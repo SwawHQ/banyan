@@ -142,8 +142,11 @@ export const canvasScenarios = [
                     });
                     assert.ok(Math.abs(name.width - before.nav.width) <= 1, 'Product names share the navigation column width.');
                     await page.screenshot({ path: path.join(artifactDir, `${source.replaceAll('/', '-')}-${width}-before.png`) });
-                    // Use a visible point, avoiding Playwright's automatic centering of links.
-                    const point = { x: name.x + 40, y: name.y + 10 };
+                    // The page canvas can pan past the label's start; tap its visible portion.
+                    const visibleLeft = Math.max(0, name.x);
+                    const visibleRight = Math.min(width, name.x + name.width);
+                    assert.ok(visibleRight > visibleLeft, 'The panned product row remains visible.');
+                    const point = { x: (visibleLeft + visibleRight) / 2, y: name.y + 10 };
                     assert.ok(point.x > 0 && point.x < width);
                     if (mobile) await page.touchscreen.tap(point.x, point.y);
                     else await page.mouse.click(point.x, point.y);

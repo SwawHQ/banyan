@@ -63,10 +63,6 @@ other = "Time"
 [article_meta_directory]
 other = "Directory"
 
-
-[no_trans_msg]
-other = "This page does not yet have a [{lang}] version.\nGo to the [{lang}] homepage?"
-
 [language_return_missing]
 other = "This page has no {lang} version. Showing the original content."
 
@@ -81,15 +77,3 @@ other = "Go to this language's homepage"
 
 [tryOtherLangs]
 other = "Try other language versions:"
-
-[settings_return]
-other = "Back"
-
-[appearance_auto]
-other = "Follow system"
-
-[appearance_light]
-other = "Light"
-
-[appearance_dark]
-other = "Dark"

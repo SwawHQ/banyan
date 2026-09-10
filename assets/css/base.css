@@ -33,10 +33,6 @@ a:visited {
     outline-offset: 2px;
 }
 
-.page-back-link {
-    margin-block-start: 1rem;
-}
-
 .skip-link {
     position: absolute;
     left: -9999px;
