@@ -1,14 +1,18 @@
 {{ if .Date }}
-<div class="document-meta__row" aria-label="{{ i18n "article_meta_dates" }}">
-  <span class="document-meta__label">{{ i18n "article_meta_dates" }}</span>
+<div class="document-meta__group" aria-label="{{ i18n "article_meta_dates" }}">
+  <div class="document-meta__row">
+  <span class="collection-item-icon">{{ partial "system-ui/icon/render.html" (dict "name" "clock") }}</span>
   <time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
     {{ i18n "label_published" | default "Published" }} {{ .Date.Format "2006-01-02" }}
   </time>
+  </div>
   {{ if and .Lastmod (ne (.Lastmod.Format "2006-01-02") (.Date.Format "2006-01-02")) }}
-    <span class="document-meta__separator"> · </span>
+  <div class="document-meta__row">
+    <span class="collection-item-icon">{{ partial "system-ui/icon/render.html" (dict "name" "clock") }}</span>
     <time datetime="{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}">
       {{ i18n "label_updated" | default "Updated" }} {{ .Lastmod.Format "2006-01-02" }}
     </time>
+  </div>
   {{ end }}
 </div>
 {{ end }}

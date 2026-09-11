@@ -1,0 +1,8 @@
+{{- $items := trim (printf "%s" (partial "feature-document/toc-items.html" .Fragments.Headings)) " \r\n\t" -}}
+{{- with $items -}}
+<nav class="document-toc" aria-label="{{ i18n "document_chapters" }}">
+  <p class="document-toc__title">{{ i18n "document_chapters" }}</p>
+  <ul>{{ . | safeHTML }}</ul>
+</nav>
+{{ partial "system-assets/script.html" (dict "path" "js/document/toc.js") }}
+{{- end -}}

@@ -77,3 +77,8 @@ other = "返回本語言首頁"
 
 [tryOtherLangs]
 other = "嘗試其他語言版本："
+
+[document_aside]
+other = '內容資訊'
+[document_chapters]
+other = '章節'

@@ -6,6 +6,7 @@
   {{- $links = $links | append (dict
     "href" .
     "text" "GitHub"
+    "icon" "github"
     "target" "_blank"
     "rel" "noopener noreferrer"
   ) -}}
@@ -26,23 +27,20 @@
   {{- if not (hasPrefix $href "https://") -}}
     {{- errorf "Build failed: published_links[%d] on page %q requires an absolute https:// URL." $index $pageID -}}
   {{- end -}}
+  {{- $hostIcons := dict "github.com" "github" "mp.weixin.qq.com" "wechat" -}}
+  {{- $icon := index $hostIcons (lower (urls.Parse $href).Hostname) | default "link" -}}
   {{- $links = $links | append (dict
     "href" $href
     "text" $text
+    "icon" $icon
     "target" "_blank"
     "rel" "noopener noreferrer"
   ) -}}
 {{- end -}}
 {{- if gt (len $links) 0 -}}
-<nav class="document-meta__row document-meta__row--resources" aria-label="{{ i18n "article_meta_resources" }}">
+<nav class="document-meta__group document-meta__row--resources" aria-label="{{ i18n "article_meta_resources" }}">
   {{- range $index, $link := $links -}}
-    {{- if gt $index 0 -}}<span class="document-meta__separator" aria-hidden="true">·</span>{{- end -}}
-    {{- partial "system-ui/link.html" (dict
-      "href" (index $link "href")
-      "text" (index $link "text")
-      "target" (index $link "target")
-      "rel" (index $link "rel")
-    ) -}}
+    <a class="collection-item-link" href="{{ .href }}" target="{{ .target }}" rel="{{ .rel }}">{{ partial "system-ui/list/item-content.html" (dict "text" .text "icon" .icon) }}</a>
   {{- end -}}
 </nav>
 {{- end -}}

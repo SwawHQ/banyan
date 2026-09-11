@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { documentAsideScenarios } from './document-aside.mjs';
 import path from 'node:path';
 import {
     gotoAndWait,
@@ -68,6 +69,7 @@ async function readCanvas(page) {
 }
 
 export const canvasScenarios = [
+    ...documentAsideScenarios,
     {
         id: 'canvas-source-navigation',
         kind: 'single',
@@ -342,7 +344,7 @@ export const canvasScenarios = [
                             sibling: main.parentElement === aside.parentElement,
                             followsMain: main.nextElementSibling === aside,
                             gap: right.left - box.right, expectedGap: gap,
-                            asideWidth: right.width, expectedWidth: 15 * gap,
+                            asideWidth: right.width, expectedWidth: Math.min(30 * gap, document.querySelector('.page').clientWidth),
                             topDifference: meta.top - heading.top,
                             overflow: aside.scrollWidth - aside.clientWidth,
                             readingY, asideUnmoved, independent,
@@ -377,10 +379,13 @@ export const canvasScenarios = [
             });
             assert(printed.below && printed.overflow === 'visible' && !printed.clipped, JSON.stringify(printed));
             await page.emulateMedia({ media: 'screen' });
-            for (const route of ['/zh/all/', '/zh/about/', '/zh/language/']) {
+            for (const route of ['/zh/all/', '/zh/language/']) {
                 await gotoAndWait(page, baseUrl + route);
                 assert.equal(await page.locator('.document-aside').count(), 0, `No empty sidebar on ${route}`);
             }
+            await gotoAndWait(page, baseUrl + '/zh/about/');
+            assert.equal(await page.locator('.slot-meta').count(), 0);
+            assert.equal(await page.locator('.document-toc').count(), 1, 'An article outline is independent of the metadata slot.');
             return { cases, printed };
         }
     },

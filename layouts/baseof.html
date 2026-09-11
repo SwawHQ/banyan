@@ -172,13 +172,8 @@
                 {{- end -}}
             </main>
             </div>
-            {{- with index $slotFlags "meta" -}}
-              {{- $metaHTML := trim (printf "%s" (partial "feature-document/meta.html" (dict "ctx" $ "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel))) " \r\n\t" -}}
-              {{- with $metaHTML -}}
-            <aside class="document-aside">
-                <div class="slot slot-meta" data-slot="meta">{{ . | safeHTML }}</div>
-            </aside>
-              {{- end -}}
+            {{- block "document-aside" (dict "ctx" $ "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel) -}}
+              {{- partial "feature-document/aside.html" . -}}
             {{- end -}}
             </div>
         </div>

@@ -33,6 +33,8 @@
 | `breadcrumb` | `true`／`false` | 当前页面的集合路径及各级条目 |
 | `meta` | `true`／`false` | 正文右侧辅助列中的路径、taxonomy、日期与外链 |
 
+文章布局另行提供章节导航，不需要 `list` 或新的 slot 声明，详见 [元信息与章节试验](document-aside-study.md)。`slots.meta: false` 只关闭元信息，仍可显示章节。`document-aside` 是布局 block，Markdown 内容不能将它声明为 slot。
+
 未知 slot 名和错误值类型均应在构建时失败。`slots.footer`、版权页脚片段及其专用模板和样式已移除。旧 `show_breadcrumb`、`show_meta`、`breadcrumb_variant` 和布局导向的 `rail-*`／`stage-*` 声明不属于当前约定。
 
 页面基础样式由 `baseof.html` 直接调用 `system-ui/page-styles.html`，装配为唯一且稳定的 `page.css`，包括画幅、列表、路径、元信息 slot、更新面板和 404 辅助样式；页面入口不能替换或漏掉它。真正渲染 `.prose` 的入口显式调用 `feature-document/styles.html`，取得同一个 `prose.css`。集合页只在实际输出正文时调用；模板直接生成正文结构的预取诊断页也显式调用同一装配器。不会通过页面类型或渲染后的 HTML 标签猜测需要哪些正文组件。

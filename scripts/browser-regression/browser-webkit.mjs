@@ -8,6 +8,7 @@ await runBrowserRegression({
     scenarios: canvasScenarios.filter(scenario => [
         'canvas-source-navigation',
         'canvas-document-aside',
+        'document-aside-navigation',
         'canvas-first-frame-slow-runtime',
         'canvas-history-scroll-restoration',
         'canvas-anchors'

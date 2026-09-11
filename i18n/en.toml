@@ -77,3 +77,8 @@ other = "Go to this language's homepage"
 
 [tryOtherLangs]
 other = "Try other language versions:"
+
+[document_aside]
+other = 'Document information'
+[document_chapters]
+other = 'On this page'

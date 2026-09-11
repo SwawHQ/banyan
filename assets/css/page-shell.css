@@ -3,6 +3,7 @@
     --page-edge-block-start: 12px;
     --page-edge-block-end: 6rem;
     --navigation-column-inline: 15rem;
+    --document-aside-inline: min(30rem, 100cqi);
     --page-shell-gap-inline: 1rem;
     --main-column-inline: min(88ch, 100cqi);
     --document-start-offset: 52px;
@@ -88,7 +89,7 @@ body {
 }
 
 .document-aside {
-    inline-size: var(--navigation-column-inline);
+    inline-size: var(--document-aside-inline);
     block-size: 100%;
     padding-block: var(--document-start-offset) var(--page-edge-block-end);
     overflow-wrap: anywhere;

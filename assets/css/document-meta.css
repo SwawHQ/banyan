@@ -1,23 +1,94 @@
+.document-meta,
+.document-toc {
+    margin: 0;
+    line-height: 1.55;
+}
+
 .document-meta {
     display: grid;
-    gap: 0.24rem;
-    margin: 0;
+    gap: 0.8rem;
+}
+
+.document-meta__group {
+    display: grid;
+    gap: 0.08rem;
+}
+
+.document-meta__group:empty {
+    display: none;
 }
 
 .document-meta__row {
-    margin: 0;
-    font-size: small;
-    color: var(--muted);
     display: flex;
-    flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.3rem;
+    gap: 0.15rem;
+    min-width: 0;
+    margin: 0;
+    color: var(--muted);
 }
 
-.document-meta__label {
-    color: var(--fg);
+.document-meta__path {
+    min-width: 0;
+}
+
+.document-meta__row:has(.document-meta__path) {
+    border-radius: var(--collection-item-radius);
+}
+
+.document-meta__row:has(.document-meta__path):is(:hover, :focus-within) {
+    background: var(--collection-item-hover-bg);
+}
+
+.document-meta__path a:is(:hover, :focus-visible) {
+    color: var(--accent-text);
 }
 
 .document-meta__separator {
+    margin-inline: 0.15rem;
     color: var(--muted);
+}
+
+.document-aside .collection-item-link {
+    inline-size: 100%;
+    align-items: baseline;
+}
+
+.document-aside .collection-item-title {
+    overflow: visible;
+    white-space: normal;
+}
+
+.document-toc {
+    margin-block-start: 1.5rem;
+}
+
+.document-toc:first-child {
+    margin-block-start: 0;
+}
+
+.document-toc__title {
+    margin: 0 0 0.4rem;
+    font-size: small;
+    font-weight: normal;
+    color: var(--muted);
+}
+
+.document-toc ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.document-toc ul ul {
+    padding-inline-start: 1.5rem;
+}
+
+.document-toc li {
+    margin-block: 0.08rem;
+}
+
+@media print {
+    .document-toc {
+        display: none;
+    }
 }

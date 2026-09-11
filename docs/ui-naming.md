@@ -35,7 +35,7 @@ list: name
 
 首页、普通页面、分类法分别使用 `model-home`、`model-page`、`model-taxonomy` 生成结构路径；`model.html` 保留按页面类型选择模型的显式分支，不再使用没有对应手动模式的 `-auto` 后缀。
 
-`page-shell.css` 中，`--main-column-inline` 控制主内容宽度，`--navigation-column-inline` 统一控制第一列、路径列、辅助列与列表名称列的宽度，`--page-shell-gap-inline` 统一控制画幅列间距。`--document-start-offset` 对齐正文标题与右侧元信息顶部。各屏幕宽度使用同一套画幅；不再给相同尺寸建立 rail／path 转发变量。
+`page-shell.css` 中，`--main-column-inline` 控制主内容宽度，`--navigation-column-inline` 统一控制第一列、路径列与列表名称列的宽度，`--document-aside-inline` 独立控制辅助列（桌面 30rem，最多占一个可视区域），`--page-shell-gap-inline` 统一控制画幅列间距。`--document-start-offset` 对齐正文标题与右侧元信息顶部。各屏幕宽度使用同一套画幅；不再给相同尺寸建立 rail／path 转发变量。
 
 ## CSS 源码与发布名
 

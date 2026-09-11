@@ -1,8 +1,11 @@
-.collection-item-link {
+:root {
     --collection-item-radius: 0.22rem;
     --collection-item-hover-bg: color-mix(in srgb, var(--accent) 8%, transparent);
     --collection-item-current-bg: color-mix(in srgb, var(--accent) 14%, transparent);
     --collection-item-current-ring: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.collection-item-link {
     position: relative;
     isolation: isolate;
     display: inline-flex;

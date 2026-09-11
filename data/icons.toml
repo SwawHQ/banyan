@@ -105,6 +105,27 @@ stroke_linecap = "round"
 stroke_width = "2"
 body = '<path d="M4 6H20M4 12H20M4 18H20"/>'
 
+[clock]
+viewBox = "0 0 24 24"
+fill = "none"
+stroke = "currentColor"
+stroke_width = "1.5"
+body = '<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/>'
+
+[link]
+viewBox = "0 0 24 24"
+fill = "none"
+stroke = "currentColor"
+stroke_width = "1.5"
+body = '<path d="m10 13 4-4M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 1 1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0"/>'
+
+[heading]
+viewBox = "0 0 24 24"
+fill = "none"
+stroke = "currentColor"
+stroke_width = "1.5"
+body = '<path d="M6 4v16M18 4v16M6 12h12"/>'
+
 [my]
 viewBox = "0 0 24 24"
 fill = "none"
