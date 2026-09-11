@@ -100,8 +100,7 @@ function start() {
 try {
     var html = document.documentElement;
     var entryPending = html.getAttribute("data-entry-breadcrumb-pending") === "true";
-    var sortPending = html.getAttribute("data-breadcrumb-sort-pending") === "true";
-    if (!entryPending && !sortPending) {
+    if (!entryPending) {
         return;
     }
 
@@ -135,15 +134,6 @@ try {
                 placeholderCount += 1;
             }
         }
-    } else if (sortPending) {
-        var pageCollectionSource = parseJson(body.dataset.pageCollectionSource || "{}", {});
-        var collectionSource = findSource(entryBreadcrumbSources, pageCollectionSource.logical_path || pageCollectionSource.logicalPath || "");
-        if (collectionSource) {
-            var collectionLevels = Array.isArray(collectionSource.levels) ? collectionSource.levels : [];
-            placeholderCount = countVisibleItems(collectionLevels.map(function (level) {
-                return level && typeof level.item === "object" ? level.item : null;
-            }).filter(Boolean));
-        }
     }
 
     if (placeholderCount <= 0) {
@@ -155,7 +145,7 @@ try {
     nav.setAttribute("aria-hidden", "true");
 
     for (var itemIndex = 0; itemIndex < placeholderCount; itemIndex += 1) {
-        var placeholder = document.createElement("span");
+        var placeholder = document.createElement("div");
         placeholder.className = "path-column";
         placeholder.dataset.collectionColumn = "true";
         nav.appendChild(placeholder);

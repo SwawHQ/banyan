@@ -1,13 +1,15 @@
 import {
-    buildPathColumnItems,
+    applyBreadcrumbRowSort,
     buildCollectionSortToggleHref,
+    getCollectionSortState,
 } from './breadcrumb-items.js';
 import {
     parseCollectionSourceIndex,
     pickCollectionItemsByHref,
     pickCollectionSourceByHref,
 } from './breadcrumb-source.js';
-import { renderPathColumn } from './path-render.js';
+import { updateCollectionColumnHeader } from './path-render.js';
+import { sortItemsRows } from './collection-items.js';
 import { refreshMainCollectionNavigation } from './collection-navigation.js';
 import {
     getLogicalPathDepth,
@@ -75,7 +77,7 @@ function isPlainPrimaryClick(event, link) {
         && (!link.target || link.target === '_self');
 }
 
-function refreshBreadcrumbCollectionColumns(changedLogicalPath = '') {
+export function refreshBreadcrumbCollectionColumns(changedLogicalPath = '') {
     const wrappers = Array.from(document.querySelectorAll(
         '.slot-breadcrumb [data-collection-column]'
     ));
@@ -94,33 +96,34 @@ function refreshBreadcrumbCollectionColumns(changedLogicalPath = '') {
             return;
         }
 
-        const link = wrapper.querySelector('a[data-collection-entry][aria-current="page"][href]');
-        if (!(link instanceof HTMLAnchorElement)) {
-            return;
-        }
+        const decoded = readWrapperCollectionItems(wrapper, sourceIndex);
+        const state = getCollectionSortState(collectionSource);
+        const header = wrapper.querySelector('[data-collection-header]');
+        if (!decoded || !state || !header?.querySelector('[data-collection-sort-toggle]')) return;
 
-        const selectedPathname = normalizePathname(
-            new URL(link.href, window.location.origin).pathname
-        );
-        const columnItems = buildPathColumnItems(
-            readWrapperCollectionItems(wrapper, sourceIndex),
-            collectionSource,
-            { selectedPathname }
-        );
-        if (columnItems.length === 0) {
-            return;
-        }
+        const links = [...wrapper.querySelectorAll('a[data-collection-entry][href]')];
+        const pathname = href => normalizePathname(new URL(href, window.location.origin).pathname);
+        const cellsByPath = new Map(links.map(link => [pathname(link.href), link.parentElement]));
+        const { rows } = sortItemsRows(decoded.rows, state.sortVariant, collectionSource.logicalPath, state.defaultSort);
+        const cells = rows.map(row => cellsByPath.get(pathname(row.href)));
+        if (cells.length !== links.length || cells.some(cell => !cell)) return;
 
-        if (!columnItems.some((columnItem) => columnItem.current)) {
-            return;
+        rows.forEach((row, i) => {
+            const link = cells[i].querySelector('a[data-collection-entry]');
+            const url = new URL(link.href);
+            // Preserve the existing from, fragment and unrelated query fields.
+            applyBreadcrumbRowSort(url, row, collectionSource, state);
+            const href = `${url.pathname}${url.search}${url.hash}`;
+            if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+        });
+        if (cells.some((cell, i) => cell !== links[i].parentElement)) {
+            const scrollTop = wrapper.scrollTop;
+            const fragment = document.createDocumentFragment();
+            cells.forEach(cell => fragment.appendChild(cell));
+            header.parentElement.appendChild(fragment);
+            wrapper.scrollTop = scrollTop;
         }
-
-        renderPathColumn(
-            wrapper,
-            columnItems,
-            collectionSource,
-            { lineageLogicalPath }
-        );
+        updateCollectionColumnHeader(header, collectionSource, state, lineageLogicalPath);
     });
 }
 
@@ -154,13 +157,8 @@ export function initBreadcrumbColumnSort() {
         }
 
         event.preventDefault();
-        const restoreFocus = document.activeElement === toggle;
         window.history.replaceState(window.history.state, '', nextHref);
         refreshBreadcrumbCollectionColumns(collectionSource.logicalPath);
         refreshMainCollectionNavigation();
-        if (restoreFocus) {
-            const nextToggle = wrapper.querySelector('a[data-collection-sort-toggle="true"]');
-            if (nextToggle instanceof HTMLElement) nextToggle.focus({ preventScroll: true });
-        }
     });
 }

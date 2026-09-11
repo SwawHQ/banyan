@@ -68,6 +68,215 @@ async function readCanvas(page) {
 }
 
 export const canvasScenarios = [
+    {
+        id: 'canvas-source-navigation',
+        kind: 'single',
+        serviceWorkers: 'block',
+        viewport: { width: 390, height: 844 },
+        hasTouch: true,
+        title: 'Opening an Article Retains Source Columns and Clicking It Again Keeps the Document',
+        async run({ page, baseUrl }) {
+            await page.addInitScript(() => {
+                const observer = new MutationObserver(() => {
+                    if (!document.querySelector('#main')) return;
+                    window.__sourceNav = document.querySelector('.slot-breadcrumb .path-navigation');
+                    window.__sourceColumns = [...document.querySelectorAll('.slot-breadcrumb .path-column')];
+                    observer.disconnect();
+                });
+                observer.observe(document, { childList: true, subtree: true });
+            });
+            await page.route('**/js/browse/path-entry.*.js', async route => {
+                await new Promise(resolve => setTimeout(resolve, 350));
+                await route.continue();
+            });
+            // Click only the visible portion, without locator.click() revealing the whole row.
+            const clickVisible = async link => {
+                const point = await link.evaluate(el => {
+                    const box = el.getBoundingClientRect();
+                    const left = box.x - (visualViewport?.offsetLeft || 0);
+                    return {
+                        x: (Math.max(0, left) + Math.min(innerWidth, left + box.width)) / 2,
+                        y: box.y + box.height / 2
+                    };
+                });
+                await page.touchscreen.tap(point.x, point.y);
+            };
+            const cases = [];
+            for (const [source, slug, x] of [
+                ['tags/tooling', 'coskill-trustworthy-collaboration', 360],
+                ['tags/tooling/devtools/windows', 'xvenv', 900]
+            ]) {
+                await gotoAndWait(page, `${baseUrl}/zh/${source}/`);
+                await waitForBreadcrumbSettled(page);
+                await page.evaluate(x => scrollTo(x, 0), x);
+                await nextPaint(page);
+                const before = await readCanvas(page);
+                assert.equal(before.canvasOffsetX, x);
+                await clickVisible(page.locator(`main [data-collection-entry][href*="/p/${slug}/"]`));
+                await page.waitForURL(url => url.pathname === `/zh/p/${slug}/`);
+                await waitForBreadcrumbSettled(page);
+                await nextPaint(page);
+                const after = await readCanvas(page);
+                assert.equal(after.canvasOffsetX, before.canvasOffsetX,
+                    'Source hydration must not reset a panned canvas in WebKit.');
+                assert.equal(after.nav.x, before.nav.x);
+                before.columns.forEach((column, index) => assert.equal(after.columns[index].x, column.x));
+                assert.equal(after.columns.at(-1).x, before.main.x);
+                assert(after.mainDocumentX > before.mainDocumentX);
+                assert.equal(await page.evaluate(() => {
+                    const nav = window.__sourceNav;
+                    return nav?.isConnected && !nav.hasAttribute('aria-hidden')
+                        && nav.getAttribute('aria-label') === 'Breadcrumb'
+                        && window.__sourceColumns.length === nav.children.length
+                        && window.__sourceColumns.every((column, index) => column === nav.children[index]);
+                }), true, 'The reserved column containers must survive source hydration.');
+
+                const readingY = await page.evaluate(() => {
+                    window.__sameEntryDocument = true;
+                    const content = document.querySelector('.page-content');
+                    content.scrollTop = 120;
+                    return content.scrollTop;
+                });
+                assert(readingY > 0, 'Exercise an existing article reading position.');
+                const selected = page.locator(`.slot-breadcrumb [aria-current="page"][href*="/p/${slug}/"]`);
+                const selectedHref = await selected.evaluate(el => el.href);
+                assert.equal(selectedHref, page.url());
+                let documentRequests = 0;
+                const recordRequest = request => {
+                    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documentRequests += 1;
+                };
+                page.on('request', recordRequest);
+                await clickVisible(selected);
+                await nextPaint(page);
+                assert.equal(documentRequests, 0, 'Clicking the selected article must not reload the document.');
+                page.off('request', recordRequest);
+                assert.deepEqual(await page.evaluate(() => ({
+                    retained: window.__sameEntryDocument,
+                    x: visualViewport?.pageLeft ?? scrollX,
+                    y: document.querySelector('.page-content').scrollTop,
+                    pending: sessionStorage.getItem('banyan:canvas-navigation')
+                })), { retained: true, x, y: readingY, pending: null });
+                cases.push({ source, before: before.canvasOffsetX, after: after.canvasOffsetX, readingY });
+            }
+            return { cases };
+        }
+    },
+    {
+        id: 'canvas-path-sort-reuses-dom',
+        kind: 'single',
+        serviceWorkers: 'block',
+        viewport: { width: 1440, height: 130 },
+        title: 'Sorting Reuses Server-rendered Path Rows, Headers and Links',
+        async run({ page, baseUrl }) {
+            await page.addInitScript(() => {
+                const observer = new MutationObserver(() => {
+                    if (!document.querySelector('#main')) return;
+                    window.__pathNodes = [...document.querySelectorAll('.path-column')].map(column => ({
+                        column,
+                        header: column.querySelector('[data-collection-header]'),
+                        links: [...column.querySelectorAll('[data-collection-entry]')],
+                        icons: [...column.querySelectorAll('.collection-item-icon')]
+                    }));
+                    observer.disconnect();
+                });
+                observer.observe(document, { childList: true, subtree: true });
+            });
+            await page.route('**/js/browse/path-entry.*.js', async route => {
+                await new Promise(resolve => setTimeout(resolve, 400));
+                await route.continue();
+            });
+            await gotoAndWait(page, `${baseUrl}/tags/tooling/devtools/?sorts=date-desc,date-asc`);
+            await waitForBreadcrumbSettled(page);
+            const retained = () => page.evaluate(() => window.__pathNodes.every(({ column, header, links, icons }) =>
+                column.isConnected && header?.isConnected && links.length > 0
+                && links.every(link => link.isConnected && column.contains(link))
+                && icons.every(icon => icon.isConnected && column.contains(icon))));
+            assert.equal(await retained(), true, 'Initial sort must reuse SSR rows instead of replacing them with placeholders.');
+
+            const target = '.path-column[data-breadcrumb-collection-href="/tags/tooling/"]';
+            const before = await page.locator(target).evaluate(column => {
+                const link = column.querySelector('[href*="/p/coskill-trustworthy-collaboration/"]');
+                const url = new URL(link.href);
+                url.searchParams.set('note', 'keep');
+                url.hash = 'reading';
+                link.href = url.href;
+                const toggle = column.querySelector('[data-collection-sort-toggle]');
+                toggle.focus({ preventScroll: true });
+                column.scrollTop = 35;
+                return {
+                    y: column.scrollTop,
+                    order: [...column.querySelectorAll('[data-collection-entry]')].map(a => new URL(a.href).pathname)
+                };
+            });
+            assert(before.y > 0, 'Exercise a scrolled column.');
+            for (const attempt of [0, 1]) {
+                await page.locator(`${target} [data-collection-sort-toggle]`).evaluate(toggle => toggle.click());
+                await nextPaint(page);
+                const after = await page.locator(target).evaluate(column => {
+                    const link = column.querySelector('[href*="/p/coskill-trustworthy-collaboration/"]');
+                    return {
+                        y: column.scrollTop,
+                        href: link.href,
+                        focused: document.activeElement === column.querySelector('[data-collection-sort-toggle]'),
+                        order: [...column.querySelectorAll('[data-collection-entry]')].map(a => new URL(a.href).pathname)
+                    };
+                });
+                assert.equal(await retained(), true, 'Click sorting must preserve row, icon and header identity.');
+                assert.equal(after.focused, true);
+                assert.equal(after.y, before.y);
+                const url = new URL(after.href);
+                assert.equal(url.searchParams.get('from'), 'tags/tooling');
+                assert.equal(url.searchParams.get('note'), 'keep');
+                assert.equal(url.hash, '#reading');
+                if (attempt === 0) assert.notDeepEqual(after.order, before.order);
+                else assert.deepEqual(after.order, before.order);
+            }
+            return { preservedNodes: true, scrollTop: before.y };
+        }
+    },
+    {
+        id: 'canvas-path-entry-lineage',
+        kind: 'single',
+        serviceWorkers: 'block',
+        title: 'Path Column Article Links Keep Their Source Before and After Rendering',
+        async run({ page, baseUrl }) {
+            const selector = '.slot-breadcrumb a[href*="/p/coskill-trustworthy-collaboration/"]';
+            const cases = [];
+            for (const lang of ['', 'zh/', 'zh-tw/']) {
+                for (const [route, from] of [
+                    ['tags/tooling/devtools/', 'tags/tooling'],
+                    ['p/loop-engineering-digital-life-origin/', 'd']
+                ]) {
+                    const url = `${baseUrl}/${lang}${route}`;
+                    const response = await page.request.get(url);
+                    assert.equal(response.status(), 200);
+                    // Parse the response without executing scripts: the href
+                    // must already work before hydration, including with JS off.
+                    const rawHref = await page.evaluate(({ html, selector }) =>
+                        new DOMParser().parseFromString(html, 'text/html')
+                            .querySelector(selector)?.getAttribute('href'),
+                    { html: await response.text(), selector });
+                    assert(rawHref, `Missing source-column article link: ${url}`);
+                    assert.equal(new URL(rawHref, baseUrl).searchParams.get('from'), from, url);
+                    await gotoAndWait(page, url);
+                    await waitForBreadcrumbSettled(page);
+                    const rendered = await page.locator(selector).getAttribute('href');
+                    assert.equal(new URL(rendered, baseUrl).searchParams.get('from'), from);
+                    cases.push({ url, rawHref, rendered });
+                }
+                for (const query of ['', '?from=tags/tooling', '?sorts=date-desc,date-asc']) {
+                    await gotoAndWait(page, `${baseUrl}/${lang}tags/tooling/devtools/${query}`);
+                    await waitForBreadcrumbSettled(page);
+                    await page.locator(selector).click();
+                    await page.waitForURL(url => url.pathname === `/${lang}p/coskill-trustworthy-collaboration/`);
+                    assert.equal(new URL(page.url()).searchParams.get('from'), 'tags/tooling');
+                    await page.reload();
+                    assert.equal(new URL(page.url()).searchParams.get('from'), 'tags/tooling');
+                }
+            }
+            return { cases };
+        }
+    },
     ...[false, true].map(mobile => ({
         id: mobile ? 'canvas-mobile-native-scrollbar' : 'canvas-desktop-auto-scrollbar',
         kind: 'single',

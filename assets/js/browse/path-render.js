@@ -105,14 +105,6 @@ function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
     if (!state) {
         return header;
     }
-    label.href = buildCollectionPageHref(
-        collectionSource.href,
-        collectionSource.logicalPath,
-        state.sortVariant,
-        state.defaultSort
-    );
-    const copy = readCollectionSortCopy();
-
     const separator = document.createElement('span');
     separator.className = 'collection-column-separator';
     separator.setAttribute('aria-hidden', 'true');
@@ -120,28 +112,33 @@ function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
 
     const toggle = document.createElement('a');
     toggle.className = 'collection-column-sort';
-    toggle.href = buildCollectionSortToggleHref(
-        collectionSource,
-        window.location.href,
-        lineageLogicalPath
-    );
     toggle.dataset.collectionSortToggle = 'true';
     applyBreadcrumbPrefetchSlot(toggle);
-    const actionLabel = copy.actions[state.nextToken] || state.nextToken;
-    toggle.title = actionLabel;
-    toggle.setAttribute('aria-label', actionLabel);
 
     const sortLabel = document.createElement('span');
     sortLabel.className = 'collection-sort-label';
-    sortLabel.textContent = copy.fields[state.field] || state.field;
     const indicator = document.createElement('span');
     indicator.className = 'collection-sort-indicator';
     indicator.dataset.sortIndicator = '';
     indicator.setAttribute('aria-hidden', 'true');
-    indicator.textContent = state.order === 'asc' ? '↑' : '↓';
     toggle.append(sortLabel, indicator);
     header.append(separator, toggle);
+    updateCollectionColumnHeader(header, collectionSource, state, lineageLogicalPath);
     return header;
+}
+
+export function updateCollectionColumnHeader(header, source, state, lineageLogicalPath) {
+    const copy = readCollectionSortCopy();
+    header.querySelector('.collection-column-label').href = buildCollectionPageHref(
+        source.href, source.logicalPath, state.sortVariant, state.defaultSort
+    );
+    const toggle = header.querySelector('[data-collection-sort-toggle]');
+    toggle.href = buildCollectionSortToggleHref(source, window.location.href, lineageLogicalPath);
+    const actionLabel = copy.actions[state.nextToken] || state.nextToken;
+    toggle.title = actionLabel;
+    toggle.setAttribute('aria-label', actionLabel);
+    toggle.querySelector('.collection-sort-label').textContent = copy.fields[state.field] || state.field;
+    toggle.querySelector('[data-sort-indicator]').textContent = state.order === 'asc' ? '↑' : '↓';
 }
 
 function buildCollectionCell(item, current) {
@@ -191,35 +188,43 @@ export function renderPathColumn(
     column.replaceChildren(buildCollectionColumnGrid(items, collectionSource, options));
 }
 
-function buildPathColumn(item) {
+function fillPathColumn(column, item) {
     const columnItems = Array.isArray(item.column_items) ? item.column_items.filter(Boolean) : [];
     const collectionSource = item.collection_source || item.collectionSource || {
         href: item.collection_href || '',
         label: item.collection_label || '',
     };
     const collectionHref = item.collection_href || item.collectionHref || collectionSource.href || '';
-    const column = document.createElement('div');
-    column.className = 'path-column';
-    column.dataset.collectionColumn = 'true';
     if (collectionHref) {
         column.dataset.breadcrumbCollectionHref = collectionHref;
+    } else {
+        delete column.dataset.breadcrumbCollectionHref;
     }
     renderPathColumn(column, columnItems.length > 0 ? columnItems : [item], collectionSource);
-    return column;
 }
 
 export function renderPathColumns(items) {
-    const container = document.querySelector('.slot-breadcrumb');
-    if (!container || !Array.isArray(items) || items.length === 0) {
+    const nav = document.querySelector('.slot-breadcrumb .path-navigation');
+    if (!nav || !Array.isArray(items) || items.length === 0) {
         return false;
     }
 
-    const nav = document.createElement('nav');
-    nav.className = 'path-navigation';
+    // Keep the reserved scroll containers attached. Replacing them resets the
+    // horizontal canvas in WebKit even when the new columns have identical sizes.
+    const columns = Array.from(nav.children);
+    items.forEach((item, index) => {
+        let column = columns[index];
+        if (!column) {
+            column = document.createElement('div');
+            column.className = 'path-column';
+            column.dataset.collectionColumn = 'true';
+            nav.appendChild(column);
+        }
+        fillPathColumn(column, item);
+    });
+    columns.slice(items.length).forEach(column => column.remove());
+
     nav.setAttribute('aria-label', 'Breadcrumb');
-
-    items.forEach((item) => nav.appendChild(buildPathColumn(item)));
-
-    container.replaceChildren(nav);
+    nav.removeAttribute('aria-hidden');
     return true;
 }

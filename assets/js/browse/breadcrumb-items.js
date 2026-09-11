@@ -143,47 +143,17 @@ export function buildCollectionPageHref(href, logicalPath, sortVariant, defaultS
     }
 }
 
-function buildDescendantCollectionHref(href, collectionSource, sortToken = '', defaultSort = '') {
-    const rawHref = typeof href === 'string' ? href.trim() : '';
-    if (!rawHref || !collectionSource?.logicalPath) {
-        return rawHref;
-    }
-
-    try {
-        const url = new URL(rawHref, window.location.origin);
-        applySortTokenToUrl(url, sortToken, defaultSort);
-        applySortsTokensToUrl(
-            url,
-            buildDescendantSortsTokens(collectionSource.logicalPath, sortToken),
-            buildDefaultSortsTokens(collectionSource.logicalPath, defaultSort, 1)
-        );
-        return toRelativeHref(url);
-    } catch (error) {
-        return rawHref;
-    }
-}
-
-function buildEntrySourceHref(href, logicalPath, sortToken = '', defaultSort = '', sortsTokens = [], defaultSortsTokens = []) {
-    const rawHref = typeof href === 'string' ? href.trim() : '';
-    if (!rawHref) {
-        return '';
-    }
-
-    try {
-        const url = new URL(rawHref, window.location.origin);
-        if (logicalPath) {
-            applyFromPathToUrl(url, logicalPath);
-        }
-        applySortTokenToUrl(url, sortToken, defaultSort);
-        applySortsTokensToUrl(
-            url,
-            sortsTokens,
-            defaultSortsTokens.length > 0 ? defaultSortsTokens : buildDefaultSortsTokens(logicalPath, defaultSort)
-        );
-        return toRelativeHref(url);
-    } catch (error) {
-        return rawHref;
-    }
+export function applyBreadcrumbRowSort(url, row, collectionSource, sortState = {}) {
+    const { sortToken = '', defaultSort = '', sortsTokens = [], defaultSortsTokens = [] } = sortState;
+    const logicalPath = collectionSource.logicalPath;
+    const isCollection = isCollectionRowKind(row.kind);
+    applySortTokenToUrl(url, sortToken, defaultSort);
+    applySortsTokensToUrl(
+        url,
+        isCollection ? buildDescendantSortsTokens(logicalPath, sortToken) : sortsTokens,
+        isCollection ? buildDefaultSortsTokens(logicalPath, defaultSort, 1)
+            : defaultSortsTokens.length ? defaultSortsTokens : buildDefaultSortsTokens(logicalPath, defaultSort)
+    );
 }
 
 export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
@@ -191,23 +161,14 @@ export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
         return '';
     }
 
-    if (isCollectionRowKind(row.kind)) {
-        return buildDescendantCollectionHref(
-            row.href,
-            collectionSource,
-            sortState?.sortToken || '',
-            sortState?.defaultSort || ''
-        );
+    try {
+        const url = new URL(row.href, window.location.origin);
+        if (!isCollectionRowKind(row.kind)) applyFromPathToUrl(url, collectionSource.logicalPath);
+        applyBreadcrumbRowSort(url, row, collectionSource, sortState);
+        return toRelativeHref(url);
+    } catch (error) {
+        return row.href;
     }
-
-    return buildEntrySourceHref(
-        row.href,
-        collectionSource.logicalPath,
-        sortState?.sortToken || '',
-        sortState?.defaultSort || '',
-        sortState?.sortsTokens || [],
-        sortState?.defaultSortsTokens || []
-    );
 }
 
 export function buildPathColumnItemsFromDecodedRows(decoded, collectionSource, { selectedKey = '', selectedPathname = '' } = {}) {
