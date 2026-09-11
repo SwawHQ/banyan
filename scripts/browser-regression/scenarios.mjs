@@ -25,7 +25,7 @@ const WIDE_VIEWPORT = { width: 1600, height: 1100 };
 const BREADCRUMB_FIRST_FRAME_VIEWPORT = { width: 1280, height: 960 };
 const EXPECTED_HOME_TITLE = process.env.BANYAN_BROWSER_HOME_TITLE || '';
 const ARTICLE_PAGE_PATH = process.env.BANYAN_BROWSER_ARTICLE_PATH || '/about/';
-const BREADCRUMB_PRODUCTS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_PRODUCTS_PATH || '/intent/explore/';
+const BREADCRUMB_COLLECTION_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_COLLECTION_PATH || '/tags/ai/';
 const BREADCRUMB_TAGS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_PATH
     || '/zh/tags/tooling/devtools/';
 const BREADCRUMB_TAGS_COLLECTION_HREF = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_COLLECTION_HREF
@@ -45,7 +45,7 @@ const BREADCRUMB_MULTI_COLUMN_SORT_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_
 const BREADCRUMB_COLLECTION_SORT_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_COLLECTION_SORT_PATH
     || '/zh/d/wsl/';
 const COMPOSITE_SORT_PATH = process.env.BANYAN_BROWSER_COMPOSITE_SORT_PATH
-    || '/zh/intent/explore/';
+    || '/zh/tags/ai/';
 
 async function startBreadcrumbContinuityProbe(page, columnIndex = 0) {
     await page.evaluate((targetColumnIndex) => {
@@ -233,7 +233,6 @@ function recordFirstBreadcrumbColumnStateScript(targetCollectionHref) {
 const GRID_LIST_COLUMN_CASES = [
     { id: 'section-wide', path: '/zh/d/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'all-wide', path: '/zh/all/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
-    { id: 'intent-wide', path: '/zh/intent/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'tags-wide', path: '/zh/tags/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'section-medium', path: '/zh/d/', viewport: { width: 1024, height: 960 } },
     { id: 'section-mobile', path: '/zh/d/', viewport: { width: 390, height: 844 }, horizontalCanvas: true },
@@ -583,13 +582,13 @@ export const securityScenarios = [
         async run({ page, baseUrl }) {
             const consoleEntries = [];
             createConsoleRecorder(page, consoleEntries);
-            const url = `${baseUrl}${BREADCRUMB_PRODUCTS_PATH}`;
+            const url = `${baseUrl}${BREADCRUMB_COLLECTION_PATH}`;
             const response = await gotoAndWait(page, url);
             await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
 
             return collectSecurityOutcome(page, response, consoleEntries, {
-                path: BREADCRUMB_PRODUCTS_PATH
+                path: BREADCRUMB_COLLECTION_PATH
             });
         }
     }
@@ -685,11 +684,11 @@ export const scenarios = [
             }, rootPaths);
             for (const state of staticRoots) {
                 const labels = {
-                    '/': ['Articles - All', 'Articles - Categories', 'Products - All', 'Products - Categories'],
-                    '/zh/': ['文章 - 全部', '文章 - 分类', '产品 - 全部', '产品 - 分类'],
-                    '/zh-tw/': ['文章 - 全部', '文章 - 分類', '產品 - 全部', '產品 - 分類']
+                    '/': ['Content - All', 'Content - Categories', 'Products - All', 'Products - Categories'],
+                    '/zh/': ['内容 - 全部', '内容 - 分类', '产品 - 全部', '产品 - 分类'],
+                    '/zh-tw/': ['內容 - 全部', '內容 - 分類', '產品 - 全部', '產品 - 分類']
                 };
-                if (JSON.stringify(state.articleLabels) !== JSON.stringify(labels[state.prefix])) fail('Article and product entries must use the same All/Categories naming and order.', state);
+                if (JSON.stringify(state.articleLabels) !== JSON.stringify(labels[state.prefix])) fail('Content and product entries must use the same All/Categories naming and order.', state);
                 if (state.count !== 1 || JSON.stringify(state.hrefs) !== JSON.stringify(state.expected)
                     || JSON.stringify(state.selected) !== JSON.stringify([state.prefix + 'all/'])
                     || state.home !== state.prefix || state.rowContentCount !== rootPaths.length || state.homeIcon !== '©' || state.footerCount !== 0 || state.oldControls !== 0
@@ -759,7 +758,6 @@ export const scenarios = [
                 ['/zh/p/xvenv/?from=product-categories/free', null],
                 ['/zh/p/xvenv/?from=products', null],
                 ['/zh/d/', null],
-                ['/zh/intent/', null],
                 ['/zh/about/', '/zh/about/'],
                 ['/zh/updates/check/', '/zh/updates/'],
                 ['/zh/changelog/', '/zh/updates/'],
@@ -781,10 +779,10 @@ export const scenarios = [
             const articlePath = '/zh/p/xvenv/';
             await gotoAndWait(page, baseUrl + articlePath);
             const sources = await page.evaluate(() => JSON.parse(document.body.dataset.entryBreadcrumbSources || '[]'));
-            const sourceCases = ['all', 'tags', 'intent'].map((root) => sources.find((source) => (
+            const sourceCases = ['all', 'tags', 'products'].map((root) => sources.find((source) => (
                 source.logical_path === `/${root}/` || source.logical_path.startsWith(`/${root}/`)
             )));
-            if (sourceCases.some((source) => !source)) fail('The fixture product must expose all, tags and intent sources.', { sources });
+            if (sourceCases.some((source) => !source)) fail('The fixture product must expose all, tags and products sources.', { sources });
             for (const source of sourceCases) {
                 const target = new URL(articlePath, baseUrl);
                 target.searchParams.set('from', source.logical_path.replace(/^\/|\/$/g, ''));
@@ -796,7 +794,7 @@ export const scenarios = [
             await page.goBack();
             await assertSelection(sourceCases[1].root_item.href);
             await page.goForward();
-            await assertSelection(null);
+            await assertSelection(sourceCases[2].root_item.href);
 
             // Keep source selection usable before external bundles finish loading.
             await page.addInitScript(() => {
@@ -814,7 +812,7 @@ export const scenarios = [
                 ['/zh/p/xvenv/?from=%2Fproducts%2Ffree%2F', '/zh/products/'],
                 ['/zh/p/xvenv/', null],
                 ['/zh/p/xvenv/?from=products/not-a-source', null],
-                ['/zh/p/xvenv/?from=intent/decide', null],
+                ['/zh/p/xvenv/?from=tags/not-a-source', null],
                 ['/zh/language/?return=' + encodeURIComponent('/zh/p/xvenv/?from=products/free'), '/zh/language/']
             ];
             const firstPaintStates = [];
@@ -842,7 +840,7 @@ export const scenarios = [
     {
         id: 'root-navigation-hidden-exploration',
         kind: 'single',
-        title: 'Article Metadata Keeps Hidden Directory and Intent Paths Usable',
+        title: 'Article Metadata Keeps Hidden Directory Paths Usable',
         serviceWorkers: 'block',
         viewport: { width: 1024, height: 700 },
         async run({ page, baseUrl, artifactDir }) {
@@ -853,7 +851,7 @@ export const scenarios = [
                 if (state.count !== 14 || state.selected.length) fail('Hidden paths preserve the visible root list without a misleading selected entry.', state);
             };
             for (const prefix of ['', '/zh', '/zh-tw']) {
-                for (const [root, collection] of [['d', '/d/products/'], ['intent', '/intent/decide/']]) {
+                for (const [root, collection] of [['d', '/d/products/']]) {
                     const article = `${prefix}/p/xvenv/`;
                     await gotoAndWait(page, `${baseUrl}${article}?from=all`);
                     const metadataLink = page.locator(`.slot-meta a[href="${prefix}${collection}"]`);
@@ -900,7 +898,7 @@ export const scenarios = [
                 await gotoAndWait(page, `${baseUrl}/zh/${entry}/`);
                 await page.screenshot({ path: path.join(artifactDir, `articles-${entry}.png`) });
             }
-            return { message: 'All three languages retain metadata links to directory/intent collections, sorting, source columns and selection through reload/back/forward; hidden roots never appear in the first column.' };
+            return { message: 'All three languages retain directory sources, sorting, source columns and selection through reload/back/forward; hidden roots never appear in the first column.' };
         }
     },
     {
@@ -1010,12 +1008,12 @@ export const scenarios = [
         }
     },
     {
-        id: 'breadcrumb-products-wide-stability',
+        id: 'breadcrumb-collection-wide-stability',
         kind: 'single',
-        title: 'Breadcrumb Wide Stability (Products)',
+        title: 'Breadcrumb Wide Stability (Collection)',
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
-            await gotoAndWait(page, `${baseUrl}${BREADCRUMB_PRODUCTS_PATH}`);
+            await gotoAndWait(page, `${baseUrl}${BREADCRUMB_COLLECTION_PATH}`);
             await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
             const mainX1 = await getMainInlineStart(page);
@@ -1481,6 +1479,33 @@ export const scenarios = [
                             ?.getAttribute('href') || '',
                     }))
             ));
+            const readDocumentMeta = () => page.evaluate(() => {
+                const directory = document.querySelector('.document-meta__row--path');
+                const taxonomyRows = Array.from(document.querySelectorAll(
+                    '.document-meta__row--taxonomy-path'
+                ));
+                const dates = document.querySelector('.document-meta time')?.closest(
+                    '.document-meta__row'
+                );
+                const resources = document.querySelector('.document-meta__row--resources');
+                return {
+                    directoryRootHref: directory?.querySelector('a.document-meta__label')
+                        ?.getAttribute('href') || '',
+                    directoryRootText: directory?.querySelector('a.document-meta__label')
+                        ?.textContent?.trim() || '',
+                    resourceHasVisibleLabel: Boolean(resources?.querySelector(
+                        '.document-meta__label'
+                    )),
+                    taxonomyRows: taxonomyRows.map((row) => ({
+                        path: row.getAttribute('data-taxonomy-path') || '',
+                        rootHref: row.querySelector('a.document-meta__label')
+                            ?.getAttribute('href') || '',
+                        rootText: row.querySelector('a.document-meta__label')
+                            ?.textContent?.trim() || '',
+                    })),
+                    timeLabelIsLink: Boolean(dates?.querySelector('a.document-meta__label')),
+                };
+            });
             const openInitialState = async () => {
                 await gotoAndWait(page, initialUrl.href);
                 await page.waitForSelector('.path-columns .collection-header--path');
@@ -1496,6 +1521,30 @@ export const scenarios = [
             };
 
             const initialBeforeChild = await openInitialState();
+            const documentMeta = await readDocumentMeta();
+            if (!documentMeta.directoryRootHref || documentMeta.directoryRootText !== '/') {
+                fail('Article directory metadata must begin with a linked site-root slash.', {
+                    documentMeta,
+                    url: page.url()
+                });
+            }
+            if (
+                documentMeta.taxonomyRows.length === 0
+                || documentMeta.taxonomyRows.some((row) => (
+                    !row.path || !row.rootHref || !row.rootText
+                ))
+            ) {
+                fail('Each taxonomy metadata path must begin with its linked taxonomy root.', {
+                    documentMeta,
+                    url: page.url()
+                });
+            }
+            if (documentMeta.timeLabelIsLink || documentMeta.resourceHasVisibleLabel) {
+                fail('Time must remain plain metadata and resource links must be self-labelling.', {
+                    documentMeta,
+                    url: page.url()
+                });
+            }
             const childToggle = page.locator(
                 '.path-columns [data-collection-sort-toggle="true"]'
             ).nth(1);
@@ -1638,7 +1687,8 @@ export const scenarios = [
                 ancestorUrl: ancestorUrl.href,
                 childContinuity,
                 childNavigationRequestCount,
-                childUrl: childUrl.href
+                childUrl: childUrl.href,
+                documentMeta
             };
         }
     },

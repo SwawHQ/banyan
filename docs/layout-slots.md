@@ -12,13 +12,13 @@
 
 入口可在自己的 front matter 中用 `icon: folder` 声明 SVG，或用 `icon: { text: "©" }` 声明字符图标；省略时使用 `folder`，不存在的图标会让构建失败。当前语言、外观、我的入口分别声明 `language`、`theme`、`my`，更新入口声明 `icon: { text: "↻" }`。
 
-- 不能只取 `Home.Sections`，因为语言、外观、我的和全部文章包含普通页面。
+- 不能只取 `Home.Sections`，因为语言、外观、我的和 `/all/` 入口是普通页面。
 - 不能只取 `Site.Pages`，因为 `build.list: local` 的系统页只列在其父页集合中。
 - taxonomy 根需要单独合并，不能假定它们都在 `Home.Pages` 中。
 - `build.list: never` 的内部节点不作为入口。内部 fragment 同时设置 `build.render: never`，避免生成独立页面。
 - `weight` 只需在入口本身定义，不应 cascade 到所有文章。
 
-当前项目显示文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类及语言、外观、我的、关于、更新、RSS、微信、GitHub、备案、首页共 14 项，来自根页面声明而非模板白名单。首页在 `content/_index*.md` 声明 `root_nav: true`、`linkTitle`、`icon` 和 `weight`，使用普通条目组件，正文继续使用 `page-home`。
+当前项目显示内容 - 全部、内容 - 分类、产品 - 全部、产品 - 分类及语言、外观、我的、关于、更新、RSS、微信、GitHub、备案、首页共 14 项，来自根页面声明而非模板白名单。首页在 `content/_index*.md` 声明 `root_nav: true`、`linkTitle`、`icon` 和 `weight`，使用普通条目组件，正文继续使用 `page-home`。
 
 `nav_primary`、`slots.primary_nav`、`slots.utilities` 和 `slots.breadcrumb_root` 已移除，对应的主菜单、系统下拉及 breadcrumb model fragment 不再参与装配。新增入口应建立真实根页面或 taxonomy 根，声明 `root_nav: true` 并提供名称与顺序。
 
@@ -31,7 +31,9 @@
 | 键 | 值 | 用途 |
 | --- | --- | --- |
 | `breadcrumb` | `true`／`false` | 当前页面的集合路径及各级条目 |
-| `meta` | `true`／`false` | 路径摘要、taxonomy、发布日期和更新日期 |
+| `meta` | `true`／`false` | 正文右侧辅助列中的路径、taxonomy、日期与外链 |
+
+文章布局另行提供章节导航，不需要 `list` 或新的 slot 声明，详见 [元信息与章节试验](document-aside-study.md)。`slots.meta: false` 只关闭元信息，仍可显示章节。`document-aside` 是布局 block，Markdown 内容不能将它声明为 slot。
 
 未知 slot 名和错误值类型均应在构建时失败。`slots.footer`、版权页脚片段及其专用模板和样式已移除。旧 `show_breadcrumb`、`show_meta`、`breadcrumb_variant` 和布局导向的 `rail-*`／`stage-*` 声明不属于当前约定。
 
@@ -64,7 +66,7 @@ slots:
 
 ## 与导航状态和布局的边界
 
-`slots` 决定页面装配哪些区域；`from / sort / sorts` 表示当次浏览来源及排序。有效 `from` 决定来源根，没有有效来源时按真实内容祖先确定归属。来源根须声明 `root_nav: true` 才有对应的第一列选中项；隐藏的目录／阅读目的仍保留右侧路径和探索能力。不能从公开网址前缀推断归属：例如 Xvenv 的正文位于 `d/products/`，直接访问归属隐藏的目录，第一列不选中；通过产品分类进入时选中产品－分类。
+`slots` 决定页面装配哪些区域；`from / sort / sorts` 表示当次浏览来源及排序。有效 `from` 决定来源根，没有有效来源时按真实内容祖先确定归属。来源根须声明 `root_nav: true` 才有对应的第一列选中项；隐藏的目录仍保留右侧路径和探索能力。不能从公开网址前缀推断归属：例如 Xvenv 的正文位于 `d/products/`，直接访问归属隐藏的目录，第一列不选中；通过产品分类进入时选中“产品 - 分类”。
 
 系统页使用普通链接，不携带 `return`；语言与外观页的返回行为见 `navigation-state.md`。切换语言留在对应语言的设置页，不改变当前系统入口的选中态。首页选中自身；其他页面匹配自身和最近的可列出祖先，但不把首页当成所有页面的默认选中项。没有可列出根祖先的内部页不强行选中入口。
 

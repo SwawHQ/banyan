@@ -147,9 +147,7 @@
           {{- $breadcrumbModel = partial "feature-browse/navigation/path/model.html" (dict "ctx" $) -}}
           {{- $hasPathColumns = gt (len (index $breadcrumbModel "tail_items")) 0 -}}
         {{- end -}}
-        {{- $pageShellClasses := slice "page-shell" -}}
-        {{- if $hasPathColumns -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-path-columns" -}}{{- end -}}
-        <div class="{{ delimit $pageShellClasses " " }}">
+        <div class="page-shell">
             <div class="page-rail">
                 {{- partial "feature-browse/navigation/root/render.html" . -}}
                 {{- if gt (len $browserNavigationSources) 0 -}}
@@ -173,12 +171,10 @@
                   {{- partial "system-metadata/seo/breadcrumb.html" (dict "ctx" $ "model" $breadcrumbModel) -}}
                 {{- end -}}
             </main>
-            {{- with index $slotFlags "meta" -}}
-            <div class="slot slot-meta" data-slot="meta">
-                {{- partial "feature-document/meta.html" (dict "ctx" $ "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel) -}}
             </div>
+            {{- block "document-aside" (dict "ctx" $ "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel) -}}
+              {{- partial "feature-document/aside.html" . -}}
             {{- end -}}
-            </div>
             </div>
         </div>
     </div>

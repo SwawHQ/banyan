@@ -9,6 +9,7 @@
 | 集合页面 | `layouts/page-collection.html`、`feature-browse/collection/render-page.html`；列表内容由 `feature-browse/collection/render.html` 渲染 |
 | 集合条目 | `collection-item.css` 负责条目和状态，`collection-grid.css` 负责 `.collection-list` 公共网格，`collection-table.css` 负责 `--directory`／`--all`／`--products` 列定义 |
 | 文档元信息 | `document-meta.css`；负责 `.document-meta` 内的日期与分类信息，不属于正文组件 |
+| 正文右侧辅助列 | `page-shell.css` 中的 `.document-aside`；与正文并列、独立纵向滚动，当前承载元信息 |
 | 正文中的有序／无序列表 | `prose-lists.css`；只作用于正文 `ul/ol/li` |
 | 区域开关 | `slot_flags`、`slotFlags`；值是布尔值，不再是 fragment 来源 |
 | 浏览来源与排序状态 | `browse/navigation-state.js`、`browse/navigation-state.contract.js` |
@@ -24,7 +25,7 @@ layout: page-collection
 list: name
 ```
 
-`layout` 选择页面模板，`list` 选择列表展示；集合成员来自 Hugo 的目录／分类结构，或 `aggregate` 指向的集合。更名没有改变这三个职责，也没有提供 `article-list` 旧模板别名。根项目与主题自身内容已经迁移；`exampleSite` 按项目约定留待单独处理。
+`layout` 选择页面模板，`list` 选择列表展示；集合成员来自 Hugo 的目录／分类结构，或 `aggregate` 指向的集合。更名没有改变这三个职责，也没有提供 `article-list` 旧模板别名。根项目、主题内容和 `exampleSite` 均已迁移到当前命名。
 
 ## 路径数据与显示
 
@@ -34,7 +35,7 @@ list: name
 
 首页、普通页面、分类法分别使用 `model-home`、`model-page`、`model-taxonomy` 生成结构路径；`model.html` 保留按页面类型选择模型的显式分支，不再使用没有对应手动模式的 `-auto` 后缀。
 
-`page-shell.css` 中，`--main-column-inline` 控制主内容与元信息宽度，`--navigation-column-inline` 统一控制第一列、路径列与列表名称列的宽度，`--page-shell-gap-inline` 统一控制画幅列间距。各屏幕宽度使用同一套画幅；不再给相同尺寸建立 rail／path 转发变量。
+`page-shell.css` 中，`--main-column-inline` 控制主内容宽度，`--navigation-column-inline` 统一控制第一列、路径列与列表名称列的宽度，`--document-aside-inline` 独立控制辅助列（桌面 30rem，最多占一个可视区域），`--page-shell-gap-inline` 统一控制画幅列间距。辅助列与导航列从同一顶部开始，正文标题间距由 `prose-base.css` 控制。各屏幕宽度使用同一套画幅；不再给相同尺寸建立 rail／path 转发变量。
 
 ## CSS 源码与发布名
 

@@ -271,7 +271,7 @@ bun run check:browser:speculation
 - `security-csp-enforce-home`
 - `security-csp-enforce-breadcrumb-wide`
 - `speculation-rules-header-all`
-- `speculation-rules-header-xvenv`
+- `speculation-rules-header-breadcrumb`
 
 结果是：
 

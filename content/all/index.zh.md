@@ -1,10 +1,10 @@
 ﻿---
 root_nav: true
-title: 所有文章
-linkTitle: 文章 - 全部
+title: 内容 - 全部
+linkTitle: 内容 - 全部
 weight: 10
-browser_title: "全部文章与技术指南"
-description: "集中浏览全部已发布文章与技术指南。"
+browser_title: "全部技术内容"
+description: "集中浏览全部已发布内容，包括文章、实战指南与产品页面。"
 slug: "all"
 layout: page-collection
 slots:

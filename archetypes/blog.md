@@ -13,7 +13,5 @@ description: ""
 # - label: WeChat
 #   url: https://example.com/article
 
-#intent:
-#- explore
 #tags: []
 ---

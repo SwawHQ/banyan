@@ -111,13 +111,13 @@ Service Worker 的异步查询使用 `pollUntil(() => page.evaluate(async ...))`
 ### Single-build
 
 - `home-shell-smoke`
-- `breadcrumb-products-wide-stability`
+- `breadcrumb-collection-wide-stability`
 - `breadcrumb-tags-wide-stability`
 - `sw-home-register`
 - `security-csp-enforce-home`
 - `security-csp-enforce-breadcrumb-wide`
 - `speculation-rules-header-all`
-- `speculation-rules-header-xvenv`
+- `speculation-rules-header-breadcrumb`
 - `speculation-rules-header-prefetchdebug`
 
 ### Upgrade

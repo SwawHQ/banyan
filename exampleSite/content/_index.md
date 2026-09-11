@@ -1,9 +1,12 @@
 ---
+root_nav: true
 title: Banyan
+linkTitle: Banyan
+icon: { text: "B" }
+weight: 110
+browser_title: Banyan — A Minimal Hugo Publishing Theme
 description: A minimal example site for the Banyan Hugo theme.
-nav_primary: home
-type: frameworks
-layout: home-brand
+layout: page-home
 brand_line: Clear structure for exploratory publishing.
 home_signals:
   - Hugo
@@ -12,8 +15,4 @@ home_signals:
   - Breadcrumbs
   - PWA
 home_signal_guide_chance: 0
-slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  footer: /fragments/home-footer-shortcuts
 ---

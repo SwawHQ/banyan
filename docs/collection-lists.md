@@ -1,14 +1,16 @@
 # 列表与产品声明
 
-页面的 `list` 只声明子项怎么展示。文章集合的成员来自页面本身的目录或 Hugo 分类关系；选择页的选项由对应布局提供。入口归属继续由真实根页面及有效 `from` 决定，不在文章 front matter 中写菜单。
+页面的 `list` 只声明子项怎么展示。内容集合的成员来自页面本身的目录或 Hugo 分类关系；选择页的选项由对应布局提供。入口归属继续由真实根页面及有效 `from` 决定，不在内容 front matter 中写菜单。
 
 第一列名称使用页面的 `linkTitle`，未声明时使用 `title`。语言、外观、我的的三语言主题页面已声明简称，例如 `title: 系统－语言`、`linkTitle: 语言`；入口显示“语言”，页面自身标题仍来自 `title`。
 
 第一列采用显式加入：只有根页面顶层声明布尔值 `root_nav: true` 才显示；未声明、`false` 或字符串 `"true"` 均不显示。首页自身也遵守该规则。此字段只对首页及其直接子页／分类根生效，不能把深层文章提升成根入口；不要放入 `cascade`。项目覆盖主题页面时，每种语言各自保留该声明。
 
-当前前四项依次为：主题 `content/all/index*.md` 的“文章 - 全部”（`weight: 10`）、项目 `content/tags/_index*.md` 的“文章 - 分类”（`20`）、主题 `content/all-products/_index*.md` 的“产品 - 全部”（`30`）、主题 `content/products/_index*.md` 的“产品 - 分类”（`40`），均使用 `linkTitle` 指定入口文字。
+当前前四项依次为：主题 `content/all/index*.md` 的“内容 - 全部”（`weight: 10`）、项目 `content/tags/_index*.md` 的“内容 - 分类”（`20`）、主题 `content/all-products/_index*.md` 的“产品 - 全部”（`30`）、主题 `content/products/_index*.md` 的“产品 - 分类”（`40`），均使用 `linkTitle` 指定入口文字。
 
-`/d/` 和 `/intent/` 不声明 `root_nav`。它们继续渲染目录／分类页，文章底部目录和阅读目的链接、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤仅发生在 `feature-browse/navigation/root/render.html`，`feature-browse/navigation/root/pages.html` 保留完整结构供归属与来源模型使用。
+“内容”是 `/d/` 内容树的上位集合名称：`/d/` 提供目录视图，`/all/` 提供全部视图，`/tags/` 提供分类视图。产品页面位于 `/d/products/`，因此可以同时出现在内容视图和产品专用视图中；`/all-products/` 与 `/products/` 分别是该子集的全部视图和分类视图。入口名称描述视图所覆盖的集合，不用“文章”代指整个 `/d/` 内容树。
+
+`/d/` 不声明 `root_nav`。它继续渲染目录页，文章的目录来源、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤仅发生在 `feature-browse/navigation/root/render.html`，`feature-browse/navigation/root/pages.html` 保留完整结构供归属与来源模型使用。
 
 ## 在哪里改表格
 
@@ -19,7 +21,7 @@
 | 项目 `content/tags/_index.zh.md` | `list: directory` | 现有标签树的子项 |
 | 主题 `content/products/_index.zh.md` | `list: directory` | Hugo 的产品分类词项，包含显式空分类 |
 | 上述文件的 `cascade`，目标 `kind: term` | `list: products` | 每个分类的 `.Pages`，无需逐类写来源 |
-| 主题 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | `/d/` 下全部文章 |
+| 主题 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | `/d/` 下全部内容 |
 | 主题 `content/all-products/_index.zh.md` | `list: products`、`aggregate: /products` | 产品分类成员的去重并集 |
 | 主题 `content/updates/_index.zh.md` | `list: name` | 更新目录的两个真实子项：检查更新、更新记录 |
 | 主题 `content/language/index.zh.md` | `list: choice` | `hugo.toml` 已启用的语言 |
@@ -93,7 +95,7 @@ GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/
 
 ## 统一更新时间
 
-目录、分类、全部文章和路径列的时间统一读取 Hugo `.Lastmod`，列名为“更新时间”。文件显示自身更新时间；非空目录／分类汇总其包含文章的最新更新时间，目录递归到后代文章，树形分类也包含下级分类。空目录使用自身 `.Lastmod`，空分类及其他没有有效时间的条目显示 `—`，排序值为空。
+目录、分类、内容全部视图和路径列的时间统一读取 Hugo `.Lastmod`，列名为“更新时间”。文件显示自身更新时间；非空目录／分类汇总其包含内容的最新更新时间，目录递归到后代内容，树形分类也包含下级分类。空目录使用自身 `.Lastmod`，空分类及其他没有有效时间的条目显示 `—`，排序值为空。
 
 项目 `hugo.toml` 已启用 `enableGitInfo = true`，并配置 `[frontmatter] lastmod = ["lastmod", ":git", ":default"]`：显式 `lastmod` 优先，其次由 Hugo 取 Git 提交时间，最后使用 Hugo 的默认日期来源。无需为了列表补造 `date`；需要手动控制更新时间时，在文章 front matter 写 `lastmod: 2026-09-08T18:00:00+08:00`。
 
@@ -120,7 +122,7 @@ list_icon_file: product
 
 图片默认保留原色。需要跟随外观时，可声明 `icon: { image: "site/pwa/favicon.svg", monochrome: true }`。共用图标样式在浅色使用 `brightness(0)`、深色使用 `brightness(0) invert(1)`，分别显示纯黑／纯白，并保留透明度；手动切换或跟随系统都生效。它只改变当前图标元素的显示，不修改源文件、发布文件或哈希 URL，也不会让共用图片的浏览器 favicon、正文头像自动变色。此选项适合有透明背景的单色图形；多色细节会统一变成黑／白。省略或 `false` 均保留原色，不接受字符串 `"true"`。第一列、主列表及动态路径列都保留同一声明。
 
-主题现在在 `content/products/_index*.md` 和 `content/all-products/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置，不需要逐篇给产品文章写图标。Xvenv 未写 `icon`，因此在产品分类和产品全部中显示包裹，在目录、标签和全部文章中仍显示文件；如果希望所有入口一致，在 Xvenv 各语言文件中声明 `icon: product` 即可。
+主题现在在 `content/products/_index*.md` 和 `content/all-products/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置，不需要逐篇给产品页面写图标。Xvenv 未写 `icon`，因此在产品分类和产品全部中显示包裹，在内容的目录、分类和全部视图中仍显示文件；如果希望所有入口一致，在 Xvenv 各语言文件中声明 `icon: product` 即可。
 
 `aggregate` 只提供集合成员，不参与默认图标继承；`/all-products/` 与 `/products/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。根项目 `content/_index*.md` 声明 `linkTitle: "2026 Swaw"`、`icon: { text: "©" }`、`weight: 110`；访问首页只选中首页，其他页面仍按真实入口或有效来源选中。旧版权页脚、顶部重复首页链接及 `slots.footer` 已移除。
 
@@ -184,6 +186,8 @@ weight: 30
 旧文章书签中的 `from=product-categories/free` 已不再是有效来源；`from=products` 也不能继续代表“全部产品”，因为新分类根只收录分类词项。两者按既有无效来源规则使用文章的真实目录路径，正文仍正常打开，刷新后规则一致。新链接分别携带 `from=products/free`、`from=all-products`。不在运行时增加旧产品命名适配层。系统页不携带 `return`；原生后退恢复历史中的文章网址及其 `from`／排序，回到带旧来源的文章也按上述规则处理。
 
 ## 验证
+
+运行 `node themes/banyan/scripts/checks/check-path-rebuild.mjs` 可验证 Hugo 开发预览的增量重建：使用根站点内容和临时目录标题覆盖层，先访问正文，再修改祖先标题，检查三语言正文元信息同步更新。路径模型每次渲染读取当前祖先，不能存入跨增量重建保留的页面 Scratch，否则祖先改名后可能继续输出旧名称。
 
 路径来源直接内嵌在各语言页面，使用当前语言模型的 `current_collection_items` 和祖先层 `collection_items`。浏览器在页面边界一次解码，不再发布或请求 `_items.json`，因此主表与路径列天然使用同一份语言和排序事实。浏览器回归 `updates-name-list` 覆盖三语言名称列表、两个真实子项、进入后的选中和排序、刷新／历史恢复，同时验证关于、微信、GitHub、RSS 等普通根入口及其实际内容。升级回归从首页／文章列表经过更新目录进入检查页，验证离线／重试、新版本应用后保留更新路径列、清理旧导航缓存。
 

@@ -2,6 +2,10 @@
 {{ partial "feature-document/styles.html" . }}
 {{ end }}
 
+{{ define "document-aside" }}
+{{ partial "feature-document/aside.html" (merge . (dict "toc" (partial "feature-document/toc.html" .ctx))) }}
+{{ end }}
+
 {{ define "main" }}
 {{ partial "feature-document/render-page.html" . }}
 {{ end }}

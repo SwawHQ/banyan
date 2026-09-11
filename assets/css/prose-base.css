@@ -22,6 +22,7 @@
 
 
 .prose :is(h1, h2, h3, h4, h5, h6) {
+    scroll-margin-block-start: 12px;
     display: block;
     text-align: left;
     color: var(--accent);
@@ -31,7 +32,7 @@
 }
 
 .prose h1 {
-    margin: 52px 0 52px;
+    margin: 52px 0;
     padding-bottom: 3px;
     border-bottom: 2px solid color-mix(in srgb, var(--accent), transparent 85%);
 }

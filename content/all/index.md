@@ -1,10 +1,10 @@
 ﻿---
 root_nav: true
-title: All
-linkTitle: Articles - All
+title: Content - All
+linkTitle: Content - All
 weight: 10
-browser_title: "All Articles and Technical Guides"
-description: "Browse every published article and technical guide in one place."
+browser_title: "All Technical Content"
+description: "Browse all published content, including articles, practical guides, and product pages."
 slug: "all"
 layout: page-collection
 slots:

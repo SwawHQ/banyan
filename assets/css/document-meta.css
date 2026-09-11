@@ -1,23 +1,77 @@
-.document-meta {
+.document-meta,
+.document-toc {
+    margin: 0;
+    line-height: 1.55;
+}
+
+.document-meta,
+.document-meta__links {
     display: grid;
-    gap: 0.24rem;
-    margin: 44px 0 1rem;
+    gap: 0.08rem;
 }
 
 .document-meta__row {
-    margin: 0;
-    font-size: small;
-    color: var(--muted);
     display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.3rem;
+    align-items: flex-start;
+    gap: 0.15rem;
+    min-width: 0;
+    margin: 0;
+    color: var(--muted);
 }
 
-.document-meta__label {
-    color: var(--fg);
+.document-meta__row > .collection-item-icon {
+    /* Center the icon on the first text line, including wrapped paths. */
+    block-size: 1lh;
+}
+
+.document-meta__path,
+.document-meta__value {
+    min-width: 0;
+}
+
+.document-meta a:is(:hover, :focus-visible) {
+    color: var(--accent-text);
 }
 
 .document-meta__separator {
+    margin-inline: 0.15rem;
     color: var(--muted);
+}
+
+.document-aside .collection-item-link {
+    inline-size: 100%;
+    align-items: baseline;
+}
+
+.document-aside .collection-item-title {
+    overflow: visible;
+    white-space: normal;
+}
+
+.document-toc {
+    margin-block-start: 1.5rem;
+}
+
+.document-toc:first-child {
+    margin-block-start: 0;
+}
+
+.document-toc ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.document-toc li {
+    margin-block: 0.08rem;
+}
+
+.document-toc__h3 .collection-item-title {
+    padding-inline-start: 1em;
+}
+
+@media print {
+    .document-toc {
+        display: none;
+    }
 }

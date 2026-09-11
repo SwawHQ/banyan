@@ -1,5 +1,6 @@
 ---
 title: "更新记录"
+description: "查看当前 Banyan 构建、源码版本与发布说明状态。"
 slug: "changelog"
 url: changelog/
 weight: 20

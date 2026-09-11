@@ -3,6 +3,7 @@
     --page-edge-block-start: 12px;
     --page-edge-block-end: 6rem;
     --navigation-column-inline: 15rem;
+    --document-aside-inline: min(30rem, 100cqi);
     --page-shell-gap-inline: 1rem;
     --main-column-inline: min(88ch, 100cqi);
 }
@@ -34,6 +35,7 @@ body {
 .page-rail,
 .page-stage,
 .page-content,
+.document-aside,
 .slot {
     min-width: 0;
     min-block-size: 0;
@@ -51,6 +53,11 @@ body {
 }
 
 .page-stage {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    column-gap: var(--page-shell-gap-inline);
+    align-items: start;
     block-size: 100%;
 }
 
@@ -61,6 +68,7 @@ body {
 
 .page-rail,
 .page-content,
+.document-aside,
 .path-column {
     box-sizing: border-box;
     max-block-size: 100%;
@@ -70,14 +78,27 @@ body {
 }
 
 .page-content {
-    inline-size: max-content;
+    /* The shared gap includes the scrollbar, even with overlay scrollbars. */
+    inline-size: calc(var(--main-column-inline) + var(--page-shell-gap-inline));
+    scrollbar-gutter: stable;
     block-size: 100%;
     padding-block-end: var(--page-edge-block-end);
 }
 
-.slot-main,
-.slot-meta {
+.slot-main {
     inline-size: var(--main-column-inline);
+    max-inline-size: 100%;
+    display: flow-root;
+    scroll-margin-block-start: var(--page-edge-block-start);
+    scroll-margin-inline-start: var(--page-edge-inline);
+}
+
+.document-aside {
+    inline-size: var(--document-aside-inline);
+    margin-inline-start: calc(-1 * var(--page-shell-gap-inline));
+    block-size: 100%;
+    padding-block-end: var(--page-edge-block-end);
+    overflow-wrap: anywhere;
 }
 
 @media (hover: hover) and (pointer: fine) and (forced-colors: none) {
@@ -91,19 +112,19 @@ body {
     }
 }
 
-.slot-main {
-    display: flow-root;
-    scroll-margin-block-start: var(--page-edge-block-start);
-    scroll-margin-inline-start: var(--page-edge-inline);
+/* Collection tables determine their own width and retain the external gap. */
+.page-content:has(> .slot-main--collection) {
+    inline-size: max-content;
+}
+
+.page-content:has(> .slot-main--collection) + .document-aside {
+    margin-inline-start: 0;
 }
 
 .slot-main--collection {
     inline-size: max-content;
+    max-inline-size: none;
     min-inline-size: var(--main-column-inline);
-}
-
-.slot-meta {
-    padding-block-start: 0.9rem;
 }
 
 .article {
@@ -121,9 +142,24 @@ body {
     .page-stage,
     .page-rail,
     .page-content,
+    .document-aside,
     .path-column {
         block-size: auto;
         max-block-size: none;
         overflow: visible;
+    }
+
+    .page-stage {
+        display: block;
+    }
+
+    .page-content {
+        inline-size: max-content;
+    }
+
+    .document-aside {
+        inline-size: var(--main-column-inline);
+        margin-inline-start: 0;
+        padding-block: 1rem 0;
     }
 }

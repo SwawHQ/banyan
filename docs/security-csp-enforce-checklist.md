@@ -69,7 +69,7 @@ swaw.com 的正式配置因 EdgeOne header value 限制保持 `off`；header 模
 secondary speculation header 专项回归当前也已覆盖：
 
 - `/all/`
-- `/intent/explore/`
+- `/tags/ai/`
 - `/prefetchdebug/`
 
 它们确认：

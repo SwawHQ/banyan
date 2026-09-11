@@ -4,7 +4,7 @@ import path from 'node:path';
 import { runBrowserRegression } from './run.mjs';
 import { fail, gotoAndWait, pollUntil, readSecurityPolicyViolations, waitForBreadcrumbSettled } from './helpers.mjs';
 
-const SPECULATION_BREADCRUMB_PATH = process.env.BANYAN_SPECULATION_BREADCRUMB_PATH || '/intent/explore/';
+const SPECULATION_BREADCRUMB_PATH = process.env.BANYAN_SPECULATION_BREADCRUMB_PATH || '/tags/ai/';
 
 function recordRuntimePrefetchTraceScript() {
     return `

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { documentAsideScenarios } from './document-aside.mjs';
 import path from 'node:path';
 import {
     gotoAndWait,
@@ -68,6 +69,7 @@ async function readCanvas(page) {
 }
 
 export const canvasScenarios = [
+    ...documentAsideScenarios,
     {
         id: 'canvas-source-navigation',
         kind: 'single',
@@ -284,33 +286,131 @@ export const canvasScenarios = [
         viewport: { width: mobile ? 390 : 1440, height: 900 },
         isMobile: mobile,
         hasTouch: mobile,
-        title: 'Scrolling Shows the Desktop Thumb Without Changing Column Width',
+        title: 'Resizing and Scrolling Preserve Column Width and the Metadata Gap',
         async run({ page, baseUrl }) {
-            await gotoAndWait(page, `${baseUrl}/zh/p/wsl-guide/?from=all`);
-            const read = () => page.locator('.page-content').evaluate(column => ({
-                color: getComputedStyle(column).scrollbarColor,
-                nestedColor: getComputedStyle(column.firstElementChild).scrollbarColor,
-                width: column.clientWidth,
-                y: column.scrollTop
-            }));
+            await gotoAndWait(page, `${baseUrl}/zh/p/xvenv/?from=all`);
+            const read = () => page.locator('.page-content').evaluate(column => {
+                const aside = document.querySelector('.document-aside').getBoundingClientRect();
+                const scrollbar = column.offsetWidth - column.clientWidth;
+                return {
+                    color: getComputedStyle(column).scrollbarColor,
+                    nestedColor: getComputedStyle(column.firstElementChild).scrollbarColor,
+                    width: column.clientWidth,
+                    scrollbar,
+                    gap: aside.left - column.querySelector('.prose').getBoundingClientRect().right,
+                    expectedGap: Math.max(scrollbar, parseFloat(getComputedStyle(column.parentElement).columnGap)),
+                    overflowX: column.scrollWidth - column.clientWidth,
+                    scrollable: column.scrollHeight > column.clientHeight,
+                    y: column.scrollTop
+                };
+            });
             const hidden = 'rgba(0, 0, 0, 0) rgba(0, 0, 0, 0)';
-            const initial = await read();
-            assert.equal(initial.color, mobile ? 'auto' : hidden);
-            assert.equal(initial.nestedColor, 'auto');
-            await page.locator('.page-content').evaluate(column => { column.scrollTop = 200; });
-            await page.waitForFunction(() => document.querySelector('.page-content').hasAttribute('data-scrolling'));
-            const active = await read();
-            assert.equal(active.color, 'auto');
-            await page.waitForFunction(() => !document.querySelector('.page-content').hasAttribute('data-scrolling'));
-            const idle = await read();
-            assert.equal(idle.color, initial.color);
-            assert.equal(active.width, initial.width);
-            assert.equal(idle.width, initial.width);
-            assert.equal(idle.y, active.y);
-            assert(idle.y > 0);
-            return { initial, active, idle };
+            const cases = [];
+            for (const width of mobile ? [390, 768, 390] : [1800, 1440, 1024, 1800]) {
+                await page.setViewportSize({ width, height: 900 });
+                const resized = await read();
+                assert.equal(resized.color, mobile ? 'auto' : hidden);
+                assert.equal(resized.nestedColor, 'auto');
+                await page.locator('.page-content').evaluate(column => { column.scrollTop += 100; });
+                await page.waitForFunction(() => document.querySelector('.page-content').hasAttribute('data-scrolling'));
+                const active = await read();
+                assert.equal(active.color, 'auto');
+                await page.waitForFunction(() => !document.querySelector('.page-content').hasAttribute('data-scrolling'));
+                const idle = await read();
+                assert.equal(idle.color, resized.color);
+                for (const state of [resized, active, idle]) {
+                    assert.equal(state.width, resized.width);
+                    assert(Math.abs(state.gap - state.expectedGap) <= 1, JSON.stringify(state));
+                    assert.equal(state.overflowX, 0, JSON.stringify(state));
+                }
+                assert.equal(idle.y, active.y);
+                assert(idle.y > 0);
+                cases.push({ width, resized, active, idle });
+            }
+            // The same real article must retain its gap when no scrolling is needed.
+            const height = await page.locator('.page-content').evaluate(column => column.scrollHeight + 100);
+            await page.setViewportSize({ width: mobile ? 390 : 1800, height });
+            const short = await read();
+            assert.equal(short.scrollable, false, JSON.stringify(short));
+            assert(Math.abs(short.gap - short.expectedGap) <= 1, JSON.stringify(short));
+            return { cases, short };
         }
     })),
+    {
+        id: 'canvas-document-aside',
+        kind: 'single',
+        serviceWorkers: 'block',
+        title: 'Document Metadata Occupies an Independent Right Column',
+        async run({ page, baseUrl, artifactDir }) {
+            const cases = [];
+            for (const width of [390, 1024, 1600]) {
+                await page.setViewportSize({ width, height: 300 });
+                for (const prefix of ['', '/zh', '/zh-tw']) {
+                    await gotoAndWait(page, `${baseUrl}${prefix}/p/xvenv/?from=all`);
+                    await waitForBreadcrumbSettled(page);
+                    const state = await page.evaluate(() => {
+                        const main = document.querySelector('.page-content');
+                        const aside = document.querySelector('.document-aside');
+                        const right = aside.getBoundingClientRect();
+                        const meta = aside.querySelector('.document-meta').getBoundingClientRect();
+                        const gap = parseFloat(getComputedStyle(document.documentElement).fontSize);
+                        const top = right.top;
+                        const initialX = scrollX;
+                        main.scrollTop = 200;
+                        const readingY = main.scrollTop;
+                        const asideUnmoved = aside.scrollTop === 0 && aside.getBoundingClientRect().top === top;
+                        aside.scrollTop = 100000;
+                        const independent = main.scrollTop === readingY && aside.scrollTop > 0 && scrollX === initialX;
+                        return {
+                            sibling: main.parentElement === aside.parentElement,
+                            followsMain: main.nextElementSibling === aside,
+                            gap: right.left - main.querySelector('.prose').getBoundingClientRect().right,
+                            expectedGap: Math.max(gap, main.offsetWidth - main.clientWidth),
+                            asideWidth: right.width, expectedWidth: Math.min(30 * gap, document.querySelector('.page').clientWidth),
+                            topDifference: meta.top - document.querySelector('[data-root-navigation]').getBoundingClientRect().top,
+                            overflow: aside.scrollWidth - aside.clientWidth,
+                            readingY, asideUnmoved, independent,
+                            metaRows: aside.querySelectorAll('.document-meta__row--taxonomy-path').length,
+                        };
+                    });
+                    assert(state.sibling && state.followsMain, JSON.stringify(state));
+                    assert(Math.abs(state.gap - state.expectedGap) <= 1, JSON.stringify(state));
+                    assert(Math.abs(state.asideWidth - state.expectedWidth) <= 1, JSON.stringify(state));
+                    assert(Math.abs(state.topDifference) <= 1 && state.overflow <= 1, JSON.stringify(state));
+                    assert(state.readingY > 0 && state.asideUnmoved && state.independent, JSON.stringify(state));
+                    assert(state.metaRows >= 3, 'Product and content taxonomy paths must remain present.');
+                    cases.push({ width, prefix, ...state });
+                }
+            }
+            for (const width of [390, 1600]) {
+                await page.setViewportSize({ width, height: 900 });
+                await gotoAndWait(page, `${baseUrl}/zh/p/coskill-trustworthy-collaboration/?from=all`);
+                await waitForBreadcrumbSettled(page);
+                if (width === 390) await page.locator('.document-aside').scrollIntoViewIfNeeded();
+                await page.screenshot({ path: path.join(artifactDir, `aside-${width}.png`) });
+            }
+            await page.emulateMedia({ media: 'print' });
+            const printed = await page.evaluate(() => {
+                const main = document.querySelector('.page-content');
+                const aside = document.querySelector('.document-aside');
+                return {
+                    below: aside.getBoundingClientRect().top >= main.getBoundingClientRect().bottom,
+                    overflow: getComputedStyle(aside).overflowY,
+                    clipped: aside.scrollHeight > aside.clientHeight + 1 || main.scrollHeight > main.clientHeight + 1,
+                };
+            });
+            assert(printed.below && printed.overflow === 'visible' && !printed.clipped, JSON.stringify(printed));
+            await page.emulateMedia({ media: 'screen' });
+            for (const route of ['/zh/all/', '/zh/language/']) {
+                await gotoAndWait(page, baseUrl + route);
+                assert.equal(await page.locator('.document-aside').count(), 0, `No empty sidebar on ${route}`);
+            }
+            await gotoAndWait(page, baseUrl + '/zh/about/');
+            assert.equal(await page.locator('.slot-meta').count(), 0);
+            assert.equal(await page.locator('.document-toc').count(), 1, 'An article outline is independent of the metadata slot.');
+            return { cases, printed };
+        }
+    },
     {
         id: 'canvas-column-scroll-ownership',
         kind: 'single',
@@ -325,12 +425,13 @@ export const canvasScenarios = [
                 const state = await page.evaluate(() => {
                     const doc = document.scrollingElement;
                     const content = document.querySelector('.page-content');
-                    const columns = [...document.querySelectorAll('.page-rail, .path-column, .page-content')];
+                    const columns = [...document.querySelectorAll('.page-rail, .path-column, .page-content, .document-aside')];
                     for (const column of columns) column.scrollTop = 100000;
                     return {
                         documentHeight: doc.scrollHeight, viewportHeight: doc.clientHeight,
                         rootY: scrollY, readingY: content.scrollTop,
                         metaInContent: content.contains(document.querySelector('.slot-meta')),
+                        metaInAside: document.querySelector('.document-aside')?.contains(document.querySelector('.slot-meta')),
                         columns: columns.map(column => ({
                             className: column.className,
                             x: column.scrollLeft,
@@ -342,8 +443,8 @@ export const canvasScenarios = [
                 });
                 assert.equal(state.documentHeight, state.viewportHeight, 'Offscreen articles must not extend the document vertically.');
                 assert.equal(state.rootY, 0);
-                assert(state.metaInContent && state.readingY > 0, 'Article metadata shares the article scroller.');
-                assert(state.columns.every(column => column.y > 0), 'Short screens must expose the bottom of every long column.');
+                assert(!state.metaInContent && state.metaInAside && state.readingY > 0, 'Article metadata has its own sibling scroller.');
+                assert(state.columns.filter(column => column.className !== 'document-aside').every(column => column.y > 0), 'Short screens must expose the bottom of every long column.');
                 assert(state.columns.every(column => column.x === 0 && column.scrollWidth <= column.clientWidth + 1), JSON.stringify(state));
                 assert(state.columns.every(column => column.bottom <= state.viewportHeight + 1));
                 await page.screenshot({ path: path.join(artifactDir, `columns-${width}.png`) });
@@ -489,7 +590,8 @@ export const canvasScenarios = [
                     window.__canvasTouchStarts.push({
                         trusted: event.isTrusted,
                         region: event.target.closest('[data-root-navigation]') ? 'root'
-                            : event.target.closest('.prose') ? 'prose' : 'column'
+                            : event.target.closest('.prose') ? 'prose'
+                                : event.target.closest('.document-aside') ? 'aside' : 'column'
                     });
                 }, { passive: true });
             });
@@ -538,7 +640,8 @@ export const canvasScenarios = [
             await swipe(210, -180);
             assert.ok((await canvasPosition()).x > 0, 'A leftward drag on a root row moves the document canvas.');
             for (let attempt = 0; attempt < 4 && (await readCanvas(page)).main.x > 16; attempt++) {
-                await swipe(350, -300);
+                // Main is no longer the last column; target it instead of the canvas end.
+                await swipe(350, -Math.min(300, (await readCanvas(page)).main.x));
             }
             const final = await readCanvas(page);
             assert.ok(final.main.x >= 0 && final.main.x <= 16 && final.main.right <= final.viewport + 1,
@@ -546,9 +649,27 @@ export const canvasScenarios = [
             assert.equal(page.url(), url, 'Dragging a navigation link must not activate it.');
             await swipe(50, 120);
             await swipe(300, -120);
+            const asideBounds = () => page.locator('.document-aside').evaluate(aside => {
+                const box = aside.getBoundingClientRect();
+                const viewport = window.visualViewport;
+                return { x: box.x - (viewport?.offsetLeft || 0), right: box.right - (viewport?.offsetLeft || 0) };
+            });
+            for (let attempt = 0; attempt < 4 && (await asideBounds()).right > 390; attempt++) {
+                await swipe(350, -Math.min(300, Math.max(40, (await asideBounds()).right - 390)));
+            }
+            const aside = await asideBounds();
+            assert(aside.x >= 0 && aside.right <= 390, 'Touch dragging reveals the entire metadata column.');
+            await page.screenshot({ path: path.join(artifactDir, 'mobile-metadata.png') });
+            for (let attempt = 0; attempt < 4 && (await readCanvas(page)).main.x < 0; attempt++) {
+                await swipe(300, Math.min(300, 16 - (await readCanvas(page)).main.x));
+            }
+            const returnedMain = await readCanvas(page);
+            assert(returnedMain.main.x >= 0 && returnedMain.main.right <= 391,
+                'A rightward drag from metadata restores the reading column.');
             const events = await page.evaluate(() => window.__canvasTouchStarts);
             assert.ok(events.some(event => event.trusted && event.region === 'prose'));
             assert.ok(events.some(event => event.trusted && event.region === 'root'));
+            assert.ok(events.some(event => event.trusted && event.region === 'aside'));
             assert.ok(events.every(event => event.trusted));
             await page.screenshot({ path: path.join(artifactDir, 'mobile-reading-restored.png') });
 
@@ -564,7 +685,7 @@ export const canvasScenarios = [
                 Math.abs((window.visualViewport?.pageLeft ?? scrollX) - x) <= 1
             ), historyPosition, { timeout: 5000 });
             const restoredHistoryPosition = await canvasPosition();
-            return { initial, roots, final, drags, events, historyPosition, restoredHistoryPosition };
+            return { initial, roots, final, aside, returnedMain, drags, events, historyPosition, restoredHistoryPosition };
         }
     },
     {

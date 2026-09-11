@@ -1,32 +1,26 @@
 ---
-title: Tags
-nav_primary: signals
-layout: article-list
+root_nav: true
+title: 內容 - 分類
+linkTitle: 內容 - 分類
+weight: 20
+browser_title: Banyan 範例站內容主題
+description: 按主題瀏覽範例內容。
+layout: page-collection
+list: directory
 slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  breadcrumb_root: /fragments/breadcrumb-model-signals
   breadcrumb: true
 cascade:
-  - _target:
+  - target:
       kind: term
-    nav_primary: signals
-    layout: article-list
+    layout: page-collection
     slots:
-      primary_nav: /fragments/nav-primary-links
-      utilities: /fragments/nav-utilities
-      breadcrumb_root: /fragments/breadcrumb-model-signals
       breadcrumb: true
 banyan_taxonomy:
   mode: tree
-  show_in_home: true
-  home_weight: 30
   article_weight: 30
   normalize: lower
-  article_mode: deepest_by_root
+  article_mode: leaf_paths
   term_rel: tag
   unassigned_term: untagged
   unassigned_label: --untagged--
 ---
-
-{{< taxonomy-list >}}

@@ -5,16 +5,7 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
     pointer-events: none;
 }
 
-.page-shell--has-path-columns .page-stage {
-    display: grid;
-    grid-template-columns: max-content max-content;
-    column-gap: var(--page-shell-gap-inline);
-    align-items: start;
-}
-
 .path-columns {
-    grid-column: 1;
-    grid-row: 1;
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: var(--navigation-column-inline);
@@ -31,14 +22,10 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
 
 .path-column {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-content: start;
     min-inline-size: 0;
     inline-size: var(--navigation-column-inline);
-}
-
-.page-shell--has-path-columns .page-content {
-    grid-column: 2;
-    grid-row: 1;
 }
 
 @media print {

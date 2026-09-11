@@ -20,8 +20,6 @@
   {{- else -}}
     {{- $termParts := split $term $separator -}}
     {{- $termDepth := len $termParts -}}
-    {{- $root := index $termParts 0 -}}
-    {{- $rootNorm := partial "feature-browse/taxonomy/normalize-value.html" (dict "spec" $spec "value" $root) -}}
     {{- $children := slice -}}
     {{- range $termValue, $pages := (index $ctx.Site.Taxonomies $plural | default dict) -}}
       {{- $termValueNorm := partial "feature-browse/taxonomy/normalize-value.html" (dict "spec" $spec "value" $termValue) -}}
@@ -51,18 +49,14 @@
     {{- end -}}
     {{- $exactPages := partial "feature-browse/taxonomy/children/pages-for-value.html" (dict "ctx" $ctx "spec" $spec "prefix" $term "mode" "exact") -}}
     {{- range $page := $exactPages -}}
-      {{- $branchMax := 0 -}}
+      {{- $hasDescendant := false -}}
       {{- range $value := partial "feature-browse/taxonomy/page-values.html" (dict "page" $page "spec" $spec) -}}
-        {{- $valueText := printf "%v" $value -}}
-        {{- $segments := split $valueText $separator -}}
-        {{- $first := index $segments 0 -}}
-        {{- if ne (partial "feature-browse/taxonomy/normalize-value.html" (dict "spec" $spec "value" $first)) $rootNorm -}}
-          {{- continue -}}
+        {{- $valueNorm := partial "feature-browse/taxonomy/normalize-value.html" (dict "spec" $spec "value" $value) -}}
+        {{- if hasPrefix $valueNorm (printf "%s%s" $termNorm $separator) -}}
+          {{- $hasDescendant = true -}}
         {{- end -}}
-        {{- $depth := len $segments -}}
-        {{- if gt $depth $branchMax -}}{{- $branchMax = $depth -}}{{- end -}}
       {{- end -}}
-      {{- if ne $branchMax $termDepth -}}
+      {{- if $hasDescendant -}}
         {{- continue -}}
       {{- end -}}
       {{- $items = $items | append (dict "node" $page "kind" "page") -}}

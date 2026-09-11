@@ -31,6 +31,7 @@ const cases = [
     ['zero', 'icon: {text: "<b>EN</b>"}\nproducts: [free]\noffer: {amount: 0, currency: "$"}'],
     ['no-offer', 'icon: {image: "badge.webp"}\nproducts: [free]'],
     ['unclassified', 'icon: {image: "site/pwa/favicon.svg", monochrome: true}\noffer: {amount: 99, currency: "$", value: "Not a product"}'],
+    ['tag-branches', 'tags: [contract-tree, contract-tree/shallow, contract-tree/deep/leaf]'],
     ['empty', 'products: []'],
     ['blank', 'products: [""]']
 ];
@@ -42,7 +43,14 @@ for (const lang of langs) {
     write(path.join(overlay, `products/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlist: directory\n---\n');
     write(path.join(overlay, `products/contract-name/_index${lang}.md`), '---\ntitle: Names only\nlist: name\n---\n');
     write(path.join(overlay, `contract-name-all/index${lang}.md`), '---\ntitle: All names\nslug: contract-name-all\nroot_nav: true\nlayout: page-collection\nlist: name\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
-    for (const term of ['contract-dates', 'contract-dates/child']) {
+    for (const term of [
+        'contract-dates',
+        'contract-dates/child',
+        'contract-tree',
+        'contract-tree/shallow',
+        'contract-tree/deep',
+        'contract-tree/deep/leaf'
+    ]) {
         write(path.join(overlay, `tags/${term}/_index${lang}.md`), `---\ntitle: ${term}\n---\n`);
     }
     write(path.join(overlay, `tags/untagged/_index${lang}.md`), '---\ntitle: Untagged\n---\n');
@@ -161,6 +169,34 @@ for (const view of ['directory', 'all', 'products', 'name']) {
         assertUpdated('tags/contract-dates', '/tags/contract-dates/child/', '2026-08-02', '20260802000000');
         assertUpdated('tags/contract-dates', '/p/contract-priced/', '2026-08-01', '20260801000000');
         assertUpdated('tags/contract-dates/child', '/p/contract-missing/', '2026-08-02', '20260802000000');
+        const tagBranchHref = `${prefixes[index]}/p/contract-tag-branches/`;
+        assert(payload(output, lang, 'tags/contract-tree/shallow').rows.some(row => row.href === tagBranchHref),
+            'a shallower sibling path keeps its directly assigned article');
+        assert(payload(output, lang, 'tags/contract-tree/deep/leaf').rows.some(row => row.href === tagBranchHref),
+            'a deeper sibling path keeps the same article');
+        assert(!payload(output, lang, 'tags/contract-tree').rows.some(row => row.href === tagBranchHref),
+            'an explicitly assigned ancestor omits the article when a descendant path covers it');
+        const tagBranchHtml = fs.readFileSync(path.join(output, prefixes[index].slice(1), 'p/contract-tag-branches/index.html'), 'utf8');
+        const tagMetaRows = tagBranchHtml.match(/<nav\b[^>]*document-meta__row--tags[\s\S]*?<\/nav>/g) ?? [];
+        assert.equal(tagMetaRows.length, 2, 'each taxonomy leaf path has its own metadata row');
+        const shallowMeta = tagMetaRows.find(row => /data-taxonomy-path="?contract-tree\/shallow"?/.test(row)) ?? '';
+        const deepMeta = tagMetaRows.find(row => /data-taxonomy-path="?contract-tree\/deep\/leaf"?/.test(row)) ?? '';
+        assert(shallowMeta, 'article metadata keeps a shallower sibling leaf row');
+        assert(deepMeta, 'article metadata keeps a deeper sibling leaf row');
+        assert(tagMetaRows.every(row => new RegExp(`href=${prefixes[index]}/tags/`).test(row)),
+            'each taxonomy path row links its taxonomy root label');
+        assert.match(shallowMeta, new RegExp(`href=${prefixes[index]}/tags/contract-tree/`),
+            'shallower leaf row links its root path segment');
+        assert.match(shallowMeta, new RegExp(`href=${prefixes[index]}/tags/contract-tree/shallow/`),
+            'shallower leaf row links its endpoint');
+        assert.match(deepMeta, new RegExp(`href=${prefixes[index]}/tags/contract-tree/`),
+            'deeper leaf row links its root path segment');
+        assert.match(deepMeta, new RegExp(`href=${prefixes[index]}/tags/contract-tree/deep/`),
+            'deeper leaf row links its intermediate path segment');
+        assert.match(deepMeta, new RegExp(`href=${prefixes[index]}/tags/contract-tree/deep/leaf/`),
+            'deeper leaf row links its endpoint');
+        assert(!tagMetaRows.some(row => /data-taxonomy-path="?contract-tree"?(?:\s|>)/.test(row)),
+            'an ancestor covered by a descendant does not get its own metadata row');
         const unassignedRow = payload(output, lang, 'tags/untagged').rows.find(row => row.href === `${prefixes[index]}/p/contract-unclassified/`);
         assert(unassignedRow, 'unassigned taxonomy term contains pages without taxonomy values');
         assert.equal(unassignedRow.key, 'contract-unclassified', 'unassigned taxonomy pages use the same stable collection key');

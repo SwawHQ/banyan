@@ -1,9 +1,9 @@
 ﻿---
-title: Library
+title: Content
 linkTitle: Directory
 weight: 10
-browser_title: "Technical Library and Practical Guides"
-description: "Browse published articles and practical guides by topic and section."
+browser_title: "Technical Content and Practical Resources"
+description: "Browse content by topic and section, including articles, practical guides, and product pages."
 layout: "page-collection"
 list: directory
 slots:
