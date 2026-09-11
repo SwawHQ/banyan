@@ -12,11 +12,11 @@ const viewports = [390, 1024, 1440].map(width => ({ width, height: 900 }));
 const nextPaint = page => page.evaluate(() => new Promise(resolve => {
     requestAnimationFrame(() => requestAnimationFrame(resolve));
 }));
-const position = page => page.evaluate(() => ({ x: scrollX, y: scrollY }));
+const position = page => page.evaluate(() => ({ x: scrollX }));
 
 async function assertPosition(page, expected, label) {
-    await page.waitForFunction(({ x, y }) => (
-        Math.abs(scrollX - x) <= 1 && Math.abs(scrollY - y) <= 1
+    await page.waitForFunction(({ x }) => (
+        Math.abs(scrollX - x) <= 1
     ), expected, { timeout: 5000 });
     assert.deepEqual(await position(page), expected, label);
 }
@@ -68,6 +68,86 @@ async function readCanvas(page) {
 }
 
 export const canvasScenarios = [
+    ...[false, true].map(mobile => ({
+        id: mobile ? 'canvas-mobile-native-scrollbar' : 'canvas-desktop-auto-scrollbar',
+        kind: 'single',
+        serviceWorkers: 'block',
+        viewport: { width: mobile ? 390 : 1440, height: 900 },
+        isMobile: mobile,
+        hasTouch: mobile,
+        title: 'Scrolling Shows the Desktop Thumb Without Changing Column Width',
+        async run({ page, baseUrl }) {
+            await gotoAndWait(page, `${baseUrl}/zh/p/wsl-guide/?from=all`);
+            const read = () => page.locator('.page-content').evaluate(column => ({
+                color: getComputedStyle(column).scrollbarColor,
+                nestedColor: getComputedStyle(column.firstElementChild).scrollbarColor,
+                width: column.clientWidth,
+                y: column.scrollTop
+            }));
+            const hidden = 'rgba(0, 0, 0, 0) rgba(0, 0, 0, 0)';
+            const initial = await read();
+            assert.equal(initial.color, mobile ? 'auto' : hidden);
+            assert.equal(initial.nestedColor, 'auto');
+            await page.locator('.page-content').evaluate(column => { column.scrollTop = 200; });
+            await page.waitForFunction(() => document.querySelector('.page-content').hasAttribute('data-scrolling'));
+            const active = await read();
+            assert.equal(active.color, 'auto');
+            await page.waitForFunction(() => !document.querySelector('.page-content').hasAttribute('data-scrolling'));
+            const idle = await read();
+            assert.equal(idle.color, initial.color);
+            assert.equal(active.width, initial.width);
+            assert.equal(idle.width, initial.width);
+            assert.equal(idle.y, active.y);
+            assert(idle.y > 0);
+            return { initial, active, idle };
+        }
+    })),
+    {
+        id: 'canvas-column-scroll-ownership',
+        kind: 'single',
+        serviceWorkers: 'block',
+        title: 'The Document Pans Horizontally and Each Column Scrolls Vertically',
+        async run({ page, baseUrl, artifactDir }) {
+            const cases = [];
+            for (const width of [390, 500, 1440]) {
+                await page.setViewportSize({ width, height: 300 });
+                await gotoAndWait(page, `${baseUrl}/zh/p/ssh-remote-kit-windows/?from=all`);
+                await waitForBreadcrumbSettled(page);
+                const state = await page.evaluate(() => {
+                    const doc = document.scrollingElement;
+                    const content = document.querySelector('.page-content');
+                    const columns = [...document.querySelectorAll('.page-rail, .path-column, .page-content')];
+                    for (const column of columns) column.scrollTop = 100000;
+                    return {
+                        documentHeight: doc.scrollHeight, viewportHeight: doc.clientHeight,
+                        rootY: scrollY, readingY: content.scrollTop,
+                        metaInContent: content.contains(document.querySelector('.slot-meta')),
+                        columns: columns.map(column => ({
+                            className: column.className,
+                            x: column.scrollLeft,
+                            y: column.scrollTop,
+                            clientWidth: column.clientWidth, scrollWidth: column.scrollWidth,
+                            bottom: column.getBoundingClientRect().bottom
+                        }))
+                    };
+                });
+                assert.equal(state.documentHeight, state.viewportHeight, 'Offscreen articles must not extend the document vertically.');
+                assert.equal(state.rootY, 0);
+                assert(state.metaInContent && state.readingY > 0, 'Article metadata shares the article scroller.');
+                assert(state.columns.every(column => column.y > 0), 'Short screens must expose the bottom of every long column.');
+                assert(state.columns.every(column => column.x === 0 && column.scrollWidth <= column.clientWidth + 1), JSON.stringify(state));
+                assert(state.columns.every(column => column.bottom <= state.viewportHeight + 1));
+                await page.screenshot({ path: path.join(artifactDir, `columns-${width}.png`) });
+                cases.push({ width, ...state });
+                for (const route of ['all', 'd', 'all-products']) {
+                    await gotoAndWait(page, `${baseUrl}/zh/${route}/`);
+                    const overflow = await page.locator('.page-content').evaluate(column => column.scrollWidth - column.clientWidth);
+                    assert(overflow <= 1, `/${route}/ must extend the page horizontally without an inner scrollbar.`);
+                }
+            }
+            return { cases };
+        }
+    },
     ...[false, true].map(mobile => ({
         id: mobile ? 'canvas-mobile-append-column' : 'canvas-append-column',
         kind: 'single',
@@ -214,7 +294,7 @@ export const canvasScenarios = [
             const cdp = await context.newCDPSession(page);
             const canvasPosition = () => page.evaluate(() => ({
                 x: window.visualViewport?.pageLeft ?? scrollX,
-                y: window.visualViewport?.pageTop ?? scrollY
+                y: document.querySelector('.page-content').scrollTop
             }));
             const drags = [];
             const swipe = async (x, distance, distanceY = 0) => {
@@ -271,9 +351,8 @@ export const canvasScenarios = [
             await gotoAndWait(page, `${baseUrl}/zh/appearance/`);
             await page.goBack();
             await waitForBreadcrumbSettled(page);
-            await page.waitForFunction(({ x, y }) => (
+            await page.waitForFunction(({ x }) => (
                 Math.abs((window.visualViewport?.pageLeft ?? scrollX) - x) <= 1
-                && Math.abs((window.visualViewport?.pageTop ?? scrollY) - y) <= 1
             ), historyPosition, { timeout: 5000 });
             const restoredHistoryPosition = await canvasPosition();
             return { initial, roots, final, drags, events, historyPosition, restoredHistoryPosition };
@@ -305,7 +384,7 @@ export const canvasScenarios = [
                     assert.ok(state.columns.every(column => Math.abs(column.y - state.main.y) <= 1), detail);
                     assert.ok(Math.abs(state.nav.y - state.main.y) <= 1, detail);
                     assert.equal(state.canvasOffsetX, 0, 'Direct visits preserve the canvas origin: ' + detail);
-                    assert.ok(state.main.width <= state.viewport + 1, detail);
+                    if (name !== 'collection') assert.ok(state.main.width <= state.viewport + 1, detail);
                     if (viewport.width === 390) {
                         assert.ok(state.scrollWidth > state.viewport, detail);
                         assert.ok(state.nav.x >= 0 && state.nav.right <= state.viewport, detail);
@@ -340,29 +419,33 @@ export const canvasScenarios = [
         id: 'canvas-history-scroll-restoration',
         kind: 'single',
         serviceWorkers: 'block',
-        viewport: viewports[0],
-        title: 'Native Back, Forward and Reload Preserve Both Scroll Axes',
+        viewport: { width: 390, height: 300 },
+        title: 'History Navigation Preserves the Native Horizontal Canvas Position',
         async run({ page, baseUrl }) {
-            await gotoAndWait(page, baseUrl + articlePath);
+            await gotoAndWait(page, `${baseUrl}/zh/p/ssh-remote-kit-windows/?from=all`);
             await waitForBreadcrumbSettled(page);
-            await page.evaluate(() => scrollTo({ left: 241, top: 570, behavior: 'instant' }));
+            await page.evaluate(() => { scrollTo(241, 0); document.querySelector('.page-content').scrollTop = 570; });
             await nextPaint(page);
             const first = await position(page);
-            assert.ok(first.x > 0 && first.y > 0, 'The history fixture must exercise both axes.');
+            assert.ok(first.x > 0, 'The history fixture must exercise a panned canvas.');
             await gotoAndWait(page, `${baseUrl}/zh/p/xvenv/?from=all`);
             await waitForBreadcrumbSettled(page);
-            await page.evaluate(() => scrollTo({ left: 37, top: 310, behavior: 'instant' }));
+            await page.evaluate(() => { scrollTo(37, 0); document.querySelector('.page-content').scrollTop = 310; });
             await nextPaint(page);
             const second = await position(page);
             await page.goBack();
             await waitForBreadcrumbSettled(page);
-            await assertPosition(page, first, 'Back must restore the chosen view, including the directory column.');
+            await assertPosition(page, first, 'Back must preserve the native horizontal restoration.');
             await page.goForward();
             await waitForBreadcrumbSettled(page);
             await assertPosition(page, second, 'Forward must restore the second reading position.');
             await page.reload();
             await waitForBreadcrumbSettled(page);
             await assertPosition(page, second, 'Reload must not run the new-navigation positioning again.');
+            assert.equal(await page.evaluate(() => history.scrollRestoration), 'auto');
+            assert.equal(await page.evaluate(() => !!history.state?.banyanColumnScroll
+                || Object.keys(sessionStorage).some(key => key.startsWith('banyan:column-scroll:'))), false,
+            'Column positions must not be stored by the site.');
 
             const sort = page.locator('.slot-breadcrumb [data-collection-sort-toggle="true"]').first();
             await sort.scrollIntoViewIfNeeded();
@@ -374,15 +457,18 @@ export const canvasScenarios = [
             await page.waitForURL(url => url.href !== beforeUrl);
             await waitForBreadcrumbSettled(page);
             await assertPosition(page, beforeSort, 'Sorting a visible column must not jump back to main.');
+            await gotoAndWait(page, `${baseUrl}/zh/p/ssh-remote-kit-windows/?from=all`);
+            assert.equal(await page.locator('.page-content').evaluate(column => column.scrollTop), 0,
+                'A new visit to the same URL starts at the top.');
             return { first, second, beforeSort };
         }
     },
     {
-        id: 'canvas-anchors-and-keyboard',
+        id: 'canvas-anchors',
         kind: 'single',
         serviceWorkers: 'block',
         viewport: viewports[0],
-        title: 'Native Anchors, Skip Link and Column Keyboard Order',
+        title: 'Native Anchors and Skip Link',
         async run({ page, baseUrl }) {
             await gotoAndWait(page, baseUrl + articlePath);
             const headingId = await page.locator('.prose :is(h2, h3)[id]').first().getAttribute('id');
@@ -397,12 +483,25 @@ export const canvasScenarios = [
                 'A direct fragment keeps the native target visible: ' + JSON.stringify(heading));
 
             await page.locator('.skip-link').focus();
+            const beforeSkip = await page.locator('.page-content').evaluate(column => column.scrollTop);
             await page.keyboard.press('Enter');
             await page.waitForURL(url => url.hash === '#main');
             await nextPaint(page);
             const main = await page.locator('#main').boundingBox();
             assert.ok(main.x >= -1 && main.x < 390 && main.y >= -1 && main.y < 900,
                 'Skip to content must bring the actual main column into view.');
+            const afterSkip = await page.locator('.page-content').evaluate(column => column.scrollTop);
+            assert(beforeSkip > afterSkip);
+            return { headingId, heading };
+        }
+    },
+    {
+        id: 'canvas-keyboard-order',
+        kind: 'single',
+        serviceWorkers: 'block',
+        viewport: viewports[0],
+        title: 'Column Keyboard Order',
+        async run({ page, baseUrl }) {
 
             // Keyboard traversal leaves the complete root list for the next column.
             await gotoAndWait(page, `${baseUrl}/zh/updates/`);
@@ -422,7 +521,7 @@ export const canvasScenarios = [
             await page.keyboard.press('Tab');
             assert.equal(await page.evaluate(() => !!document.activeElement.closest('.slot-breadcrumb, #main')), true,
                 'Tab after the final root link proceeds to the next visible column.');
-            return { headingId, heading, order };
+            return { order };
         }
     },
     {
