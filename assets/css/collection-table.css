@@ -1,10 +1,7 @@
 .collection-list--table {
+    /* Tables extend the page canvas; the document owns horizontal scrolling. */
     width: max-content;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: none;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
+    max-width: none;
 }
 
 .collection-list--table > :is(.collection-cell--date, .collection-cell--count, .collection-cell--price, .collection-cell--value) {
@@ -27,11 +24,11 @@
 }
 
 .collection-list--directory {
-    grid-template-columns: var(--navigation-column-inline) minmax(5.1rem, max-content) minmax(4rem, max-content);
+    grid-template-columns: var(--navigation-column-inline) minmax(5.2rem, max-content) minmax(3rem, max-content);
 }
 
 .collection-list--all {
-    grid-template-columns: var(--navigation-column-inline) minmax(5.1rem, max-content) minmax(4rem, max-content) minmax(8rem, max-content);
+    grid-template-columns: var(--navigation-column-inline) minmax(5.2rem, max-content) minmax(3rem, max-content) minmax(8rem, max-content);
 }
 
 .collection-list--all > .collection-cell--path a {

@@ -7,24 +7,21 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
 
 .page-shell--has-path-columns .page-stage {
     display: grid;
-    grid-template-columns: max-content var(--main-column-inline);
+    grid-template-columns: max-content max-content;
     column-gap: var(--page-shell-gap-inline);
     align-items: start;
 }
 
 .path-columns {
     grid-column: 1;
-    grid-row: 1 / span 2;
+    grid-row: 1;
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: var(--navigation-column-inline);
     column-gap: var(--page-shell-gap-inline);
     align-items: start;
-    position: sticky;
-    top: var(--page-edge-block-start);
-    max-block-size: calc(100vh - var(--page-edge-block-start) - 1rem);
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
+    block-size: 100%;
+    min-block-size: 0;
 }
 
 .slot-breadcrumb,
@@ -39,13 +36,13 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
     inline-size: var(--navigation-column-inline);
 }
 
-.page-shell--has-path-columns .slot-main {
+.page-shell--has-path-columns .page-content {
     grid-column: 2;
     grid-row: 1;
 }
 
-.page-shell--has-path-columns .slot-meta {
-    grid-column: 2;
-    grid-row: 2;
-    padding-block-start: 0.9rem;
+@media print {
+    .path-columns {
+        block-size: auto;
+    }
 }

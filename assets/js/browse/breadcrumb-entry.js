@@ -10,6 +10,7 @@ import {
 } from './breadcrumb-source.js';
 import { readPageCollectionSource } from './collection-source.js';
 import { renderPathColumns } from './path-render.js';
+import { refreshBreadcrumbCollectionColumns } from './breadcrumb-column-sort.js';
 
 const ENTRY_BREADCRUMB_PENDING_ATTR = 'data-entry-breadcrumb-pending';
 const BREADCRUMB_SORT_PENDING_ATTR = 'data-breadcrumb-sort-pending';
@@ -136,7 +137,8 @@ export function initializeBreadcrumb() {
         }
 
         if (sortPending) {
-            result.sortRendered = renderPathColumns(buildCollectionPathItems(sources));
+            refreshBreadcrumbCollectionColumns();
+            result.sortRendered = true;
         }
     } finally {
         if (entryPending) clearPending(ENTRY_BREADCRUMB_PENDING_ATTR);

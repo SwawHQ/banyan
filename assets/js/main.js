@@ -1,12 +1,14 @@
 import { initRootNavigation } from './browse/root-navigation.js';
 import { initLanguageReturn } from './preferences/language-return.js';
 import { initThemePreference } from './preferences/theme.js';
+import { initAutoScrollbar } from './browse/auto-scrollbar.js';
 
 initRootNavigation();
 
 document.addEventListener('DOMContentLoaded', () => {
     initThemePreference();
     initLanguageReturn();
+    initAutoScrollbar();
 });
 
 // 针对微信安卓版：通过 WeixinJSBridge 强制覆盖字体大小并禁止用户修改，缓解字体缩放导致的页面跳变

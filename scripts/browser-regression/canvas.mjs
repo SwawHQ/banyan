@@ -12,11 +12,11 @@ const viewports = [390, 1024, 1440].map(width => ({ width, height: 900 }));
 const nextPaint = page => page.evaluate(() => new Promise(resolve => {
     requestAnimationFrame(() => requestAnimationFrame(resolve));
 }));
-const position = page => page.evaluate(() => ({ x: scrollX, y: scrollY }));
+const position = page => page.evaluate(() => ({ x: scrollX }));
 
 async function assertPosition(page, expected, label) {
-    await page.waitForFunction(({ x, y }) => (
-        Math.abs(scrollX - x) <= 1 && Math.abs(scrollY - y) <= 1
+    await page.waitForFunction(({ x }) => (
+        Math.abs(scrollX - x) <= 1
     ), expected, { timeout: 5000 });
     assert.deepEqual(await position(page), expected, label);
 }
@@ -68,6 +68,295 @@ async function readCanvas(page) {
 }
 
 export const canvasScenarios = [
+    {
+        id: 'canvas-source-navigation',
+        kind: 'single',
+        serviceWorkers: 'block',
+        viewport: { width: 390, height: 844 },
+        hasTouch: true,
+        title: 'Opening an Article Retains Source Columns and Clicking It Again Keeps the Document',
+        async run({ page, baseUrl }) {
+            await page.addInitScript(() => {
+                const observer = new MutationObserver(() => {
+                    if (!document.querySelector('#main')) return;
+                    window.__sourceNav = document.querySelector('.slot-breadcrumb .path-navigation');
+                    window.__sourceColumns = [...document.querySelectorAll('.slot-breadcrumb .path-column')];
+                    observer.disconnect();
+                });
+                observer.observe(document, { childList: true, subtree: true });
+            });
+            await page.route('**/js/browse/path-entry.*.js', async route => {
+                await new Promise(resolve => setTimeout(resolve, 350));
+                await route.continue();
+            });
+            // Click only the visible portion, without locator.click() revealing the whole row.
+            const clickVisible = async link => {
+                const point = await link.evaluate(el => {
+                    const box = el.getBoundingClientRect();
+                    const left = box.x - (visualViewport?.offsetLeft || 0);
+                    return {
+                        x: (Math.max(0, left) + Math.min(innerWidth, left + box.width)) / 2,
+                        y: box.y + box.height / 2
+                    };
+                });
+                await page.touchscreen.tap(point.x, point.y);
+            };
+            const cases = [];
+            for (const [source, slug, x] of [
+                ['tags/tooling', 'coskill-trustworthy-collaboration', 360],
+                ['tags/tooling/devtools/windows', 'xvenv', 900]
+            ]) {
+                await gotoAndWait(page, `${baseUrl}/zh/${source}/`);
+                await waitForBreadcrumbSettled(page);
+                await page.evaluate(x => scrollTo(x, 0), x);
+                await nextPaint(page);
+                const before = await readCanvas(page);
+                assert.equal(before.canvasOffsetX, x);
+                await clickVisible(page.locator(`main [data-collection-entry][href*="/p/${slug}/"]`));
+                await page.waitForURL(url => url.pathname === `/zh/p/${slug}/`);
+                await waitForBreadcrumbSettled(page);
+                await nextPaint(page);
+                const after = await readCanvas(page);
+                assert.equal(after.canvasOffsetX, before.canvasOffsetX,
+                    'Source hydration must not reset a panned canvas in WebKit.');
+                assert.equal(after.nav.x, before.nav.x);
+                before.columns.forEach((column, index) => assert.equal(after.columns[index].x, column.x));
+                assert.equal(after.columns.at(-1).x, before.main.x);
+                assert(after.mainDocumentX > before.mainDocumentX);
+                assert.equal(await page.evaluate(() => {
+                    const nav = window.__sourceNav;
+                    return nav?.isConnected && !nav.hasAttribute('aria-hidden')
+                        && nav.getAttribute('aria-label') === 'Breadcrumb'
+                        && window.__sourceColumns.length === nav.children.length
+                        && window.__sourceColumns.every((column, index) => column === nav.children[index]);
+                }), true, 'The reserved column containers must survive source hydration.');
+
+                const readingY = await page.evaluate(() => {
+                    window.__sameEntryDocument = true;
+                    const content = document.querySelector('.page-content');
+                    content.scrollTop = 120;
+                    return content.scrollTop;
+                });
+                assert(readingY > 0, 'Exercise an existing article reading position.');
+                const selected = page.locator(`.slot-breadcrumb [aria-current="page"][href*="/p/${slug}/"]`);
+                const selectedHref = await selected.evaluate(el => el.href);
+                assert.equal(selectedHref, page.url());
+                let documentRequests = 0;
+                const recordRequest = request => {
+                    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documentRequests += 1;
+                };
+                page.on('request', recordRequest);
+                await clickVisible(selected);
+                await nextPaint(page);
+                assert.equal(documentRequests, 0, 'Clicking the selected article must not reload the document.');
+                page.off('request', recordRequest);
+                assert.deepEqual(await page.evaluate(() => ({
+                    retained: window.__sameEntryDocument,
+                    x: visualViewport?.pageLeft ?? scrollX,
+                    y: document.querySelector('.page-content').scrollTop,
+                    pending: sessionStorage.getItem('banyan:canvas-navigation')
+                })), { retained: true, x, y: readingY, pending: null });
+                cases.push({ source, before: before.canvasOffsetX, after: after.canvasOffsetX, readingY });
+            }
+            return { cases };
+        }
+    },
+    {
+        id: 'canvas-path-sort-reuses-dom',
+        kind: 'single',
+        serviceWorkers: 'block',
+        viewport: { width: 1440, height: 130 },
+        title: 'Sorting Reuses Server-rendered Path Rows, Headers and Links',
+        async run({ page, baseUrl }) {
+            await page.addInitScript(() => {
+                const observer = new MutationObserver(() => {
+                    if (!document.querySelector('#main')) return;
+                    window.__pathNodes = [...document.querySelectorAll('.path-column')].map(column => ({
+                        column,
+                        header: column.querySelector('[data-collection-header]'),
+                        links: [...column.querySelectorAll('[data-collection-entry]')],
+                        icons: [...column.querySelectorAll('.collection-item-icon')]
+                    }));
+                    observer.disconnect();
+                });
+                observer.observe(document, { childList: true, subtree: true });
+            });
+            await page.route('**/js/browse/path-entry.*.js', async route => {
+                await new Promise(resolve => setTimeout(resolve, 400));
+                await route.continue();
+            });
+            await gotoAndWait(page, `${baseUrl}/tags/tooling/devtools/?sorts=date-desc,date-asc`);
+            await waitForBreadcrumbSettled(page);
+            const retained = () => page.evaluate(() => window.__pathNodes.every(({ column, header, links, icons }) =>
+                column.isConnected && header?.isConnected && links.length > 0
+                && links.every(link => link.isConnected && column.contains(link))
+                && icons.every(icon => icon.isConnected && column.contains(icon))));
+            assert.equal(await retained(), true, 'Initial sort must reuse SSR rows instead of replacing them with placeholders.');
+
+            const target = '.path-column[data-breadcrumb-collection-href="/tags/tooling/"]';
+            const before = await page.locator(target).evaluate(column => {
+                const link = column.querySelector('[href*="/p/coskill-trustworthy-collaboration/"]');
+                const url = new URL(link.href);
+                url.searchParams.set('note', 'keep');
+                url.hash = 'reading';
+                link.href = url.href;
+                const toggle = column.querySelector('[data-collection-sort-toggle]');
+                toggle.focus({ preventScroll: true });
+                column.scrollTop = 35;
+                return {
+                    y: column.scrollTop,
+                    order: [...column.querySelectorAll('[data-collection-entry]')].map(a => new URL(a.href).pathname)
+                };
+            });
+            assert(before.y > 0, 'Exercise a scrolled column.');
+            for (const attempt of [0, 1]) {
+                await page.locator(`${target} [data-collection-sort-toggle]`).evaluate(toggle => toggle.click());
+                await nextPaint(page);
+                const after = await page.locator(target).evaluate(column => {
+                    const link = column.querySelector('[href*="/p/coskill-trustworthy-collaboration/"]');
+                    return {
+                        y: column.scrollTop,
+                        href: link.href,
+                        focused: document.activeElement === column.querySelector('[data-collection-sort-toggle]'),
+                        order: [...column.querySelectorAll('[data-collection-entry]')].map(a => new URL(a.href).pathname)
+                    };
+                });
+                assert.equal(await retained(), true, 'Click sorting must preserve row, icon and header identity.');
+                assert.equal(after.focused, true);
+                assert.equal(after.y, before.y);
+                const url = new URL(after.href);
+                assert.equal(url.searchParams.get('from'), 'tags/tooling');
+                assert.equal(url.searchParams.get('note'), 'keep');
+                assert.equal(url.hash, '#reading');
+                if (attempt === 0) assert.notDeepEqual(after.order, before.order);
+                else assert.deepEqual(after.order, before.order);
+            }
+            return { preservedNodes: true, scrollTop: before.y };
+        }
+    },
+    {
+        id: 'canvas-path-entry-lineage',
+        kind: 'single',
+        serviceWorkers: 'block',
+        title: 'Path Column Article Links Keep Their Source Before and After Rendering',
+        async run({ page, baseUrl }) {
+            const selector = '.slot-breadcrumb a[href*="/p/coskill-trustworthy-collaboration/"]';
+            const cases = [];
+            for (const lang of ['', 'zh/', 'zh-tw/']) {
+                for (const [route, from] of [
+                    ['tags/tooling/devtools/', 'tags/tooling'],
+                    ['p/loop-engineering-digital-life-origin/', 'd']
+                ]) {
+                    const url = `${baseUrl}/${lang}${route}`;
+                    const response = await page.request.get(url);
+                    assert.equal(response.status(), 200);
+                    // Parse the response without executing scripts: the href
+                    // must already work before hydration, including with JS off.
+                    const rawHref = await page.evaluate(({ html, selector }) =>
+                        new DOMParser().parseFromString(html, 'text/html')
+                            .querySelector(selector)?.getAttribute('href'),
+                    { html: await response.text(), selector });
+                    assert(rawHref, `Missing source-column article link: ${url}`);
+                    assert.equal(new URL(rawHref, baseUrl).searchParams.get('from'), from, url);
+                    await gotoAndWait(page, url);
+                    await waitForBreadcrumbSettled(page);
+                    const rendered = await page.locator(selector).getAttribute('href');
+                    assert.equal(new URL(rendered, baseUrl).searchParams.get('from'), from);
+                    cases.push({ url, rawHref, rendered });
+                }
+                for (const query of ['', '?from=tags/tooling', '?sorts=date-desc,date-asc']) {
+                    await gotoAndWait(page, `${baseUrl}/${lang}tags/tooling/devtools/${query}`);
+                    await waitForBreadcrumbSettled(page);
+                    await page.locator(selector).click();
+                    await page.waitForURL(url => url.pathname === `/${lang}p/coskill-trustworthy-collaboration/`);
+                    assert.equal(new URL(page.url()).searchParams.get('from'), 'tags/tooling');
+                    await page.reload();
+                    assert.equal(new URL(page.url()).searchParams.get('from'), 'tags/tooling');
+                }
+            }
+            return { cases };
+        }
+    },
+    ...[false, true].map(mobile => ({
+        id: mobile ? 'canvas-mobile-native-scrollbar' : 'canvas-desktop-auto-scrollbar',
+        kind: 'single',
+        serviceWorkers: 'block',
+        viewport: { width: mobile ? 390 : 1440, height: 900 },
+        isMobile: mobile,
+        hasTouch: mobile,
+        title: 'Scrolling Shows the Desktop Thumb Without Changing Column Width',
+        async run({ page, baseUrl }) {
+            await gotoAndWait(page, `${baseUrl}/zh/p/wsl-guide/?from=all`);
+            const read = () => page.locator('.page-content').evaluate(column => ({
+                color: getComputedStyle(column).scrollbarColor,
+                nestedColor: getComputedStyle(column.firstElementChild).scrollbarColor,
+                width: column.clientWidth,
+                y: column.scrollTop
+            }));
+            const hidden = 'rgba(0, 0, 0, 0) rgba(0, 0, 0, 0)';
+            const initial = await read();
+            assert.equal(initial.color, mobile ? 'auto' : hidden);
+            assert.equal(initial.nestedColor, 'auto');
+            await page.locator('.page-content').evaluate(column => { column.scrollTop = 200; });
+            await page.waitForFunction(() => document.querySelector('.page-content').hasAttribute('data-scrolling'));
+            const active = await read();
+            assert.equal(active.color, 'auto');
+            await page.waitForFunction(() => !document.querySelector('.page-content').hasAttribute('data-scrolling'));
+            const idle = await read();
+            assert.equal(idle.color, initial.color);
+            assert.equal(active.width, initial.width);
+            assert.equal(idle.width, initial.width);
+            assert.equal(idle.y, active.y);
+            assert(idle.y > 0);
+            return { initial, active, idle };
+        }
+    })),
+    {
+        id: 'canvas-column-scroll-ownership',
+        kind: 'single',
+        serviceWorkers: 'block',
+        title: 'The Document Pans Horizontally and Each Column Scrolls Vertically',
+        async run({ page, baseUrl, artifactDir }) {
+            const cases = [];
+            for (const width of [390, 500, 1440]) {
+                await page.setViewportSize({ width, height: 300 });
+                await gotoAndWait(page, `${baseUrl}/zh/p/ssh-remote-kit-windows/?from=all`);
+                await waitForBreadcrumbSettled(page);
+                const state = await page.evaluate(() => {
+                    const doc = document.scrollingElement;
+                    const content = document.querySelector('.page-content');
+                    const columns = [...document.querySelectorAll('.page-rail, .path-column, .page-content')];
+                    for (const column of columns) column.scrollTop = 100000;
+                    return {
+                        documentHeight: doc.scrollHeight, viewportHeight: doc.clientHeight,
+                        rootY: scrollY, readingY: content.scrollTop,
+                        metaInContent: content.contains(document.querySelector('.slot-meta')),
+                        columns: columns.map(column => ({
+                            className: column.className,
+                            x: column.scrollLeft,
+                            y: column.scrollTop,
+                            clientWidth: column.clientWidth, scrollWidth: column.scrollWidth,
+                            bottom: column.getBoundingClientRect().bottom
+                        }))
+                    };
+                });
+                assert.equal(state.documentHeight, state.viewportHeight, 'Offscreen articles must not extend the document vertically.');
+                assert.equal(state.rootY, 0);
+                assert(state.metaInContent && state.readingY > 0, 'Article metadata shares the article scroller.');
+                assert(state.columns.every(column => column.y > 0), 'Short screens must expose the bottom of every long column.');
+                assert(state.columns.every(column => column.x === 0 && column.scrollWidth <= column.clientWidth + 1), JSON.stringify(state));
+                assert(state.columns.every(column => column.bottom <= state.viewportHeight + 1));
+                await page.screenshot({ path: path.join(artifactDir, `columns-${width}.png`) });
+                cases.push({ width, ...state });
+                for (const route of ['all', 'd', 'all-products']) {
+                    await gotoAndWait(page, `${baseUrl}/zh/${route}/`);
+                    const overflow = await page.locator('.page-content').evaluate(column => column.scrollWidth - column.clientWidth);
+                    assert(overflow <= 1, `/${route}/ must extend the page horizontally without an inner scrollbar.`);
+                }
+            }
+            return { cases };
+        }
+    },
     ...[false, true].map(mobile => ({
         id: mobile ? 'canvas-mobile-append-column' : 'canvas-append-column',
         kind: 'single',
@@ -142,8 +431,11 @@ export const canvasScenarios = [
                     });
                     assert.ok(Math.abs(name.width - before.nav.width) <= 1, 'Product names share the navigation column width.');
                     await page.screenshot({ path: path.join(artifactDir, `${source.replaceAll('/', '-')}-${width}-before.png`) });
-                    // Use a visible point, avoiding Playwright's automatic centering of links.
-                    const point = { x: name.x + 40, y: name.y + 10 };
+                    // The page canvas can pan past the label's start; tap its visible portion.
+                    const visibleLeft = Math.max(0, name.x);
+                    const visibleRight = Math.min(width, name.x + name.width);
+                    assert.ok(visibleRight > visibleLeft, 'The panned product row remains visible.');
+                    const point = { x: (visibleLeft + visibleRight) / 2, y: name.y + 10 };
                     assert.ok(point.x > 0 && point.x < width);
                     if (mobile) await page.touchscreen.tap(point.x, point.y);
                     else await page.mouse.click(point.x, point.y);
@@ -211,7 +503,7 @@ export const canvasScenarios = [
             const cdp = await context.newCDPSession(page);
             const canvasPosition = () => page.evaluate(() => ({
                 x: window.visualViewport?.pageLeft ?? scrollX,
-                y: window.visualViewport?.pageTop ?? scrollY
+                y: document.querySelector('.page-content').scrollTop
             }));
             const drags = [];
             const swipe = async (x, distance, distanceY = 0) => {
@@ -268,9 +560,8 @@ export const canvasScenarios = [
             await gotoAndWait(page, `${baseUrl}/zh/appearance/`);
             await page.goBack();
             await waitForBreadcrumbSettled(page);
-            await page.waitForFunction(({ x, y }) => (
+            await page.waitForFunction(({ x }) => (
                 Math.abs((window.visualViewport?.pageLeft ?? scrollX) - x) <= 1
-                && Math.abs((window.visualViewport?.pageTop ?? scrollY) - y) <= 1
             ), historyPosition, { timeout: 5000 });
             const restoredHistoryPosition = await canvasPosition();
             return { initial, roots, final, drags, events, historyPosition, restoredHistoryPosition };
@@ -302,7 +593,7 @@ export const canvasScenarios = [
                     assert.ok(state.columns.every(column => Math.abs(column.y - state.main.y) <= 1), detail);
                     assert.ok(Math.abs(state.nav.y - state.main.y) <= 1, detail);
                     assert.equal(state.canvasOffsetX, 0, 'Direct visits preserve the canvas origin: ' + detail);
-                    assert.ok(state.main.width <= state.viewport + 1, detail);
+                    if (name !== 'collection') assert.ok(state.main.width <= state.viewport + 1, detail);
                     if (viewport.width === 390) {
                         assert.ok(state.scrollWidth > state.viewport, detail);
                         assert.ok(state.nav.x >= 0 && state.nav.right <= state.viewport, detail);
@@ -337,29 +628,33 @@ export const canvasScenarios = [
         id: 'canvas-history-scroll-restoration',
         kind: 'single',
         serviceWorkers: 'block',
-        viewport: viewports[0],
-        title: 'Native Back, Forward and Reload Preserve Both Scroll Axes',
+        viewport: { width: 390, height: 300 },
+        title: 'History Navigation Preserves the Native Horizontal Canvas Position',
         async run({ page, baseUrl }) {
-            await gotoAndWait(page, baseUrl + articlePath);
+            await gotoAndWait(page, `${baseUrl}/zh/p/ssh-remote-kit-windows/?from=all`);
             await waitForBreadcrumbSettled(page);
-            await page.evaluate(() => scrollTo({ left: 241, top: 570, behavior: 'instant' }));
+            await page.evaluate(() => { scrollTo(241, 0); document.querySelector('.page-content').scrollTop = 570; });
             await nextPaint(page);
             const first = await position(page);
-            assert.ok(first.x > 0 && first.y > 0, 'The history fixture must exercise both axes.');
+            assert.ok(first.x > 0, 'The history fixture must exercise a panned canvas.');
             await gotoAndWait(page, `${baseUrl}/zh/p/xvenv/?from=all`);
             await waitForBreadcrumbSettled(page);
-            await page.evaluate(() => scrollTo({ left: 37, top: 310, behavior: 'instant' }));
+            await page.evaluate(() => { scrollTo(37, 0); document.querySelector('.page-content').scrollTop = 310; });
             await nextPaint(page);
             const second = await position(page);
             await page.goBack();
             await waitForBreadcrumbSettled(page);
-            await assertPosition(page, first, 'Back must restore the chosen view, including the directory column.');
+            await assertPosition(page, first, 'Back must preserve the native horizontal restoration.');
             await page.goForward();
             await waitForBreadcrumbSettled(page);
             await assertPosition(page, second, 'Forward must restore the second reading position.');
             await page.reload();
             await waitForBreadcrumbSettled(page);
             await assertPosition(page, second, 'Reload must not run the new-navigation positioning again.');
+            assert.equal(await page.evaluate(() => history.scrollRestoration), 'auto');
+            assert.equal(await page.evaluate(() => !!history.state?.banyanColumnScroll
+                || Object.keys(sessionStorage).some(key => key.startsWith('banyan:column-scroll:'))), false,
+            'Column positions must not be stored by the site.');
 
             const sort = page.locator('.slot-breadcrumb [data-collection-sort-toggle="true"]').first();
             await sort.scrollIntoViewIfNeeded();
@@ -371,15 +666,18 @@ export const canvasScenarios = [
             await page.waitForURL(url => url.href !== beforeUrl);
             await waitForBreadcrumbSettled(page);
             await assertPosition(page, beforeSort, 'Sorting a visible column must not jump back to main.');
+            await gotoAndWait(page, `${baseUrl}/zh/p/ssh-remote-kit-windows/?from=all`);
+            assert.equal(await page.locator('.page-content').evaluate(column => column.scrollTop), 0,
+                'A new visit to the same URL starts at the top.');
             return { first, second, beforeSort };
         }
     },
     {
-        id: 'canvas-anchors-and-keyboard',
+        id: 'canvas-anchors',
         kind: 'single',
         serviceWorkers: 'block',
         viewport: viewports[0],
-        title: 'Native Anchors, Skip Link and Column Keyboard Order',
+        title: 'Native Anchors and Skip Link',
         async run({ page, baseUrl }) {
             await gotoAndWait(page, baseUrl + articlePath);
             const headingId = await page.locator('.prose :is(h2, h3)[id]').first().getAttribute('id');
@@ -394,12 +692,25 @@ export const canvasScenarios = [
                 'A direct fragment keeps the native target visible: ' + JSON.stringify(heading));
 
             await page.locator('.skip-link').focus();
+            const beforeSkip = await page.locator('.page-content').evaluate(column => column.scrollTop);
             await page.keyboard.press('Enter');
             await page.waitForURL(url => url.hash === '#main');
             await nextPaint(page);
             const main = await page.locator('#main').boundingBox();
             assert.ok(main.x >= -1 && main.x < 390 && main.y >= -1 && main.y < 900,
                 'Skip to content must bring the actual main column into view.');
+            const afterSkip = await page.locator('.page-content').evaluate(column => column.scrollTop);
+            assert(beforeSkip > afterSkip);
+            return { headingId, heading };
+        }
+    },
+    {
+        id: 'canvas-keyboard-order',
+        kind: 'single',
+        serviceWorkers: 'block',
+        viewport: viewports[0],
+        title: 'Column Keyboard Order',
+        async run({ page, baseUrl }) {
 
             // Keyboard traversal leaves the complete root list for the next column.
             await gotoAndWait(page, `${baseUrl}/zh/updates/`);
@@ -419,7 +730,7 @@ export const canvasScenarios = [
             await page.keyboard.press('Tab');
             assert.equal(await page.evaluate(() => !!document.activeElement.closest('.slot-breadcrumb, #main')), true,
                 'Tab after the final root link proceeds to the next visible column.');
-            return { headingId, heading, order };
+            return { order };
         }
     },
     {

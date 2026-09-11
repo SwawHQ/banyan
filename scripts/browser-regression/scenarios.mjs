@@ -1431,7 +1431,7 @@ export const scenarios = [
                 fail('Column rows did not reflect the toggled sort direction.', { after, before });
             }
             if (!after.toggleFocused) {
-                fail('Column sorting must restore focus to the replacement toggle.', {
+                fail('Column sorting must keep focus on the existing toggle.', {
                     after,
                     before,
                 });

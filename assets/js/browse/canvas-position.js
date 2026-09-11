@@ -1,7 +1,7 @@
 const CANVAS_NAVIGATION_KEY = 'banyan:canvas-navigation';
 
 // Carry only the horizontal position of one same-tab collection navigation.
-// History traversal and reload keep the browser's own restoration on both axes.
+// History traversal and reload keep the browser's native horizontal restoration.
 export function initCanvasPosition() {
     let pending;
     try {
@@ -16,7 +16,11 @@ export function initCanvasPosition() {
             || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         const link = event.target.closest?.('[data-collection-entry][href], [data-slot="breadcrumb"] a[href]');
         if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
-        if (link.origin !== location.origin || link.hash || link.href === location.href) return;
+        if (link.origin !== location.origin || link.hash) return;
+        if (link.href === location.href) {
+            event.preventDefault();
+            return;
+        }
         try {
             sessionStorage[CANVAS_NAVIGATION_KEY] = JSON.stringify({
                 source: location.href.split('#')[0],

@@ -195,7 +195,7 @@ export async function runBrowserRegression(options = {}) {
         throw new Error('This browser-regression entry requires two temp builds under temp_workspace/public/, or explicit BANYAN_BROWSER_UPGRADE_FROM_DIR / BANYAN_BROWSER_UPGRADE_TO_DIR overrides.');
     }
     const outputDir = createOutputDir(modeName);
-    const browser = await chromium.launch({
+    const browser = await (options.browserType || chromium).launch({
         headless: options.headless !== false
     });
     const server = await createStaticSiteServer({ rootDir: primaryBuildDir });

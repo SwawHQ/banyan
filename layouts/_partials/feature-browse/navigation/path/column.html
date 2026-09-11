@@ -11,14 +11,21 @@
   {{- $collectionSource = dict "href" $collectionHref "label" (index $item "collection_label" | default "") -}}
 {{- end -}}
 {{- $header := partial "feature-browse/navigation/path/column-header.html" (dict "ctx" $ctx "source" $collectionSource) -}}
+{{- $logicalPath := partial "feature-browse/collection/logical-path.html" (dict "ctx" $ctx "href" $collectionHref) -}}
+{{- $from := partial "feature-browse/routing/lineage-value.html" (dict "logical_path" $logicalPath) -}}
+{{- $fromParam := partialCached "feature-browse/routing/param-name.html" (dict "semantic" "entry_lineage") "routing-param:entry_lineage" -}}
 <div class="path-column" data-collection-column="true"{{ with $collectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}>
   <div class="collection-list collection-list--path-column{{ if $header }} collection-list--headed{{ end }}">
     {{- $header -}}
     {{- range $row := $items -}}
       {{- $isCurrent := eq (index $row "current") true -}}
       {{- $kind := lower (trim (printf "%v" (index $row "kind" | default "")) " ") -}}
+      {{- $href := index $row "href" -}}
+      {{- if and (eq $kind "page") $from -}}
+        {{- $href = printf "%s?%s=%s" $href $fromParam $from -}}
+      {{- end -}}
       {{ partial "system-ui/list/link-cell.html" (dict
-        "href" (index $row "href")
+        "href" $href
         "text" (index $row "text")
         "icon" (index $row "icon" | default (cond (eq $kind "page") "file" "folder"))
         "title" (index $row "title")

@@ -166,7 +166,8 @@
             {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
             <script>{{ $breadcrumbSkeletonInline | safeJS }}</script>
             {{- end -}}
-            <main id="main" class="slot slot-main" data-slot="main" tabindex="-1">
+            <div class="page-content">
+            <main id="main" class="slot slot-main{{ if $hasSortableCollection }} slot-main--collection{{ end }}" data-slot="main" tabindex="-1">
                 {{- block "main" . -}}{{- end -}}
                 {{- if $hasBreadcrumbCapability -}}
                   {{- partial "system-metadata/seo/breadcrumb.html" (dict "ctx" $ "model" $breadcrumbModel) -}}
@@ -177,6 +178,7 @@
                 {{- partial "feature-document/meta.html" (dict "ctx" $ "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel) -}}
             </div>
             {{- end -}}
+            </div>
             </div>
         </div>
     </div>

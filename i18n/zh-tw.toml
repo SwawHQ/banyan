@@ -63,10 +63,6 @@ other = "時間"
 [article_meta_directory]
 other = "目錄"
 
-
-[no_trans_msg]
-other = "本頁尚未提供 [{lang}] 版本。\n前往該語言首頁嗎？"
-
 [language_return_missing]
 other = "本頁尚無{lang}版本，繼續顯示原內容。"
 
@@ -81,15 +77,3 @@ other = "返回本語言首頁"
 
 [tryOtherLangs]
 other = "嘗試其他語言版本："
-
-[settings_return]
-other = "返回"
-
-[appearance_auto]
-other = "跟隨系統"
-
-[appearance_light]
-other = "淺色"
-
-[appearance_dark]
-other = "深色"

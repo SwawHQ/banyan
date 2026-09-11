@@ -4,12 +4,15 @@
     {{- $items := slice -}}
     {{- range slice "auto" "light" "dark" -}}
       {{- $items = $items | append (dict
-        "control" "button" "text" (i18n (printf "appearance_%s" .)) "icon" (printf "appearance-%s" .)
+        "control" "button" "text" (index $.Params.labels .) "icon" (printf "appearance-%s" .)
         "dataAttrs" (dict "theme-choice" .)
       ) -}}
     {{- end -}}
+    {{- $items = $items | append (dict
+      "control" "link" "href" .Site.Home.RelPermalink "text" .Params.labels.back
+      "icon" (dict "text" "↩") "dataAttrs" (dict "page-action" "back")
+    ) -}}
     {{ partial "system-ui/choice/render.html" (dict "page" . "title" .Title "items" $items) }}
-    {{ partial "feature-preferences/back-link.html" . }}
   </div>
 </article>
 {{ end }}
