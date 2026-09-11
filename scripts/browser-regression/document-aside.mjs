@@ -13,21 +13,38 @@ export const documentAsideScenarios = [{
             await page.setViewportSize({ width: 1800, height: 900 });
             await gotoAndWait(page, `${baseUrl}${prefix}/p/swaw-kit-git/?from=all`);
             await waitForBreadcrumbSettled(page);
+            await page.waitForFunction(() => document.querySelector('.document-toc [aria-current="location"]')?.hash === '#main');
             const structure = await page.evaluate(() => ({
-                headings: [...document.querySelectorAll('.prose :is(h2,h3,h4,h5,h6)')].map(h => ({ id: h.id, text: h.textContent.trim() })),
-                entries: [...document.querySelectorAll('.document-toc a')].map(a => ({ id: decodeURIComponent(a.hash.slice(1)), text: a.textContent.trim() })),
+                label: document.querySelector('.document-toc').getAttribute('aria-label'),
+                headings: [...document.querySelectorAll('.prose :is(h2,h3)')].map(h => ({ id: h.id, text: h.textContent.trim() })),
+                entries: [...document.querySelectorAll('.document-toc a')].map(a => ({ id: decodeURIComponent(a.hash.slice(1)), text: a.querySelector('.collection-item-title').textContent.trim() })),
+                nestedLists: document.querySelectorAll('.document-toc ul ul').length,
                 taxonomy: [...document.querySelectorAll('.document-meta__row--taxonomy-path a')].map(a => new URL(a.href).pathname),
-                times: [...document.querySelectorAll('.document-meta time')].map(t => t.parentElement.querySelectorAll('time').length),
+                directoryAfterTaxonomies: [...document.querySelectorAll('.document-meta__row--taxonomy-path')].every(row => row.compareDocumentPosition(document.querySelector('.document-meta__row--path')) & Node.DOCUMENT_POSITION_FOLLOWING),
+                timeCount: document.querySelectorAll('.document-meta time').length,
+                dateRowCount: new Set([...document.querySelectorAll('.document-meta time')].map(t => t.closest('.document-meta__row'))).size,
+                dateIcons: [...document.querySelectorAll('.document-meta time')].map(t => t.closest('.document-meta__row').querySelector('use')?.getAttribute('href')),
+                datesFirst: [...document.querySelector('.document-meta').children].slice(0, 2).every(row => row.querySelector('time')),
+                rowGaps: [...document.querySelectorAll('.document-meta__row')].map(e => e.getBoundingClientRect()).map((box, i, boxes) => i > 0 ? box.top - boxes[i - 1].bottom : null).slice(1),
                 platformIcons: [...document.querySelectorAll('.document-meta__row--resources use')].map(u => u.getAttribute('href')),
             }));
-            assert.deepEqual(structure.entries, structure.headings, 'Hugo headings and outline entries must have identical IDs, text and order.');
+            assert.deepEqual(structure.entries[0], { id: 'main', text: structure.label });
+            assert.deepEqual(structure.entries.slice(1), structure.headings, 'The article-start link precedes the Hugo headings in their original order.');
             assert(structure.entries.length > 10);
             assert(structure.taxonomy.includes(prefix + '/tags/tooling/devtools/windows/'));
             assert(structure.taxonomy.includes(prefix + '/tags/tooling/devtools/'));
-            assert(structure.times.length > 0 && structure.times.every(count => count === 1));
+            assert(structure.directoryAfterTaxonomies, 'Every taxonomy path precedes the directory path.');
+            assert(structure.timeCount === 2 && structure.dateRowCount === 2, 'Updated and published dates occupy separate rows.');
+            assert.deepEqual(structure.dateIcons, ['#icon-clock', '#icon-clock']);
+            assert(structure.datesFirst, 'Both date rows precede taxonomy and directory paths.');
+            assert.equal(structure.nestedLists, 0, 'H2 and H3 form one flat list.');
+            assert(Math.max(...structure.rowGaps) - Math.min(...structure.rowGaps) <= 1, 'Metadata rows have uniform spacing.');
             assert(structure.platformIcons.includes('#icon-github'));
             if (prefix === '/zh') {
                 assert(structure.platformIcons.includes('#icon-wechat'));
+                const metadataPath = page.locator('.document-meta__row--taxonomy-path').first();
+                await metadataPath.hover();
+                assert.equal(await metadataPath.evaluate(e => getComputedStyle(e).backgroundColor), 'rgba(0, 0, 0, 0)', 'A multi-link metadata row has no hover background.');
                 await page.screenshot({ path: path.join(artifactDir, 'desktop.png') });
             }
             results.push({ prefix, ...structure });
@@ -36,6 +53,11 @@ export const documentAsideScenarios = [{
             await page.setViewportSize({ width, height: 800 });
             await gotoAndWait(page, `${baseUrl}/zh/p/swaw-kit-git/?from=all`);
             await waitForBreadcrumbSettled(page);
+            await page.locator('.page-content').evaluate(column => {
+                column.scrollTop = (column.querySelector('h2').getBoundingClientRect().top - column.getBoundingClientRect().top) / 2;
+            });
+            await page.waitForFunction(() => document.querySelector('.page-content').scrollTop > 0
+                && document.querySelector('.document-toc [aria-current="location"]')?.hash === '#main');
             const link = page.locator('.document-toc a').nth(3);
             const fragment = await link.getAttribute('href');
             const assertTarget = async (stage) => {
@@ -87,6 +109,12 @@ export const documentAsideScenarios = [{
             const overflow = await page.locator('.document-aside').evaluate(e => e.scrollWidth - e.clientWidth);
             assert(overflow <= 1, 'Long headings must wrap inside the aside.');
             await page.screenshot({ path: path.join(artifactDir, `aside-${width}.png`) });
+            await page.locator('.document-toc a[href="#main"]').click();
+            await assertTarget('return to article start');
+            await page.reload();
+            await waitForBreadcrumbSettled(page);
+            await assertTarget('reload article start');
+            assert.equal(await page.locator('.page-content').evaluate(e => e.scrollTop), 0);
             results.push({ width, reading, overflow });
         }
         await page.emulateMedia({ media: 'print' });
@@ -101,6 +129,8 @@ export const documentAsideScenarios = [{
             await plain.goto(baseUrl + '/zh/p/swaw-kit-git/?from=all');
             await plain.locator('.document-toc a').nth(3).click();
             assert(await plain.locator('.page-content').evaluate(e => e.scrollTop > 0), 'Outline links work without JavaScript.');
+            await plain.locator('.document-toc a[href="#main"]').click();
+            assert.equal(await plain.locator('.page-content').evaluate(e => e.scrollTop), 0, 'The article-start link works without JavaScript.');
         } finally { await noScript.close(); }
         return { results };
     }

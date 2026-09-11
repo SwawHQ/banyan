@@ -6,7 +6,6 @@
     --document-aside-inline: min(30rem, 100cqi);
     --page-shell-gap-inline: 1rem;
     --main-column-inline: min(88ch, 100cqi);
-    --document-start-offset: 52px;
 }
 
 html {
@@ -79,19 +78,26 @@ body {
 }
 
 .page-content {
-    inline-size: max-content;
+    /* The shared gap includes the scrollbar, even with overlay scrollbars. */
+    inline-size: calc(var(--main-column-inline) + var(--page-shell-gap-inline));
+    scrollbar-gutter: stable;
     block-size: 100%;
     padding-block-end: var(--page-edge-block-end);
 }
 
 .slot-main {
     inline-size: var(--main-column-inline);
+    max-inline-size: 100%;
+    display: flow-root;
+    scroll-margin-block-start: var(--page-edge-block-start);
+    scroll-margin-inline-start: var(--page-edge-inline);
 }
 
 .document-aside {
     inline-size: var(--document-aside-inline);
+    margin-inline-start: calc(-1 * var(--page-shell-gap-inline));
     block-size: 100%;
-    padding-block: var(--document-start-offset) var(--page-edge-block-end);
+    padding-block-end: var(--page-edge-block-end);
     overflow-wrap: anywhere;
 }
 
@@ -106,14 +112,18 @@ body {
     }
 }
 
-.slot-main {
-    display: flow-root;
-    scroll-margin-block-start: var(--page-edge-block-start);
-    scroll-margin-inline-start: var(--page-edge-inline);
+/* Collection tables determine their own width and retain the external gap. */
+.page-content:has(> .slot-main--collection) {
+    inline-size: max-content;
+}
+
+.page-content:has(> .slot-main--collection) + .document-aside {
+    margin-inline-start: 0;
 }
 
 .slot-main--collection {
     inline-size: max-content;
+    max-inline-size: none;
     min-inline-size: var(--main-column-inline);
 }
 
@@ -143,8 +153,13 @@ body {
         display: block;
     }
 
+    .page-content {
+        inline-size: max-content;
+    }
+
     .document-aside {
         inline-size: var(--main-column-inline);
+        margin-inline-start: 0;
         padding-block: 1rem 0;
     }
 }

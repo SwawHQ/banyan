@@ -38,9 +38,12 @@
   ) -}}
 {{- end -}}
 {{- if gt (len $links) 0 -}}
-<nav class="document-meta__group document-meta__row--resources" aria-label="{{ i18n "article_meta_resources" }}">
+<nav class="document-meta__links document-meta__row--resources" aria-label="{{ i18n "article_meta_resources" }}">
   {{- range $index, $link := $links -}}
-    <a class="collection-item-link" href="{{ .href }}" target="{{ .target }}" rel="{{ .rel }}">{{ partial "system-ui/list/item-content.html" (dict "text" .text "icon" .icon) }}</a>
+    <div class="document-meta__row">
+      <span class="collection-item-icon">{{ partial "system-ui/icon/render.html" (dict "name" .icon) }}</span>
+      <a href="{{ .href }}" target="{{ .target }}" rel="{{ .rel }}">{{ .text }}</a>
+    </div>
   {{- end -}}
 </nav>
 {{- end -}}

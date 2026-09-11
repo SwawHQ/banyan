@@ -1,12 +1,11 @@
 {{- range . -}}
-  {{- $children := trim (printf "%s" (partial "feature-document/toc-items.html" .Headings)) " \r\n\t" -}}
-  {{- if and .ID (ge .Level 2) -}}
+  {{- if and .ID (in (slice 2 3) .Level) -}}
     {{- $href := printf "#%s" (.ID | urlquery | replaceRE "\\+" "%20") -}}
-    <li>
-      <a class="collection-item-link" href="{{ $href }}">{{ partial "system-ui/list/item-content.html" (dict "text" (.Title | plainify | htmlUnescape) "icon" "heading") }}</a>
-      {{- with $children -}}<ul>{{ . | safeHTML }}</ul>{{- end -}}
+    <li class="document-toc__h{{ .Level }}">
+      <a class="collection-item-link" href="{{ $href }}">
+        <span class="collection-item-title">{{ .Title | plainify | htmlUnescape }}</span>
+      </a>
     </li>
-  {{- else -}}
-    {{- $children | safeHTML -}}
   {{- end -}}
+  {{- partial "feature-document/toc-items.html" .Headings -}}
 {{- end -}}

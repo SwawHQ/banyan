@@ -223,7 +223,9 @@ export async function runBrowserRegression(options = {}) {
     }
     const outputDir = createOutputDir(modeName);
     const browser = await (options.browserType || chromium).launch({
-        headless: options.headless !== false
+        headless: options.headless !== false,
+        // Keep native scrollbar geometry in headless Chromium layout checks.
+        ignoreDefaultArgs: ['--hide-scrollbars']
     });
     const server = await createStaticSiteServer({ rootDir: primaryBuildDir });
     await server.start();

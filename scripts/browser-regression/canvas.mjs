@@ -286,31 +286,54 @@ export const canvasScenarios = [
         viewport: { width: mobile ? 390 : 1440, height: 900 },
         isMobile: mobile,
         hasTouch: mobile,
-        title: 'Scrolling Shows the Desktop Thumb Without Changing Column Width',
+        title: 'Resizing and Scrolling Preserve Column Width and the Metadata Gap',
         async run({ page, baseUrl }) {
-            await gotoAndWait(page, `${baseUrl}/zh/p/wsl-guide/?from=all`);
-            const read = () => page.locator('.page-content').evaluate(column => ({
-                color: getComputedStyle(column).scrollbarColor,
-                nestedColor: getComputedStyle(column.firstElementChild).scrollbarColor,
-                width: column.clientWidth,
-                y: column.scrollTop
-            }));
+            await gotoAndWait(page, `${baseUrl}/zh/p/xvenv/?from=all`);
+            const read = () => page.locator('.page-content').evaluate(column => {
+                const aside = document.querySelector('.document-aside').getBoundingClientRect();
+                const scrollbar = column.offsetWidth - column.clientWidth;
+                return {
+                    color: getComputedStyle(column).scrollbarColor,
+                    nestedColor: getComputedStyle(column.firstElementChild).scrollbarColor,
+                    width: column.clientWidth,
+                    scrollbar,
+                    gap: aside.left - column.querySelector('.prose').getBoundingClientRect().right,
+                    expectedGap: Math.max(scrollbar, parseFloat(getComputedStyle(column.parentElement).columnGap)),
+                    overflowX: column.scrollWidth - column.clientWidth,
+                    scrollable: column.scrollHeight > column.clientHeight,
+                    y: column.scrollTop
+                };
+            });
             const hidden = 'rgba(0, 0, 0, 0) rgba(0, 0, 0, 0)';
-            const initial = await read();
-            assert.equal(initial.color, mobile ? 'auto' : hidden);
-            assert.equal(initial.nestedColor, 'auto');
-            await page.locator('.page-content').evaluate(column => { column.scrollTop = 200; });
-            await page.waitForFunction(() => document.querySelector('.page-content').hasAttribute('data-scrolling'));
-            const active = await read();
-            assert.equal(active.color, 'auto');
-            await page.waitForFunction(() => !document.querySelector('.page-content').hasAttribute('data-scrolling'));
-            const idle = await read();
-            assert.equal(idle.color, initial.color);
-            assert.equal(active.width, initial.width);
-            assert.equal(idle.width, initial.width);
-            assert.equal(idle.y, active.y);
-            assert(idle.y > 0);
-            return { initial, active, idle };
+            const cases = [];
+            for (const width of mobile ? [390, 768, 390] : [1800, 1440, 1024, 1800]) {
+                await page.setViewportSize({ width, height: 900 });
+                const resized = await read();
+                assert.equal(resized.color, mobile ? 'auto' : hidden);
+                assert.equal(resized.nestedColor, 'auto');
+                await page.locator('.page-content').evaluate(column => { column.scrollTop += 100; });
+                await page.waitForFunction(() => document.querySelector('.page-content').hasAttribute('data-scrolling'));
+                const active = await read();
+                assert.equal(active.color, 'auto');
+                await page.waitForFunction(() => !document.querySelector('.page-content').hasAttribute('data-scrolling'));
+                const idle = await read();
+                assert.equal(idle.color, resized.color);
+                for (const state of [resized, active, idle]) {
+                    assert.equal(state.width, resized.width);
+                    assert(Math.abs(state.gap - state.expectedGap) <= 1, JSON.stringify(state));
+                    assert.equal(state.overflowX, 0, JSON.stringify(state));
+                }
+                assert.equal(idle.y, active.y);
+                assert(idle.y > 0);
+                cases.push({ width, resized, active, idle });
+            }
+            // The same real article must retain its gap when no scrolling is needed.
+            const height = await page.locator('.page-content').evaluate(column => column.scrollHeight + 100);
+            await page.setViewportSize({ width: mobile ? 390 : 1800, height });
+            const short = await read();
+            assert.equal(short.scrollable, false, JSON.stringify(short));
+            assert(Math.abs(short.gap - short.expectedGap) <= 1, JSON.stringify(short));
+            return { cases, short };
         }
     })),
     {
@@ -328,8 +351,6 @@ export const canvasScenarios = [
                     const state = await page.evaluate(() => {
                         const main = document.querySelector('.page-content');
                         const aside = document.querySelector('.document-aside');
-                        const heading = main.querySelector('h1').getBoundingClientRect();
-                        const box = main.getBoundingClientRect();
                         const right = aside.getBoundingClientRect();
                         const meta = aside.querySelector('.document-meta').getBoundingClientRect();
                         const gap = parseFloat(getComputedStyle(document.documentElement).fontSize);
@@ -343,9 +364,10 @@ export const canvasScenarios = [
                         return {
                             sibling: main.parentElement === aside.parentElement,
                             followsMain: main.nextElementSibling === aside,
-                            gap: right.left - box.right, expectedGap: gap,
+                            gap: right.left - main.querySelector('.prose').getBoundingClientRect().right,
+                            expectedGap: Math.max(gap, main.offsetWidth - main.clientWidth),
                             asideWidth: right.width, expectedWidth: Math.min(30 * gap, document.querySelector('.page').clientWidth),
-                            topDifference: meta.top - heading.top,
+                            topDifference: meta.top - document.querySelector('[data-root-navigation]').getBoundingClientRect().top,
                             overflow: aside.scrollWidth - aside.clientWidth,
                             readingY, asideUnmoved, independent,
                             metaRows: aside.querySelectorAll('.document-meta__row--taxonomy-path').length,
