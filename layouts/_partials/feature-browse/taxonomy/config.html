@@ -41,10 +41,10 @@
 {{- if not (in $allowedNormalize $normalize) -}}
   {{- errorf "Build failed: %s only supports identity/lower for [banyan_taxonomy].normalize; got %q." $pagePath (index $spec "normalize") -}}
 {{- end -}}
-{{- $allowedArticleModes := slice "all" "deepest_by_root" "none" -}}
+{{- $allowedArticleModes := slice "all" "leaf_paths" "none" -}}
 {{- $articleMode := lower (printf "%v" (index $spec "article_mode")) -}}
 {{- if not (in $allowedArticleModes $articleMode) -}}
-  {{- errorf "Build failed: %s only supports all/deepest_by_root/none for [banyan_taxonomy].article_mode; got %q." $pagePath (index $spec "article_mode") -}}
+  {{- errorf "Build failed: %s only supports all/leaf_paths/none for [banyan_taxonomy].article_mode; got %q." $pagePath (index $spec "article_mode") -}}
 {{- end -}}
 {{- $spec = merge $spec (dict
     "mode" $mode

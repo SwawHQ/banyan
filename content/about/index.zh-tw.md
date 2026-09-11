@@ -3,6 +3,7 @@ root_nav: true
 date: "2025-10-11T20:10:44+08:00"
 draft: false
 title: "關於"
+description: "了解 Banyan 如何為 Hugo 站點組織內容與分類導覽。"
 slug: "about"
 url: about/
 weight: 95
@@ -14,7 +15,7 @@ build:
 ---
 
 
-Banyan 是一個類似資源管理器的極簡 Hugo 主題，專為清晰結構、作者意圖提示，以及資源管理器式 taxonomy 導航而設計（預設推薦：`intent + tags`）。
+Banyan 是一個類似資源管理器的極簡 Hugo 主題，專為清晰結構和資源管理器式 taxonomy 導航而設計（預設推薦：層級 `tags`）。
 
 正如 `theme.toml` 中所定義的：
 - **名稱**: banyan

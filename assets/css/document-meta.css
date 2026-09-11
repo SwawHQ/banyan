@@ -1,7 +1,7 @@
 .document-meta {
     display: grid;
     gap: 0.24rem;
-    margin: 44px 0 1rem;
+    margin: 0;
 }
 
 .document-meta__row {

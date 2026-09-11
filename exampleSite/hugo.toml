@@ -34,6 +34,11 @@ mode = "off"
 [params.service_worker]
 mode = "off"
 
+[params.sitemap]
+# Theme-owned pages use build.list = "local", so include the public ones
+# explicitly in each language sitemap.
+include_pages = ["/about", "/updates/changelog", "/rss", "/github"]
+
 [frontmatter]
 lastmod = ["lastmod", ":git", ":fileModTime", ":default"]
 
@@ -41,7 +46,6 @@ lastmod = ["lastmod", ":git", ":fileModTime", ":default"]
 pagerSize = 30
 
 [taxonomies]
-intent = "intent"
 tag = "tags"
 
 [markup]
@@ -55,6 +59,7 @@ unsafe = false
 disableXML = true
 
 [outputs]
+page     = ["HTML"]
 section  = ["HTML","RSS"]
 home     = ["HTML","RSS","LLMS"]
 taxonomy = ["HTML","RSS"]

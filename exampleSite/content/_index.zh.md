@@ -1,9 +1,12 @@
 ---
+root_nav: true
 title: Banyan
+linkTitle: Banyan
+icon: { text: "B" }
+weight: 110
+browser_title: Banyan — 极简 Hugo 发布主题
 description: Banyan Hugo 主题的最小示例站点。
-nav_primary: home
-type: frameworks
-layout: home-brand
+layout: page-home
 brand_line: 为探索型发布提供清晰结构。
 home_signals:
   - Hugo
@@ -12,8 +15,4 @@ home_signals:
   - Breadcrumbs
   - PWA
 home_signal_guide_chance: 0
-slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  footer: /fragments/home-footer-shortcuts
 ---

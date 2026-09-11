@@ -1,6 +1,6 @@
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
-import { chromium } from 'playwright';
 
 import {
     createOutputDir,
@@ -10,12 +10,31 @@ import {
     explicitUpgradeToEnv,
     relFromSite,
     resolvePrimaryBuild,
-    resolveUpgradeBuildPair
+    resolveUpgradeBuildPair,
+    siteRoot
 } from './paths.mjs';
 import { writeReportFiles } from './report.mjs';
 import { createStaticSiteServer } from './server.mjs';
 import { recordLayoutShiftObserverScript, recordSecurityPolicyViolationScript } from './helpers.mjs';
 import { scenarios } from './scenarios.mjs';
+
+function loadChromium() {
+    try {
+        const siteRequire = createRequire(path.join(siteRoot, 'package.json'));
+        const playwright = siteRequire('playwright');
+        if (!playwright?.chromium) {
+            throw new Error('Dependency "playwright" does not expose chromium.');
+        }
+        return playwright.chromium;
+    } catch (error) {
+        const detail = error instanceof Error ? ` ${error.message}` : '';
+        throw new Error(
+            `Cannot load "playwright" from the current site (${siteRoot}). Run npm install or bun install there.${detail}`
+        );
+    }
+}
+
+const chromium = loadChromium();
 
 function readScenarioFilter() {
     const raw = process.env.BANYAN_BROWSER_ONLY || '';
@@ -188,6 +207,14 @@ export async function runBrowserRegression(options = {}) {
     const modeName = options.modeName || 'browser';
     const scenarioFilter = options.onlyScenarioIds || readScenarioFilter();
     const scenarioList = Array.isArray(options.scenarios) ? options.scenarios : scenarios;
+    const knownIds = new Set(scenarioList.map(scenario => scenario.id));
+    const unknownIds = scenarioFilter.filter(id => !knownIds.has(id));
+    if (unknownIds.length > 0) {
+        throw new Error(`Unknown browser scenario(s): ${unknownIds.join(', ')}`);
+    }
+    if (scenarioList.length === 0) {
+        throw new Error('Browser regression requires at least one scenario.');
+    }
     const primaryBuild = resolvePrimaryBuild();
     const primaryBuildDir = primaryBuild.dirPath;
     const upgradePair = resolveUpgradeBuildPair();

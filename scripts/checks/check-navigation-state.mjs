@@ -427,20 +427,20 @@ assert.equal(
     'a visible-lineage override should preserve every column slot when no from state exists yet'
 );
 
-window.location.href = 'https://example.test/zh/p/example/?from=intent/decide';
-window.location.search = '?from=intent/decide';
+window.location.href = 'https://example.test/zh/p/example/?from=tags/windows';
+window.location.search = '?from=tags/windows';
 
 assert.deepEqual(
     breadcrumbPath.buildCurrentPathItem(
         {},
         'WSL Toolkit',
         'WSL automation management script',
-        '/zh/p/wsl-automng/?from=intent/decide'
+        '/zh/p/wsl-automng/?from=tags/windows'
     ),
     {
         text: 'WSL Toolkit',
         title: 'WSL automation management script',
-        href: '/zh/p/wsl-automng/?from=intent/decide',
+        href: '/zh/p/wsl-automng/?from=tags/windows',
         current: true,
     },
     'entry preview should keep compact visible text and the full title as separate fields'
@@ -449,7 +449,7 @@ assert.deepEqual(
 const previewColumnCurrentItem = breadcrumbPath.buildCurrentPathItem(
     {
         currentCollectionSource: {
-            logical_path: '/intent/decide/',
+            logical_path: '/tags/windows/',
             provider: 'collection',
             sort_variant: 'tree',
             default_sort: 'date-desc',
@@ -457,7 +457,7 @@ const previewColumnCurrentItem = breadcrumbPath.buildCurrentPathItem(
         currentCollectionItems: collectionItems.decodeItemsPayload({
             ds: 'date-desc',
             f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
-            lp: '/intent/decide/',
+            lp: '/tags/windows/',
             p: 'taxonomy',
             rv: [
                 'wsl-automng', 'page', '/zh/p/wsl-automng/', 'WSL Toolkit', '1', 'WSL Toolkit', '20260624', '1341',
@@ -468,7 +468,7 @@ const previewColumnCurrentItem = breadcrumbPath.buildCurrentPathItem(
     },
     'WSL Toolkit',
     'WSL automation management script',
-    '/zh/p/wsl-automng/?from=intent/decide'
+    '/zh/p/wsl-automng/?from=tags/windows'
 );
 
 assert.equal(
@@ -478,30 +478,30 @@ assert.equal(
 );
 
 const sourcePayload = JSON.stringify([{
-    logical_path: '/intent/decide/',
+    logical_path: '/tags/windows/',
     provider: 'collection',
     root_item: {
-        href: '/zh/intent/',
-        text: 'Intent',
-        title: 'Reader Intent'
+        href: '/zh/tags/',
+        text: 'Tags',
+        title: 'Article topics'
     },
     tail_items: [{
-        href: '/zh/intent/decide/',
-        text: 'Decide',
-        title: 'Decision Support'
+        href: '/zh/tags/windows/',
+        text: 'Windows',
+        title: 'Windows development'
     }],
     current_collection_source: {
-        logical_path: '/intent/decide/',
+        logical_path: '/tags/windows/',
         provider: 'collection',
         sort_variant: 'tree',
         default_sort: 'date-desc',
-        label: 'Decide',
-        href: '/zh/intent/decide/'
+        label: 'Windows',
+        href: '/zh/tags/windows/'
     },
     current_collection_items: {
         ds: 'date-desc',
         f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
-        lp: '/intent/decide/',
+        lp: '/tags/windows/',
         p: 'taxonomy',
         rv: [
             'xvenv', 'page', '/zh/p/xvenv/', 'Xvenv', '1', 'Xvenv', '20260626', '6402',
@@ -512,17 +512,17 @@ const sourcePayload = JSON.stringify([{
     },
     levels: [{
         item: {
-            href: '/zh/intent/decide/',
-            text: 'Decide',
-            title: 'Decision Support'
+            href: '/zh/tags/windows/',
+            text: 'Windows',
+            title: 'Windows development'
         },
         collection_source: {
-            logical_path: '/intent/',
+            logical_path: '/tags/',
             provider: 'collection',
             sort_variant: 'tree',
             default_sort: 'date-desc',
-            label: 'Intent',
-            href: '/zh/intent/'
+            label: 'Tags',
+            href: '/zh/tags/'
         }
     }]
 }]);
@@ -536,16 +536,16 @@ assert.deepEqual(
         termTitle: sources[0]?.tailItems?.[0]?.title,
     },
     {
-        rootText: 'Intent',
-        rootTitle: 'Reader Intent',
-        termText: 'Decide',
-        termTitle: 'Decision Support',
+        rootText: 'Tags',
+        rootTitle: 'Article topics',
+        termText: 'Windows',
+        termTitle: 'Windows development',
     },
     'taxonomy root and term navigation should preserve compact text separately from full semantic titles'
 );
 
 assert.deepEqual(
-    breadcrumbSource.parseEntrySelection(sources, '/intent/decide/'),
+    breadcrumbSource.parseEntrySelection(sources, '/tags/windows/'),
     {
         source: sources[0],
     },
@@ -553,12 +553,12 @@ assert.deepEqual(
 );
 
 assert.equal(
-    breadcrumbSource.parseEntrySelection(sources, '/intent/decide/wsl-automng/'),
+    breadcrumbSource.parseEntrySelection(sources, '/tags/windows/wsl-automng/'),
     null,
     'from values with an entry key tail should not be treated as valid navigation state'
 );
 
-for (const invalidFrom of ['/intent/', '/intent/unknown/', '/tags/decide/', '']) {
+for (const invalidFrom of ['/tags/', '/tags/unknown/', '/products/windows/', '']) {
     assert.equal(
         breadcrumbSource.parseEntrySelection(sources, invalidFrom),
         null,
@@ -570,30 +570,30 @@ const collectionSourceIndex = breadcrumbSource.parseCollectionSourceIndex(source
 assert.deepEqual(
     breadcrumbSource.pickCollectionSourceByHref(
         collectionSourceIndex,
-        'https://example.test/zh/intent/?sort=date-asc#menu'
+        'https://example.test/zh/tags/?sort=date-asc#menu'
     ),
     {
-        logicalPath: '/intent/',
+        logicalPath: '/tags/',
         provider: 'collection',
         sortVariant: 'tree',
         defaultSort: 'date-desc',
-        label: 'Intent',
-        href: '/zh/intent/',
+        label: 'Tags',
+        href: '/zh/tags/',
     },
     'collection href lookup should resolve ancestor metadata from the current page source registry'
 );
 assert.deepEqual(
     breadcrumbSource.pickCollectionSourceByHref(
         collectionSourceIndex,
-        '/zh/intent/decide'
+        '/zh/tags/windows'
     ),
     {
-        logicalPath: '/intent/decide/',
+        logicalPath: '/tags/windows/',
         provider: 'collection',
         sortVariant: 'tree',
         defaultSort: 'date-desc',
-        label: 'Decide',
-        href: '/zh/intent/decide/',
+        label: 'Windows',
+        href: '/zh/tags/windows/',
     },
     'collection href lookup should normalize trailing slashes and resolve the current collection'
 );
@@ -612,7 +612,7 @@ assert.equal(
             text: 'WSL管理脚本',
         },
         {
-            logicalPath: '/intent/decide/',
+            logicalPath: '/tags/windows/',
             provider: 'collection',
         },
         {
@@ -622,7 +622,7 @@ assert.equal(
             defaultSortsTokens: ['date-desc', 'date-desc'],
         }
     ),
-    '/zh/p/wsl-automng/?from=intent/decide',
+    '/zh/p/wsl-automng/?from=tags/windows',
     'entry hrefs should write collection-only from values'
 );
 

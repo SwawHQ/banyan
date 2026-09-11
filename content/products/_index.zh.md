@@ -1,6 +1,6 @@
 ---
 root_nav: true
-title: 产品－分类
+title: 产品 - 分类
 description: 按价格或来源浏览产品。
 linkTitle: 产品 - 分类
 weight: 40

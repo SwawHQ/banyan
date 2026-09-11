@@ -1,179 +1,153 @@
 # Banyan Taxonomies
 
-## 默认推荐
+## 默认模型
 
-Banyan 默认推荐的 taxonomy 心智模型是：
+Banyan 推荐用两层结构组织内容：
 
 - 目录树 / section：主结构，回答“它放在哪一枝上”
-- `intent`：主意图，回答“作者为什么写这篇，希望它对读者起什么作用”
-- `tags`：辅关键词，回答“它还涉及哪些主题点”
+- `tags`：主题分类，回答“它涉及哪些领域”
 
-对应的站点根配置建议为：
+站点根配置：
 
 ```toml
 [taxonomies]
-intent = "intent"
 tag = "tags"
 ```
 
-Banyan 现在不再提供 taxonomy 命名或渲染配置的通用兜底。
+一篇文章可以属于多条独立路径：
 
-也就是说，`intent`、`tags`、`udc` 等 taxonomy 的命名和渲染行为都必须由各自的 root bundle 明确声明。
+```yaml
+tags:
+  - ai
+  - tooling/devtools/windows
+```
 
-因此，Banyan 推荐使用 taxonomy 对应的 branch bundle 页面做“就地定义”：
+Hugo 原生把每个 taxonomy term 当成独立字符串。Banyan 约定用 `/` 表达路径，并在界面中把这些字符串渲染成树。
 
-- `content/<plural>/_index.<lang>.md`：定义 taxonomy 根页的标题、正文、页面资源，以及可选的 Banyan 渲染参数
-- `content/<plural>/<term>/_index.<lang>.md`：定义 term 页的标题、正文、页面资源
+## 就地定义
 
-注意：
+Banyan 不提供 taxonomy 名称或渲染配置的通用兜底。每个 taxonomy 由站点自己的 branch bundle 定义：
 
-- taxonomy 是否存在，仍然必须先在站点根 `hugo.toml` 的 `[taxonomies]` 中声明
-- 仅创建 `content/<plural>/` 不会自动创建 taxonomy；若未声明，它只会变成普通 section
-- taxonomy 根 bundle 与 term bundle 都必须提供非空 `title`；它承担完整语义标题，并用于 metadata、schema 与 tooltip
-- `linkTitle` 是可选的短标签，只用于导航、breadcrumb、列表和文章页 taxonomy label；未填写时回退到 `title`
-- taxonomy 不再读取 `[banyan_taxonomy].label`、`[banyan_taxonomy].home_label`
-- taxonomy 根 bundle 必须提供 `[banyan_taxonomy]`，并显式填写 `mode`、`article_weight`、`normalize`、`article_mode`
-- 第一列是否显示由根页面的 `root_nav` 决定，顺序来自页面 `weight`；taxonomy 配置不再承担首页入口职责
+- `content/<plural>/_index.<lang>.md`：定义 taxonomy 根页及 Banyan 渲染参数
+- `content/<plural>/<term>/_index.<lang>.md`：定义 term 页的标题、正文和页面资源
 
-## Intent 是什么
+taxonomy 必须先在站点根 `hugo.toml` 的 `[taxonomies]` 中声明。仅创建同名内容目录只会得到普通 section。
 
-`intent` 不是主题词，不是目录分类，也不是“这篇关于什么”。
+根 bundle 契约：
 
-它描述的是：
+- 必须提供非空 `title`
+- 可选 `linkTitle` 作为导航、breadcrumb、列表和文章元信息中的短名称；未填写时回退到 `title`
+- 必须提供 `[banyan_taxonomy]`
+- 必须显式填写 `mode`、`article_weight`、`normalize`、`article_mode`
+- 第一列是否显示来自页面的 `root_nav`，顺序来自页面 `weight`
 
-- 作者为什么写这篇
-- 作者希望读者通过这篇完成什么认知动作
-- 这篇内容希望对读者起什么作用
-
-一个简单判断法：
-
-- 能回答“这篇是关于什么的” => 放目录树或 `tags`
-- 能回答“作者写它是为了让读者完成什么动作” => 放 `intent`
-
-## 使用规则
-
-- 每篇默认只放 `1` 个 `intent`
-- 特殊情况最多 `2` 个；超过后通常说明 taxonomy 边界开始漂移
-- 不要把主题词、对象词、栏目词塞进 `intent`
-- `intent` 建议使用稳定 slug，展示名称若需本地化，可通过 term page 自定义
-
-## 推荐 Intent 选项
-
-推荐先从一套小而稳的集合开始，不要一开始铺太多：
-
-| slug | 中文含义 | 适合场景 |
-| --- | --- | --- |
-| `start` | 入门 | 帮读者快速建立第一层认知，降低开始门槛 |
-| `decide` | 决策 | 帮读者比较、权衡、做选择 |
-| `reference` | 备查 | 提供稳定资料，方便未来回查 |
-| `avoid` | 避坑 | 提醒风险、反模式、常见误区 |
-| `explore` | 了解 / 探索 | 用于开放式了解、扫盲、勘察问题空间 |
-| `announce` | 动态 / 通知 | 用于发布变更、进展、状态更新 |
-
-推荐扩展项：
-
-| slug | 中文含义 | 适合场景 |
-| --- | --- | --- |
-| `record` | 记录 | 留档、复盘、过程沉淀 |
-| `opinion` | 观点 | 明确表达判断、立场、主张 |
-
-## Front Matter 示例
+示例：
 
 ```yaml
 ---
-title: "A page"
-intent:
-  - reference
-tags:
-  - taxonomy
-  - taxonomy/intent
+title: "Content - Categories"
+linkTitle: "Content - Categories"
+root_nav: true
+
+banyan_taxonomy:
+  mode: tree
+  article_weight: 30
+  normalize: lower
+  article_mode: leaf_paths
+  term_rel: tag
+  unassigned_term: untagged
+  unassigned_label: --untagged--
 ---
 ```
 
-taxonomy 根 bundle 可以这样写：
+## 树形路径与文章归属
 
-```toml
-+++
-title = "Reader Intent"
-linkTitle = "Intent"
+`mode: tree` 把 `/` 分隔的 term 作为路径渲染。若文章声明：
 
-[banyan_taxonomy]
-mode = "flat"
-article_weight = 20
-normalize = "lower"
-article_mode = "all"
-+++
+```yaml
+tags:
+  - tooling/devtools/windows
 ```
 
-term bundle 使用同一契约，例如 `content/intent/reference/_index.<lang>.md`：
+则 `tooling`、`tooling/devtools` 和 `tooling/devtools/windows` 都需要对应语言的 term bundle。文章归在最深的 `windows` 节点，祖先节点通过子树汇总仍可找到它。
 
-```toml
-+++
-title = "Reference and Future Lookup"
-linkTitle = "Reference"
-+++
+当一篇文章声明多条路径时，Banyan 保留每条互不包含的叶子路径，只省略已被后代覆盖的祖先：
+
+```yaml
+tags:
+  - tooling
+  - tooling/devtools/windows
+  - tooling/servers/linux
+  - ai
 ```
 
-其中 `title` 必填；只有在完整标题不适合紧凑界面时，才需要额外填写 `linkTitle`。
+文章元信息为 `tooling/devtools/windows`、`tooling/servers/linux` 和 `ai` 各生成一行，并在每行显示从 taxonomy 根到终点的完整可点击路径；行首 taxonomy 名称链接到 taxonomy 根页。显式填写的 `tooling` 被第一条更深路径覆盖，因此不单独生成终点行；它仍作为两条完整路径中的祖先节点显示。两个兄弟分支都保留。分类页使用同一条叶子规则决定文章的直接归属。
 
-## Site Bundles
+`article_mode` 支持：
 
-Banyan intentionally does not keep `content/intent` or `content/tags` under
-theme live content. Taxonomy root bundles are site information architecture:
-they decide which taxonomy names exist, how those taxonomies render, and which
-terms deserve their own pages. Use the root-bundle contract above as the source
-of truth when creating them.
+- `all`：每个声明值生成一条文章元信息行
+- `leaf_paths`：树形 taxonomy 中每个叶子生成一行完整路径，省略已被后代覆盖的祖先终点行
+- `none`：不在文章元信息中显示该 taxonomy
 
-For a real site, copy only the plural bundle you declared in the site root
-`hugo.toml`:
+## 渲染参数
+
+`mode` 支持：
+
+- `flat`：把所有 term 作为同一层展示
+- `tree`：按 `/` 路径展示层级
+
+`normalize` 支持：
+
+- `identity`：保留原值比较
+- `lower`：用小写值比较路径
+
+可选参数：
+
+- `term_rel`：文章 term 链接的 `rel` 值
+- `require_term_bundles`：是否要求每个 term 和树形祖先都存在显式 bundle，默认为 `true`
+- `unassigned_term`：没有填写该 taxonomy 的文章所进入的虚拟 term
+- `unassigned_label`：未分类 term 的显示名称
+
+`[banyan_taxonomy].label` 与 `home_label` 已移除；完整名称来自 `title`，短名称来自 `linkTitle`。
+
+## Term bundle
+
+例如 `content/tags/tooling/devtools/_index.zh.md`：
+
+```yaml
+---
+title: "开发工具"
+description: "浏览提升开发、调试、部署与维护效率的工具和实战指南。"
+---
+```
+
+`title` 必填。只有完整标题不适合紧凑界面时才需要额外填写 `linkTitle`。
+
+## 自定义 taxonomy
+
+其他 taxonomy 使用同一契约。先在站点根配置注册，再建立对应的 root bundle。例如：
 
 ```toml
 [taxonomies]
-intent = "intent"
 tag = "tags"
+author = "authors"
 ```
 
-Then place the copied bundles in the site root:
+```yaml
+---
+title: "Authors"
 
-```text
-content/intent/_index.md
-content/intent/_index.zh.md
-content/intent/_index.zh-tw.md
-content/tags/_index.md
-content/tags/_index.zh.md
-content/tags/_index.zh-tw.md
+banyan_taxonomy:
+  mode: flat
+  article_weight: 40
+  normalize: lower
+  article_mode: all
+---
 ```
 
-Do not copy taxonomy bundles into `themes/banyan/content/` unless you are
-intentionally changing theme live content. If a taxonomy is not declared in the
-site root, a same-named content directory is just a normal section and may create
-unexpected routes.
+新增 taxonomy 的顺序是：
 
-## 自定义其他 Taxonomy
-
-若需要 `udc`、`categories`、`authors` 等其他 taxonomy，先在站点根 `hugo.toml` 的 `[taxonomies]` 中声明，再创建对应的 `content/<plural>/_index.<lang>.md` root bundle。
-
-例如显式定义一个树状 `udc`：
-
-```toml
-+++
-title = "UDC"
-
-[banyan_taxonomy]
-mode = "tree"
-article_weight = 40
-normalize = "lower"
-article_mode = "deepest_by_root"
-+++
-```
-
-这样 `udc` 仍然可用，而且它的标题契约和渲染参数都只来自自己的 root bundle。
-
-## 推荐工作流
-
-当你要新增一个 taxonomy 时，推荐顺序是：
-
-1. 在站点根 `hugo.toml` 的 `[taxonomies]` 中声明它
-2. 按本文的 taxonomy 根 bundle 示例，在站点中建立 `content/<plural>/_index.<lang>.md`
-3. 在 bundle 的 `_index.<lang>.md` 里调整标题、正文、`[banyan_taxonomy]`
-4. 如果 term 也需要说明文字、图标、局部 CSS/JS，再继续创建 `content/<plural>/<term>/_index.<lang>.md`
+1. 在站点根 `[taxonomies]` 中声明单数键和复数值。
+2. 创建 `content/<plural>/_index.<lang>.md` 并填写完整根 bundle 契约。
+3. 为内容使用的 term 创建对应语言的 bundle；树形 taxonomy 还要创建每层祖先。
+4. 需要说明文字、图标或局部资源时，再放入对应 term bundle。

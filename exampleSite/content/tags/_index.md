@@ -1,32 +1,26 @@
 ---
-title: Tags
-nav_primary: signals
-layout: article-list
+root_nav: true
+title: Content - Categories
+linkTitle: Content - Categories
+weight: 20
+browser_title: Content Topics in the Banyan Example Site
+description: Browse example content by topic.
+layout: page-collection
+list: directory
 slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  breadcrumb_root: /fragments/breadcrumb-model-signals
   breadcrumb: true
 cascade:
-  - _target:
+  - target:
       kind: term
-    nav_primary: signals
-    layout: article-list
+    layout: page-collection
     slots:
-      primary_nav: /fragments/nav-primary-links
-      utilities: /fragments/nav-utilities
-      breadcrumb_root: /fragments/breadcrumb-model-signals
       breadcrumb: true
 banyan_taxonomy:
   mode: tree
-  show_in_home: true
-  home_weight: 30
   article_weight: 30
   normalize: lower
-  article_mode: deepest_by_root
+  article_mode: leaf_paths
   term_rel: tag
   unassigned_term: untagged
   unassigned_label: --untagged--
 ---
-
-{{< taxonomy-list >}}

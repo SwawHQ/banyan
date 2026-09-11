@@ -1,5 +1,6 @@
 ---
 title: "Changelog"
+description: "Inspect the current Banyan build, source revision, and release-note status."
 slug: "changelog"
 url: changelog/
 weight: 20

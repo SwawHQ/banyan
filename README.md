@@ -58,11 +58,15 @@ status = 301
 ## Example Site
 
 `themes/banyan/exampleSite` is a minimal consumer site used to verify that the
-theme can run outside swaw.com content. From the repository root, you can build
-it with:
+theme can run outside swaw.com content. Install and run it as an independent
+consumer site:
 
 ```bash
-hugo --source themes/banyan/exampleSite --gc --cleanDestinationDir --minify
+cd themes/banyan/exampleSite
+npm install
+npm run build
+npm run check:public:prod
+npm run check:browser:public
 ```
 
 The example site deliberately avoids product, legal, or brand-specific content.
@@ -76,7 +80,7 @@ not as a place to store theme internals.
 - Default SSR list pages with client-side sorting via URL params
 - Optional recursive `all/` list views for home and sections
 - Minimalist CSS architecture
-- Content-driven taxonomy bundles: recommended `intent` + hierarchical `tags`, with rendering defined in each taxonomy root bundle
+- Content-driven taxonomy bundles, with hierarchical `tags` recommended by default and rendering defined in each taxonomy root bundle
 
 ## Agent Access
 
@@ -187,18 +191,17 @@ Banyan keeps root favicon files and PWA resources on separate paths:
 ## Taxonomies
 
 Declare taxonomies in your site's root `hugo.toml` under `[taxonomies]`.
-Banyan's recommended default is `intent + tags`:
+Banyan's recommended default is hierarchical `tags`:
 
 Example:
 
 ```toml
 [taxonomies]
-intent = "intent"
 tag = "tags"
 ```
 
-`intent` describes why the author wrote the page or what cognitive action it
-should trigger for the reader. `tags` remain supplemental topic keywords.
+`tags` classify pages by topic. One page may belong to multiple independent
+paths such as `ai` and `tooling/devtools/windows`.
 
 Each taxonomy must provide an explicit root bundle at
 `content/<plural>/_index.<lang>.md` and define Banyan rendering metadata in
@@ -215,7 +218,7 @@ linkTitle = "UDC"
 mode = "tree"
 article_weight = 40
 normalize = "lower"
-article_mode = "deepest_by_root"
+article_mode = "leaf_paths"
 +++
 ```
 
@@ -229,31 +232,7 @@ Notes:
 - Required `[banyan_taxonomy]` keys are: `mode`, `article_weight`, `normalize`, and `article_mode`.
 - Attach taxonomy metadata and resources with `content/<plural>/_index.<lang>.md`; terms used by content require matching bundles such as `content/<plural>/<term>/_index.<lang>.md`.
 - Follow the current bundle contract in [docs/taxonomies.md](docs/taxonomies.md); avoid treating `themes/banyan/content/` as a template warehouse, because theme content participates in the live build.
-- See [docs/taxonomies.md](docs/taxonomies.md) for intent guidance and the recommended term set.
+- See [docs/taxonomies.md](docs/taxonomies.md) for hierarchical tags and multi-path behavior.
 
 ## License
 MIT
-
-
-
-
-
-`public/_headers` / `public/edgeone.json` 由主题默认缓存策略和站点
-`data/cache-policy.toml`（若存在）共同驱动；站点 `data/redirects.toml`
-会同时生成 Cloudflare Pages 的 `public/_redirects` 和 EdgeOne 的
-`redirects` 配置。腾讯 EdgeOne 可能需要将 `public/edgeone.json` 同步到
-项目根目录。
-
-
-
-
-
-### hugo 基本命令
-a 开发，动态构建并指定端口：
-    hugo server  -D --port 13241
-b 开发，指定地址和访问地址：
-    hugo server  -D --bind 0.0.0.0 --port 5120 --baseURL "http://120.233.73.242:5120/"  --appendPort=false --printPathWarnings
-c 编译生产版：
-    hugo --gc --cleanDestinationDir --minify
-d 使用banyan 模板（archetypes 目录下的）创建文章
-    hugo new -k banyan content/blog/2026-03-06-asdf.md

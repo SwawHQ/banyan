@@ -11,46 +11,73 @@
   {{ $label := partial "feature-browse/taxonomy/root-label.html" (dict "ctx" $page "spec" $spec) }}
   {{ $taxonomyPage := index $spec "page" }}
   {{ $labelTitle := $taxonomyPage.Title }}
+  {{ $taxonomyHref := $taxonomyPage.RelPermalink }}
   {{ $articleMode := printf "%v" (index $spec "article_mode") }}
   {{ if eq $articleMode "none" }}
     {{ continue }}
   {{ end }}
 
-<nav class="document-meta__row document-meta__row--{{ $plural }}" aria-label="{{ $labelTitle }}">
-  <span class="document-meta__label" title="{{ $labelTitle }}">{{ $label }}</span>
-  {{ if and (eq (index $spec "mode") "tree") (eq $articleMode "deepest_by_root") }}
-    {{ $separator := printf "%v" (index $spec "separator" | default "/") }}
-    {{ $deepestByRoot := dict }}
-    {{ $rootOrder := slice }}
-    {{ range $value := $values }}
-      {{ $term := printf "%v" $value }}
-      {{ $root := index (split $term $separator) 0 }}
-      {{ if not (in $rootOrder $root) }}
-        {{ $rootOrder = $rootOrder | append $root }}
-      {{ end }}
-      {{ $current := index $deepestByRoot $root | default "" }}
-      {{ $currentDepth := len (cond (ne $current "") (split $current $separator) (slice)) }}
-      {{ $newDepth := len (split $term $separator) }}
-      {{ if or (eq $current "") (gt $newDepth $currentDepth) }}
-        {{ $deepestByRoot = merge $deepestByRoot (dict $root $term) }}
-      {{ end }}
+  {{ $separator := printf "%v" (index $spec "separator" | default "/") }}
+  {{ $declaredTerms := slice }}
+  {{ $seen := dict }}
+  {{ range $value := $values }}
+    {{ $term := printf "%v" $value }}
+    {{ $termNorm := partial "feature-browse/taxonomy/normalize-value.html" (dict "spec" $spec "value" $term) }}
+    {{ if eq $termNorm "" }}
+      {{ continue }}
     {{ end }}
-    {{ range $root := $rootOrder }}
-      {{ $term := index $deepestByRoot $root }}
-      {{ $display := partial "feature-browse/taxonomy/value-label.html" (dict "ctx" $page "spec" $spec "value" $term) }}
-      {{ $fullTitle := $display }}
-      {{ $termPage := partial "feature-browse/taxonomy/term-page.html" (dict "ctx" $page "spec" $spec "plural" $plural "value" $term) }}
-      {{ with $termPage }}
-        {{ $fullTitle = .Title }}
-      {{ end }}
-{{ partial "system-ui/link.html" (dict "href" (partial "feature-browse/taxonomy/url.html" (dict "ctx" $page "spec" $spec "value" $term)) "rel" (index $spec "term_rel") "text" $display "title" $fullTitle "prefetchSlot" "nav") }}
+    {{ if isset $seen $termNorm }}
+      {{ continue }}
     {{ end }}
-  {{ else }}
-    {{ with $page.GetTerms $plural }}
-      {{ range . }}
-{{ partial "system-ui/link.html" (dict "href" .RelPermalink "rel" (index $spec "term_rel") "text" (.LinkTitle | default .Title) "title" .Title "prefetchSlot" "nav") }}
+    {{ $seen = merge $seen (dict $termNorm true) }}
+    {{ $declaredTerms = $declaredTerms | append $term }}
+  {{ end }}
+
+  {{ $visibleTerms := $declaredTerms }}
+  {{ if and (eq (index $spec "mode") "tree") (eq $articleMode "leaf_paths") }}
+    {{ $visibleTerms = slice }}
+    {{ range $term := $declaredTerms }}
+      {{ $termNorm := partial "feature-browse/taxonomy/normalize-value.html" (dict "spec" $spec "value" $term) }}
+      {{ $hasDescendant := false }}
+      {{ range $otherTerm := $declaredTerms }}
+        {{ $otherNorm := partial "feature-browse/taxonomy/normalize-value.html" (dict "spec" $spec "value" $otherTerm) }}
+        {{ if hasPrefix $otherNorm (printf "%s%s" $termNorm $separator) }}
+          {{ $hasDescendant = true }}
+        {{ end }}
+      {{ end }}
+      {{ if not $hasDescendant }}
+        {{ $visibleTerms = $visibleTerms | append $term }}
       {{ end }}
     {{ end }}
   {{ end }}
+
+  {{ range $term := $visibleTerms }}
+    {{ $pathValues := slice $term }}
+    {{ if eq (index $spec "mode") "tree" }}
+      {{ $pathValues = slice }}
+      {{ $pathParts := slice }}
+      {{ range $part := split $term $separator }}
+        {{ $pathParts = $pathParts | append $part }}
+        {{ $pathValues = $pathValues | append (delimit $pathParts $separator) }}
+      {{ end }}
+    {{ end }}
+    {{ $leafDisplay := partial "feature-browse/taxonomy/value-label.html" (dict "ctx" $page "spec" $spec "value" $term) }}
+    {{ $leafTitle := $leafDisplay }}
+    {{ with partial "feature-browse/taxonomy/term-page.html" (dict "ctx" $page "spec" $spec "plural" $plural "value" $term) }}
+      {{ $leafTitle = .Title }}
+    {{ end }}
+
+<nav class="document-meta__row document-meta__row--{{ $plural }} document-meta__row--taxonomy-path" aria-label="{{ printf "%s: %s" $labelTitle $leafTitle }}" data-taxonomy-path="{{ $term }}">
+{{ partial "system-ui/link.html" (dict "href" $taxonomyHref "text" $label "class" "document-meta__label" "title" $labelTitle "prefetchSlot" "nav") }}
+    {{ range $pathValue := $pathValues }}
+      {{ $display := partial "feature-browse/taxonomy/value-label.html" (dict "ctx" $page "spec" $spec "value" $pathValue) }}
+      {{ $fullTitle := $display }}
+      {{ with partial "feature-browse/taxonomy/term-page.html" (dict "ctx" $page "spec" $spec "plural" $plural "value" $pathValue) }}
+        {{ $fullTitle = .Title }}
+      {{ end }}
+  <span class="document-meta__separator" aria-hidden="true">/</span>
+{{ partial "system-ui/link.html" (dict "href" (partial "feature-browse/taxonomy/url.html" (dict "ctx" $page "spec" $spec "value" $pathValue)) "rel" (index $spec "term_rel") "text" $display "title" $fullTitle "prefetchSlot" "nav") }}
+    {{ end }}
 </nav>
+  {{ end }}
 {{ end }}

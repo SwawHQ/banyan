@@ -61,8 +61,8 @@ Extract into starter/template:
 - Root `hugo.toml` structural config: `[outputs]`, `[taxonomies]`, `[markup]`,
   `[languages]`, and `[permalinks]`.
 - Root `package.json` script shape for a consumer site.
-- Root taxonomy root-bundle shape from `content/intent/_index.*.md` and
-  `content/tags/_index.*.md`, including page `weight` for root-entry ordering.
+- Root taxonomy root-bundle shape from `content/tags/_index.*.md`, including
+  page `weight` for root-entry ordering.
 
 Keep as site-owned:
 
@@ -142,6 +142,9 @@ Acceptance:
 
 Purpose: provide a minimal, runnable consumer site that demonstrates Banyan
 without carrying swaw.com identity.
+
+Status: completed. The example site now uses the current page layouts, slots,
+taxonomy bundle contract, hierarchical tags, and smoke-test scenario names.
 
 Required files:
 

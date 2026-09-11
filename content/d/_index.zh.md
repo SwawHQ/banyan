@@ -1,9 +1,9 @@
 ﻿---
-title: 文库
+title: 内容
 linkTitle: 目录
 weight: 10
-browser_title: "技术文库与实战指南"
-description: "按主题与栏目浏览已发布文章和实战指南。"
+browser_title: "技术内容与实用资源"
+description: "按主题与栏目浏览内容，包括文章、实战指南与产品页面。"
 layout: "page-collection"
 list: directory
 slots:

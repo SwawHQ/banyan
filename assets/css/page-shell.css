@@ -5,6 +5,7 @@
     --navigation-column-inline: 15rem;
     --page-shell-gap-inline: 1rem;
     --main-column-inline: min(88ch, 100cqi);
+    --document-start-offset: 52px;
 }
 
 html {
@@ -34,6 +35,7 @@ body {
 .page-rail,
 .page-stage,
 .page-content,
+.document-aside,
 .slot {
     min-width: 0;
     min-block-size: 0;
@@ -51,6 +53,11 @@ body {
 }
 
 .page-stage {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    column-gap: var(--page-shell-gap-inline);
+    align-items: start;
     block-size: 100%;
 }
 
@@ -61,6 +68,7 @@ body {
 
 .page-rail,
 .page-content,
+.document-aside,
 .path-column {
     box-sizing: border-box;
     max-block-size: 100%;
@@ -75,9 +83,15 @@ body {
     padding-block-end: var(--page-edge-block-end);
 }
 
-.slot-main,
-.slot-meta {
+.slot-main {
     inline-size: var(--main-column-inline);
+}
+
+.document-aside {
+    inline-size: var(--navigation-column-inline);
+    block-size: 100%;
+    padding-block: var(--document-start-offset) var(--page-edge-block-end);
+    overflow-wrap: anywhere;
 }
 
 @media (hover: hover) and (pointer: fine) and (forced-colors: none) {
@@ -102,10 +116,6 @@ body {
     min-inline-size: var(--main-column-inline);
 }
 
-.slot-meta {
-    padding-block-start: 0.9rem;
-}
-
 .article {
     box-sizing: border-box;
     inline-size: 100%;
@@ -121,9 +131,19 @@ body {
     .page-stage,
     .page-rail,
     .page-content,
+    .document-aside,
     .path-column {
         block-size: auto;
         max-block-size: none;
         overflow: visible;
+    }
+
+    .page-stage {
+        display: block;
+    }
+
+    .document-aside {
+        inline-size: var(--main-column-inline);
+        padding-block: 1rem 0;
     }
 }

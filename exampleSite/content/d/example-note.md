@@ -1,30 +1,22 @@
 ---
-title: "Example Note"
+title: "A Predictable Content Model"
+linkTitle: "Content Model"
 date: "2026-01-01T00:00:00+08:00"
 draft: false
 slug: "example-note"
-nav_primary: signals
-type: "post"
-layout: "article-page"
-intent:
-  - explore
+description: "A small article demonstrating Banyan's article, taxonomy, metadata, and breadcrumb contracts."
 tags:
-  - examples
-slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  breadcrumb_root: /fragments/breadcrumb-model-signals
-  breadcrumb: true
-  meta: true
+  - ai
+  - tooling/devtools
 ---
 
-# Example Note
+This page is intentionally small. It proves that article rendering, metadata,
+taxonomy links, and breadcrumb navigation work in a clean consumer site.
 
-This page is intentionally small. It exists to prove the article layout,
-breadcrumbs, taxonomy links, and default navigation work in a clean consumer
-site.
+## Structure Before Decoration
 
-## A Short Section
+Banyan derives navigation from real pages and taxonomies. A page declares what
+it is, while the theme owns how that structure is presented.
 
-Banyan favors content-driven structure. The site root declares taxonomies, and
-taxonomy root bundles define how those taxonomies should render.
+The article belongs to two independent tag paths. This demonstrates that one
+page can appear under both AI and developer tooling without duplicating content.
