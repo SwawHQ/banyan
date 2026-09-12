@@ -6,9 +6,45 @@ directory.
 
 ## Theme colors
 
-`css/theme.css` owns color roles and their light/dark defaults, including aliases
-and mixing formulas. Component CSS and the icon library consume those roles;
+The selected palette owns color roles and their light/dark defaults, including
+aliases and mixing formulas. Component CSS and the icon library consume those roles;
 layout, animation, opacity, and interaction selectors stay with their components.
+
+### Select a palette
+
+The theme defaults to `css/theme.css`. To use the built-in black/white/grayscale
+palette, add this to the consuming site's `hugo.toml`:
+
+```toml
+[params.appearance]
+palette = "css/theme-monochrome.css"
+```
+
+The path is relative to Hugo's `assets/` filesystem. A site can also select its
+own complete palette, such as `assets/css/theme-custom.css`, by configuring
+`palette = "css/theme-custom.css"`. Native same-path site overrides still apply.
+A missing file, an empty/non-string setting, or a non-CSS resource fails the
+build with an explicit configuration error.
+
+Exactly one palette joins the existing CSS bundle; it replaces the default
+palette rather than adding an override layer. Rebuild and deploy after changing
+the setting. The appearance page still selects system/light/dark mode within
+that palette. The monochrome palette covers UI, syntax, and homepage diagram
+colors; it does not recolor article images or image-based brand assets.
+
+The monochrome palette uses `#FBFBFB` / `#000000` page backgrounds and softened
+`#363636` / `#C6C6C6` body text. Borders and surface fills stay subdued so dense
+articles have fewer competing edges; table text retains the body foreground.
+Syntax colors use a narrow grayscale range, with comments and line numbers
+checked on both ordinary and highlighted code lines. Contrast checks protect
+legibility; they do not measure reading comfort.
+
+Both built-in files implement the same scoped role declarations. When adding a
+role, update both files and any site-owned copies. Run
+`node themes/banyan/scripts/checks/check-palettes.mjs` from the consuming site to
+check configuration handling, both palettes, and native asset overrides.
+
+### Color roles
 
 | Scope | Color roles |
 | --- | --- |

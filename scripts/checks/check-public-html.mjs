@@ -262,7 +262,8 @@ function hasClassToken(text, token) {
 function normalizeCssAssetFamilyKey(relativePath) {
     return `${relativePath ?? ''}`
         .replace(/\.([0-9a-f]{16,})(?=\.css$)/i, '')
-        .replace(/\.min(?=\.css$)/i, '');
+        .replace(/\.min(?=\.css$)/i, '')
+        .replace(/^\/css\/page\.[0-9a-f]{32}\.css$/i, '/css/page.css');
 }
 
 function inspectBreadcrumbPrefetchContract(text) {
@@ -979,8 +980,11 @@ function inspectStylesheetContract(rows, cssAssetsByPath) {
         issues.push(`CSS assets must be referenced by rendered HTML; found orphan assets: ${orphanStylesheetAssets.join(', ')}.`);
     }
 
-    if (pageStyleRefs.size !== 1) {
-        issues.push(`All rendered pages must share one page.css URL; found ${[...pageStyleRefs].join(', ') || '<none>'}.`);
+    // Each configured palette has its own Concat target and one content fingerprint.
+    const pagePaletteTargets = new Set([...pageStyleRefs].map(ref =>
+        ref.replace(/\.(?:min\.)?[0-9a-f]{16,}\.css$/i, '.css')));
+    if (pageStyleRefs.size === 0 || pagePaletteTargets.size !== pageStyleRefs.size) {
+        issues.push(`Rendered pages must share one page.css URL per palette; found ${[...pageStyleRefs].join(', ') || '<none>'}.`);
     }
     if (proseStyleRefs.size !== 1) {
         issues.push(`All prose pages must share one prose.css URL; found ${[...proseStyleRefs].join(', ') || '<none>'}.`);

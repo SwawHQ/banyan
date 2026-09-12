@@ -48,6 +48,11 @@ baseName = "llms"
 isPlainText = true
 notAlternative = true
 
+[params.appearance]
+# Complete color-role file, relative to assets/. Select at build time.
+# Built-in alternative: "css/theme-monochrome.css" (both light and dark modes).
+palette = "css/theme.css"
+
 [params.agent_access]
 # Banyan defaults to open discovery and model access. Publishers who need a
 # different consent policy should override these values in their site config.
