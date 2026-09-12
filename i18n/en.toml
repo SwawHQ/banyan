@@ -82,3 +82,5 @@ other = "Try other language versions:"
 other = 'Document information'
 [document_chapters]
 other = 'On this page'
+[document_aside_toggle]
+other = 'Contents & info'

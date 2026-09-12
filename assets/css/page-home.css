@@ -4,17 +4,10 @@
 }
 
 .page-home {
-    --page-home-anchor-color: var(--muted);
-    --page-home-horizon-color: currentColor;
-    --page-home-signal-color: color-mix(in srgb, #5F759E 84%, var(--fg));
     --page-home-signal-peak-opacity: 0.9;
     --page-home-signal-guide-opacity: 0.45;
     --page-home-signal-primary-peak-opacity: 0.9;
     --page-home-signal-selected-opacity: 1;
-    --page-home-signal-selected-color: var(--accent);
-    --page-home-windsock-body-color: var(--accent);
-    --page-home-windsock-stripe-color: var(--bg);
-    --page-home-windsock-pole-color: currentColor;
     --page-home-windsock-size: 1.9rem;
     --page-home-windsock-foot-offset: 1.715rem;
     --page-home-horizon-windsock-contact-offset: 0.26rem;
@@ -25,17 +18,10 @@
 }
 
 [data-theme="dark"] .page-home {
-    --page-home-anchor-color: color-mix(in srgb, var(--fg) 58%, var(--bg));
-    --page-home-horizon-color: color-mix(in srgb, var(--border) 38%, var(--bg));
-    --page-home-signal-color: color-mix(in srgb, #7388AC 78%, var(--fg));
     --page-home-signal-peak-opacity: 0.79;
     --page-home-signal-guide-opacity: 0.32;
     --page-home-signal-primary-peak-opacity: 0.79;
     --page-home-signal-selected-opacity: 0.82;
-    --page-home-signal-selected-color: color-mix(in srgb, var(--accent) 82%, var(--fg));
-    --page-home-windsock-body-color: var(--accent);
-    --page-home-windsock-stripe-color: var(--bg);
-    --page-home-windsock-pole-color: color-mix(in srgb, var(--border) 52%, var(--bg));
 }
 
 .page-home__anchor {

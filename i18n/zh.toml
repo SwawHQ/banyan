@@ -82,3 +82,5 @@ other = "尝试其他语言版本："
 other = '内容信息'
 [document_chapters]
 other = '章节'
+[document_aside_toggle]
+other = '目录与信息'

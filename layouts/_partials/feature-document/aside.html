@@ -1,11 +1,9 @@
-{{- $metaHTML := "" -}}
-{{- if index .slot_flags "meta" -}}
-  {{- $metaHTML = trim (printf "%s" (partial "feature-document/meta.html" .)) " \r\n\t" -}}
-{{- end -}}
-{{- $tocHTML := .toc | default "" -}}
-{{- if or $metaHTML $tocHTML -}}
-<aside class="document-aside" aria-label="{{ i18n "document_aside" }}">
-  {{- with $metaHTML -}}<div class="slot slot-meta" data-slot="meta">{{ . | safeHTML }}</div>{{- end -}}
-  {{- $tocHTML | safeHTML -}}
+{{- if or .meta .toc -}}
+<aside id="document-aside" class="document-aside" aria-label="{{ i18n .label }}">
+  {{- with .meta -}}<div class="slot slot-meta" data-slot="meta">{{ . | safeHTML }}</div>{{- end -}}
+  {{- .toc | safeHTML -}}
 </aside>
+{{- if .collapsible -}}
+  {{- partial "system-assets/script.html" (dict "path" "js/document/aside.js") -}}
+{{- end -}}
 {{- end -}}

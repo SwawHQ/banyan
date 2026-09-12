@@ -2,6 +2,33 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { gotoAndWait, waitForBreadcrumbSettled } from './helpers.mjs';
 
+// Locator.click() uses layout-viewport coordinates on a panned mobile canvas.
+async function activate(page, locator, touch = false) {
+    await locator.evaluate(node => node.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'instant' }));
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await clickVisible(page, locator, touch);
+}
+
+// Do not let the test's click preparation hide a canvas-position regression.
+async function clickVisible(page, locator, touch) {
+    const point = await locator.evaluate(node => {
+        const box = node.getBoundingClientRect();
+        const left = Math.max(0, box.left - visualViewport.offsetLeft);
+        const right = Math.min(visualViewport.width, box.right - visualViewport.offsetLeft);
+        if (right <= left) throw new Error('The control must be visible before clicking it.');
+        return { x: (left + right) / 2, y: box.top - visualViewport.offsetTop + box.height / 2 };
+    });
+    if (touch) await page.touchscreen.tap(point.x, point.y);
+    else await page.mouse.click(point.x, point.y);
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
+
+export async function openDocumentAside(page, touch = false) {
+    const toggle = page.locator('#document-aside-toggle');
+    if (await toggle.getAttribute('aria-expanded') === 'false') await activate(page, toggle, touch);
+    await page.waitForSelector('.document-aside', { state: 'visible' });
+}
+
 export const documentAsideScenarios = [{
     id: 'document-aside-navigation',
     kind: 'single',
@@ -14,6 +41,8 @@ export const documentAsideScenarios = [{
             await gotoAndWait(page, `${baseUrl}${prefix}/p/swaw-kit-git/?from=all`);
             await waitForBreadcrumbSettled(page);
             await page.waitForFunction(() => document.querySelector('.document-toc [aria-current="location"]')?.hash === '#main');
+            assert.equal(await page.locator('.document-aside').isVisible(), false);
+            await openDocumentAside(page);
             const structure = await page.evaluate(() => ({
                 label: document.querySelector('.document-toc').getAttribute('aria-label'),
                 headings: [...document.querySelectorAll('.prose :is(h2,h3)')].map(h => ({ id: h.id, text: h.textContent.trim() })),
@@ -53,6 +82,7 @@ export const documentAsideScenarios = [{
             await page.setViewportSize({ width, height: 800 });
             await gotoAndWait(page, `${baseUrl}/zh/p/swaw-kit-git/?from=all`);
             await waitForBreadcrumbSettled(page);
+            await openDocumentAside(page);
             await page.locator('.page-content').evaluate(column => {
                 column.scrollTop = (column.querySelector('h2').getBoundingClientRect().top - column.getBoundingClientRect().top) / 2;
             });
@@ -84,6 +114,7 @@ export const documentAsideScenarios = [{
             };
             await link.click();
             await assertTarget('click');
+            assert.equal(await page.locator('.document-aside').isVisible(), false, 'Selecting a chapter restores the reading boundary.');
             assert.equal(new URL(page.url()).search, '?from=all');
             await page.reload();
             await waitForBreadcrumbSettled(page);
@@ -105,7 +136,7 @@ export const documentAsideScenarios = [{
             await gotoAndWait(page, `${baseUrl}/zh/p/swaw-kit-git/?from=all#${encodeURIComponent(decodeURIComponent(fragment.slice(1)))}`);
             await waitForBreadcrumbSettled(page);
             await assertTarget('direct');
-            await page.locator('.document-aside').scrollIntoViewIfNeeded();
+            await openDocumentAside(page);
             const overflow = await page.locator('.document-aside').evaluate(e => e.scrollWidth - e.clientWidth);
             assert(overflow <= 1, 'Long headings must wrap inside the aside.');
             await page.screenshot({ path: path.join(artifactDir, `aside-${width}.png`) });
@@ -118,6 +149,8 @@ export const documentAsideScenarios = [{
             results.push({ width, reading, overflow });
         }
         await page.emulateMedia({ media: 'print' });
+        assert.equal(await page.locator('.document-aside').isVisible(), true);
+        assert.equal(await page.locator('#document-aside-toggle').isVisible(), false);
         assert.equal(await page.locator('.document-toc').isVisible(), false, 'The screen navigation should not duplicate the article when printed.');
         await page.emulateMedia({ media: 'screen' });
         await gotoAndWait(page, baseUrl + '/zh/icp/');
@@ -127,6 +160,8 @@ export const documentAsideScenarios = [{
         try {
             const plain = await noScript.newPage();
             await plain.goto(baseUrl + '/zh/p/swaw-kit-git/?from=all');
+            assert.equal(await plain.locator('#document-aside-toggle').isVisible(), false);
+            assert.equal(await plain.locator('.document-aside').isVisible(), true);
             await plain.locator('.document-toc a').nth(3).click();
             assert(await plain.locator('.page-content').evaluate(e => e.scrollTop > 0), 'Outline links work without JavaScript.');
             await plain.locator('.document-toc a[href="#main"]').click();
@@ -134,4 +169,173 @@ export const documentAsideScenarios = [{
         } finally { await noScript.close(); }
         return { results };
     }
-}];
+}, ...[true, false].map(mobile => ({
+    id: mobile ? 'document-aside-mobile-toggle' : 'document-aside-desktop-toggle',
+    kind: 'single',
+    serviceWorkers: 'block',
+    isMobile: mobile,
+    hasTouch: mobile,
+    title: 'Aside Disclosure Preserves the Reading Column and Its Scroll Position',
+    async run({ page, baseUrl, artifactDir }) {
+        const errors = [];
+        page.on('pageerror', error => errors.push(error.message));
+        await page.route('**/js/document/aside.*.js', async route => {
+            await new Promise(resolve => setTimeout(resolve, 400));
+            await route.continue();
+        });
+        await page.addInitScript(() => {
+            window.__asideFirstFrames = [];
+            function record() {
+                const aside = document.getElementById('document-aside');
+                if (aside) window.__asideFirstFrames.push(getComputedStyle(aside).display);
+                if (document.readyState !== 'complete') requestAnimationFrame(record);
+            }
+            requestAnimationFrame(record);
+        });
+        const read = () => page.evaluate(() => {
+            const content = document.querySelector('.page-content');
+            const main = document.getElementById('main').getBoundingClientRect();
+            return {
+                width: main.width, height: content.scrollHeight, y: content.scrollTop,
+                left: main.left - visualViewport.offsetLeft, right: main.right - visualViewport.offsetLeft,
+                x: visualViewport.pageLeft, canvasWidth: document.scrollingElement.scrollWidth,
+                viewport: visualViewport.width,
+            };
+        });
+        const results = [];
+        for (const width of mobile ? [320, 390, 430] : [768, 1800]) {
+            await page.setViewportSize({ width, height: 844 });
+            await gotoAndWait(page, baseUrl + '/zh/p/ssh-remote-kit-windows/?from=all');
+            await waitForBreadcrumbSettled(page);
+            const frames = await page.evaluate(() => window.__asideFirstFrames);
+            assert(frames.length > 0 && frames.every(display => display === 'none'), 'The aside is absent from the first frame, even with a delayed controller.');
+            await page.locator('.page-shell').evaluate(node => node.scrollIntoView({ inline: 'end', block: 'nearest', behavior: 'instant' }));
+            const collapsed = await read();
+            assert(collapsed.left >= 7 && collapsed.right <= collapsed.viewport - 7, JSON.stringify(collapsed));
+            const toggle = page.locator('#document-aside-toggle');
+            assert.equal(await toggle.getAttribute('aria-controls'), 'document-aside');
+            assert(await toggle.evaluate(node => node.getBoundingClientRect().height >= 44));
+            assert.equal(await page.locator('.document-aside button').count(), 0, 'The title control is the only aside toggle.');
+            const paint = locator => locator.evaluate(async node => {
+                // Navigation anchors animate color on hover and theme changes.
+                await Promise.all(node.getAnimations().map(animation => animation.finished));
+                return {
+                    color: getComputedStyle(node).color,
+                    background: getComputedStyle(node, '::before').backgroundColor,
+                    ring: getComputedStyle(node, '::before').boxShadow,
+                    underline: getComputedStyle(node.querySelector('.collection-item-title')).textDecorationThickness,
+                };
+            });
+            for (const theme of ['light', 'dark']) {
+                await page.evaluate(value => document.documentElement.dataset.theme = value, theme);
+                if (!mobile) {
+                    const reference = page.locator('[data-root-navigation] .collection-item-link:not(.is-current)').first();
+                    await reference.hover();
+                    const preview = await paint(reference);
+                    await toggle.hover();
+                    assert.deepEqual(await paint(toggle), preview, 'The unselected control reuses the navigation hover style.');
+                    await page.mouse.move(0, 0);
+                }
+                if (width === 390 || width === 1800) await page.screenshot({ path: path.join(artifactDir, `collapsed-${width}-${theme}.png`) });
+                const beforeToggle = await read();
+                await clickVisible(page, toggle, mobile);
+                const opened = await read();
+                assert.equal(opened.width, collapsed.width);
+                assert.equal(opened.height, collapsed.height);
+                assert.equal(opened.x, beforeToggle.x, 'Opening the aside preserves the user-chosen canvas position.');
+                assert.equal(opened.left, beforeToggle.left, 'Opening the aside does not move the reading column.');
+                assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+                assert.equal(await page.locator('.document-aside').evaluate(node => node.contains(document.activeElement)), false,
+                    'Pointer activation does not transfer focus into the aside.');
+                assert.deepEqual(await paint(toggle), await paint(page.locator('[data-root-navigation] .collection-item-link.is-current')), 'Expanded state reuses the selected navigation style.');
+                assert.equal(await toggle.evaluate(node => getComputedStyle(node).borderTopWidth), '0px');
+                if (width === 390 || width === 1800) await page.screenshot({ path: path.join(artifactDir, `opened-${width}-${theme}.png`) });
+                await clickVisible(page, toggle, mobile);
+                assert.equal(await toggle.getAttribute('aria-expanded'), 'false', 'Clicking the selected title control closes the aside.');
+                assert.equal(await page.locator('.document-aside').isVisible(), false);
+                assert.equal((await read()).x, beforeToggle.x, 'Closing from the title control preserves the canvas position.');
+                await openDocumentAside(page, mobile);
+                await page.locator('.page-content').evaluate(node => { node.scrollTop = 700; });
+                // Simulate keyboard focus in the aside without panning to it.
+                await page.locator('.document-aside a').first().evaluate(node => node.focus({ preventScroll: true }));
+                const beforeEscape = await read();
+                await page.keyboard.press('Escape');
+                const closed = await read();
+                assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+                assert.equal(closed.y, 700);
+                assert.equal(closed.width, collapsed.width);
+                assert.equal(closed.x, beforeEscape.x, 'Escape does not request a horizontal realignment.');
+                assert.equal(await page.evaluate(() => document.activeElement.id), 'main');
+                await page.locator('.page-content').evaluate(node => { node.scrollTop = 0; });
+            }
+            // The user may leave main partly visible instead of aligning its edge.
+            await page.locator('.page-content').evaluate(node => {
+                node.style.scrollMarginInlineStart = '40px';
+                node.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'instant' });
+                node.style.scrollMarginInlineStart = '';
+            });
+            await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+            const partial = await read();
+            await clickVisible(page, toggle, mobile);
+            assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+            assert.equal((await read()).x, partial.x, 'Opening from a partially visible article does not realign it.');
+            await clickVisible(page, toggle, mobile);
+            assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+            assert.equal((await read()).x, partial.x, 'Closing from a partially visible article does not realign it.');
+            // Once the user pans past the closed boundary, removing the column
+            // must let the browser clamp x instead of preserving an empty track.
+            if (width < 1800) {
+                await openDocumentAside(page, mobile);
+                await page.locator('.page-content').evaluate((node, x) => {
+                    node.style.scrollMarginInlineStart = `${node.getBoundingClientRect().left + scrollX - x}px`;
+                    node.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'instant' });
+                    node.style.scrollMarginInlineStart = '';
+                }, collapsed.x + 100);
+                await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+                const beyondBoundary = await read();
+                assert(beyondBoundary.x > collapsed.x + 90, 'Exercise a viewport beyond the closed canvas boundary.');
+                await clickVisible(page, toggle, mobile);
+                const clamped = await read();
+                assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+                assert.equal(clamped.x, collapsed.x, 'Closing only clamps to the new native boundary.');
+                assert.equal(clamped.canvasWidth, collapsed.canvasWidth, 'The closed aside leaves no reserved blank width.');
+                assert.equal(clamped.y, beyondBoundary.y, 'Native horizontal clamping preserves reading progress.');
+            }
+            await openDocumentAside(page, mobile);
+            await activate(page, page.locator('.document-toc a').nth(2), mobile);
+            await page.waitForFunction(() => location.hash && document.querySelector('.page-content').scrollTop > 0);
+            assert.equal(await page.locator('.document-aside').isVisible(), false);
+            const chapter = await read();
+            assert(chapter.left >= -1 && chapter.right <= chapter.viewport + 1);
+            if (!mobile) {
+                await page.locator('.page-content').evaluate(node => { node.scrollTop = 0; });
+                await toggle.focus();
+                const beforeKeyboard = await read();
+                await page.keyboard.press('Enter');
+                assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+                assert.equal((await read()).x, beforeKeyboard.x);
+                assert.equal(await page.evaluate(() => document.activeElement.id), 'document-aside-toggle');
+                await page.keyboard.press('Escape');
+                assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+                assert.equal((await read()).x, beforeKeyboard.x);
+                await page.keyboard.press('Space');
+                assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+                await page.keyboard.press('Space');
+                assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+                assert.equal((await read()).x, beforeKeyboard.x);
+            }
+            results.push({ width, collapsed, chapter, firstFrames: frames.length });
+        }
+        for (const route of ['/zh/icp/', '/zh/language/', '/zh/all/', '/offline/']) {
+            await gotoAndWait(page, baseUrl + route);
+            assert.equal(await page.locator('#document-aside-toggle').count(), 0, `No empty control on ${route}.`);
+            assert.equal(await page.locator('script[src*="document/aside."]').count(), 0);
+        }
+        await gotoAndWait(page, baseUrl + '/zh/about/');
+        assert.equal(await page.locator('.slot-meta').count(), 0);
+        await openDocumentAside(page, mobile);
+        assert.equal(await page.locator('#document-aside-toggle').textContent(), '章节');
+        assert.deepEqual(errors, []);
+        return { results };
+    }
+}))];

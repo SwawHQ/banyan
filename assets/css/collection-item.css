@@ -1,8 +1,5 @@
 .collection-item-link {
     --collection-item-radius: 0.22rem;
-    --collection-item-hover-bg: color-mix(in srgb, var(--accent) 8%, transparent);
-    --collection-item-current-bg: color-mix(in srgb, var(--accent) 14%, transparent);
-    --collection-item-current-ring: color-mix(in srgb, var(--accent) 18%, transparent);
     position: relative;
     isolation: isolate;
     display: inline-flex;
@@ -11,12 +8,12 @@
     min-width: 0;
     max-width: 100%;
     border-radius: var(--collection-item-radius);
-    color: var(--link);
+    color: var(--collection-item-text);
     text-decoration: none;
 }
 
 .collection-item-link:visited {
-    color: var(--link-visited);
+    color: var(--collection-item-visited-text);
 }
 
 button.collection-item-link {
@@ -65,7 +62,7 @@ button.collection-item-link {
 
 .collection-item-link:hover,
 .collection-item-link:focus-visible {
-    color: var(--accent-text);
+    color: var(--collection-item-hover-text);
     background: transparent;
 }
 
@@ -74,17 +71,17 @@ button.collection-item-link {
     background: var(--collection-item-hover-bg);
 }
 
-.collection-item-link.is-current,
+.collection-item-link:is(.is-current, [aria-expanded="true"]),
 .collection-item-link.is-current:visited {
-    color: var(--accent-text);
+    color: var(--collection-item-current-text);
 }
 
-.collection-item-link.is-current::before {
+.collection-item-link:is(.is-current, [aria-expanded="true"])::before {
     background: var(--collection-item-current-bg);
     box-shadow: inset 0 0 0 1px var(--collection-item-current-ring);
 }
 
-.collection-item-link.is-current .collection-item-title {
+.collection-item-link:is(.is-current, [aria-expanded="true"]) .collection-item-title {
     text-decoration-thickness: 1.5px;
     text-underline-offset: 0.08em;
 }

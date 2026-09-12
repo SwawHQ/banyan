@@ -1,9 +1,15 @@
 {{- $contentHTML := printf "%s" .Content -}}
 {{- $content := trim $contentHTML " \r\n\t" -}}
 {{- partial "feature-document/validate-heading.html" . -}}
+{{- $aside := partialCached "feature-document/aside-model.html" . .RelPermalink -}}
 <article class="article">
   <div class="prose">
     <h1 id="{{ .Title | anchorize }}">{{ .Title }}</h1>
+    {{- if $aside.collapsible -}}
+    <div class="document-tools">
+      <button id="document-aside-toggle" class="collection-item-link" type="button" aria-expanded="false" aria-controls="document-aside"><span class="collection-item-title">{{ i18n $aside.label }}</span></button>
+    </div>
+    {{- end -}}
     {{- if ne $content "" -}}
     {{- $contentHTML | safeHTML -}}
     {{- end -}}

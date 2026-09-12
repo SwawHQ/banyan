@@ -1,0 +1,20 @@
+{{- /* Shared by the article controls and the aside; cached per page by both callers. */ -}}
+{{- $slotFlags := partial "system-ui/page-slots.html" (dict "ctx" .) -}}
+{{- $metaHTML := "" -}}
+{{- if index $slotFlags "meta" -}}
+  {{- $breadcrumbModel := dict -}}
+  {{- if index $slotFlags "breadcrumb" -}}
+    {{- $breadcrumbModel = partial "feature-browse/navigation/path/model.html" (dict "ctx" .) -}}
+  {{- end -}}
+  {{- $metaHTML = trim (printf "%s" (partial "feature-document/meta.html" (dict "ctx" . "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel))) " \r\n\t" -}}
+{{- end -}}
+{{- $isArticle := eq .Layout "page-article" -}}
+{{- $tocHTML := "" -}}
+{{- if $isArticle -}}
+  {{- $tocHTML = trim (printf "%s" (partial "feature-document/toc.html" .)) " \r\n\t" -}}
+{{- end -}}
+{{- $label := "document_aside" -}}
+{{- if $tocHTML -}}
+  {{- $label = cond (ne $metaHTML "") "document_aside_toggle" "document_chapters" -}}
+{{- end -}}
+{{- return (dict "meta" $metaHTML "toc" $tocHTML "collapsible" (and $isArticle (or (ne $metaHTML "") (ne $tocHTML ""))) "label" $label) -}}
