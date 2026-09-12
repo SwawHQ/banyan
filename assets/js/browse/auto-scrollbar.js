@@ -1,6 +1,5 @@
-export function initAutoScrollbar() {
-    const column = document.querySelector('.page-content');
-    if (!column) return;
+export function initAutoScrollbar(column) {
+    if (column.hasAttribute('data-auto-scrollbar')) return;
     let timer;
     column.dataset.autoScrollbar = '';
     column.addEventListener('pointermove', event => {

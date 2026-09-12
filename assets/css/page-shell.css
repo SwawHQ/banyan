@@ -102,12 +102,12 @@ body {
 }
 
 @media (hover: hover) and (pointer: fine) and (forced-colors: none) {
-    .page-content[data-auto-scrollbar]:not([data-scrolling]):not([data-scrollbar-hover]) {
+    [data-auto-scrollbar]:not([data-scrolling]):not([data-scrollbar-hover]) {
         scrollbar-color: transparent transparent;
     }
 
     /* Do not hide the scrollbars of nested prose tables or code blocks. */
-    .page-content[data-auto-scrollbar] > * {
+    [data-auto-scrollbar] > * {
         scrollbar-color: auto;
     }
 }

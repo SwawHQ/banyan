@@ -5,6 +5,7 @@ import {
     normalizeBreadcrumbCollectionSource,
 } from './breadcrumb-items.js';
 import { normalizeIcon } from './icon-value.js';
+import { initAutoScrollbar } from './auto-scrollbar.js';
 
 const PATH_PREFETCH_SLOT = 'crumb';
 
@@ -185,6 +186,7 @@ export function renderPathColumn(
         return;
     }
 
+    initAutoScrollbar(column);
     column.replaceChildren(buildCollectionColumnGrid(items, collectionSource, options));
 }
 

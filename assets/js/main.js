@@ -8,7 +8,8 @@ initRootNavigation();
 document.addEventListener('DOMContentLoaded', () => {
     initThemePreference();
     initLanguageReturn();
-    initAutoScrollbar();
+    document.querySelectorAll('.page-rail, .path-column, .page-content, .document-aside')
+        .forEach(initAutoScrollbar);
 });
 
 // 针对微信安卓版：通过 WeixinJSBridge 强制覆盖字体大小并禁止用户修改，缓解字体缩放导致的页面跳变
