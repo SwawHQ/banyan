@@ -32,7 +32,7 @@
   {{- if $hasTaxonomy -}}{{ partial "feature-document/taxonomy-links.html" (dict "ctx" $ctx) }}{{- end -}}
   {{- if $hasPath -}}
   <nav class="document-meta__row document-meta__row--path" aria-label="{{ i18n "article_meta_directory" }}">
-    <span class="collection-item-icon">{{ partial "system-ui/icon/render.html" (dict "name" "tag") }}</span>
+    <span class="collection-item-icon">{{ partial "system-ui/icon/render.html" (dict "name" "folder-tree") }}</span>
     <span class="document-meta__path">
     {{- $homeLabel := i18n "goHome" -}}
     {{- partial "system-ui/link.html" (dict
