@@ -31,7 +31,7 @@
 }
 
 .prose h1 {
-    margin: 52px 0;
+    margin: 0 0 52px 0;
     padding-bottom: 3px;
     border-bottom: 2px solid var(--prose-heading-border);
 }
