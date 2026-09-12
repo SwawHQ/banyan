@@ -8,9 +8,10 @@
 | 可见路径列 | `browse/path-render.js`、`path-navigation.css`；容器 `.path-columns`、单列 `.path-column` |
 | 集合页面 | `layouts/page-collection.html`、`feature-browse/collection/render-page.html`；列表内容由 `feature-browse/collection/render.html` 渲染 |
 | 集合条目 | `collection-item.css` 负责条目和状态，`collection-grid.css` 负责 `.collection-list` 公共网格，`collection-table.css` 负责 `--directory`／`--all`／`--products` 列定义 |
-| 文档元信息 | `document-meta.css`；负责 `.document-meta` 内的日期与分类信息，不属于正文组件 |
-| 正文右侧辅助列 | `page-shell.css` 中的 `.document-aside`；与正文并列、独立纵向滚动，当前承载元信息 |
+| 文档元信息与章节目录 | `document-aside.css`；负责 `.document-meta`、`.document-toc` 和辅助列内的列表条目适配，不属于正文组件 |
+| 正文右侧辅助列 | `page-shell.css` 控制 `.document-aside` 的尺寸与独立纵向滚动，`document-aside.css` 控制列内内容 |
 | 正文中的有序／无序列表 | `prose-lists.css`；只作用于正文 `ul/ol/li` |
+| 首页 | `layouts/page-home.html`、`entry-page-home/model.html`、`page-home.css`；交互入口为 `js/pages/home.js`，风向袋为 `assets/page-home/windsock.svg` |
 | 区域开关 | `slot_flags`、`slotFlags`；值是布尔值，不再是 fragment 来源 |
 | 浏览来源与排序状态 | `browse/navigation-state.js`、`browse/navigation-state.contract.js` |
 | 语言和外观偏好 | `preferences/language-page.js` 仅用于选择页；`preferences/language-return.js` 与 `preferences/theme.js` 负责跨页面行为；静态选项和返回链接在模板输出 |
@@ -39,9 +40,32 @@ list: name
 
 ## CSS 源码与发布名
 
-`assets/css/` 保持扁平。19 个源码按前缀排列：`theme.css` 提供主题变量；`base.css` 与 `icons.css` 提供页面基础和图标；`page-shell.css` 与 `path-navigation.css` 提供画幅；三个 `collection-*` 文件提供列表；`document-meta.css` 提供元信息；`prose-base.css`、`prose-inline.css`、`prose-lists.css`、`prose-quotes.css`、`prose-images.css`、`prose-code.css`、`prose-tables.css` 提供正文；`home-brand.css`、`updates-panel.css`、`not-found.css` 属于具体入口。
+`assets/css/` 保持扁平，现有 19 个源码文件。layouts 的 `entry-*`、`feature-*`、`system-*` 表达模板调用边界；CSS 按视觉职责命名，不复制模板目录层级，也不要求一个模板对应一个样式文件。
 
-源码文件表达维护职责，发布文件表达缓存边界。`baseof.html` 直接装配公共 `page.css`；七个 `prose-*` 源码只在页面确实输出 `.prose` 时合并成一个 `prose.css`；`updates-panel.css` 与 `not-found.css` 虽保留独立源码归属，也进入 `page.css`。首页另发 `home-brand.css` 和三种语言各自的场景样式，因此完整生产构建共有 6 个 CSS 资源。
+| 模板职责 | CSS 归属 |
+| --- | --- |
+| `baseof.html` 与 `system-ui/page-slots.html` | `theme.css`、`base.css`、`page-shell.css`：主题、默认值、整体画幅和各列滚动 |
+| `system-ui/icon/`、`system-ui/list/`、`system-ui/choice/` | `icons.css`、`collection-item.css`、`collection-grid.css`：图标、共享条目及状态、列表网格与公共列头 |
+| `feature-browse/collection/` | `collection-table.css`：多列字段和 directory／all／products 列定义 |
+| `feature-browse/navigation/path/` 与 `browse/path-render.js` | `path-navigation.css`：路径列排列、待绘制状态、路径列头和共享列表在路径列内的适配 |
+| `feature-document/aside.html`、`meta.html`、`toc.html` | `document-aside.css`：元信息、章节目录及列内条目适配；列尺寸和滚动仍由 `page-shell.css` 统一控制 |
+| `feature-document/render-page.html` 与 Markdown 渲染 | 七个 `prose-*`：基础、行内、列表、引用、图片、代码、表格；所有正文页共用 |
+| `page-home.html` 与 `entry-page-home/` | `page-home.css`：首页场景 |
+| `feature-updates/panel.html`、`404.html` | `updates-panel.css`、`not-found.css`：各自的小型呈现规则 |
+
+公共装配入口 `system-ui/page-styles.html` 按“基础与画幅 → 共享列表 → 功能适配”排序。共享文件定义组件默认外观，路径列和辅助列的特有规则放在各自文件。`collection-*` 也供语言、外观与章节目录复用，它表示一套列表呈现，不限定为集合页面；无需随消费者增加重复样式或更换为模板层级前缀。
+
+源码文件表达维护职责，发布文件表达缓存边界。`baseof.html` 通过上述入口装配公共 `page.css`；`feature-document/styles.html` 将七个 `prose-*` 源码合并成一个 `prose.css`，由确实输出 `.prose` 的页面加载；`updates-panel.css` 与 `not-found.css` 虽保留独立源码归属，也进入 `page.css`。首页另发 `page-home.css` 和三种语言各自的场景样式，因此完整生产构建共有 6 个 CSS 资源。
+
+## 首页命名与资源
+
+首页内部统一使用 `page-home`：根节点 `.page-home`、子元素 `.page-home__*`、页面变量与动画 `--page-home-*`／`page-home-*`、信号控件 `data-page-home-signal` 与选中标记 `data-page-home-signal-selected`。模板的 `pageHomeModel` 返回 `signals` 与 `sceneCSS`，后者发布为 `page-home-scene.<page-key>.css`；单个信号的局部参数为 `--signal-lift`、`--signal-duration`、`--signal-delay`。
+
+JS 的 `pageHomes` 表示首页根节点，`scenePauseStates` 表示场景暂停原因，`selectedSignalControl` 表示选中的信号控件；操作使用 `setScenePaused`、`initSignalButtons`、`setSignalSelected`、`clearSelectedSignal` 等具名函数。`pages/home.js` 的目录已经表达页面归属，不重复添加 `page-` 前缀。
+
+风向袋是首页私有的 SVG 资源，由 `resources.Get "page-home/windsock.svg"` 直接读取并内联；无需为它维护三个语言的隐藏内容页面。站点如需定制，可在根目录的 `assets/page-home/windsock.svg` 覆盖同名主题资源。
+
+内容字段 `brand_line`、`home_signals` 与 `home_signal_*`／`home_wind_field_start_offset_rem` 保留既有语义；Hugo 原生的 home Kind、`home.llms.txt`、导航的 `model-home.html` 也不属于这次内部命名迁移。
 
 ## 更新模块
 

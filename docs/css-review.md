@@ -42,7 +42,7 @@
 
 - `assets/css/` 保持扁平，共 19 个源码文件。元素默认样式、skip link 和 reduced-motion 归入 `base.css`，图标显示归入 `icons.css`；不再保留宽泛且很小的 `core-a11y.css`、`core-motion.css`。
 - 列表源码收敛为 `collection-item.css`、`collection-grid.css`、`collection-table.css`：分别负责条目状态、公共网格和多列表格。服务端、浏览器重绘与测试共用 `.collection-list` 及其 `--directory`、`--all`、`--products` 变体；行为通过明确的 `data-collection-*` 属性连接，不再借类名前缀推断。
-- 元信息由 `document-meta.css` 独立负责。正文使用 `prose-base.css`、`prose-inline.css`、`prose-lists.css`、`prose-quotes.css`、`prose-images.css`、`prose-code.css`、`prose-tables.css`；普通表格选择器明确排除 Chroma 行号表，避免正文表格规则穿透代码组件。
+- 元信息与章节目录由 `document-aside.css` 负责。正文使用 `prose-base.css`、`prose-inline.css`、`prose-lists.css`、`prose-quotes.css`、`prose-images.css`、`prose-code.css`、`prose-tables.css`；普通表格选择器明确排除 Chroma 行号表，避免正文表格规则穿透代码组件。
 - 七个正文源码固定合并成一个 `prose.css`，只由真正输出 `.prose` 的入口加载；不再扫描正文标签决定 core／rich 组合，也不要求模板生成代码块的页面手动拼两个包。
 - `baseof.html` 直接加载公共 `page.css`，不再提供所有页面重复继承的默认样式 block。`updates-panel.css`、`not-found.css` 保留靠近功能的源码归属，但一并进入 `page.css`，删除两个微型发布入口。
 
@@ -160,7 +160,7 @@ CSS 类仍被排序与路径脚本用作部分查询条件。没有发现当前 
 ## 应保留的机制与边界
 
 - 大画幅、固定导航列宽、路径列追加、sticky、横向滚动相关规则是当前交互的主体。整理不能改变已有列的位置或重新自动滚到最右。
-- [`home-brand.css`](../assets/css/home-brand.css) 的 `58rem` 媒体查询仅调整首页场景的宽度与留白，不是旧的全站响应式模式。保留组件自己的适配。
+- [`page-home.css`](../assets/css/page-home.css) 的 `58rem` 媒体查询仅调整首页场景的宽度与留白，不是旧的全站响应式模式。保留组件自己的适配。
 - 代码块和正文表格仍需要处理自身溢出；不要因为页面允许横向滑动，就机械删除所有局部 overflow。
 - 图标已经支持 SVG、字符和资源图片。图标库中的 file／folder／product 改用 `currentColor` 等中性表达即可；不新增第四种图标协议。
 - 首页选中链接已有下划线，选中按钮主要靠颜色和透明度，灰阶化时给按钮补充非颜色的选中标记，保持可辨认。
@@ -178,14 +178,14 @@ CSS 类仍被排序与路径脚本用作部分查询条件。没有发现当前 
 | `theme.css` | 明暗基础配色、浏览器 `color-scheme` |
 | `base.css` | 元素默认样式、全局排版、焦点、skip link 与 reduced-motion |
 | `icons.css` | 通用 SVG／文字／图片图标尺寸、对齐、单色显示及 sprite 容器 |
-| `page-shell.css` | 页面、第一列、主区尺寸和整体画幅 |
-| `path-navigation.css` | 路径列对页面主体的扩展 |
+| `page-shell.css` | 整体画幅、各列尺寸、滚动与打印布局 |
+| `path-navigation.css` | 路径列排列、待绘制状态、路径列头及列表适配 |
 | `collection-item.css` | 条目、图标占位、链接／按钮 reset 与统一交互状态 |
-| `collection-grid.css` | `.collection-list` 单列基底、列头和路径列行结构；行为由独立的 `data-collection-*` 标记连接 |
-| `collection-table.css` | 多列表格字段、滚动及 directory／all／products 列定义 |
-| `document-meta.css` | 正文外的日期与分类元信息 slot |
+| `collection-grid.css` | `.collection-list` 单列基底、公共列头和单元格；行为由独立的 `data-collection-*` 标记连接 |
+| `collection-table.css` | 多列表格字段及 directory／all／products 列定义 |
+| `document-aside.css` | 辅助列内的元信息、章节目录和列表条目适配；列尺寸与滚动归 `page-shell.css` |
 | 七个 `prose-*` 文件 | 正文基础、行内、列表、引用、图片、代码、表格；共同发布为 `prose.css` |
-| `home-brand.css` | 首页品牌场景的静态呈现；场景参数仍按语言单独生成 |
+| `page-home.css` | 首页品牌场景的静态呈现；场景参数仍按语言单独生成 |
 | `updates-panel.css`、`not-found.css` | 功能自己拥有的呈现源码；随公共 `page.css` 发布 |
 
 这个划分让“改列宽”“改选中背景”“改代码块”“改深色文字”各有清晰位置。Hugo 装配边界只有公共 `page.css`、按需 `prose.css` 与首页资源；无需引入多层目录、CSS 框架、通用样式注册器或 CSS `@import`。

@@ -740,7 +740,7 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         canonicalHref: extractCanonicalHref(text),
         hasMainBundle: hasMainBundle(text),
         hasPrefetchRuntimeBundle: hasPrefetchRuntimeBundle(text),
-        hasHomeBrand: hasClassToken(text, 'home-brand'),
+        hasPageHome: hasClassToken(text, 'page-home'),
         hasProse: hasClassToken(text, 'prose'),
         inlineStyleAttrCount,
         repeatedBreadcrumbCollectionSourceCount,
@@ -934,13 +934,13 @@ function inspectStylesheetContract(rows, cssAssetsByPath) {
         if (row.hasProse) {
             allowedFamilies.add('/css/prose.css');
         }
-        if (row.hasHomeBrand) {
-            allowedFamilies.add('/css/home-brand.css');
+        if (row.hasPageHome) {
+            allowedFamilies.add('/css/page-home.css');
         }
         const unexpectedEntries = entries.filter(({ family, ref }) => (
             !deprecatedRefs.has(ref)
             && !allowedFamilies.has(family)
-            && !(row.hasHomeBrand && family.startsWith('/css/home-brand-scene.'))
+            && !(row.hasPageHome && family.startsWith('/css/page-home-scene.'))
         ));
 
         if (pageEntries.length !== 1 || entries[0]?.family !== '/css/page.css') {
@@ -963,11 +963,11 @@ function inspectStylesheetContract(rows, cssAssetsByPath) {
             proseStyleRefs.add(entry.ref);
         }
 
-        if (row.hasHomeBrand) {
-            const homeBrandCount = refsFor('/css/home-brand.css').length;
-            const sceneCount = entries.filter(({ family }) => family.startsWith('/css/home-brand-scene.')).length;
-            if (entries.length !== 3 || homeBrandCount !== 1 || sceneCount !== 1) {
-                issues.push(`${row.relativePath}: homepage must keep page.css plus one home-brand.css and one scene stylesheet; got ${row.stylesheetRefs.join(', ') || '<none>'}.`);
+        if (row.hasPageHome) {
+            const pageHomeStyleCount = refsFor('/css/page-home.css').length;
+            const sceneCount = entries.filter(({ family }) => family.startsWith('/css/page-home-scene.')).length;
+            if (entries.length !== 3 || pageHomeStyleCount !== 1 || sceneCount !== 1) {
+                issues.push(`${row.relativePath}: homepage must keep page.css plus one page-home.css and one scene stylesheet; got ${row.stylesheetRefs.join(', ') || '<none>'}.`);
             }
         }
     }

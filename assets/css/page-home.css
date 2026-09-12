@@ -1,0 +1,303 @@
+/* Scene geometry and signal timing come from entry-page-home/model.html. */
+.page {
+    --page-edge-block-end: 1.5rem;
+}
+
+.page-home {
+    --page-home-anchor-color: var(--muted);
+    --page-home-horizon-color: currentColor;
+    --page-home-signal-color: color-mix(in srgb, #5F759E 84%, var(--fg));
+    --page-home-signal-peak-opacity: 0.9;
+    --page-home-signal-guide-opacity: 0.45;
+    --page-home-signal-primary-peak-opacity: 0.9;
+    --page-home-signal-selected-opacity: 1;
+    --page-home-signal-selected-color: var(--accent);
+    --page-home-windsock-body-color: var(--accent);
+    --page-home-windsock-stripe-color: var(--bg);
+    --page-home-windsock-pole-color: currentColor;
+    --page-home-windsock-size: 1.9rem;
+    --page-home-windsock-foot-offset: 1.715rem;
+    --page-home-horizon-windsock-contact-offset: 0.26rem;
+    position: relative;
+    box-sizing: border-box;
+    block-size: 34rem;
+    padding-block-start: var(--page-home-wind-field-start-offset, 18rem);
+}
+
+[data-theme="dark"] .page-home {
+    --page-home-anchor-color: color-mix(in srgb, var(--fg) 58%, var(--bg));
+    --page-home-horizon-color: color-mix(in srgb, var(--border) 38%, var(--bg));
+    --page-home-signal-color: color-mix(in srgb, #7388AC 78%, var(--fg));
+    --page-home-signal-peak-opacity: 0.79;
+    --page-home-signal-guide-opacity: 0.32;
+    --page-home-signal-primary-peak-opacity: 0.79;
+    --page-home-signal-selected-opacity: 0.82;
+    --page-home-signal-selected-color: color-mix(in srgb, var(--accent) 82%, var(--fg));
+    --page-home-windsock-body-color: var(--accent);
+    --page-home-windsock-stripe-color: var(--bg);
+    --page-home-windsock-pole-color: color-mix(in srgb, var(--border) 52%, var(--bg));
+}
+
+.page-home__anchor {
+    position: absolute;
+    z-index: 1;
+    inset-block-start: calc(var(--page-home-wind-field-start-offset, 18rem) + var(--page-home-wind-field-height, 13.2rem) + 0.62rem);
+    inset-inline-start: 1.5rem;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.34rem;
+    max-inline-size: min(28rem, calc(100% - 3rem));
+    margin: 0;
+    color: var(--page-home-anchor-color);
+    font-size: 0.68rem;
+    line-height: 1.2;
+}
+
+.page-home__anchor-title,
+.page-home__anchor-line {
+    margin: 0;
+    font-size: inherit;
+    line-height: inherit;
+    letter-spacing: 0;
+}
+
+.page-home__anchor-title {
+    font-weight: 600;
+}
+
+.page-home__anchor-line {
+    font-weight: 400;
+}
+
+.page-home__scene {
+    position: relative;
+    container-type: inline-size;
+    inline-size: min(36rem, calc(100% - 3rem));
+    block-size: calc(var(--page-home-wind-field-height, 13.2rem) + var(--page-home-ground-space, 2.8rem));
+    margin-inline: 1.5rem auto;
+}
+
+.page-home__horizon {
+    position: absolute;
+    inset-block-start: var(--page-home-wind-field-height, 13.2rem);
+    inset-inline: 0;
+    display: block;
+    block-size: 0.48rem;
+    color: var(--page-home-horizon-color);
+}
+
+.page-home__horizon-arc {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+}
+
+.page-home__horizon-arc path {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+}
+
+.page-home__signals {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    list-style: none;
+    pointer-events: none;
+}
+
+.page-home__signal {
+    position: absolute;
+    --page-home-signal-travel: calc(100cqi + 8rem);
+    inset-block-start: calc(var(--page-home-wind-field-height, 13.2rem) - var(--signal-lift));
+    inset-inline-start: 0;
+    display: inline-flex;
+    align-items: center;
+    column-gap: 0.28rem;
+    color: var(--page-home-signal-color);
+    font-size: var(--page-home-signal-font-size, 0.72rem);
+    line-height: 1;
+    letter-spacing: 0;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: auto;
+}
+
+.page-home__signal.is-primary {
+    --page-home-signal-peak-opacity: var(--page-home-signal-primary-peak-opacity);
+}
+
+.page-home__signal > :is(a, button),
+.page-home__signal > a:visited {
+    color: inherit;
+    text-decoration: none;
+    text-underline-offset: 0.16em;
+    text-decoration-thickness: 1px;
+}
+
+.page-home__signal > :is(a, button) {
+    box-sizing: border-box;
+    display: inline;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    appearance: none;
+    background: transparent;
+    font: inherit;
+    letter-spacing: inherit;
+    cursor: default;
+    pointer-events: auto;
+}
+
+.page-home__signal > button {
+    text-align: inherit;
+}
+
+.page-home__signal > :is(a, button):focus-visible {
+    outline-offset: 0.16rem;
+}
+
+.page-home__signal.is-selected {
+    z-index: 2;
+    opacity: var(--page-home-signal-selected-opacity) !important;
+    animation-play-state: paused;
+}
+
+.page-home__signal.is-selected > :is(a, button) {
+    color: var(--page-home-signal-selected-color);
+}
+
+.page-home__signal.is-selected > a {
+    text-decoration-line: underline;
+}
+
+.page-home.is-paused .page-home__signal,
+.page-home.is-paused .page-home__windsock-sock {
+    animation-play-state: paused;
+}
+
+.page-home__signal.is-guided::after {
+    content: "";
+    inline-size: 1.25rem;
+    border-block-start: 1px solid currentColor;
+    opacity: var(--page-home-signal-guide-opacity);
+}
+
+.page-home__windsock {
+    position: absolute;
+    display: block;
+    inline-size: var(--page-home-windsock-size);
+    block-size: var(--page-home-windsock-size);
+    /* Align the pole foot to the visible horizon curve, with a tiny stroke overlap. */
+    inset-block-start: calc(var(--page-home-wind-field-height, 13.2rem) + var(--page-home-horizon-windsock-contact-offset) - var(--page-home-windsock-foot-offset));
+    inset-inline-start: 78%;
+    overflow: visible;
+}
+
+.page-home__windsock-sock {
+    transform-box: view-box;
+    transform-origin: 14% 32%;
+}
+
+.page-home__windsock-body {
+    fill: var(--page-home-windsock-body-color);
+}
+
+.page-home__windsock-stripes {
+    fill: var(--page-home-windsock-stripe-color);
+}
+
+.page-home__windsock-pole {
+    fill: var(--page-home-windsock-pole-color);
+}
+
+/* This scene communicates through motion. Keep it animated until there is a deliberate static fallback. */
+.page-home__windsock-sock {
+    animation: page-home-windsock-sock 3.6s ease-in-out infinite;
+}
+
+.page-home__signal {
+    animation-name: page-home-signal-drift;
+    animation-duration: var(--signal-duration);
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-delay: var(--signal-delay);
+}
+
+@keyframes page-home-windsock-sock {
+    0% {
+        transform: rotate(-2deg) skewX(-1deg) translate(0, 0);
+    }
+
+    34% {
+        transform: rotate(-9deg) skewX(-4deg) translate(0.16rem, -0.12rem);
+    }
+
+    58% {
+        transform: rotate(-6deg) skewX(-2deg) translate(0.1rem, -0.08rem);
+    }
+
+    82% {
+        transform: rotate(2deg) skewX(1deg) translate(0.03rem, 0.02rem);
+    }
+
+    100% {
+        transform: rotate(-2deg) skewX(-1deg) translate(0, 0);
+    }
+}
+
+@keyframes page-home-signal-drift {
+    0% {
+        opacity: 0;
+        transform: translate(-8rem, 0.08rem) rotate(-2deg);
+        visibility: hidden;
+    }
+
+    7.99% {
+        opacity: 0;
+        transform: translate(-8rem, 0.08rem) rotate(-2deg);
+        visibility: hidden;
+    }
+
+    8%,
+    22% {
+        opacity: var(--page-home-signal-peak-opacity);
+        visibility: visible;
+    }
+
+    28% {
+        opacity: var(--page-home-signal-peak-opacity);
+        transform: translate(calc(100cqi + 1rem), -0.08rem) rotate(1deg);
+        visibility: visible;
+    }
+
+    28.01% {
+        opacity: 0;
+        transform: translate(var(--page-home-signal-travel), 0.04rem) rotate(1deg);
+        visibility: hidden;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(var(--page-home-signal-travel), 0.04rem) rotate(1deg);
+        visibility: hidden;
+    }
+}
+
+@media (min-width: 58rem) {
+    .page-home__scene {
+        inline-size: min(36rem, 100%);
+        margin-inline: 3rem auto;
+    }
+
+    .page-home__anchor {
+        inset-inline-start: 3rem;
+    }
+
+}

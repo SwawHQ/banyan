@@ -28,6 +28,38 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
     inline-size: var(--navigation-column-inline);
 }
 
+/* Path-specific headers and list adaptation follow the shared collection rules. */
+.collection-list--path-column .collection-header--path {
+    display: flex;
+    align-items: baseline;
+    height: var(--collection-header-height);
+    min-width: 0;
+    margin-bottom: var(--collection-header-gap);
+    line-height: var(--collection-header-line-height);
+    white-space: nowrap;
+}
+
+.collection-column-separator {
+    margin-inline: 0.24rem;
+    opacity: 0.72;
+}
+
+.collection-column-label:hover,
+.collection-column-label:focus-visible,
+.collection-column-sort:hover,
+.collection-column-sort:focus-visible {
+    color: var(--accent-text);
+}
+
+.collection-list--path-column .collection-item-link {
+    white-space: nowrap;
+}
+
+.collection-list--path-column .collection-item-title {
+    overflow-wrap: normal;
+    text-wrap: nowrap;
+}
+
 @media print {
     .path-columns {
         block-size: auto;

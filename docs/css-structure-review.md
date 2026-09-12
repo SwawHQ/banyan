@@ -2,7 +2,11 @@
 
 2026-09-10｜基于已完成 6A／6B 的工作区｜审查与实施记录
 
-实施状态：源码与发布结构整理已完成，后续已继续实施本文末尾的“选择器与页面资源收尾”。主题现有 19 个扁平 CSS 源文件；生产构建发布 `page.css`、`prose.css`、`home-brand.css` 和三份语言场景 CSS，共 6 个资源。中段“DOM 类名先保持”的决定仅描述第一轮文件整理；后续原子迁移已替代该阶段的旧类名。
+实施状态：源码与发布结构整理已完成，后续已继续实施本文末尾的“选择器与页面资源收尾”。主题现有 19 个扁平 CSS 源文件；生产构建发布 `page.css`、`prose.css`、`page-home.css` 和三份语言场景 CSS，共 6 个资源。中段“DOM 类名先保持”的决定仅描述第一轮文件整理；后续原子迁移已替代该阶段的旧类名。
+
+2026-09-12 补充：按当前 layouts 复核归属后，`document-meta.css` 更名为 `document-aside.css`，覆盖元信息、章节目录和列内条目适配；路径列专有规则从 `collection-grid.css` 移入 `path-navigation.css`。公共包按基础、共享组件、功能适配装配，源码数和发布边界保持不变。下文保留此前阶段记录；当前模板与 CSS 对照以 [UI 命名与职责](ui-naming.md#css-源码与发布名) 为准。
+
+本次验证：根站生产构建与 132 个 HTML 的产物检查通过，相关浏览器回归 6／6 通过。以首页语义调整后的产物为基线，文章、全部文章、产品和外观页在 390／1440px、明暗主题下共 16 组计算样式、几何和截图完全一致；文章辅助列另行截图核对。公共 `page.css` 压缩后仍为 11,470 B。产物位于 `temp_workspace/public/260912-css-layout-after`，回归报告位于 `temp_workspace/regression/260912114626-browser/report.json`，视觉对照记录位于 `temp_workspace/css-layout-verification/result.json`。
 
 ## 结论
 
@@ -52,7 +56,7 @@ content 的 layout
              ├─ 有正文 → feature-document/styles.html
              │             ├─ 2 个基础源文件 → article-core.css
              │             └─ 有富内容 → 5 个组件源文件 → article-rich.css
-             ├─ 首页 → home-brand.css + 模板生成的场景 CSS
+             ├─ 首页 → page-home.css + 模板生成的场景 CSS
              ├─ 更新检查 → updates.css
              └─ 404 → not-found.css
 
@@ -92,12 +96,12 @@ page-shell.css 的画幅／列宽
     → 集合列定义、第一列宽度、路径列布局
 
 首页 model.html 生成的场景参数
-    → home-brand.css 的位置与动画
+    → page-home.css 的位置与动画
 ```
 
 按变量引用检查，跨 CSS 文件的提供者主要就是 `theme.css` 和 `page-shell.css`；首页另消费模板生成的变量。图片、引用、表格和代码的局部颜色变量已归在各自文件，没有发现正文组件互相读取对方的专属配色变量。
 
-`home-brand.css` 在首页覆盖 `--page-edge-block-end`，属于明确的页面级留白定制，应保留。模板生成的 `--lift`、`--dur`、`--lag` 也是实际使用的首页私有参数，不是未定义变量；可在文件顶部注明来源，不必为局部变量统一加很长的全局前缀。
+`page-home.css` 在首页覆盖 `--page-edge-block-end`，属于明确的页面级留白定制，应保留。模板生成的 `--signal-lift`、`--signal-duration`、`--signal-delay` 也是实际使用的首页私有参数，不是未定义变量；可在文件顶部注明来源，不必为局部变量统一加很长的全局前缀。
 
 目前没有 CSS 文件循环加载的问题。需要关心的是**多个选择器命中同一元素时，谁拥有最终规则**，而不只是文件引用图。
 
@@ -176,7 +180,7 @@ page-shell.css 的画幅／列宽
 | `article-media.css` | 1,701 | `prose-images.css` | 移出 hr，保留图片及其包装 |
 | `article-code.css` | 3,515 | `prose-code.css` | 代码块、Chroma、行号 |
 | `article-table.css` | 1,209 | `prose-tables.css` | 普通正文表格，隔离 Chroma 内部表格 |
-| `home-brand.css` | 8,047 | 保留 | 首页品牌场景及其独立适配 |
+| `page-home.css` | 8,047 | 保留 | 首页品牌场景及其独立适配 |
 | `updates.css` | 148 | `updates-panel.css` | 明确只有检查更新面板，不负责更新引擎 |
 | `not-found.css` | 94 | 保留 | 404 的其他语言链接排列 |
 
@@ -200,7 +204,7 @@ assets/css/
   prose-images.css
   prose-code.css
   prose-tables.css
-  home-brand.css
+  page-home.css
   updates-panel.css
   not-found.css
 ```
@@ -241,7 +245,7 @@ assets/css/
 
 建议把 `article-core.css` 与 `article-rich.css` 合成一个 `prose.css`；源码仍按正文组件分开。当前 65 个正文页中有 50 个需要 rich，单包会让 15 个纯文本页多取得约 6.39 KB 的 minified CSS，但删除渲染后 HTML 标签嗅探、`prefetchdebug` 显式补包和 core／rich 顺序契约，更符合本站的低心智维护优先级。
 
-页面公共包继续叫 `page.css`，并拼入仍各自维护的 `updates-panel.css` 与 `not-found.css` 源码。首页继续使用公共 `home-brand.css` 加语言场景 CSS；三份场景当前内容完全相同，但未来模型允许按语言变化，为节省 2,992 B 建立内容键去重机制并不划算。
+页面公共包继续叫 `page.css`，并拼入仍各自维护的 `updates-panel.css` 与 `not-found.css` 源码。首页继续使用公共 `page-home.css` 加语言场景 CSS；三份场景当前内容完全相同，但未来模型允许按语言变化，为节省 2,992 B 建立内容键去重机制并不划算。
 
 这属于名称迁移：更新引用和 `check-public-html.mjs` 的产物契约后，不保留旧文件、双加载或重定向。仅改源码文件名并保持内容、顺序、输出目标不变时，最终拼接字节可保持相同；改变输出 basename 时，即使内容 hash 相同，资源 URL 也会改变，浏览器会重新取得新地址。移动规则或修正作用范围则会正常改变内容 hash。
 

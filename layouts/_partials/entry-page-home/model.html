@@ -32,7 +32,7 @@
 {{- if lt $signalLaunchGapSeconds 1 -}}{{- $signalLaunchGapSeconds = 1 -}}{{- end -}}
 {{- $signalDurationSpreadSeconds := 16 -}}
 {{- $signalDurationBaseSeconds := sub $signalDriftSeconds (div $signalDurationSpreadSeconds 2) -}}
-{{- $sceneRule := printf ".home-brand{--home-brand-wind-field-start-offset:%vrem;--home-brand-wind-field-height:%vrem;--home-brand-ground-space:%vrem;--home-brand-signal-font-size:%vrem}" $windFieldStartOffsetRem $windFieldHeightRem $groundSpaceRem $signalFontSizeRem -}}
+{{- $sceneRule := printf ".page-home{--page-home-wind-field-start-offset:%vrem;--page-home-wind-field-height:%vrem;--page-home-ground-space:%vrem;--page-home-signal-font-size:%vrem}" $windFieldStartOffsetRem $windFieldHeightRem $groundSpaceRem $signalFontSizeRem -}}
 {{- $rules := slice $sceneRule -}}
 {{- $items := slice -}}
 {{- range $index, $signal := $signals -}}
@@ -48,17 +48,16 @@
 {{- $signalLiftRem := add $signalMinLiftRem (mul $signalSlotStepRem $signalSlot) -}}
 {{- $signalLift := printf "%.2frem" $signalLiftRem -}}
 {{- $signalSlotGroup := div $signalSlot 2 -}}
-{{- $duration := add $signalDurationBaseSeconds (mod (add (mul $signalSlot 5) (mul $index 3)) $signalDurationSpreadSeconds) -}}
-{{- $signalDuration := $duration -}}
-{{- if $signalIsPrimary -}}{{- $signalDuration = mul $duration 2 -}}{{- end -}}
+{{- $signalDuration := add $signalDurationBaseSeconds (mod (add (mul $signalSlot 5) (mul $index 3)) $signalDurationSpreadSeconds) -}}
+{{- if $signalIsPrimary -}}{{- $signalDuration = mul $signalDuration 2 -}}{{- end -}}
 {{- $delayJitter := mod (mul $signalSlotGroup 2) $signalLaunchGapSeconds -}}
 {{- $delay := add 2 (add (mul $index $signalLaunchGapSeconds) $delayJitter) -}}
 {{- $guideBucket := mod (add 15 (mul $index 37)) 100 -}}
-{{- $signalClasses := slice "home-brand__signal" -}}
+{{- $signalClasses := slice "page-home__signal" -}}
 {{- if $signalIsPrimary -}}{{- $signalClasses = $signalClasses | append "is-primary" -}}{{- end -}}
 {{- if gt $guideChance $guideBucket -}}{{- $signalClasses = $signalClasses | append "is-guided" -}}{{- end -}}
 {{- $isExternalSignalURL := or (hasPrefix $signalURL "http://") (hasPrefix $signalURL "https://") (hasPrefix $signalURL "//") -}}
 {{- $items = $items | append (dict "name" $signalName "url" $signalURL "isExternalURL" $isExternalSignalURL "classes" (delimit $signalClasses " ")) -}}
-{{- $rules = $rules | append (printf ".home-brand__signal:nth-child(%d){--lift:%s;--dur:%ds;--lag:-%ds}" (add $index 1) $signalLift $signalDuration $delay) -}}
+{{- $rules = $rules | append (printf ".page-home__signal:nth-child(%d){--signal-lift:%s;--signal-duration:%ds;--signal-delay:-%ds}" (add $index 1) $signalLift $signalDuration $delay) -}}
 {{- end -}}
-{{- return (dict "signals" $items "css" (delimit $rules "")) -}}
+{{- return (dict "signals" $items "sceneCSS" (delimit $rules "")) -}}

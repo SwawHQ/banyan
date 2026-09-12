@@ -1,57 +1,57 @@
 (function () {
-    const HOME_SIGNAL_SELECTOR = "[data-home-signal]";
-    const homeBrands = Array.from(document.querySelectorAll(".home-brand"));
-    const pauseStates = new Map();
-    let selectedControl = null;
+    const SIGNAL_CONTROL_SELECTOR = "[data-page-home-signal]";
+    const pageHomes = Array.from(document.querySelectorAll(".page-home"));
+    const scenePauseStates = new Map();
+    let selectedSignalControl = null;
 
-    const setPaused = (homeBrand, source, paused) => {
-        if (!homeBrand) {
+    const setScenePaused = (pageHome, reason, paused) => {
+        if (!pageHome) {
             return;
         }
 
-        const state = pauseStates.get(homeBrand) || {
+        const state = scenePauseStates.get(pageHome) || {
             document: document.hidden,
             viewport: false,
         };
 
-        state[source] = paused;
-        pauseStates.set(homeBrand, state);
-        homeBrand.classList.toggle("is-paused", state.document || state.viewport);
+        state[reason] = paused;
+        scenePauseStates.set(pageHome, state);
+        pageHome.classList.toggle("is-paused", state.document || state.viewport);
     };
 
-    const updateDocumentPause = () => {
-        homeBrands.forEach((homeBrand) => {
-            setPaused(homeBrand, "document", document.hidden);
+    const syncDocumentPauseState = () => {
+        pageHomes.forEach((pageHome) => {
+            setScenePaused(pageHome, "document", document.hidden);
         });
     };
 
-    const initButtons = () => {
-        homeBrands.forEach((homeBrand) => {
-            homeBrand.querySelectorAll("button[data-home-signal]").forEach((button) => {
+    const initSignalButtons = () => {
+        pageHomes.forEach((pageHome) => {
+            pageHome.querySelectorAll("button[data-page-home-signal]").forEach((button) => {
                 button.setAttribute("aria-pressed", "false");
             });
         });
     };
 
-    const setSelected = (control, selected) => {
-        const signal = control.closest(".home-brand__signal");
-        control.toggleAttribute("data-home-signal-selected", selected);
+    const setSignalSelected = (control, selected) => {
+        const signal = control.closest(".page-home__signal");
+        control.toggleAttribute("data-page-home-signal-selected", selected);
         if (control instanceof HTMLButtonElement) {
             control.setAttribute("aria-pressed", selected ? "true" : "false");
         }
         signal?.classList.toggle("is-selected", selected);
     };
 
-    const clearSelected = () => {
-        if (!selectedControl) {
+    const clearSelectedSignal = () => {
+        if (!selectedSignalControl) {
             return;
         }
 
-        setSelected(selectedControl, false);
-        selectedControl = null;
+        setSignalSelected(selectedSignalControl, false);
+        selectedSignalControl = null;
     };
 
-    const isLinkControl = (control) => control instanceof HTMLAnchorElement && control.hasAttribute("href");
+    const isSignalLink = (control) => control instanceof HTMLAnchorElement && control.hasAttribute("href");
 
     document.addEventListener("click", (event) => {
         const target = event.target;
@@ -60,11 +60,11 @@
             return;
         }
 
-        const control = target.closest(HOME_SIGNAL_SELECTOR);
+        const control = target.closest(SIGNAL_CONTROL_SELECTOR);
 
         if (!control) {
-            if (!target.closest(".home-brand__signals")) {
-                clearSelected();
+            if (!target.closest(".page-home__signals")) {
+                clearSelectedSignal();
             }
             return;
         }
@@ -73,42 +73,42 @@
             return;
         }
 
-        if (control === selectedControl) {
-            if (isLinkControl(control)) {
-                clearSelected();
+        if (control === selectedSignalControl) {
+            if (isSignalLink(control)) {
+                clearSelectedSignal();
                 return;
             }
 
             event.preventDefault();
-            clearSelected();
+            clearSelectedSignal();
             return;
         }
 
         event.preventDefault();
-        clearSelected();
-        selectedControl = control;
-        setSelected(control, true);
+        clearSelectedSignal();
+        selectedSignalControl = control;
+        setSignalSelected(control, true);
     });
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
-            clearSelected();
+            clearSelectedSignal();
         }
     });
 
-    document.addEventListener("visibilitychange", updateDocumentPause);
-    initButtons();
-    updateDocumentPause();
+    document.addEventListener("visibilitychange", syncDocumentPauseState);
+    initSignalButtons();
+    syncDocumentPauseState();
 
     if ("IntersectionObserver" in window) {
         const sceneObserver = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
-                setPaused(entry.target.closest(".home-brand"), "viewport", !entry.isIntersecting);
+                setScenePaused(entry.target.closest(".page-home"), "viewport", !entry.isIntersecting);
             });
         });
 
-        homeBrands.forEach((homeBrand) => {
-            sceneObserver.observe(homeBrand.querySelector(".home-brand__scene") || homeBrand);
+        pageHomes.forEach((pageHome) => {
+            sceneObserver.observe(pageHome.querySelector(".page-home__scene") || pageHome);
         });
     }
 })();

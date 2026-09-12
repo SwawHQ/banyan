@@ -32,7 +32,7 @@ layouts/
 当前只有三个入口私有目录：
 
 - `entry-baseof/`：全站骨架独有的内联脚本和内容图标声明审计。`entry-baseof/audit-content-icons.html` 依赖入口对可列出页面的精确判断，不属于通用构建审计。
-- `entry-page-home/`：首页品牌场景模型。
+- `entry-page-home/`：首页场景模型，返回信号条目与 `sceneCSS`；`page-home.html` 装配样式、交互与 `assets/page-home/windsock.svg`。
 - `entry-page-prefetch-debug/`：prefetch 调试页的可见内容。
 
 ## Partial 所有权
@@ -58,7 +58,7 @@ _partials/
 ```
 
 - `feature-browse/`：集合成员、统一 row、排序、第一列入口、路径列、浏览来源、taxonomy、URL 状态和集合内部的产品展示适配。
-- `feature-document/`：正文外壳、标题契约、文章元信息、文章 schema、正文样式和 Markdown 图片渲染。
+- `feature-document/`：正文外壳、标题契约、辅助列的元信息与章节目录、文章 schema、正文样式和 Markdown 图片渲染。
 - `feature-preferences/`：语言上下文、语言选项模型，以及语言页与外观页共用的返回操作。外观固定为 auto、light、dark 三项，由 `page-appearance.html` 就地装配，不单独建立选项模型；它不负责账号、会话或权限。
 - `feature-updates/`：检查更新页面及其静态状态文案；浏览器控制器只读取页面已输出的数据。
 - `system-ui/`：列表行、图标、选择控件、链接、页面 slot 与公共页面样式装配。
