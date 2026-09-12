@@ -48,7 +48,7 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
 .collection-column-label:focus-visible,
 .collection-column-sort:hover,
 .collection-column-sort:focus-visible {
-    color: var(--accent-text);
+    color: var(--link-hover);
 }
 
 .collection-list--path-column .collection-item-link {

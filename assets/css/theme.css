@@ -1,3 +1,7 @@
+/* Color roles and their light/dark defaults. Components only consume these roles.
+   Unqualified scopes apply to both modes; dark blocks only override differences.
+   Keep each scope when overriding: aliases and mixes resolve before inheritance.
+   A role may use a literal, an alias, or a mix without changing its consumers. */
 :root {
     color-scheme: light;
     --bg: #FFFFFF;
@@ -8,6 +12,7 @@
     --link-visited: var(--muted);
     --accent: #9E685F;
     --accent-text: color-mix(in srgb, var(--accent) 72%, var(--fg));
+    --link-hover: var(--accent-text);
     --focus-ring: var(--accent);
 }
 
@@ -18,4 +23,110 @@
     --muted: #D0D0D0;
     --border: #CCCCCC;
     --accent: #AC7B73;
+}
+
+/* Colored illustrations; ordinary line icons continue to use currentColor. */
+.icon {
+    --icon-accent: var(--accent);
+    --icon-shade: color-mix(in srgb, var(--icon-accent) 80%, black);
+}
+
+.collection-item-link {
+    --collection-item-text: var(--link);
+    --collection-item-visited-text: var(--link-visited);
+    --collection-item-hover-text: var(--link-hover);
+    --collection-item-current-text: var(--accent-text);
+    --collection-item-hover-bg: color-mix(in srgb, var(--accent) 8%, transparent);
+    --collection-item-current-bg: color-mix(in srgb, var(--accent) 14%, transparent);
+    --collection-item-current-ring: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.prose {
+    /* Shared neutral input for the borders of inline code, tables, and images.
+       Their output roles stay separate because their tint strengths differ. */
+    --prose-border-base: #D7D7D7;
+
+    --prose-heading-color: var(--accent);
+    --prose-heading-border: color-mix(in srgb, var(--prose-heading-color), transparent 85%);
+    --prose-rule-border: #888888;
+    --prose-deleted-color: #999;
+    --prose-deleted-decoration: var(--accent);
+
+    --code-inline-text: color-mix(in srgb, var(--accent) 55%, var(--fg));
+    --code-inline-bg: color-mix(in srgb, var(--accent) 6%, var(--bg));
+    --code-inline-border: color-mix(in srgb, var(--accent) 22%, var(--prose-border-base));
+
+    --quote-text: var(--fg);
+    --quote-bg: color-mix(in srgb, var(--accent) 7%, var(--bg));
+    --quote-border: color-mix(in srgb, var(--accent) 72%, var(--fg));
+    --quote-ring: color-mix(in srgb, var(--quote-border) 14%, transparent);
+
+    --image-frame-bg: color-mix(in srgb, var(--accent) 3%, var(--bg));
+    --image-frame-border: color-mix(in srgb, var(--accent) 16%, var(--prose-border-base));
+    --image-frame-shadow: color-mix(in srgb, var(--fg) 10%, transparent);
+
+    --table-text: var(--muted);
+    --table-header-bg: color-mix(in srgb, var(--accent) 4%, #F1F1F1);
+    --table-border: color-mix(in srgb, var(--accent) 14%, var(--prose-border-base));
+    --table-striped-bg: color-mix(in srgb, var(--accent) 2%, #FAFAFA);
+
+    /* Syntax colors are independent of the decorative accent. */
+    --code-block-text: #4F6590;
+    --code-block-bg: color-mix(in srgb, var(--accent) 3%, #F8F8F8);
+    --code-block-border: color-mix(in srgb, var(--accent) 12%, #E3E3E3);
+    --code-line-highlight: color-mix(in srgb, var(--accent) 5%, #EFEFEF);
+    --code-line-number: var(--muted);
+    --code-scrollbar-track: var(--code-block-bg);
+    --code-scrollbar-thumb: color-mix(in srgb, var(--accent) 16%, var(--code-block-border));
+    --code-token-string: #7A4F8F;
+    --code-token-comment: var(--muted);
+    --code-token-keyword: #8F554C;
+    --code-token-type: #557A45;
+}
+
+[data-theme="dark"] .prose {
+    --prose-border-base: #3A3A3A;
+
+    --code-inline-text: color-mix(in srgb, var(--accent) 68%, var(--fg));
+    --code-inline-bg: color-mix(in srgb, var(--accent) 14%, var(--bg));
+    --code-inline-border: color-mix(in srgb, var(--accent) 36%, var(--prose-border-base));
+
+    --quote-bg: color-mix(in srgb, var(--accent) 16%, var(--bg));
+    --quote-border: color-mix(in srgb, var(--accent) 76%, var(--fg));
+
+    --image-frame-bg: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    --image-frame-border: color-mix(in srgb, var(--accent) 34%, var(--prose-border-base));
+    --image-frame-shadow: color-mix(in srgb, #000000 34%, transparent);
+
+    --table-header-bg: color-mix(in srgb, var(--accent) 8%, var(--bg));
+    --table-border: color-mix(in srgb, var(--accent) 24%, var(--prose-border-base));
+    --table-striped-bg: color-mix(in srgb, var(--accent) 4%, var(--bg));
+
+    --code-block-text: #8EA2C6;
+    --code-block-bg: color-mix(in srgb, var(--accent) 5%, #222222);
+    --code-block-border: color-mix(in srgb, var(--accent) 14%, #3A3A3A);
+    --code-line-highlight: color-mix(in srgb, var(--accent) 9%, #2C2C2C);
+    --code-scrollbar-thumb: color-mix(in srgb, var(--accent) 24%, var(--code-block-border));
+    --code-token-string: #B58DCA;
+    --code-token-comment: #A8A8A8;
+    --code-token-keyword: #C08A82;
+    --code-token-type: #9EC889;
+}
+
+.page-home {
+    --page-home-anchor-color: var(--muted);
+    --page-home-horizon-color: currentColor;
+    --page-home-signal-color: color-mix(in srgb, #5F759E 84%, var(--fg));
+    --page-home-signal-selected-color: var(--accent);
+    --page-home-windsock-body-color: var(--accent);
+    --page-home-windsock-stripe-color: var(--bg);
+    --page-home-windsock-pole-color: currentColor;
+}
+
+[data-theme="dark"] .page-home {
+    --page-home-anchor-color: color-mix(in srgb, var(--fg) 58%, var(--bg));
+    --page-home-horizon-color: color-mix(in srgb, var(--border) 38%, var(--bg));
+    --page-home-signal-color: color-mix(in srgb, #7388AC 78%, var(--fg));
+    --page-home-signal-selected-color: color-mix(in srgb, var(--accent) 82%, var(--fg));
+    --page-home-windsock-pole-color: color-mix(in srgb, var(--border) 52%, var(--bg));
 }

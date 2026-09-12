@@ -1,7 +1,6 @@
 .prose {
     /* Keep aligned with params.media.responsive_images.sizes fallback. */
     --prose-max-inline: 88ch;
-    --prose-rule-border: #888888;
     max-inline-size: min(100%, var(--prose-max-inline));
     overflow-wrap: break-word;
 }
@@ -25,7 +24,7 @@
     scroll-margin-block-start: 12px;
     display: block;
     text-align: left;
-    color: var(--accent);
+    color: var(--prose-heading-color);
     letter-spacing: 0;
     font-size: 1rem;
     font-weight: bold;
@@ -34,7 +33,7 @@
 .prose h1 {
     margin: 52px 0;
     padding-bottom: 3px;
-    border-bottom: 2px solid color-mix(in srgb, var(--accent), transparent 85%);
+    border-bottom: 2px solid var(--prose-heading-border);
 }
 
 .prose h2 {

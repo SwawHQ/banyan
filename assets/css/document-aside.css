@@ -31,7 +31,7 @@
 }
 
 .document-meta a:is(:hover, :focus-visible) {
-    color: var(--accent-text);
+    color: var(--link-hover);
 }
 
 .document-meta__separator {
