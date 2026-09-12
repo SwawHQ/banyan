@@ -21,6 +21,7 @@ import { updatesNavigationScenarios } from './updates-navigation.mjs';
 import { canvasScenarios } from './canvas.mjs';
 import { openDocumentAside } from './document-aside.mjs';
 import { presentationContractScenarios } from './presentation-contracts.mjs';
+import { paletteContractScenarios } from './palette-contracts.mjs';
 
 const WIDE_VIEWPORT = { width: 1600, height: 1100 };
 const BREADCRUMB_FIRST_FRAME_VIEWPORT = { width: 1280, height: 960 };
@@ -637,6 +638,7 @@ async function readBreadcrumbPrefetchSlotContract(page) {
 }
 
 export const scenarios = [
+    ...paletteContractScenarios,
     ...presentationContractScenarios,
     ...canvasScenarios,
     ...preferenceAndUpdateScenarios,

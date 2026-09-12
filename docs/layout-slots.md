@@ -72,4 +72,4 @@ slots:
 
 第一列的存在不表示页面具有 collection browser。集合路径仍由 `slots.breadcrumb`、集合来源和 provider 决定；不要新增 `slots.browser_mode`，也不要把来源、排序和列状态写入 front matter。
 
-同一份入口列表和 slot 声明用于各屏幕宽度。整页横向画幅保持原有浏览位置；外观选择页在跟随系统、浅色和深色之间切换，所有页面共同消费 `theme.css` 的语义色变量。黑白灰收敛属于后续 6C，不是 slot 契约的一部分。
+同一份入口列表和 slot 声明用于各屏幕宽度。整页横向画幅保持原有浏览位置；外观选择页在跟随系统、浅色和深色之间切换，所有页面共同消费 `params.appearance.palette` 指定文件中的语义色变量，默认使用 `css/theme.css`，也可选择 `css/theme-monochrome.css`。配色文件选择不属于 slot 契约，详见 `assets/README.md`。

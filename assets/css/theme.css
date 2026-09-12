@@ -42,19 +42,20 @@
 }
 
 .prose {
-    /* Shared neutral input for the borders of inline code, tables, and images.
-       Their output roles stay separate because their tint strengths differ. */
-    --prose-border-base: #D7D7D7;
+    /* Neutral surfaces move from bg toward fg; the outer mix adds accent tint.
+       Keep one-use neutral mixes inline, and share only the input for inline
+       code, table, and image borders. Output roles remain independent. */
+    --prose-border-neutral: color-mix(in srgb, var(--fg) 18%, var(--bg));
 
     --prose-heading-color: var(--accent);
     --prose-heading-border: color-mix(in srgb, var(--prose-heading-color), transparent 85%);
-    --prose-rule-border: #888888;
-    --prose-deleted-color: #999;
+    --prose-rule-border: color-mix(in srgb, var(--fg) 52%, var(--bg));
+    --prose-deleted-color: var(--muted);
     --prose-deleted-decoration: var(--accent);
 
     --code-inline-text: color-mix(in srgb, var(--accent) 55%, var(--fg));
     --code-inline-bg: color-mix(in srgb, var(--accent) 6%, var(--bg));
-    --code-inline-border: color-mix(in srgb, var(--accent) 22%, var(--prose-border-base));
+    --code-inline-border: color-mix(in srgb, var(--accent) 22%, var(--prose-border-neutral));
 
     --quote-text: var(--fg);
     --quote-bg: color-mix(in srgb, var(--accent) 7%, var(--bg));
@@ -62,54 +63,55 @@
     --quote-ring: color-mix(in srgb, var(--quote-border) 14%, transparent);
 
     --image-frame-bg: color-mix(in srgb, var(--accent) 3%, var(--bg));
-    --image-frame-border: color-mix(in srgb, var(--accent) 16%, var(--prose-border-base));
+    --image-frame-border: color-mix(in srgb, var(--accent) 16%, var(--prose-border-neutral));
     --image-frame-shadow: color-mix(in srgb, var(--fg) 10%, transparent);
 
     --table-text: var(--muted);
-    --table-header-bg: color-mix(in srgb, var(--accent) 4%, #F1F1F1);
-    --table-border: color-mix(in srgb, var(--accent) 14%, var(--prose-border-base));
-    --table-striped-bg: color-mix(in srgb, var(--accent) 2%, #FAFAFA);
+    --table-header-bg: color-mix(in srgb, var(--accent) 4%, color-mix(in srgb, var(--fg) 6%, var(--bg)));
+    --table-border: color-mix(in srgb, var(--accent) 14%, var(--prose-border-neutral));
+    --table-striped-bg: color-mix(in srgb, var(--accent) 2%, color-mix(in srgb, var(--fg) 2%, var(--bg)));
 
-    /* Syntax colors are independent of the decorative accent. */
+    /* Syntax colors are independent of the decorative accent.
+       Check text on both the block background and highlighted lines. */
     --code-block-text: #4F6590;
-    --code-block-bg: color-mix(in srgb, var(--accent) 3%, #F8F8F8);
-    --code-block-border: color-mix(in srgb, var(--accent) 12%, #E3E3E3);
-    --code-line-highlight: color-mix(in srgb, var(--accent) 5%, #EFEFEF);
+    --code-block-bg: color-mix(in srgb, var(--accent) 3%, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --code-block-border: color-mix(in srgb, var(--accent) 12%, color-mix(in srgb, var(--fg) 12%, var(--bg)));
+    --code-line-highlight: color-mix(in srgb, var(--accent) 5%, color-mix(in srgb, var(--fg) 7%, var(--bg)));
     --code-line-number: var(--muted);
     --code-scrollbar-track: var(--code-block-bg);
     --code-scrollbar-thumb: color-mix(in srgb, var(--accent) 16%, var(--code-block-border));
     --code-token-string: #7A4F8F;
     --code-token-comment: var(--muted);
     --code-token-keyword: #8F554C;
-    --code-token-type: #557A45;
+    --code-token-type: #49673D;
 }
 
 [data-theme="dark"] .prose {
-    --prose-border-base: #3A3A3A;
+    --prose-border-neutral: color-mix(in srgb, var(--fg) 15%, var(--bg));
 
     --code-inline-text: color-mix(in srgb, var(--accent) 68%, var(--fg));
     --code-inline-bg: color-mix(in srgb, var(--accent) 14%, var(--bg));
-    --code-inline-border: color-mix(in srgb, var(--accent) 36%, var(--prose-border-base));
+    --code-inline-border: color-mix(in srgb, var(--accent) 36%, var(--prose-border-neutral));
 
     --quote-bg: color-mix(in srgb, var(--accent) 16%, var(--bg));
     --quote-border: color-mix(in srgb, var(--accent) 76%, var(--fg));
 
     --image-frame-bg: color-mix(in srgb, var(--accent) 10%, var(--bg));
-    --image-frame-border: color-mix(in srgb, var(--accent) 34%, var(--prose-border-base));
+    --image-frame-border: color-mix(in srgb, var(--accent) 34%, var(--prose-border-neutral));
     --image-frame-shadow: color-mix(in srgb, #000000 34%, transparent);
 
     --table-header-bg: color-mix(in srgb, var(--accent) 8%, var(--bg));
-    --table-border: color-mix(in srgb, var(--accent) 24%, var(--prose-border-base));
+    --table-border: color-mix(in srgb, var(--accent) 24%, var(--prose-border-neutral));
     --table-striped-bg: color-mix(in srgb, var(--accent) 4%, var(--bg));
 
     --code-block-text: #8EA2C6;
-    --code-block-bg: color-mix(in srgb, var(--accent) 5%, #222222);
-    --code-block-border: color-mix(in srgb, var(--accent) 14%, #3A3A3A);
-    --code-line-highlight: color-mix(in srgb, var(--accent) 9%, #2C2C2C);
+    --code-block-bg: color-mix(in srgb, var(--accent) 5%, color-mix(in srgb, var(--fg) 4%, var(--bg)));
+    --code-block-border: color-mix(in srgb, var(--accent) 14%, color-mix(in srgb, var(--fg) 15%, var(--bg)));
+    --code-line-highlight: color-mix(in srgb, var(--accent) 9%, color-mix(in srgb, var(--fg) 9%, var(--bg)));
     --code-scrollbar-thumb: color-mix(in srgb, var(--accent) 24%, var(--code-block-border));
-    --code-token-string: #B58DCA;
+    --code-token-string: #BE9CD0;
     --code-token-comment: #A8A8A8;
-    --code-token-keyword: #C08A82;
+    --code-token-keyword: #C99E98;
     --code-token-type: #9EC889;
 }
 

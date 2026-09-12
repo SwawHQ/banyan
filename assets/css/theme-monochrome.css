@@ -1,0 +1,136 @@
+/* Complete monochrome palette with light/dark defaults. Components only consume these roles.
+   Near-white and pure-black canvases use softened text, quiet borders, and
+   shallow surface steps. Reserve strong contrast for reading and focus.
+   Unqualified scopes apply to both modes; dark blocks keep explicit mode defaults.
+   Keep each scope when overriding: aliases and mixes resolve before inheritance.
+   A role may use a literal, an alias, or a mix without changing its consumers. */
+:root {
+    color-scheme: light;
+    --bg: #FBFBFB;
+    --fg: #363636;
+    --muted: #666666;
+    --border: #AAAAAA;
+    --link: var(--fg);
+    --link-visited: var(--muted);
+    --accent: #444444;
+    --accent-text: color-mix(in srgb, var(--accent) 72%, var(--fg));
+    --link-hover: var(--accent-text);
+    --focus-ring: var(--accent);
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #000000;
+    --fg: #C6C6C6;
+    --muted: #969696;
+    --border: #444444;
+    --accent: #C0C0C0;
+}
+
+/* Grayscale illustrations; ordinary line icons continue to use currentColor. */
+.icon {
+    --icon-accent: var(--accent);
+    --icon-shade: color-mix(in srgb, var(--icon-accent) 80%, black);
+}
+
+.collection-item-link {
+    --collection-item-text: var(--link);
+    --collection-item-visited-text: var(--link-visited);
+    --collection-item-hover-text: var(--link-hover);
+    --collection-item-current-text: var(--accent-text);
+    --collection-item-hover-bg: color-mix(in srgb, var(--accent) 6%, transparent);
+    --collection-item-current-bg: color-mix(in srgb, var(--accent) 10%, transparent);
+    --collection-item-current-ring: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.prose {
+    /* Neutral surfaces move from bg toward fg; the outer mix adds emphasis.
+       Keep one-use neutral mixes inline, and share only the input for inline
+       code, table, and image borders. Output roles remain independent. */
+    --prose-border-neutral: color-mix(in srgb, var(--fg) 12%, var(--bg));
+
+    --prose-heading-color: var(--accent);
+    --prose-heading-border: color-mix(in srgb, var(--prose-heading-color) 10%, transparent);
+    --prose-rule-border: color-mix(in srgb, var(--fg) 24%, var(--bg));
+    --prose-deleted-color: var(--muted);
+    --prose-deleted-decoration: var(--accent);
+
+    --code-inline-text: color-mix(in srgb, var(--accent) 55%, var(--fg));
+    --code-inline-bg: color-mix(in srgb, var(--accent) 4%, var(--bg));
+    --code-inline-border: color-mix(in srgb, var(--accent) 6%, var(--prose-border-neutral));
+
+    --quote-text: var(--fg);
+    --quote-bg: color-mix(in srgb, var(--accent) 3%, var(--bg));
+    --quote-border: color-mix(in srgb, var(--accent) 30%, var(--bg));
+    --quote-ring: color-mix(in srgb, var(--quote-border) 8%, transparent);
+
+    --image-frame-bg: color-mix(in srgb, var(--accent) 1%, var(--bg));
+    --image-frame-border: color-mix(in srgb, var(--accent) 4%, var(--prose-border-neutral));
+    --image-frame-shadow: color-mix(in srgb, var(--fg) 3%, transparent);
+
+    --table-text: var(--fg);
+    --table-header-bg: color-mix(in srgb, var(--accent) 2%, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --table-border: color-mix(in srgb, var(--accent) 5%, var(--prose-border-neutral));
+    --table-striped-bg: color-mix(in srgb, var(--accent) 1%, color-mix(in srgb, var(--fg) 1%, var(--bg)));
+
+    /* Syntax colors are independent of the decorative accent.
+       Check text on both the block background and highlighted lines. */
+    --code-block-text: #404040;
+    --code-block-bg: color-mix(in srgb, var(--accent) 2%, color-mix(in srgb, var(--fg) 2%, var(--bg)));
+    --code-block-border: color-mix(in srgb, var(--accent) 5%, color-mix(in srgb, var(--fg) 9%, var(--bg)));
+    --code-line-highlight: color-mix(in srgb, var(--accent) 3%, color-mix(in srgb, var(--fg) 4%, var(--bg)));
+    --code-line-number: var(--muted);
+    --code-scrollbar-track: var(--code-block-bg);
+    --code-scrollbar-thumb: color-mix(in srgb, var(--accent) 22%, var(--code-block-border));
+    --code-token-string: #505050;
+    --code-token-comment: var(--muted);
+    --code-token-keyword: #363636;
+    --code-token-type: #484848;
+}
+
+[data-theme="dark"] .prose {
+    --prose-border-neutral: color-mix(in srgb, var(--fg) 14%, var(--bg));
+
+    --code-inline-text: color-mix(in srgb, var(--accent) 68%, var(--fg));
+    --code-inline-bg: color-mix(in srgb, var(--accent) 7%, var(--bg));
+    --code-inline-border: color-mix(in srgb, var(--accent) 8%, var(--prose-border-neutral));
+
+    --quote-bg: color-mix(in srgb, var(--accent) 5%, var(--bg));
+    --quote-border: color-mix(in srgb, var(--accent) 30%, var(--bg));
+
+    --image-frame-bg: color-mix(in srgb, var(--accent) 2%, var(--bg));
+    --image-frame-border: color-mix(in srgb, var(--accent) 6%, var(--prose-border-neutral));
+    --image-frame-shadow: color-mix(in srgb, #000000 34%, transparent);
+
+    --table-header-bg: color-mix(in srgb, var(--accent) 7%, var(--bg));
+    --table-border: color-mix(in srgb, var(--accent) 8%, var(--prose-border-neutral));
+    --table-striped-bg: color-mix(in srgb, var(--accent) 3%, var(--bg));
+
+    --code-block-text: #BABABA;
+    --code-block-bg: color-mix(in srgb, var(--accent) 4%, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --code-block-border: color-mix(in srgb, var(--accent) 8%, color-mix(in srgb, var(--fg) 12%, var(--bg)));
+    --code-line-highlight: color-mix(in srgb, var(--accent) 7%, color-mix(in srgb, var(--fg) 6%, var(--bg)));
+    --code-scrollbar-thumb: color-mix(in srgb, var(--accent) 24%, var(--code-block-border));
+    --code-token-string: #AEAEAE;
+    --code-token-comment: #969696;
+    --code-token-keyword: #C6C6C6;
+    --code-token-type: #B6B6B6;
+}
+
+.page-home {
+    --page-home-anchor-color: var(--muted);
+    --page-home-horizon-color: currentColor;
+    --page-home-signal-color: color-mix(in srgb, #666666 84%, var(--fg));
+    --page-home-signal-selected-color: var(--accent);
+    --page-home-windsock-body-color: var(--accent);
+    --page-home-windsock-stripe-color: var(--bg);
+    --page-home-windsock-pole-color: currentColor;
+}
+
+[data-theme="dark"] .page-home {
+    --page-home-anchor-color: var(--muted);
+    --page-home-horizon-color: color-mix(in srgb, var(--border) 75%, var(--bg));
+    --page-home-signal-color: color-mix(in srgb, #AAAAAA 78%, var(--fg));
+    --page-home-signal-selected-color: color-mix(in srgb, var(--accent) 82%, var(--fg));
+    --page-home-windsock-pole-color: var(--border);
+}

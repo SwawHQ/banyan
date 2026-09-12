@@ -1,4 +1,18 @@
-{{ $theme := resources.Get "css/theme.css" }}
+{{ $palettePath := .Site.Params.appearance.palette }}
+{{ if or (ne (printf "%T" $palettePath) "string") (eq (trim (printf "%v" $palettePath) " \r\n\t") "") }}
+  {{ errorf "Build failed: params.appearance.palette must be a non-empty CSS asset path." }}
+  {{ return }}
+{{ end }}
+{{ $palettePath = trim $palettePath " \r\n\t" }}
+{{ $theme := resources.Get $palettePath }}
+{{ if not $theme }}
+  {{ errorf "Build failed: params.appearance.palette %q was not found under assets/." $palettePath }}
+  {{ return }}
+{{ end }}
+{{ if ne $theme.MediaType.Type "text/css" }}
+  {{ errorf "Build failed: params.appearance.palette %q must reference a CSS resource, got %q." $palettePath $theme.MediaType.Type }}
+  {{ return }}
+{{ end }}
 {{ $base := resources.Get "css/base.css" }}
 {{ $icons := resources.Get "css/icons.css" }}
 {{ $pageShell := resources.Get "css/page-shell.css" }}
@@ -23,6 +37,7 @@
   $updatesPanel
   $notFound
 }}
-{{ $bundle := $parts | resources.Concat "css/page.css" }}
+{{/* Concat caches by target path; language-specific palettes need distinct keys. */}}
+{{ $bundle := $parts | resources.Concat (printf "css/page.%s.css" (md5 $palettePath)) }}
 {{ $bundle = partial "system-assets/process-css.html" (dict "resource" $bundle) }}
 <link rel="stylesheet" href="{{ $bundle.RelPermalink }}">
