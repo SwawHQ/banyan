@@ -28,12 +28,45 @@ switching between them does not require editing component CSS. Simple inherited
 text, `currentColor`, `transparent`, and browser-controlled colors do not need a
 new variable for every declaration.
 
-The shared `--prose-border-base` is the neutral input for inline code, table, and
-image borders. Each keeps its own output role and tint strength. Other one-use
-mixing inputs are written directly in the role definition instead of adding a
-second variable. Syntax token colors and the homepage signal color remain
-independent palette decisions. Existing mix ratios preserve Banyan's current
-appearance; they are not a contrast-safe generator for arbitrary accent colors.
+Prose surfaces and borders derive their neutral inputs from `--bg` and `--fg`,
+then mix in `--accent` where a tint is needed. The inner mix controls how far a
+surface sits from the page background; the outer mix controls its accent tint.
+For example, the light code background is:
+
+```css
+--code-block-bg: color-mix(in srgb, var(--accent) 3%, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+```
+
+The inputs and dependencies are deliberately small:
+
+| Decision | Inputs / dependent roles |
+| --- | --- |
+| Page palette | `--bg`, `--fg`, `--accent`, with separate light/dark values |
+| Shared neutral border | `--prose-border-neutral` derives from `--bg`/`--fg`; inline code, table, and image borders add their own accent tint |
+| Table surfaces | Header and stripe backgrounds have their own neutral and accent strengths |
+| Code surfaces | Block background, border, and line highlight each derive from the page palette; scrollbar track follows the block background, thumb follows its border plus accent |
+| Prose separator | `--prose-rule-border` derives from `--bg`/`--fg` without accent |
+| Deleted prose text | `--prose-deleted-color` follows `--muted`; its separate decoration role keeps the deletion visible |
+| Other derived roles | Heading, quote, inline-code and image backgrounds, collection states, and colored icons retain their existing dependencies |
+| Independent choices | Root muted text and border, syntax colors, and homepage signal color keep independent palette values |
+
+`--prose-border-neutral` replaces `--prose-border-base`; update that name in any
+site palette copy. Code-block borders keep a separate neutral calculation: their
+light-mode treatment differs from inline code, tables, and images. One-use neutral
+mixes stay directly in their role definitions instead of gaining extra aliases.
+All output roles remain independently overridable.
+
+Whole-percent neutral mixes approximate the previous neutral shades; existing
+accent tint strengths and the `srgb` mixing space stay unchanged. Small color
+differences are intentional. These formulas provide coordinated defaults, not a
+contrast-safe generator for arbitrary background, foreground, or accent colors.
+
+The default deleted-text and syntax palette is checked against actual prose,
+code-block, and highlighted-line backgrounds in both modes. Normal text must
+reach 4.5:1; corrected deleted-text, light type, and dark keyword/string roles
+target at least 5:1 for some margin. Deletion keeps its own color role even though
+its default follows muted text. Recheck these pairs when overriding the palette;
+the default tests do not guarantee readability for arbitrary custom colors.
 
 To customize the palette, copy the complete `css/theme.css` into the site's root
 `assets/css/theme.css` and edit its values. Hugo replaces this asset as a whole;
