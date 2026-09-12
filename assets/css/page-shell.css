@@ -78,8 +78,9 @@ body {
 }
 
 .page-content {
-    /* The shared gap includes the scrollbar, even with overlay scrollbars. */
-    inline-size: calc(var(--main-column-inline) + var(--page-shell-gap-inline));
+    /* Fit the entire reading column, including its scrollbar, in the viewport.
+       Its width stays the same whether the document aside is open or closed. */
+    inline-size: min(calc(var(--main-column-inline) + var(--page-shell-gap-inline)), 100cqi);
     scrollbar-gutter: stable;
     block-size: 100%;
     padding-block-end: var(--page-edge-block-end);
@@ -95,7 +96,6 @@ body {
 
 .document-aside {
     inline-size: var(--document-aside-inline);
-    margin-inline-start: calc(-1 * var(--page-shell-gap-inline));
     block-size: 100%;
     padding-block-end: var(--page-edge-block-end);
     overflow-wrap: anywhere;
@@ -115,10 +115,6 @@ body {
 /* Collection tables determine their own width and retain the external gap. */
 .page-content:has(> .slot-main--collection) {
     inline-size: max-content;
-}
-
-.page-content:has(> .slot-main--collection) + .document-aside {
-    margin-inline-start: 0;
 }
 
 .slot-main--collection {

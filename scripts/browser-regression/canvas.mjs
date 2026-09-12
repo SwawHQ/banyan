@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { documentAsideScenarios } from './document-aside.mjs';
+import { documentAsideScenarios, openDocumentAside } from './document-aside.mjs';
 import path from 'node:path';
 import {
     gotoAndWait,
@@ -289,6 +289,7 @@ export const canvasScenarios = [
         title: 'Resizing and Scrolling Preserve Column Width and the Metadata Gap',
         async run({ page, baseUrl }) {
             await gotoAndWait(page, `${baseUrl}/zh/p/xvenv/?from=all`);
+            await openDocumentAside(page, mobile);
             const read = () => page.locator('.page-content').evaluate(column => {
                 const aside = document.querySelector('.document-aside').getBoundingClientRect();
                 const scrollbar = column.offsetWidth - column.clientWidth;
@@ -297,8 +298,8 @@ export const canvasScenarios = [
                     nestedColor: getComputedStyle(column.firstElementChild).scrollbarColor,
                     width: column.clientWidth,
                     scrollbar,
-                    gap: aside.left - column.querySelector('.prose').getBoundingClientRect().right,
-                    expectedGap: Math.max(scrollbar, parseFloat(getComputedStyle(column.parentElement).columnGap)),
+                    gap: aside.left - column.getBoundingClientRect().right,
+                    expectedGap: parseFloat(getComputedStyle(column.parentElement).columnGap),
                     overflowX: column.scrollWidth - column.clientWidth,
                     scrollable: column.scrollHeight > column.clientHeight,
                     y: column.scrollTop
@@ -348,11 +349,11 @@ export const canvasScenarios = [
                 for (const prefix of ['', '/zh', '/zh-tw']) {
                     await gotoAndWait(page, `${baseUrl}${prefix}/p/xvenv/?from=all`);
                     await waitForBreadcrumbSettled(page);
+                    await openDocumentAside(page);
                     const state = await page.evaluate(() => {
                         const main = document.querySelector('.page-content');
                         const aside = document.querySelector('.document-aside');
                         const right = aside.getBoundingClientRect();
-                        const meta = aside.querySelector('.document-meta').getBoundingClientRect();
                         const gap = parseFloat(getComputedStyle(document.documentElement).fontSize);
                         const top = right.top;
                         const initialX = scrollX;
@@ -364,10 +365,10 @@ export const canvasScenarios = [
                         return {
                             sibling: main.parentElement === aside.parentElement,
                             followsMain: main.nextElementSibling === aside,
-                            gap: right.left - main.querySelector('.prose').getBoundingClientRect().right,
-                            expectedGap: Math.max(gap, main.offsetWidth - main.clientWidth),
+                            gap: right.left - main.getBoundingClientRect().right,
+                            expectedGap: gap,
                             asideWidth: right.width, expectedWidth: Math.min(30 * gap, document.querySelector('.page').clientWidth),
-                            topDifference: meta.top - document.querySelector('[data-root-navigation]').getBoundingClientRect().top,
+                            topDifference: right.top - document.querySelector('[data-root-navigation]').getBoundingClientRect().top,
                             overflow: aside.scrollWidth - aside.clientWidth,
                             readingY, asideUnmoved, independent,
                             metaRows: aside.querySelectorAll('.document-meta__row--taxonomy-path').length,
@@ -386,6 +387,7 @@ export const canvasScenarios = [
                 await page.setViewportSize({ width, height: 900 });
                 await gotoAndWait(page, `${baseUrl}/zh/p/coskill-trustworthy-collaboration/?from=all`);
                 await waitForBreadcrumbSettled(page);
+                await openDocumentAside(page);
                 if (width === 390) await page.locator('.document-aside').scrollIntoViewIfNeeded();
                 await page.screenshot({ path: path.join(artifactDir, `aside-${width}.png`) });
             }
@@ -422,6 +424,7 @@ export const canvasScenarios = [
                 await page.setViewportSize({ width, height: 300 });
                 await gotoAndWait(page, `${baseUrl}/zh/p/ssh-remote-kit-windows/?from=all`);
                 await waitForBreadcrumbSettled(page);
+                await openDocumentAside(page);
                 const state = await page.evaluate(() => {
                     const doc = document.scrollingElement;
                     const content = document.querySelector('.page-content');
@@ -640,7 +643,7 @@ export const canvasScenarios = [
             await swipe(210, -180);
             assert.ok((await canvasPosition()).x > 0, 'A leftward drag on a root row moves the document canvas.');
             for (let attempt = 0; attempt < 4 && (await readCanvas(page)).main.x > 16; attempt++) {
-                // Main is no longer the last column; target it instead of the canvas end.
+                // With the aside collapsed, reaching the canvas end aligns main.
                 await swipe(350, -Math.min(300, (await readCanvas(page)).main.x));
             }
             const final = await readCanvas(page);
@@ -649,6 +652,7 @@ export const canvasScenarios = [
             assert.equal(page.url(), url, 'Dragging a navigation link must not activate it.');
             await swipe(50, 120);
             await swipe(300, -120);
+            await openDocumentAside(page, true);
             const asideBounds = () => page.locator('.document-aside').evaluate(aside => {
                 const box = aside.getBoundingClientRect();
                 const viewport = window.visualViewport;

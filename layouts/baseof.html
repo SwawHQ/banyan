@@ -172,9 +172,7 @@
                 {{- end -}}
             </main>
             </div>
-            {{- block "document-aside" (dict "ctx" $ "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel) -}}
-              {{- partial "feature-document/aside.html" . -}}
-            {{- end -}}
+            {{- partial "feature-document/aside.html" (partialCached "feature-document/aside-model.html" . .RelPermalink) -}}
             </div>
         </div>
     </div>

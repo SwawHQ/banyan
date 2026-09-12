@@ -1,4 +1,39 @@
 /* Aside contents; column sizing and scrolling belong to page-shell.css. */
+.document-tools {
+    display: none;
+}
+
+/* Static HTML keeps the information accessible without scripting and in print.
+   In interactive views aria-expanded is the only open/closed state. */
+@media screen and (scripting: enabled) {
+    .page-stage:has(#document-aside-toggle[aria-expanded="false"]) > .document-aside {
+        display: none;
+    }
+
+    .prose h1:has(+ .document-tools) {
+        margin-block-end: 0;
+    }
+
+    .document-tools {
+        display: flex;
+        justify-content: flex-end;
+        margin-block: 4px 8px;
+    }
+
+    .document-tools .collection-item-link {
+        min-block-size: 44px;
+        padding: 0 0.35rem;
+        line-height: 1.55;
+    }
+
+    /* Keep the navigation-row highlight compact inside the larger touch target. */
+    .document-tools .collection-item-link::before {
+        block-size: 1lh;
+        inset-block: 0;
+        margin-block: auto;
+    }
+}
+
 .document-meta,
 .document-toc {
     margin: 0;

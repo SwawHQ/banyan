@@ -19,6 +19,7 @@ import { relFromSite } from './paths.mjs';
 import { preferenceAndUpdateScenarios } from './preference-and-updates.mjs';
 import { updatesNavigationScenarios } from './updates-navigation.mjs';
 import { canvasScenarios } from './canvas.mjs';
+import { openDocumentAside } from './document-aside.mjs';
 import { presentationContractScenarios } from './presentation-contracts.mjs';
 
 const WIDE_VIEWPORT = { width: 1600, height: 1100 };
@@ -855,6 +856,7 @@ export const scenarios = [
                     const article = `${prefix}/p/xvenv/`;
                     await gotoAndWait(page, `${baseUrl}${article}?from=all`);
                     const metadataLink = page.locator(`.slot-meta a[href="${prefix}${collection}"]`);
+                    await openDocumentAside(page);
                     await metadataLink.click();
                     await waitForBreadcrumbSettled(page);
                     if (new URL(page.url()).pathname !== `${prefix}${collection}`) fail('Article metadata must navigate to the real collection.', { url: page.url() });

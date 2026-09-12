@@ -9,11 +9,13 @@ await runBrowserRegression({
         'canvas-source-navigation',
         'canvas-document-aside',
         'document-aside-navigation',
+        'document-aside-mobile-toggle',
+        'document-aside-desktop-toggle',
         'canvas-first-frame-slow-runtime',
         'canvas-history-scroll-restoration',
         'canvas-anchors'
     ].includes(scenario.id)).map(scenario => ({
         ...scenario,
-        isMobile: scenario.id === 'canvas-source-navigation'
+        isMobile: scenario.isMobile || scenario.id === 'canvas-source-navigation'
     }))
 });
