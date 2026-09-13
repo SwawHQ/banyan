@@ -1,8 +1,11 @@
 .prose img {
     box-sizing: border-box;
-    display: block;
     max-width: 100%;
     height: auto;
+}
+
+.prose img:not(.md-inline-image) {
+    display: block;
     margin: 18px 0;
     padding: 8px;
     border: 1px solid var(--image-frame-border);
@@ -11,17 +14,17 @@
     box-shadow: 0 0.35rem 1rem var(--image-frame-shadow);
 }
 
-.prose p:has(> img:only-child),
-.prose p:has(> a:only-child > img:only-child) {
+.prose p:has(> img:not(.md-inline-image):only-child),
+.prose p:has(> a:only-child > img:not(.md-inline-image):only-child) {
     margin: 20px 0;
 }
 
-.prose p:has(> img:only-child) > img,
-.prose p:has(> a:only-child > img:only-child) > a > img {
+.prose p:has(> img:not(.md-inline-image):only-child) > img,
+.prose p:has(> a:only-child > img:not(.md-inline-image):only-child) > a > img {
     margin: 0;
 }
 
-.prose p:has(> a:only-child > img:only-child) > a {
+.prose p:has(> a:only-child > img:not(.md-inline-image):only-child) > a {
     display: block;
 }
 

@@ -10,7 +10,7 @@
 {{- $downloadValue := trim (printf "%v" (.Get "download" | default "")) " \r\n\t" -}}
 {{- $downloadLower := lower $downloadValue -}}
 {{- if ne $alt "" -}}
-  <img src="{{ $href | safeURL }}" alt="{{ $alt }}"{{ with $title }} title="{{ . }}"{{ end }}{{ with $width }} width="{{ . }}"{{ end }}{{ with $height }} height="{{ . }}"{{ end }} loading="lazy" decoding="async">
+  <img src="{{ $href | safeURL }}" alt="{{ $alt }}"{{ with .Get "class" }} class="{{ . }}"{{ end }}{{ with $title }} title="{{ . }}"{{ end }}{{ with $width }} width="{{ . }}"{{ end }}{{ with $height }} height="{{ . }}"{{ end }} loading="lazy" decoding="async">
 {{- else -}}
   {{- if eq $text "" -}}{{- $text = path.Base $src -}}{{- end -}}
   <a href="{{ $href | safeURL }}"{{ with $title }} title="{{ . }}"{{ end }}{{ if eq $downloadLower "true" }} download{{ else if and (ne $downloadValue "") (ne $downloadLower "false") }} download="{{ $downloadValue }}"{{ end }}>{{ $text }}</a>

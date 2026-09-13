@@ -85,11 +85,13 @@ slots:
 | 项目 `content/rss/index*.md` | 覆盖主题 RSS 默认页的入口顺序，正文仍调用 `{{< rss-link >}}`；`icon: rss`、`weight: 100`，排在更新之后、微信之前；主题默认权重仍为 `103` |
 | 主题 `content/github/index*.md` | 默认的 Banyan 仓库说明；`icon: github`、`weight: 102`，项目可同路径覆盖 |
 | 项目 `content/github/index*.md` | 仅展示 SwawHQ 组织账号的头像与普通链接，保留完整入口声明；头像通过现有 `asset` 短代码引用项目 `assets/site/pwa/favicon.svg`，与浏览器图标共用哈希资源，不使用表格 |
-| 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "粤ICP备2024338434号"`、`icon: { image: "0.webp" }`、`weight: 105`，排在首页入口之前；正文备案号本身链接到工信部查询网站；主题不存放业务备案信息 |
+| 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "ICP备2024338434号"`、`icon: { text: "粤" }`、`weight: 105`，排在首页入口之前；国徽图片 `0.webp` 通过 `asset` 短代码显示在正文备案号的“粤”字前，与完整备案号同行并共用工信部查询链接；主题不存放业务备案信息 |
 
 `layouts/_shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址，并在新标签打开。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。
 
 GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/" >}}链接文字{{< /new-tab >}}`，头像可在其中嵌套 `asset` 短代码；加粗可在短代码外侧使用 Markdown `**`。该短代码复用 `system-ui/link.html` 输出 `target="_blank"`、`rel="noopener noreferrer"`，不需要 JavaScript，也无需开启 Markdown 原始 HTML。第一列入口仍使用当前标签打开说明页。
+
+正文中的小图标可使用 `{{< asset src="badge.webp" alt="图标说明" class="md-inline-image" width="16" height="16" >}}`。该 class 只排除普通正文图片的块布局、边框、内边距和阴影，保留浏览器默认的行内图片排版。图标与文字用普通空格分隔，可放进同一个链接，沿用普通链接的下划线。
 
 关于（`95`）、更新（`96`）排在我的（`90`）之后；RSS（`100`）、微信（`101`）、GitHub（`102`）依次排在更新之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。第一列共 14 项；原 PWA 状态和站点合并为更新，旧页脚及其片段配置已移除。
 
@@ -118,7 +120,7 @@ list_icon_file: product
 
 `icon` 只描述该入口本身，不按同名字段继承。条目未声明 `icon` 时，由列出它的列表提供默认值；两个 `list_icon_*` 字段分别沿当前列表的真实祖先取最近的非空声明，最终默认为 `folder`／`file`。省略或空白表示继承，明确写 `folder`／`file` 可以覆盖祖先设置。条目自己的非空 `icon` 始终优先，SVG 名称去除首尾空白并统一为小写；对象必须包含一个非空字符串字段 `text` 或 `image`，保留大小写，仅图片对象允许额外声明布尔值 `monochrome`。`list_icon_folder` 与 `list_icon_file` 同样接受文字、图片对象，继承时整体替换。
 
-图片统一调用现有 `system-assets/publish-local.html`：先查声明页面的 bundle，再查全站 `assets/`。例如 `content/icp/index.zh.md` 写 `icon: { image: "0.webp" }`，读取 `content/icp/0.webp`，发布为 `/media/content/icp/0.<sha256>.webp`。页面也可声明 `icon: { image: "site/pwa/favicon.svg" }`，读取 `assets/site/pwa/favicon.svg`，发布为 `/site/pwa/favicon.<sha256>.svg`，与浏览器标签图标共用同一资源和 URL。全站资源路径不带 `assets/` 前缀；`./0.webp` 则明确只从声明页面的 bundle 查找，缺失时不转查 assets。
+图片统一调用现有 `system-assets/publish-local.html`：先查声明页面的 bundle，再查全站 `assets/`。例如页面声明 `icon: { image: "badge.webp" }` 时，读取该页面 bundle 内的 `badge.webp` 并发布为带哈希的资源；正文 `asset` 短代码也使用同一发布流程。页面也可声明 `icon: { image: "site/pwa/favicon.svg" }`，读取 `assets/site/pwa/favicon.svg`，发布为 `/site/pwa/favicon.<sha256>.svg`，与浏览器标签图标共用同一资源和 URL。全站资源路径不带 `assets/` 前缀；`./badge.webp` 则明确只从声明页面的 bundle 查找，缺失时不转查 assets。
 
 图片默认值在声明目录解析后才继承，不会改成从子目录寻找同名文件。图片按 `1rem` 显示、保持比例，使用共用图标占位，无灯箱或正文图片的响应式变体。缺失资源、静态／远程 URL 和非图片文件会使构建失败。若页面自行声明 `build`，需同时保留 `publishResources: false`，避免覆盖全局 cascade 后又发布无哈希原图。语言配置中的图片以对应语言首页作为 bundle 上下文，同样支持全站 assets。
 
