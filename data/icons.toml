@@ -63,8 +63,12 @@ body = '<path d="M16 22v-3q0-2-1-2 6-1 6-7 0-2-2-4V2l-4 2q-3-1-6 0L5 2v4q-2 2-2 
 
 [rss]
 viewBox = "0 0 24 24"
-fill = "currentColor"
-body = '<circle cx="6" cy="18" r="2"/><path d="M4 10v3c3.86 0 7 3.14 7 7h3c0-5.51-4.49-10-10-10zm0-6v3c7.17 0 13 5.83 13 13h3C20 11.18 12.82 4 4 4z"/>'
+fill = "none"
+stroke = "currentColor"
+stroke_linecap = "butt"
+stroke_linejoin = "round"
+stroke_width = "1.5"
+body = '<circle cx="5" cy="19" r="1.25" fill="currentColor" stroke="none"/><path d="M3.75 11H5a8 8 0 0 1 8 8v1.25M3.75 4H5a15 15 0 0 1 15 15v1.25"/>'
 
 
 

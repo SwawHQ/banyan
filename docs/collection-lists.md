@@ -80,7 +80,7 @@ slots:
 
 | 实体文件（三语言） | 内容职责 |
 | --- | --- |
-| 项目 `content/about/index*.md` | Swaw 与创始人介绍；`weight: 95`、`icon: { image: "site/pwa/favicon.svg", monochrome: true }` 使用站点 logo，浅色显示纯黑、深色显示纯白，与浏览器 favicon、GitHub 头像共用同一哈希资源，点击仍进入 `/about/`；主题同路径保留通用默认内容 |
+| 项目 `content/about/index*.md` | Swaw 与创始人介绍；`weight: 95`、`icon: { image: "site/pwa/favicon.svg" }` 使用站点 logo，浅色与深色均保留 SVG 内置颜色 `#757474`，与浏览器 favicon、GitHub 头像共用同一哈希资源，点击仍进入 `/about/`；主题同路径保留通用默认内容 |
 | 项目 `content/wechat/index*.md` | 微信二维码页面；`icon: wechat`、`weight: 101` |
 | 项目 `content/rss/index*.md` | 覆盖主题 RSS 默认页的入口顺序，正文仍调用 `{{< rss-link >}}`；`icon: rss`、`weight: 100`，排在更新之后、微信之前；主题默认权重仍为 `103` |
 | 主题 `content/github/index*.md` | 默认的 Banyan 仓库说明；`icon: github`、`weight: 102`，项目可同路径覆盖 |

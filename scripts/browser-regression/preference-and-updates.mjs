@@ -91,7 +91,7 @@ export const preferenceAndUpdateScenarios = [
                 const expected = children.map(name => `${prefix}/${name}/`).sort();
                 assert.deepEqual((await rowPaths(links)).sort(), expected, 'Only real updates children belong to the list.');
                 assert.equal(await page.locator(`[data-root-href="${prefix}/updates/"] .icon--text`).textContent(), '↻');
-                const aboutIcon = page.locator(`[data-root-href="${prefix}/about/"] img.icon--image.icon--monochrome`);
+                const aboutIcon = page.locator(`[data-root-href="${prefix}/about/"] img.icon--image`);
                 const aboutIconHref = await aboutIcon.getAttribute('src');
                 assert.equal(aboutIconHref, await page.locator('head link[rel="icon"][type="image/svg+xml"]').getAttribute('href'), 'The About entry reuses the published site favicon.');
                 await aboutIcon.evaluate(image => image.decode());
@@ -417,11 +417,11 @@ export const preferenceAndUpdateScenarios = [
             await gotoAndWait(page, baseUrl + '/zh/all/?sort=name-asc');
             await page.locator('[data-root-href="/zh/appearance/"]').click();
             await page.waitForURL(baseUrl + '/zh/appearance/');
-            const assertAboutFilter = async (dark) => {
-                const icon = page.locator('[data-root-href="/zh/about/"] img.icon--monochrome');
-                assert.equal(await icon.evaluate(image => getComputedStyle(image).filter), dark ? 'brightness(0) invert(1)' : 'brightness(0)');
+            const assertAboutFilter = async () => {
+                const icon = page.locator('[data-root-href="/zh/about/"] img.icon--image');
+                assert.equal(await icon.evaluate(image => getComputedStyle(image).filter), 'none', 'The About logo retains its original colors in every theme.');
             };
-            await assertAboutFilter(false);
+            await assertAboutFilter();
             const choiceContract = await page.evaluate(() => {
                 const list = document.querySelector('.slot-main [data-list-view]');
                 return {
@@ -440,25 +440,25 @@ export const preferenceAndUpdateScenarios = [
             assert(choiceContract.options.every((option) => option.tagName === 'BUTTON' && option.pressed !== null));
             await page.locator(`${preferencePage} [data-theme-choice="dark"]`).click();
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
-            await assertAboutFilter(true);
+            await assertAboutFilter();
             assert.equal(await page.evaluate(() => localStorage.getItem('theme-preference')), 'dark');
             await page.reload();
             await page.waitForSelector(`${preferencePage} [data-theme-choice="dark"].is-current[aria-pressed="true"]`);
             await page.locator(`${preferencePage} [data-theme-choice="light"]`).click();
             await page.waitForSelector(`${preferencePage} [data-theme-choice="light"].is-current`);
-            await assertAboutFilter(false);
+            await assertAboutFilter();
             await page.screenshot({ path: path.join(artifactDir, 'appearance-light.png'), animations: 'disabled' });
 
             assert.equal(await page.locator('.site-nav-utilities').count(), 0, 'The old settings buttons are removed.');
             await page.locator(`${preferencePage} [data-theme-choice="auto"]`).click();
             await page.emulateMedia({ colorScheme: 'dark' });
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
-            await assertAboutFilter(true);
+            await assertAboutFilter();
             await page.locator('[data-page-action="back"]').click();
             await page.waitForURL((url) => url.pathname === '/zh/all/');
             await page.emulateMedia({ colorScheme: 'light' });
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
-            await assertAboutFilter(false);
+            await assertAboutFilter();
 
             const other = await context.newPage();
             await other.goto(`${baseUrl}/zh/appearance/`);
@@ -467,7 +467,7 @@ export const preferenceAndUpdateScenarios = [
             await other.close();
             await page.goForward();
             await page.waitForSelector(`${preferencePage} [data-theme-choice="dark"].is-current`);
-            await assertAboutFilter(true);
+            await assertAboutFilter();
             await page.screenshot({ path: path.join(artifactDir, 'appearance-dark.png'), animations: 'disabled' });
             return { message: 'Appearance choices, refresh, return, OS changes and cross-tab sync passed.' };
         }

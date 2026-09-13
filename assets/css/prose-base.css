@@ -24,16 +24,21 @@
     scroll-margin-block-start: 12px;
     display: block;
     text-align: left;
-    color: var(--prose-heading-color);
     letter-spacing: 0;
+}
+
+.prose :is(h2, h3, h4, h5, h6) {
+    color: var(--prose-heading-color);
     font-size: 1rem;
     font-weight: bold;
 }
 
 .prose h1 {
+    font-weight: normal;
     margin: 0 0 52px 0;
-    padding-bottom: 3px;
-    border-bottom: 2px solid var(--prose-heading-border);
+    /* Match the navigation header rule at 1.34rem; grow with wrapped titles. */
+    padding-bottom: calc(1.34rem - 1lh);
+    border-bottom: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
 }
 
 .prose h2 {
