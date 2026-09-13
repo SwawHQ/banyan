@@ -142,4 +142,5 @@ update_visibility_throttle = 3
 offline_notice_path = "offline/"
 
 [frontmatter]
-lastmod = ["lastmod", ":git", ":default"]
+# Editorial update time: never derive it from repository maintenance.
+lastmod = ["lastmod", "date"]

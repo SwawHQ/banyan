@@ -128,6 +128,8 @@ GitHub 简化验收：生产构建 `temp_workspace/public/2609082304-github-simp
 
 列表时间统一：目录、分类、全部文章及路径列改用 Hugo `.Lastmod`，三语言日期列改名为“更新时间／更新時間／Updated”，排序取相同时间；保留既有 `sort=date-asc/desc` URL 键。非空目录与分类延续文章最新时间汇总规则，递归目录与树形分类包含后代文章；空目录使用自身时间，无有效时间显示 `—`。沿用项目 `lastmod → :git → :default` 配置，无需逐篇补造发布日期，正文发布日期与站点构建时间维持各自含义。此前“缺失发布日期就显示 —”的说明由本规则替代。
 
+2026-09-13 日期来源修订：上述 Git 日期来源已改为 `lastmod → date`，防止批量维护内容元数据时刷新文章更新时间。现有文章缺失的 `lastmod` 以其手写 `date` 初始化，已有 `lastmod` 保留；当前规则与维护方式见 `collection-lists.md` 的“统一更新时间”。
+
 本步验证：集合契约 `temp_workspace/collection-contract-YZQQJy` 覆盖三语言、三种列表、显式更新时间／默认日期／无时间、目录和平面／树形分类汇总、升降序进入路径列；生产构建 `temp_workspace/public/2609081815-list-lastmod` 的 HTML 与导航检查、5 项相关浏览器回归通过（`temp_workspace/regression/260908181601-browser/report.json`）。实际 `192.168.1.114:5120` 预览检查五个列表根的三语言列名，站点三个子项显示日期及排序值与 Git 一致，进入子页、排序、刷新和历史保留第二列；截图与报告位于 `temp_workspace/list-lastmod-live/`。本步等待用户复测，不推进后续布局整理。
 
 站点目录再次收敛：按用户要求删除 `site-page.html`，三语言站点根统一声明 `layout: page-collection`、`list: directory`。撤销集合配置、来源注册、路径菜单及图标审计中的站点布局分支；既有 `site_update` 声明仅负责由全站骨架附加操作区、样式和入口更新标记。下述保留专用布局的方案已被替代。验收覆盖三语言全部三个子页（微信、关于、更新记录）的默认／排序进入、第二列及选中保留、刷新与前进后退，并直接检查用户使用的局域网预览，不能只凭临时生产构建通过就交付。

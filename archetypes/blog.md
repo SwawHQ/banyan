@@ -4,6 +4,7 @@ title: "{{ replace .File.ContentBaseName "-" " " | title }}"
 # Optional concise noun phrase for navigation, lists, and breadcrumbs:
 # linkTitle: ""
 date: {{ .Date }}
+lastmod: {{ .Date }}
 draft: true
 slug: "{{ .File.ContentBaseName }}"
 description: ""

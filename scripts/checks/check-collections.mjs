@@ -159,7 +159,7 @@ for (const view of ['directory', 'all', 'products', 'name']) {
             const dated = payload(output, lang, list).rows.filter(row => /\/p\/contract-(priced|missing)\//.test(row.href));
             assert.deepEqual(dated.map(row => row.date_text), ['2026-08-02', '2026-08-01'], 'default order uses Lastmod, not publication date or name');
         }
-        assertUpdated('all', '/p/contract-no-offer/', '2026-01-01', '20260101000000'); // Hugo default falls back to date.
+        assertUpdated('all', '/p/contract-no-offer/', '2026-01-01', '20260101000000'); // Explicit date fallback when lastmod is absent.
         assertUpdated('all', '/p/contract-direct/', '2026-08-03', '20260803000000'); // No publication date.
         assertUpdated('all', '/p/contract-child/', '—', ''); // No usable time at all.
         if (!['products', 'name'].includes(view)) assertUpdated('d', '/d/contract-override/', '2026-08-03', '20260803000000');

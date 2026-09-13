@@ -97,7 +97,9 @@ GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/
 
 目录、分类、内容全部视图和路径列的时间统一读取 Hugo `.Lastmod`，列名为“更新时间”。文件显示自身更新时间；非空目录／分类汇总其包含内容的最新更新时间，目录递归到后代内容，树形分类也包含下级分类。空目录使用自身 `.Lastmod`，空分类及其他没有有效时间的条目显示 `—`，排序值为空。
 
-项目 `hugo.toml` 已启用 `enableGitInfo = true`，并配置 `[frontmatter] lastmod = ["lastmod", ":git", ":default"]`：显式 `lastmod` 优先，其次由 Hugo 取 Git 提交时间，最后使用 Hugo 的默认日期来源。无需为了列表补造 `date`；需要手动控制更新时间时，在文章 front matter 写 `lastmod: 2026-09-08T18:00:00+08:00`。
+主题与项目 `hugo.toml` 配置 `[frontmatter] lastmod = ["lastmod", "date"]`：显式 `lastmod` 优先，未填写时使用手写 `date`，两者都没有则无有效更新时间。Git 提交和文件修改时间不参与文章更新时间；`enableGitInfo = true` 仍为更新记录页提供源码提交信息。
+
+文章 front matter 显式填写 `date` 和 `lastmod`：`date` 记录发布日期，初始 `lastmod` 与 `date` 相同，后续有实质内容更新时再手动调整 `lastmod`。整理分类、格式或目录时无需改动这两个字段。`blog` 与 `banyan` 新建文章模板会生成相同的初始日期；为已有文章补字段时复制其 `date`，保留原本已经填写的 `lastmod`。
 
 显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。既有 `sort=date-asc/desc` URL 键保持不变，含义统一为更新时间，产品表仍只有名称、价格、价值说明三列。正文中的发布日期继续使用 `.Date`，不改变其含义；检查更新页中的版本时间仍是构建时间。
 
