@@ -119,8 +119,7 @@
     --page-home-signal-peak-opacity: var(--page-home-signal-primary-peak-opacity);
 }
 
-.page-home__signal > :is(a, button),
-.page-home__signal > a:visited {
+.page-home__signal > :is(a, button) {
     color: inherit;
     text-decoration: none;
     text-underline-offset: 0.16em;

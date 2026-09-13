@@ -9,7 +9,6 @@
     --muted: #5F5F5F;
     --border: #838383;
     --link: var(--fg);
-    --link-visited: var(--muted);
     --accent: #9E685F;
     --accent-text: color-mix(in srgb, var(--accent) 72%, var(--fg));
     --link-hover: var(--accent-text);
@@ -33,10 +32,10 @@
 
 .collection-item-link {
     --collection-item-text: var(--link);
-    --collection-item-visited-text: var(--link-visited);
     --collection-item-hover-text: var(--link-hover);
     --collection-item-current-text: var(--accent-text);
     --collection-item-hover-bg: color-mix(in srgb, var(--accent) 8%, transparent);
+    --collection-item-hover-ring: transparent;
     --collection-item-current-bg: color-mix(in srgb, var(--accent) 14%, transparent);
     --collection-item-current-ring: color-mix(in srgb, var(--accent) 18%, transparent);
 }

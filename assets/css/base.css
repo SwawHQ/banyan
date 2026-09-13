@@ -24,9 +24,6 @@ a {
     text-decoration-skip-ink: auto;
     transition: color 0.3s;
 }
-a:visited {
-    color: var(--link-visited);
-}
 
 :is(a, button):focus-visible {
     outline: 2px dashed var(--focus-ring);

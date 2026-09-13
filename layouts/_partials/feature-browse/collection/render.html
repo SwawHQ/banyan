@@ -50,7 +50,7 @@
       {{- if eq $config.view "all" -}}{{- $count = $row.size_text -}}{{- $unit = $row.size_unit -}}{{- end -}}
       <span class="collection-cell collection-cell--count" data-collection-cell="{{ cond (eq $config.view "all") "size" "count" }}"><span>{{ $count }}</span><span class="collection-count-unit">{{ $unit | safeHTML }}</span></span>
       {{- if eq $config.view "all" -}}
-        <span class="collection-cell collection-cell--path" data-collection-cell="path">{{ partial "system-ui/link.html" (dict "href" $row.path_href "text" $row.path_text "title" $row.path_text) }}</span>
+        <span class="collection-cell collection-cell--path" data-collection-cell="path">{{ partial "system-ui/link.html" (dict "href" $row.path_href "text" $row.path_text "title" $row.path_text "class" "collection-item-link" "textClass" "collection-item-title") }}</span>
       {{- end -}}
     {{- end -}}
   {{- end -}}
