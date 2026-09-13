@@ -2057,6 +2057,7 @@ export const scenarios = [
                     separatorBlockStart: list.getBoundingClientRect().top
                         + Number.parseFloat(separatorStyle.top),
                     stateBackground: stateStyle.backgroundColor,
+                    stateShadow: stateStyle.boxShadow,
                     stateRadius: stateStyle.borderRadius
                 };
             });
@@ -2117,6 +2118,7 @@ export const scenarios = [
                     headerTextBlockStart: headerTextRect.top,
                     hoverLinkBackground: hoveredStyle.backgroundColor,
                     hoverStateBackground: hoverStateStyle.backgroundColor,
+                    hoverStateShadow: hoverStateStyle.boxShadow,
                     hoverStateRadius: hoverStateStyle.borderRadius,
                     iconInlineStart: icon.getBoundingClientRect().left,
                     linkBlockSize: link.getBoundingClientRect().height,
@@ -2152,8 +2154,9 @@ export const scenarios = [
                 || grid.linkBackground !== transparent
                 || column.hoverLinkBackground !== transparent
                 || column.currentLinkBackground !== transparent
-                || grid.stateBackground === transparent
+                || (grid.stateBackground === transparent && grid.stateShadow === 'none')
                 || grid.stateBackground !== column.hoverStateBackground
+                || grid.stateShadow !== column.hoverStateShadow
                 || grid.stateRadius !== column.hoverStateRadius
                 || column.currentStateBackground === transparent
                 || column.currentStateShadow === 'none'

@@ -31,16 +31,6 @@
     grid-template-columns: var(--navigation-column-inline) minmax(5.2rem, max-content) minmax(3rem, max-content) minmax(8rem, max-content);
 }
 
-.collection-list--all > .collection-cell--path a {
-    display: block;
-    width: 100%;
-    color: inherit;
-}
-
-.collection-list--all > .collection-cell--path a:visited {
-    color: var(--link-visited);
-}
-
 .collection-list--products {
     grid-template-columns: var(--navigation-column-inline) minmax(4rem, max-content) minmax(10rem, max-content);
 }
