@@ -1359,7 +1359,9 @@ export const scenarios = [
                     label: header?.querySelector('.collection-column-label')?.textContent?.trim() || '',
                     rowCount: rows.length,
                     toggleFocused: document.activeElement === toggle,
-                    wrappedRowCount: rows.filter((row) => row.getBoundingClientRect().height > 24).length,
+                    wrappedRowCount: rows.filter((row) => (
+                        row.getBoundingClientRect().height > Number.parseFloat(getComputedStyle(row).lineHeight) + 0.1
+                    )).length,
                 };
             });
 
@@ -2038,7 +2040,8 @@ export const scenarios = [
                     || !(icon instanceof HTMLElement)) return null;
 
                 const headerRange = document.createRange();
-                headerRange.selectNodeContents(headerText);
+                // Measure the label text, excluding the sort indicator's inline-block box.
+                headerRange.selectNodeContents(headerText.firstChild);
                 const headerTextRect = headerRange.getBoundingClientRect();
                 const linkStyle = getComputedStyle(link);
                 const stateStyle = getComputedStyle(link, '::before');
@@ -2087,7 +2090,7 @@ export const scenarios = [
                     || !(current instanceof HTMLElement)) return null;
 
                 const headerRange = document.createRange();
-                headerRange.selectNodeContents(headerText);
+                headerRange.selectNodeContents(headerText.firstChild);
                 const headerTextRect = headerRange.getBoundingClientRect();
                 const linkStyle = getComputedStyle(link);
                 const hoveredStyle = getComputedStyle(hovered);
@@ -2440,6 +2443,51 @@ export const scenarios = [
             }
 
             return state;
+        }
+    },
+    {
+        id: 'breadcrumb-header-sort-visibility',
+        kind: 'single',
+        title: 'Long Column Labels Preserve the Sort Control',
+        viewport: WIDE_VIEWPORT,
+        async run({ page, baseUrl }) {
+            const results = [];
+            for (const prefix of ['', '/zh', '/zh-tw']) {
+                await gotoAndWait(page, `${baseUrl}${prefix}/tags/tooling/`);
+                await waitForBreadcrumbSettled(page);
+                const header = page.locator('.collection-header--path').first();
+                const toggle = header.locator('[data-collection-sort-toggle]');
+                for (const stage of ['initial', 'sorted']) {
+                    if (stage === 'sorted') {
+                        const indicator = await toggle.locator('[data-sort-indicator]').textContent();
+                        await toggle.click();
+                        await page.waitForFunction(previous => document.querySelector('.collection-header--path [data-sort-indicator]')?.textContent !== previous, indicator);
+                        await waitForBreadcrumbSettled(page);
+                    }
+                    const geometry = await header.evaluate(node => {
+                        const label = node.querySelector('.collection-column-label');
+                        const sort = node.querySelector('[data-collection-sort-toggle]');
+                        const arrow = sort.querySelector('[data-sort-indicator]');
+                        return {
+                            width: node.clientWidth,
+                            contentWidth: node.scrollWidth,
+                            right: node.getBoundingClientRect().right,
+                            sortRight: sort.getBoundingClientRect().right,
+                            arrowRight: arrow.getBoundingClientRect().right,
+                            label: label.textContent,
+                            labelTitle: label.title,
+                        };
+                    });
+                    if (geometry.contentWidth > geometry.width + 1
+                        || geometry.sortRight > geometry.right + 0.1
+                        || geometry.arrowRight > geometry.right + 0.1
+                        || geometry.labelTitle !== geometry.label) {
+                        fail('A long column label clips the sort control or loses its full title.', { prefix, stage, ...geometry });
+                    }
+                    results.push({ prefix, stage, ...geometry });
+                }
+            }
+            return { results };
         }
     },
     {

@@ -32,11 +32,19 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
 .collection-list--path-column .collection-header--path {
     display: flex;
     align-items: baseline;
-    height: var(--collection-header-height);
     min-width: 0;
-    margin-bottom: var(--collection-header-gap);
-    line-height: var(--collection-header-line-height);
     white-space: nowrap;
+}
+
+.collection-column-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.collection-column-separator,
+.collection-column-sort {
+    flex: none;
 }
 
 .collection-column-separator {

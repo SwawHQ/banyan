@@ -1,8 +1,4 @@
 .collection-list {
-    --collection-header-height: 1.55em;
-    --collection-header-line-height: 1.18;
-    --collection-header-gap: 0.14rem;
-    --collection-header-rule-offset: 1.34rem;
     position: relative;
     display: grid;
     width: var(--navigation-column-inline);
@@ -13,7 +9,7 @@
     align-items: end;
     column-gap: 0.6rem;
     row-gap: 0.08rem;
-    line-height: 1.7;
+    line-height: var(--column-line-height);
 }
 
 .collection-cell {
@@ -27,7 +23,7 @@
     display: flex;
 }
 
-.collection-list > :not(.collection-cell--name) {
+.collection-list > :not(.collection-cell--name, .collection-cell--header) {
     font-size: small;
 }
 
@@ -46,7 +42,7 @@
 .collection-list--headed::after {
     content: "";
     position: absolute;
-    top: var(--collection-header-rule-offset);
+    top: 1lh;
     left: 0;
     right: 0;
     border-bottom: 1px solid;
@@ -56,8 +52,13 @@
 
 .collection-header {
     color: var(--muted);
-    font-size: small;
-    line-height: 1.18;
+    font-size: 1rem;
+    line-height: var(--column-line-height);
+}
+
+.collection-list--headed > .collection-header {
+    /* Reserve the separator below the natural first line, as article h1 does. */
+    padding-block-end: 1px;
 }
 
 .collection-header a {
@@ -73,7 +74,6 @@
 .collection-panel > .collection-header {
     margin: 0 0 0.14rem;
     font-weight: 400;
-    line-height: 1.55;
 }
 
 .collection-sort-indicator {
@@ -86,9 +86,7 @@
 .collection-list h1.collection-header {
     display: block;
     width: 100%;
-    height: var(--collection-header-height);
-    margin: 0 0 var(--collection-header-gap);
-    line-height: var(--collection-header-line-height);
+    margin: 0;
     text-decoration: none;
 }
 
@@ -98,10 +96,6 @@
 
 .collection-list .collection-header a[data-sort-active="true"] {
     font-weight: 700;
-}
-
-.collection-list .collection-header {
-    line-height: inherit;
 }
 
 .collection-list .collection-item-link {

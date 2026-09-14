@@ -214,7 +214,21 @@ export const documentAsideScenarios = [{
             assert(collapsed.left >= 7 && collapsed.right <= collapsed.viewport - 7, JSON.stringify(collapsed));
             const toggle = page.locator('#document-aside-toggle');
             assert.equal(await toggle.getAttribute('aria-controls'), 'document-aside');
-            assert(await toggle.evaluate(node => node.getBoundingClientRect().height >= 44));
+            const toggleSpacing = await toggle.evaluate(node => {
+                const navigation = document.querySelector('[data-root-navigation] .collection-list');
+                const row = navigation.querySelector('.collection-item-link');
+                const title = document.querySelector('.prose h1');
+                return {
+                    height: node.getBoundingClientRect().height,
+                    rowHeight: row.getBoundingClientRect().height,
+                    gap: node.getBoundingClientRect().top - title.getBoundingClientRect().bottom,
+                    rowGap: Number.parseFloat(getComputedStyle(navigation).rowGap),
+                };
+            });
+            assert(Math.abs(toggleSpacing.height - toggleSpacing.rowHeight) < 0.1,
+                'The aside toggle occupies one ordinary navigation row.');
+            assert(Math.abs(toggleSpacing.gap - toggleSpacing.rowGap) < 0.1,
+                'The title separator and aside toggle use the ordinary list row gap.');
             assert.equal(await page.locator('.document-aside button').count(), 0, 'The title control is the only aside toggle.');
             const paint = locator => locator.evaluate(async node => {
                 // Navigation anchors animate color on hover and theme changes.

@@ -1,4 +1,5 @@
 :root {
+    --column-line-height: 1.7;
     --page-edge-inline: 8px;
     --page-edge-block-start: 12px;
     --page-edge-block-end: 6rem;

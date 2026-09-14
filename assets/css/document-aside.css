@@ -1,4 +1,8 @@
 /* Aside contents; column sizing and scrolling belong to page-shell.css. */
+.document-aside {
+    line-height: var(--column-line-height);
+}
+
 .document-tools {
     display: none;
 }
@@ -17,27 +21,18 @@
     .document-tools {
         display: flex;
         justify-content: flex-end;
-        margin-block: 4px 8px;
+        margin-block: 0.08rem 8px;
     }
 
     .document-tools .collection-item-link {
-        min-block-size: 44px;
         padding: 0 0.35rem;
-        line-height: 1.55;
-    }
-
-    /* Keep the navigation-row highlight compact inside the larger touch target. */
-    .document-tools .collection-item-link::before {
-        block-size: 1lh;
-        inset-block: 0;
-        margin-block: auto;
+        line-height: var(--column-line-height);
     }
 }
 
 .document-meta,
 .document-toc {
     margin: 0;
-    line-height: 1.55;
 }
 
 .document-meta,
