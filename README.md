@@ -28,8 +28,19 @@ Once copied, open your root `hugo.toml` and customize `baseURL`, `title`,
 root is not inside the theme directory, remove `themesDir = "../.."`; a normal
 consumer site only needs `theme = "banyan"`.
 
-Customize site-level SEO descriptions by overriding
-`content/fragments/site-meta/index.<lang>.md` in your site root.
+Set the shared site description in your root `hugo.toml`:
+
+```toml
+[params]
+description = "Your site description."
+```
+
+For localized copy, override `languages.<lang>.params.description`. Pages may
+define their own front matter `description`; otherwise SEO and social cards use
+the site description. `llms.txt` also uses the site description for its intro
+and home entry. The former `content/fragments/site-meta/` container is removed;
+move its values into site params and delete the old files.
+
 Keep each language's social locale in `languages.<lang>.params.locale`; Banyan
 uses it for Open Graph locale tags.
 An optional `languages.<lang>.params.icon = { text = "EN" }` supplies the short marker shown
@@ -91,22 +102,22 @@ shape Hugo uses for multilingual sitemaps.
 
 Language indexes link directly to canonical HTML pages. They include the
 language home, `/about/`, and regular pages from the `d` content section.
-Utility pages, taxonomy indexes, and fragment content stay outside the curated
+Utility pages and taxonomy indexes stay outside the curated
 index without requiring per-page output flags.
 
-Article meta exposes `GitHub` when the language's `/fragments/site-meta`
-defines `site_meta.content_source` and the current page has a Hugo source file.
+Article meta exposes `GitHub` when `params.content_source.repository` is set
+and the current page has a Hugo source file. The theme leaves the repository
+empty by default; configure the site's own content repository in `hugo.toml`.
 
 Source links use the configured branch instead of the build revision. This keeps
 new pages predictable before their first public commit, while the changelog/build
 surface remains the place for exact deployment provenance:
 
-```yaml
-site_meta:
-  content_source:
-    repository: "https://github.com/owner/repo"
-    branch: "main"
-    content_root: "content"
+```toml
+[params.content_source]
+repository = "https://github.com/owner/repo"
+branch = "main"
+content_root = "content"
 ```
 
 Copies published on platforms whose URLs cannot be derived are declared on the
@@ -132,7 +143,7 @@ Banyan's current page shell is assembled from a small fixed slot set rather than
 free-form fragment injection.
 
 See [`docs/layout-slots.md`](docs/layout-slots.md) for the current slot names,
-their semantics, and the recommended fragment naming rules.
+their semantics, and the boundary between page slots and site configuration.
 
 ## Security
 

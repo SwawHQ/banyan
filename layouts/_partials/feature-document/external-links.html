@@ -1,4 +1,4 @@
-{{- $ctx := .ctx | default . -}}
+{{- $ctx := . -}}
 {{- $links := slice -}}
 {{- $pageID := $ctx.RelPermalink -}}
 {{- with $ctx.File -}}{{- $pageID = .Path -}}{{- end -}}
@@ -39,7 +39,7 @@
 {{- end -}}
 {{- if gt (len $links) 0 -}}
 <nav class="document-meta__links document-meta__row--resources" aria-label="{{ i18n "article_meta_resources" }}">
-  {{- range $index, $link := $links -}}
+  {{- range $links -}}
     <div class="document-meta__row">
       <span class="collection-item-icon">{{ partial "system-ui/icon/render.html" (dict "name" .icon) }}</span>
       <a href="{{ .href }}" target="{{ .target }}" rel="{{ .rel }}">{{ .text }}</a>

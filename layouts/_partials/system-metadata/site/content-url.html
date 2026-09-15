@@ -1,11 +1,9 @@
 {{- $page := . -}}
-{{- if reflect.IsMap . }}{{ with index . "page" }}{{ $page = . }}{{ end }}{{ end -}}
 {{- $url := "" -}}
-{{- $siteMeta := partial "system-metadata/site/meta.html" $page -}}
-{{- $sourceConfig := index $siteMeta "content_source" | default dict -}}
+{{- $sourceConfig := $page.Site.Params.content_source | default dict -}}
 {{- if $sourceConfig -}}
   {{- if not (reflect.IsMap $sourceConfig) -}}
-    {{- errorf "Build failed: site_meta.content_source must be a map/object." -}}
+    {{- errorf "Build failed: params.content_source must be a map/object." -}}
   {{- end -}}
   {{- $repository := trim (printf "%v" (index $sourceConfig "repository" | default "")) " \r\n\t" -}}
   {{- $branch := trim (printf "%v" (index $sourceConfig "branch" | default "main")) " \r\n\t" -}}

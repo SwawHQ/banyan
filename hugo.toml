@@ -48,6 +48,16 @@ baseName = "llms"
 isPlainText = true
 notAlternative = true
 
+[params]
+# Shared default; sites may override per language with languages.<lang>.params.
+description = "A minimalist theme for Hugo."
+
+[params.content_source]
+# Set the site's content repository to enable article source links.
+repository = ""
+branch = "main"
+content_root = "content"
+
 [params.appearance]
 # Complete color-role file, relative to assets/. Select at build time.
 # Built-in alternative: "css/theme-monochrome.css" (both light and dark modes).

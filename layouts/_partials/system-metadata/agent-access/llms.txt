@@ -6,18 +6,7 @@
 {{- $isMultilingual := gt (len hugo.Sites) 1 -}}
 {{- $isRootLanguageHome := eq $currentSite.Home.Permalink $primarySite.BaseURL -}}
 {{- $isGlobal := and (not $languageOnly) $isMultilingual $isPrimaryLanguage $isRootLanguageHome -}}
-{{- $scopeSites := slice -}}
-{{- if $isGlobal -}}
-  {{- range sort hugo.Sites "Language.Weight" -}}
-    {{- $scopeSites = $scopeSites | append . -}}
-  {{- end -}}
-{{- else -}}
-  {{- $scopeSites = $scopeSites | append $currentSite -}}
-{{- end -}}
-{{- $metaHome := $currentSite.Home -}}
-{{- if $isGlobal -}}{{- $metaHome = $primarySite.Home -}}{{- end -}}
-{{- $siteMeta := partial "system-metadata/site/meta.html" $metaHome -}}
-{{- $siteDescription := trim (printf "%v" (index $siteMeta "description" | default "")) " \r\n\t" -}}
+{{- $siteDescription := trim (printf "%v" ($currentSite.Params.description | default "")) " \r\n\t" -}}
 # {{ $primarySite.Title }}{{ if not $isGlobal }} - {{ $currentSite.Language.LanguageName | default $currentSite.Language.Lang }}{{ end }}
 {{- with $siteDescription }}
 
@@ -71,19 +60,14 @@ Sitemap: {{ absURL "sitemap.xml" }}
 {{- if not $isGlobal }}
 
 ## Site Entry Points
-{{ range $site := $scopeSites }}
-{{- $homeDescription := "" -}}
-{{- $homeMeta := partial "system-metadata/site/meta.html" $site.Home -}}
-{{- with index $homeMeta "description" -}}{{- $homeDescription = trim (printf "%v" .) " \r\n\t" -}}{{- end -}}
-{{- $homeLabel := printf "%s Home" ($site.Language.LanguageName | default $site.Language.Lang) }}
-- [{{ $homeLabel }}]({{ $site.Home.Permalink }}){{ with $homeDescription }}: {{ . }}{{ end }}
-{{ with $site.GetPage "/about" }}
+{{ $homeLabel := printf "%s Home" ($currentSite.Language.LanguageName | default $currentSite.Language.Lang) }}
+- [{{ $homeLabel }}]({{ $currentSite.Home.Permalink }}){{ with $siteDescription }}: {{ . }}{{ end }}
+{{ with $currentSite.GetPage "/about" }}
 {{ if .IsPage }}
 {{- $aboutDescription := trim (printf "%v" (.Params.description | default "")) " \r\n\t" -}}
 - [{{ .Title }}]({{ .Permalink }}){{ with $aboutDescription }}: {{ . }}{{ end }}
 {{ end }}
 {{ end }}
-{{- end }}
 
 {{- $contentPages := slice -}}
 {{- $seenContentPages := dict -}}

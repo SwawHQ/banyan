@@ -15,7 +15,7 @@
 - 不能只取 `Home.Sections`，因为语言、外观、我的和 `/all/` 入口是普通页面。
 - 不能只取 `Site.Pages`，因为 `build.list: local` 的系统页只列在其父页集合中。
 - taxonomy 根需要单独合并，不能假定它们都在 `Home.Pages` 中。
-- `build.list: never` 的内部节点不作为入口。内部 fragment 同时设置 `build.render: never`，避免生成独立页面。
+- `build.list: never` 的内部节点不作为入口。
 - `weight` 只需在入口本身定义，不应 cascade 到所有文章。
 
 当前项目显示内容 - 全部、内容 - 分类、产品 - 全部、产品 - 分类及语言、外观、我的、关于、更新、RSS、微信、GitHub、备案、首页共 14 项，来自根页面声明而非模板白名单。首页在 `content/_index*.md` 声明 `root_nav: true`、`linkTitle`、`icon` 和 `weight`，使用普通条目组件，正文继续使用 `page-home`。
@@ -60,7 +60,7 @@ slots:
 
 更新目录 `content/updates/_index*.md` 使用 `layout: page-collection`、`list: name`，只列出检查更新与更新记录两个真实子页。`baseof.html` 不追加操作，根导航也不承担更新标记。`content/updates/check/index*.md` 使用 `page-update-check` 布局明确渲染更新面板，并在 `body-extra` 中加载 `js/updates/page.js`；面板源码样式仍进入公共 `page.css`。`site_update.labels` 只提供功能文案，不是全站装配开关。版本为普通状态文本，记录通过同级列表访问。两个子页均保留更新路径列。语言和外观布局分别调用 `feature-preferences/back-link.html`；返回脚本只由相应页面装配。语言选择脚本仅由 `page-language` 加载，跨页面语言返回及主题同步继续在全站主脚本中运行。
 
-保留的 fragment 按内容语义命名，例如 `site-meta`；不要用最终容器位置命名。`site-meta` 提供站点品牌与 SEO 元数据，`slots.meta` 则控制当前页面的日期、taxonomy 等元信息，两者职责不同。
+站点默认描述和文章源码仓库配置分别使用 `hugo.toml` 中的 `params.description` 与 `params.content_source`，不再通过隐藏的 `fragments/site-meta` 页面承载。通用值全站共用，需要本地化时由 `languages.<lang>.params` 覆盖。`slots.meta` 只控制当前页面的日期、taxonomy 等元信息装配。
 
 首页链接已统一到普通入口。关于、微信、RSS、GitHub、备案等信息通过各自真实根页面访问，更新入口列出检查更新和更新记录；SEO 元数据仍由独立的 head 模板输出。
 

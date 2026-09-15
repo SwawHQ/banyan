@@ -1,5 +1,5 @@
 {{- $page := . -}}
-{{- $result := dict "url" "" "disabled" false "configured" false "source" "" -}}
+{{- $url := "" -}}
 {{- $found := false -}}
 {{- $candidates := slice $page -}}
 {{- range $page.Ancestors -}}
@@ -12,9 +12,7 @@
     {{- $found = true -}}
     {{- $raw := index $owner.Params "share_image" -}}
     {{- if eq (printf "%T" $raw) "bool" -}}
-      {{- if not $raw -}}
-        {{- $result = dict "url" "" "disabled" true "configured" false "source" "disabled" "owner" $owner -}}
-      {{- else -}}
+      {{- if $raw -}}
         {{- errorf "Build failed: page %q has unsupported share_image=true; use a string path/URL or false." ($owner.File.Path | default $owner.RelPermalink) -}}
       {{- end -}}
     {{- else -}}
@@ -23,7 +21,6 @@
         {{- errorf "Build failed: page %q has an empty share_image; use a string path/URL or false." ($owner.File.Path | default $owner.RelPermalink) -}}
       {{- end -}}
 
-      {{- $url := "" -}}
       {{- if or (strings.HasPrefix $src "http://") (strings.HasPrefix $src "https://") -}}
         {{- $url = $src -}}
       {{- else if strings.HasPrefix $src "/" -}}
@@ -33,10 +30,8 @@
         {{- $shareSrc := partialCached "system-metadata/seo/share-image/publish.html" $resolved $owner.RelPermalink $src "share" -}}
         {{- $url = absURL $shareSrc -}}
       {{- end -}}
-
-      {{- $result = dict "url" $url "disabled" false "configured" true "source" $src "owner" $owner -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
 
-{{- return $result -}}
+{{- return $url -}}

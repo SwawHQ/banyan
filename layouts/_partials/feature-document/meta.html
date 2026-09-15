@@ -25,7 +25,7 @@
 {{- end -}}
 {{- $hasDates := false -}}
 {{- if $ctx.Date -}}{{- $hasDates = true -}}{{- end -}}
-{{- $externalLinks := partial "feature-document/external-links.html" (dict "ctx" $ctx) -}}
+{{- $externalLinks := partial "feature-document/external-links.html" $ctx -}}
 {{- if or $hasPath $hasTaxonomy $hasDates $externalLinks -}}
 <div class="document-meta">
   {{- if $hasDates -}}{{ partial "feature-document/dates.html" $ctx }}{{- end -}}
