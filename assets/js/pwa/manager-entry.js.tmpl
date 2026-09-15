@@ -1,5 +1,6 @@
 import { createServiceWorkerManagerRuntime } from './manager-runtime.js';
 import { startEnableMode } from './update-engine.js';
+import { initUpdateNavigation } from './navigation.js';
 
 const runtime = createServiceWorkerManagerRuntime({
     swUrl: {{ printf "%q" .sw_url }},
@@ -9,3 +10,4 @@ const runtime = createServiceWorkerManagerRuntime({
 });
 
 runtime.updates = startEnableMode(runtime);
+initUpdateNavigation(runtime);

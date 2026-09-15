@@ -109,7 +109,7 @@ Service Worker 仍从首次导航 HTML 的 `href` 和 `src` 扫描并预热当�
 
 runtime 自己保留传输、session gate 和交互监听；诊断页自己保留展示。两者共享“应该做什么”，不混合“如何执行”和“如何解释”。Hugo 模板仍按配置裁剪运行 bundle。
 
-PWA 的缓存名称与归属集中在 `pwa/cache-names.js`。enable worker、disable worker、页面停用入口和激活失败恢复共用同一判断：
+PWA 的缓存名称与归属集中在 `pwa/cache-names.js`。enable worker、disable worker和页面停用入口共用同一判断；升级失败不再注销或清缓存：
 
 - `nav-html-*`：版本化导航 HTML；
 - `asset-versioned-*`：版本化非指纹资源；
@@ -144,6 +144,6 @@ bun run check:browser:speculation:latest-temp
 bun run check:browser:sw-disable
 ```
 
-修改 PWA 时还要验证连续两版 enable 升级、enable → disable、离线导航、首次页面引用资源预热，以及 `/sw.js` 的 no-cache 响应头。生产 HTML 审计继续约束首页、全部文章和产品页的原始体积、gzip 体积、内嵌路径数据固定成本与每行增长成本。
+修改 PWA 时还要验证连续两版 enable 升级、站内跳转前激活、刷新与历史不触发额外重载、其他标签页状态保留、激活失败继续原跳转、enable → disable、离线导航、首次页面引用资源预热，以及 `/sw.js` 的 no-cache 响应头。生产 HTML 审计继续约束首页、全部文章和产品页的原始体积、gzip 体积、内嵌路径数据固定成本与每行增长成本。
 
 J1～J4 的判断标准是单一事实源和局部行为：删除重复解释和重复交付，保留首帧、浏览器历史、离线与旧客户端升级所需的真实边界。黑白主题色 6C 属于后续视觉工作，不与这次 JavaScript 结构调整混合。

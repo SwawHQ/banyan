@@ -41,7 +41,7 @@ list: products
 
 更新目录声明 `layout: page-collection`、`list: name`，与 `/d/` 复用相同模板、集合来源、排序及路径列。目录中只有真实子项，没有追加的版本、检查、状态或返回按钮；全站骨架、公共样式装配和根导航不识别 `site_update`。`root_nav: true`、`weight: 96`、`icon: { text: "↻" }` 将它作为普通“更新”入口列在第一列。
 
-检查更新是主题 `content/updates/check/index*.md` 的真实子页面，声明 `layout: page-update-check` 和 `icon: { text: "↻" }`，网址为 `/updates/check/`（各语言加对应前缀）。其布局装配当前构建版本、检查按钮及状态，`site_update.labels` 仍是静态界面与运行时文案的单一事实源。版本时间显示为普通文本，不再链接到更新记录；更新记录通过同级列表访问，因此移除了 `site_update.changelog_page`。这里只检查和应用站点版本，不同步用户数据，也不把版本时间伪装成内容更新时间。
+检查更新是主题 `content/updates/check/index*.md` 的真实子页面，声明 `layout: page-update-check` 和 `icon: { text: "↻" }`，网址为 `/updates/check/`（各语言加对应前缀）。其布局装配当前构建版本、检查按钮及状态，`site_update.labels` 是静态界面与运行时文案的单一事实源。版本时间显示为普通文本，更新记录通过同级列表访问。检查按钮可手动检查或应用站点版本；普通站内同标签页链接在已有 waiting worker 时先激活再跳转，第一列仍无更新标记或弹窗。刷新、历史导航、同页锚点与新标签页链接保持原生行为，其他标签页不强制重载。
 
 项目与主题的更新记录都位于 `content/updates/changelog/index*.md`，保留 `url: changelog/`，因此公开网址仍是 `/changelog/`。来源和第一列归属来自真实内容父目录 `/updates/`，不依赖公开网址前缀。原 `content/pwa/`、`content/site/` 及 `pwa-page` 布局已移除；根 `data/redirects.toml` 将旧 `/pwa/` 转到 `/updates/check/`、旧 `/site/` 转到 `/updates/`，覆盖三语言及有无尾斜杠。图片资源目录 `assets/site/pwa/` 与内容路径无关，保持原位置。语言、外观页的返回按钮分别由各自布局调用。
 

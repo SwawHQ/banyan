@@ -110,7 +110,8 @@ function shouldDeleteOnActivate(key) {
 }
 
 async function fetchNavigationResponse(request) {
-    return fetch(request);
+    // A fresh versioned SW cache must not be populated from an older HTTP cache.
+    return fetch(new Request(request, { cache: 'no-cache' }));
 }
 
 function normalizeSameOriginUrl(urlValue, baseUrl) {

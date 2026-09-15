@@ -1,9 +1,5 @@
-import { isManagedCacheKey } from './cache-names.js';
-
 const SW_ACTIVATION_TIMEOUT_MS = 4000;
 
-let waitingWorker = null;
-let reloadOnControllerChange = false;
 let updateCheckTimer = null;
 let warmedCurrentUrl = '';
 let updateController = null;
@@ -11,7 +7,7 @@ const statusListeners = new Set();
 let updateStatus = 'idle';
 let updateLatencyMs = null;
 let updateCheckPromise = null;
-let activationFallbackTimer = null;
+let activationPromise = null;
 
 function publishUpdateStatus() {
     for (const listener of statusListeners) listener({ status: updateStatus, latencyMs: updateLatencyMs });
@@ -29,10 +25,11 @@ function setUpdateReadyState(ready) {
 async function checkForUpdates(runtime) {
     if (updateStatus === 'unavailable') return;
     if (updateStatus === 'ready') {
-        await applyWaitingWorker(runtime);
+        if (await activateWaitingWorker(runtime)) window.location.reload();
         return;
     }
 
+    if (activationPromise) return activationPromise;
     if (updateCheckPromise) return updateCheckPromise;
 
     if (navigator.onLine === false) {
@@ -78,35 +75,6 @@ async function checkForUpdates(runtime) {
     return updateCheckPromise;
 }
 
-function clearActivationFallbackTimer() {
-    if (!activationFallbackTimer) return;
-
-    window.clearTimeout(activationFallbackTimer);
-    activationFallbackTimer = null;
-}
-
-async function clearManagedCaches() {
-    if (!('caches' in window)) return;
-
-    try {
-        const keys = await caches.keys();
-        await Promise.all(keys.filter(isManagedCacheKey).map((key) => caches.delete(key)));
-    } catch (error) { }
-}
-
-function isReloadNavigation() {
-    try {
-        const entry = performance.getEntriesByType('navigation')[0];
-        if (entry?.type) return entry.type === 'reload';
-    } catch (error) { }
-
-    try {
-        return performance.navigation && performance.navigation.type === 1;
-    } catch (error) {
-        return false;
-    }
-}
-
 async function warmCurrentPage(runtime) {
     const currentUrl = new URL(window.location.href);
     currentUrl.hash = '';
@@ -130,7 +98,6 @@ function bindWaitingWorker(runtime, registration) {
     if (!registration?.waiting) return false;
 
     runtime.setActiveRegistration(registration);
-    waitingWorker = registration.waiting;
     setUpdateReadyState(true);
     void warmCurrentPage(runtime);
     return true;
@@ -180,83 +147,39 @@ function scheduleRegistrationUpdates(runtime, registration) {
     });
 }
 
-async function resolveWaitingWorker(runtime, registration) {
-    if (registration?.waiting) {
-        runtime.setActiveRegistration(registration);
-        waitingWorker = registration.waiting;
-        setUpdateReadyState(true);
-        void warmCurrentPage(runtime);
-    }
+function activateWaitingWorker(runtime) {
+    if (activationPromise) return activationPromise;
+    const worker = runtime.getActiveRegistration()?.waiting;
+    if (!worker) return Promise.resolve(false);
 
-    if (waitingWorker && waitingWorker.state !== 'redundant') return waitingWorker;
-
-    waitingWorker = null;
-    await registration?.update().catch(() => { });
-    if (bindWaitingWorker(runtime, registration)) return waitingWorker;
-    return null;
-}
-
-async function recoverStuckWaitingWorker(registration) {
-    clearActivationFallbackTimer();
-    waitingWorker = null;
-    reloadOnControllerChange = false;
-    setUpdateReadyState(false);
-
-    try {
-        await registration?.unregister();
-    } catch (error) { }
-
-    await clearManagedCaches();
-    window.location.reload();
-}
-
-function scheduleActivationFallback(runtime, registration, expectedWorker) {
-    clearActivationFallbackTimer();
-
-    activationFallbackTimer = window.setTimeout(() => {
-        void (async () => {
-            try {
-                if (!reloadOnControllerChange) return;
-
-                const currentRegistration = runtime.getActiveRegistration() || registration;
-                if (!currentRegistration) {
-                    window.location.reload();
-                    return;
-                }
-
-                await currentRegistration.update().catch(() => { });
-                if (currentRegistration.waiting === expectedWorker) {
-                    await recoverStuckWaitingWorker(currentRegistration);
-                    return;
-                }
-
-                window.location.reload();
-            } catch (error) {
-                window.location.reload();
-            }
-        })();
-    }, SW_ACTIVATION_TIMEOUT_MS);
-}
-
-async function applyWaitingWorker(runtime) {
-    const activeRegistration = runtime.getActiveRegistration();
-    if (!activeRegistration) return;
-
-    const targetWaitingWorker = await resolveWaitingWorker(runtime, activeRegistration);
-    if (!targetWaitingWorker) {
-        window.location.reload();
-        return;
-    }
-
-    setUpdateReadyState(false);
-    reloadOnControllerChange = true;
-    scheduleActivationFallback(runtime, activeRegistration, targetWaitingWorker);
-
-    try {
-        targetWaitingWorker.postMessage({ type: 'SKIP_WAITING' });
-    } catch (error) {
-        await recoverStuckWaitingWorker(activeRegistration);
-    }
+    updateStatus = 'checking';
+    publishUpdateStatus();
+    activationPromise = new Promise(resolve => {
+        const finish = success => {
+            window.clearTimeout(timer);
+            worker.removeEventListener('statechange', onChange);
+            navigator.serviceWorker.removeEventListener('controllerchange', onChange);
+            window.removeEventListener('pagehide', onLeave);
+            updateStatus = success ? 'current' : 'failed';
+            publishUpdateStatus();
+            resolve(success);
+        };
+        const onChange = () => {
+            if (worker.state === 'activated' && navigator.serviceWorker.controller === worker) finish(true);
+            else if (worker.state === 'redundant') finish(false);
+        };
+        const onLeave = () => finish(false);
+        const timer = window.setTimeout(() => finish(false), SW_ACTIVATION_TIMEOUT_MS);
+        worker.addEventListener('statechange', onChange);
+        navigator.serviceWorker.addEventListener('controllerchange', onChange);
+        window.addEventListener('pagehide', onLeave, { once: true });
+        try {
+            worker.postMessage({ type: 'SKIP_WAITING' });
+        } catch {
+            finish(false);
+        }
+    }).finally(() => { activationPromise = null; });
+    return activationPromise;
 }
 
 async function handleEnableMode(runtime) {
@@ -268,11 +191,7 @@ async function handleEnableMode(runtime) {
         });
         runtime.setActiveRegistration(registration);
 
-        const hasWaitingWorker = bindWaitingWorker(runtime, registration);
-        if (hasWaitingWorker && isReloadNavigation()) {
-            void applyWaitingWorker(runtime);
-            return;
-        }
+        bindWaitingWorker(runtime, registration);
 
         watchInstallingWorker(runtime, registration);
         registration.addEventListener('updatefound', () => {
@@ -280,10 +199,7 @@ async function handleEnableMode(runtime) {
         });
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            waitingWorker = null;
-            clearActivationFallbackTimer();
             setUpdateReadyState(false);
-            if (reloadOnControllerChange) window.location.reload();
         });
 
         scheduleRegistrationUpdates(runtime, registration);
@@ -303,7 +219,8 @@ export function startEnableMode(runtime) {
             listener({ status: updateStatus, latencyMs: updateLatencyMs });
             return () => statusListeners.delete(listener);
         },
-        check: () => checkForUpdates(runtime)
+        check: () => checkForUpdates(runtime),
+        activate: () => activateWaitingWorker(runtime)
     };
     if (!runtime?.supportsServiceWorker()) {
         updateStatus = 'unavailable';

@@ -6,7 +6,7 @@
 
 1. 普通页面 / UI / 样式 / 交互改动
 2. `prefetch` / `Speculation-Rules` / CSP 改动
-3. SW 升级 / 检查更新页面 / 激活恢复改动
+3. SW 升级 / 检查更新页面 / 跳转前激活改动
 4. 生产候选检查
 
 不要先记一堆脚本名。  
@@ -54,7 +54,7 @@ bun run check:browser:speculation:latest-temp
 
 - `sw.js`
 - 更新状态与手动检查
-- 激活失败恢复
+- 跳转前激活及失败时继续导航
 - 页面内嵌导航数据与更新页面数据交付
 - SW 版本升级行为
 

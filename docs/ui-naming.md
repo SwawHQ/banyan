@@ -69,7 +69,7 @@ JS 的 `pageHomes` 表示首页根节点，`scenePauseStates` 表示场景暂停
 
 ## 更新模块
 
-`feature-updates/labels.html` 返回检查更新页提供的文案，`feature-updates/panel.html` 负责 HTML，`assets/css/updates-panel.css` 负责呈现，`assets/js/updates/page.js` 负责读取本页静态文案并绑定状态与操作。该小型 CSS 源码仍由公共 `page.css` 装配；页面脚本只由 `page-update-check.html` 加载。页面通过已有 `window.BanyanServiceWorkerManagerRuntime.updates` 的 `subscribe(listener)` 接收 `{status, latencyMs}`，通过 `check()` 检查或应用更新。引擎不导入页面 UI、查询控件或加载文案；未启用 SW 时页面显示不可用。`site_update` 文案声明和 `data-site-update-*` 操作接口表示站点更新功能，与旧 `/site/` 页面无关。
+`feature-updates/labels.html` 返回检查更新页提供的文案，`feature-updates/panel.html` 负责 HTML，`assets/css/updates-panel.css` 负责呈现，`assets/js/updates/page.js` 负责读取本页静态文案并绑定状态与操作。该小型 CSS 源码仍由公共 `page.css` 装配；页面脚本只由 `page-update-check.html` 加载。页面通过 `window.BanyanServiceWorkerManagerRuntime.updates.subscribe(listener)` 接收 `{status, latencyMs}`，通过 `check()` 检查或手动应用并重载。`pwa/navigation.js` 只在普通站内同标签页链接跳转前调用 `activate()` 激活已就绪版本，然后直接打开目标地址；激活操作本身不重载页面。引擎不查询页面控件或加载文案，刷新、历史和其他标签页不触发自动重载。未启用 SW 时检查页显示不可用。
 
 ## 样式类与行为标记
 

@@ -1,402 +1,78 @@
-# Banyan Service Worker Regression Checklist
+# Service Worker 回归检查
 
-## 目的
+本清单描述当前行为。仅使用项目根内容构建测试，不使用 exampleSite。
 
-这份 checklist 不是为了证明 “SW 看起来能用”。
+## 更新契约
 
-它真正要验证的是：
+- 浏览器默认安装、等待与激活生命周期保留，后台发现新版不重载页面。
+- 普通站内同标签页链接指向另一文档（路径或查询不同），且已经有 waiting worker 时，先激活再打开目标地址。
+- 没有 waiting worker 时直接执行原生跳转，不为每次点击联网检查。
+- 同页锚点、当前页链接、下载、外链、修饰键和新标签页链接不触发主动升级。
+- 刷新、返回、前进不主动升级或追加重载；滚动和历史恢复交给浏览器。
+- 其他标签页可以被新 worker 接管，但不重载，其 DOM 和输入内容保留。
+- `updates/check/` 的按钮继续手动检查，ready 时手动激活并重载本页。
+- 离开页面或执行历史/锚点导航后，取消原待完成跳转，避免异步回调覆盖新的导航意图。
 
-- 新 worker 能否被发现
-- waiting -> activate -> reload 这条链是否稳定
-- 更新状态是否能在检查更新页面中显示，普通页面是否保持安静
-- 隐藏更新控件时，是否仍然保留 waiting 且不弹确认
-- 失败恢复是否会误伤正常用户
+## 模块与事实源
 
-一个重要心智：
+- `assets/js/pwa/update-engine.js` 负责注册、后台检查、状态订阅及激活。
+- `assets/js/pwa/navigation.js` 处理符合条件的链接，复用 `updates.activate()`，不调用 reload。
+- `updates.activate()` 返回是否成功，不自行跳转、刷新、注销或清缓存。
+- `assets/js/updates/page.js` 只装配检查页；三语言 `content/updates/check/index*.md` 提供文案。
+- 判断待升级版本直接读取 `registration.waiting`，不另存 waiting worker 镜像。
 
-- `sw.js` 是缓存与路由状态机
-- `sw-manager` 是浏览器端 orchestration
-- UI 提示只是其中一层表象
+## 激活失败
 
-所以回归时不要只看 “有没弹窗”，而要看：
+4 秒是一次激活等待的上限，不是强制恢复的倒计时。
 
-- worker 状态
-- registration.waiting / registration.active
-- controller 是否切换
-- 缓存是否被正确保留或清理
+- 激活异常或超时：普通链接继续前往原目标；手动检查页显示失败，可再次检查。
+- 移除临时监听和定时器，不保留迟到的重载回调。
+- 不注销 registration，不清缓存，不触发延迟刷新。
+- 若 worker 后来完成激活，由浏览器接管，已打开页面不因此重载。
 
-## 当前关键文件
+## 缓存契约
 
-- `themes/banyan/assets/js/pwa/worker-enable.js.tmpl`
-- `themes/banyan/assets/js/pwa/manager-entry.js.tmpl`
-- `themes/banyan/assets/js/pwa/manager-runtime.js`
-- `themes/banyan/assets/js/pwa/update-engine.js`
-- `themes/banyan/assets/js/pwa/cache-names.js`
-- `themes/banyan/assets/js/updates/page.js`
-- `themes/banyan/assets/js/pwa/worker-disable.js`
-- `themes/banyan/assets/js/pwa/manager-disable.js`
-- `themes/banyan/layouts/_partials/feature-updates/panel.html`
-- `themes/banyan/layouts/baseof.html`
+- navigation：cache-first，缓存名按构建版本区分。
+- 导航缓存未命中时，HTTP 请求使用 `cache: no-cache` 重新验证，避免旧 HTTP HTML 写入新版 SW 缓存。
+- assets：cache-first，指纹资源跨版本保留。
+- sw.js：不进入 Cache Storage；响应头必须为 `no-cache, max-age=0, must-revalidate`。
+- 新 worker 激活清理旧 navigation/versioned 缓存。
+- 首次导航扫描 HTML 并预热其引用的 CSS/JS 等资源。
+- 未缓存页面离线时使用对应语言的离线页；缓存命中的页面离线可读。
+- navigation preload 保持关闭。
 
-## 当前实现的关键约定
+## 自动化场景
 
-### SW enable 模式
+准备两份均包含本次实现、构建版本不同的根内容生产产物，通过以下变量明确选择：
 
-- `sw.js` 由 `pwa/worker-enable.js.tmpl` 生成
-- 浏览器侧 manager 由 `pwa/manager-entry.js.tmpl` 打包进入稳定的发布名 `sw-manager.enable.bundle.*.js`
-- registration 使用：
-  - `scope: /`
-  - `updateViaCache: 'none'`
+- `BANYAN_BROWSER_BUILD_DIR`
+- `BANYAN_BROWSER_UPGRADE_FROM_DIR`
+- `BANYAN_BROWSER_UPGRADE_TO_DIR`
 
-### 更新提示界面
+运行 `node themes/banyan/scripts/browser-regression/browser.mjs`，可用 `BANYAN_BROWSER_ONLY` 选择：
 
-- 检查更新子页面 `/updates/check/` 使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎
-- 只有检查页加载 `updates/page.js`。全站引擎通过 `BanyanServiceWorkerManagerRuntime.updates.subscribe()` 提供状态，页面用 `check()` 请求检查／应用；引擎不导入 UI
-- 普通页面没有 `html[data-site-update]` 镜像状态；测试通过 `registration.waiting` 判断待更新，检查页通过 `data-site-update-state` 验证显示
-- 更新目录 `/updates/` 使用名称列表显示两个真实子项，第一列没有 `data-site-update-link` 或专用更新标记
-- 第一列通过普通更新入口进入名称列表，再进入检查更新页；点击入口不会检查或应用更新
-- 旧 Ver 下拉菜单及脚本已移除
-- 当前逻辑应当：
-  - 普通页面静默发现更新，不弹确认、不因发现更新主动重载
-  - 用户通过更新入口及其子项进入检查更新页，worker 仍处于 waiting
-  - 检查页按钮检查更新，ready 时显示“立即更新”并负责应用更新；目录和路径列不承担更新动作
-  - 已有 waiting worker 时用户主动刷新页面，继续沿用现有应用更新逻辑
+| 场景 | 覆盖内容 |
+| --- | --- |
+| `sw-home-register` | 首次导航及引用资源预热、离线刷新、sw.js 不缓存及响应头 |
+| `sw-update-entry-home`、`sw-update-entry-collection` | ready 后跳转升级、已缓存目标使用新版、旧 navigation 缓存删除、其他标签页及草稿保留、无延迟重载 |
+| `sw-update-native-navigation` | 刷新、历史、锚点及修饰键打开新标签页不主动激活 |
+| `sw-update-navigation-timeout`、`sw-update-navigation-throw` | 激活超时/异常仍正常跳转，registration 和缓存不被清理 |
+| `sw-update-navigation-cancel` | 等待激活期间转向锚点，原跳转不得在稍后覆盖新意图 |
+| `sw-update-check` | 手动检查、离线重试、手动应用并刷新、更新后版本及路径列 |
+| `sw-update-hidden-control-stays-quiet` | 隐藏控件不触发弹窗或自动激活 |
+| `sw-update-language-page-static` | 等待更新时语言选项仍可操作 |
+| `canvas-source-navigation`、`canvas-history-scroll-restoration` | 来源、排序和原生滚动/历史行为 |
 
-### 页面文案与版本
+`browser-security.mjs` 验证 CSP、响应头与 navigation preload。
 
-- 版本界面文案的事实源为 `content/updates/check/index*.md` 的 `site_update.labels`，由 `feature-updates/panel.html` 同时输出初始界面和 `data-site-update-copy`
-- 构建版本、显示时间和 ISO 时间由 Hugo 直接写入检查页的 `time[data-site-update-version]`
-- `updates/page.js` 同步读取本页数据，只响应更新引擎状态；不请求 runtime manifest 或语言 JSON
-- 每种 Hugo 语言由自己的检查页内容负责。没有对应静态页面的语言代码，不在浏览器端伪造 fallback
+## disable 模式
 
-### 激活失败恢复
+停用是独立功能。`worker-disable.js` 主动激活、清理受管缓存，`manager-disable.js` 注销根作用域注册；无关缓存必须保留。
 
-- 若 waiting worker 被请求 `SKIP_WAITING` 后，4 秒内没有完成切换：
-  - manager 会尝试恢复
-  - 最重的路径是：`unregister + clearManagedCaches + reload`
+使用独立的 enable/disable 构建对运行 `browser-sw-disable.mjs`。正常更新失败不调用这套停用流程。
 
-这条路径非常敏感，所以它是回归重点。
+## 本轮验证（2026-09-15）
 
-## 回归前准备
+根内容生产构建对：`temp_workspace/public/2609152303-pwa-navigation-final-from` → `2609152303-pwa-navigation-final-to`。132 页 HTML 审计通过。
 
-### 建议环境
-
-- 一个真实浏览器 profile
-- DevTools 可打开 `Application > Service Workers` 与 `Application > Cache Storage`
-- 最好准备两份连续构建产物
-
-### 建议构建方式
-
-先生成一版旧产物，再生成一版新产物。
-
-例子：
-
-```powershell
-bun run build:browser:temp -- sw-upgrade-before
-bun run build:browser:temp -- sw-upgrade-after
-```
-
-如果要做真实升级链，应该让浏览器先跑 `build-a`，再切换到 `build-b`。
-
-### 建议观察面板
-
-- `Application > Service Workers`
-- `Application > Cache Storage`
-- `Network`
-- `Console`
-
-## 基础 smoke checks
-
-### 1. 首次访问注册
-
-操作：
-
-1. 清空当前站点 service worker 与相关缓存
-2. 打开首页
-3. 等待页面稳定
-
-预期：
-
-- 存在 root scope 的 service worker registration
-- `registration.active` 存在
-- 没有 `waiting` worker
-- 页面无异常 reload 循环
-
-失败信号：
-
-- 注册根本没建立
-- 刚首次访问就出现 waiting / ready 提示
-- 控制台出现明显 registration/fetch 错误
-
-### 2. 关键缓存建立
-
-操作：
-
-1. 首次访问首页
-2. 再进入一个 breadcrumb 页，如：
-   - `/p/xvenv/`
-   - `/d/products/`
-3. 查看 Cache Storage
-
-预期：
-
-- 存在当前 build 对应的 `nav-html-*`
-- 存在 `asset-fingerprint`
-- 仅当站点自定义了非指纹 versioned asset 路由时，才会建立 `asset-versioned-*`
-- 首次导航会预缓存当前 HTML 引用的样式与脚本资源
-- 导航使用 cache-first + versioned，带 hash 资源使用 cache-first + fingerprinted；`sw.js` 不进入缓存
-- `/sw.js` 响应为 `Cache-Control: no-cache, max-age=0, must-revalidate`
-
-失败信号：
-
-- 只注册了 worker，但没有建立任何受管缓存
-- 缓存桶命名异常
-- 首次导航后缓存仍为空
-
-## 更新链路 checks
-
-### 3. 新版本可被发现
-
-操作：
-
-1. 浏览器先加载旧版本
-2. 切到新版本产物
-3. 触发一次刷新，或等待定时检查
-4. 必要时切后台再切回前台，触发 visibility update check
-
-预期：
-
-- 新 worker 被发现
-- `registration.waiting` 最终出现
-- 检查页的 `[data-site-update-panel]` 进入 `data-site-update-state="ready"`
-
-失败信号：
-
-- 新 build 已部署，但浏览器长时间没有 waiting worker
-- `registration.update()` 后仍停留旧 worker 且无错误线索
-
-### 4. 通过更新入口检查和应用新版本
-
-建议页面：
-
-- `/`
-- `/all/`
-- `/d/`
-- `/p/xvenv/?from=tags/tooling/devtools/windows`
-
-操作：
-
-1. 让页面进入 update ready 状态
-2. 点击第一列「更新」，再点击「检查更新」子项
-
-预期：
-
-- 普通页面没有弹窗或自动重载，更新等待用户在检查页应用
-- 第一列是普通更新入口，无特殊更新标记；名称列表仅含两个真实子项
-- 进入检查页后保留更新列表列及其选中项，worker 仍然 waiting，直到点击「立即更新」
-- 可见检查按钮所在页面直接呈现状态，应用后重载并保留当前页和路径列
-
-失败信号：
-
-- 点击普通入口或子项就应用更新
-- 检查页丢失更新路径列或正确选中项
-- breadcrumb 当前项带有更新动作
-- 任意页面出现自动更新确认框
-
-### 5. 隐藏更新控件时仍保持安静
-
-建议页面：
-
-- 临时隐藏检查更新按钮，且页面没有其他可见更新控件的场景
-- offline 页面不属于这个场景，因为它不注入 enable manager
-
-操作：
-
-1. 让页面进入 update ready 状态
-2. 再次检查更新，观察页面和 waiting worker
-
-预期：
-
-- 控件隐藏不会触发弹窗或自动应用
-- waiting worker 保持可用；重新显示控件后可手动应用
-
-失败信号：
-
-- 出现 `window.confirm`
-- 因控件隐藏而自动应用或丢失 waiting worker
-
-### 6. 激活成功链
-
-操作：
-
-1. 在检查页 ready 状态下点击“立即更新”
-2. 观察 worker 状态与页面刷新
-
-预期：
-
-- waiting worker 收到 `SKIP_WAITING`
-- 浏览器触发 `controllerchange`
-- 页面刷新一次
-- 刷新后使用的是新 active worker
-- 检查页的 `data-site-update-state` 不再是 `ready`
-
-失败信号：
-
-- waiting 一直不消失
-- controller 没切换
-- 页面刷新多次形成循环
-- 刷新后仍是旧 worker
-
-### 7. 激活超时恢复链
-
-这是高风险专项，不需要每次都测，但改过 `sw-manager` 激活逻辑后建议测。
-
-操作思路：
-
-1. 制造一个“waiting worker 切换非常慢或卡住”的场景
-2. 在检查页点击“立即更新”
-3. 观察 4 秒 fallback
-
-预期：
-
-- 真卡住时，最终会走恢复路径
-- 恢复后页面能重新加载，不留脏状态
-
-重点观察：
-
-- registration 是否被注销
-- 受管缓存是否被清掉
-- reload 后是否能重新注册
-
-失败信号：
-
-- 误把慢激活当卡死
-- 正常用户频繁触发硬恢复
-- 恢复后进入 reload loop
-
-## 语言与文案 checks
-
-### 8. 检查页静态文案
-
-建议语言：
-
-- `en`
-- `zh`
-- `zh-tw`
-
-操作：
-
-1. 分别让页面进入 update ready
-2. 查看检查更新页面中的状态和按钮文案
-
-预期：
-
-- 状态和按钮文案来自当前语言检查页的 `site_update.labels`
-- `time[data-site-update-version]` 的 `title`、`datetime` 和文本分别是构建版本、ISO 时间和显示时间
-- 页面不请求 `/runtime/*.json` 或 `/__fragments/*`
-
-失败信号：
-
-- 某个已发布语言显示了另一语言的文案
-- 版本界面没有读到检查页文案
-
-## 关闭模式 checks
-
-### 9. disable 模式清理
-
-自动回归使用一份 enable 产物和一份 disable 产物，并显式传入：
-
-```powershell
-$env:BANYAN_BROWSER_UPGRADE_FROM_DIR = 'temp_workspace/public/<enable-build>'
-$env:BANYAN_BROWSER_UPGRADE_TO_DIR = 'temp_workspace/public/<disable-build>'
-bun run check:browser:sw-disable
-```
-
-disable 构建还应将 `params.prefetch_runtime.mode` 设为 `off`，避免配置继续声明依赖 Service Worker 的预取 transport。
-
-操作：
-
-1. 先在 enable 模式下建立 registration 与缓存
-2. 切到 disable 模式产物
-3. 重新访问页面
-
-预期：
-
-- root scope registration 被注销
-- 受管缓存被清理
-- 页面不再重新注册 enable worker
-- 与 Banyan 无关的 Cache Storage 桶保持不变
-
-失败信号：
-
-- disable 页面仍残留旧 registration
-- managed caches 没被删干净
-- disable 后刷新又莫名回到 enable 行为
-
-## 建议的最小回归矩阵
-
-如果不想每次都全测，至少覆盖这 5 组：
-
-1. 首页首次访问
-2. 首页与集合页面出现 waiting 后，通过第一列「更新」进入更新目录，再打开检查页应用更新（`sw-update-entry-home`、`sw-update-entry-collection`）
-3. 三种真实语言检查页的静态文案、版本时间和零 runtime JSON 请求
-4. 隐藏检查按钮后仍不弹窗，重复检查继续保留 waiting（`sw-update-hidden-control-stays-quiet`）
-5. 检查更新页离线重试、检查新版本、激活刷新及旧导航缓存清理（`sw-update-check`），同时确认 waiting 时语言设置页仍可使用
-
-运行升级回归时，显式设置 `BANYAN_BROWSER_UPGRADE_FROM_DIR` 和 `BANYAN_BROWSER_UPGRADE_TO_DIR`，指向两个完整构建；此矩阵需要两份都包含展平后的第一列和系统页。不要让自动选择误用临时结构探针的产物。
-
-## 出问题时先怀疑哪一层
-
-### 看不到更新提示
-
-优先怀疑：
-
-1. 新 worker 根本没进入 `waiting`
-2. 检查页的 `[data-site-update-panel][data-site-update-state="ready"]` 没有出现
-3. 是否已经进入检查更新页；普通页面不显示提示
-4. 检查页的 `data-site-update-state` 或状态文字未更新
-
-### 文案语言不对
-
-优先怀疑：
-
-1. 当前语言的 `content/updates/check/index*.md` 是否声明完整 `site_update.labels`
-2. `feature-updates/panel.html` 是否把同一 labels 写入 `data-site-update-copy`
-3. `updates/page.js` 是否只读取当前面板的数据
-
-### 点击更新后卡住
-
-优先怀疑：
-
-1. `registration.waiting` 是否真的存在
-2. `SKIP_WAITING` 是否发到正确 worker
-3. `controllerchange` 是否触发
-4. 4 秒 fallback 是否误判
-
-### 关闭 SW 后仍残留旧行为
-
-优先怀疑：
-
-1. `pwa/manager-disable.js`
-2. root scope registration 是否被正确识别
-3. managed caches 名称前缀是否与 enable 模式一致
-
-## 当前已知敏感点
-
-### 更新入口与操作分开
-
-第一列「更新」与其他目录入口相同，不承担更新标记。检查、应用更新由真实子页「检查更新」中的按钮执行；其他 breadcrumb 列和当前菜单选项不带更新动作。普通页面和隐藏控件的页面均不再弹确认框。
-
-### 4 秒激活超时
-
-`SW_ACTIVATION_TIMEOUT_MS = 4000` 现在是经验值，不是协议事实。  
-如果未来真机上出现误恢复，应优先重新评估这个阈值，而不是先打补丁改 UI。
-
-### disable 模式是 destructive 的
-
-`pwa/manager-disable.js` 会：
-
-- `unregister`
-- `clearManagedCaches`
-
-所以测试 disable 模式时，不要和普通前端 UI 回归混在一起。
+16 项浏览器检查通过：`temp_workspace/regression/260915230441-browser`（11 项）、`260915230601-browser`（取消跳转）、`260915230515-browser-security`（3 项）、`260915230640-browser-sw-disable`（停用）。停用产物使用临时配置同时关闭依赖 SW 的预取运行时，未改项目配置。
