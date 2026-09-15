@@ -405,8 +405,9 @@ async function inspectImageDelivery(relativePath, html, publicDir, seenShareRati
 
     for (const tag of extractStartTags(html, 'img')) {
         const src = extractTagAttribute(tag.text, 'src');
-        if (extractTagAttribute(tag.text, 'class').split(/\s+/).includes('icon--image')) {
-            // Icons reuse resource publication, but do not use the article picture/lightbox layout.
+        const classes = extractTagAttribute(tag.text, 'class').split(/\s+/);
+        if (classes.includes('icon--image') || classes.includes('md-inline-image')) {
+            // Navigation and inline icons use published resources without article picture/lightbox markup.
             if (!/^\/(?!\/).+\.[a-f0-9]{64}\.[^/?#]+$/.test(src) || await getPublicAssetSize(publicDir, src) === null) {
                 issues.push(`${relativePath}: image icon must reference an existing hashed resource, got ${src}`);
             }
