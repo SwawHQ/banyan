@@ -39,9 +39,9 @@ const productionGuardrails = [
         maxBreadcrumbSourceCount: 1
     },
     {
-        label: 'products',
-        rootCollectionSlug: 'products',
-        relativePathLabel: '*/products/index.html',
+        label: 'tools',
+        rootCollectionSlug: 'tools',
+        relativePathLabel: '*/tools/index.html',
         rawBaseBytes: 28_000,
         rawPerItemBytes: 1_500,
         gzipBaseBytes: 8_000,

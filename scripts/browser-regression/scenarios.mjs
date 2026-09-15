@@ -238,7 +238,7 @@ const GRID_LIST_COLUMN_CASES = [
     { id: 'tags-wide', path: '/zh/tags/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'section-medium', path: '/zh/d/', viewport: { width: 1024, height: 960 } },
     { id: 'section-mobile', path: '/zh/d/', viewport: { width: 390, height: 844 }, horizontalCanvas: true },
-    { id: 'products-wide', path: '/zh/all-products/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true }
+    { id: 'tools-wide', path: '/zh/all-tools/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true }
 ];
 const DESIGN_AUDIT_VIEWPORTS = [
     {
@@ -265,9 +265,9 @@ const DESIGN_AUDIT_PAGES = [
         waitForSelector: '.slot-main'
     },
     {
-        id: 'products',
-        path: '/all-products/',
-        title: 'Products',
+        id: 'tools',
+        path: '/all-tools/',
+        title: 'Tools',
         waitForSelector: '.collection-list'
     },
     {
@@ -650,7 +650,7 @@ export const scenarios = [
         serviceWorkers: 'block',
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
-            const rootPaths = ['all', 'tags', 'all-products', 'products',
+            const rootPaths = ['all', 'tags', 'all-tools', 'tools',
                 'language', 'appearance', 'my', 'about', 'updates', 'rss', 'wechat', 'github', 'icp', ''];
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
             const staticRoots = await page.evaluate(async (paths) => {
@@ -660,12 +660,29 @@ export const scenarios = [
                     const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
                     const navs = doc.querySelectorAll('[data-root-navigation]');
                     const nav = navs[0];
+                    const primaryEntryPages = [];
+                    for (const path of paths.slice(0, 4)) {
+                        const entryResponse = await fetch(prefix + path + '/');
+                        const entryDoc = new DOMParser().parseFromString(await entryResponse.text(), 'text/html');
+                        const meta = key => entryDoc.querySelector(`meta[name="${key}"], meta[property="${key}"]`)?.content || '';
+                        primaryEntryPages.push({
+                            status: entryResponse.status,
+                            browserTitle: entryDoc.title,
+                            title: meta('og:title'),
+                            twitterTitle: meta('twitter:title'),
+                            description: meta('description'),
+                            ogDescription: meta('og:description'),
+                            twitterDescription: meta('twitter:description'),
+                            canonicalPath: new URL(entryDoc.querySelector('link[rel="canonical"]').href).pathname
+                        });
+                    }
                     results.push({
                         prefix,
                         count: navs.length,
                         expected: paths.map((path) => prefix + (path ? path + '/' : '')),
                         hrefs: [...doc.querySelectorAll('[data-root-href]')].map((link) => link.dataset.rootHref),
-                        articleLabels: [...doc.querySelectorAll('[data-root-href] .collection-item-title')].slice(0, 4).map(node => node.textContent),
+                        primaryEntryLabels: [...doc.querySelectorAll('[data-root-href] .collection-item-title')].slice(0, 4).map(node => node.textContent),
+                        primaryEntryPages,
                         selected: [...doc.querySelectorAll('[data-root-href][aria-current="page"]')]
                             .map((link) => link.dataset.rootHref),
                         home: nav?.querySelector(`[data-root-href="${prefix}"]`)?.getAttribute('href'),
@@ -686,12 +703,21 @@ export const scenarios = [
                 return results;
             }, rootPaths);
             for (const state of staticRoots) {
-                const labels = {
-                    '/': ['Content - All', 'Content - Categories', 'Products - All', 'Products - Categories'],
-                    '/zh/': ['内容 - 全部', '内容 - 分类', '产品 - 全部', '产品 - 分类'],
-                    '/zh-tw/': ['內容 - 全部', '內容 - 分類', '產品 - 全部', '產品 - 分類']
+                const primaryEntryLabelsByPrefix = {
+                    '/': ['Discover - All', 'Discover - Categories', 'Tools - All', 'Tools - Categories'],
+                    '/zh/': ['发现 - 全部', '发现 - 分类', '工具 - 全部', '工具 - 分类'],
+                    '/zh-tw/': ['發現 - 全部', '發現 - 分類', '工具 - 全部', '工具 - 分類']
                 };
-                if (JSON.stringify(state.articleLabels) !== JSON.stringify(labels[state.prefix])) fail('Content and product entries must use the same All/Categories naming and order.', state);
+                if (JSON.stringify(state.primaryEntryLabels) !== JSON.stringify(primaryEntryLabelsByPrefix[state.prefix])) fail('Swaw must show Discover - All, Discover - Categories, Tools - All and Tools - Categories in the declared order for each language.', state);
+                for (const [index, entry] of state.primaryEntryPages.entries()) {
+                    const expectedTitle = primaryEntryLabelsByPrefix[state.prefix][index];
+                    if (entry.status !== 200 || entry.title !== expectedTitle || entry.twitterTitle !== expectedTitle
+                        || entry.browserTitle !== `${expectedTitle} - swaw`
+                        || !entry.description || entry.description !== entry.ogDescription || entry.description !== entry.twitterDescription
+                        || entry.canonicalPath !== state.expected[index]) {
+                        fail('Primary entry labels, browser/social titles and descriptions must agree while canonical routes stay stable.', { prefix: state.prefix, expectedTitle, entry });
+                    }
+                }
                 if (state.count !== 1 || JSON.stringify(state.hrefs) !== JSON.stringify(state.expected)
                     || JSON.stringify(state.selected) !== JSON.stringify([state.prefix + 'all/'])
                     || state.home !== state.prefix || state.rowContentCount !== rootPaths.length || state.homeIcon !== '©' || state.footerCount !== 0 || state.oldControls !== 0
@@ -738,7 +764,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         timeoutMs: 60000,
         async run({ page, baseUrl }) {
-            const expectedRoots = ['all', 'tags', 'all-products', 'products',
+            const expectedRoots = ['all', 'tags', 'all-tools', 'tools',
                 'language', 'appearance', 'my', 'about', 'updates', 'rss', 'wechat', 'github', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
             const assertSelection = async (expected) => {
                 await waitForBreadcrumbSettled(page);
@@ -757,9 +783,8 @@ export const scenarios = [
             };
             const directCases = [
                 ['/zh/p/xvenv/', null],
-                ['/zh/p/xvenv/?from=products/not-a-source', null],
-                ['/zh/p/xvenv/?from=product-categories/free', null],
-                ['/zh/p/xvenv/?from=products', null],
+                ['/zh/p/xvenv/?from=tools/not-a-source', null],
+                ['/zh/p/xvenv/?from=tools', null],
                 ['/zh/d/', null],
                 ['/zh/about/', '/zh/about/'],
                 ['/zh/updates/check/', '/zh/updates/'],
@@ -782,10 +807,10 @@ export const scenarios = [
             const articlePath = '/zh/p/xvenv/';
             await gotoAndWait(page, baseUrl + articlePath);
             const sources = await page.evaluate(() => JSON.parse(document.body.dataset.entryBreadcrumbSources || '[]'));
-            const sourceCases = ['all', 'tags', 'products'].map((root) => sources.find((source) => (
+            const sourceCases = ['all', 'tags', 'tools'].map((root) => sources.find((source) => (
                 source.logical_path === `/${root}/` || source.logical_path.startsWith(`/${root}/`)
             )));
-            if (sourceCases.some((source) => !source)) fail('The fixture product must expose all, tags and products sources.', { sources });
+            if (sourceCases.some((source) => !source)) fail('The fixture tool must expose all, tags and tools sources.', { sources });
             for (const source of sourceCases) {
                 const target = new URL(articlePath, baseUrl);
                 target.searchParams.set('from', source.logical_path.replace(/^\/|\/$/g, ''));
@@ -809,14 +834,13 @@ export const scenarios = [
                 await route.continue();
             });
             const firstPaintCases = [
-                ['/zh/p/xvenv/?from=products/free', '/zh/products/'],
-                ['/zh/p/xvenv/?from=product-categories/free', null],
-                ['/zh/p/xvenv/?from=products', null],
-                ['/zh/p/xvenv/?from=%2Fproducts%2Ffree%2F', '/zh/products/'],
+                ['/zh/p/xvenv/?from=tools/free', '/zh/tools/'],
+                ['/zh/p/xvenv/?from=tools', null],
+                ['/zh/p/xvenv/?from=%2Ftools%2Ffree%2F', '/zh/tools/'],
                 ['/zh/p/xvenv/', null],
-                ['/zh/p/xvenv/?from=products/not-a-source', null],
+                ['/zh/p/xvenv/?from=tools/not-a-source', null],
                 ['/zh/p/xvenv/?from=tags/not-a-source', null],
-                ['/zh/language/?return=' + encodeURIComponent('/zh/p/xvenv/?from=products/free'), '/zh/language/']
+                ['/zh/language/?return=' + encodeURIComponent('/zh/p/xvenv/?from=tools/free'), '/zh/language/']
             ];
             const firstPaintStates = [];
             for (const [target, expectedRoot] of firstPaintCases) {
@@ -933,42 +957,42 @@ export const scenarios = [
         }
     },
     {
-        id: 'products-category-entry-lineage',
+        id: 'tools-category-entry-lineage',
         kind: 'single',
-        title: 'Products Category and All Entry Lineage',
+        title: 'Tools Category and All Entry Lineage',
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
-            const categoriesPath = '/products/';
+            const categoriesPath = '/tools/';
             await gotoAndWait(page, `${baseUrl}${categoriesPath}`);
             const categoryHrefs = await page.locator('.slot-main .collection-item-link').evaluateAll(
                 (links) => links.map((link) => new URL(link.href).pathname)
             );
             if (categoryHrefs.length === 0 || new Set(categoryHrefs).size !== categoryHrefs.length
                 || categoryHrefs.some((href) => !href.startsWith(categoriesPath))) {
-                fail('Product category rows must be distinct native terms below their root.', { categoryHrefs });
+                fail('Tool category rows must be distinct native terms below their root.', { categoryHrefs });
             }
 
-            // Discover an existing product so the regression does not depend on a product slug.
-            await gotoAndWait(page, `${baseUrl}/all-products/`);
-            const productLink = page.locator('.slot-main .collection-list--products .collection-item-link').first();
-            const productHref = await productLink.getAttribute('href');
-            if (!productHref) fail('Product lineage verification requires one real product.');
-            const productPath = new URL(productHref, baseUrl).pathname;
+            // Discover an existing tool so the regression does not depend on a tool slug.
+            await gotoAndWait(page, `${baseUrl}/all-tools/`);
+            const toolLink = page.locator('.slot-main .collection-list--products .collection-item-link').first();
+            const toolHref = await toolLink.getAttribute('href');
+            if (!toolHref) fail('Tool lineage verification requires one real tool.');
+            const toolPath = new URL(toolHref, baseUrl).pathname;
             const sources = await page.evaluate(async (href) => {
                 const response = await fetch(href);
                 const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
                 return JSON.parse(doc.body.dataset.entryBreadcrumbSources || '[]');
-            }, productPath);
+            }, toolPath);
             const categorySource = sources.find((source) => source.provider === 'collection'
-                && source.logical_path.startsWith('/products/'));
-            if (!categorySource) fail('A real product must belong to an authored product category.');
+                && source.logical_path.startsWith('/tools/'));
+            if (!categorySource) fail('A real tool must belong to an authored tool category.');
 
             const results = [];
-            for (const collectionPath of ['/all-products/', categorySource.logical_path]) {
+            for (const collectionPath of ['/all-tools/', categorySource.logical_path]) {
                 await gotoAndWait(page, `${baseUrl}${collectionPath}?sort=price-desc`);
-                const target = page.locator(`.slot-main .collection-list--products .collection-item-link[href^="${productPath}?"]`);
+                const target = page.locator(`.slot-main .collection-list--products .collection-item-link[href^="${toolPath}?"]`);
                 await target.click();
-                await page.waitForURL((url) => url.pathname === productPath);
+                await page.waitForURL((url) => url.pathname === toolPath);
                 await waitForBreadcrumbSettled(page);
                 const assertSelection = async () => {
                     const state = await page.evaluate(() => ({
@@ -978,15 +1002,15 @@ export const scenarios = [
                             .map((link) => new URL(link.href).pathname),
                         categories: [...document.querySelectorAll('.slot-breadcrumb .collection-item-link')]
                             .map((link) => new URL(link.href).pathname)
-                            .filter((href) => href.startsWith('/products/')),
+                            .filter((href) => href.startsWith('/tools/')),
                         currentSort: document.querySelector('.slot-breadcrumb .collection-column-sort')?.textContent
                     }));
-                    const expectedRoot = collectionPath === '/all-products/' ? '/all-products/' : categoriesPath;
+                    const expectedRoot = collectionPath === '/all-tools/' ? '/all-tools/' : categoriesPath;
                     if (state.from !== collectionPath.replace(/^\/|\/$/g, '')
                         || state.root !== expectedRoot
-                        || !state.selected.includes(productPath)
+                        || !state.selected.includes(toolPath)
                         || !state.currentSort?.includes('↓')) {
-                        fail('Opening a product must preserve its source root, selected row and descending sort.', state);
+                        fail('Opening a tool must preserve its source root, selected row and descending sort.', state);
                     }
                     if (expectedRoot === categoriesPath
                         && (JSON.stringify(state.categories) !== JSON.stringify(categoryHrefs)
@@ -1002,13 +1026,13 @@ export const scenarios = [
                 await page.goBack();
                 await page.waitForURL((url) => url.pathname === collectionPath);
                 if (new URL(page.url()).searchParams.get('sort') !== 'price-desc') {
-                    fail('Back navigation must restore the product list sort.', { url: page.url() });
+                    fail('Back navigation must restore the tool list sort.', { url: page.url() });
                 }
                 await page.goForward();
                 await waitForBreadcrumbSettled(page);
                 await assertSelection();
             }
-            return { productPath, results };
+            return { toolPath, results };
         }
     },
     {

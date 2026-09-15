@@ -334,7 +334,7 @@ export const preferenceAndUpdateScenarios = [
         title: 'Language Choices Replace the Settings History Entry',
         dialogPolicy: 'dismiss',
         async run({ page, baseUrl, dialogs, artifactDir }) {
-            await gotoAndWait(page, baseUrl + '/zh/p/xvenv/?from=products/free&sorts=_,name-asc#details');
+            await gotoAndWait(page, baseUrl + '/zh/p/xvenv/?from=tools/free&sorts=_,name-asc#details');
             const article = page.url();
             await page.locator('[data-root-href="/zh/language/"]').click();
             const historyLength = await page.evaluate(() => history.length);

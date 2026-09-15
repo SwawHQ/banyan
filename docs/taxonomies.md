@@ -12,7 +12,10 @@ Banyan 推荐用两层结构组织内容：
 ```toml
 [taxonomies]
 tag = "tags"
+tool = "tools"
 ```
+
+`tools` 使用平面分类，根配置位于 `content/tools/_index*.md`，文章声明 `tools: [free, first-party]`。`content/all-tools/` 以 `aggregate: /tools` 汇总成员；`list: products` 只控制价格／用途列，与分类法名称无关。具体约定见 [列表与产品声明](collection-lists.md#怎样收录工具)。
 
 一篇文章可以属于多条独立路径：
 
@@ -45,8 +48,7 @@ taxonomy 必须先在站点根 `hugo.toml` 的 `[taxonomies]` 中声明。仅创
 
 ```yaml
 ---
-title: "Content - Categories"
-linkTitle: "Content - Categories"
+title: "Topics"
 root_nav: true
 
 banyan_taxonomy:

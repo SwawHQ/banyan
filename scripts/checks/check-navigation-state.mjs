@@ -121,11 +121,11 @@ assert.equal(
 assert.equal(
     applySorts(
         navState,
-        'https://example.test/zh/p/example/?from=products/first-party',
+        'https://example.test/zh/p/example/?from=tools/first-party',
         ['', 'name-asc'],
         ['date-desc', 'name-asc']
     ),
-    '/zh/p/example/?from=products/first-party',
+    '/zh/p/example/?from=tools/first-party',
     'placeholder/default lineage sorts should be omitted when every layer is default'
 );
 
@@ -558,7 +558,7 @@ assert.equal(
     'from values with an entry key tail should not be treated as valid navigation state'
 );
 
-for (const invalidFrom of ['/tags/', '/tags/unknown/', '/products/windows/', '']) {
+for (const invalidFrom of ['/tags/', '/tags/unknown/', '/tools/windows/', '']) {
     assert.equal(
         breadcrumbSource.parseEntrySelection(sources, invalidFrom),
         null,

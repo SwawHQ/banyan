@@ -1,8 +1,7 @@
 ---
 root_nav: true
-title: Products - Categories
-description: Browse products by price or origin.
-linkTitle: Products - Categories
+title: 工具 - 分类
+description: 按价格或来源浏览工具。
 weight: 40
 layout: page-collection
 list: directory

@@ -6,9 +6,11 @@
 
 第一列采用显式加入：只有根页面顶层声明布尔值 `root_nav: true` 才显示；未声明、`false` 或字符串 `"true"` 均不显示。首页自身也遵守该规则。此字段只对首页及其直接子页／分类根生效，不能把深层文章提升成根入口；不要放入 `cascade`。项目覆盖主题页面时，每种语言各自保留该声明。
 
-当前前四项依次为：主题 `content/all/index*.md` 的“内容 - 全部”（`weight: 10`）、项目 `content/tags/_index*.md` 的“内容 - 分类”（`20`）、主题 `content/all-products/_index*.md` 的“产品 - 全部”（`30`）、主题 `content/products/_index*.md` 的“产品 - 分类”（`40`）。内容的两个入口直接使用 `title`，浏览器标题也由同一名称加站点名生成；产品的两个入口仍声明与 `title` 相同的 `linkTitle`。
+Swaw 当前前四项依次为项目 `content/all/index*.md` 的“发现 - 全部”（`weight: 10`）、`content/tags/_index*.md` 的“发现 - 分类”（`20`）、`content/all-tools/_index*.md` 的“工具 - 全部”（`30`）、`content/tools/_index*.md` 的“工具 - 分类”（`40`）。四个入口的站点文案由根目录页面定义，覆盖主题默认页；直接使用 `title`，不重复声明相同的 `linkTitle`。英文对应 Discover - All、Discover - Categories、Tools - All、Tools - Categories，繁体对应發現 - 全部、發現 - 分類、工具 - 全部、工具 - 分類。
 
-“内容”是 `/d/` 内容树的上位集合名称：`/d/` 提供目录视图，`/all/` 提供全部视图，`/tags/` 提供分类视图。产品页面位于 `/d/products/`，因此可以同时出现在内容视图和产品专用视图中；`/all-products/` 与 `/products/` 分别是该子集的全部视图和分类视图。入口名称描述视图所覆盖的集合，不用“文章”代指整个 `/d/` 内容树。
+“发现”是 Swaw 对 `/d/` 内容集合的展示名称，容纳知识、实践方法与技术动态：`/d/` 提供目录视图，`/all/` 提供全部视图，`/tags/` 提供分类视图。工具对应的产品页面位于 `/d/products/`，因此可以同时出现在发现和工具视图中；`/all-tools/` 与 `/tools/` 分别提供工具的全部视图和分类视图。
+
+站点分类法为 `tool = "tools"`，文章用 `tools: [free, first-party]` 归类，全部入口声明 `aggregate: /tools`。主题默认入口同步位于 `content/tools/`、`content/all-tools/`；项目覆盖三语文案。`list: products`、`offer`、`products_*` 文案键与 `product` 图标保留通用产品展示语义，与分类法名称独立。旧产品入口及分类／RSS 地址直接废弃，不发布旧页面、重定向或兼容分支。
 
 `/d/` 不声明 `root_nav`。它继续渲染目录页，文章的目录来源、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤仅发生在 `feature-browse/navigation/root/render.html`，`feature-browse/navigation/root/pages.html` 保留完整结构供归属与来源模型使用。
 
@@ -19,10 +21,10 @@
 | 主题 `content/d/_index.zh.md` | `list: directory` | 目录的直接子目录、文章 |
 | 项目 `content/d/wsl/_index.zh.md` | 未声明，继承 `/d/` | WSL 目录的直接子项 |
 | 项目 `content/tags/_index.zh.md` | `list: directory` | 现有标签树的子项 |
-| 主题 `content/products/_index.zh.md` | `list: directory` | Hugo 的产品分类词项，包含显式空分类 |
+| 项目 `content/tools/_index.zh.md` | `list: directory` | “工具 - 分类”：Hugo 的工具分类词项，包含显式空分类 |
 | 上述文件的 `cascade`，目标 `kind: term` | `list: products` | 每个分类的 `.Pages`，无需逐类写来源 |
-| 主题 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | `/d/` 下全部内容 |
-| 主题 `content/all-products/_index.zh.md` | `list: products`、`aggregate: /products` | 产品分类成员的去重并集 |
+| 项目 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | “发现 - 全部”：`/d/` 下全部内容 |
+| 项目 `content/all-tools/_index.zh.md` | `list: products`、`aggregate: /tools` | “工具 - 全部”：工具分类成员的去重并集 |
 | 主题 `content/updates/_index.zh.md` | `list: name` | 更新目录的两个真实子项：检查更新、更新记录 |
 | 主题 `content/language/index.zh.md` | `list: choice` | `hugo.toml` 已启用的语言 |
 | 主题 `content/appearance/index.zh.md` | `list: choice` | 跟随系统、浅色、深色 |
@@ -109,7 +111,7 @@ GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/
 
 字符图标继承条目字号（当前为 15px），不再缩小到 `0.75em`。文字和 SVG 共用 `1.5rem` 宽的居中占位，容纳 `EN` 等短标记并保持名称起点一致；SVG 图形本身仍为 `1rem`。更新入口和检查更新页在三语言 front matter 声明 `icon: { text: "↻" }`，表示查看版本与检查更新，无需调整公共字号或占位。字符的具体字形由字体决定，需要严格一致的几何外观时使用 SVG。
 
-SVG 名称来自 `data/icons.toml`，字符使用 `icon: { text: "©" }`，页面图片使用 `icon: { image: "0.webp" }`；三者都使用同一个 `icon` 值，不根据引号或是否命中图标库猜测类型。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如主题 `content/products/_index.zh.md` 可以声明：
+SVG 名称来自 `data/icons.toml`，字符使用 `icon: { text: "©" }`，页面图片使用 `icon: { image: "0.webp" }`；三者都使用同一个 `icon` 值，不根据引号或是否命中图标库猜测类型。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如主题 `content/tools/_index.zh.md` 可以声明：
 
 ```yaml
 icon: product
@@ -126,9 +128,9 @@ list_icon_file: product
 
 图片默认保留原色。需要跟随外观时，可声明 `icon: { image: "site/pwa/favicon.svg", monochrome: true }`。共用图标样式在浅色使用 `brightness(0)`、深色使用 `brightness(0) invert(1)`，分别显示纯黑／纯白，并保留透明度；手动切换或跟随系统都生效。它只改变当前图标元素的显示，不修改源文件、发布文件或哈希 URL，也不会让共用图片的浏览器 favicon、正文头像自动变色。此选项适合有透明背景的单色图形；多色细节会统一变成黑／白。省略或 `false` 均保留原色，不接受字符串 `"true"`。第一列、主列表及动态路径列都保留同一声明。
 
-主题现在在 `content/products/_index*.md` 和 `content/all-products/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置，不需要逐篇给产品页面写图标。Xvenv 未写 `icon`，因此在产品分类和产品全部中显示包裹，在内容的目录、分类和全部视图中仍显示文件；如果希望所有入口一致，在 Xvenv 各语言文件中声明 `icon: product` 即可。
+主题现在在 `content/tools/_index*.md` 和 `content/all-tools/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置，不需要逐篇给产品页面写图标。Xvenv 未写 `icon`，因此在产品分类和产品全部中显示包裹，在内容的目录、分类和全部视图中仍显示文件；如果希望所有入口一致，在 Xvenv 各语言文件中声明 `icon: product` 即可。
 
-`aggregate` 只提供集合成员，不参与默认图标继承；`/all-products/` 与 `/products/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。根项目 `content/_index*.md` 声明 `linkTitle: "2026 Swaw"`、`icon: { text: "©" }`、`weight: 110`；访问首页只选中首页，其他页面仍按真实入口或有效来源选中。旧版权页脚、顶部重复首页链接及 `slots.footer` 已移除。
+`aggregate` 只提供集合成员，不参与默认图标继承；`/all-tools/` 与 `/tools/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。根项目 `content/_index*.md` 声明 `linkTitle: "2026 Swaw"`、`icon: { text: "©" }`、`weight: 110`；访问首页只选中首页，其他页面仍按真实入口或有效来源选中。旧版权页脚、顶部重复首页链接及 `slots.footer` 已移除。
 
 图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。浏览器用 `assets/js/browse/icon-value.js` 保留同样的值结构，JSON 编解码不得把对象转成字符串。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主表、页面内嵌 source payload 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
 
@@ -154,21 +156,21 @@ icon = { text = "EN" }
 
 语言页的选择仍留在设置页；返回原内容时优先打开刚选语言的真实译文。此行为由语言脚本处理，不属于 `choice` 渲染协议，具体规则见 [系统页面与返回](navigation-state.md#系统页面与返回)。
 
-## 怎样收录产品
+## 怎样收录工具
 
-根项目 `hugo.toml` 注册 `product = "products"`。文章的内容位置、`slug` 和 `/p/.../` 地址保持不变，例如 `content/d/products/xvenv/index.zh.md`：
+根项目 `hugo.toml` 注册 `tool = "tools"`。文章的内容位置、`slug` 和 `/p/.../` 地址保持不变，例如 `content/d/products/xvenv/index.zh.md`：
 
 ```yaml
-products: [free, first-party]
+tools: [free, first-party]
 offer:
   amount: 0
   currency: "$"
   value: "项目级免安装开发环境"
 ```
 
-至少一个非空产品词项才构成产品收录。词项由作者自由定义，例如 `products: [paid, "$5~$50", "Special Tools"]`，无需改模板或新增分类文件。系统不解释分类含义、不检查互斥，也不从价格推导分类。`offer` 可省略，或只写 `value`；填写 `amount` 时必须提供 `currency`，金额需为非负数字。未标价显示 `—`，价格升序和降序均排在已标价项后；0 显示本语言的“免费”。价值说明缺失时留空。
+至少一个非空工具词项才构成工具收录。词项由作者自由定义，例如 `tools: [paid, "$5~$50", "Special Tools"]`，无需改模板或新增分类文件。系统不解释分类含义、不检查互斥，也不从价格推导分类。`offer` 可省略，或只写 `value`；填写 `amount` 时必须提供 `currency`，金额需为非负数字。未标价显示 `—`，价格升序和降序均排在已标价项后；0 显示本语言的“免费”。价值说明缺失时留空。
 
-Hugo 自动生成 `/products/<词项>/`。需要译名、介绍、权重或显式空分类时，再创建项目 `content/products/<词项>/_index.zh.md`，例如：
+Hugo 自动生成 `/tools/<词项>/`。需要译名、介绍、权重或显式空分类时，再创建项目 `content/tools/<词项>/_index.zh.md`，例如：
 
 ```yaml
 ---
@@ -185,9 +187,9 @@ weight: 30
 
 名称比较由 Hugo 执行一次，生成 `sort_name` 数值名次，显示文字仍保留在 `text`。这样首帧、主表与路径列使用同一名称顺序，不因浏览器语言或 ICU 实现不同而换位。更新时间降序中时间相同的条目也使用名称降序；升序相反。实现依据见 [Hugo 的稳定排序实现](https://github.com/gohugoio/hugo/blob/v0.157.0/tpl/collections/sort.go)。
 
-`/products/` 现在是分类根，产品全部是 `/all-products/`。项目 `data/redirects.toml` 将旧 `/product-categories/.../` 直接转到新地址，删除与新真实页面重叠的旧规则；`/products/` 本身不重定向。
+`/tools/` 是分类根，工具全部是 `/all-tools/`。站点直接使用新地址，旧 `/products/`、`/all-products/`、`/product-categories/` 及其子路径均不保留。
 
-旧文章书签中的 `from=product-categories/free` 已不再是有效来源；`from=products` 也不能继续代表“全部产品”，因为新分类根只收录分类词项。两者按既有无效来源规则使用文章的真实目录路径，正文仍正常打开，刷新后规则一致。新链接分别携带 `from=products/free`、`from=all-products`。不在运行时增加旧产品命名适配层。系统页不携带 `return`；原生后退恢复历史中的文章网址及其 `from`／排序，回到带旧来源的文章也按上述规则处理。
+新链接分别携带 `from=tools/free`、`from=all-tools`，分类根 `from=tools` 不代表工具全部。无效来源按通用规则使用文章的真实目录路径；原生后退恢复历史中的文章网址及其来源／排序。
 
 ## 验证
 

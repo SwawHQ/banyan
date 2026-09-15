@@ -1,5 +1,7 @@
 # 导航入口展平纲要
 
+> 后续命名更新：站点工具分类法已迁移为 `tool = "tools"`，入口为 `/tools/`、`/all-tools/`。本文保留当时的实施记录；当前约定见 [collection-lists.md](collection-lists.md)。
+
 > 历史实施记录：本文按时间保留曾经的方案、阶段复核和已退役名称，因此中间段落不代表当前代码契约。维护现有实现时请以 [面包屑模型](breadcrumb-models.md)、[列表声明](collection-lists.md)、[布局 slot](layout-slots.md) 与 [Partial 架构](partial-architecture.md) 为准。
 
 2026-09-10｜分支：`codex/flatten-navigation`｜状态：6A／6B、CSS 结构、选择器及页面资源边界已整理；6C 黑白灰配色待确认后实施

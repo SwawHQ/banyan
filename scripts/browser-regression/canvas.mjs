@@ -452,7 +452,7 @@ export const canvasScenarios = [
                 assert(state.columns.every(column => column.bottom <= state.viewportHeight + 1));
                 await page.screenshot({ path: path.join(artifactDir, `columns-${width}.png`) });
                 cases.push({ width, ...state });
-                for (const route of ['all', 'd', 'all-products']) {
+                for (const route of ['all', 'd', 'all-tools']) {
                     await gotoAndWait(page, `${baseUrl}/zh/${route}/`);
                     const overflow = await page.locator('.page-content').evaluate(column => column.scrollWidth - column.clientWidth);
                     assert(overflow <= 1, `/${route}/ must extend the page horizontally without an inner scrollbar.`);
@@ -489,11 +489,11 @@ export const canvasScenarios = [
             });
             for (const width of mobile ? [390] : [390, 1024, 1440]) {
                 if (!mobile) await page.setViewportSize({ width, height: 900 });
-                for (const source of ['products/free', 'all-products']) {
+                for (const source of ['tools/free', 'all-tools']) {
                     await gotoAndWait(page, `${baseUrl}/zh/${source}/`);
                     await waitForBreadcrumbSettled(page);
                     assert.equal((await readCanvas(page)).canvasOffsetX, 0);
-                    if (source === 'products') {
+                    if (source === 'tools/free') {
                         if (mobile) {
                             const sortPoint = await page.locator('main [data-sort-field="name"]').evaluate(el => {
                                 const box = el.getBoundingClientRect();
@@ -513,7 +513,7 @@ export const canvasScenarios = [
                             await cdp.send('Input.dispatchTouchEvent', {
                                 type: 'touchStart', touchPoints: [{ x: 350, y: 180, id: 1 }]
                             });
-                            const distance = source === 'products' ? 160 : 320;
+                            const distance = source === 'tools/free' ? 160 : 320;
                             for (let offset = 20; offset <= distance; offset += 20) {
                                 await page.waitForTimeout(40);
                                 await cdp.send('Input.dispatchTouchEvent', {
@@ -523,7 +523,7 @@ export const canvasScenarios = [
                             await page.waitForTimeout(120);
                             await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
                         } else {
-                            await page.evaluate(x => scrollTo(x, 0), source === 'products' ? 150 : 310);
+                            await page.evaluate(x => scrollTo(x, 0), source === 'tools/free' ? 150 : 310);
                         }
                     }
                     await nextPaint(page);
@@ -549,7 +549,7 @@ export const canvasScenarios = [
                     const after = await readCanvas(page);
                     const firstX = await page.evaluate(() => window.__firstCanvasX);
                     assert.ok(Math.abs(firstX - before.canvasOffsetX) <= 1, 'The inherited position is already correct at first paint, before slow runtime scripts.');
-                    if (source === 'products') assert.equal(new URL(page.url()).searchParams.get('sort'), mobile ? 'name-desc' : 'price-desc');
+                    if (source === 'tools/free') assert.equal(new URL(page.url()).searchParams.get('sort'), mobile ? 'name-desc' : 'price-desc');
                     assert.ok(Math.abs(after.canvasOffsetX - before.canvasOffsetX) <= 1, 'Opening a product retains the source canvas position.');
                     assert.equal(after.canvasOffsetY, 0, 'The new article starts at its top.');
                     assert.ok(Math.abs(after.nav.x - before.nav.x) <= 1, 'Root entries stay in place.');

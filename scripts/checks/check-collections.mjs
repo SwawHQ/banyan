@@ -26,22 +26,22 @@ const logoHash = createHash('sha256').update(logoBytes).digest('hex');
 const assetImage = {image: `/site/pwa/favicon.${logoHash}.svg`};
 const monochromeAsset = {...assetImage, monochrome: true};
 const cases = [
-    ['priced', 'icon: appearance-dark\nlastmod: 2026-08-01\ntags: [contract-dates]\nproducts: [free, paid, "Special Tools", "$5~$50", contract-dates, contract-name]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
-    ['missing', 'lastmod: 2026-08-02\ntags: [contract-dates/child]\nproducts: [free, paid, "Special Tools", contract-dates, contract-name]\noffer: {value: "Value without a price"}'],
-    ['zero', 'icon: {text: "<b>EN</b>"}\nproducts: [free]\noffer: {amount: 0, currency: "$"}'],
-    ['no-offer', 'icon: {image: "badge.webp"}\nproducts: [free]'],
+    ['priced', 'icon: appearance-dark\nlastmod: 2026-08-01\ntags: [contract-dates]\ntools: [free, paid, "Special Tools", "$5~$50", contract-dates, contract-name]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
+    ['missing', 'lastmod: 2026-08-02\ntags: [contract-dates/child]\ntools: [free, paid, "Special Tools", contract-dates, contract-name]\noffer: {value: "Value without a price"}'],
+    ['zero', 'icon: {text: "<b>EN</b>"}\ntools: [free]\noffer: {amount: 0, currency: "$"}'],
+    ['no-offer', 'icon: {image: "badge.webp"}\ntools: [free]'],
     ['unclassified', 'icon: {image: "site/pwa/favicon.svg", monochrome: true}\noffer: {amount: 99, currency: "$", value: "Not a product"}'],
     ['tag-branches', 'tags: [contract-tree, contract-tree/shallow, contract-tree/deep/leaf]'],
-    ['empty', 'products: []'],
-    ['blank', 'products: [""]']
+    ['empty', 'tools: []'],
+    ['blank', 'tools: [""]']
 ];
 for (const lang of langs) {
     for (const [name, field] of [['enabled', 'root_nav: true'], ['disabled', 'root_nav: false'], ['omitted', ''], ['string', 'root_nav: "true"']]) {
         write(path.join(overlay, `contract-nav-${name}/index${lang}.md`), `---\ntitle: Navigation ${name}\nslug: contract-nav-${name}\nlayout: page-article\nbuild: {list: local}\n${field}\n---\nDirectly accessible information page.\n`);
     }
-    write(path.join(overlay, `products/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\nicon: rss\n---\n');
-    write(path.join(overlay, `products/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlist: directory\n---\n');
-    write(path.join(overlay, `products/contract-name/_index${lang}.md`), '---\ntitle: Names only\nlist: name\n---\n');
+    write(path.join(overlay, `tools/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\nicon: rss\n---\n');
+    write(path.join(overlay, `tools/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlist: directory\n---\n');
+    write(path.join(overlay, `tools/contract-name/_index${lang}.md`), '---\ntitle: Names only\nlist: name\n---\n');
     write(path.join(overlay, `contract-name-all/index${lang}.md`), '---\ntitle: All names\nslug: contract-name-all\nroot_nav: true\nlayout: page-collection\nlist: name\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
     for (const term of [
         'contract-dates',
@@ -54,8 +54,8 @@ for (const lang of langs) {
         write(path.join(overlay, `tags/${term}/_index${lang}.md`), `---\ntitle: ${term}\n---\n`);
     }
     write(path.join(overlay, `tags/untagged/_index${lang}.md`), '---\ntitle: Untagged\n---\n');
-    const paid = fs.readFileSync(`content/products/paid/_index${lang}.md`, 'utf8');
-    write(path.join(overlay, `products/paid/_index${lang}.md`), paid.replace('---', '---\nlist_icon_file: appearance-light'));
+    const paid = fs.readFileSync(`content/tools/paid/_index${lang}.md`, 'utf8');
+    write(path.join(overlay, `tools/paid/_index${lang}.md`), paid.replace('---', '---\nlist_icon_file: appearance-light'));
     for (const [name, fields] of cases) write(path.join(overlay, `d/contract-${name}/index${lang}.md`),
         `---\ntitle: "Contract ${name}"\nslug: contract-${name}\ndate: 2026-01-01\n${fields}\n---\nArticle body stays an article.\n`);
     write(path.join(overlay, `d/contract-override/_index${lang}.md`), '---\ntitle: Override\nroot_nav: true\nicon: info\nlist: all\nlist_icon_folder: rss\nlist_icon_file: appearance-auto\n---\n');
@@ -153,7 +153,7 @@ for (const view of ['directory', 'all', 'products', 'name']) {
             assert.equal(row.date_text, text, `${list}: display uses Lastmod`);
             assert.equal(row.sort_date, key, `${list}: sorting uses the displayed time`);
         };
-        for (const list of ['all', 'products/contract-dates', ...(['products', 'name'].includes(view) ? [] : ['d'])]) {
+        for (const list of ['all', 'tools/contract-dates', ...(['products', 'name'].includes(view) ? [] : ['d'])]) {
             assertUpdated(list, '/p/contract-priced/', '2026-08-01', '20260801000000');
             assertUpdated(list, '/p/contract-missing/', '2026-08-02', '20260802000000');
             const dated = payload(output, lang, list).rows.filter(row => /\/p\/contract-(priced|missing)\//.test(row.href));
@@ -163,8 +163,8 @@ for (const view of ['directory', 'all', 'products', 'name']) {
         assertUpdated('all', '/p/contract-direct/', '2026-08-03', '20260803000000'); // No publication date.
         assertUpdated('all', '/p/contract-child/', '—', ''); // No usable time at all.
         if (!['products', 'name'].includes(view)) assertUpdated('d', '/d/contract-override/', '2026-08-03', '20260803000000');
-        assertUpdated('products', '/products/contract-dates/', '2026-08-02', '20260802000000');
-        assertUpdated('products', '/products/contract-empty/', '—', '');
+        assertUpdated('tools', '/tools/contract-dates/', '2026-08-02', '20260802000000');
+        assertUpdated('tools', '/tools/contract-empty/', '—', '');
         assertUpdated('tags', '/tags/contract-dates/', '2026-08-02', '20260802000000');
         assertUpdated('tags/contract-dates', '/tags/contract-dates/child/', '2026-08-02', '20260802000000');
         assertUpdated('tags/contract-dates', '/p/contract-priced/', '2026-08-01', '20260801000000');
@@ -201,7 +201,7 @@ for (const view of ['directory', 'all', 'products', 'name']) {
         assert(unassignedRow, 'unassigned taxonomy term contains pages without taxonomy values');
         assert.equal(unassignedRow.key, 'contract-unclassified', 'unassigned taxonomy pages use the same stable collection key');
         const iconFor = (list, href) => payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`)?.icon;
-        for (const list of ['d', 'all', 'products/free', 'all-products']) {
+        for (const list of ['d', 'all', 'tools/free', 'all-tools']) {
             assert.deepEqual(iconFor(list, '/p/contract-no-offer/'), ownImage, 'own image resolves against its article bundle in every list');
         }
         assert.deepEqual(iconFor('d/contract-image', '/d/contract-image/child/'), assetImage, 'directory defaults support global assets');
@@ -217,7 +217,7 @@ for (const view of ['directory', 'all', 'products', 'name']) {
         assert.deepEqual(iconFor('d/contract-text', '/d/contract-text/child/'), {text: 'Dir'});
         assert.deepEqual(iconFor('d/contract-text', '/p/contract-text/'), {text: 'EN'});
         assert.equal(iconFor('d/contract-text/child', '/p/contract-text-child/'), 'product', 'SVG overrides inherited text atomically');
-        for (const list of ['d', 'all', 'products/free', 'all-products']) {
+        for (const list of ['d', 'all', 'tools/free', 'all-tools']) {
             assert.deepEqual(iconFor(list, '/p/contract-zero/'), {text: '<b>EN</b>'}, 'text icon case and literal markup survive the payload');
         }
         assert.equal(iconFor('d', '/p/contract-empty/'), 'file', 'a parent icon is not inherited by its articles');
@@ -227,27 +227,27 @@ for (const view of ['directory', 'all', 'products', 'name']) {
         assert.equal(iconFor('d/contract-override/child', '/d/contract-override/child/nested/'), 'rss', 'folder default still inherits after a file-only override');
         assert.equal(iconFor('d/contract-override/child', '/p/contract-child/'), 'theme');
         assert.equal(iconFor('d/contract-override/child/nested', '/p/contract-nested/'), 'theme', 'blank declarations inherit');
-        assert.equal(iconFor('products', '/products/contract-empty/'), 'rss', 'term own icon wins over the folder default');
-        assert.equal(iconFor('products/free', '/p/contract-missing/'), 'product', 'term inherits taxonomy file default');
-        assert.equal(iconFor('products/paid', '/p/contract-missing/'), 'appearance-light', 'a term can override its file default');
-        assert.equal(iconFor('all-products', '/p/contract-missing/'), 'product', 'aggregate uses its own default');
+        assert.equal(iconFor('tools', '/tools/contract-empty/'), 'rss', 'term own icon wins over the folder default');
+        assert.equal(iconFor('tools/free', '/p/contract-missing/'), 'product', 'term inherits taxonomy file default');
+        assert.equal(iconFor('tools/paid', '/p/contract-missing/'), 'appearance-light', 'a term can override its file default');
+        assert.equal(iconFor('all-tools', '/p/contract-missing/'), 'product', 'aggregate uses its own default');
         assert.equal(iconFor('all', '/p/contract-direct/'), 'file', 'aggregate does not inherit its target defaults');
-        for (const list of ['d', 'all', 'products/free', 'products/paid', 'all-products']) {
+        for (const list of ['d', 'all', 'tools/free', 'tools/paid', 'all-tools']) {
             assert.equal(iconFor(list, '/p/contract-priced/'), 'appearance-dark', `own article icon wins in ${list}`);
         }
-        const all = payload(output, lang, 'all-products');
-        assert.equal(all.rows.filter(row => /\/p\/contract-/.test(row.href)).length, 4, 'native union includes four fixture products, once each');
+        const all = payload(output, lang, 'all-tools');
+        assert.equal(all.rows.filter(row => /\/p\/contract-/.test(row.href)).length, 4, 'native union includes four fixture tools, once each');
         assert.equal(new Set(all.rows.map(row => row.href)).size, all.rows.length);
         assert(!all.rows.some(row => /\/p\/contract-(unclassified|empty|blank)\//.test(row.href)));
-        const free = payload(output, lang, 'products/free');
+        const free = payload(output, lang, 'tools/free');
         assert.equal(free.sv, 'products');
         assert.equal(free.rows.filter(row => /\/p\/contract-/.test(row.href)).length, 4);
         assert.equal(free.rows.find(row => row.href.includes('contract-priced')).price_text, '$25', 'category labels do not validate prices');
         assert.equal(free.rows.find(row => row.href.includes('contract-missing')).price_text, '—');
         assert.equal(free.rows.find(row => row.href.includes('contract-zero')).sort_price, '0');
-        const categories = payload(output, lang, 'products');
+        const categories = payload(output, lang, 'tools');
         assert.equal(categories.sv, 'tree');
-        assert(categories.rows.some(row => row.href === `${prefixes[index]}/products/contract-empty/` && row.count_text === '0'));
+        assert(categories.rows.some(row => row.href === `${prefixes[index]}/tools/contract-empty/` && row.count_text === '0'));
         for (const label of ['Special Tools', '$5~$50']) {
             const term = categories.rows.find(row => row.text === label);
             assert(term, `autogenerated term ${label}`);
@@ -256,7 +256,7 @@ for (const view of ['directory', 'all', 'products', 'name']) {
         }
         const html = fs.readFileSync(path.join(output, prefixes[index].slice(1), 'p/contract-missing/index.html'), 'utf8');
         assert(!/data-sortable=(?:"true"|true)/.test(html), 'article remains an article despite inherited list');
-        for (const list of ['products/contract-name', 'contract-name-all', ...(view === 'name' ? ['d', 'd/wsl'] : [])]) {
+        for (const list of ['tools/contract-name', 'contract-name-all', ...(view === 'name' ? ['d', 'd/wsl'] : [])]) {
             const names = payload(output, lang, list);
             assert.equal(names.sv, 'name');
             assert.equal(names.ds, 'name-asc');
@@ -277,9 +277,9 @@ try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, serviceWorkers: 'block' });
     const page = await context.newPage();
     for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
-        await gotoAndWait(page, `${baseUrl}${prefixes[index]}/products/`);
+        await gotoAndWait(page, `${baseUrl}${prefixes[index]}/tools/`);
         const names = await page.locator('.slot-main .collection-item-title').allTextContents();
-        assert.deepEqual(names, payload(builds.directory, lang, 'products').rows.map(row => row.text), 'default category order agrees before and after hydration');
+        assert.deepEqual(names, payload(builds.directory, lang, 'tools').rows.map(row => row.text), 'default category order agrees before and after hydration');
         assert.equal(await page.locator(`[data-root-href="${prefixes[index]}/d/"] use`).getAttribute('href'), '#icon-info', 'root navigation honors the same own icon');
         const nav = page.locator('[data-root-href*="/contract-nav-"]');
         assert.deepEqual(await nav.evaluateAll(nodes => nodes.map(node => node.dataset.rootHref)), [`${prefixes[index]}/contract-nav-enabled/`], 'Only boolean root_nav: true opts a root page into navigation.');
@@ -289,7 +289,7 @@ try {
             assert.equal(response.status(), 200, 'Navigation visibility must not disable page output.');
         }
     }
-    for (const list of ['d', 'all', 'products/contract-dates']) {
+    for (const list of ['d', 'all', 'tools/contract-dates']) {
         for (const direction of ['asc', 'desc']) {
             await gotoAndWait(page, `${baseUrl}/${list}/?sort=date-${direction}`);
             const links = '.slot-main .collection-item-link[href*="/p/contract-"]';
@@ -307,12 +307,12 @@ try {
     }
     console.log('PASS Lastmod ascending/descending display and article path order');
     for (const direction of ['asc', 'desc']) {
-        await gotoAndWait(page, `${baseUrl}/products/free/?sort=price-${direction}`);
+        await gotoAndWait(page, `${baseUrl}/tools/free/?sort=price-${direction}`);
         const ordered = await page.locator('.slot-main .collection-list--products .collection-item-link').evaluateAll(links => links.map(link => ({
             href: new URL(link.href).pathname,
             price: link.closest('.collection-cell--name').dataset.sortPrice ?? ''
         })));
-        assert.equal(ordered.length, payload(builds.directory, 'en', 'products/free').rows.length);
+        assert.equal(ordered.length, payload(builds.directory, 'en', 'tools/free').rows.length);
         const firstMissing = ordered.findIndex(row => row.price === '');
         assert(firstMissing >= 0);
         assert(ordered.slice(firstMissing).every(row => row.price === ''), `unpriced last on price-${direction}`);
@@ -322,16 +322,16 @@ try {
         await clicked.click();
         await waitForBreadcrumbSettled(page);
         const selected = await page.locator('[data-root-href].is-current').getAttribute('data-root-href');
-        assert.equal(selected, '/products/');
+        assert.equal(selected, '/tools/');
         const items = await page.locator('.slot-breadcrumb .collection-item-link[href*="/p/"]').evaluateAll(links => links.map(a => new URL(a.href).pathname));
         assert.deepEqual(items, ordered.map(row => row.href), 'path column order matches product table');
     }
     // Arbitrary auto terms must support article entry, not just compile a page.
-    await gotoAndWait(page, `${baseUrl}/products/`);
+    await gotoAndWait(page, `${baseUrl}/tools/`);
     await page.locator('.slot-main a').filter({ hasText: '$5~$50' }).click();
     await page.locator('.slot-main a[href*="/p/contract-priced/?"]').click();
     await waitForBreadcrumbSettled(page);
-    assert.equal(await page.locator('[data-root-href].is-current').getAttribute('data-root-href'), '/products/');
+    assert.equal(await page.locator('[data-root-href].is-current').getAttribute('data-root-href'), '/tools/');
     await context.close();
     console.log('PASS missing-price order, shared path rows, arbitrary term article entry');
 
@@ -346,7 +346,7 @@ try {
     assert.equal(await staticPage.locator('.slot-breadcrumb a[href*="/d/contract-override/child/"] use').getAttribute('href'), '#icon-rss', 'SSR column projection preserves inherited icons');
     await staticPage.goto(`${baseUrl}/p/contract-text/`);
     assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
-    await staticPage.goto(`${baseUrl}/products/free/`);
+    await staticPage.goto(`${baseUrl}/tools/free/`);
     assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-no-offer/"] img.icon--image').getAttribute('src'), ownImage.image);
     assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-no-offer/"] .icon--monochrome').count(), 0, 'ordinary images retain their colors');
     assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-zero/"] .icon--text').textContent(), '<b>EN</b>');
@@ -362,11 +362,11 @@ try {
     const iconsContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 960 } });
     const iconsPage = await iconsContext.newPage();
     const selectedIcon = () => iconsPage.locator('.slot-breadcrumb a.is-current[href*="/p/contract-missing/"] use').getAttribute('href');
-    await gotoAndWait(iconsPage, `${baseUrl}/products/free/?sort=name-desc`);
+    await gotoAndWait(iconsPage, `${baseUrl}/tools/free/?sort=name-desc`);
     await iconsPage.locator('.slot-main a[href*="/p/contract-missing/?"]').click();
     await waitForBreadcrumbSettled(iconsPage);
     assert.equal(await selectedIcon(), '#icon-product');
-    await gotoAndWait(iconsPage, `${baseUrl}/p/contract-missing/?from=products/paid&sort=name-asc`);
+    await gotoAndWait(iconsPage, `${baseUrl}/p/contract-missing/?from=tools/paid&sort=name-asc`);
     assert.equal(await selectedIcon(), '#icon-appearance-light');
     await iconsPage.reload();
     await waitForBreadcrumbSettled(iconsPage);
@@ -391,7 +391,7 @@ try {
         await iconsPage.goForward();
         await waitForBreadcrumbSettled(iconsPage);
         assert.equal(await selectedAsset().getAttribute('src'), assetImage.image);
-        await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/?sort=name-asc`);
+        await gotoAndWait(iconsPage, `${baseUrl}${prefix}/tools/free/?sort=name-asc`);
         await iconsPage.locator('.slot-main a[href*="/p/contract-no-offer/?"]').click();
         const selectedImage = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-no-offer/"] img.icon--image');
         await waitForBreadcrumbSettled(iconsPage);
@@ -408,7 +408,7 @@ try {
         await iconsPage.locator('.slot-main a[href*="/p/contract-image-child/?"]').click();
         await waitForBreadcrumbSettled(iconsPage);
         assert.equal(await iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] img.icon--image.icon--monochrome').getAttribute('src'), inheritedImage.image);
-        await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/?sort=name-asc`);
+        await gotoAndWait(iconsPage, `${baseUrl}${prefix}/tools/free/?sort=name-asc`);
         await iconsPage.locator('.slot-main a[href*="/p/contract-zero/?"]').click();
         const selectedText = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-zero/"] .icon--text').textContent();
         await waitForBreadcrumbSettled(iconsPage);
@@ -438,7 +438,7 @@ try {
     const mainLinks = `${nameGrid} .collection-item-link`;
     for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
         const prefix = prefixes[index];
-        for (const list of ['d', 'd/wsl', 'products/contract-name', 'contract-name-all']) {
+        for (const list of ['d', 'd/wsl', 'tools/contract-name', 'contract-name-all']) {
             const address = `${baseUrl}${prefix}/${list}/`;
             await gotoAndWait(namesPage, address);
             const expected = payload(builds.name, lang, list).rows.map(row => row.href);
@@ -488,7 +488,7 @@ try {
     }
     await gotoAndWait(namesPage, `${baseUrl}/zh/d/`);
     await namesPage.screenshot({path: path.join(work, 'name-list-zh.png')});
-    await gotoAndWait(namesPage, `${baseUrl}/zh/p/contract-missing/?from=products/contract-name&sort=name-desc`);
+    await gotoAndWait(namesPage, `${baseUrl}/zh/p/contract-missing/?from=tools/contract-name&sort=name-desc`);
     await namesPage.screenshot({path: path.join(work, 'name-list-path-zh.png')});
     await namesContext.close();
     console.log('PASS name-only SSR, section inheritance, taxonomy/aggregate sources, ascending/descending sort, path columns and history in three languages');

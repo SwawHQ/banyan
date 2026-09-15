@@ -1,8 +1,7 @@
 ---
 root_nav: true
-title: 產品 - 全部
-description: 查看所有產品，包含不同價格與來源。
-linkTitle: 產品 - 全部
+title: Tools - All
+description: All tools, across prices and origins.
 weight: 30
 layout: page-collection
 outputs:
@@ -11,5 +10,5 @@ slots:
   breadcrumb: true
 list: products
 list_icon_file: product
-aggregate: /products
+aggregate: /tools
 ---

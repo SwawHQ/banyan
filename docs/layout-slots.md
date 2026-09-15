@@ -18,7 +18,7 @@
 - `build.list: never` 的内部节点不作为入口。
 - `weight` 只需在入口本身定义，不应 cascade 到所有文章。
 
-当前项目显示内容 - 全部、内容 - 分类、产品 - 全部、产品 - 分类及语言、外观、我的、关于、更新、RSS、微信、GitHub、备案、首页共 14 项，来自根页面声明而非模板白名单。首页在 `content/_index*.md` 声明 `root_nav: true`、`linkTitle`、`icon` 和 `weight`，使用普通条目组件，正文继续使用 `page-home`。
+当前项目显示发现 - 全部、发现 - 分类、工具 - 全部、工具 - 分类及语言、外观、我的、关于、更新、RSS、微信、GitHub、备案、首页共 14 项，来自根页面声明而非模板白名单。前四项的文案由项目对应根页面的 `title` 提供。首页在 `content/_index*.md` 声明 `root_nav: true`、`linkTitle`、`icon` 和 `weight`，使用普通条目组件，正文继续使用 `page-home`。
 
 `nav_primary`、`slots.primary_nav`、`slots.utilities` 和 `slots.breadcrumb_root` 已移除，对应的主菜单、系统下拉及 breadcrumb model fragment 不再参与装配。新增入口应建立真实根页面或 taxonomy 根，声明 `root_nav: true` 并提供名称与顺序。
 
@@ -66,7 +66,7 @@ slots:
 
 ## 与导航状态和布局的边界
 
-`slots` 决定页面装配哪些区域；`from / sort / sorts` 表示当次浏览来源及排序。有效 `from` 决定来源根，没有有效来源时按真实内容祖先确定归属。来源根须声明 `root_nav: true` 才有对应的第一列选中项；隐藏的目录仍保留右侧路径和探索能力。不能从公开网址前缀推断归属：例如 Xvenv 的正文位于 `d/products/`，直接访问归属隐藏的目录，第一列不选中；通过产品分类进入时选中“产品 - 分类”。
+`slots` 决定页面装配哪些区域；`from / sort / sorts` 表示当次浏览来源及排序。有效 `from` 决定来源根，没有有效来源时按真实内容祖先确定归属。来源根须声明 `root_nav: true` 才有对应的第一列选中项；隐藏的目录仍保留右侧路径和探索能力。不能从公开网址前缀推断归属：例如 Xvenv 的正文位于 `d/products/`，直接访问归属隐藏的目录，第一列不选中；通过产品分类进入时选中“工具 - 分类”。
 
 系统页使用普通链接，不携带 `return`；语言与外观页的返回行为见 `navigation-state.md`。切换语言留在对应语言的设置页，不改变当前系统入口的选中态。首页选中自身；其他页面匹配自身和最近的可列出祖先，但不把首页当成所有页面的默认选中项。没有可列出根祖先的内部页不强行选中入口。
 

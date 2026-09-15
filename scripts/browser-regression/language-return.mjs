@@ -17,7 +17,7 @@ export const languageReturnScenarios = [
         serviceWorkers: 'block',
         title: 'Return to the Selected Translation Without Adding History',
         async run({ page, baseUrl, artifactDir }) {
-            const suffix = '/p/xvenv/?from=products/free&sorts=_,name-asc#details';
+            const suffix = '/p/xvenv/?from=tools/free&sorts=_,name-asc#details';
             await gotoAndWait(page, baseUrl + suffix);
             await page.locator('[data-root-href="/language/"]').click();
             const historyLength = await page.evaluate(() => history.length);
@@ -27,7 +27,7 @@ export const languageReturnScenarios = [
             await page.reload();
             await page.locator('[data-page-action="back"]').click();
             await page.waitForURL(baseUrl + '/zh' + suffix);
-            await page.waitForSelector('[data-root-href="/zh/products/"].is-current');
+            await page.waitForSelector('[data-root-href="/zh/tools/"].is-current');
             assert.equal(await page.evaluate(() => history.length), historyLength);
             assert.equal(await page.evaluate(key => sessionStorage.getItem(key), pendingKey), null);
             assert.equal(await page.evaluate(key => sessionStorage.getItem(key), labelKey), null);
