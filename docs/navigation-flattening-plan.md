@@ -98,7 +98,7 @@ GitHub 简化验收：生产构建 `temp_workspace/public/2609082304-github-simp
 
 站点 Logo 验收：集合契约 `temp_workspace/collection-contract-BeFSY5` 覆盖 assets 自身／默认图标、三语言 SSR／运行时、刷新和历史，以及显式 bundle、静态／远程 URL、缺失及非图片资源校验；确认全站 Logo 只生成一份哈希资源。生产构建 `temp_workspace/public/2609082213-site-logo-assets` 的 141 页 HTML 审计、图片发布检查和 2 项相关浏览器回归通过（`temp_workspace/regression/260908221328-browser/report.json`）。局域网预览核对三语言同一 favicon URL、15px 图标尺寸、文章进入后的选中态及浅色／深色截图，产物在 `temp_workspace/site-logo-live/`。
 
-入口名称简化：语言、外观、我的、站点三语言页面通过 front matter 的 `linkTitle` 声明简称，第一列统一去掉“系统－／System -”前缀；页面自身 `title` 继续用于页内标题，无需修改导航模板。
+入口名称简化：第一列统一去掉“系统－／System -”前缀。语言、外观、我的的三语言主题页面进一步将 `title` 统一为简短名称，删除重复的 `linkTitle`，使入口与页内标题一致，无需修改导航模板。
 
 备案名称与链接补齐：三语言入口显示完整 `粤ICP备2024338434号`；正文备案号自身加粗并链接至 `https://beian.miit.gov.cn/`，原有查询网站说明链接继续保留。
 

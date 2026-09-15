@@ -1,7 +1,6 @@
 ---
 root_nav: true
-title: System - Language
-linkTitle: Language
+title: Language
 slug: language
 layout: page-language
 list: choice

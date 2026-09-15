@@ -1,7 +1,6 @@
 ---
 root_nav: true
-title: System - Appearance
-linkTitle: Appearance
+title: Appearance
 slug: appearance
 layout: page-appearance
 list: choice

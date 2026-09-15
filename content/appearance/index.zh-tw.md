@@ -1,7 +1,6 @@
 ---
 root_nav: true
-title: 系統－外觀
-linkTitle: 外觀
+title: 外觀
 slug: appearance
 layout: page-appearance
 list: choice

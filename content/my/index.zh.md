@@ -1,8 +1,7 @@
 ---
 root_nav: true
 draft: false
-title: 系统－我的
-linkTitle: 我的
+title: 我的
 slug: my
 layout: page-my
 icon: my

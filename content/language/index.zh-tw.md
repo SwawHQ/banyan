@@ -1,7 +1,6 @@
 ---
 root_nav: true
-title: 系統－語言
-linkTitle: 語言
+title: 語言
 slug: language
 layout: page-language
 list: choice

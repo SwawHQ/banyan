@@ -1,8 +1,7 @@
 ---
 root_nav: true
 draft: false
-title: System - My
-linkTitle: My
+title: My
 slug: my
 layout: page-my
 icon: my
