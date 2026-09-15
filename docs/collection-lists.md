@@ -6,7 +6,7 @@
 
 第一列采用显式加入：只有根页面顶层声明布尔值 `root_nav: true` 才显示；未声明、`false` 或字符串 `"true"` 均不显示。首页自身也遵守该规则。此字段只对首页及其直接子页／分类根生效，不能把深层文章提升成根入口；不要放入 `cascade`。项目覆盖主题页面时，每种语言各自保留该声明。
 
-当前前四项依次为：主题 `content/all/index*.md` 的“内容 - 全部”（`weight: 10`）、项目 `content/tags/_index*.md` 的“内容 - 分类”（`20`）、主题 `content/all-products/_index*.md` 的“产品 - 全部”（`30`）、主题 `content/products/_index*.md` 的“产品 - 分类”（`40`），均使用 `linkTitle` 指定入口文字。
+当前前四项依次为：主题 `content/all/index*.md` 的“内容 - 全部”（`weight: 10`）、项目 `content/tags/_index*.md` 的“内容 - 分类”（`20`）、主题 `content/all-products/_index*.md` 的“产品 - 全部”（`30`）、主题 `content/products/_index*.md` 的“产品 - 分类”（`40`）。内容的两个入口直接使用 `title`，浏览器标题也由同一名称加站点名生成；产品的两个入口仍声明与 `title` 相同的 `linkTitle`。
 
 “内容”是 `/d/` 内容树的上位集合名称：`/d/` 提供目录视图，`/all/` 提供全部视图，`/tags/` 提供分类视图。产品页面位于 `/d/products/`，因此可以同时出现在内容视图和产品专用视图中；`/all-products/` 与 `/products/` 分别是该子集的全部视图和分类视图。入口名称描述视图所覆盖的集合，不用“文章”代指整个 `/d/` 内容树。
 
