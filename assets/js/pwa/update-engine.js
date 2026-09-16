@@ -10,24 +10,11 @@ let updateCheckPromise = null;
 let activationPromise = null;
 
 function publishUpdateStatus() {
-    for (const listener of statusListeners) listener({ status: updateStatus, latencyMs: updateLatencyMs });
-}
-
-function setUpdateReadyState(ready) {
-    if (ready) {
-        updateStatus = 'ready';
-    } else if (updateStatus === 'ready') {
-        updateStatus = 'idle';
-    }
-    publishUpdateStatus();
+    for (const listener of statusListeners) listener();
 }
 
 async function checkForUpdates(runtime) {
     if (updateStatus === 'unavailable') return;
-    if (updateStatus === 'ready') {
-        if (await activateWaitingWorker(runtime)) window.location.reload();
-        return;
-    }
 
     if (activationPromise) return activationPromise;
     if (updateCheckPromise) return updateCheckPromise;
@@ -55,13 +42,9 @@ async function checkForUpdates(runtime) {
 
             await registration.update();
             updateLatencyMs = Math.max(0, performance.now() - checkStartedAt);
-            if (bindWaitingWorker(runtime, registration)) {
-                updateStatus = 'ready';
-                publishUpdateStatus();
-                return;
-            }
+            if (bindWaitingWorker(runtime, registration)) return;
 
-            updateStatus = 'current';
+            updateStatus = registration.installing ? 'installing' : 'current';
             publishUpdateStatus();
         } catch (error) {
             updateLatencyMs = null;
@@ -98,7 +81,8 @@ function bindWaitingWorker(runtime, registration) {
     if (!registration?.waiting) return false;
 
     runtime.setActiveRegistration(registration);
-    setUpdateReadyState(true);
+    updateStatus = 'ready';
+    publishUpdateStatus();
     void warmCurrentPage(runtime);
     return true;
 }
@@ -107,17 +91,28 @@ function watchInstallingWorker(runtime, registration) {
     const installing = registration.installing;
     if (!installing) return;
 
-    installing.addEventListener('statechange', () => {
-        if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-            bindWaitingWorker(runtime, registration);
+    updateStatus = 'installing';
+    publishUpdateStatus();
+    const onStateChange = () => {
+        if (!['installed', 'redundant'].includes(installing.state)) return;
+        installing.removeEventListener('statechange', onStateChange);
+        if (installing.state === 'installed') {
+            if (!bindWaitingWorker(runtime, registration)) {
+                updateStatus = 'current';
+                publishUpdateStatus();
+            }
+        } else if (!registration.waiting) {
+            updateStatus = 'failed';
+            publishUpdateStatus();
         }
-    });
+    };
+    installing.addEventListener('statechange', onStateChange);
 }
 
 function markBackgroundUpdateChecked(runtime, registration) {
     if (bindWaitingWorker(runtime, registration)) return;
     updateLatencyMs = null;
-    if (updateStatus !== 'ready') updateStatus = 'current';
+    updateStatus = registration.installing ? 'installing' : 'current';
     publishUpdateStatus();
 }
 
@@ -199,15 +194,19 @@ async function handleEnableMode(runtime) {
         });
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            setUpdateReadyState(false);
+            markBackgroundUpdateChecked(runtime, registration);
         });
+        markBackgroundUpdateChecked(runtime, registration);
 
         scheduleRegistrationUpdates(runtime, registration);
         void warmCurrentPage(runtime);
         navigator.serviceWorker.ready.then((readyRegistration) => {
             if (readyRegistration?.active) runtime.setActiveRegistration(readyRegistration);
         }).catch(() => { });
-    } catch (error) { }
+    } catch (error) {
+        updateStatus = navigator.onLine === false ? 'offline' : 'failed';
+        publishUpdateStatus();
+    }
 }
 
 // The engine owns SW state; the update page subscribes without loading its UI globally.
@@ -215,9 +214,14 @@ export function startEnableMode(runtime) {
     if (updateController) return updateController;
     updateController = {
         subscribe(listener) {
-            statusListeners.add(listener);
-            listener({ status: updateStatus, latencyMs: updateLatencyMs });
-            return () => statusListeners.delete(listener);
+            const publish = () => listener({
+                status: updateStatus,
+                latencyMs: updateLatencyMs,
+                controlled: Boolean(navigator.serviceWorker?.controller)
+            });
+            statusListeners.add(publish);
+            publish();
+            return () => statusListeners.delete(publish);
         },
         check: () => checkForUpdates(runtime),
         activate: () => activateWaitingWorker(runtime)
@@ -226,6 +230,7 @@ export function startEnableMode(runtime) {
         updateStatus = 'unavailable';
         return updateController;
     }
+    updateStatus = 'checking';
     if (document.readyState === 'complete') void handleEnableMode(runtime);
     else window.addEventListener('load', () => void handleEnableMode(runtime), { once: true });
     return updateController;

@@ -24,6 +24,11 @@ and migration decisions.
 
 ### Changed
 
+- Replaced the Updates directory with a Powered by overview: Banyan/Hugo credits,
+  source and change-log links, actual build metadata, and inline PWA status and update checks.
+- PWA checks now only check for updates. Ready versions activate before ordinary
+  same-tab site navigation; checks never reload the page or apply an update.
+
 - Separated product price classification from origin so free and paid filters
   include both first-party and third-party products. Removed the old nested
   product navigation tree and its special root-matching strategy.

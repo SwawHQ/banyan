@@ -141,6 +141,10 @@ post = "prefetch_moderate"
 version_prefix = "v"
 timestamp_layout = "20060102150405"
 
+[params.build.theme]
+revision = ""
+dirty = false
+
 [params.build.audit]
 permalink_collision = "warn"
 

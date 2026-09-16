@@ -120,6 +120,8 @@ Service Worker 的异步查询使用 `pollUntil(() => page.evaluate(async ...))`
 - `speculation-rules-header-breadcrumb`
 - `speculation-rules-header-prefetchdebug`
 
+`powered-by-overview` 验证三语言总览、图标、外部记录链接及 内嵌 PWA 面板的刷新／历史行为。
+
 ### Upgrade
 
 需要 `temp_workspace/public/` 下至少有两份构建产物：
@@ -134,7 +136,7 @@ upgrade 场景会：
 
 1. 先用较旧的 temp build 建立 active worker
 2. 再切换到较新的 temp build
-3. 检查 waiting / update ready / prompt 行为
+3. 检查 waiting / update ready、重复检查不激活，以及导航升级和跨标签页状态保留
 
 ## 构建目录选择规则
 

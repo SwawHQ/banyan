@@ -86,7 +86,7 @@ PWA 条目图标：主题三语言 `content/site/pwa/index*.md` 声明 `icon: { 
 
 说明页目标链接：RSS 订阅地址、备案页两个查询链接、GitHub 头像和文字链接均使用原生新标签打开，第一列入口仍在当前标签打开说明页。RSS 短代码为既有 `system-ui/link.html` 传入 `target="_blank"` 和 `rel="noopener noreferrer"`；GitHub／备案正文使用小型 `new-tab` 短代码复用同一渲染器，主题 GitHub 默认页同步采用。保留 `unsafe: false`，不增加 JS 或全站链接重写。生产构建 `temp_workspace/public/2609082309-info-links-new-tab` 的 141 页 HTML 审计及 `system-site-directory` 回归通过（`temp_workspace/regression/260908231037-browser/report.json`）；三语言共 15 次实际点击验证新标签 URL、`window.opener` 为空、原页面 URL 保持，以及根入口仍在当前标签打开。测试拦截目标响应以排除外站和 XML 查看器差异，RSS 实际 XML 仍独立读取校验。
 
-GitHub 账号与头像：项目三语言 GitHub 说明页仅展示 SwawHQ 组织账号，撤掉表格、个人账号与介绍文案，正文只保留可点击的头像及 `github.com/SwawHQ` 链接。清理重复资源后，头像统一引用项目 `assets/site/pwa/favicon.svg`，通过现有 `asset` 短代码与站点入口、浏览器图标共用哈希资源；尺寸声明为 64×48，保持 SVG 的 4:3 图形比例。关于页同步只保留 SwawHQ。无新增模板、样式或运行时分支。
+GitHub 账号与头像（2026-09-16 更新）：项目三语言 GitHub 说明页按“创始人 / 开源项目”展示 bornwhy 与 SwawHQ，各有可点击头像和可复制的 URL。个人头像复用 `assets/site/brand/lib/bornwhy.svg`（64×64）；组织头像复用 `assets/site/pwa/favicon.svg`（64×48），通过现有 `asset` 短代码与浏览器图标共用哈希资源。关于页同步提供创始人 GitHub 和 Swaw 开源项目两个链接，品牌首页仍指向组织。仓库地址 `swawai/banyan`、`swawai/swaw.com` 已迁移至 SwawHQ，活动配置、内容与主题默认值同步更新；其他仓库不在本次迁移范围。无新增模板、样式或运行时分支。
 
 共用 favicon 验收：生产构建 `temp_workspace/public/2609082329-github-shared-favicon` 的 141 页 HTML 审计及 `system-site-directory` 回归通过（`temp_workspace/regression/260908233010-browser/report.json`），三语言头像解码、比例、同 favicon URL 和新标签链接均通过，已查看截图。未恢复或提交用户此次资源清理；旧 `site/brand/favicon.svg` 引用已清除。
 

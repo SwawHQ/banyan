@@ -15,7 +15,7 @@
 | 区域开关 | `slot_flags`、`slotFlags`；值是布尔值，不再是 fragment 来源 |
 | 浏览来源与排序状态 | `browse/navigation-state.js`、`browse/navigation-state.contract.js` |
 | 语言和外观偏好 | `preferences/language-page.js` 仅用于选择页；`preferences/language-return.js` 与 `preferences/theme.js` 负责跨页面行为；静态选项和返回链接在模板输出 |
-| 检查与应用更新 | `updates/page.js` 连接页面、更新引擎与状态呈现；模板为 `feature-updates/panel.html`、`feature-updates/labels.html` |
+| PWA 状态与检查 | `updates/page.js` 连接页面、更新引擎与状态呈现；模板为 `feature-updates/panel.html`、`feature-updates/labels.html` |
 
 ## 内容声明
 
@@ -69,7 +69,7 @@ JS 的 `pageHomes` 表示首页根节点，`scenePauseStates` 表示场景暂停
 
 ## 更新模块
 
-`feature-updates/labels.html` 返回检查更新页提供的文案，`feature-updates/panel.html` 负责 HTML，`assets/css/updates-panel.css` 负责呈现，`assets/js/updates/page.js` 负责读取本页静态文案并绑定状态与操作。该小型 CSS 源码仍由公共 `page.css` 装配；页面脚本只由 `page-update-check.html` 加载。页面通过 `window.BanyanServiceWorkerManagerRuntime.updates.subscribe(listener)` 接收 `{status, latencyMs}`，通过 `check()` 检查或手动应用并重载。`pwa/navigation.js` 只在普通站内同标签页链接跳转前调用 `activate()` 激活已就绪版本，然后直接打开目标地址；激活操作本身不重载页面。引擎不查询页面控件或加载文案，刷新、历史和其他标签页不触发自动重载。未启用 SW 时检查页显示不可用。
+`feature-updates/labels.html` 返回 Powered by 页提供的文案，`feature-updates/panel.html` 负责 HTML，`assets/css/updates-panel.css` 负责呈现，`assets/js/updates/page.js` 负责读取本页静态文案并绑定状态与操作。该小型 CSS 源码仍由公共 `page.css` 装配；页面脚本只由 `page-powered-by.html` 加载。页面通过 `window.BanyanServiceWorkerManagerRuntime.updates.subscribe(listener)` 接收 `{status, latencyMs, controlled}`，通过 `check()` 只检查新版，永不激活或重载。`pwa/navigation.js` 只在普通站内同标签页链接跳转前调用 `activate()` 激活已就绪版本，然后直接打开目标地址；激活操作本身不重载页面。引擎不查询页面控件或加载文案，刷新、历史和其他标签页不触发自动重载。未启用 SW 时检查页显示不可用。
 
 ## 样式类与行为标记
 

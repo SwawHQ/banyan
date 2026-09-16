@@ -233,7 +233,7 @@ assets/css/
 - `layouts/_partials/feature-document/styles.html`
 - `layouts/baseof.html`
 - `layouts/404.html`
-- `layouts/page-update-check.html`
+- `layouts/page-powered-by.html`
 
 整理后删除 `feature-document/styles-core.html`、`feature-document/styles-rich.html` 和 `feature-updates/styles.html`。`baseof.html` 直接调用公共页面样式，不再保留当前无人覆盖、却允许入口意外替换掉 `page.css` 的 `styles` block。
 

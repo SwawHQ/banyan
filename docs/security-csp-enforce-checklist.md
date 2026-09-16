@@ -131,7 +131,7 @@ Strict-Transport-Security: max-age=300
 
 ### 8. 更新页的动态文案
 
-旧 Ver 菜单已移除，更新界面位于 `/updates/check/`：
+旧 Ver 菜单与 Updates 目录已移除，更新界面内嵌于 `/powered-by/`：
 
 - 面板由 `feature-updates/panel.html` 输出
 - 只有此页加载 `updates/page.js`；该页面入口使用 `textContent` 更新静态文案，引擎只提供状态与操作

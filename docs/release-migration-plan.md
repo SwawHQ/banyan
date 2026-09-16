@@ -95,11 +95,11 @@ Navigation contract after the 2026-09-07 flattening step:
   been removed.
 - Taxonomy roots require only rendering metadata that affects taxonomy output.
   Root navigation visibility and ordering belong to page `root_nav` and `weight`.
-- Language, appearance, my, and updates are real root pages. The updates directory
-  uses `list: name` and lists its real check/changelog children without appended controls.
-  `content/updates/check/index*.md` owns update copy and actions through `page-update-check`;
-  the ordinary navigation retains the updates column while the child handles actions.
-  Other pages use the existing update confirmation when no control is visible.
+- Language, appearance, my, and Powered by are real root pages. The Powered by
+  overview replaces the updates directory and embeds the PWA panel without child pages.
+  `content/powered-by/index*.md` owns update copy through `page-powered-by`.
+  Checks never activate or reload; ready updates activate before ordinary same-tab
+  site navigation, without interrupting other tabs.
 - The current page shell uses one horizontal canvas at every viewport width.
   The appearance page selects the system, light, or dark black-and-white theme.
   See [layout slots](layout-slots.md) and the

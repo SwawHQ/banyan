@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 function readGitValue(cwd, args) {
     const result = spawnSync('git', args, {
@@ -51,5 +52,13 @@ export function createHugoEnv({ cwd = process.cwd(), env = process.env } = {}) {
         }
     }
 
+    const themeRoot = fileURLToPath(new URL('../..', import.meta.url));
+    // A copied theme inside the site's repository has no independent theme revision.
+    const themeRevision = readGitValue(themeRoot, ['rev-parse', '--show-prefix']) === ''
+        ? readGitValue(themeRoot, ['rev-parse', 'HEAD']) : '';
+    if (themeRevision && !nextEnv.HUGO_PARAMS_BUILD_THEME_REVISION) {
+        nextEnv.HUGO_PARAMS_BUILD_THEME_REVISION = themeRevision;
+        nextEnv.HUGO_PARAMS_BUILD_THEME_DIRTY = String(Boolean(readGitValue(themeRoot, ['status', '--porcelain', '--untracked-files=normal'])));
+    }
     return nextEnv;
 }

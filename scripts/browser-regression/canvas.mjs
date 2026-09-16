@@ -702,7 +702,7 @@ export const canvasScenarios = [
             for (const viewport of viewports) {
                 await page.setViewportSize(viewport);
                 for (const [name, target] of [
-                    ['article', articlePath], ['collection', '/zh/all/'], ['system', '/zh/updates/']
+                    ['article', articlePath], ['collection', '/zh/all/'], ['system', '/zh/powered-by/']
                 ]) {
                     await gotoAndWait(page, baseUrl + target);
                     await waitForBreadcrumbSettled(page);
@@ -838,7 +838,7 @@ export const canvasScenarios = [
         async run({ page, baseUrl }) {
 
             // Keyboard traversal leaves the complete root list for the next column.
-            await gotoAndWait(page, `${baseUrl}/zh/updates/`);
+            await gotoAndWait(page, `${baseUrl}/zh/powered-by/`);
             const order = await page.evaluate(() => {
                 const rail = document.querySelector('.page-rail');
                 const nav = rail.querySelector('[data-root-navigation]');

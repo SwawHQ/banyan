@@ -17,7 +17,7 @@ layouts/
 ├─ page-my.html
 ├─ page-offline.html
 ├─ page-prefetch-debug.html
-├─ page-update-check.html
+├─ page-powered-by.html
 ├─ home.llms.txt
 ├─ robots.txt
 ├─ sitemap.xml

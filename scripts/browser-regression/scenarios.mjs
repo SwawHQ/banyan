@@ -651,7 +651,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             const rootPaths = ['all', 'tags', 'all-tools', 'tools',
-                'language', 'appearance', 'my', 'about', 'updates', 'rss', 'wechat', 'github', 'icp', ''];
+                'language', 'appearance', 'my', 'about', 'powered-by', 'rss', 'wechat', 'github', 'icp', ''];
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
             const staticRoots = await page.evaluate(async (paths) => {
                 const results = [];
@@ -687,7 +687,7 @@ export const scenarios = [
                             .map((link) => link.dataset.rootHref),
                         home: nav?.querySelector(`[data-root-href="${prefix}"]`)?.getAttribute('href'),
                         homeIcon: nav?.querySelector(`[data-root-href="${prefix}"] .icon--text`)?.textContent,
-                        updatesIcon: nav?.querySelector(`[data-root-href="${prefix}updates/"] .icon--text`)?.textContent,
+                        codeIcon: nav?.querySelector(`[data-root-href="${prefix}powered-by/"] use`)?.getAttribute('href'),
                         favicon: doc.querySelector('link[rel="icon"][type="image/svg+xml"]')?.getAttribute('href'),
                         footerCount: doc.querySelectorAll('footer, .slot-footer').length,
                         settings: [...doc.querySelectorAll('[data-root-href][data-settings-link]')]
@@ -728,7 +728,7 @@ export const scenarios = [
                     || state.icons.wechat !== '#icon-wechat'
                     || state.icons.github !== '#icon-github'
                     || state.icons.rss !== '#icon-rss'
-                    || !state.favicon || state.updatesIcon !== '↻') {
+                    || !state.favicon || state.codeIcon !== '#icon-code') {
                     fail('Every locale must SSR one weighted root list with ordinary URLs, declared icons and no settings-link rewriting markers.', state);
                 }
             }
@@ -765,7 +765,7 @@ export const scenarios = [
         timeoutMs: 60000,
         async run({ page, baseUrl }) {
             const expectedRoots = ['all', 'tags', 'all-tools', 'tools',
-                'language', 'appearance', 'my', 'about', 'updates', 'rss', 'wechat', 'github', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
+                'language', 'appearance', 'my', 'about', 'powered-by', 'rss', 'wechat', 'github', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
             const assertSelection = async (expected) => {
                 await waitForBreadcrumbSettled(page);
                 const state = await page.evaluate(() => ({
@@ -787,8 +787,7 @@ export const scenarios = [
                 ['/zh/p/xvenv/?from=tools', null],
                 ['/zh/d/', null],
                 ['/zh/about/', '/zh/about/'],
-                ['/zh/updates/check/', '/zh/updates/'],
-                ['/zh/changelog/', '/zh/updates/'],
+                ['/zh/powered-by/', '/zh/powered-by/'],
                 ['/zh/wechat/', '/zh/wechat/'],
                 ['/zh/github/', '/zh/github/'],
                 ['/zh/rss/', '/zh/rss/'],
@@ -796,7 +795,7 @@ export const scenarios = [
                 ['/zh/language/?return=%2Fzh%2Fall%2F', '/zh/language/'],
                 ['/zh/appearance/?return=%2Fzh%2Fall%2F', '/zh/appearance/'],
                 ['/zh/my/?return=%2Fzh%2Fall%2F', '/zh/my/'],
-                ['/zh/updates/?return=%2Fzh%2Fall%2F', '/zh/updates/'],
+                ['/zh/powered-by/?return=%2Fzh%2Fall%2F', '/zh/powered-by/'],
                 ['/zh/', '/zh/']
             ];
             for (const [target, root] of directCases) {

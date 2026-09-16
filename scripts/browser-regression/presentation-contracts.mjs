@@ -84,10 +84,10 @@ export const presentationContractScenarios = [
         title: 'Settings Controllers Load Only with Their Pages',
         async run({ page, baseUrl }) {
             const cases = [
-                ['/zh/', []], ['/zh/all/', []], ['/zh/about/', []], ['/zh/updates/', []],
+                ['/zh/', []], ['/zh/all/', []], ['/zh/about/', []],
                 ['/zh/language/', ['/js/preferences/language-page.']],
                 ['/zh/appearance/', ['/js/preferences/back-links.']], ['/zh/my/', ['/js/preferences/back-links.']],
-                ['/zh/updates/check/', ['/js/updates/page.']]
+                ['/zh/powered-by/', ['/js/updates/page.']]
             ];
             const controllers = ['/js/preferences/language-page.', '/js/preferences/back-links.', '/js/updates/page.'];
             for (const [route, expected] of cases) {
@@ -106,7 +106,7 @@ export const presentationContractScenarios = [
                 assert(!source.includes('data-site-update-panel'), 'Update presentation stays out of the global SW engine.');
                 assert(!source.includes('data-page-action'), 'Back controls stay page-local.');
             }
-            return { message: 'Eight real pages have the expected controller boundaries.' };
+            return { message: 'Seven real pages have the expected controller boundaries.' };
         }
     }
 ];

@@ -7,7 +7,7 @@ A minimalist, multi-language, and highly customizable theme for Hugo.
 Inside your Hugo project root, clone this theme into the `themes` directory:
 
 ```bash
-git clone https://github.com/swawai/banyan.git themes/banyan
+git clone https://github.com/SwawHQ/banyan.git themes/banyan
 ```
 
 ## Setup (Crucial Step)
@@ -110,7 +110,7 @@ and the current page has a Hugo source file. The theme leaves the repository
 empty by default; configure the site's own content repository in `hugo.toml`.
 
 Source links use the configured branch instead of the build revision. This keeps
-new pages predictable before their first public commit, while the changelog/build
+new pages predictable before their first public commit, while the Powered by build
 surface remains the place for exact deployment provenance:
 
 ```toml

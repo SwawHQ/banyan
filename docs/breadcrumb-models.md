@@ -12,7 +12,7 @@
 ## 选中规则
 
 `feature-browse/navigation/root/selected.html` 从当前页面及真实内容祖先中找根入口，提供静态 HTML 的默认选中项。
-公开 URL 可以与内容路径不同，因此不能根据 URL 前缀猜所属入口。例如 `content/d/products/xvenv/` 发布在 `/p/xvenv/`，仍属于真实目录；目录隐藏时第一列不选中。`content/updates/changelog/` 保留 `/changelog/` 地址，同时归属“更新”并显示其路径列。
+公开 URL 可以与内容路径不同，因此不能根据 URL 前缀猜所属入口。例如 `content/d/products/xvenv/` 发布在 `/p/xvenv/`，仍属于真实目录；目录隐藏时第一列不选中。`content/powered-by/` 是独立根页面，选中自己的入口，无子页路径列。
 
 有效的 `from` 指向当前页面已发布的来源集合。预览与运行时根据该来源的 `root_item` 调整第一列选中项，完整入口列表始终保留。
 从“标签”进入同一篇文章就选中“标签”，从“产品－全部”进入就选中“产品－全部”。不存在或不属于当前文章的来源不参与选中，继续使用内容祖先。

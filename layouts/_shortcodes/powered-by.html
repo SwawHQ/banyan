@@ -1,0 +1,20 @@
+{{- $copy := .Page.Params.powered_by -}}
+{{- $build := site.Params.build | default dict -}}
+{{- $repo := site.Params.theme_repo | default "https://github.com/SwawHQ/banyan" -}}
+<h2 id="banyan">Banyan</h2>
+<p>{{ $copy.banyan }}</p>
+{{ with $build.theme.revision }}<p>{{ $copy.revision }}: <code>{{ substr . 0 12 }}</code>{{ if $build.theme.dirty }} · {{ $copy.dirty }}{{ end }}</p>{{ end }}
+<p><a href="{{ $repo }}" target="_blank" rel="noopener noreferrer">{{ $copy.source }}</a> · <a href="{{ $repo }}/blob/HEAD/CHANGELOG.md" target="_blank" rel="noopener noreferrer">{{ $copy.changes }}</a></p>
+<h2 id="hugo">Hugo</h2>
+<p>{{ $copy.hugo }}</p>
+<p>{{ $copy.version }}: <code>{{ hugo.Version }}</code></p>
+<p><a href="https://gohugo.io/" target="_blank" rel="noopener noreferrer">{{ $copy.website }}</a> · <a href="https://gohugo.io/news/" target="_blank" rel="noopener noreferrer">{{ $copy.releases }}</a></p>
+<h2 id="build">{{ $copy.build }}</h2>
+<ul>
+<li>{{ $copy.version }}: <code>{{ partial "system-build/version.html" .Page }}</code></li>
+<li>{{ $copy.time }}: <time data-site-update-version title="{{ partial "system-build/version.html" .Page }}" datetime="{{ partial "system-build/time-iso.html" .Page }}">{{ partial "system-build/time-display.html" .Page }}</time></li>
+{{ with $build.revision }}<li>{{ $copy.commit }}: {{ if $build.commit.href }}<a href="{{ $build.commit.href }}" target="_blank" rel="noopener noreferrer"><code>{{ substr . 0 12 }}</code></a>{{ else }}<code>{{ substr . 0 12 }}</code>{{ end }}</li>{{ end }}
+</ul>
+<h2 id="pwa">PWA</h2>
+<p>{{ $copy.pwa }}</p>
+{{ partial "feature-updates/panel.html" .Page }}

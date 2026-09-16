@@ -33,14 +33,12 @@ export const preferenceAndUpdateScenarios = [
         }
     })),
     {
-        id: 'updates-name-list',
+        id: 'powered-by-overview',
         kind: 'single',
         serviceWorkers: 'block',
         viewport: { width: 1024, height: 700 },
-        title: 'Updates Name List and Child Navigation',
+        title: 'Powered by Overview with Inline PWA Status',
         async run({ page, baseUrl, artifactDir, context }) {
-            const grid = '.slot-main [data-sortable="true"]';
-            const links = `${grid} .collection-cell--name:not(.collection-cell--header) a`;
             const rowPaths = selector => page.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
             const assertNewTabs = async (links) => {
                 const originalUrl = page.url();
@@ -63,14 +61,6 @@ export const preferenceAndUpdateScenarios = [
                     } finally { await context.unroute(destination, destinationResponse); }
                 }
             };
-            const geometry = () => page.locator(grid).evaluate(node => {
-                const row = node.querySelector('.collection-cell--name:not(.collection-cell--header) a');
-                return {
-                    columns: getComputedStyle(node).gridTemplateColumns,
-                    rowHeight: row.getBoundingClientRect().height,
-                    titleOffset: row.querySelector('.collection-item-title').getBoundingClientRect().left - row.getBoundingClientRect().left
-                };
-            });
             for (const prefix of ['', '/zh', '/zh-tw']) {
                 await gotoAndWait(page, `${baseUrl}${prefix}/`);
                 const feedHref = await page.locator('head link[rel="alternate"][type="application/rss+xml"]').getAttribute('href');
@@ -81,26 +71,24 @@ export const preferenceAndUpdateScenarios = [
                 assert.equal(await page.locator(`${homeEntry}.is-current`).count(), 1);
                 assert.equal(await page.locator(`${homeEntry} .icon--text`).textContent(), '©');
                 assert.equal(await page.locator(homeEntry).getAttribute('href'), `${prefix}/`);
-                await gotoAndWait(page, `${baseUrl}${prefix}/d/`);
-                const directoryGeometry = await geometry();
-                await gotoAndWait(page, `${baseUrl}${prefix}/updates/`);
-                assert.deepEqual(await geometry(), {...directoryGeometry, columns: '225px'}, 'The name list preserves directory row height and icon spacing in one column.');
-                assert.equal(await page.locator(grid).count(), 1);
-                assert.deepEqual(await page.locator(`${grid} [data-sort-field]`).evaluateAll(nodes => nodes.map(node => node.dataset.sortField)), ['name']);
-                const children = ['changelog', 'updates/check'];
-                const expected = children.map(name => `${prefix}/${name}/`).sort();
-                assert.deepEqual((await rowPaths(links)).sort(), expected, 'Only real updates children belong to the list.');
-                assert.equal(await page.locator(`[data-root-href="${prefix}/updates/"] .icon--text`).textContent(), '↻');
+                await gotoAndWait(page, `${baseUrl}${prefix}/powered-by/`);
+                assert.equal(await page.locator('.slot-main h1').textContent(), 'Powered by');
+                assert.equal(await page.locator('.slot-main [data-sortable]').count(), 0);
+                assert.equal(await page.locator('[data-site-update-panel]').count(), 1);
+                assert.equal(await page.locator('[data-site-update-action]').count(), 1);
+                assert.equal(await page.locator('.slot-breadcrumb .collection-item-link').count(), 0);
+                assert.equal(await page.locator(`[data-root-href="${prefix}/powered-by/"] use`).getAttribute('href'), '#icon-code');
+                assert.equal(await page.locator('#icon-code path').count(), 1, 'The code symbol is included in the SVG sprite.');
+                const prose = page.locator('.slot-main .prose');
+                assert.equal(await prose.locator('h2').count(), 4);
+                assert.equal(await prose.locator('a[href="https://github.com/SwawHQ/banyan/blob/HEAD/CHANGELOG.md"]').count(), 1);
+                assert.equal(await prose.locator('a[href="https://gohugo.io/news/"]').count(), 1);
+                await assertNewTabs(prose.locator('a[target="_blank"]'));
                 const aboutIcon = page.locator(`[data-root-href="${prefix}/about/"] img.icon--image`);
                 const aboutIconHref = await aboutIcon.getAttribute('src');
                 assert.equal(aboutIconHref, await page.locator('head link[rel="icon"][type="image/svg+xml"]').getAttribute('href'), 'The About entry reuses the published site favicon.');
                 await aboutIcon.evaluate(image => image.decode());
                 assert.deepEqual(await aboutIcon.evaluate(image => ({width: image.getBoundingClientRect().width, height: image.getBoundingClientRect().height})), {width: 15, height: 15});
-                assert.equal(await page.locator(`${grid} [data-site-update-action]`).count(), 0, 'Update actions stay outside sortable content.');
-                assert.equal(await page.locator('[data-site-update-panel], [data-site-update-action], [data-page-action="back"]').count(), 0, 'The directory contains no appended page controls.');
-                assert.equal(await page.locator('[data-site-update-link]').count(), 0, 'Root navigation does not specialize the updates entry.');
-                assert.equal(await page.locator('.slot-main > article > [data-sortable="true"]').count(), 1, 'The ordinary collection-page renders the directory.');
-                assert.equal(await page.locator('.slot-main > article [data-site-update-panel]').count(), 0, 'The list layout does not append update controls.');
                 assert.equal(await page.locator('footer, .slot-footer').count(), 0, 'The homepage entry replaces the footer.');
                 assert.equal(await page.locator(`${homeEntry} .collection-item-title`).textContent(), brand);
                 assert.equal(await page.locator(`${homeEntry}.is-current`).count(), 0);
@@ -122,7 +110,7 @@ export const preferenceAndUpdateScenarios = [
                 assert.equal(await filingLinks.count(), 2);
                 await assertNewTabs(filingLinks);
                 await page.goBack();
-                await page.waitForURL(`${baseUrl}${prefix}/updates/`);
+                await page.waitForURL(`${baseUrl}${prefix}/powered-by/`);
                 await waitForBreadcrumbSettled(page);
 
                 for (const name of ['about', 'wechat', 'github', 'rss']) {
@@ -135,7 +123,7 @@ export const preferenceAndUpdateScenarios = [
                         assert.equal(new URL(page.url()).search, '', 'An ordinary root link carries no directory source.');
                         assert.deepEqual(await rowPaths('[data-root-href].is-current'), [`${prefix}/${name}/`]);
                         assert.equal(await page.locator('[data-root-href]').count(), 14);
-                        assert.equal(await page.locator(`[data-root-href="${prefix}/updates/"] .icon--text`).textContent(), '↻');
+                        assert.equal(await page.locator(`[data-root-href="${prefix}/powered-by/"] use`).getAttribute('href'), '#icon-code');
                         assert.equal(await page.locator(`[data-root-href="${prefix}/about/"] img.icon--image`).getAttribute('src'), aboutIconHref);
                         assert.equal(await page.locator('.slot-breadcrumb .collection-item-link').count(), 0, 'Promoted pages do not retain a site directory column.');
                     };
@@ -152,8 +140,15 @@ export const preferenceAndUpdateScenarios = [
                         assert.equal(await avatar.getAttribute('height'), '48');
                         assert.deepEqual(await avatar.evaluate(image => ({width: image.getBoundingClientRect().width, naturalRatio: image.naturalWidth / image.naturalHeight})), {width: 64, naturalRatio: 4 / 3});
                         assert.equal(await page.locator('.slot-main .prose table').count(), 0);
-                        assert.equal(await page.locator('.slot-main .prose img').count(), 1);
-                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"], .slot-main .prose a[href="https://github.com/bornwhy"]').count(), 0);
+                        const founderLinks = page.locator('.slot-main .prose a[href="https://github.com/bornwhy"]');
+                        assert.equal(await founderLinks.count(), 2, 'The founder has a linked avatar and visible URL.');
+                        await assertNewTabs(founderLinks);
+                        const founderAvatar = founderLinks.locator('img');
+                        await founderAvatar.evaluate(image => image.decode());
+                        assert.equal(await founderAvatar.getAttribute('height'), '64');
+                        assert.deepEqual(await founderAvatar.evaluate(image => ({width: image.getBoundingClientRect().width, naturalRatio: image.naturalWidth / image.naturalHeight})), {width: 64, naturalRatio: 1});
+                        assert.deepEqual(await page.locator('.slot-main .prose a').evaluateAll(links => [...new Set(links.map(link => link.href))]), ['https://github.com/bornwhy', 'https://github.com/SwawHQ']);
+                        assert.equal(await page.locator('.slot-main .prose img').count(), 2);
                     } else if (name === 'wechat') {
                         const qrImages = page.locator('.slot-main .prose img');
                         assert.equal(await qrImages.count(), 2);
@@ -171,83 +166,58 @@ export const preferenceAndUpdateScenarios = [
                         assert(!/\/(?:about|updates|wechat|rss|github|icp)\//.test(xml), 'Local information pages do not become feed articles.');
                     } else if (name === 'about') {
                         assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/SwawHQ"]').count(), 1);
-                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"], .slot-main .prose a[href="https://github.com/bornwhy"]').count(), 0);
+                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/bornwhy"]').count(), 1);
+                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"]').count(), 0);
                     }
                     if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `root-${name}.png`) });
                     await page.reload();
                     await waitForBreadcrumbSettled(page);
                     await assertRootPage();
                     await page.goBack();
-                    await page.waitForURL(`${baseUrl}${prefix}/updates/`);
+                    await page.waitForURL(`${baseUrl}${prefix}/powered-by/`);
                     await waitForBreadcrumbSettled(page);
                     await page.goForward();
                     await waitForBreadcrumbSettled(page);
                     await assertRootPage();
                     await page.goBack();
-                    await page.waitForURL(`${baseUrl}${prefix}/updates/`);
+                    await page.waitForURL(`${baseUrl}${prefix}/powered-by/`);
                     await waitForBreadcrumbSettled(page);
                 }
 
-                const assertArticle = async (name, expectedPaths) => {
-                    assert.equal(await page.locator(`[data-root-href="${prefix}/updates/"].is-current`).count(), 1);
-                    assert.deepEqual(await rowPaths('.slot-breadcrumb .collection-item-link'), expectedPaths);
-                    assert.equal(await page.locator('[data-root-href]').count(), 14);
-                    if (name === 'updates/check') {
-                        assert.equal(await page.locator('[data-site-update-panel]').count(), 1);
-                        assert.equal(await page.locator('a[data-site-update-version]').count(), 0, 'The current version is status text, not another navigation link.');
-                        assert.match(await page.locator('[data-site-update-version]').textContent(), /\d{4}-\d{2}-\d{2}/);
-                    }
-                    assert.equal(await page.locator(`.slot-breadcrumb .is-current[href*="/${name}/"]`).count(), 1);
+                const assertOverview = async () => {
+                    assert.equal(new URL(page.url()).pathname, `${prefix}/powered-by/`);
+                    assert.equal(await page.locator(`[data-root-href="${prefix}/powered-by/"].is-current`).count(), 1);
+                    assert.equal(await page.locator('[data-site-update-panel]').count(), 1);
+                    assert.equal(await page.locator('[data-site-update-version]').count(), 1, 'Build time appears only once.');
+                    assert.equal(await page.locator('[data-site-update-panel] time').count(), 0);
+                    assert.equal(await page.locator('.slot-breadcrumb .collection-item-link').count(), 0);
+                    assert.equal(await page.locator('a[href*="/powered-by/pwa/"]').count(), 0);
+                    assert.equal(await page.locator('[data-pwa-controlled]').count(), 1);
+                    assert.equal(await page.locator('[data-site-update-action="check"]').count(), 1);
                 };
-                const defaultPaths = await rowPaths(links);
-                for (const name of children) {
-                    await page.locator(`${links}[href*="/${name}/"]`).click();
-                    await waitForBreadcrumbSettled(page);
-                    await assertArticle(name, defaultPaths);
-                    assert.equal(new URL(page.url()).pathname, `${prefix}/${name}/`, 'Selecting an information page stays on that page.');
-                    if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `updates-${name.replaceAll('/', '-')}-default.png`) });
-                    await page.goBack();
-                    await page.waitForURL(`${baseUrl}${prefix}/updates/`);
-                    await waitForBreadcrumbSettled(page);
-                }
-
-                for (const [field, firstOrder] of [['name', 'desc']]) {
-                    await page.locator(`${grid} [data-sort-field="${field}"]`).click();
-                    await page.waitForURL(url => (url.searchParams.get('sort') || 'name-asc') === `${field}-${firstOrder}`);
-                    await page.locator(`${grid} [data-sort-field="${field}"]`).click();
-                    await page.waitForURL(url => (url.searchParams.get('sort') || 'name-asc') === `${field}-${firstOrder === 'asc' ? 'desc' : 'asc'}`);
-                    assert.deepEqual((await rowPaths(links)).sort(), expected);
-                }
-                const sortedUrl = page.url();
-                const sortedPaths = await rowPaths(links);
+                await assertOverview();
                 await page.reload();
-                await waitForBreadcrumbSettled(page);
-                assert.deepEqual(await rowPaths(links), sortedPaths);
-                await page.screenshot({ path: path.join(artifactDir, `site-${prefix.slice(1) || 'en'}.png`) });
-
-                for (const name of children) {
-                    await page.locator(`${links}[href*="/${name}/"]`).click();
+                await assertOverview();
+                await page.locator(`[data-root-href="${prefix}/about/"]`).click();
+                await page.goBack();
+                await page.waitForURL(`${baseUrl}${prefix}/powered-by/`);
+                await assertOverview();
+                await page.locator('[data-site-update-panel]').scrollIntoViewIfNeeded();
+                if (prefix === '/zh') await page.screenshot({path: path.join(artifactDir, 'pwa-inline-desktop.png')});
+                if (prefix === '/zh') {
+                    await page.screenshot({path: path.join(artifactDir, 'powered-by-desktop.png')});
+                    await page.setViewportSize({width: 390, height: 844});
+                    await gotoAndWait(page, baseUrl + '/zh/about/');
+                    await page.locator('[data-root-href="/zh/powered-by/"]').click();
                     await waitForBreadcrumbSettled(page);
-                    assert.equal(new URL(page.url()).searchParams.get('from'), 'updates');
-                    const articleUrl = page.url();
-                    await assertArticle(name, sortedPaths);
-                    await page.reload();
-                    await waitForBreadcrumbSettled(page);
-                    await assertArticle(name, sortedPaths);
-                    await page.goBack();
-                    await page.waitForURL(sortedUrl);
-                    await waitForBreadcrumbSettled(page);
-                    assert.deepEqual(await rowPaths(links), sortedPaths);
-                    await page.goForward();
-                    await page.waitForURL(articleUrl);
-                    await waitForBreadcrumbSettled(page);
-                    await assertArticle(name, sortedPaths);
-                    await page.goBack();
-                    await page.waitForURL(sortedUrl);
-                    await waitForBreadcrumbSettled(page);
+                    await page.locator('.slot-main h1').scrollIntoViewIfNeeded();
+                    await page.screenshot({path: path.join(artifactDir, 'powered-by-mobile.png')});
+                    await page.locator('[data-site-update-panel]').scrollIntoViewIfNeeded();
+                    await page.screenshot({path: path.join(artifactDir, 'pwa-inline-mobile.png')});
+                    await page.setViewportSize({width: 1024, height: 700});
                 }
             }
-            return { message: 'Updates lists its two real children; About, WeChat, GitHub and RSS remain ordinary root pages with declared icons, stable selection across reload/history and working content in all three languages.' };
+            return { message: 'The multilingual overview, SVG icon, source/release links and inline PWA panel work across reload and history; existing root information pages remain intact.' };
         }
     },
     {
@@ -304,13 +274,13 @@ export const preferenceAndUpdateScenarios = [
             await page.evaluate(() => history.replaceState({ ...history.state, backMarker: true }, '', location.href));
             const article = page.url();
             await assertCleanLinks();
-            for (const name of ['appearance', 'updates', 'language']) {
+            for (const name of ['appearance', 'powered-by', 'language']) {
                 await entry(name).click();
                 await page.waitForURL(baseUrl + '/zh/' + name + '/');
                 await assertCleanLinks();
             }
             await page.reload();
-            for (const name of ['updates', 'appearance']) {
+            for (const name of ['powered-by', 'appearance']) {
                 if (name === 'appearance') {
                     assert.equal(await page.locator('[data-page-action="back"]').count(), 0, 'The ordinary updates list has no custom back control.');
                     await page.goBack();
@@ -391,13 +361,13 @@ export const preferenceAndUpdateScenarios = [
 
             // Unknown query parameters do not participate in settings navigation.
             await page.addInitScript(() => history.replaceState({ ...history.state, cleanupMarker: true }, '', location.href));
-            for (const name of ['language', 'appearance', 'my', 'updates/check']) {
+            for (const name of ['language', 'appearance', 'my', 'powered-by']) {
                 await gotoAndWait(page, baseUrl + '/zh/' + name + '/?return=https%3A%2F%2Fexample.invalid%2F&probe=keep#anchor');
                 assert.equal(new URL(page.url()).search, '?return=https%3A%2F%2Fexample.invalid%2F&probe=keep');
                 assert.equal(new URL(page.url()).hash, '#anchor');
                 assert.equal(await page.evaluate(() => history.state.cleanupMarker), true);
             }
-            await gotoAndWait(page, baseUrl + '/zh/updates/?return=unused&probe=keep');
+            await gotoAndWait(page, baseUrl + '/zh/powered-by/?return=unused&probe=keep');
             assert.equal(new URL(page.url()).search, '?return=unused&probe=keep', 'Ordinary and settings pages both ignore unknown query parameters.');
             await gotoAndWait(page, baseUrl + '/language/?return=' + encodeURIComponent('/prefetchdebug/'));
             const dialogCount = dialogs.length;
@@ -476,12 +446,12 @@ export const preferenceAndUpdateScenarios = [
     {
         id: 'sw-update-check',
         kind: 'upgrade',
-        title: 'Check Updates Child Applies Service Worker Updates',
+        title: 'PWA Checks Never Activate or Reload; Link Navigation Applies Updates',
         dialogPolicy: 'dismiss',
         async run({ page, context, baseUrl, server, upgradePair, dialogs, artifactDir }) {
             assert.ok(upgradePair?.fromDir && upgradePair?.toDir, 'Two builds containing the preference and update pages are required.');
             server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/zh/updates/check/`);
+            await gotoAndWait(page, `${baseUrl}/zh/powered-by/`);
             await waitForServiceWorkerActive(page);
             await page.waitForSelector(`${updatePanel}[data-site-update-state]`);
             const versionBefore = await page.locator('[data-site-update-version]').getAttribute('title');
@@ -499,23 +469,35 @@ export const preferenceAndUpdateScenarios = [
             await page.waitForSelector(`${updatePanel}[data-site-update-state="ready"]`);
             assert.equal(dialogs.length, 0, 'The check page shows the update in place.');
             await page.screenshot({ path: path.join(artifactDir, 'site-update-ready.png') });
-            const navigation = page.waitForEvent('load');
-            await page.locator('[data-site-update-action="check"]').click();
-            await navigation;
-            await page.waitForFunction((previous) => document.querySelector('[data-site-update-version]')?.title !== previous, versionBefore);
+            const labelBefore = await page.locator('[data-site-update-action="check"]').textContent();
+            let loads = 0;
+            page.on('load', () => { loads++; });
+            for (let i = 0; i < 2; i++) {
+                await page.locator('[data-site-update-action="check"]').click();
+                await page.waitForSelector(`${updatePanel}[data-site-update-state="ready"]`);
+            }
+            await page.waitForTimeout(4500);
+            assert.equal(loads, 0, 'Repeated checks must not activate or reload, including after the activation timeout.');
+            await waitForUpdateReady(page);
+            assert.equal(await page.locator('[data-site-update-action="check"]').textContent(), labelBefore);
+            assert.equal(await page.locator('[data-site-update-version]').getAttribute('title'), versionBefore);
+            await page.locator('[data-root-href="/zh/about/"]').click();
+            await page.waitForURL(baseUrl + '/zh/about/');
+            await page.locator('[data-root-href="/zh/powered-by/"]').click();
+            await page.waitForURL(baseUrl + '/zh/powered-by/');
+            assert.notEqual(await page.locator('[data-site-update-version]').getAttribute('title'), versionBefore);
             await waitForServiceWorkerActive(page);
-            assert.equal(new URL(page.url()).pathname, '/zh/updates/check/');
-            assert.equal(await page.locator('[data-root-href="/zh/updates/"].is-current').count(), 1);
+            assert.equal(new URL(page.url()).pathname, '/zh/powered-by/');
+            assert.equal(await page.locator('[data-root-href="/zh/powered-by/"].is-current').count(), 1);
             await waitForBreadcrumbSettled(page);
-            assert.equal(await page.locator('.slot-breadcrumb .collection-item-link').count(), 2, 'Applying updates preserves the updates column.');
-            assert.equal(await page.locator('.slot-breadcrumb .is-current[href*="/updates/check/"]').count(), 1);
+            assert.equal(await page.locator('.slot-breadcrumb .collection-item-link').count(), 0, 'The overview needs no child navigation column.');
             const cacheKeysAfter = await page.evaluate(() => caches.keys());
             for (const key of cacheKeysBefore.filter((key) => key.startsWith('nav-html-'))) {
                 assert.ok(!cacheKeysAfter.includes(key), `Old navigation cache remains: ${key}`);
             }
             const swResponse = await context.request.get(`${baseUrl}/sw.js`);
             assert.equal(swResponse.headers()['cache-control'], 'no-cache, max-age=0, must-revalidate');
-            return { message: 'Offline/retry, update notification, activation, reload, old navigation cache deletion and sw.js headers passed.',
+            return { message: 'Offline/retry and repeated checks stay on the page; link navigation activates the update, clears old navigation caches and preserves sw.js headers.',
                 details: { versionBefore, versionAfter: await page.locator('[data-site-update-version]').getAttribute('title'), cacheKeysBefore, cacheKeysAfter } };
         }
     }

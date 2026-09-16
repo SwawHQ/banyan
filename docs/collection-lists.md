@@ -25,7 +25,6 @@ Swaw 当前前四项依次为项目 `content/all/index*.md` 的“发现 - 全�
 | 上述文件的 `cascade`，目标 `kind: term` | `list: products` | 每个分类的 `.Pages`，无需逐类写来源 |
 | 项目 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | “发现 - 全部”：`/d/` 下全部内容 |
 | 项目 `content/all-tools/_index.zh.md` | `list: products`、`aggregate: /tools` | “工具 - 全部”：工具分类成员的去重并集 |
-| 主题 `content/updates/_index.zh.md` | `list: name` | 更新目录的两个真实子项：检查更新、更新记录 |
 | 主题 `content/language/index.zh.md` | `list: choice` | `hugo.toml` 已启用的语言 |
 | 主题 `content/appearance/index.zh.md` | `list: choice` | 跟随系统、浅色、深色 |
 
@@ -41,13 +40,11 @@ list: products
 
 `aggregate` 只用于汇总入口，指向一个 section 或 taxonomy 根。它不从父目录继承。普通目录和分类页无需写 `aggregate`，也不写 `list_source` 或 `product_filter`。主题默认页面的站点专用修改可通过项目同路径文件覆盖；三种语言各自保留完整 front matter。
 
-更新目录声明 `layout: page-collection`、`list: name`，与 `/d/` 复用相同模板、集合来源、排序及路径列。目录中只有真实子项，没有追加的版本、检查、状态或返回按钮；全站骨架、公共样式装配和根导航不识别 `site_update`。`root_nav: true`、`weight: 96`、`icon: { text: "↻" }` 将它作为普通“更新”入口列在第一列。
+Powered by 由主题 `content/powered-by/index*.md` 提供，使用 `page-powered-by` 展示技术总览，声明 `root_nav: true`、`weight: 96` 与 SVG `icon: code`。`powered-by` shortcode 展示 Banyan、Hugo 实际构建版本、站点构建信息和内嵌 PWA 状态面板；Banyan 变更记录直接链接仓库的 `CHANGELOG.md`，不维护站内副本。构建脚本从主题 Git 工作区注入提交与未提交修改状态；不把最低兼容 Hugo 版本当作实际构建版本。
 
-检查更新是主题 `content/updates/check/index*.md` 的真实子页面，声明 `layout: page-update-check` 和 `icon: { text: "↻" }`，网址为 `/updates/check/`（各语言加对应前缀）。其布局装配当前构建版本、检查按钮及状态，`site_update.labels` 是静态界面与运行时文案的单一事实源。版本时间显示为普通文本，更新记录通过同级列表访问。检查按钮可手动检查或应用站点版本；普通站内同标签页链接在已有 waiting worker 时先激活再跳转，第一列仍无更新标记或弹窗。刷新、历史导航、同页锚点与新标签页链接保持原生行为，其他标签页不强制重载。
+PWA 状态面板直接位于总览页的 PWA 段落，`site_update.labels` 与技术说明同存于 `content/powered-by/index*.md`，不依赖其他内容页面。面板显示是否受 Service Worker 控制及检查/安装/等待状态；构建信息只在上方显示一次。检查按钮始终只检查，不激活或刷新。普通站内同标签页链接在已有 waiting worker 时先激活再跳转，其他标签页不重载；刷新、历史和锚点保持原生行为。
 
-项目与主题的更新记录都位于 `content/updates/changelog/index*.md`，保留 `url: changelog/`，因此公开网址仍是 `/changelog/`。来源和第一列归属来自真实内容父目录 `/updates/`，不依赖公开网址前缀。原 `content/pwa/`、`content/site/` 及 `pwa-page` 布局已移除；根 `data/redirects.toml` 将旧 `/pwa/` 转到 `/updates/check/`、旧 `/site/` 转到 `/updates/`，覆盖三语言及有无尾斜杠。图片资源目录 `assets/site/pwa/` 与内容路径无关，保持原位置。语言、外观页的返回按钮分别由各自布局调用。
-
-更新根与两个子页通过 `slots.breadcrumb: true` 启用路径列，目录的 `cascade` 同时为未声明 `slots` 的新子页提供默认值。已有子页自行声明了 `slots`，需在原 map 内加入 `breadcrumb: true`，不能期待父级 cascade 自动补进该 map。
+旧更新目录、主题及根站点的 changelog 占位页、`changelog-fallback` shortcode 已移除，构建信息并入技术总览。已有 `data/redirects.toml` 中旧 PWA/site 迁移的目标同步指向新路径。总览是根级普通页面，不再保留 PWA 子页、子页路径列及其专用布局。
 
 ## 名称列表与公共样式
 
@@ -86,7 +83,7 @@ slots:
 | 项目 `content/wechat/index*.md` | 微信二维码页面；`icon: wechat`、`weight: 101` |
 | 项目 `content/rss/index*.md` | 覆盖主题 RSS 默认页的入口顺序，正文仍调用 `{{< rss-link >}}`；`icon: rss`、`weight: 100`，排在更新之后、微信之前；主题默认权重仍为 `103` |
 | 主题 `content/github/index*.md` | 默认的 Banyan 仓库说明；`icon: github`、`weight: 102`，项目可同路径覆盖 |
-| 项目 `content/github/index*.md` | 仅展示 SwawHQ 组织账号的头像与普通链接，保留完整入口声明；头像通过现有 `asset` 短代码引用项目 `assets/site/pwa/favicon.svg`，与浏览器图标共用哈希资源，不使用表格 |
+| 项目 `content/github/index*.md` | 按创始人、开源项目顺序展示 bornwhy 与 SwawHQ 的头像和链接，保留完整入口声明；现有 `asset` 短代码分别引用 `site/brand/lib/bornwhy.svg`（64×64）与 `site/pwa/favicon.svg`（64×48），组织头像与浏览器图标共用哈希资源，不使用表格；关于页同步提供两个带用途标签的链接，品牌首页仍链接组织 |
 | 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "ICP备2024338434号"`、`icon: { text: "粤" }`、`weight: 105`，排在首页入口之前；国徽图片 `0.webp` 通过 `asset` 短代码显示在正文备案号的“粤”字前，与完整备案号同行并共用工信部查询链接；主题不存放业务备案信息 |
 
 `layouts/_shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址，并在新标签打开。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。
@@ -195,6 +192,6 @@ weight: 30
 
 运行 `node themes/banyan/scripts/checks/check-path-rebuild.mjs` 可验证 Hugo 开发预览的增量重建：使用根站点内容和临时目录标题覆盖层，先访问正文，再修改祖先标题，检查三语言正文元信息同步更新。路径模型每次渲染读取当前祖先，不能存入跨增量重建保留的页面 Scratch，否则祖先改名后可能继续输出旧名称。
 
-路径来源直接内嵌在各语言页面，使用当前语言模型的 `current_collection_items` 和祖先层 `collection_items`。浏览器在页面边界一次解码，不再发布或请求 `_items.json`，因此主表与路径列天然使用同一份语言和排序事实。浏览器回归 `updates-name-list` 覆盖三语言名称列表、两个真实子项、进入后的选中和排序、刷新／历史恢复，同时验证关于、微信、GitHub、RSS 等普通根入口及其实际内容。升级回归从首页／文章列表经过更新目录进入检查页，验证离线／重试、新版本应用后保留更新路径列、清理旧导航缓存。
+路径来源直接内嵌在各语言页面，使用当前语言模型的 `current_collection_items` 和祖先层 `collection_items`。浏览器在页面边界一次解码，不再发布或请求 `_items.json`，因此主表与路径列天然使用同一份语言和排序事实。浏览器回归 `powered-by-overview` 覆盖三语言技术总览、SVG 图标、外部变更记录链接、内嵌 PWA 面板及刷新／历史恢复，同时验证其他普通根入口。升级回归验证重复检查不刷新、导航升级、跨标签页草稿保留及旧导航缓存清理。
 
 在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建 directory／all／products／name 四种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。name 用例同时覆盖目录、子目录继承、分类、聚合入口，检查首帧仅名称列、名称升降序、进入文章后的路径列、刷新及历史恢复。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

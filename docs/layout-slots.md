@@ -58,11 +58,11 @@ slots:
 
 语言、外观页面用顶层 `list: choice` 声明选择行，并分别由 `page-language`、`page-appearance` 布局提供选项，由语言、外观脚本处理操作；我的等系统页无需列表声明。它们都无需为了显示第一列设置 `slots`。布局、集合 provider 和产品属性仍是各自独立的配置。
 
-更新目录 `content/updates/_index*.md` 使用 `layout: page-collection`、`list: name`，只列出检查更新与更新记录两个真实子页。`baseof.html` 不追加操作，根导航也不承担更新标记。`content/updates/check/index*.md` 使用 `page-update-check` 布局明确渲染更新面板，并在 `body-extra` 中加载 `js/updates/page.js`；面板源码样式仍进入公共 `page.css`。`site_update.labels` 只提供功能文案，不是全站装配开关。版本为普通状态文本，记录通过同级列表访问。两个子页均保留更新路径列。语言和外观布局分别调用 `feature-preferences/back-link.html`；返回脚本只由相应页面装配。语言选择脚本仅由 `page-language` 加载，跨页面语言返回及主题同步继续在全站主脚本中运行。
+Powered by 总览 `content/powered-by/index*.md` 使用 `page-powered-by` 布局和 `powered-by` shortcode；框架说明与构建信息直接展示，变更记录链接上游仓库。PWA 段落内嵌 `feature-updates/panel.html`，该页通过 `body-extra` 加载 `js/updates/page.js`。`site_update.labels` 提供静态界面与运行时文案，检查只检查、不激活或重载；构建时间只显示一次。总览无子页或额外路径列，语言和外观布局仍各自装配返回控件。
 
 站点默认描述和文章源码仓库配置分别使用 `hugo.toml` 中的 `params.description` 与 `params.content_source`，不再通过隐藏的 `fragments/site-meta` 页面承载。通用值全站共用，需要本地化时由 `languages.<lang>.params` 覆盖。`slots.meta` 只控制当前页面的日期、taxonomy 等元信息装配。
 
-首页链接已统一到普通入口。关于、微信、RSS、GitHub、备案等信息通过各自真实根页面访问，更新入口列出检查更新和更新记录；SEO 元数据仍由独立的 head 模板输出。
+首页链接已统一到普通入口。关于、微信、RSS、GitHub、备案等信息通过各自真实根页面访问，Powered by 入口展示技术总览并内嵌 PWA 状态面板；SEO 元数据仍由独立的 head 模板输出。
 
 ## 与导航状态和布局的边界
 

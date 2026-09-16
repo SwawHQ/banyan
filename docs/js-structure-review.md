@@ -20,7 +20,7 @@ assets/js/
 ├─ browse/                  根入口、路径列、集合排序、URL 状态和画幅
 ├─ preferences/             语言、外观和返回操作
 ├─ pages/                   首页、404、离线页的专用入口
-├─ updates/                 检查更新页面
+├─ updates/                 PWA 状态页面
 ├─ prefetch/                预取策略、浏览器输入、运行入口和诊断页
 ├─ pwa/                     Worker、页面端 manager、更新引擎和缓存命名
 └─ inline/                  必须在首帧前运行的薄适配器
@@ -79,7 +79,7 @@ J1 删除了无消费者的 export、不可达的旧事件分支和专用页面�
 
 ## J3：删除重复的运行时数据交付
 
-检查更新页的多语言文案来自对应 `content/updates/check/index*.md`，由 `feature-updates/panel.html` 同时渲染初始 HTML 和本页 `data-site-update-copy`。构建版本与时间也直接写入本页。
+PWA 状态面板的多语言文案来自对应 `content/powered-by/index*.md`，由 `feature-updates/panel.html` 同时渲染初始 HTML 和本页 `data-site-update-copy`。构建版本与时间由同页的技术总览提供，面板不重复显示。
 
 已经删除：
 

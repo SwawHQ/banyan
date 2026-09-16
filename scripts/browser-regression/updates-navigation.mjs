@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { forceServiceWorkerUpdate, gotoAndWait, waitForServiceWorkerActive, waitForUpdateReady } from './helpers.mjs';
 
-const updatesEntry = '[data-root-navigation] a[data-root-href="/zh/updates/"]';
+const updatesEntry = '[data-root-navigation] a[data-root-href="/zh/powered-by/"]';
 
 function requireUpgradePair(upgradePair) {
     assert.ok(upgradePair?.fromDir && upgradePair?.toDir, 'Two builds containing the flattened navigation are required.');
@@ -20,7 +20,7 @@ export const updatesNavigationScenarios = [
         async run({ page, context, baseUrl, server, upgradePair, dialogs, artifactDir }) {
             requireUpgradePair(upgradePair);
             server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/zh/updates/check/`);
+            await gotoAndWait(page, `${baseUrl}/zh/powered-by/`);
             await waitForServiceWorkerActive(page);
             const versionBefore = await page.locator('[data-site-update-version]').getAttribute('title');
             await gotoAndWait(page, baseUrl + href);
@@ -29,7 +29,7 @@ export const updatesNavigationScenarios = [
             assert.equal(await page.locator('[data-site-update-link]').count(), 0, 'The root site link has no special update role.');
 
             const reader = await context.newPage();
-            await gotoAndWait(reader, `${baseUrl}/zh/about/`);
+            await gotoAndWait(reader, `${baseUrl}/zh/powered-by/`);
             await waitForServiceWorkerActive(reader);
             await reader.evaluate(() => {
                 window.__readingContext = 'preserved';
@@ -50,25 +50,25 @@ export const updatesNavigationScenarios = [
             assert.equal(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/'))?.waiting), true);
             await page.screenshot({ path: path.join(artifactDir, 'site-entry-ready.png') });
 
+            let targetLoads = 0;
+            page.on('load', () => { targetLoads++; });
             await page.locator(updatesEntry).click();
-            await page.waitForURL(url => url.pathname === '/zh/updates/');
+            await page.waitForURL(url => url.pathname === '/zh/powered-by/');
             await waitForServiceWorkerActive(page);
             assert.equal(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/'))?.waiting), false,
                 'The ready worker activates before loading the link destination.');
             await reader.waitForFunction(() => navigator.serviceWorker.controller !== window.__oldController);
+            await reader.waitForSelector('[data-site-update-state="current"]');
+            assert.equal(await reader.locator('[data-pwa-controlled]').textContent(), '是');
             assert.equal(await reader.evaluate(() => window.__readingContext), 'preserved');
             assert.equal(await reader.locator('#unsaved-draft').inputValue(), 'An unsaved draft');
-            assert.equal(await page.locator('[data-site-update-panel]').count(), 0);
-            let targetLoads = 0;
-            page.on('load', () => { targetLoads++; });
-            await page.locator('.slot-main .collection-item-link[href*="/updates/check/"]').click();
-            await page.waitForURL(url => url.pathname === '/zh/updates/check/');
+            assert.equal(await page.locator('[data-site-update-panel]').count(), 1);
             await page.waitForLoadState('load');
             assert.notEqual(await page.locator('[data-site-update-version]').getAttribute('title'), versionBefore,
                 'Even a previously cached destination displays the new build.');
             assert.equal(new URL(page.url()).searchParams.has('return'), false);
             assert.equal(await page.locator(`${updatesEntry}.is-current`).count(), 1);
-            assert.equal(await page.locator('.slot-breadcrumb .collection-item-link').count(), 2);
+            assert.equal(await page.locator('.slot-breadcrumb .collection-item-link').count(), 0);
             await page.waitForTimeout(4500);
             assert.equal(targetLoads, 1, 'No delayed reload follows navigation.');
             const cachesAfter = await page.evaluate(() => caches.keys());
@@ -88,7 +88,7 @@ export const updatesNavigationScenarios = [
         async run({ page, baseUrl, server, upgradePair, dialogs }) {
             requireUpgradePair(upgradePair);
             server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/zh/updates/check/`);
+            await gotoAndWait(page, `${baseUrl}/zh/powered-by/`);
             await waitForServiceWorkerActive(page);
             await page.locator('[data-site-update-action]').evaluate(node => { node.style.visibility = 'hidden'; });
             assert.equal(await page.locator('[data-site-update-link]').count(), 0);
@@ -112,7 +112,7 @@ export const updatesNavigationScenarios = [
             server.setRoot(upgradePair.fromDir);
             await gotoAndWait(page, `${baseUrl}/zh/about/`);
             await waitForServiceWorkerActive(page);
-            await gotoAndWait(page, `${baseUrl}/zh/updates/check/`);
+            await gotoAndWait(page, `${baseUrl}/zh/powered-by/`);
             const version = await page.locator('[data-site-update-version]').getAttribute('title');
             server.setRoot(upgradePair.toDir);
             await forceServiceWorkerUpdate(page);
@@ -183,7 +183,7 @@ export const updatesNavigationScenarios = [
         async run({ page, baseUrl, server, upgradePair }) {
             requireUpgradePair(upgradePair);
             server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/zh/updates/`);
+            await gotoAndWait(page, `${baseUrl}/zh/powered-by/`);
             await waitForServiceWorkerActive(page);
             await gotoAndWait(page, `${baseUrl}/zh/about/`);
             const cacheKeys = await page.evaluate(() => caches.keys());
@@ -203,7 +203,7 @@ export const updatesNavigationScenarios = [
             let loads = 0;
             page.on('load', () => { loads++; });
             await page.locator(updatesEntry).click();
-            await page.waitForURL(url => url.pathname === '/zh/updates/');
+            await page.waitForURL(url => url.pathname === '/zh/powered-by/');
             await page.waitForLoadState('load');
             await page.waitForTimeout(4500);
             assert.equal(loads, 1);
