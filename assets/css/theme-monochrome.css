@@ -1,6 +1,6 @@
 /* Complete monochrome palette with light/dark defaults. Components only consume these roles.
    Near-white and pure-black canvases use softened text. Selected navigation
-   uses an inverse fill, softened in dark mode; hover stays unfilled with an outline.
+   uses the body foreground as its fill; hover stays unfilled with an outline.
    Unqualified scopes apply to both modes; dark blocks keep explicit mode defaults.
    Keep each scope when overriding: aliases and mixes resolve before inheritance.
    A role may use a literal, an alias, or a mix without changing its consumers. */
@@ -42,7 +42,7 @@
     --collection-item-hover-bg: transparent;
     --collection-item-hover-ring: var(--fg);
     --collection-item-current-text: var(--monochrome-dark-fg);
-    --collection-item-current-bg: var(--monochrome-dark-bg);
+    --collection-item-current-bg: var(--fg);
     --collection-item-current-ring: transparent;
 }
 
