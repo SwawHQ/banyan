@@ -1,6 +1,6 @@
 /* Complete monochrome palette with light/dark defaults. Components only consume these roles.
    Near-white and pure-black canvases use softened text. Selected navigation
-   uses the opposite canvas; hover stays unfilled with a visible outline.
+   uses an inverse fill, softened in dark mode; hover stays unfilled with an outline.
    Unqualified scopes apply to both modes; dark blocks keep explicit mode defaults.
    Keep each scope when overriding: aliases and mixes resolve before inheritance.
    A role may use a literal, an alias, or a mix without changing its consumers. */
@@ -48,7 +48,7 @@
 
 [data-theme="dark"] .collection-item-link {
     --collection-item-current-text: var(--monochrome-light-fg);
-    --collection-item-current-bg: var(--monochrome-light-bg);
+    --collection-item-current-bg: var(--fg);
 }
 
 .collection-item-link:is(.is-current, [aria-expanded="true"]) .icon {
