@@ -43,6 +43,8 @@ export const documentAsideScenarios = [{
             await page.waitForFunction(() => document.querySelector('.document-toc [aria-current="location"]')?.hash === '#main');
             assert.equal(await page.locator('.document-aside').isVisible(), false);
             await openDocumentAside(page);
+            assert.equal(await page.locator('#document-aside-close').textContent(),
+                { '': 'Hide', '/zh': '收起', '/zh-tw': '收起' }[prefix]);
             const structure = await page.evaluate(() => ({
                 label: document.querySelector('.document-toc').getAttribute('aria-label'),
                 headings: [...document.querySelectorAll('.prose :is(h2,h3)')].map(h => ({ id: h.id, text: h.textContent.trim() })),
@@ -56,7 +58,11 @@ export const documentAsideScenarios = [{
                 datesFirst: [...document.querySelector('.document-meta').children].slice(0, 2).every(row => row.querySelector('time')),
                 rowGaps: [...document.querySelectorAll('.document-meta__row')].map(e => e.getBoundingClientRect()).map((box, i, boxes) => i > 0 ? box.top - boxes[i - 1].bottom : null).slice(1),
                 platformIcons: [...document.querySelectorAll('.document-meta__row--resources use')].map(u => u.getAttribute('href')),
+                rowTextStarts: ['.document-toc a[href="#main"] .collection-item-title', '.document-toc__h2 .collection-item-title', '#document-aside-close .collection-item-title']
+                    .map(selector => document.querySelector(selector).getBoundingClientRect().left),
             }));
+            assert(structure.rowTextStarts.every(left => Math.abs(left - structure.rowTextStarts[0]) < 0.1),
+                'The chapter header, top-level chapter and close control have aligned text: ' + JSON.stringify(structure.rowTextStarts));
             assert.deepEqual(structure.entries[0], { id: 'main', text: structure.label });
             assert.deepEqual(structure.entries.slice(1), structure.headings, 'The article-start link precedes the Hugo headings in their original order.');
             assert(structure.entries.length > 10);
@@ -114,7 +120,11 @@ export const documentAsideScenarios = [{
             };
             await link.click();
             await assertTarget('click');
-            assert.equal(await page.locator('.document-aside').isVisible(), false, 'Selecting a chapter restores the reading boundary.');
+            assert.equal(await page.locator('.document-aside').isVisible(), true, 'Selecting a chapter keeps the aside open.');
+            assert.equal(await page.locator('#document-aside-toggle').getAttribute('aria-expanded'), 'true');
+            await link.click();
+            await assertTarget('repeat click');
+            assert.equal(await page.locator('.document-aside').isVisible(), true, 'Repeated chapter activation keeps the aside open.');
             assert.equal(new URL(page.url()).search, '?from=all');
             await page.reload();
             await waitForBreadcrumbSettled(page);
@@ -142,6 +152,7 @@ export const documentAsideScenarios = [{
             await page.screenshot({ path: path.join(artifactDir, `aside-${width}.png`) });
             await page.locator('.document-toc a[href="#main"]').click();
             await assertTarget('return to article start');
+            assert.equal(await page.locator('.document-aside').isVisible(), true, 'Returning to the article start keeps the aside open.');
             await page.reload();
             await waitForBreadcrumbSettled(page);
             await assertTarget('reload article start');
@@ -151,6 +162,7 @@ export const documentAsideScenarios = [{
         await page.emulateMedia({ media: 'print' });
         assert.equal(await page.locator('.document-aside').isVisible(), true);
         assert.equal(await page.locator('#document-aside-toggle').isVisible(), false);
+        assert.equal(await page.locator('#document-aside-close').isVisible(), false);
         assert.equal(await page.locator('.document-toc').isVisible(), false, 'The screen navigation should not duplicate the article when printed.');
         await page.emulateMedia({ media: 'screen' });
         await gotoAndWait(page, baseUrl + '/zh/icp/');
@@ -161,6 +173,7 @@ export const documentAsideScenarios = [{
             const plain = await noScript.newPage();
             await plain.goto(baseUrl + '/zh/p/swaw-kit-git/?from=all');
             assert.equal(await plain.locator('#document-aside-toggle').isVisible(), false);
+            assert.equal(await plain.locator('#document-aside-close').isVisible(), false);
             assert.equal(await plain.locator('.document-aside').isVisible(), true);
             await plain.locator('.document-toc a').nth(3).click();
             assert(await plain.locator('.page-content').evaluate(e => e.scrollTop > 0), 'Outline links work without JavaScript.');
@@ -229,7 +242,13 @@ export const documentAsideScenarios = [{
                 'The aside toggle occupies one ordinary navigation row.');
             assert(Math.abs(toggleSpacing.gap - toggleSpacing.rowGap) < 0.1,
                 'The title separator and aside toggle use the ordinary list row gap.');
-            assert.equal(await page.locator('.document-aside button').count(), 0, 'The title control is the only aside toggle.');
+            const close = page.locator('#document-aside-close');
+            assert.equal(await page.locator('.document-aside button').count(), 1, 'The aside has an explicit close control.');
+            assert.equal(await close.getAttribute('aria-controls'), 'document-aside');
+            assert.equal(await close.textContent(), '收起');
+            assert.equal(await close.evaluate(node => node.closest('.document-tools') === document.querySelector('.document-aside').lastElementChild
+                && !!(document.querySelector('.document-toc').compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING)), true,
+                'The close control follows the chapter list.');
             const paint = locator => locator.evaluate(async node => {
                 // Navigation anchors animate color on hover and theme changes.
                 await Promise.all(node.getAnimations().map(animation => animation.finished));
@@ -259,6 +278,9 @@ export const documentAsideScenarios = [{
                 assert.equal(opened.x, beforeToggle.x, 'Opening the aside preserves the user-chosen canvas position.');
                 assert.equal(opened.left, beforeToggle.left, 'Opening the aside does not move the reading column.');
                 assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+                assert(Math.abs(await close.evaluate(node => node.querySelector('.collection-item-title').getBoundingClientRect().left
+                    - document.querySelector('.document-toc a[href="#main"] .collection-item-title').getBoundingClientRect().left)) < 0.1,
+                    'The close control aligns with the chapter header at every viewport width.');
                 assert.equal(await page.locator('.document-aside').evaluate(node => node.contains(document.activeElement)), false,
                     'Pointer activation does not transfer focus into the aside.');
                 assert.deepEqual(await paint(toggle), await paint(page.locator('[data-root-navigation] .collection-item-link.is-current')), 'Expanded state reuses the selected navigation style.');
@@ -318,9 +340,17 @@ export const documentAsideScenarios = [{
             await openDocumentAside(page, mobile);
             await activate(page, page.locator('.document-toc a').nth(2), mobile);
             await page.waitForFunction(() => location.hash && document.querySelector('.page-content').scrollTop > 0);
-            assert.equal(await page.locator('.document-aside').isVisible(), false);
+            assert.equal(await page.locator('.document-aside').isVisible(), true, 'Chapter activation keeps the aside open.');
+            assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
             const chapter = await read();
             assert(chapter.left >= -1 && chapter.right <= chapter.viewport + 1);
+            await activate(page, close, mobile);
+            const explicitlyClosed = await read();
+            assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+            assert.equal(await page.locator('.document-aside').isVisible(), false);
+            assert.equal(explicitlyClosed.y, chapter.y, 'Closing from the aside preserves the selected chapter.');
+            assert.equal(explicitlyClosed.canvasWidth, collapsed.canvasWidth, 'The close control leaves no empty canvas column.');
+            assert.equal(await page.evaluate(() => document.activeElement.id), 'main', 'Focus leaves the hidden aside.');
             if (!mobile) {
                 await page.locator('.page-content').evaluate(node => { node.scrollTop = 0; });
                 await toggle.focus();
@@ -337,6 +367,11 @@ export const documentAsideScenarios = [{
                 await page.keyboard.press('Space');
                 assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
                 assert.equal((await read()).x, beforeKeyboard.x);
+                await page.keyboard.press('Enter');
+                await close.focus();
+                await page.keyboard.press('Enter');
+                assert.equal(await toggle.getAttribute('aria-expanded'), 'false', 'The aside close control works with the keyboard.');
+                assert.equal(await page.evaluate(() => document.activeElement.id), 'main');
             }
             results.push({ width, collapsed, chapter, firstFrames: frames.length });
         }

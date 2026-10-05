@@ -72,6 +72,7 @@
 .document-aside .collection-item-link {
     inline-size: 100%;
     align-items: baseline;
+    padding: 0;
 }
 
 .document-aside .collection-item-title {

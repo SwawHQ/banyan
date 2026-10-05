@@ -21,8 +21,4 @@ function onEscape(event) {
 }
 toggle.addEventListener('keydown', onEscape);
 aside.addEventListener('keydown', onEscape);
-aside.querySelector('.document-toc')?.addEventListener('click', event => {
-    if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-    // toc.js retains native fragment history and reveals the selected chapter.
-    if (event.target.closest('a[href^="#"]')) closeAside();
-});
+document.getElementById('document-aside-close').addEventListener('click', closeAside);

@@ -84,3 +84,5 @@ other = '內容資訊'
 other = '章節'
 [document_aside_toggle]
 other = '目錄與資訊'
+[document_aside_close]
+other = '收起'

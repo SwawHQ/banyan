@@ -84,3 +84,5 @@ other = 'Document information'
 other = 'On this page'
 [document_aside_toggle]
 other = 'Contents & info'
+[document_aside_close]
+other = 'Hide'
