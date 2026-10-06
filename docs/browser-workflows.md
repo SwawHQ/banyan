@@ -98,7 +98,8 @@ bun run check:browser:speculation:public
 bun run check:security:headers
 ```
 
-这条命令默认检查 `https://swaw.com/`，并确认首页安全头和 `/sw.js` 缓存策略真实生效。
+根站点应在 `package.json` 的这条命令中显式传入线上 URL，确认首页安全头和
+`/sw.js` 缓存策略真实生效；检查脚本自身默认使用本地 `http://127.0.0.1:8787/`。
 
 ## 什么时候才需要显式指定 build
 

@@ -23,6 +23,10 @@ and migration decisions.
   taxonomy roots, and one demo article.
 
 ### Changed
+- Set the default multilingual RSS entry weight to 100.
+- Kept generic browser contracts and the shared runner in Banyan while moving
+  consumer-specific journeys to the site; removed legal-asset and domain
+  assumptions from collection and image delivery checks.
 
 - Replaced the Updates directory with a Powered by overview: Banyan/Hugo credits,
   source and change-log links, actual build metadata, and inline PWA status and update checks.

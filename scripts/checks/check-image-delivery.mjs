@@ -1,8 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const defaultPublicDir = 'public';
-const siteOrigin = 'https://swaw.com';
+let siteOrigin;
 const maxGeneratedShareImageBytes = 500_000;
 const defaultResponsiveImageConfig = Object.freeze({
     maxWidth: 1600,
@@ -161,7 +162,7 @@ function parseTomlString(section, key) {
 async function readResponsiveImageConfig(siteRoot) {
     const config = { ...defaultResponsiveImageConfig };
     const configPaths = [
-        path.join(siteRoot, 'themes', 'banyan', 'hugo.toml'),
+        fileURLToPath(new URL('../../hugo.toml', import.meta.url)),
         path.join(siteRoot, 'hugo.toml')
     ];
 
@@ -486,6 +487,11 @@ async function main() {
     const publicDir = path.resolve(process.cwd(), options.publicDir);
     const responsiveImageConfig = await readResponsiveImageConfig(process.cwd());
     const htmlFiles = await collectHtmlFiles(publicDir);
+    const homeHtml = await fs.readFile(path.join(publicDir, 'index.html'), 'utf8');
+    const canonical = extractStartTags(homeHtml, 'link').find(tag => hasRelToken(tag.text, 'canonical'));
+    const canonicalHref = canonical ? extractTagAttribute(canonical.text, 'href') : '';
+    if (!canonicalHref) throw new Error('Published home page must declare its canonical URL for image checks.');
+    siteOrigin = new URL(canonicalHref).origin;
     const totals = {
         issues: [],
         warnings: [],

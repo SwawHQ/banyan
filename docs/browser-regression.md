@@ -15,6 +15,10 @@
 
 - `themes/banyan/scripts/browser-regression/`
 
+主题目录保留共用运行器、服务器、helpers 及通用行为检查。消费者站点的实际文章、
+导航文案、备案、账号与设计截图验收位于根仓库 `scripts/browser-regression/`，
+根 `package.json` 的入口将本站场景与主题通用场景组合后交给同一运行器。
+
 如果你现在脑子里只想问一句“我到底该跑哪组命令”，先看：
 
 - [`browser-workflows.md`](browser-workflows.md)
@@ -35,7 +39,7 @@
 - `bun run check:browser:trace`
 - `bun run check:browser:install`
 
-产品入口专项场景 `tools-category-entry-lineage` 验证四个分类的目录顺序，以及从全部／分类列表进入真实产品后的根选中、分类兄弟项、排序、刷新与前进后退。它从当前站点发现一个真实产品，不依赖固定产品 slug；至少需要一篇声明 `tools` 分类的工具正文。
+根仓库的产品入口专项场景 `tools-category-entry-lineage` 验证四个分类的目录顺序，以及从全部／分类列表进入真实产品后的根选中、分类兄弟项、排序、刷新与前进后退。它从当前站点发现一个真实产品，不依赖固定产品 slug；至少需要一篇声明 `tools` 分类的工具正文。
 
 
 ## 设计原则

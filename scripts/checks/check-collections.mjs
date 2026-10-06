@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { resolveHugoCommand } from '../build/hugo-command.mjs';
 import { createHugoEnv } from '../build/hugo-env.mjs';
@@ -11,13 +12,15 @@ import { createStaticSiteServer } from '../browser-regression/server.mjs';
 import { gotoAndWait, waitForBreadcrumbSettled } from '../browser-regression/helpers.mjs';
 
 const root = process.cwd();
+const themeRoot = fileURLToPath(new URL('../..', import.meta.url));
 const work = fs.mkdtempSync(path.join(root, 'temp_workspace', 'collection-contract-'));
 const rel = p => path.relative(root, p).replaceAll('\\', '/');
 const write = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, s); };
 const overlay = path.join(work, 'content');
 const langs = ['', '.zh', '.zh-tw'];
 const prefixes = ['', '/zh', '/zh-tw'];
-const imageBytes = fs.readFileSync('content/icp/0.webp');
+// A self-contained 1px WebP keeps image contracts independent of site/legal assets.
+const imageBytes = Buffer.from('UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA', 'base64');
 const imageHash = createHash('sha256').update(imageBytes).digest('hex');
 const ownImage = {image: `/media/content/d/contract-no-offer/badge.${imageHash}.webp`};
 const inheritedImage = {image: `/media/content/d/contract-image/badge.${imageHash}.webp`, monochrome: true};
@@ -54,8 +57,7 @@ for (const lang of langs) {
         write(path.join(overlay, `tags/${term}/_index${lang}.md`), `---\ntitle: ${term}\n---\n`);
     }
     write(path.join(overlay, `tags/untagged/_index${lang}.md`), '---\ntitle: Untagged\n---\n');
-    const paid = fs.readFileSync(`content/tools/paid/_index${lang}.md`, 'utf8');
-    write(path.join(overlay, `tools/paid/_index${lang}.md`), paid.replace('---', '---\nlist_icon_file: appearance-light'));
+    write(path.join(overlay, `tools/paid/_index${lang}.md`), '---\ntitle: Paid fixture\nlist_icon_file: appearance-light\n---\n');
     for (const [name, fields] of cases) write(path.join(overlay, `d/contract-${name}/index${lang}.md`),
         `---\ntitle: "Contract ${name}"\nslug: contract-${name}\ndate: 2026-01-01\n${fields}\n---\nArticle body stays an article.\n`);
     write(path.join(overlay, `d/contract-override/_index${lang}.md`), '---\ntitle: Override\nroot_nav: true\nicon: info\nlist: all\nlist_icon_folder: rss\nlist_icon_file: appearance-auto\n---\n');
@@ -79,14 +81,14 @@ write(config, `[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "content"
 const hugo = resolveHugoCommand({ cwd: root });
 function build(view) {
     for (const lang of langs) {
-        const source = fs.readFileSync(`themes/banyan/content/d/_index${lang}.md`, 'utf8');
+        const source = fs.readFileSync(path.join(themeRoot, `content/d/_index${lang}.md`), 'utf8');
         write(path.join(overlay, `d/_index${lang}.md`), source.replace('list: directory', `list: ${view}\nroot_nav: true\nicon: info`));
     }
     const output = path.join(work, view);
     const result = spawnSync(hugo, ['--config', `hugo.toml,${rel(config)}`, '--minify', '--destination', rel(output)],
         { cwd: root, env: createHugoEnv({ cwd: root }), encoding: 'utf8', windowsHide: true });
     assert.equal(result.status, 0, result.stdout + result.stderr);
-    const patch = spawnSync(process.execPath, ['themes/banyan/scripts/build/patch-csp.mjs', rel(output)],
+    const patch = spawnSync(process.execPath, [path.join(themeRoot, 'scripts/build/patch-csp.mjs'), rel(output)],
         { cwd: root, encoding: 'utf8', windowsHide: true });
     assert.equal(patch.status, 0, patch.stdout + patch.stderr);
     assert.equal(fs.existsSync(path.join(output, '__fragments')), false, 'collection rows stay in HTML instead of duplicate fragment output');

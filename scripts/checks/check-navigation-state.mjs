@@ -433,14 +433,14 @@ window.location.search = '?from=tags/windows';
 assert.deepEqual(
     breadcrumbPath.buildCurrentPathItem(
         {},
-        'WSL Toolkit',
-        'WSL automation management script',
-        '/zh/p/wsl-automng/?from=tags/windows'
+        'Beta',
+        'Beta detailed article title',
+        '/zh/p/contract-beta/?from=tags/windows'
     ),
     {
-        text: 'WSL Toolkit',
-        title: 'WSL automation management script',
-        href: '/zh/p/wsl-automng/?from=tags/windows',
+        text: 'Beta',
+        title: 'Beta detailed article title',
+        href: '/zh/p/contract-beta/?from=tags/windows',
         current: true,
     },
     'entry preview should keep compact visible text and the full title as separate fields'
@@ -460,20 +460,20 @@ const previewColumnCurrentItem = breadcrumbPath.buildCurrentPathItem(
             lp: '/tags/windows/',
             p: 'taxonomy',
             rv: [
-                'wsl-automng', 'page', '/zh/p/wsl-automng/', 'WSL Toolkit', '1', 'WSL Toolkit', '20260624', '1341',
+                'contract-beta', 'page', '/zh/p/contract-beta/', 'Beta', '1', 'Beta', '20260624', '1341',
             ],
             sv: 'tree',
             v: 1,
         }),
     },
-    'WSL Toolkit',
-    'WSL automation management script',
-    '/zh/p/wsl-automng/?from=tags/windows'
+    'Beta',
+    'Beta detailed article title',
+    '/zh/p/contract-beta/?from=tags/windows'
 );
 
 assert.equal(
     previewColumnCurrentItem?.column_items?.find((item) => item.current === true)?.title,
-    'WSL automation management script',
+    'Beta detailed article title',
     'entry preview should attach the full title to the visible current column item'
 );
 
@@ -504,8 +504,8 @@ const sourcePayload = JSON.stringify([{
         lp: '/tags/windows/',
         p: 'taxonomy',
         rv: [
-            'xvenv', 'page', '/zh/p/xvenv/', 'Xvenv', '1', 'Xvenv', '20260626', '6402',
-            'wsl-automng', 'page', '/zh/p/wsl-automng/', 'WSL Toolkit', '1', 'WSL Toolkit', '20260624', '1341',
+            'contract-alpha', 'page', '/zh/p/contract-alpha/', 'Alpha', '1', 'Alpha', '20260626', '6402',
+            'contract-beta', 'page', '/zh/p/contract-beta/', 'Beta', '1', 'Beta', '20260624', '1341',
         ],
         sv: 'tree',
         v: 1
@@ -553,7 +553,7 @@ assert.deepEqual(
 );
 
 assert.equal(
-    breadcrumbSource.parseEntrySelection(sources, '/tags/windows/wsl-automng/'),
+    breadcrumbSource.parseEntrySelection(sources, '/tags/windows/contract-beta/'),
     null,
     'from values with an entry key tail should not be treated as valid navigation state'
 );
@@ -606,10 +606,10 @@ assert.equal(
 assert.equal(
     breadcrumbItems.buildBreadcrumbRowHref(
         {
-            key: 'wsl-automng',
+            key: 'contract-beta',
             kind: 'page',
-            href: '/zh/p/wsl-automng/',
-            text: 'WSL管理脚本',
+            href: '/zh/p/contract-beta/',
+            text: '紧凑标题',
         },
         {
             logicalPath: '/tags/windows/',
@@ -622,35 +622,35 @@ assert.equal(
             defaultSortsTokens: ['date-desc', 'date-desc'],
         }
     ),
-    '/zh/p/wsl-automng/?from=tags/windows',
+    '/zh/p/contract-beta/?from=tags/windows',
     'entry hrefs should write collection-only from values'
 );
 
 const selectedItem = breadcrumbItems.buildSelectedBreadcrumbItem(
     sources[0],
-    '/zh/p/wsl-automng/',
-    'WSL automation management script'
+    '/zh/p/contract-beta/',
+    'Beta detailed article title'
 );
 
 assert.equal(
     selectedItem?.text,
-    'WSL Toolkit',
+    'Beta',
     'short from should resolve the compact visible text from the selected row'
 );
 assert.equal(selectedItem?.current, true, 'selected row from pathname should be marked current');
 assert.equal(
     selectedItem?.title,
-    'WSL automation management script',
+    'Beta detailed article title',
     'selected current item should preserve the full page title without expanding the compact collection payload'
 );
 assert.equal(
-    selectedItem?.column_items?.find((item) => item.text === 'WSL Toolkit')?.current,
+    selectedItem?.column_items?.find((item) => item.text === 'Beta')?.current,
     true,
     'current breadcrumb column item should be highlighted when selected by pathname'
 );
 assert.equal(
     selectedItem?.column_items?.find((item) => item.current === true)?.title,
-    'WSL automation management script',
+    'Beta detailed article title',
     'settled entry state should attach the full title to the visible current column item'
 );
 

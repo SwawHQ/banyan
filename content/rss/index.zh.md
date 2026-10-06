@@ -6,7 +6,7 @@ date: 2026-09-08
 slug: rss
 layout: page-article
 icon: rss
-weight: 103
+weight: 100
 outputs:
   - HTML
 build:
