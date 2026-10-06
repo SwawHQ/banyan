@@ -23,6 +23,10 @@ and migration decisions.
   taxonomy roots, and one demo article.
 
 ### Changed
+- Publish the theme from `module/` as `github.com/SwawHQ/banyan/module` and move
+  the runnable demo to the repository root, using a local Go module replacement.
+- Refresh the demo sitemap paths and editorial Lastmod policy to the current
+  theme contract; keep production minification and CSP post-processing explicit.
 - Set the default multilingual RSS entry weight to 100.
 - Kept generic browser contracts and the shared runner in Banyan while moving
   consumer-specific journeys to the site; removed legal-asset and domain

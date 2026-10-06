@@ -37,11 +37,11 @@ function parseCli(argv) {
 
 function printHelp() {
     console.log(`Usage:
-  node themes/banyan/scripts/dev/build-browser-temp.mjs [note]
+  node scripts/dev/build-browser-temp.mjs [note]
 
 Examples:
   bun run build:browser:temp
-  node themes/banyan/scripts/dev/build-browser-temp.mjs prefetch-debug
+  node scripts/dev/build-browser-temp.mjs prefetch-debug
 
 Notes:
   - Builds a minified Hugo output into temp_workspace/public/<timestamp>-<note>
@@ -116,7 +116,7 @@ if (options.help) {
 
 const destinationDir = buildDestination(options.note);
 const destinationRel = relFromSite(destinationDir);
-const hugoCommand = resolveHugoCommand({ cwd: siteRoot });
+const hugoCommand = await resolveHugoCommand({ cwd: siteRoot });
 runProcess(
     hugoCommand,
     ['--gc', '--cleanDestinationDir', '--minify', '--destination', destinationRel],

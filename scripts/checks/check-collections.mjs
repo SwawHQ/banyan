@@ -12,7 +12,7 @@ import { createStaticSiteServer } from '../browser-regression/server.mjs';
 import { gotoAndWait, waitForBreadcrumbSettled } from '../browser-regression/helpers.mjs';
 
 const root = process.cwd();
-const themeRoot = fileURLToPath(new URL('../..', import.meta.url));
+const themeRoot = fileURLToPath(new URL('../../module/', import.meta.url));
 const work = fs.mkdtempSync(path.join(root, 'temp_workspace', 'collection-contract-'));
 const rel = p => path.relative(root, p).replaceAll('\\', '/');
 const write = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, s); };
@@ -24,7 +24,7 @@ const imageBytes = Buffer.from('UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQA
 const imageHash = createHash('sha256').update(imageBytes).digest('hex');
 const ownImage = {image: `/media/content/d/contract-no-offer/badge.${imageHash}.webp`};
 const inheritedImage = {image: `/media/content/d/contract-image/badge.${imageHash}.webp`, monochrome: true};
-const logoBytes = fs.readFileSync('assets/site/pwa/favicon.svg');
+const logoBytes = fs.readFileSync(path.join(themeRoot, 'assets/site/pwa/favicon.svg'));
 const logoHash = createHash('sha256').update(logoBytes).digest('hex');
 const assetImage = {image: `/site/pwa/favicon.${logoHash}.svg`};
 const monochromeAsset = {...assetImage, monochrome: true};
@@ -78,7 +78,7 @@ write(path.join(overlay, 'd/contract-no-offer/badge.webp'), imageBytes);
 write(path.join(overlay, 'd/contract-image/badge.webp'), imageBytes);
 const config = path.join(work, 'overlay.toml');
 write(config, `[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
-const hugo = resolveHugoCommand({ cwd: root });
+const hugo = await resolveHugoCommand({ cwd: root });
 function build(view) {
     for (const lang of langs) {
         const source = fs.readFileSync(path.join(themeRoot, `content/d/_index${lang}.md`), 'utf8');
@@ -88,7 +88,7 @@ function build(view) {
     const result = spawnSync(hugo, ['--config', `hugo.toml,${rel(config)}`, '--minify', '--destination', rel(output)],
         { cwd: root, env: createHugoEnv({ cwd: root }), encoding: 'utf8', windowsHide: true });
     assert.equal(result.status, 0, result.stdout + result.stderr);
-    const patch = spawnSync(process.execPath, [path.join(themeRoot, 'scripts/build/patch-csp.mjs'), rel(output)],
+    const patch = spawnSync(process.execPath, [fileURLToPath(new URL('../build/patch-csp.mjs', import.meta.url)), rel(output)],
         { cwd: root, encoding: 'utf8', windowsHide: true });
     assert.equal(patch.status, 0, patch.stdout + patch.stderr);
     assert.equal(fs.existsSync(path.join(output, '__fragments')), false, 'collection rows stay in HTML instead of duplicate fragment output');

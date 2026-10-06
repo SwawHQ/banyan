@@ -98,10 +98,13 @@ export const presentationContractScenarios = [
             }
             const commonCode = await page.evaluate(async () => {
                 const scripts = [...document.scripts].filter(script => /\/js\/(main\.|sw-manager\.enable)/.test(script.src));
-                return Promise.all(scripts.map(script => fetch(script.src).then(response => response.text())));
+                return {
+                    hasMain: scripts.some(script => /\/js\/main\./.test(script.src)),
+                    sources: await Promise.all(scripts.map(script => fetch(script.src).then(response => response.text())))
+                };
             });
-            assert(commonCode.length >= 2);
-            for (const source of commonCode) {
+            assert(commonCode.hasMain, 'The main bundle loads independently of the optional service worker.');
+            for (const source of commonCode.sources) {
                 assert(!source.includes('data-language-choice'), 'Language picker behavior stays out of global bundles.');
                 assert(!source.includes('data-site-update-panel'), 'Update presentation stays out of the global SW engine.');
                 assert(!source.includes('data-page-action'), 'Back controls stay page-local.');

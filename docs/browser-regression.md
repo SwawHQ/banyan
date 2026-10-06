@@ -13,11 +13,15 @@
 
 ## 目录
 
-- `themes/banyan/scripts/browser-regression/`
+- 本仓库的 `scripts/browser-regression/`
 
-主题目录保留共用运行器、服务器、helpers 及通用行为检查。消费者站点的实际文章、
-导航文案、备案、账号与设计截图验收位于根仓库 `scripts/browser-regression/`，
-根 `package.json` 的入口将本站场景与主题通用场景组合后交给同一运行器。
+本仓库保留共用运行器、服务器、helpers 及通用行为检查，根目录是演示站点。
+消费者站点的实际文章、导航文案、备案、账号与设计截图验收应位于该站点自己的
+`scripts/browser-regression/`，由站点入口按需组合通用场景后交给同一运行器。
+
+根演示站点当前可用命令以 [README](../README.md#repository-layout-and-local-development)
+和根 `package.json` 为准；下文部分专项流程需要消费者站点自行声明命令，并准备
+对应内容及启用 SW 等功能的构建产物。
 
 如果你现在脑子里只想问一句“我到底该跑哪组命令”，先看：
 

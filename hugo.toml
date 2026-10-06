@@ -1,26 +1,62 @@
-# themes/banyan/hugo.toml
-# -------------------------------------------------------------------
-# Theme Default Configuration
-# -------------------------------------------------------------------
-# This file provides the baseline properties for the Banyan theme.
-# Note: Structural configurations like [outputs], [taxonomies], and
-# [permalinks] are intentionally omitted here. Sites must define them in their
-# root hugo.toml. Output format definitions are inherited from theme config, but
-# sites still need root [outputs] entries to enable those formats.
+# Banyan demo site.
+#
+# This file intentionally includes Hugo structural settings that are not
+# inherited from theme configuration. Copy the relevant parts into a real site's
+# root hugo.toml when adopting Banyan.
 
 baseURL = "http://localhost:1313/"
 languageCode = "en-us"
-title = "Banyan Theme"
-
-
+title = "Banyan Example"
 preserveTaxonomyNames = true
 defaultContentLanguage = "en"
-defaultContentLanguageInSubdir = true
+defaultContentLanguageInSubdir = false
 enableRobotsTXT = true
 timeZone = "Asia/Shanghai"
-
-enableGitInfo = true
 panicOnWarning = true
+
+[build]
+noJSConfigInAssets = true
+
+[cascade.build]
+# Page bundle resources should be published only through explicit theme pipelines.
+publishResources = false
+
+[params.prefetch_runtime]
+mode = "off"
+
+[params.service_worker]
+mode = "off"
+
+[params.sitemap]
+# Theme-owned pages use build.list = "local", so include the public ones
+# explicitly in each language sitemap.
+include_pages = ["/about", "/powered-by", "/rss", "/github"]
+
+[frontmatter]
+lastmod = ["lastmod", "date"]
+
+[pagination]
+pagerSize = 30
+
+[taxonomies]
+tag = "tags"
+
+[markup]
+[markup.highlight]
+noClasses = false
+style = "vs"
+[markup.goldmark]
+[markup.goldmark.renderer]
+unsafe = false
+[markup.minify]
+disableXML = true
+
+[outputs]
+page     = ["HTML"]
+section  = ["HTML","RSS"]
+home     = ["HTML","RSS","LLMS"]
+taxonomy = ["HTML","RSS"]
+term     = ["HTML","RSS"]
 
 [languages]
 [languages.en]
@@ -41,120 +77,8 @@ weight = 3
 [languages.zh-tw.params]
 locale = "zh_TW"
 
-[outputFormats]
-[outputFormats.LLMS]
-mediaType = "text/plain"
-baseName = "llms"
-isPlainText = true
-notAlternative = true
+[permalinks]
+d = "/p/:slug/"
 
-[params]
-# Shared default; sites may override per language with languages.<lang>.params.
-description = "A minimalist theme for Hugo."
-
-[params.content_source]
-# Set the site's content repository to enable article source links.
-repository = ""
-branch = "main"
-content_root = "content"
-
-[params.appearance]
-# Complete color-role file, relative to assets/. Select at build time.
-# Built-in alternative: "css/theme-monochrome.css" (both light and dark modes).
-palette = "css/theme.css"
-
-[params.agent_access]
-# Banyan defaults to open discovery and model access. Publishers who need a
-# different consent policy should override these values in their site config.
-# The wildcard policy already covers current and future crawlers; keep the
-# explicit lists empty so a site can add exceptions without conflicting groups.
-default_policy = "allow"
-allow_user_agents = []
-disallow_user_agents = []
-
-[params.sitemap]
-# Pages excluded from list collections may still be explicitly included in
-# each language sitemap by their logical content path.
-include_pages = []
-
-[params.web_app_manifest]
-# link  = emit <link rel="manifest"> in <head> for the most predictable PWA path
-# defer = emit the manifest late in <head>, after render-critical styles/scripts
-#         have already been discovered
-# off   = do not generate or link the web app manifest
-mode = "defer"
-
-[params.media.responsive_images]
-# Keep this fallback aligned with the readable content width in
-# assets/css/prose-base.css. The browser uses sizes with srcset and the
-# device DPR to choose a generated WebP candidate.
-sizes = "auto, (max-width: 820px) calc(100vw - 32px), 800px"
-widths = [768, 1200, 1600]
-# Reading pages should not auto-download source-size images; click-through
-# links still expose the original file when details matter.
-max_width = 1600
-
-[params.prefetch_runtime]
-mode = "off"
-# Runtime warmup stack:
-# - Handles link rel=prefetch and Service Worker navigation warmup.
-# - The environment key uses two capability flags:
-#   first flag = link prefetch transport is available
-#   second flag = Service Worker API is available in the current browser context
-# - Mode short codes keep the runtime dispatch compact:
-#   link_sf / link_mf / link_xf
-#   sw_sf   / sw_mf   / sw_xf
-# - The optional _g suffix enables a sessionStorage gate so identical warmup
-#   batches run only once per browser session.
-
-[params.prefetch_runtime.env.TT]
-nav = "sw_xf_g"
-crumb = "sw_mf_g"
-sort_siblings = "sw_xf_g"
-descendants = "sw_xf_g"
-post = "sw_mf_g"
-
-[params.prefetch_runtime.env.FT]
-ref = "TT"
-
-[params.prefetch_runtime.env.TF]
-nav = "link_xf"
-crumb = "link_mf"
-sort_siblings = "link_xf"
-descendants = "link_mf"
-post = "link_mf"
-
-[params.speculation_rules]
-# Header stack for external Speculation Rules JSON.
-# Edge platforms that cannot emit quoted Speculation-Rules header values should
-# keep this off and let the runtime/SW prefetch stack handle warmup.
-mode = "off"
-runtime_coordination = "preempt_runtime_when_supported"
-nav = "prefetch_eager"
-crumb = "prefetch_moderate"
-sort_siblings = "prefetch_eager"
-descendants = "prefetch_moderate"
-post = "prefetch_moderate"
-
-[params.build]
-# Site-wide build version defaults used by the Service Worker and update page.
-version_prefix = "v"
-timestamp_layout = "20060102150405"
-
-[params.build.theme]
-revision = ""
-dirty = false
-
-[params.build.audit]
-permalink_collision = "warn"
-
-[params.service_worker]
-# Service Worker is opt-in because it changes browser caching behavior.
-mode = "off"
-update_check_interval = 15
-update_visibility_throttle = 3
-offline_notice_path = "offline/"
-
-[frontmatter]
-# Editorial update time: never derive it from repository maintenance.
-lastmod = ["lastmod", "date"]
+[[module.imports]]
+path = "github.com/SwawHQ/banyan/module"

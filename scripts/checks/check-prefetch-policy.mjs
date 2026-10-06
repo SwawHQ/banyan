@@ -5,7 +5,7 @@ import * as esbuild from 'esbuild';
 
 const policyEntry = path.join(
     process.cwd(),
-    'themes/banyan/assets/js/prefetch/policy.js'
+    'module/assets/js/prefetch/policy.js'
 );
 
 const build = await esbuild.build({

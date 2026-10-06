@@ -1,0 +1,34 @@
+{
+  "name": "banyan-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Runnable demo and local development site for the Banyan Hugo Module.",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "prepare:external": "node scripts/external-resources/sync.mjs",
+    "csp:headers": "node scripts/build/patch-csp.mjs",
+    "speculation-rules:headers": "node scripts/build/emit-speculation-rules-headers.mjs",
+    "build": "node scripts/build/run-hugo.mjs --gc --cleanDestinationDir --minify && npm run csp:headers && npm run speculation-rules:headers",
+    "build:browser:temp": "node scripts/dev/build-browser-temp.mjs",
+    "help:browser": "node scripts/dev/print-browser-help.mjs",
+    "dev": "node scripts/build/run-hugo.mjs server -D --printPathWarnings --disableFastRender --bind 127.0.0.1 --port 13241",
+    "check:public": "node scripts/checks/check-public-html.mjs public",
+    "check:public:prod": "node scripts/checks/check-public-html.mjs public --check",
+    "check:agent:prod": "node scripts/checks/check-agent-readiness.mjs public --check",
+    "check:browser": "node scripts/browser-regression/browser-smoke.mjs",
+    "check:browser:public": "node scripts/browser-regression/run-entry-with-build.mjs public browser-smoke.mjs",
+    "check:browser:latest-temp": "node scripts/browser-regression/run-entry-with-build.mjs latest-temp browser-smoke.mjs",
+    "check:browser:speculation:public": "node scripts/browser-regression/run-entry-with-build.mjs public browser-speculation-rules.mjs",
+    "check:browser:speculation:latest-temp": "node scripts/browser-regression/run-entry-with-build.mjs latest-temp browser-speculation-rules.mjs",
+    "check:browser:install": "npx playwright install chromium",
+    "report:assets": "node scripts/checks/report-assets.mjs public"
+  },
+  "devDependencies": {
+    "hugo-extended": "0.157.0",
+    "playwright": "^1.59.1",
+    "yaml": "^2.9.0"
+  }
+}

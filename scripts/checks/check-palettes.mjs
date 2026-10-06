@@ -1,5 +1,5 @@
 // Build the consuming site's real content; all configuration and asset fixtures
-// stay under temp_workspace instead of changing the site or exampleSite.
+// stay under temp_workspace instead of changing the root demo or module.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,7 +16,7 @@ fs.mkdirSync(path.join(root, 'temp_workspace'), { recursive: true });
 const work = fs.mkdtempSync(path.join(root, 'temp_workspace', 'palette-contract-'));
 const rel = file => path.relative(root, file).replaceAll('\\', '/');
 const write = (file, text) => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, text); };
-const readPalette = name => fs.readFileSync(`themes/banyan/assets/css/${name}.css`, 'utf8');
+const readPalette = name => fs.readFileSync(`module/assets/css/${name}.css`, 'utf8');
 const defaultCss = readPalette('theme');
 const monochromeCss = readPalette('theme-monochrome');
 const declarations = css => [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
@@ -25,7 +25,7 @@ const declarations = css => [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/(
 assert.deepEqual(declarations(monochromeCss).map(String).sort(), declarations(defaultCss).map(String).sort(),
     'Both complete palettes must maintain the same scoped color roles.');
 
-const hugo = resolveHugoCommand({ cwd: root });
+const hugo = await resolveHugoCommand({ cwd: root });
 function build(name, config = '', expectedError) {
     const configFile = path.join(work, `${name}.toml`);
     const output = path.join(work, name);
@@ -39,7 +39,7 @@ function build(name, config = '', expectedError) {
         return;
     }
     assert.equal(result.status, 0, log);
-    const patch = spawnSync(process.execPath, ['themes/banyan/scripts/build/patch-csp.mjs', rel(output)],
+    const patch = spawnSync(process.execPath, ['scripts/build/patch-csp.mjs', rel(output)],
         { cwd: root, encoding: 'utf8', windowsHide: true });
     assert.equal(patch.status, 0, patch.stdout + patch.stderr);
     return output;

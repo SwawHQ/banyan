@@ -15,11 +15,11 @@ const localContentImagePattern = /\.(?:jpe?g|png|webp)(?:[?#]|$)/i;
 
 function printHelp() {
     console.log(`Usage:
-  node themes/banyan/scripts/checks/check-image-delivery.mjs [publicDir] [--check]
+  node scripts/checks/check-image-delivery.mjs [publicDir] [--check]
 
 Examples:
   bun run check:images
-  node themes/banyan/scripts/checks/check-image-delivery.mjs temp_workspace/public/260707-images --check
+  node scripts/checks/check-image-delivery.mjs temp_workspace/public/260707-images --check
 
 Notes:
   - Default mode prints a report and does not fail.
@@ -162,7 +162,7 @@ function parseTomlString(section, key) {
 async function readResponsiveImageConfig(siteRoot) {
     const config = { ...defaultResponsiveImageConfig };
     const configPaths = [
-        fileURLToPath(new URL('../../hugo.toml', import.meta.url)),
+        fileURLToPath(new URL('../../module/hugo.toml', import.meta.url)),
         path.join(siteRoot, 'hugo.toml')
     ];
 

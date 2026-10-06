@@ -304,7 +304,7 @@ async function main() {
         '--appendPort=false'
     ];
 
-    const child = spawn(resolveHugoCommand({ cwd: siteRoot }), hugoArgs, {
+    const child = spawn(await resolveHugoCommand({ cwd: siteRoot }), hugoArgs, {
         cwd: siteRoot,
         env: createHugoEnv({ cwd: siteRoot }),
         shell: false,

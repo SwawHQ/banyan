@@ -1,13 +1,16 @@
-# Banyan Theme for Hugo
+# Banyan for Hugo
 
-A minimalist, multi-language, and highly customizable theme for Hugo.
+A minimalist, multi-language Hugo theme, with a runnable demo in the repository root.
 
-## Installation
+## Run the Demo
 
-Inside your Hugo project root, clone this theme into the `themes` directory:
+Install Git, Go 1.18 or newer, and Node.js 18.17 or newer. Then:
 
 ```bash
-git clone https://github.com/SwawHQ/banyan.git themes/banyan
+git clone https://github.com/SwawHQ/banyan.git
+cd banyan
+npm install
+npm run dev
 ```
 
 ## Setup (Crucial Step)
@@ -17,16 +20,15 @@ Due to Hugo's configuration merging rules, structural configurations like
 site's root configuration file. Banyan provides its custom `[outputFormats]`,
 but the root site still needs `[outputs]` entries to enable them.
 
-Use `exampleSite/hugo.toml` as the starter shape for a real site root:
+The repository's root `hugo.toml` is the starter configuration. The demo consumes
+`github.com/SwawHQ/banyan/module` through Hugo Modules; its root `go.mod` replaces
+that dependency with `./module` for local development. No module release is
+needed to build the demo or preview changes.
 
-```bash
-cp themes/banyan/exampleSite/hugo.toml ./hugo.toml
-```
-
-Once copied, open your root `hugo.toml` and customize `baseURL`, `title`,
-`themesDir`, language settings, and deployment-specific params. If your site
-root is not inside the theme directory, remove `themesDir = "../.."`; a normal
-consumer site only needs `theme = "banyan"`.
+Customize root content, `baseURL`, `title`, language settings, and deployment
+params to build your own site. Site files override corresponding module files.
+The published theme module contains only `module/`; demo content and repository
+tools are outside that module.
 
 Set the shared site description in your root `hugo.toml`:
 
@@ -48,7 +50,7 @@ by the language choice list; when absent, Banyan uses its language icon.
 
 If you need to customize cache routes, SW cache behavior, or deployment metadata,
 create a site-owned `data/cache-policy.toml`. Banyan falls back to
-`themes/banyan/data/cache-policy-default.toml` when that file is absent.
+`module/data/cache-policy-default.toml` when that file is absent in this repository.
 
 ```bash
 mkdir -p data
@@ -66,23 +68,39 @@ destination = "/new-path/"
 status = 301
 ```
 
-## Example Site
+## Repository Layout and Local Development
 
-`themes/banyan/exampleSite` is a minimal consumer site used to verify that the
-theme can run outside swaw.com content. Install and run it as an independent
-consumer site:
+The root demo is a consumer of the local theme module:
+
+```text
+banyan/
+├── hugo.toml, go.mod, package.json   # Demo configuration and commands
+├── content/, data/                 # Demo content and site-owned data
+├── module/                         # Published Hugo Module and defaults
+│   ├── go.mod, hugo.toml
+│   └── layouts/, assets/, content/, data/, i18n/, static/, archetypes/
+├── scripts/                        # Repository build and checking tools
+└── docs/
+```
+
+Run production validation from the repository root:
 
 ```bash
-cd themes/banyan/exampleSite
-npm install
 npm run build
 npm run check:public:prod
+npm run check:agent:prod
+npm run check:browser:install
 npm run check:browser:public
 ```
 
-The example site deliberately avoids product, legal, or brand-specific content.
-Treat it as a runnable reference for required root config and small demo content,
-not as a place to store theme internals.
+`npm run dev` starts Hugo at `http://localhost:13241/` and watches the local
+module. Template and asset edits in `module/` rebuild the running demo. Production
+builds are minified and receive CSP post-processing; development builds are not
+minified. Semantic releases of the subdirectory module use tags such as
+`module/v0.1.0`.
+
+The demo deliberately avoids product, legal, or brand-specific content. Keep
+site customization in the root and reusable theme behavior in `module/`.
 
 ## Features
 
@@ -242,7 +260,7 @@ Notes:
 - `[banyan_taxonomy].label` and `[banyan_taxonomy].home_label` are removed and are not read.
 - Required `[banyan_taxonomy]` keys are: `mode`, `article_weight`, `normalize`, and `article_mode`.
 - Attach taxonomy metadata and resources with `content/<plural>/_index.<lang>.md`; terms used by content require matching bundles such as `content/<plural>/<term>/_index.<lang>.md`.
-- Follow the current bundle contract in [docs/taxonomies.md](docs/taxonomies.md); avoid treating `themes/banyan/content/` as a template warehouse, because theme content participates in the live build.
+- Follow the current bundle contract in [docs/taxonomies.md](docs/taxonomies.md); module content participates in the live build and provides overridable defaults.
 - See [docs/taxonomies.md](docs/taxonomies.md) for hierarchical tags and multi-path behavior.
 
 ## License

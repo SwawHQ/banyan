@@ -10,9 +10,9 @@ This directory is split by script side effect, not by implementation detail.
 - `external-resources/`: explicit data-preparation scripts that sync declared remote files into the consuming site.
 
 Most scripts treat `process.cwd()` as the consuming site root. This keeps the
-same script usable from `swaw.com`, `exampleSite`, or another Banyan consumer.
-When a script needs theme files, it should derive the theme root from its own
-script location instead of assuming the theme lives at `themes/banyan`.
+same script usable from the root demo or another Banyan consumer. Repository
+tools currently live in `scripts/`; the local theme implementation lives in
+`module/`. Package commands are invoked from the repository root.
 
 Consumer-specific browser journeys belong in the site's `scripts/browser-regression/`.
 The site imports generic theme scenarios and passes its combined suite explicitly

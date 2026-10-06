@@ -48,11 +48,11 @@ function parseCli(argv) {
 
 function printHelp() {
     console.log(`Usage:
-  node themes/banyan/scripts/build/patch-csp.mjs [publicDir]
+  node scripts/build/patch-csp.mjs [publicDir]
 
 Examples:
   bun run csp:headers
-  node themes/banyan/scripts/build/patch-csp.mjs temp_workspace/public/260504-csp
+  node scripts/build/patch-csp.mjs temp_workspace/public/260504-csp
 
 Notes:
   - This script scans final built HTML and hashes the executable inline scripts

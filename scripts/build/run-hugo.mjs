@@ -4,7 +4,7 @@ import { createHugoEnv } from './hugo-env.mjs';
 import { resolveHugoCommand } from './hugo-command.mjs';
 
 const siteRoot = process.cwd();
-const hugoCommand = resolveHugoCommand({ cwd: siteRoot });
+const hugoCommand = await resolveHugoCommand({ cwd: siteRoot });
 
 const child = spawn(hugoCommand, process.argv.slice(2), {
     cwd: siteRoot,

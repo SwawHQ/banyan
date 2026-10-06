@@ -8,12 +8,12 @@ const legacyMarkdownOutputs = new Set(['AGENT_MARKDOWN', 'MARKDOWN']);
 
 function printHelp() {
     console.log(`Usage:
-  node themes/banyan/scripts/checks/check-agent-readiness.mjs [publicDir] [--check]
+  node scripts/checks/check-agent-readiness.mjs [publicDir] [--check]
 
 Examples:
   bun run check:agent
   bun run check:agent:prod
-  node themes/banyan/scripts/checks/check-agent-readiness.mjs temp_workspace/public/260603-agent-readiness --check
+  node scripts/checks/check-agent-readiness.mjs temp_workspace/public/260603-agent-readiness --check
 
 Notes:
   - Default mode prints a report and does not fail on readiness issues.

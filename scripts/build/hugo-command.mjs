@@ -1,12 +1,10 @@
-import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-export function resolveHugoCommand({ cwd = process.cwd() } = {}) {
-    const localBinName = process.platform === 'win32' ? 'hugo.exe' : 'hugo';
-    const localHugo = path.join(cwd, 'node_modules', '.bin', localBinName);
-    if (fs.existsSync(localHugo)) {
-        return localHugo;
-    }
-
-    return process.platform === 'win32' ? 'hugo.exe' : 'hugo';
+export async function resolveHugoCommand({ cwd = process.cwd() } = {}) {
+    const siteRequire = createRequire(path.join(cwd, 'package.json'));
+    const packageUrl = pathToFileURL(siteRequire.resolve('hugo-extended')).href;
+    const { getHugoBinary } = await import(packageUrl);
+    return getHugoBinary();
 }

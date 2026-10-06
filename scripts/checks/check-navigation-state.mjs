@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import * as esbuild from 'esbuild';
 
 const siteRoot = process.cwd();
-const browseRoot = path.join(siteRoot, 'themes/banyan/assets/js/browse');
+const browseRoot = path.join(siteRoot, 'module/assets/js/browse');
 const navStateEntry = path.join(browseRoot, 'navigation-state.js');
 const breadcrumbItemsEntry = path.join(browseRoot, 'breadcrumb-items.js');
 const breadcrumbEntry = path.join(browseRoot, 'breadcrumb-entry.js');

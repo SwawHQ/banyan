@@ -54,12 +54,12 @@ const productionGuardrails = [
 
 function printHelp() {
     console.log(`Usage:
-  node themes/banyan/scripts/checks/check-public-html.mjs [publicDir] [--check] [--top N]
+  node scripts/checks/check-public-html.mjs [publicDir] [--check] [--top N]
 
 Examples:
   bun run check:public
   bun run check:public:prod
-  node themes/banyan/scripts/checks/check-public-html.mjs temp_workspace/public/2605010948-page-local-compact-min --check
+  node scripts/checks/check-public-html.mjs temp_workspace/public/2605010948-page-local-compact-min --check
 
 Notes:
   - Default mode prints a report only.
