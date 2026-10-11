@@ -19,6 +19,8 @@ powered_by:
   website: "官网"
   releases: "发布记录"
   revision: "主题提交"
+  theme_version: "主题版本"
+  local_version: "本地开发版"
   dirty: "有未提交修改"
   version: "构建版本"
   build: "本站构建"

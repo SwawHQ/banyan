@@ -7,8 +7,7 @@
 {{ errorf "Build failed: missing JS resource %q." $path }}
   {{ else }}
     {{ $buildParams := .params | default dict }}
-    {{ $resource = $resource | js.Build (dict "params" $buildParams) }}
-    {{ if not hugo.IsServer }}{{ $resource = $resource | minify }}{{ end }}
+    {{ $resource = $resource | js.Build (dict "params" $buildParams "minify" (not hugo.IsServer)) }}
     {{ $resource = $resource | fingerprint }}
 <script src="{{ $resource.RelPermalink }}" integrity="{{ $resource.Data.Integrity }}" defer fetchpriority="low"></script>
   {{ end }}

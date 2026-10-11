@@ -58,7 +58,7 @@
 {{- if not $pageHomeScript -}}
 {{- errorf "Build failed: missing resource %q." "assets/js/pages/home.js" -}}
 {{- else -}}
-{{- if not hugo.IsServer -}}{{- $pageHomeScript = $pageHomeScript | minify -}}{{- end -}}
+{{- $pageHomeScript = $pageHomeScript | js.Build (dict "minify" (not hugo.IsServer)) -}}
 {{- $pageHomeScript = $pageHomeScript | fingerprint -}}
 <script src="{{ $pageHomeScript.RelPermalink }}" integrity="{{ $pageHomeScript.Data.Integrity }}" defer></script>
 {{- end -}}

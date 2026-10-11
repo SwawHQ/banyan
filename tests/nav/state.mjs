@@ -1,0 +1,621 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import { pathToFileURL } from 'node:url';
+import assert from 'node:assert/strict';
+import {buildJavaScript} from '../../.agents/skills/swaw-banyan/tasks/_shared/hugo-js.mjs';
+
+const siteRoot = process.cwd();
+const browseRoot = path.join(siteRoot, 'module/assets/js/browse');
+const navStateEntry = path.join(browseRoot, 'navigation-state.js');
+const breadcrumbItemsEntry = path.join(browseRoot, 'breadcrumb-items.js');
+const breadcrumbEntry = path.join(browseRoot, 'breadcrumb-entry.js');
+const breadcrumbSourceEntry = path.join(browseRoot, 'breadcrumb-source.js');
+const collectionItemsEntry = path.join(browseRoot, 'collection-items.js');
+const collectionSortEntry = path.join(browseRoot, 'collection-sort.js');
+const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'banyan-nav-state-'));
+
+try {
+
+    const entries = [navStateEntry, breadcrumbItemsEntry, breadcrumbEntry, breadcrumbSourceEntry, collectionItemsEntry, collectionSortEntry];
+    const jsRoot = path.dirname(browseRoot);
+    const bundles = await buildJavaScript({jsRoot, work:tempRoot,
+        entries:entries.map(entry => path.relative(jsRoot, entry).replace(/\\/g, '/')),
+        params:{navigationState:{fields:{
+            entry_lineage:{name:"from", location:"query", cache_key:"ignore"},
+            active_sort:{name:"sort", location:"query", cache_key:"ignore"},
+            lineage_sorts:{name:"sorts", location:"query", cache_key:"ignore", placeholder:"_"}
+        }}}
+    });
+    function bundleFor(entrypoint) {
+        return bundles.get(path.relative(jsRoot, entrypoint).replace(/\\/g, '/'));
+    }
+    async function importBrowserModule(entrypoint) {
+        return import(pathToFileURL(bundleFor(entrypoint).file).href);
+    }
+    function applySorts(module, inputUrl, tokens, defaultTokens = []) {
+        const url = new URL(inputUrl);
+        module.applySortsTokensToUrl(url, tokens, defaultTokens);
+        return `${url.pathname}${url.search}${url.hash}`;
+    }
+
+    const navState = await importBrowserModule(navStateEntry);
+
+    const collectionSortSources = bundleFor(collectionSortEntry).sources;
+    for (const input of ['browse/collection-sort.js', 'browse/sort-policy.js', 'browse/collection-navigation.js']) {
+        assert.ok(collectionSortSources.includes(input), 'source map must identify actual entry and imported modules: '+input);
+    }
+    const pathRuntimeInputs = [
+        'browse/breadcrumb-column-sort.js',
+        'browse/breadcrumb-items.js',
+        'browse/breadcrumb-source.js',
+        'browse/path-render.js',
+    ];
+    assert.deepEqual(
+        collectionSortSources.filter(input => pathRuntimeInputs.includes(input)),
+        [],
+        'collection sort bundle must not include path navigation runtime modules'
+    );
+
+    assert.equal(
+        applySorts(
+            navState,
+            'https://example.test/zh/d/wsl/?sorts=date-desc,date-desc',
+            ['date-desc', 'date-desc'],
+            ['date-desc', 'date-desc']
+        ),
+        '/zh/d/wsl/',
+        'default lineage sorts should be omitted from URLs'
+    );
+
+    assert.equal(
+        applySorts(
+            navState,
+            'https://example.test/zh/p/example/?from=d&sorts=date-desc',
+            ['date-desc'],
+            ['date-desc']
+        ),
+        '/zh/p/example/?from=d',
+        'default entry lineage sorts should be omitted while preserving from'
+    );
+
+    assert.equal(
+        applySorts(
+            navState,
+            'https://example.test/zh/p/example/?from=tools/first-party',
+            ['', 'name-asc'],
+            ['date-desc', 'name-asc']
+        ),
+        '/zh/p/example/?from=tools/first-party',
+        'placeholder/default lineage sorts should be omitted when every layer is default'
+    );
+
+    assert.equal(
+        applySorts(
+            navState,
+            'https://example.test/zh/p/example/?from=d/wsl',
+            ['name-asc', 'date-desc'],
+            ['date-desc', 'date-desc']
+        ),
+        '/zh/p/example/?from=d/wsl&sorts=name-asc,date-desc',
+        'non-default ancestor sort should keep the full lineage for depth alignment'
+    );
+
+    assert.equal(
+        applySorts(
+            navState,
+            'https://example.test/zh/p/example/?from=d/wsl',
+            ['', 'name-asc'],
+            ['date-desc', 'date-desc']
+        ),
+        '/zh/p/example/?from=d/wsl&sorts=_,name-asc',
+        'non-default descendant sort should keep placeholder alignment'
+    );
+
+    console.log('Navigation state checks passed.');
+
+    globalThis.window = {
+        location: {
+            origin: 'https://example.test',
+            href: 'https://example.test/zh/p/example/?from=all',
+            pathname: '/zh/p/example/',
+            search: '',
+            hash: '',
+        },
+    };
+
+    window.location.search = '?from=d/wsl';
+    assert.deepEqual(
+        navState.buildLineageSortsTokensForPath('/d/wsl/', '/d/', 'date-asc'),
+        ['date-asc', ''],
+        'ancestor sort updates should target their own full-lineage slot'
+    );
+    assert.deepEqual(
+        navState.buildLineageSortsTokensForPath('/d/wsl/', '/d/wsl/', 'date-asc'),
+        ['', 'date-asc'],
+        'active sort updates should target the deepest full-lineage slot'
+    );
+
+    const breadcrumbSource = await importBrowserModule(breadcrumbSourceEntry);
+    const breadcrumbItems = await importBrowserModule(breadcrumbItemsEntry);
+    const breadcrumbPath = await importBrowserModule(breadcrumbEntry);
+    const collectionItems = await importBrowserModule(collectionItemsEntry);
+
+    const compositeRows = [
+        {
+            key: 'beta',
+            href: '/zh/p/beta/',
+            sort_group: '0',
+            sort_name: 'Beta',
+            sort_size: '2',
+        },
+        {
+            key: 'alpha',
+            href: '/zh/p/alpha/',
+            sort_group: '0',
+            sort_name: 'Alpha',
+            sort_size: '2',
+        },
+        {
+            key: 'gamma',
+            href: '/zh/p/gamma/',
+            sort_group: '0',
+            sort_name: 'Gamma',
+            sort_size: '10',
+        },
+    ];
+
+    function readCompositeOrder(token, rows = compositeRows) {
+        window.location.search = `?sort=${token}`;
+        window.location.href = `https://example.test/zh/all/${window.location.search}`;
+        return collectionItems.sortItemsRows(rows, 'all').rows.map((row) => row.key);
+    }
+
+    const compositeAsc = readCompositeOrder('size-asc');
+    const compositeDesc = readCompositeOrder('size-desc');
+    assert.deepEqual(
+        compositeAsc,
+        ['alpha', 'beta', 'gamma'],
+        'numeric primary ties should use the name field as the next ascending tuple component'
+    );
+    assert.deepEqual(
+        compositeDesc,
+        compositeAsc.slice().reverse(),
+        'descending sort should reverse the complete primary/name tuple'
+    );
+
+    const stableKeyRows = [
+        {
+            key: 'second',
+            href: '/zh/p/second/',
+            sort_group: '0',
+            sort_name: 'Same',
+            sort_size: '2',
+        },
+        {
+            key: 'first',
+            href: '/zh/p/first/',
+            sort_group: '0',
+            sort_name: 'Same',
+            sort_size: '2',
+        },
+    ];
+    assert.deepEqual(
+        readCompositeOrder('size-asc', stableKeyRows),
+        ['first', 'second'],
+        'stable hrefs should make otherwise equal rows deterministic'
+    );
+    assert.deepEqual(
+        readCompositeOrder('size-desc', stableKeyRows),
+        ['second', 'first'],
+        'stable hrefs should reverse with the rest of the descending tuple'
+    );
+
+    const preciseDateRows = [
+        {
+            key: 'same-day-later',
+            href: '/zh/p/same-day-later/',
+            sort_group: '0',
+            sort_name: 'Same day later',
+            sort_date: '20260726134731',
+        },
+        {
+            key: 'next-day',
+            href: '/zh/p/next-day/',
+            sort_group: '0',
+            sort_name: 'Next day',
+            sort_date: '20260727000000',
+        },
+        {
+            key: 'same-day-earlier',
+            href: '/zh/p/same-day-earlier/',
+            sort_group: '0',
+            sort_name: 'Same day earlier',
+            sort_date: '20260726120000',
+        },
+    ];
+    assert.deepEqual(
+        readCompositeOrder('date-asc', preciseDateRows),
+        ['same-day-earlier', 'same-day-later', 'next-day'],
+        '14-digit publication date keys should preserve second-level ordering within one display date'
+    );
+    assert.deepEqual(
+        readCompositeOrder('date-desc', preciseDateRows),
+        ['next-day', 'same-day-later', 'same-day-earlier'],
+        'descending publication date sorting should reverse the complete precise-date tuple'
+    );
+
+    window.location.href = 'https://example.test/zh/p/example/?from=all';
+    window.location.pathname = '/zh/p/example/';
+    window.location.search = '?from=all';
+
+    const allCollectionSource = {
+        logical_path: '/all/',
+        provider: 'collection',
+        sort_variant: 'all',
+        default_sort: 'date-desc',
+        label: 'All',
+        href: '/zh/all/',
+    };
+
+    assert.deepEqual(
+        breadcrumbItems.getCollectionSortState(allCollectionSource),
+        {
+            collectionSource: {
+                logicalPath: '/all/',
+                provider: 'collection',
+                sortVariant: 'all',
+                defaultSort: 'date-desc',
+                label: 'All',
+                href: '/zh/all/',
+            },
+            sortVariant: 'all',
+            sortToken: 'date-desc',
+            field: 'date',
+            order: 'desc',
+            nextToken: 'date-asc',
+            defaultSort: 'date-desc',
+            sortsTokens: ['date-desc'],
+            defaultSortsTokens: ['date-desc'],
+        },
+        'column header should expose the active field and direction without adding a field picker'
+    );
+
+    assert.equal(
+        breadcrumbItems.buildCollectionSortToggleHref(allCollectionSource),
+        '/zh/p/example/?from=all&sorts=date-asc',
+        'column header should toggle only its lineage sort direction'
+    );
+
+    window.location.href = 'https://example.test/zh/p/example/?from=all&sort=name-desc&sorts=name-desc';
+    window.location.search = '?from=all&sort=name-desc&sorts=name-desc';
+    assert.equal(
+        breadcrumbItems.buildCollectionSortToggleHref(allCollectionSource),
+        '/zh/p/example/?from=all&sort=name-desc&sorts=name-asc',
+        'column header should preserve the independent main sort while toggling its lineage slot'
+    );
+
+    window.location.href = 'https://example.test/zh/p/example/?from=d/wsl&sorts=name-asc,date-desc';
+    window.location.search = '?from=d/wsl&sorts=name-asc,date-desc';
+    assert.equal(
+        breadcrumbItems.buildCollectionSortToggleHref({
+            logical_path: '/d/wsl/',
+            provider: 'collection',
+            sort_variant: 'section',
+            default_sort: 'date-desc',
+            label: 'WSL',
+            href: '/zh/d/wsl/',
+        }),
+        '/zh/p/example/?from=d/wsl&sorts=name-asc,date-asc',
+        'nested column toggles should preserve ancestor sort state and replace only the current slot'
+    );
+
+    const directoryCollectionSource = {
+        logical_path: '/d/',
+        provider: 'collection',
+        sort_variant: 'section',
+        default_sort: 'date-desc',
+        label: 'Directory',
+        href: '/zh/d/',
+    };
+    const wslCollectionSource = {
+        logical_path: '/d/wsl/',
+        provider: 'collection',
+        sort_variant: 'section',
+        default_sort: 'date-desc',
+        label: 'WSL',
+        href: '/zh/d/wsl/',
+    };
+
+    window.location.href = 'https://example.test/zh/p/example/?from=d/wsl';
+    window.location.search = '?from=d/wsl';
+    assert.equal(
+        breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
+        '/zh/p/example/?from=d/wsl&sorts=date-asc,_',
+        'ancestor column toggles should preserve the full lineage and update only the ancestor slot'
+    );
+    assert.equal(
+        breadcrumbItems.buildCollectionSortToggleHref(wslCollectionSource),
+        '/zh/p/example/?from=d/wsl&sorts=_,date-asc',
+        'active column toggles should update only the deepest lineage slot'
+    );
+
+    window.location.href = 'https://example.test/zh/p/example/?from=d/wsl&sort=date-asc&sorts=_,date-asc';
+    window.location.search = '?from=d/wsl&sort=date-asc&sorts=_,date-asc';
+    assert.equal(
+        breadcrumbItems.getCollectionSortState(directoryCollectionSource)?.sortToken,
+        'date-desc',
+        'the active sort alias must not leak into an ancestor column'
+    );
+    assert.equal(
+        breadcrumbItems.getCollectionSortState(wslCollectionSource)?.sortToken,
+        'date-asc',
+        'the deepest column should read its own lineage slot'
+    );
+
+    window.location.href = 'https://example.test/zh/d/wsl/?from=d&sort=name-asc';
+    window.location.pathname = '/zh/d/wsl/';
+    window.location.search = '?from=d&sort=name-asc';
+    assert.equal(
+        breadcrumbItems.getCollectionSortState(directoryCollectionSource)?.sortToken,
+        'date-desc',
+        'a main-grid sort must not leak into a breadcrumb column without a lineage override'
+    );
+    assert.equal(
+        breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
+        '/zh/d/wsl/?from=d&sort=name-asc&sorts=date-asc',
+        'breadcrumb sorting should preserve the main-grid sort while updating only its lineage slot'
+    );
+
+    window.location.href = 'https://example.test/zh/d/wsl/?from=d&sort=name-asc&sorts=date-asc';
+    window.location.search = '?from=d&sort=name-asc&sorts=date-asc';
+    assert.equal(
+        breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
+        '/zh/d/wsl/?from=d&sort=name-asc',
+        'returning a breadcrumb column to its default should remove sorts without changing sort'
+    );
+
+    window.location.href = 'https://example.test/zh/tags/tooling/devtools/windows/wsl/';
+    window.location.pathname = '/zh/tags/tooling/devtools/windows/wsl/';
+    window.location.search = '';
+    assert.equal(
+        breadcrumbItems.buildCollectionSortToggleHref(
+            directoryCollectionSource,
+            window.location.href,
+            '/d/wsl/'
+        ),
+        '/zh/tags/tooling/devtools/windows/wsl/?from=d/wsl&sorts=date-asc,_',
+        'a visible-lineage override should preserve every column slot when no from state exists yet'
+    );
+
+    window.location.href = 'https://example.test/zh/p/example/?from=tags/windows';
+    window.location.search = '?from=tags/windows';
+
+    assert.deepEqual(
+        breadcrumbPath.buildCurrentPathItem(
+            {},
+            'Beta',
+            'Beta detailed article title',
+            '/zh/p/contract-beta/?from=tags/windows'
+        ),
+        {
+            text: 'Beta',
+            title: 'Beta detailed article title',
+            href: '/zh/p/contract-beta/?from=tags/windows',
+            current: true,
+        },
+        'entry preview should keep compact visible text and the full title as separate fields'
+    );
+
+    const previewColumnCurrentItem = breadcrumbPath.buildCurrentPathItem(
+        {
+            currentCollectionSource: {
+                logical_path: '/tags/windows/',
+                provider: 'collection',
+                sort_variant: 'tree',
+                default_sort: 'date-desc',
+            },
+            currentCollectionItems: collectionItems.decodeItemsPayload({
+                ds: 'date-desc',
+                f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
+                lp: '/tags/windows/',
+                p: 'taxonomy',
+                rv: [
+                    'contract-beta', 'page', '/zh/p/contract-beta/', 'Beta', '1', 'Beta', '20260624', '1341',
+                ],
+                sv: 'tree',
+                v: 1,
+            }),
+        },
+        'Beta',
+        'Beta detailed article title',
+        '/zh/p/contract-beta/?from=tags/windows'
+    );
+
+    assert.equal(
+        previewColumnCurrentItem?.column_items?.find((item) => item.current === true)?.title,
+        'Beta detailed article title',
+        'entry preview should attach the full title to the visible current column item'
+    );
+
+    const sourcePayload = JSON.stringify([{
+        logical_path: '/tags/windows/',
+        provider: 'collection',
+        root_item: {
+            href: '/zh/tags/',
+            text: 'Tags',
+            title: 'Article topics'
+        },
+        tail_items: [{
+            href: '/zh/tags/windows/',
+            text: 'Windows',
+            title: 'Windows development'
+        }],
+        current_collection_source: {
+            logical_path: '/tags/windows/',
+            provider: 'collection',
+            sort_variant: 'tree',
+            default_sort: 'date-desc',
+            label: 'Windows',
+            href: '/zh/tags/windows/'
+        },
+        current_collection_items: {
+            ds: 'date-desc',
+            f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
+            lp: '/tags/windows/',
+            p: 'taxonomy',
+            rv: [
+                'contract-alpha', 'page', '/zh/p/contract-alpha/', 'Alpha', '1', 'Alpha', '20260626', '6402',
+                'contract-beta', 'page', '/zh/p/contract-beta/', 'Beta', '1', 'Beta', '20260624', '1341',
+            ],
+            sv: 'tree',
+            v: 1
+        },
+        levels: [{
+            item: {
+                href: '/zh/tags/windows/',
+                text: 'Windows',
+                title: 'Windows development'
+            },
+            collection_source: {
+                logical_path: '/tags/',
+                provider: 'collection',
+                sort_variant: 'tree',
+                default_sort: 'date-desc',
+                label: 'Tags',
+                href: '/zh/tags/'
+            }
+        }]
+    }]);
+    const sources = breadcrumbSource.parseEntryBreadcrumbSources(sourcePayload);
+
+    assert.deepEqual(
+        {
+            rootText: sources[0]?.rootItem?.text,
+            rootTitle: sources[0]?.rootItem?.title,
+            termText: sources[0]?.tailItems?.[0]?.text,
+            termTitle: sources[0]?.tailItems?.[0]?.title,
+        },
+        {
+            rootText: 'Tags',
+            rootTitle: 'Article topics',
+            termText: 'Windows',
+            termTitle: 'Windows development',
+        },
+        'taxonomy root and term navigation should preserve compact text separately from full semantic titles'
+    );
+
+    assert.deepEqual(
+        breadcrumbSource.parseEntrySelection(sources, '/tags/windows/'),
+        {
+            source: sources[0],
+        },
+        'short from should select the collection source without requiring an entry key tail'
+    );
+
+    assert.equal(
+        breadcrumbSource.parseEntrySelection(sources, '/tags/windows/contract-beta/'),
+        null,
+        'from values with an entry key tail should not be treated as valid navigation state'
+    );
+
+    for (const invalidFrom of ['/tags/', '/tags/unknown/', '/tools/windows/', '']) {
+        assert.equal(
+            breadcrumbSource.parseEntrySelection(sources, invalidFrom),
+            null,
+            'root selection must use an exact published source, never infer a root from an unregistered prefix'
+        );
+    }
+
+    const collectionSourceIndex = breadcrumbSource.parseCollectionSourceIndex(sourcePayload);
+    assert.deepEqual(
+        breadcrumbSource.pickCollectionSourceByHref(
+            collectionSourceIndex,
+            'https://example.test/zh/tags/?sort=date-asc#menu'
+        ),
+        {
+            logicalPath: '/tags/',
+            provider: 'collection',
+            sortVariant: 'tree',
+            defaultSort: 'date-desc',
+            label: 'Tags',
+            href: '/zh/tags/',
+        },
+        'collection href lookup should resolve ancestor metadata from the current page source registry'
+    );
+    assert.deepEqual(
+        breadcrumbSource.pickCollectionSourceByHref(
+            collectionSourceIndex,
+            '/zh/tags/windows'
+        ),
+        {
+            logicalPath: '/tags/windows/',
+            provider: 'collection',
+            sortVariant: 'tree',
+            defaultSort: 'date-desc',
+            label: 'Windows',
+            href: '/zh/tags/windows/',
+        },
+        'collection href lookup should normalize trailing slashes and resolve the current collection'
+    );
+    assert.equal(
+        breadcrumbSource.pickCollectionSourceByHref(collectionSourceIndex, '/zh/unknown/'),
+        null,
+        'collection href lookup must not infer metadata for sources absent from the current page registry'
+    );
+
+    assert.equal(
+        breadcrumbItems.buildBreadcrumbRowHref(
+            {
+                key: 'contract-beta',
+                kind: 'page',
+                href: '/zh/p/contract-beta/',
+                text: '紧凑标题',
+            },
+            {
+                logicalPath: '/tags/windows/',
+                provider: 'collection',
+            },
+            {
+                sortToken: '',
+                defaultSort: 'date-desc',
+                sortsTokens: [],
+                defaultSortsTokens: ['date-desc', 'date-desc'],
+            }
+        ),
+        '/zh/p/contract-beta/?from=tags/windows',
+        'entry hrefs should write collection-only from values'
+    );
+
+    const selectedItem = breadcrumbItems.buildSelectedBreadcrumbItem(
+        sources[0],
+        '/zh/p/contract-beta/',
+        'Beta detailed article title'
+    );
+
+    assert.equal(
+        selectedItem?.text,
+        'Beta',
+        'short from should resolve the compact visible text from the selected row'
+    );
+    assert.equal(selectedItem?.current, true, 'selected row from pathname should be marked current');
+    assert.equal(
+        selectedItem?.title,
+        'Beta detailed article title',
+        'selected current item should preserve the full page title without expanding the compact collection payload'
+    );
+    assert.equal(
+        selectedItem?.column_items?.find((item) => item.text === 'Beta')?.current,
+        true,
+        'current breadcrumb column item should be highlighted when selected by pathname'
+    );
+    assert.equal(
+        selectedItem?.column_items?.find((item) => item.current === true)?.title,
+        'Beta detailed article title',
+        'settled entry state should attach the full title to the visible current column item'
+    );
+
+    console.log('Entry from checks passed.');
+} finally {
+    await fs.rm(tempRoot,{recursive:true,force:true});
+}

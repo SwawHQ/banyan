@@ -32,6 +32,7 @@
     "buildCommand" (printf "%v" (index $edgeone "buildCommand" | default ""))
     "outputDirectory" (printf "%v" (index $edgeone "outputDirectory" | default ""))
     "nodeVersion" (printf "%v" (index $edgeone "nodeVersion" | default ""))
+    "hugoVersion" (printf "%v" (index $edgeone "hugoVersion" | default hugo.Version))
     "redirects" $redirects
     "headers" $headers
 -}}

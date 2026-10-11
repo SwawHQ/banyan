@@ -13,6 +13,29 @@
   {{- $headerRoutes = $filtered -}}
 {{- end -}}
 {{- /* RelPermalink evaluation publishes all three generated files. */ -}}
+{{- $rulesURL := partial "system-delivery/prefetch/speculation/publish.html" . -}}
+{{- $csp := partial "system-delivery/deployment/csp-value.html" .inline_scripts -}}
+{{- $updatedRoutes := slice -}}
+{{- range $route := $headerRoutes -}}
+  {{- if eq (index $route "path") "/*" -}}
+    {{- $headers := merge (index $route "headers") (dict "Content-Security-Policy" $csp) -}}
+    {{- if $rulesURL -}}
+      {{- $headers = merge $headers (dict "Speculation-Rules" (printf "%q" $rulesURL)) -}}
+    {{- end -}}
+    {{- $route = merge $route (dict "headers" $headers) -}}
+  {{- end -}}
+  {{- $updatedRoutes = $updatedRoutes | append $route -}}
+{{- end -}}
+{{- $headerRoutes = $updatedRoutes -}}
+{{- if $rulesURL -}}
+  {{- $headerRoutes = $headerRoutes | append (dict
+    "path" (printf "%s/*" (path.Dir $rulesURL))
+    "headers" (dict
+      "Cache-Control" "public, max-age=31536000, immutable"
+      "Content-Type" "application/speculationrules+json"
+    )
+  ) -}}
+{{- end -}}
 {{- $headersBody := partial "system-delivery/deployment/cloudflare-headers.txt" (dict "routes" $headerRoutes) -}}
 {{- $headersResource := resources.FromString "_headers" $headersBody -}}
 {{- $publishHeaders := $headersResource.RelPermalink -}}

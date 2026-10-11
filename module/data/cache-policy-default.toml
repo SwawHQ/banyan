@@ -2,8 +2,8 @@
 # Site owners can override it by creating data/cache-policy.toml at the repo root.
 
 [edgeone]
-installCommand = "git submodule sync --recursive && git submodule update --init --recursive --force && bun install --frozen-lockfile"
-buildCommand = "bun run build"
+installCommand = ""
+buildCommand = "hugo --minify --gc --cleanDestinationDir"
 outputDirectory = "public"
 nodeVersion = "22.11.0"
 
@@ -122,8 +122,8 @@ path = "/*"
 
 [routes.headers]
 # Content-Security-Policy is intentionally not declared in this static policy.
-# It is generated post-build by themes/banyan/scripts/build/patch-csp.mjs because it
-# depends on the exact executable inline script bytes after Hugo minification.
+# Deployment templates generate it from the same js.Build output embedded in HTML.
+# The site must set minify.disableJS=true to preserve those bytes and their hashes.
 Referrer-Policy = "strict-origin-when-cross-origin"
 X-Content-Type-Options = "nosniff"
 X-Frame-Options = "SAMEORIGIN"

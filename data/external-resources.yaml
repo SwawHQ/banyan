@@ -1,5 +1,5 @@
 # External resources are refreshed only when explicitly running:
-#   npm run prepare:external
+#   swban sync/ext
 # Example consumer sites can declare remote files here when content needs a
 # checked-in local copy before Hugo builds.
 resources: []

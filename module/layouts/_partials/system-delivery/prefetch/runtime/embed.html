@@ -68,8 +68,8 @@
     {{- $runtimeBundle := $runtimeEntry | js.Build (dict
       "targetPath" (printf "js/prefetch.runtime.%s.bundle.js" $runtimeVariant)
       "params" $buildParams
+      "minify" (not $isServer)
     ) -}}
-    {{- if not $isServer }}{{ $runtimeBundle = $runtimeBundle | minify }}{{ end -}}
     {{- $runtimeBundle = $runtimeBundle | fingerprint -}}
 <script id="site-prefetch-data" type="application/json">{{ $configPayloadByEnv | jsonify | safeJS }}</script>
     {{- if and (eq $speculationRuntimeCoordination "preempt_runtime_when_supported") (gt (len $speculationRuntimeMeta) 0) -}}

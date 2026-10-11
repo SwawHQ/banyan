@@ -17,6 +17,10 @@ panicOnWarning = true
 [build]
 noJSConfigInAssets = true
 
+[minify]
+# js.Build owns JS minification; preserve inline bytes used by CSP hashes.
+disableJS = true
+
 [cascade.build]
 # Page bundle resources should be published only through explicit theme pipelines.
 publishResources = false

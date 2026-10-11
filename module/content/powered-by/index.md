@@ -19,6 +19,8 @@ powered_by:
   website: "Website"
   releases: "Releases"
   revision: "Theme commit"
+  theme_version: "Theme version"
+  local_version: "Local development"
   dirty: "Uncommitted changes"
   version: "Build version"
   build: "Site build"

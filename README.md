@@ -4,14 +4,44 @@ A minimalist, multi-language Hugo theme, with a runnable demo in the repository 
 
 ## Run the Demo
 
-Install Git, Go 1.18 or newer, and Node.js 18.17 or newer. Then:
+The CLI currently supports Windows x64. After cloning, prepare tools through
+the bundled Skill. It reuses compatible system tools or downloads portable
+versions. CLI setup accepts Bun or Node and needs no npm install:
 
-```bash
+```powershell
 git clone https://github.com/SwawHQ/banyan.git
 cd banyan
-npm install
-npm run dev
+.\.agents\skills\swaw-banyan\swban.cmd ensure
+.\.agents\skills\swaw-banyan\swban.cmd git.ensure
+.\.agents\skills\swaw-banyan\swban.cmd go.ensure
+.\.agents\skills\swaw-banyan\swban.cmd hugo.ensure
+.\.agents\skills\swaw-banyan\swban.cmd hugo server -D --disableFastRender --port 13241
 ```
+
+## Install in Your Own Site
+
+The Skill and Hugo Module use the same release version. The source is
+[`SKILL.md` metadata](.agents/skills/swaw-banyan/SKILL.md): Skill `0.1.0`
+pairs with Module `v0.1.0`. The examples describe the first release;
+the version is not available remotely until its tags are published.
+
+- **Skill first:** install `.agents/skills/swaw-banyan` from the repository's
+  `v0.1.0` tag using an installer that supports refs, or extract that directory
+  from the tagged repository archive. Place it in your site's
+  `.agents/skills/swaw-banyan/`. Ask your Agent to configure Banyan; it prepares
+  tools and installs the matching Module. Copying the Skill alone runs nothing.
+- **Module first:** inspect `hugo mod graph` in your site. Install the Skill
+  from the repository tag matching the resolved Module version. An existing
+  Module does not need an upgrade just to install its matching Skill.
+- **Both installed:** run `swban check/module` from the site root. If versions
+  differ, choose a Module upgrade or the matching Skill before version-specific
+  changes. An already requested upgrade does not need a second decision.
+
+Here and below, `swban` means the installed Skill's `swban.cmd`; invoke it by
+path from the target site. Follow the Skill's self-contained
+[installation guide](.agents/skills/swaw-banyan/references/install.md) for module
+initialization, pinned installation, root configuration and vendor updates.
+A clone of this repository uses its local Module and reports `development`.
 
 ## Setup (Crucial Step)
 
@@ -19,6 +49,14 @@ Due to Hugo's configuration merging rules, structural configurations like
 `[outputs]`, `[taxonomies]`, and `[permalinks]` **must** be defined in your
 site's root configuration file. Banyan provides its custom `[outputFormats]`,
 but the root site still needs `[outputs]` entries to enable them.
+
+Sites must also define this in their root `hugo.toml` so Hugo preserves the
+esbuild output used for inline CSP hashes:
+
+```toml
+[minify]
+disableJS = true
+```
 
 The repository's root `hugo.toml` is the starter configuration. The demo consumes
 `github.com/SwawHQ/banyan/module` through Hugo Modules; its root `go.mod` replaces
@@ -40,8 +78,7 @@ description = "Your site description."
 For localized copy, override `languages.<lang>.params.description`. Pages may
 define their own front matter `description`; otherwise SEO and social cards use
 the site description. `llms.txt` also uses the site description for its intro
-and home entry. The former `content/fragments/site-meta/` container is removed;
-move its values into site params and delete the old files.
+and home entry.
 
 Keep each language's social locale in `languages.<lang>.params.locale`; Banyan
 uses it for Open Graph locale tags.
@@ -74,33 +111,125 @@ The root demo is a consumer of the local theme module:
 
 ```text
 banyan/
-├── hugo.toml, go.mod, package.json   # Demo configuration and commands
+├── hugo.toml, go.mod                # Demo configuration
 ├── content/, data/                 # Demo content and site-owned data
 ├── module/                         # Published Hugo Module and defaults
 │   ├── go.mod, hugo.toml
 │   └── layouts/, assets/, content/, data/, i18n/, static/, archetypes/
-├── scripts/                        # Repository build and checking tools
+├── .agents/skills/swaw-banyan/       # Portable toolchain and tasks
+├── tests/                          # Theme and tooling source tests
 └── docs/
 ```
 
-Run production validation from the repository root:
+Run from the repository root. Below, `swban` means the bundled
+`.agents/skills/swaw-banyan/swban.cmd` entry:
 
-```bash
-npm run build
-npm run check:public:prod
-npm run check:agent:prod
-npm run check:browser:install
-npm run check:browser:public
+```powershell
+swban hugo --minify --gc --cleanDestinationDir
+swban hugo --minify --destination ./preview
+swban hugo server -D --disableFastRender --port 13241
 ```
 
-`npm run dev` starts Hugo at `http://localhost:13241/` and watches the local
+`swban hugo` passes arguments directly to Hugo. Use `--destination` to select
+an output directory and `hugo server` to preview the site. See
+[Skill usage](.agents/skills/swaw-banyan/SKILL.md) for setup and behavior.
+
+These checks and reports use the selected Bun or Node without npm dependencies:
+
+```powershell
+swban check/csp
+swban check/sri
+swban check/html/metadata
+swban check/html/styles
+swban check/llms
+swban report/size/html --top 5
+swban report/size/assets
+```
+
+Checks return a nonzero exit code when output violates a contract. Reports
+print measurements independently. Output commands default to `public/` and
+accept a different directory as their first argument.
+
+Content field checks and responsive images use the selected Hugo's resolved
+configuration. They need prepared Hugo, Go and Git but no site npm packages.
+Run `swban help` for all fine-grained check and report commands.
+
+Browser checks use the Skill's prepared browsers. Start with representative
+site coverage and select leaf checks for changed behavior:
+
+```text
+swban ensure/browser                        #Prepare Chromium
+swban check/browser/site <build>            #Check representative pages
+swban check/browser/site <build> --updates  #Check SW updates
+swban check/browser/site --help             #Show parameters
+```
+
+The [browser guide](.agents/skills/swaw-banyan/references/browser-site.md)
+lists coverage, page requirements, reports and WebKit selection. Use each task's
+`--help` for its parameters. Browser checks serve a completed build with its
+generated headers. Source tests and fault fixtures are described in
+[tests/README.md](tests/README.md). Consumer sites keep business expectations
+in their own tests.
+
+Sync declared external files and generated EdgeOne config through the Skill:
+
+```powershell
+swban sync/ext
+swban sync/ext wsl-distribution-info
+swban deploy/edgeone/sync ./preview
+```
+
+External resources are declared in site-owned `data/external-resources.yaml`.
+The first command syncs all declarations; the second selects one id. The demo
+starts with an empty list. These tasks include their dependencies and require
+no site npm install. `deploy/edgeone/sync` copies generated config to the site root;
+its source directory defaults to `public`. It does not build or upload a site.
+Build with `swban hugo` and run the needed checks explicitly. Hosted builds use
+native Hugo and the platform's tools; they do not install the Skill. Platform
+publication will consume completed output. Upload commands are not implemented;
+see the Skill's [EdgeOne notes](.agents/skills/swaw-banyan/references/edgeone.md).
+
+The preview command starts Hugo at `http://127.0.0.1:13241/` and watches the local
 module. Template and asset edits in `module/` rebuild the running demo. Production
-builds are minified and receive CSP post-processing; development builds are not
-minified. Semantic releases of the subdirectory module use tags such as
+builds are minified and Hugo generates CSP headers directly; development builds
+are not minified. Sites must keep `[minify] disableJS = true` in their root
+`hugo.toml`: esbuild owns JS minification, and subsequent HTML minification must
+preserve the inline bytes used for CSP hashes. Semantic releases of the subdirectory module use tags such as
 `module/v0.1.0`.
 
 The demo deliberately avoids product, legal, or brand-specific content. Keep
 site customization in the root and reusable theme behavior in `module/`.
+
+## Publish the Skill and Theme Module
+
+Set `SKILL.md` metadata to the release version and commit the release changes.
+Publish both tags on that commit; the example uses the current `HEAD`:
+
+```powershell
+swban git tag v0.1.0 HEAD
+swban git tag module/v0.1.0 HEAD
+swban git push --atomic --no-follow-tags origin tag v0.1.0 tag module/v0.1.0
+```
+
+Create one GitHub Release on `v0.1.0`. If attaching a Skill ZIP, include the
+Skill directory and its license; exclude `.tools`, `node_modules` and caches.
+The `module/v0.1.0` tag lets Go resolve the `module/` subdirectory separately.
+
+Powered by reads the effective module version through
+[`hugo.Deps`](https://gohugo.io/functions/hugo/deps/). Local replacements display
+"Local development"; module-scoped dirty status and Git revisions are diagnostics.
+The site's timestamp-based build/PWA version remains separate.
+
+GitHub CLI is optional. Prepare it when creating a GitHub Release:
+
+```powershell
+swban gh.ensure
+swban gh auth login --web
+swban gh release create --help
+```
+
+Use native `gh release create <tag> <asset.zip> --verify-tag --generate-notes`
+after pushing the release tag. `--verify-tag` prevents an implicit new tag.
 
 ## Features
 
@@ -168,9 +297,7 @@ their semantics, and the boundary between page slots and site configuration.
 The current CSP and browser-security regression path is documented in:
 
 - [`docs/security-csp.md`](docs/security-csp.md)
-- [`docs/security-csp-enforce-checklist.md`](docs/security-csp-enforce-checklist.md)
 - [`docs/browser-regression.md`](docs/browser-regression.md)
-- [`docs/browser-workflows.md`](docs/browser-workflows.md)
 
 The current dual-stack prefetch model is documented in:
 
@@ -254,14 +381,20 @@ article_mode = "leaf_paths"
 Notes:
 
 - Hugo's `[taxonomies]` declaration in the site root is still required to create the taxonomy itself.
-- Banyan no longer reads taxonomy labels or rendering config from theme `i18n` or `params.banyan.taxonomies.<plural>`.
 - Every taxonomy root and term bundle must provide a non-empty `title`. It is the full semantic title used by metadata, schema, and tooltips.
 - `linkTitle` is optional compact text for navigation, breadcrumbs, lists, and article taxonomy labels; it falls back to `title`.
-- `[banyan_taxonomy].label` and `[banyan_taxonomy].home_label` are removed and are not read.
 - Required `[banyan_taxonomy]` keys are: `mode`, `article_weight`, `normalize`, and `article_mode`.
 - Attach taxonomy metadata and resources with `content/<plural>/_index.<lang>.md`; terms used by content require matching bundles such as `content/<plural>/<term>/_index.<lang>.md`.
 - Follow the current bundle contract in [docs/taxonomies.md](docs/taxonomies.md); module content participates in the live build and provides overridable defaults.
 - See [docs/taxonomies.md](docs/taxonomies.md) for hierarchical tags and multi-path behavior.
 
 ## License
-MIT
+
+Banyan's original code and documentation are licensed under [MIT](LICENSE).
+Copyright (c) 2026 [WY Swaw LLC](https://swaw.com)
+([SwawHQ on GitHub](https://github.com/SwawHQ)).
+
+The [Hugo module](module/LICENSE) and
+[swaw-banyan Skill](.agents/skills/swaw-banyan/LICENSE) include the same license
+for independent distribution. Third-party code and resources retain their own
+licenses and copyright notices.

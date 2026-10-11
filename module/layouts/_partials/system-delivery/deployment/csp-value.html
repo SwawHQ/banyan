@@ -1,0 +1,22 @@
+{{- /* Hash the exact bodies embedded by baseof, independent of render order.
+      The site must set minify.disableJS=true so HTML minification keeps them. */ -}}
+{{- $hashes := slice -}}
+{{- range $key, $body := . -}}
+  {{- $resource := resources.FromString (printf "__csp/%s.js" $key) $body | fingerprint "sha256" -}}
+  {{- $hashes = $hashes | append (printf "'%s'" $resource.Data.Integrity) -}}
+{{- end -}}
+{{- $directives := slice
+  "default-src 'self'"
+  (printf "script-src 'self' 'report-sample' %s" (delimit (sort (uniq $hashes)) " "))
+  "style-src 'self' 'report-sample'"
+  "img-src 'self' data:"
+  "connect-src 'self'"
+  "font-src 'self'"
+  "manifest-src 'self'"
+  "worker-src 'self'"
+  "object-src 'none'"
+  "base-uri 'self'"
+  "frame-ancestors 'self'"
+  "form-action 'self'"
+-}}
+{{- return (delimit $directives "; ") -}}

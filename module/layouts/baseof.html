@@ -43,6 +43,7 @@
       "redirects" $siteRedirectRules
       "edgeone" $cachePolicyEdgeone
       "web_app_manifest_mode" $webAppManifestMode
+      "inline_scripts" $inlineScripts
     ) -}}
 {{- end -}}
 <!DOCTYPE html>
@@ -112,13 +113,11 @@
     {{- hugo.Generator -}}
     {{- partial "system-metadata/seo/head.html" . -}}
     {{- /* 主站通用前端逻辑，defer 下载与执行，不阻塞 HTML 解析。 */ -}}
-    {{- $js := resources.Get "js/main.js" | js.Build (dict "params" $jsBuildParams) -}}
-    {{- if not hugo.IsServer -}}{{- $js = $js | minify -}}{{- end -}}
+    {{- $js := resources.Get "js/main.js" | js.Build (dict "params" $jsBuildParams "minify" (not hugo.IsServer)) -}}
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
     {{- if $hasBreadcrumbCapability -}}
-        {{- $breadcrumbRuntime := resources.Get "js/browse/path-entry.js" | js.Build (dict "params" $jsBuildParams) -}}
-        {{- if not hugo.IsServer -}}{{- $breadcrumbRuntime = $breadcrumbRuntime | minify -}}{{- end -}}
+        {{- $breadcrumbRuntime := resources.Get "js/browse/path-entry.js" | js.Build (dict "params" $jsBuildParams "minify" (not hugo.IsServer)) -}}
         {{- $breadcrumbRuntime = $breadcrumbRuntime | fingerprint -}}
     <script src="{{ $breadcrumbRuntime.RelPermalink }}" integrity="{{ $breadcrumbRuntime.Data.Integrity }}" defer></script>
     {{- end -}}
@@ -184,12 +183,11 @@
       "speculation_config" $speculationRulesConfig
       "runtime_env_config_map" $prefetchRuntimeEnvConfig
     ) -}}
-    {{- partial "system-delivery/prefetch/speculation/publish-manifest.html" (dict
-      "ctx" .
-      "mode" $speculationRulesMode
-      "speculation_config" $speculationRulesConfig
-      "overlap_warnings" (index $prefetchCoordination "overlap_warnings")
-    ) -}}
+    {{- if .IsHome -}}
+      {{- range index $prefetchCoordination "overlap_warnings" -}}
+        {{- warnf "Speculation overlap warning for language %s: %s." $.Site.Language.Lang . -}}
+      {{- end -}}
+    {{- end -}}
     {{- if eq $prefetchRuntimeMode "enable" -}}
       {{- partial "system-delivery/prefetch/runtime/embed.html" (dict
         "env_config_map" $prefetchRuntimeEnvConfig

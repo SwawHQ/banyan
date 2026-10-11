@@ -44,20 +44,21 @@ if (toc && content) {
         if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         const entry = entries.find(entry => entry.link === event.target.closest('a'));
         // Keep native hash history, modified clicks and the no-script links.
-        if (entry) requestAnimationFrame(() => reveal(entry));
+        if (entry) requestAnimationFrame(openChapter);
     });
 
     function openChapter() {
+        // Read the current fragment when the callback runs; newer navigation wins.
         let id;
         try { id = decodeURIComponent(location.hash.slice(1)); } catch { /* Invalid fragments have no target. */ }
         const entry = entries.find(entry => entry.heading.id === id);
         // Chapter URLs reopen the chapter; reading progress is not stored.
-        // Native history restoration completes after pageshow dispatch.
-        if (entry) requestAnimationFrame(() => reveal(entry));
+        if (entry) reveal(entry);
         schedule();
     }
-    window.addEventListener('pageshow', openChapter);
-    window.addEventListener('hashchange', openChapter);
+    // Native history restoration completes after pageshow dispatch.
+    window.addEventListener('pageshow', () => requestAnimationFrame(openChapter));
+    window.addEventListener('hashchange', () => requestAnimationFrame(openChapter));
     content.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
     new ResizeObserver(schedule).observe(content.querySelector('.article'));
