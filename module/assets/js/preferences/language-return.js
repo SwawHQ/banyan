@@ -15,7 +15,7 @@ export function initLanguageReturn() {
             const rawLabel = sessionStorage.getItem(RETURN_LANGUAGE_LABEL_KEY);
             sessionStorage.removeItem(RETURN_LANGUAGE_LABEL_KEY);
             const label = JSON.parse(rawLabel);
-            // Older settings pages only write the code; an unrelated label may remain.
+            // Display metadata is optional and must match the selected code.
             if (label?.code === code) name = label.name;
         } catch { /* Optional display text must not block a language return. */ }
         // A settings visit may translate a restored page, never an explicit navigation.

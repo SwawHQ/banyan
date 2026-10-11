@@ -9,6 +9,23 @@ import {fixtureEnvironment} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
 import {command} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/disable/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
+import {isManagedCacheKey,shouldDeleteVersionedCache} from '../module/assets/js/pwa/cache-names.js';
+
+test('cache cleanup keeps current and unrelated caches',()=>{
+  for(const key of ['nav-html-old','asset-versioned-old']) {
+    assert.equal(isManagedCacheKey(key),true);
+    assert.equal(shouldDeleteVersionedCache(key,'nav-html-current','asset-versioned-current'),true);
+  }
+  for(const key of ['nav-html-current','asset-versioned-current','asset-fingerprint']) {
+    assert.equal(isManagedCacheKey(key),true);
+    assert.equal(shouldDeleteVersionedCache(key,'nav-html-current','asset-versioned-current'),false);
+  }
+  for(const key of ['other-cache','asset-static-retired']) {
+    assert.equal(isManagedCacheKey(key),false);
+    assert.equal(shouldDeleteVersionedCache(key,'nav-html-current','asset-versioned-current'),false);
+  }
+});
+
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan');
 const parent=fs.realpathSync(os.tmpdir()),page='/cleanup-start/';
 let work,skill,enabled,disabled,off;

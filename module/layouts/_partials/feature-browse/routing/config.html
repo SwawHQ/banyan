@@ -1,6 +1,6 @@
 {{- $themeConfig := index hugo.Data "navigation-state-default" | default dict -}}
 {{- if eq (len $themeConfig) 0 -}}
-  {{- errorf "Build failed: missing theme default navigation state data %q." "themes/<theme>/data/navigation-state-default.toml" -}}
+  {{- errorf "Build failed: missing theme default navigation state data %q." "data/navigation-state-default.toml" -}}
 {{- end -}}
 {{- $siteConfig := index hugo.Data "navigation-state" | default dict -}}
 {{- $themeFields := index $themeConfig "fields" | default dict -}}
@@ -39,24 +39,9 @@
   {{- if and (ne $fieldCacheKey "ignore") (ne $fieldCacheKey "keep") -}}
     {{- errorf "Build failed: navigation-state field %q uses unsupported cache_key=%q. Supported values: ignore, keep." $fieldKey $fieldCacheKey -}}
   {{- end -}}
-  {{- $fieldAliases := slice -}}
-  {{- with index $mergedField "aliases" -}}
-    {{- range . -}}
-      {{- $alias := lower (trim (printf "%v" .) " \r\n\t") -}}
-      {{- if and $alias (ne $alias $fieldName) (not (in $fieldAliases $alias)) -}}
-        {{- $fieldAliases = $fieldAliases | append $alias -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
   {{- $fieldKeysForLookup := slice $fieldName -}}
-  {{- range $fieldAliases -}}
-    {{- if not (in $fieldKeysForLookup .) -}}
-      {{- $fieldKeysForLookup = $fieldKeysForLookup | append . -}}
-    {{- end -}}
-  {{- end -}}
   {{- $normalizedField := dict
     "name" $fieldName
-    "aliases" $fieldAliases
     "keys" $fieldKeysForLookup
     "location" $fieldLocation
     "cache_key" $fieldCacheKey

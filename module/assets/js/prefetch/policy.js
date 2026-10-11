@@ -1,4 +1,4 @@
-export const PREFETCH_SLOT_ORDER = Object.freeze(['nav', 'crumb', 'sort', 'desc', 'post']);
+const PREFETCH_SLOT_ORDER = Object.freeze(['nav', 'crumb', 'sort', 'desc', 'post']);
 
 export function buildRuntimeEnvironmentKey(linkPrefetchSupported, serviceWorkerSupported) {
     return `${linkPrefetchSupported ? 'T' : 'F'}${serviceWorkerSupported ? 'T' : 'F'}`;

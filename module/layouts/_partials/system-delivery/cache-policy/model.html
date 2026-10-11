@@ -4,7 +4,7 @@
 {{- end -}}
 {{- $themePolicy := index hugo.Data "cache-policy-default" | default dict -}}
 {{- if eq (len $themePolicy) 0 -}}
-  {{- errorf "Build failed: missing theme default cache policy data %q." "themes/<theme>/data/cache-policy-default.toml" -}}
+  {{- errorf "Build failed: missing theme default cache policy data %q." "data/cache-policy-default.toml" -}}
 {{- end -}}
 {{- $sitePolicy := index hugo.Data "cache-policy" | default dict -}}
 {{- $routes := index $themePolicy "routes" | default slice -}}

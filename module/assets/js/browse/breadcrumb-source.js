@@ -51,14 +51,14 @@ export function parseEntryBreadcrumbSources(rawValue) {
                     return null;
                 }
 
-                const logicalPath = normalizeFromPath(source.logical_path || source.logicalPath || '');
-                const rootItem = normalizeLinkItem(source.root_item || source.rootItem);
+                const logicalPath = normalizeFromPath(source.logical_path || '');
+                const rootItem = normalizeLinkItem(source.root_item);
                 if (!logicalPath || !rootItem) {
                     return null;
                 }
 
-                const tailItemsRaw = Array.isArray(source.tail_items || source.tailItems)
-                    ? (source.tail_items || source.tailItems)
+                const tailItemsRaw = Array.isArray(source.tail_items)
+                    ? source.tail_items
                     : [];
                 const levelsRaw = Array.isArray(source.levels) ? source.levels : [];
 
@@ -80,14 +80,14 @@ export function parseEntryBreadcrumbSources(rawValue) {
 
                             const normalized = { item };
                             const collectionSource = normalizeCollectionSource(
-                                level.collection_source || level.collectionSource
+                                level.collection_source
                             );
                             if (collectionSource) {
                                 normalized.collectionSource = collectionSource;
                             }
 
                             const collectionItems = decodeItemsPayload(
-                                level.collection_items || level.collectionItems
+                                level.collection_items
                             );
                             if (collectionItems) {
                                 normalized.collectionItems = collectionItems;
@@ -97,10 +97,10 @@ export function parseEntryBreadcrumbSources(rawValue) {
                         })
                         .filter(Boolean),
                     currentCollectionSource: normalizeCollectionSource(
-                        source.current_collection_source || source.currentCollectionSource
+                        source.current_collection_source
                     ),
                     currentCollectionItems: decodeItemsPayload(
-                        source.current_collection_items || source.currentCollectionItems
+                        source.current_collection_items
                     ),
                 };
             })

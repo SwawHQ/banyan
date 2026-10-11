@@ -9,10 +9,8 @@ import {
     readSortTokenForPath,
 } from './navigation-state.js';
 
-const ITEMS_PAYLOAD_PROVIDERS = new Set(['collection']);
-
 export function supportsItemsPayloadProvider(provider) {
-    return ITEMS_PAYLOAD_PROVIDERS.has(`${provider ?? ''}`.trim().toLowerCase());
+    return `${provider ?? ''}`.trim().toLowerCase() === 'collection';
 }
 
 function toRowSortKey(dataKey) {

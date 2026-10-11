@@ -14,7 +14,7 @@ picker?.addEventListener('click', (event) => {
     const name = link.dataset.languageName;
     if (link.dataset.hasTrans === 'false' && !window.confirm(languageMessage(picker.dataset.languageMissing, name))) return;
     try {
-        // Cached pages read the code directly; keep its format stable across builds.
+        // Store the choice first; an optional display label may fail separately.
         sessionStorage.setItem(RETURN_LANGUAGE_KEY, code);
         sessionStorage.setItem(RETURN_LANGUAGE_LABEL_KEY, JSON.stringify({ code, name }));
     } catch { /* Static language links also work without storage. */ }

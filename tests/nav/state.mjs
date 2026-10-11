@@ -140,6 +140,9 @@ try {
     const breadcrumbItems = await importBrowserModule(breadcrumbItemsEntry);
     const breadcrumbPath = await importBrowserModule(breadcrumbEntry);
     const collectionItems = await importBrowserModule(collectionItemsEntry);
+    assert.deepEqual(breadcrumbSource.parseEntryBreadcrumbSources(JSON.stringify([{
+        logicalPath: '/tags/windows/', rootItem: {text: 'Tags', href: '/tags/'}
+    }])), [], 'browser payloads must use the Hugo field names');
 
     const compositeRows = [
         {

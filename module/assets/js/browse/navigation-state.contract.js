@@ -21,23 +21,11 @@ function normalizeField(rawField, semanticKey) {
         failContract(`field "${semanticKey}" must define a non-empty name`);
     }
 
-    const aliasesSource = Array.isArray(source.aliases) ? source.aliases : [];
-    const aliases = [];
-
-    if (Array.isArray(aliasesSource)) {
-        aliasesSource.forEach((aliasValue) => {
-            const alias = normalizeString(aliasValue);
-            if (!alias || alias === name || aliases.includes(alias)) return;
-            aliases.push(alias);
-        });
-    }
-
-    const keys = [name, ...aliases].filter(Boolean);
+    const keys = [name];
     const location = normalizeString(source.location) || 'query';
     const cacheKey = normalizeString(source.cache_key) || 'keep';
     const normalized = {
         name,
-        aliases,
         keys,
         location,
         cache_key: cacheKey

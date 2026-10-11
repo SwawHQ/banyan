@@ -2,8 +2,8 @@ import {
     buildCollectionPageHref,
     buildCollectionSortToggleHref,
     getCollectionSortState,
-    normalizeBreadcrumbCollectionSource,
 } from './breadcrumb-items.js';
+import { normalizeCollectionSource } from './collection-source.js';
 import { normalizeIcon } from './icon-value.js';
 import { initAutoScrollbar } from './auto-scrollbar.js';
 
@@ -85,7 +85,7 @@ function readCollectionSortCopy() {
 }
 
 function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
-    const collectionSource = normalizeBreadcrumbCollectionSource(source);
+    const collectionSource = normalizeCollectionSource(source);
     if (!collectionSource?.label || !collectionSource?.href) {
         return null;
     }

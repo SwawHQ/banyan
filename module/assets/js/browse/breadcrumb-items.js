@@ -25,12 +25,6 @@ import {
     readCurrentFromPath,
 } from './navigation-state.js';
 
-export const normalizeBreadcrumbCollectionSource = normalizeCollectionSource;
-
-export function getSourceSortVariant(source) {
-    return source?.sortVariant || source?.sort_variant || source?.current_collection_source?.sort_variant || '';
-}
-
 function toRelativeHref(url) {
     if (!(url instanceof URL)) {
         return '';
@@ -64,12 +58,12 @@ function readRequestedSortState(source, sortVariant, defaultSort = '') {
 }
 
 export function getCollectionSortState(source) {
-    const collectionSource = normalizeBreadcrumbCollectionSource(source);
+    const collectionSource = normalizeCollectionSource(source);
     if (!collectionSource?.logicalPath) {
         return null;
     }
 
-    const sortVariant = collectionSource.sortVariant || getSourceSortVariant(collectionSource);
+    const sortVariant = collectionSource.sortVariant || '';
     const defaultSort = collectionSource.defaultSort || SORT_VARIANTS[sortVariant]?.defaultToken || '';
     const requestedState = readRequestedSortState(collectionSource, sortVariant, defaultSort);
     const sortToken = getNormalizedSortToken(
@@ -171,12 +165,12 @@ export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
     }
 }
 
-export function buildPathColumnItemsFromDecodedRows(decoded, collectionSource, { selectedKey = '', selectedPathname = '' } = {}) {
+function buildPathColumnItemsFromDecodedRows(decoded, collectionSource, { selectedKey = '', selectedPathname = '' } = {}) {
     if (!decoded || !collectionSource?.logicalPath) {
         return [];
     }
 
-    const sortVariant = decoded.sortVariant || collectionSource.sortVariant || getSourceSortVariant(collectionSource);
+    const sortVariant = decoded.sortVariant || collectionSource.sortVariant || '';
     const defaultSort = decoded.defaultSort || collectionSource.defaultSort || SORT_VARIANTS[sortVariant]?.defaultToken || '';
     const sortState = readRequestedSortState(collectionSource, sortVariant, defaultSort);
     const { rows } = sortItemsRows(
@@ -260,8 +254,8 @@ export function buildSelectedBreadcrumbItem(source, selectedPathname = '', selec
         return null;
     }
 
-    const collectionSource = normalizeBreadcrumbCollectionSource(source?.currentCollectionSource)
-        || normalizeBreadcrumbCollectionSource(source);
+    const collectionSource = normalizeCollectionSource(source?.currentCollectionSource)
+        || normalizeCollectionSource(source);
     if (!collectionSource || !supportsItemsPayloadProvider(collectionSource.provider)) {
         return null;
     }

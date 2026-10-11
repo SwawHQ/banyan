@@ -68,8 +68,8 @@ function countTrailItems(source) {
         }).filter(Boolean));
     }
 
-    var tailItems = Array.isArray(source && (source.tail_items || source.tailItems))
-        ? (source.tail_items || source.tailItems)
+    var tailItems = Array.isArray(source && source.tail_items)
+        ? source.tail_items
         : [];
 
     return countVisibleItems(tailItems);
@@ -87,7 +87,7 @@ function findSource(sources, logicalPath) {
             continue;
         }
 
-        var sourcePath = normalizePath(source.logical_path || source.logicalPath || "");
+        var sourcePath = normalizePath(source.logical_path || "");
         if (sourcePath === normalizedPath) {
             return source;
         }

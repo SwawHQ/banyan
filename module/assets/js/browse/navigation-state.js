@@ -118,34 +118,13 @@ export function normalizePathname(pathname) {
     return normalized === '//' ? '/' : normalized;
 }
 
-function normalizeCollectionLogicalPathFromPathname(pathname, siteRoot = '/') {
-    const normalizedPath = normalizePathname(pathname);
-    const normalizedSiteRoot = normalizePathname(siteRoot);
-    if (
-        normalizedSiteRoot !== '/'
-        && normalizedPath.startsWith(normalizedSiteRoot)
-    ) {
-        return normalizeFromPath(normalizedPath.slice(normalizedSiteRoot.length));
-    }
-
-    return normalizeFromPath(normalizedPath);
-}
-
-export function normalizeCollectionLogicalPathFromUrl(url, siteRoot = '/') {
-    if (!(url instanceof URL)) {
-        return '';
-    }
-
-    return normalizeCollectionLogicalPathFromPathname(url.pathname, siteRoot);
-}
-
 function readCurrentSortsTokens() {
     const rawValue = safeDecode(readSearchParam(LINEAGE_SORTS_FIELD));
     if (!rawValue.trim()) {
         return [];
     }
 
-    return normalizeSortSlots(rawValue.split(/[|,]/));
+    return normalizeSortSlots(rawValue.split(','));
 }
 
 export function readEffectiveSortsTokens(logicalPath) {
