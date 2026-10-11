@@ -1,6 +1,6 @@
 name = "banyan"
 license = "MIT"
-licenselink = "https://github.com/SwawHQ/banyan/blob/master/LICENSE"
+licenselink = "https://github.com/SwawHQ/banyan/blob/main/module/LICENSE"
 description = "A Explorer-like Hugo theme."
 homepage = "https://github.com/SwawHQ/banyan/"
 tags = ["blog", "minimalist"]
