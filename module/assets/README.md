@@ -33,7 +33,7 @@ that palette. The monochrome palette covers UI, syntax, and homepage diagram
 colors; it does not recolor article images or image-based brand assets.
 
 The monochrome palette uses `#FBFBFB` / `#000000` page backgrounds and softened
-`#363636` / `#C6C6C6` body text. Borders and surface fills stay subdued so dense
+`#262626` / `#C6C6C6` body text. Borders and surface fills stay subdued so dense
 articles have fewer competing edges; table text retains the body foreground.
 Syntax colors use a narrow grayscale range, with comments and line numbers
 checked on both ordinary and highlighted code lines. Contrast checks protect
@@ -41,7 +41,7 @@ legibility; they do not measure reading comfort.
 
 Both built-in files implement the same scoped role declarations. When adding a
 role, update both files and any site-owned copies. Run
-`node themes/banyan/scripts/checks/check-palettes.mjs` from the consuming site to
+`swban node tests/palette/build.mjs` from the consuming site to
 check configuration handling, both palettes, and native asset overrides.
 
 ### Color roles

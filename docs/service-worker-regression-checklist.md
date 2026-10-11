@@ -43,33 +43,30 @@
 
 ## 自动化场景
 
-准备两份均包含本次实现、构建版本不同的根内容生产产物，通过以下变量明确选择：
-
-- `BANYAN_BROWSER_BUILD_DIR`
-- `BANYAN_BROWSER_UPGRADE_FROM_DIR`
-- `BANYAN_BROWSER_UPGRADE_TO_DIR`
-
-运行 `node themes/banyan/scripts/browser-regression/browser.mjs`，可用 `BANYAN_BROWSER_ONLY` 选择：
+对已启用 SW 的生产构建运行 `swban check/browser/site <build> --updates`。
+脚本自动发现更新面板及相互连接的根入口，临时构建不同版本；只改变版本配置，
+不修改站点内容。其他位置的源码通过 `--site` 指定。缺少合适页面或配置时明确失败。
+也可以直接调用下面的独立任务，按其 `--help` 指定实际路径及前后两份构建：
 
 | 场景 | 覆盖内容 |
 | --- | --- |
-| `sw-home-register` | 首次导航及引用资源预热、离线刷新、sw.js 不缓存及响应头 |
-| `sw-update-entry-home`、`sw-update-entry-collection` | ready 后跳转升级、已缓存目标使用新版、旧 navigation 缓存删除、其他标签页及草稿保留、无延迟重载 |
-| `sw-update-native-navigation` | 刷新、历史、锚点及修饰键打开新标签页不主动激活 |
-| `sw-update-navigation-timeout`、`sw-update-navigation-throw` | 激活超时/异常仍正常跳转，registration 和缓存不被清理 |
-| `sw-update-navigation-cancel` | 等待激活期间转向锚点，原跳转不得在稍后覆盖新意图 |
-| `sw-update-check` | 手动检查、离线重试、重复检查不重载、跳转应用新版及路径列 |
-| `sw-update-hidden-control-stays-quiet` | 隐藏控件不触发弹窗或自动激活 |
-| `sw-update-language-page-static` | 等待更新时语言选项仍可操作 |
-| `canvas-source-navigation`、`canvas-history-scroll-restoration` | 来源、排序和原生滚动/历史行为 |
+| `check/browser/pwa/offline` | 首次导航及引用资源预热、离线刷新、sw.js 不缓存及响应头 |
+| `check/browser/pwa/activate` | ready 后跳转升级、已缓存目标使用新版、旧 navigation 缓存删除、其他标签页及草稿保留、无延迟重载 |
+| `check/browser/pwa/native` | 刷新、历史、锚点及修饰键打开新标签页不主动激活 |
+| `check/browser/pwa/timeout`、`pwa/error` | 激活超时/异常仍正常跳转，registration 和缓存不被清理 |
+| `check/browser/pwa/cancel` | 等待激活期间转向锚点，原跳转不得在稍后覆盖新意图 |
+| `check/browser/pwa/check` | 手动检查、离线重试、隐藏控件静默、重复检查不重载、跳转应用新版 |
+| `check/browser/pwa/language` | 等待更新时语言选项仍可操作；按需单独运行 |
+| `check/browser/canvas/open`、`canvas/history` | 来源、排序和原生滚动/历史行为；按需单独运行 |
 
-`browser-security.mjs` 验证 CSP、响应头与 navigation preload。
+`check/browser/csp` 验证浏览器 CSP；`pwa/offline` 验证 SW 响应头和 navigation preload。
 
 ## disable 模式
 
 停用是独立功能。`worker-disable.js` 主动激活、清理受管缓存，`manager-disable.js` 注销根作用域注册；无关缓存必须保留。
 
-使用独立的 enable/disable 构建对运行 `browser-sw-disable.mjs`。正常更新失败不调用这套停用流程。
+使用独立构建对运行 `swban check/browser/pwa/disable <enabled> --next <disabled>`。
+正常更新失败不调用这套停用流程，site 批量入口也不会额外生成停用版本。
 
 ## 历史验证（2026-09-15）
 

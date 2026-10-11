@@ -6,11 +6,9 @@
 
 第一列采用显式加入：只有根页面顶层声明布尔值 `root_nav: true` 才显示；未声明、`false` 或字符串 `"true"` 均不显示。首页自身也遵守该规则。此字段只对首页及其直接子页／分类根生效，不能把深层文章提升成根入口；不要放入 `cascade`。项目覆盖主题页面时，每种语言各自保留该声明。
 
-Swaw 当前前四项依次为项目 `content/all/index*.md` 的“发现 - 全部”（`weight: 10`）、`content/tags/_index*.md` 的“发现 - 分类”（`20`）、`content/all-tools/_index*.md` 的“工具 - 全部”（`30`）、`content/tools/_index*.md` 的“工具 - 分类”（`40`）。四个入口的站点文案由根目录页面定义，覆盖主题默认页；直接使用 `title`，不重复声明相同的 `linkTitle`。英文对应 Discover - All、Discover - Categories、Tools - All、Tools - Categories，繁体对应發現 - 全部、發現 - 分類、工具 - 全部、工具 - 分類。
+入口名称和顺序由站点各语言页面的 `title`／`linkTitle` 与 `weight` 决定。
 
-“发现”是 Swaw 对 `/d/` 内容集合的展示名称，容纳知识、实践方法与技术动态：`/d/` 提供目录视图，`/all/` 提供全部视图，`/tags/` 提供分类视图。工具对应的产品页面位于 `/d/products/`，因此可以同时出现在发现和工具视图中；`/all-tools/` 与 `/tools/` 分别提供工具的全部视图和分类视图。
-
-站点分类法为 `tool = "tools"`，文章用 `tools: [free, first-party]` 归类，全部入口声明 `aggregate: /tools`。主题默认入口同步位于 `content/tools/`、`content/all-tools/`；项目覆盖三语文案。`list: products`、`offer`、`products_*` 文案键与 `product` 图标保留通用产品展示语义，与分类法名称独立。旧产品入口及分类／RSS 地址直接废弃，不发布旧页面、重定向或兼容分支。
+使用工具分类时，在站点 `hugo.toml` 注册 `tool = "tools"`，文章用 `tools: [free, first-party]` 归类，全部入口声明 `aggregate: /tools`。主题默认入口位于 `content/tools/`、`content/all-tools/`。`list: products`、`offer`、`products_*` 文案键与 `product` 图标保留通用产品展示语义，与分类法名称独立。
 
 `/d/` 不声明 `root_nav`。它继续渲染目录页，文章的目录来源、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤仅发生在 `feature-browse/navigation/root/render.html`，`feature-browse/navigation/root/pages.html` 保留完整结构供归属与来源模型使用。
 
@@ -21,10 +19,10 @@ Swaw 当前前四项依次为项目 `content/all/index*.md` 的“发现 - 全�
 | 主题 `content/d/_index.zh.md` | `list: directory` | 目录的直接子目录、文章 |
 | 项目 `content/d/wsl/_index.zh.md` | 未声明，继承 `/d/` | WSL 目录的直接子项 |
 | 项目 `content/tags/_index.zh.md` | `list: directory` | 现有标签树的子项 |
-| 项目 `content/tools/_index.zh.md` | `list: directory` | “工具 - 分类”：Hugo 的工具分类词项，包含显式空分类 |
+| 项目 `content/tools/_index.zh.md` | `list: directory` | Hugo 的工具分类词项，包含显式空分类 |
 | 上述文件的 `cascade`，目标 `kind: term` | `list: products` | 每个分类的 `.Pages`，无需逐类写来源 |
-| 项目 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | “发现 - 全部”：`/d/` 下全部内容 |
-| 项目 `content/all-tools/_index.zh.md` | `list: products`、`aggregate: /tools` | “工具 - 全部”：工具分类成员的去重并集 |
+| 项目 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | `/d/` 下全部内容 |
+| 项目 `content/all-tools/_index.zh.md` | `list: products`、`aggregate: /tools` | 工具分类成员的去重并集 |
 | 主题 `content/language/index.zh.md` | `list: choice` | `hugo.toml` 已启用的语言 |
 | 主题 `content/appearance/index.zh.md` | `list: choice` | 跟随系统、浅色、深色 |
 
@@ -71,28 +69,23 @@ slots:
 
 公共单列无需单独的名称列表 CSS；带列头的网格使用 `.collection-list--headed`，多列表格使用 `.collection-list--table`，路径列使用 `.collection-list--path-column`。`.collection-panel` 仅限制容器宽度，不被视为列表。集合页只有确实渲染 `.prose` 时才取得单一 `prose.css`；纯列表不会加载正文包。
 
-行为连接独立于样式：每个单元格有 `data-collection-cell="name|date|count|size|path|price|value"`，列头另有 `data-collection-header`；可进入的条目或选择按钮有 `data-collection-entry`，排序箭头有 `data-sort-indicator`。排序按这些标记和既有 `data-sort-*` 数据处理，不再解析类名前缀。样式分工与验证记录见 [CSS 结构审查](css-structure-review.md)。
+行为连接独立于样式：每个单元格有 `data-collection-cell="name|date|count|size|path|price|value"`，列头另有 `data-collection-header`；可进入的条目或选择按钮有 `data-collection-entry`，排序箭头有 `data-sort-indicator`。排序按这些标记和既有 `data-sort-*` 数据处理。样式分工见 [UI 命名与职责](ui-naming.md#css-源码与发布名)。
 
 ## 站点信息与 RSS
 
-关于、微信、GitHub、RSS 和备案信息都使用普通 `page-article`，声明 `build.list: local`、`slots.breadcrumb: true`。它们位于内容根层级，自动成为第一列普通入口，不进入全站文章 RSS；点击入口先打开说明页面，外部目标仍由正文链接提供。
+站点信息页使用普通 `page-article`，声明 `build.list: local`、`slots.breadcrumb: true`。根页面设置 `root_nav: true` 后显示在第一列，不进入全站文章 RSS；点击入口先打开说明页面，外部目标由正文链接提供。
 
 | 实体文件（三语言） | 内容职责 |
 | --- | --- |
-| 项目 `content/about/index*.md` | Swaw 与创始人介绍；`weight: 95`、`icon: { image: "site/pwa/favicon.svg" }` 使用站点 logo，浅色与深色均保留 SVG 内置颜色 `#757474`，与浏览器 favicon、GitHub 头像共用同一哈希资源，点击仍进入 `/about/`；主题同路径保留通用默认内容 |
-| 项目 `content/wechat/index*.md` | 微信二维码页面；`icon: wechat`、`weight: 101` |
-| 项目 `content/rss/index*.md` | 覆盖主题 RSS 默认页的入口顺序，正文仍调用 `{{< rss-link >}}`；`icon: rss`、`weight: 100`，排在更新之后、微信之前；主题默认权重仍为 `103` |
-| 主题 `content/github/index*.md` | 默认的 Banyan 仓库说明；`icon: github`、`weight: 102`，项目可同路径覆盖 |
-| 项目 `content/github/index*.md` | 按创始人、开源项目顺序展示 bornwhy 与 SwawHQ 的头像和链接，保留完整入口声明；现有 `asset` 短代码分别引用 `site/brand/lib/bornwhy.svg`（64×64）与 `site/pwa/favicon.svg`（64×48），组织头像与浏览器图标共用哈希资源，不使用表格；关于页同步提供两个带用途标签的链接，品牌首页仍链接组织 |
-| 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "ICP备2024338434号"`、`icon: { text: "粤" }`、`weight: 105`，排在首页入口之前；国徽图片 `0.webp` 通过 `asset` 短代码显示在正文备案号的“粤”字前，与完整备案号同行并共用工信部查询链接；主题不存放业务备案信息 |
+| 主题 `content/about/index*.md` | Banyan 介绍，站点可同路径覆盖内容与入口声明 |
+| 主题 `content/github/index*.md` | Banyan 仓库说明，站点可同路径覆盖 |
+| 主题 `content/rss/index*.md` | 当前语言的 RSS 订阅说明，正文调用 `{{< rss-link >}}` |
 
 `layouts/_shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址，并在新标签打开。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。
 
 GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/" >}}链接文字{{< /new-tab >}}`，头像可在其中嵌套 `asset` 短代码；加粗可在短代码外侧使用 Markdown `**`。该短代码复用 `system-ui/link.html` 输出 `target="_blank"`、`rel="noopener noreferrer"`，不需要 JavaScript，也无需开启 Markdown 原始 HTML。第一列入口仍使用当前标签打开说明页。
 
 正文中的小图标可使用 `{{< asset src="badge.webp" alt="图标说明" class="md-inline-image" width="16" height="16" >}}`。该 class 只排除普通正文图片的块布局、边框、内边距和阴影，保留浏览器默认的行内图片排版。图标与文字用普通空格分隔，可放进同一个链接，沿用普通链接的下划线。
-
-关于（`95`）、更新（`96`）排在我的（`90`）之后；RSS（`100`）、微信（`101`）、GitHub（`102`）依次排在更新之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。第一列共 14 项；原 PWA 状态和站点合并为更新，旧页脚及其片段配置已移除。
 
 ## 统一更新时间
 
@@ -125,9 +118,9 @@ list_icon_file: product
 
 图片默认保留原色。需要跟随外观时，可声明 `icon: { image: "site/pwa/favicon.svg", monochrome: true }`。共用图标样式在浅色使用 `brightness(0)`、深色使用 `brightness(0) invert(1)`，分别显示纯黑／纯白，并保留透明度；手动切换或跟随系统都生效。它只改变当前图标元素的显示，不修改源文件、发布文件或哈希 URL，也不会让共用图片的浏览器 favicon、正文头像自动变色。此选项适合有透明背景的单色图形；多色细节会统一变成黑／白。省略或 `false` 均保留原色，不接受字符串 `"true"`。第一列、主列表及动态路径列都保留同一声明。
 
-主题现在在 `content/tools/_index*.md` 和 `content/all-tools/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置，不需要逐篇给产品页面写图标。Xvenv 未写 `icon`，因此在产品分类和产品全部中显示包裹，在内容的目录、分类和全部视图中仍显示文件；如果希望所有入口一致，在 Xvenv 各语言文件中声明 `icon: product` 即可。
+主题在 `content/tools/_index*.md` 和 `content/all-tools/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置。未声明 `icon` 的文章使用当前列表的默认图标；需要在所有入口使用同一图标时，在文章各语言文件中声明 `icon`。
 
-`aggregate` 只提供集合成员，不参与默认图标继承；`/all-tools/` 与 `/tools/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。根项目 `content/_index*.md` 声明 `linkTitle: "2026 Swaw"`、`icon: { text: "©" }`、`weight: 110`；访问首页只选中首页，其他页面仍按真实入口或有效来源选中。旧版权页脚、顶部重复首页链接及 `slots.footer` 已移除。
+`aggregate` 只提供集合成员，不参与默认图标继承；`/all-tools/` 与 `/tools/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。访问首页只选中首页，其他页面按真实入口或有效来源选中。
 
 图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。浏览器用 `assets/js/browse/icon-value.js` 保留同样的值结构，JSON 编解码不得把对象转成字符串。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主表、页面内嵌 source payload 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
 
@@ -149,20 +142,20 @@ locale = "en_US"
 icon = { text = "EN" }
 ```
 
-当前站点分别使用 `EN`、`简`、`繁`。未设置 `icon` 时回退到主题的语言 SVG；不根据 `en`、`zh-CN` 或 `zh-TW` 猜测国旗或字符。
+站点可选择 `EN`、`简`、`繁` 等文字图标。未设置 `icon` 时使用主题的语言 SVG。
 
 语言页的选择仍留在设置页；返回原内容时优先打开刚选语言的真实译文。此行为由语言脚本处理，不属于 `choice` 渲染协议，具体规则见 [系统页面与返回](navigation-state.md#系统页面与返回)。
 
 ## 怎样收录工具
 
-根项目 `hugo.toml` 注册 `tool = "tools"`。文章的内容位置、`slug` 和 `/p/.../` 地址保持不变，例如 `content/d/products/xvenv/index.zh.md`：
+在站点 `hugo.toml` 注册 `tool = "tools"`，再为工具文章添加分类和展示信息，例如 `content/d/example-tool/index.zh.md`：
 
 ```yaml
 tools: [free, first-party]
 offer:
   amount: 0
   currency: "$"
-  value: "项目级免安装开发环境"
+  value: "工具说明"
 ```
 
 至少一个非空工具词项才构成工具收录。词项由作者自由定义，例如 `tools: [paid, "$5~$50", "Special Tools"]`，无需改模板或新增分类文件。系统不解释分类含义、不检查互斥，也不从价格推导分类。`offer` 可省略，或只写 `value`；填写 `amount` 时必须提供 `currency`，金额需为非负数字。未标价显示 `—`，价格升序和降序均排在已标价项后；0 显示本语言的“免费”。价值说明缺失时留空。
@@ -176,22 +169,22 @@ weight: 30
 ---
 ```
 
-这些是普通分类内容元数据。表格遵循当前列排序，`weight` 不覆盖用户选择的排序。目前项目保留了 free、paid、first-party、third-party 的三语言内容文件，主题中没有固定分类白名单。
+这些是普通分类内容元数据。表格遵循当前列排序，`weight` 不覆盖用户选择的排序。词项及各语言内容由站点维护，主题没有固定分类白名单。
 
-## 来源与旧链接
+## 来源与排序
 
 主表和页面内嵌的路径来源共用 `feature-browse/collection/rows.html`；一个列表页只注册一次 `collection` 来源。目录／分类关系适配分别在 `feature-browse/collection/rows/section.html`、`feature-browse/collection/rows/taxonomy.html`，展示在 `feature-browse/collection/render.html`。排序字段由 `feature-browse/collection/config.html` 解析 `list` 后给出，浏览器不按路径或 provider 猜表格种类。
 
 名称比较由 Hugo 执行一次，生成 `sort_name` 数值名次，显示文字仍保留在 `text`。这样首帧、主表与路径列使用同一名称顺序，不因浏览器语言或 ICU 实现不同而换位。更新时间降序中时间相同的条目也使用名称降序；升序相反。实现依据见 [Hugo 的稳定排序实现](https://github.com/gohugoio/hugo/blob/v0.157.0/tpl/collections/sort.go)。
 
-`/tools/` 是分类根，工具全部是 `/all-tools/`。站点直接使用新地址，旧 `/products/`、`/all-products/`、`/product-categories/` 及其子路径均不保留。
+`/tools/` 是分类根，工具全部是 `/all-tools/`。
 
 新链接分别携带 `from=tools/free`、`from=all-tools`，分类根 `from=tools` 不代表工具全部。无效来源按通用规则使用文章的真实目录路径；原生后退恢复历史中的文章网址及其来源／排序。
 
 ## 验证
 
-运行 `node themes/banyan/scripts/checks/check-path-rebuild.mjs` 可验证 Hugo 开发预览的增量重建：使用根站点内容和临时目录标题覆盖层，先访问正文，再修改祖先标题，检查三语言正文元信息同步更新。路径模型每次渲染读取当前祖先，不能存入跨增量重建保留的页面 Scratch，否则祖先改名后可能继续输出旧名称。
+运行 `swban node tests/nav/rebuild.mjs` 可验证 Hugo 开发预览的增量重建：使用根站点内容和临时目录标题覆盖层，先访问正文，再修改祖先标题，检查三语言正文元信息同步更新。路径模型每次渲染读取当前祖先，不能存入跨增量重建保留的页面 Scratch，否则祖先改名后可能继续输出旧名称。
 
-路径来源直接内嵌在各语言页面，使用当前语言模型的 `current_collection_items` 和祖先层 `collection_items`。浏览器在页面边界一次解码，不再发布或请求 `_items.json`，因此主表与路径列天然使用同一份语言和排序事实。浏览器回归 `powered-by-overview` 覆盖三语言技术总览、SVG 图标、外部变更记录链接、内嵌 PWA 面板及刷新／历史恢复，同时验证其他普通根入口。升级回归验证重复检查不刷新、导航升级、跨标签页草稿保留及旧导航缓存清理。
+路径来源直接内嵌在各语言页面，使用当前语言模型的 `current_collection_items` 和祖先层 `collection_items`。浏览器在页面边界一次解码，主表与路径列使用同一份语言和排序事实。
 
-在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建 directory／all／products／name 四种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。name 用例同时覆盖目录、子目录继承、分类、聚合入口，检查首帧仅名称列、名称升降序、进入文章后的路径列、刷新及历史恢复。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。
+在根项目执行 `swban node tests/collections/build.mjs`。它只向系统临时目录写内容覆盖层，完成后清理，基于根内容构建 directory／all／products／name 四种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。name 用例同时覆盖目录、子目录继承、分类、聚合入口，检查首帧仅名称列、名称升降序、进入文章后的路径列、刷新及历史恢复。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

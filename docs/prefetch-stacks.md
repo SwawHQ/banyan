@@ -101,7 +101,7 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 
 这样既维持 Hugo `ExecuteAsTemplate` 对 runtime transport/交互模块的构建期裁剪，也避免把运行与诊断塞进一个带 mode 分支的通用控制器。
 
-`bun run check:prefetch` 独立验证环境键、别名与 mode 解析、URL 归一化、spec slot 接管及跨 slot 去重契约。
+`swban bun tests/prefetch/policy.mjs` 独立验证环境键、别名与 mode 解析、URL 归一化、spec slot 接管及跨 slot 去重契约。
 
 ## Speculation Stack
 
@@ -118,9 +118,9 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 
 `header` 表示：
 
-- Hugo 为全站生成 document-rules manifest
-- 构建后脚本把它收敛成一个共享 rules JSON
-- 最终在默认路由写入一条全局 `Speculation-Rules` 响应头
+- Hugo 直接生成全站共享的 document rules JSON，并给文件添加内容指纹
+- 在同一次生成中，将全局 `Speculation-Rules` 响应头写入默认路由
+- 不生成逐页清单，也不需要外部 JS 去重或补响应头
 
 部署边界：
 
@@ -169,11 +169,11 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 它的主路径是：
 
 1. 页面链接通过 `data-prefetch-slot` 标出候选类别
-2. `themes/banyan/scripts/build/emit-speculation-rules-headers.mjs`
-   读取 Hugo 发布的 document-rules manifests
-3. 生成一个共享的 `/speculation-rules/document.<hash>.json`
-4. 给默认路由补 `Speculation-Rules: "/speculation-rules/document.<hash>.json"`
-5. 清理临时 manifests 目录
+2. Hugo 根据配置直接生成一个共享的 `/speculation-rules/document.<hash>.json`
+3. Hugo 给默认路由补 `Speculation-Rules: "/speculation-rules/document.<hash>.json"`
+4. 同时生成规则文件的内容类型和长期缓存响应头；没有逐页清单或外部汇总步骤
+
+全站响应头要求所有语言的有效规则一致。语言覆盖导致规则不同（包括只在某种语言关闭）时，Hugo 构建报错。
 
 若 `mode = "off"`：
 
@@ -185,7 +185,7 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 
 - `public/_headers` 和 `public/edgeone.json` 是生成产物
 - 不应手改
-- 需要改的是上游配置或构建后脚本
+- 需要改的是上游配置或主题模板
 
 ## 重叠告警
 
@@ -196,7 +196,7 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 - `params.prefetch_runtime` 命中某 slot
 - `params.speculation_rules` 也命中同一 slot
 
-构建后脚本会输出 warning。
+Hugo 在每种语言的首页渲染时输出重叠 warning。开启 panicOnWarning 的站点会将此类 warning 视为构建失败。
 
 这是刻意设计的：
 
@@ -271,5 +271,4 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 ## 相关文档
 
 - [security-csp.md](security-csp.md)
-- [security-csp-enforce-checklist.md](security-csp-enforce-checklist.md)
 - [browser-regression.md](browser-regression.md)
