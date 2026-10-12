@@ -216,7 +216,17 @@ test('empty route overrides and disabled optional assets do not restore defaults
   const optional=passed(build('optional',undefined,'[params.web_app_manifest]\nmode = "off"\n[params.speculation_rules]\nmode = "header"\nnav = "prefetch_moderate"\n'));
   const rules=parseHeaders(fs.readFileSync(path.join(optional,'_headers'),'utf8'));
   assert.ok(!rules.some(rule=>rule.source==='/site/pwa/*.webmanifest'));
-  assert.equal(cloudflareHeaders(rules,'/speculation-rules/document.hash.json')['cache-control'],'public, max-age=31536000, immutable');
+  assert.equal(cloudflareHeaders(rules,'/site/speculation-rules/document.hash.json')['cache-control'],'public, max-age=31536000, immutable');
+  assert.equal(cloudflareHeaders(rules,'/site/speculation-rules/document.hash.json')['content-type'],'application/speculationrules+json');
+  assert.equal(worker(optional).probe.getMatchingRoute('/site/speculation-rules/document.hash.json').bucket,'fingerprinted');
+  assert.deepEqual(rules.find(rule=>rule.source==='/site/speculation-rules/*').headers,
+    [{key:'Content-Type',value:'application/speculationrules+json'}]);
+  const custom=passed(build('optional-no-cache','routes = []\n',
+    '[params.speculation_rules]\nmode = "header"\nnav = "prefetch_moderate"\n'));
+  const customHeaders=parseHeaders(fs.readFileSync(path.join(custom,'_headers'),'utf8'));
+  assert.equal(cloudflareHeaders(customHeaders,'/site/speculation-rules/document.hash.json')['cache-control'],undefined,
+    'Generated MIME headers must not restore caching removed by the site.');
+  assert.equal(worker(custom).probe.SW_ROUTES.length,0);
 });
 
 test('invalid and retired policy fields fail the build instead of silently changing caching',()=>{

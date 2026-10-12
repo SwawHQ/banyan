@@ -39,10 +39,8 @@
     "path" (printf "%s/*" (path.Dir $rulesURL))
     "http" (dict
       "headers" (dict
-        "Cache-Control" "public, max-age=31536000, immutable"
         "Content-Type" "application/speculationrules+json"
       )
-      "cloudflare" (dict "unset" (slice "Cache-Control"))
     )
   ) -}}
 {{- end -}}

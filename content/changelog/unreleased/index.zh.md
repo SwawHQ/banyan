@@ -34,6 +34,8 @@ lastmod: 2026-10-12
   单个通配符，区分路径大小写，后声明的匹配规则优先。默认覆盖同源 GET 请求，
   包括 JSON 和 XML。按版本缓存未命中时校验 HTTP 缓存，关联资源只预热指纹 URL。
   站点规则数组替换默认数组，不再接受旧格式。
+  Speculation Rules 发布到 `/site/speculation-rules/`，复用默认 `/site/*` 的
+  HTTP 和 SW 缓存策略。
 - 站点地图默认收录已渲染且允许索引的 HTML 页面，不受 `build.list` 影响。
   在内容前置配置中用原生 `sitemap.disable` 排除页面，
   移除 `params.sitemap.include_pages`。禁止索引的页面和被排除的译文

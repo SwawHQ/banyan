@@ -125,7 +125,7 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 部署边界：
 
 - EdgeOne Pages 当前的 `edgeone.json` 不支持 header value 中需要转义的双引号
-- `Speculation-Rules` header 的标准写法需要类似 `"/speculation-rules/document.<hash>.json"`
+- `Speculation-Rules` header 的标准写法需要类似 `"/site/speculation-rules/document.<hash>.json"`
 - 因此使用 EdgeOne 时，站点应优先设置 `params.speculation_rules.mode = "off"`，让 runtime stack / SW warm 作为主路径
 
 ### runtime_coordination
@@ -169,15 +169,15 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 它的主路径是：
 
 1. 页面链接通过 `data-prefetch-slot` 标出候选类别
-2. Hugo 根据配置直接生成一个共享的 `/speculation-rules/document.<hash>.json`
-3. Hugo 给默认路由补 `Speculation-Rules: "/speculation-rules/document.<hash>.json"`
-4. 同时生成规则文件的内容类型和长期缓存响应头；没有逐页清单或外部汇总步骤
+2. Hugo 根据配置直接生成一个共享的 `/site/speculation-rules/document.<hash>.json`
+3. Hugo 给默认路由补 `Speculation-Rules: "/site/speculation-rules/document.<hash>.json"`
+4. 生成规则文件的专用内容类型；默认复用 `/site/*` 的长期 HTTP 缓存和 SW `fingerprinted` 策略
 
 全站响应头要求所有语言的有效规则一致。语言覆盖导致规则不同（包括只在某种语言关闭）时，Hugo 构建报错。
 
 若 `mode = "off"`：
 
-- 不生成 `/speculation-rules/*.json`
+- 不生成 `/site/speculation-rules/*.json`
 - 不写入 `Speculation-Rules` header
 - runtime stack 继续独立工作
 

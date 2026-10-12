@@ -16,15 +16,15 @@ export async function inspect(directory) {
   const root = path.resolve(directory), policies = await generatedHeaders(root), issues = [];
   const a = headerValues(policies.text,'/*','Speculation-Rules'), b = headerValues(policies.edge,'/*','Speculation-Rules');
   if (a.length > 1 || b.length > 1 || JSON.stringify(a) !== JSON.stringify(b)) issues.push('Generated Speculation-Rules headers must agree and appear at most once.');
-  const files = (await filesUnder(root,file => path.extname(file) === '.json')).filter(file => relativeName(root,file).startsWith('speculation-rules/'));
+  const files = (await filesUnder(root,file => path.extname(file) === '.json')).filter(file => relativeName(root,file).startsWith('site/speculation-rules/'));
   if (!a.length && !b.length) {
-    if (files.length || [...policies.text,...policies.edge].some(rule => rule.source.includes('/speculation-rules/'))) issues.push('Disabled speculation rules must not publish stale files or header routes.');
+    if (files.length || [...policies.text,...policies.edge].some(rule => rule.source.includes('/site/speculation-rules/'))) issues.push('Disabled speculation rules must not publish stale files or header routes.');
     return {issues};
   }
-  const match = (a[0] ?? '').match(/^"\/speculation-rules\/document\.([a-f0-9]{64})\.json"$/);
+  const match = (a[0] ?? '').match(/^"\/site\/speculation-rules\/document\.([a-f0-9]{64})\.json"$/);
   if (!match) issues.push('Speculation-Rules must reference one fingerprinted shared JSON document.');
   else {
-    const relative = 'speculation-rules/document.' + match[1] + '.json';
+    const relative = 'site/speculation-rules/document.' + match[1] + '.json';
     const bytes = await fs.readFile(insideOutput(root,relative));
     if (files.length !== 1 || relativeName(root,files[0]) !== relative) issues.push('Publish exactly one shared speculation rules file.');
     if (createHash('sha256').update(bytes).digest('hex') !== match[1]) issues.push('Speculation rules fingerprint differs from published bytes.');

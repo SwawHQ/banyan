@@ -51,13 +51,16 @@ test('site discovery uses actual translated paths, source links and sort data',a
   write(tiny,'redirect/index.html','<meta http-equiv=refresh content="0;url=/reader/deep/">');
   const minimal=await discoverSite(tiny);
   assert.equal(minimal.pages,2);assert.equal(minimal.prose,'/reader/deep/');assert.equal(minimal.collection,null);
+  assert.equal(minimal.rules,false);
+  write(tiny,'site/speculation-rules/document.hash.json','{}');
+  assert.equal((await discoverSite(tiny)).rules,true,'Rules files must be discovered under /site/.');
   const runtime=path.join(work,'runtime');fs.cpSync(tiny,runtime,{recursive:true});
   write(runtime,'custom/diagnostics/index.html',`<html lang=en><body>
     <script id=site-prefetch-data type=application/json>{"TT":"config","config":{"nav":"link_sf_g","post":"link_xf_g"}}</script>
     <script id=site-prefetch-runtime-meta type=application/json>{"coordination_mode":"preempt_runtime_when_supported","owned_slots":["nav"]}</script>
     <pre id=prefetch-debug-support></pre><a href=/other/ data-prefetch-slot=nav>Owned</a>
     <a href=/reader/deep/ data-prefetch-slot=post>Unowned</a></body></html>`);
-  write(runtime,'_headers','/*\n  Speculation-Rules: "/speculation-rules/document.json"\n');
+  write(runtime,'_headers','/*\n  Speculation-Rules: "/site/speculation-rules/document.json"\n');
   const coordinated=await discoverSite(runtime);
   assert.equal(coordinated.overlap,'/custom/diagnostics/');assert.equal(coordinated.debug,'/custom/diagnostics/');
   fs.appendFileSync(path.join(runtime,'custom/diagnostics/index.html'),'<a href=/other/ data-prefetch-slot=post>Also unowned</a>');

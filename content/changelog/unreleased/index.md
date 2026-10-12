@@ -38,6 +38,8 @@ lastmod: 2026-10-12
   requests, including JSON and XML. Versioned cache misses validate the HTTP
   cache; related-resource warmup selects only fingerprinted URLs.
   Site route arrays replace the defaults; the previous format is no longer accepted.
+  Speculation rules publish under `/site/speculation-rules/` and share the
+  default `/site/*` HTTP and SW cache policies.
 - Sitemaps include rendered, indexable HTML pages regardless of `build.list`.
   Use native `sitemap.disable` in content front matter to exclude a page;
   remove `params.sitemap.include_pages`. Noindex pages and excluded translations

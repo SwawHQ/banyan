@@ -32,7 +32,7 @@ export async function check({page,baseUrl,options}) {
     }
     assert.equal(await page.evaluate(()=>HTMLScriptElement.supports('speculationrules')),true,
       'This check requires a Chromium version with Speculation Rules support.');
-    assert.match(header,/^"\/speculation-rules\/document\.[a-f0-9]{64}\.json"$/,
+    assert.match(header,/^"\/site\/speculation-rules\/document\.[a-f0-9]{64}\.json"$/,
       'The response must declare one fingerprinted same-origin rules URL.');
     const url=new URL(JSON.parse(header),href).href,end=performance.now()+timeout;
     let ruleSet,received;

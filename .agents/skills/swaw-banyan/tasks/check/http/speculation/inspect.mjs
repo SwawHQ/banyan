@@ -7,7 +7,7 @@ export async function inspect(url) {
   const match = value.match(/^"([^"]+)"$/);
   if (!match) return {issues:['Speculation-Rules must reference one quoted rules URL.']};
   const target = new URL(match[1],response.url);
-  const fingerprint = target.pathname.match(/\/speculation-rules\/document\.([a-f0-9]{64})\.json$/)?.[1];
+  const fingerprint = target.pathname.match(/\/site\/speculation-rules\/document\.([a-f0-9]{64})\.json$/)?.[1];
   if (target.origin !== new URL(response.url).origin || !fingerprint) return {issues:['Speculation-Rules must reference a generated same-origin rules file.']};
   const ruleResponse = await request(target.href,'GET');
   const bytes = Buffer.from(await ruleResponse.arrayBuffer());

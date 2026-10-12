@@ -36,7 +36,7 @@ function output(name,from=full) {
 function headers(directory,change) {
   const file=path.join(directory,'_headers');write(file,change(fs.readFileSync(file,'utf8')));
 }
-function rulesFile(directory) {return path.join(directory,'speculation-rules',fs.readdirSync(path.join(directory,'speculation-rules'))[0]);}
+function rulesFile(directory) {return path.join(directory,'site','speculation-rules',fs.readdirSync(path.join(directory,'site','speculation-rules'))[0]);}
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-prefetch-'));skill=path.join(work,'skill');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
@@ -123,7 +123,7 @@ test('rules fail missing headers, failed assets and invalid MIME even when page 
   fails('rules',missing,/response must declare/);
   const absent=output('missing-asset');fs.unlinkSync(rulesFile(absent));fails('rules',absent,/Chromium must register|must return 200/);
   const mime=output('bad-mime');headers(mime,text=>text.replace('Content-Type: application/speculationrules+json','Content-Type: application/json'));
-  const html=path.join(mime,page,'index.html'),asset='/fake-rule-fetch.js',url='/speculation-rules/'+path.basename(rulesFile(mime));
+  const html=path.join(mime,page,'index.html'),asset='/fake-rule-fetch.js',url='/site/speculation-rules/'+path.basename(rulesFile(mime));
   write(path.join(mime,asset),'void fetch('+JSON.stringify(url)+');');
   write(html,fs.readFileSync(html,'utf8').replace('</head>','<script defer src="'+asset+'"></script></head>'));
   fails('rules',mime,/Chromium must register|application\/speculationrules/);

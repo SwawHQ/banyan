@@ -64,7 +64,7 @@ export async function discoverSite(directory) {
   const from=panel&&pages.find(page=>page.route!==panel.route&&page.worker&&page.roots.includes(panel.route)&&panel.roots.includes(page.route));
   const collectionFrom=panel&&pages.find(page=>page.sortable&&page.worker&&page.roots.includes(panel.route));
   let ruleFiles=[];
-  try {ruleFiles=await fs.readdir(path.join(root,'speculation-rules'));}
+  try {ruleFiles=await fs.readdir(path.join(root,'site','speculation-rules'));}
   catch(error){if(error.code!=='ENOENT')throw error;}
   const rules=ruleFiles.some(file=>file.endsWith('.json'))||/\bSpeculation-Rules\s*:/i.test(await readOptional(path.join(root,'_headers')));
   return {root,pages:pages.length,home:home.route,prose:prose?.route??null,collection:collection?.route??null,

@@ -23,7 +23,7 @@
 {{- end -}}
 {{- $rulesURL := "" -}}
 {{- if gt (len $rules) 0 -}}
-  {{- $resource := resources.FromString "speculation-rules/document.json" ($rules | jsonify (dict "indent" "  ")) | fingerprint "sha256" -}}
+  {{- $resource := resources.FromString "site/speculation-rules/document.json" ($rules | jsonify (dict "indent" "  ")) | fingerprint "sha256" -}}
   {{- $rulesURL = $resource.RelPermalink -}}
 {{- end -}}
 {{- return $rulesURL -}}

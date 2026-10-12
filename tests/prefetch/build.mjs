@@ -58,16 +58,17 @@ try {
     function verifyOff(output) {
         assert.equal(ruleHeader(output), '');
         assert.equal(read(path.join(output, '_headers')).includes('Speculation-Rules:'), false);
-        assert.equal(routes(output).some(route => route.source.includes('/speculation-rules/')), false);
-        const dir = path.join(output, 'speculation-rules');
+        assert.equal(routes(output).some(route => route.source.includes('/site/speculation-rules/')), false);
+        const dir = path.join(output, 'site', 'speculation-rules');
         assert.equal(fs.existsSync(dir) ? fs.readdirSync(dir).length : 0, 0, 'No stale rules files');
     }
     function verifyHeader(output) {
+        assert.equal(fs.existsSync(path.join(output, 'speculation-rules')), false, 'No former root-level rules directory');
         const value = ruleHeader(output);
-        assert.match(value, /^"\/speculation-rules\/document\.[a-f0-9]{64}\.json"$/);
+        assert.match(value, /^"\/site\/speculation-rules\/document\.[a-f0-9]{64}\.json"$/);
         const url = JSON.parse(value);
         assert.ok(read(path.join(output, '_headers')).includes('Speculation-Rules: ' + value));
-        const dir = path.join(output, 'speculation-rules');
+        const dir = path.join(output, 'site', 'speculation-rules');
         assert.equal(fs.readdirSync(dir).length, 1, 'Exactly one shared rules file');
         const body = fs.readFileSync(path.join(output, url.slice(1)));
         assert.ok(url.includes(createHash('sha256').update(body).digest('hex')), 'Fingerprint matches published bytes');
@@ -75,10 +76,9 @@ try {
             prefetch:[{source:'document', where:{selector_matches:'a[data-prefetch-slot="nav"]'}, eagerness:'moderate'}],
             prerender:[{source:'document', where:{selector_matches:'a[data-prefetch-slot="crumb"]'}, eagerness:'conservative'}]
         });
-        const assetRoute = routes(output).find(route => route.source === '/speculation-rules/*');
+        const assetRoute = routes(output).find(route => route.source === '/site/speculation-rules/*');
         assert.ok(assetRoute);
         assert.deepEqual(Object.fromEntries(assetRoute.headers.map(header => [header.key, header.value])), {
-            'Cache-Control':'public, max-age=31536000, immutable',
             'Content-Type':'application/speculationrules+json'
         });
         return value;

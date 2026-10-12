@@ -25,7 +25,7 @@ const security = {
   'Referrer-Policy':'strict-origin-when-cross-origin'
 };
 const rules = JSON.stringify({prefetch:[{source:'document',where:{selector_matches:'a[data-prefetch-slot=nav]'},eagerness:'eager'}]});
-const rulesPath = '/speculation-rules/document.' + hash(rules) + '.json';
+const rulesPath = '/site/speculation-rules/document.' + hash(rules) + '.json';
 const updatePanel='<div data-site-update-panel><p>Controlled: <span data-pwa-controlled>—</span></p><p data-site-update-status role=status aria-live=polite></p></div>';
 const updateAction='<button type=button data-site-update-action=check><span data-site-update-action-label>Check</span></button>';
 const dateRow=value=>'<div class=document-meta__row><span><svg><use href=#icon-clock></use></svg></span><time datetime="'+value+'">'+value+'</time></div>';
@@ -83,7 +83,7 @@ before(async () => {
   write(site,'public/sitemap.xml','<urlset><url><loc>https://example.test/</loc></url></urlset>');
   server = createServer((request,response) => {
     const url = new URL(request.url,'http://localhost');
-    if (url.pathname.startsWith('/speculation-rules/')) {
+    if (url.pathname.startsWith('/site/speculation-rules/')) {
       response.setHeader('Content-Type','application/json');
       response.end(url.searchParams.has('bad') ? '{}' : rules); return;
     }
