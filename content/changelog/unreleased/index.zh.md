@@ -36,6 +36,7 @@ lastmod: 2026-10-12
   站点规则数组替换默认数组，不再接受旧格式。
   Speculation Rules 发布到 `/site/speculation-rules/`，复用默认 `/site/*` 的
   HTTP 和 SW 缓存策略。
+  移除未使用的 `/icon/*` 不可变缓存规则。
 - 站点地图默认收录已渲染且允许索引的 HTML 页面，不受 `build.list` 影响。
   在内容前置配置中用原生 `sitemap.disable` 排除页面，
   移除 `params.sitemap.include_pages`。禁止索引的页面和被排除的译文

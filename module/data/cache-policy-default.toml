@@ -32,12 +32,6 @@ http.cloudflare.unset = ["Cache-Control"]
 sw.bucket = "fingerprinted"
 
 [[routes]]
-path = "/icon/*"
-http.headers.Cache-Control = "public, max-age=31536000, immutable"
-http.cloudflare.unset = ["Cache-Control"]
-sw.bucket = "fingerprinted"
-
-[[routes]]
 path = "/site/*"
 http.headers.Cache-Control = "public, max-age=31536000, immutable"
 http.cloudflare.unset = ["Cache-Control"]
