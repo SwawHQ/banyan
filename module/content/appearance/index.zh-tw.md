@@ -12,6 +12,8 @@ labels:
 icon: theme
 weight: 80
 robots: noindex, follow
+sitemap:
+  disable: true
 build:
   list: local
 outputs:

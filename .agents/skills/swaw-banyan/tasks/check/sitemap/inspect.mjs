@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {filesUnder} from '../../_shared/output.mjs';
 import {readPages,pageState} from '../../_shared/html/read.mjs';
-import {decodeHtmlAttribute} from '../../_shared/html/markup.mjs';
+import {decodeHtmlAttribute,extractStartTags,extractTagAttribute} from '../../_shared/html/markup.mjs';
 export async function inspect(directory) {
   const {root,pages} = await readPages(directory);
   const files = await filesUnder(root,file => path.basename(file).toLowerCase() === 'sitemap.xml');
@@ -14,8 +14,10 @@ export async function inspect(directory) {
   if (!files.length) issues.push('Missing sitemap.xml.');
   for (const page of pages.map(pageState)) {
     if (page.isRedirect || !page.canonicalHref) continue;
+    const disabled = extractStartTags(page.text,'html').some(tag => extractTagAttribute(tag,'data-sitemap-disabled') === 'true');
+    if (disabled && locs.has(page.canonicalHref)) issues.push(`Sitemap-disabled page must not appear as a sitemap loc: ${page.relativePath}`);
     if (page.isNoindex && locs.has(page.canonicalHref)) issues.push(`Noindex page must not appear as a sitemap loc: ${page.relativePath}`);
-    if (!page.isNoindex && !locs.has(page.canonicalHref)) issues.push(`Indexable page must appear as a sitemap loc: ${page.relativePath}`);
+    if (!disabled && !page.isNoindex && !locs.has(page.canonicalHref)) issues.push(`Indexable page must appear as a sitemap loc: ${page.relativePath}`);
   }
   return {issues};
 }

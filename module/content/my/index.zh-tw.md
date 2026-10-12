@@ -6,6 +6,8 @@ slug: my
 layout: page-my
 icon: my
 robots: noindex, follow
+sitemap:
+  disable: true
 build:
   list: local
 weight: 90

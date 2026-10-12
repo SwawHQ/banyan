@@ -48,6 +48,7 @@
 {{- end -}}
 <!DOCTYPE html>
 <html lang="{{ .Site.Language.Lang }}"
+    {{- if .Sitemap.Disable }} data-sitemap-disabled="true"{{ end }}
     {{- if $hasBreadcrumbCapability }}
     data-entry-lineage-keys='{{ (index $entryLineageField "keys" | default (slice)) | jsonify }}'
     data-active-sort-keys='{{ (index $activeSortField "keys" | default (slice)) | jsonify }}'
@@ -201,3 +202,4 @@
 </body>
 
 </html>
+{{- .Site.Store.SetInMap "banyan.sitemap.pages" .Path . -}}

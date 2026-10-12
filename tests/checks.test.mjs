@@ -148,6 +148,16 @@ test('sitemap checks cross-file indexing and robots checks its own declaration',
   const directory = output('empty sitemap');
   write(directory,'sitemap.xml','<urlset></urlset>');
   checked('check/sitemap',directory,/Indexable page must appear/);
+  const html = fs.readFileSync(path.join(directory,'index.html'),'utf8');
+  write(directory,'index.html',html.replace(/<html\b/,'<html data-sitemap-disabled="true"'));
+  assert.equal(cli('check/sitemap',[directory]).status,0);
+  write(directory,'sitemap.xml','<urlset><url><loc>https://example.test/</loc></url></urlset>');
+  checked('check/sitemap',directory,/Sitemap-disabled page must not appear/);
+  write(directory,'index.html',html.replace('</head>','<meta name="robots" content="none"></head>'));
+  checked('check/sitemap',directory,/Noindex page must not appear/);
+  write(directory,'sitemap.xml','<urlset></urlset>');
+  assert.equal(cli('check/sitemap',[directory]).status,0);
+  write(directory,'index.html',html);
   assert.equal(cli('check/html/metadata',[directory]).status,0);
   write(directory,'robots.txt','User-agent: *');
   checked('check/robots',directory,/Sitemap directive/);

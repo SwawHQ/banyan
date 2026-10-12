@@ -10,6 +10,8 @@ labels:
 icon: language
 weight: 70
 robots: noindex, follow
+sitemap:
+  disable: true
 build:
   list: local
 outputs:

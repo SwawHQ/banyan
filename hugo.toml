@@ -31,11 +31,6 @@ mode = "off"
 [params.service_worker]
 mode = "off"
 
-[params.sitemap]
-# Theme-owned pages use build.list = "local", so include the public ones
-# explicitly in each language sitemap.
-include_pages = ["/about", "/powered-by", "/rss", "/github"]
-
 [frontmatter]
 lastmod = ["lastmod", "date"]
 

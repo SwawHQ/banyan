@@ -240,6 +240,24 @@ after pushing the release tag. `--verify-tag` prevents an implicit new tag.
 - Minimalist CSS architecture
 - Content-driven taxonomy bundles, with hierarchical `tags` recommended by default and rendering defined in each taxonomy root bundle
 
+## Sitemap
+
+Sitemaps include rendered, indexable HTML pages, including `build.list: local`
+and `build.list: never`. Set `sitemap.disable: true` in a page's front matter
+to exclude it, or use `cascade.sitemap.disable: true` in a section bundle
+to exclude that section and its descendants. This setting does not stop HTML rendering or indexing.
+Pages with `robots: noindex` or `robots: none`, translation placeholders and
+404 pages are excluded automatically, including from alternate-language links.
+
+```yaml
+sitemap:
+  disable: true
+```
+
+Use `hugo server --disableFastRender` when checking sitemap changes in a preview.
+Fast previews can retain the previous XML output. Custom HTML layouts must
+inherit Banyan's `baseof.html`, which registers rendered pages for the sitemap.
+
 ## Agent Access
 
 In multilingual sites where the default language lives at the root,

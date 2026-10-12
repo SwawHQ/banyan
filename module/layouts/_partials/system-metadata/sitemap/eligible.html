@@ -1,0 +1,15 @@
+{{- $registered := index (.Site.Store.Get "banyan.sitemap.pages" | default dict) .Path -}}
+{{- $robots := findRE `[^\s,]+` (lower (.Params.robots | default "")) -}}
+{{- $render := index (.Params.build | default dict) "render" | default "always" -}}
+{{- /* Site.Store survives preview rebuilds; accept only the current rendered page. */ -}}
+{{- return (and
+  (eq $registered .)
+  (ne .Kind "404")
+  (.OutputFormats.Get "HTML")
+  .Permalink
+  (not (in (slice "never" "link") $render))
+  (not .Sitemap.Disable)
+  (not .Params.translation_placeholder)
+  (not (in $robots "noindex"))
+  (not (in $robots "none"))
+) -}}

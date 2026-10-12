@@ -19,7 +19,7 @@ export function pageState(page) {
   return {
     ...page,
     isRedirect:isRedirectPage(page.text),
-    isNoindex:extractMetaContent(page.text,'robots').toLowerCase().split(/[\s,]+/).includes('noindex'),
+    isNoindex:extractMetaContent(page.text,'robots').toLowerCase().split(/[\s,]+/).some(token => token === 'noindex' || token === 'none'),
     canonicalHref:extractCanonicalHref(page.text)
   };
 }
