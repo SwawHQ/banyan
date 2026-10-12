@@ -2,7 +2,7 @@
 title: Unreleased
 slug: unreleased
 description: Unreleased changes to the Banyan theme and Skill.
-lastmod: 2026-10-11
+lastmod: 2026-10-12
 ---
 
 ## Added
@@ -31,6 +31,13 @@ lastmod: 2026-10-11
 
 ## Changed
 
+- Cache policy uses `platform.edgeone` and ordered path rules with independent
+  `http` and `sw` fields. SW uses only `sw.bucket` (`versioned`, `fingerprinted`,
+  or `off`), supports one wildcard anywhere in a case-sensitive URL path, and
+  gives later matching rules priority. The default covers same-origin GET
+  requests, including JSON and XML. Versioned cache misses validate the HTTP
+  cache; related-resource warmup selects only fingerprinted URLs.
+  Site route arrays replace the defaults; the previous format is no longer accepted.
 - Sitemaps include rendered, indexable HTML pages regardless of `build.list`.
   Use native `sitemap.disable` in content front matter to exclude a page;
   remove `params.sitemap.include_pages`. Noindex pages and excluded translations
@@ -50,5 +57,7 @@ lastmod: 2026-10-11
 
 ## Fixed
 
+- Cloudflare cache and XML CSP overrides explicitly remove inherited headers
+  before setting their values, preventing conflicting values from being combined.
 - Chapter navigation uses the current URL fragment when scrolling runs,
   so a pending chapter scroll cannot override a newer skip-to-content action.

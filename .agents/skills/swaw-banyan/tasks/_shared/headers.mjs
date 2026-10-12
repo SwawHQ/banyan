@@ -8,12 +8,32 @@ export function parseHeaders(text) {
     if (!raw.trim() || raw.trimStart().startsWith('#')) continue;
     if (!/^\s/.test(raw)) { rule = {source:raw.trim(),headers:[]}; rules.push(rule); }
     else {
+      const unset = raw.trim().match(/^!\s+([A-Za-z0-9-]+)$/);
+      if (rule && unset) { (rule.unset ??= []).push(unset[1]); continue; }
       const offset = raw.indexOf(':');
       if (!rule || offset < 1) throw new Error('Invalid _headers declaration: ' + raw);
       rule.headers.push({key:raw.slice(0,offset).trim(),value:raw.slice(offset+1).trim()});
     }
   }
   return rules;
+}
+export function cloudflareHeaders(rules,pathname,defaults={}) {
+  const headers = Object.fromEntries(Object.entries(defaults).map(([key,value])=>[key.toLowerCase(),value]));
+  const attached = new Set();
+  for (const rule of rules) {
+    const pattern = rule.pattern ?? new RegExp('^'+rule.source.split('*')
+      .map(part=>part.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*')+'$');
+    if (!pattern.test(pathname)) continue;
+    for (const key of rule.unset ?? []) {
+      delete headers[key.toLowerCase()];attached.delete(key.toLowerCase());
+    }
+    for (const {key,value} of rule.headers) {
+      const name = key.toLowerCase();
+      headers[name] = attached.has(name) ? headers[name]+', '+value : value;
+      attached.add(name);
+    }
+  }
+  return headers;
 }
 export async function generatedHeaders(directory) {
   const root = path.resolve(directory);

@@ -92,13 +92,57 @@ An optional `languages.<lang>.params.icon = { text = "EN" }` supplies the short 
 by the language choice list; when absent, Banyan uses its language icon.
 
 If you need to customize cache routes, SW cache behavior, or deployment metadata,
-create a site-owned `data/cache-policy.toml`. Banyan falls back to
-`module/data/cache-policy-default.toml` when that file is absent in this repository.
+create a site-owned `data/cache-policy.toml`. Start from
+`module/data/cache-policy-default.toml` when changing routes: a site's `routes`
+array replaces the default array, including when empty. Platform fields merge
+with the defaults.
 
-```bash
-mkdir -p data
-# create data/cache-policy.toml only when your site needs route overrides
+```toml
+[platform.edgeone]
+hugoVersion = "0.157.0"
+
+[[routes]]
+path = "/*"
+http.headers.Cache-Control = "public, max-age=900, must-revalidate"
+sw.bucket = "versioned"
+
+[[routes]]
+path = "/js/*"
+http.headers.Cache-Control = "public, max-age=31536000, immutable"
+http.cloudflare.unset = ["Cache-Control"]
+sw.bucket = "fingerprinted"
+
+[[routes]]
+path = "/sw.js"
+sw.bucket = "off"
 ```
+
+This abbreviated example shows the format; retain the other default routes
+when configuring a site. Declare general rules first and exceptions last.
+`path` supports exact paths or one `*` anywhere, including `/*.xml` and
+`/site/pwa/*.webmanifest`. The wildcard can match an empty string or cross `/`.
+SW matches the case-sensitive URL pathname, including percent encoding, without
+query or fragment. Use encoded paths for non-ASCII characters.
+
+`http.headers` applies to both platforms. `http.cloudflare.headers` and
+`http.edgeone.headers` override common values within that route; Cloudflare's
+`unset` removes previously applied headers before setting that route's values.
+HTTP routes keep declaration order and use each platform's native behavior.
+The generated CSP uses the actual inline scripts; keep `minify.disableJS = true`.
+
+SW uses `sw.bucket`: `versioned` caches responses for the current build,
+`fingerprinted` keeps content-hashed URLs across builds, and `off` leaves
+requests to the browser. Both cache buckets use cache-first for same-origin
+GET requests. The last matching SW rule wins; HTTP-only rules do not change
+SW behavior. Unmatched requests are not cached by SW.
+
+The default `/*` rule covers pages and other same-origin GET requests, including
+JSON and XML. Use a later `off` rule to exclude a path. On a cache miss, versioned
+requests validate the HTTP cache; fingerprinted requests retain normal HTTP
+cache behavior. Page query normalization and offline HTML fallback remain
+internal to the worker. Related-resource warmup selects only fingerprinted
+URLs; other versioned resources are cached when requested. HTTP headers and
+SW policies do not infer each other.
 
 Keep site-owned URL migrations separate from cache policy in
 `data/redirects.toml`. Provider-specific renderers consume these neutral rules

@@ -1,135 +1,78 @@
-# Theme default cache policy.
-# Site owners can override it by creating data/cache-policy.toml at the repo root.
+# Site overrides: data/cache-policy.toml. A routes array replaces all default routes.
+# Declare general rules first, then exceptions. HTTP and SW policies are independent.
 
-[edgeone]
+[platform.edgeone]
 installCommand = ""
 buildCommand = "hugo --minify --gc --cleanDestinationDir"
 outputDirectory = "public"
 nodeVersion = "22.11.0"
 
 [[routes]]
-scope = "asset"
+path = "/*"
+# CSP is generated from the inline JS bytes. Keep minify.disableJS = true.
+http.headers.Referrer-Policy = "strict-origin-when-cross-origin"
+http.headers.X-Content-Type-Options = "nosniff"
+http.headers.X-Frame-Options = "SAMEORIGIN"
+http.headers.Permissions-Policy = "accelerometer=(), bluetooth=(), browsing-topics=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=()"
+http.headers.Strict-Transport-Security = "max-age=300"
+http.headers.Cache-Control = "public, max-age=900, must-revalidate"
+# Cache remaining same-origin GET requests for this build, including JSON and XML.
+sw.bucket = "versioned"
+
+[[routes]]
 path = "/css/*"
-
-[routes.headers]
-Cache-Control = "public, max-age=31536000, immutable"
-
-[routes.sw]
-mode = "cache-first"
-bucket = "fingerprinted"
+http.headers.Cache-Control = "public, max-age=31536000, immutable"
+http.cloudflare.unset = ["Cache-Control"]
+sw.bucket = "fingerprinted"
 
 [[routes]]
-scope = "asset"
 path = "/js/*"
-
-[routes.headers]
-Cache-Control = "public, max-age=31536000, immutable"
-
-[routes.sw]
-mode = "cache-first"
-bucket = "fingerprinted"
+http.headers.Cache-Control = "public, max-age=31536000, immutable"
+http.cloudflare.unset = ["Cache-Control"]
+sw.bucket = "fingerprinted"
 
 [[routes]]
-scope = "asset"
 path = "/icon/*"
-
-[routes.headers]
-Cache-Control = "public, max-age=31536000, immutable"
-
-[routes.sw]
-mode = "cache-first"
-bucket = "fingerprinted"
+http.headers.Cache-Control = "public, max-age=31536000, immutable"
+http.cloudflare.unset = ["Cache-Control"]
+sw.bucket = "fingerprinted"
 
 [[routes]]
-scope = "asset"
-path = "/site/pwa/*.webmanifest"
-
-[routes.headers]
-Content-Type = "application/manifest+json; charset=utf-8"
-Cache-Control = "public, max-age=31536000, immutable"
-
-[[routes]]
-scope = "asset"
 path = "/site/*"
-
-[routes.headers]
-Cache-Control = "public, max-age=31536000, immutable"
-
-[routes.sw]
-mode = "cache-first"
-bucket = "fingerprinted"
+http.headers.Cache-Control = "public, max-age=31536000, immutable"
+http.cloudflare.unset = ["Cache-Control"]
+sw.bucket = "fingerprinted"
 
 [[routes]]
-scope = "asset"
+path = "/site/pwa/*.webmanifest"
+http.headers.Content-Type = "application/manifest+json; charset=utf-8"
+
+[[routes]]
 path = "/media/content/*"
-
-[routes.headers]
-Cache-Control = "public, max-age=31536000, immutable"
-
-[routes.sw]
-mode = "cache-first"
-bucket = "fingerprinted"
+http.headers.Cache-Control = "public, max-age=31536000, immutable"
+http.cloudflare.unset = ["Cache-Control"]
+sw.bucket = "fingerprinted"
 
 [[routes]]
-scope = "asset"
 path = "/favicon.ico"
-
-[routes.headers]
-Cache-Control = "public, max-age=86400, must-revalidate"
-
-[routes.sw]
-mode = "ignore"
+http.headers.Cache-Control = "public, max-age=86400, must-revalidate"
+http.cloudflare.unset = ["Cache-Control"]
+sw.bucket = "off"
 
 [[routes]]
-scope = "asset"
 path = "/favicon.svg"
-
-[routes.headers]
-Cache-Control = "public, max-age=86400, must-revalidate"
-
-[routes.sw]
-mode = "ignore"
+http.headers.Cache-Control = "public, max-age=86400, must-revalidate"
+http.cloudflare.unset = ["Cache-Control"]
+sw.bucket = "off"
 
 [[routes]]
-scope = "asset"
 path = "/sw.js"
-
-[routes.headers]
-Cache-Control = "no-cache, max-age=0, must-revalidate"
-
-[routes.sw]
-mode = "ignore"
+http.headers.Cache-Control = "no-cache, max-age=0, must-revalidate"
+http.cloudflare.unset = ["Cache-Control"]
+sw.bucket = "off"
 
 [[routes]]
-scope = "asset"
 path = "/*.xml"
-
-[routes.headers]
-# Chrome's built-in XML viewer needs inline styles to render RSS/XML as a tree.
-Content-Security-Policy = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'"
-
-[[routes]]
-scope = "navigation"
-path = "/*"
-
-[routes.sw]
-mode = "cache-first"
-bucket = "versioned"
-
-[[routes]]
-scope = "default"
-path = "/*"
-
-[routes.headers]
-# Content-Security-Policy is intentionally not declared in this static policy.
-# Deployment templates generate it from the same js.Build output embedded in HTML.
-# The site must set minify.disableJS=true to preserve those bytes and their hashes.
-Referrer-Policy = "strict-origin-when-cross-origin"
-X-Content-Type-Options = "nosniff"
-X-Frame-Options = "SAMEORIGIN"
-Permissions-Policy = "accelerometer=(), bluetooth=(), browsing-topics=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=()"
-Strict-Transport-Security = "max-age=300"
-Cache-Control = "public, max-age=900, must-revalidate"
-
-[routes.sw]
-mode = "ignore"
+# The native XML viewer needs inline styles; replace the HTML policy on Cloudflare.
+http.headers.Content-Security-Policy = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'"
+http.cloudflare.unset = ["Content-Security-Policy"]

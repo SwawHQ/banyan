@@ -2,7 +2,7 @@
 {{- $redirects := .redirects | default slice -}}
 {{- $edgeone := .edgeone | default dict -}}
 {{- $webAppManifestMode := lower (printf "%v" (.web_app_manifest_mode | default "link")) -}}
-{{- $headerRoutes := partial "system-delivery/deployment/cache-header-routes.html" (dict "routes" $routes) -}}
+{{- $headerRoutes := $routes -}}
 {{- if eq $webAppManifestMode "off" -}}
   {{- $filtered := slice -}}
   {{- range $route := $headerRoutes -}}
@@ -16,23 +16,33 @@
 {{- $rulesURL := partial "system-delivery/prefetch/speculation/publish.html" . -}}
 {{- $csp := partial "system-delivery/deployment/csp-value.html" .inline_scripts -}}
 {{- $updatedRoutes := slice -}}
+{{- $hasGlobal := false -}}
+{{- $generatedHeaders := dict "Content-Security-Policy" $csp -}}
+{{- if $rulesURL -}}
+  {{- $generatedHeaders = merge $generatedHeaders (dict "Speculation-Rules" (printf "%q" $rulesURL)) -}}
+{{- end -}}
 {{- range $route := $headerRoutes -}}
-  {{- if eq (index $route "path") "/*" -}}
-    {{- $headers := merge (index $route "headers") (dict "Content-Security-Policy" $csp) -}}
-    {{- if $rulesURL -}}
-      {{- $headers = merge $headers (dict "Speculation-Rules" (printf "%q" $rulesURL)) -}}
-    {{- end -}}
-    {{- $route = merge $route (dict "headers" $headers) -}}
+  {{- if and (not $hasGlobal) (eq (index $route "path") "/*") -}}
+    {{- $http := index $route "http" | default dict -}}
+    {{- $headers := merge ($http.headers | default dict) $generatedHeaders -}}
+    {{- $route = merge $route (dict "http" (merge $http (dict "headers" $headers))) -}}
+    {{- $hasGlobal = true -}}
   {{- end -}}
   {{- $updatedRoutes = $updatedRoutes | append $route -}}
 {{- end -}}
 {{- $headerRoutes = $updatedRoutes -}}
+{{- if not $hasGlobal -}}
+  {{- $headerRoutes = (slice (dict "path" "/*" "http" (dict "headers" $generatedHeaders))) | append $headerRoutes -}}
+{{- end -}}
 {{- if $rulesURL -}}
   {{- $headerRoutes = $headerRoutes | append (dict
     "path" (printf "%s/*" (path.Dir $rulesURL))
-    "headers" (dict
-      "Cache-Control" "public, max-age=31536000, immutable"
-      "Content-Type" "application/speculationrules+json"
+    "http" (dict
+      "headers" (dict
+        "Cache-Control" "public, max-age=31536000, immutable"
+        "Content-Type" "application/speculationrules+json"
+      )
+      "cloudflare" (dict "unset" (slice "Cache-Control"))
     )
   ) -}}
 {{- end -}}

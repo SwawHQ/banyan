@@ -161,7 +161,11 @@ can set the Powered by release-notes link; its default is the upstream
 `content/changelog/` directory.
 
 For cache or deployment overrides, create site-owned `data/cache-policy.toml`;
-the Module's `data/cache-policy-default.toml` supplies defaults. Hugo generates
+the Module's `data/cache-policy-default.toml` supplies defaults. Use
+`platform.edgeone` for deployment fields and ordered `routes` with independent
+`http` and `sw.bucket` fields (`versioned`, `fingerprinted`, or `off`). A site
+route array replaces all default routes.
+Hugo generates
 `_headers` and `edgeone.json`. Do not edit those output files as configuration.
 
 ## Verify the result

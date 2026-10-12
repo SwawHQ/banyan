@@ -47,7 +47,7 @@ function isCacheableAssetResponse(response) {
 
 function getRequestPathname(request) {
     try {
-        return new URL(request.url).pathname.toLowerCase();
+        return new URL(request.url).pathname;
     } catch (error) {
         return '';
     }
@@ -60,47 +60,34 @@ function isEligibleAssetRequest(request) {
     return true;
 }
 
-function normalizeRoutePath(pathValue) {
-    return typeof pathValue === 'string' ? pathValue.toLowerCase() : '';
-}
-
 function matchesRoutePath(routePath, pathname) {
-    const normalizedRoutePath = normalizeRoutePath(routePath);
-    if (!normalizedRoutePath || !pathname) return false;
-    if (normalizedRoutePath === '/*') return true;
-    if (normalizedRoutePath.endsWith('/*')) {
-        return pathname.startsWith(normalizedRoutePath.slice(0, -1));
-    }
-    return pathname === normalizedRoutePath;
+    if (!routePath || !pathname) return false;
+    const wildcard = routePath.indexOf('*');
+    if (wildcard === -1) return pathname === routePath;
+    return pathname.length >= routePath.length - 1
+        && pathname.startsWith(routePath.slice(0, wildcard))
+        && pathname.endsWith(routePath.slice(wildcard + 1));
 }
 
-function getMatchingRoute(scope, pathname) {
-    let defaultRoute = null;
-
+function getMatchingRoute(pathname) {
     for (const route of SW_ROUTES) {
-        if (!route || typeof route !== 'object') continue;
-        const routeScope = typeof route.scope === 'string' ? route.scope.toLowerCase() : '';
-        if (routeScope === 'default' && !defaultRoute && matchesRoutePath(route.path, pathname)) {
-            defaultRoute = route;
-            continue;
-        }
-        if (routeScope === scope && matchesRoutePath(route.path, pathname)) {
+        if (matchesRoutePath(route.path, pathname)) {
             return route;
         }
     }
 
-    return defaultRoute;
+    return null;
 }
 
 function shouldHandleRoute(route) {
-    return route && route.mode === 'cache-first';
+    return route && (route.bucket === 'versioned' || route.bucket === 'fingerprinted');
 }
 
-function getCacheNameForRoute(route) {
+function getCacheNameForRoute(route, navigation = false) {
     if (!route) return '';
     if (route.bucket === 'fingerprinted') return FINGERPRINT_ASSET_CACHE;
     if (route.bucket === 'versioned') {
-        return route.scope === 'navigation' ? NAVIGATION_CACHE : VERSIONED_ASSET_CACHE;
+        return navigation ? NAVIGATION_CACHE : VERSIONED_ASSET_CACHE;
     }
     return '';
 }
@@ -109,9 +96,15 @@ function shouldDeleteOnActivate(key) {
     return shouldDeleteVersionedCache(key, NAVIGATION_CACHE, VERSIONED_ASSET_CACHE);
 }
 
-async function fetchNavigationResponse(request) {
+async function fetchCacheResponse(request, route) {
     // A fresh versioned SW cache must not be populated from an older HTTP cache.
-    return fetch(new Request(request, { cache: 'no-cache' }));
+    let response = await fetch(route.bucket === 'versioned'
+        ? new Request(request, { cache: 'no-cache' }) : request);
+    if (response && response.status === 304) {
+        // Cache Storage needs a full body, including after browser prefetch validation.
+        response = await fetch(new Request(request, { cache: 'reload' }));
+    }
+    return response;
 }
 
 function normalizeSameOriginUrl(urlValue, baseUrl) {
@@ -167,7 +160,7 @@ function getOfflineFallbackUrl(pathname) {
         if (!fallback || typeof fallback !== 'object') continue;
 
         const normalizedPrefix = normalizePathnameForPrefixMatch(
-            typeof fallback.path_prefix === 'string' ? fallback.path_prefix.toLowerCase() : ''
+            typeof fallback.path_prefix === 'string' ? fallback.path_prefix : ''
         );
         const normalizedUrl = normalizeWarmNavigationUrl(fallback.url);
 
@@ -211,22 +204,15 @@ function getAssetUrlsFromHtml(htmlText, baseUrl) {
         if (!normalizedUrl || seenUrls.has(normalizedUrl)) continue;
 
         const pathname = getRequestPathname(new Request(normalizedUrl));
-        const route = getMatchingRoute('asset', pathname);
-        if (!shouldHandleRoute(route)) continue;
+        const route = getMatchingRoute(pathname);
+        // A catch-all versioned rule must not turn page links into asset warmups.
+        if (route?.bucket !== 'fingerprinted') continue;
 
         seenUrls.add(normalizedUrl);
         urls.push(normalizedUrl);
     }
 
     return urls;
-}
-
-async function fetchAssetResponse(request) {
-    let response = await fetch(request);
-    if (response && response.status === 304) {
-        response = await fetch(new Request(request, { cache: 'reload' }));
-    }
-    return response;
 }
 
 async function warmAssetsFromHtmlResponse(response, baseUrl) {
@@ -239,15 +225,10 @@ async function warmAssetsFromHtmlResponse(response, baseUrl) {
     } catch (error) { }
 }
 
-async function updateNavigationCache(request, cache, waitForAssetWarmup = false) {
+async function updateNavigationCache(request, cache, route, waitForAssetWarmup = false) {
     try {
         const cacheKeyRequest = createNavigationCacheKeyRequest(request);
-        let response = await fetchNavigationResponse(request);
-        if (response && response.status === 304) {
-            // Browser-level prefetch often revalidates from HTTP cache and returns 304.
-            // SW cache needs a full body, so retry by bypassing the browser cache layer.
-            response = await fetch(new Request(request, { cache: 'reload' }));
-        }
+        const response = await fetchCacheResponse(request, route);
         if (isCacheableHtmlResponse(response)) {
             await cache.put(cacheKeyRequest || request, response.clone());
             const assetWarmupTask = warmAssetsFromHtmlResponse(response.clone(), response.url || request.url);
@@ -263,9 +244,9 @@ async function updateNavigationCache(request, cache, waitForAssetWarmup = false)
     }
 }
 
-async function updateAssetCache(request, cache) {
+async function updateAssetCache(request, cache, route) {
     try {
-        const response = await fetchAssetResponse(request);
+        const response = await fetchCacheResponse(request, route);
         if (isCacheableAssetResponse(response)) {
             await cache.put(request, response.clone());
         }
@@ -279,19 +260,21 @@ async function getOfflineFallbackResponse(pathname) {
     const offlineUrl = getOfflineFallbackUrl(pathname);
     if (!offlineUrl) return null;
 
-    const cache = await caches.open(NAVIGATION_CACHE);
     const offlineRequest = new Request(offlineUrl, {
         credentials: 'same-origin',
         headers: {
             Accept: 'text/html'
         }
     });
+    const route = getMatchingRoute(getRequestPathname(offlineRequest));
+    if (!shouldHandleRoute(route)) return null;
+    const cache = await caches.open(getCacheNameForRoute(route, true));
     const cachedResponse = await cache.match(createNavigationCacheKeyRequest(offlineRequest) || offlineRequest);
     if (cachedResponse) {
         return cachedResponse;
     }
 
-    const networkResponse = await updateNavigationCache(offlineRequest, cache, true);
+    const networkResponse = await updateNavigationCache(offlineRequest, cache, route, true);
     if (isCacheableHtmlResponse(networkResponse)) {
         return networkResponse;
     }
@@ -304,8 +287,8 @@ async function warmAssetUrl(urlValue) {
     if (!href) return;
 
     const pathname = getRequestPathname(new Request(href));
-    const route = getMatchingRoute('asset', pathname);
-    if (!shouldHandleRoute(route)) return;
+    const route = getMatchingRoute(pathname);
+    if (route?.bucket !== 'fingerprinted') return;
 
     const cacheName = getCacheNameForRoute(route);
     if (!cacheName) return;
@@ -317,14 +300,14 @@ async function warmAssetUrl(urlValue) {
     const cachedResponse = await cache.match(request);
     if (cachedResponse) return;
 
-    await updateAssetCache(request, cache);
+    await updateAssetCache(request, cache, route);
 }
 
 async function warmNavigationUrl(urlValue) {
     const href = normalizeWarmNavigationUrl(urlValue);
     if (!href) return;
     const pathname = getRequestPathname(new Request(href));
-    const route = getMatchingRoute('navigation', pathname);
+    const route = getMatchingRoute(pathname);
     if (!shouldHandleRoute(route)) return;
 
     if (navigationWarmupTasks.has(href)) {
@@ -333,7 +316,7 @@ async function warmNavigationUrl(urlValue) {
     }
 
     const task = (async () => {
-        const cache = await caches.open(getCacheNameForRoute(route));
+        const cache = await caches.open(getCacheNameForRoute(route, true));
         const request = new Request(href, {
             credentials: 'same-origin',
             headers: {
@@ -346,7 +329,7 @@ async function warmNavigationUrl(urlValue) {
             await warmAssetsFromHtmlResponse(cachedResponse.clone(), href);
             return;
         }
-        await updateNavigationCache(request, cache, true);
+        await updateNavigationCache(request, cache, route, true);
     })();
 
     navigationWarmupTasks.set(href, task);
@@ -369,19 +352,19 @@ self.addEventListener('install', (event) => {
 
 async function handleNavigationRequest(request) {
     const pathname = getRequestPathname(request);
-    const route = getMatchingRoute('navigation', pathname);
+    const route = getMatchingRoute(pathname);
     if (!shouldHandleRoute(route)) {
-        return fetchNavigationResponse(request);
+        return fetch(request);
     }
 
-    const cache = await caches.open(getCacheNameForRoute(route));
+    const cache = await caches.open(getCacheNameForRoute(route, true));
     const cacheKeyRequest = createNavigationCacheKeyRequest(request);
     const cachedResponse = await cache.match(cacheKeyRequest || request);
     if (cachedResponse) {
         return cachedResponse;
     }
 
-    const networkResponse = await updateNavigationCache(request, cache);
+    const networkResponse = await updateNavigationCache(request, cache, route);
     if (networkResponse) {
         return networkResponse;
     }
@@ -395,7 +378,7 @@ async function handleNavigationRequest(request) {
 }
 
 async function handleAssetRequest(request, pathname) {
-    const route = getMatchingRoute('asset', pathname);
+    const route = getMatchingRoute(pathname);
     if (!shouldHandleRoute(route)) {
         return fetch(request);
     }
@@ -411,7 +394,7 @@ async function handleAssetRequest(request, pathname) {
         return cachedResponse;
     }
 
-    const networkResponse = await updateAssetCache(request, cache);
+    const networkResponse = await updateAssetCache(request, cache, route);
     if (networkResponse) {
         return networkResponse;
     }
@@ -453,7 +436,7 @@ self.addEventListener('fetch', (event) => {
     if (!pathname) return;
 
     if (isHtmlDocumentRequest(request)) {
-        const route = getMatchingRoute('navigation', pathname);
+        const route = getMatchingRoute(pathname);
         if (!shouldHandleRoute(route)) return;
 
         event.respondWith(handleNavigationRequest(request));
@@ -462,7 +445,7 @@ self.addEventListener('fetch', (event) => {
 
     if (!isEligibleAssetRequest(request)) return;
 
-    const route = getMatchingRoute('asset', pathname);
+    const route = getMatchingRoute(pathname);
     if (!shouldHandleRoute(route)) return;
 
     event.respondWith((async () => {

@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomInt} from 'node:crypto';
 import {once} from 'node:events';
-import {parseHeaders} from '../headers.mjs';
+import {parseHeaders,cloudflareHeaders} from '../headers.mjs';
 import {readOptional} from '../output.mjs';
 
 const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8',
@@ -38,10 +38,8 @@ export async function createStaticSiteServer(directory) {
       file = await fs.realpath(file);
       if (!within(root,file)) { response.writeHead(403); response.end(); return; }
       const body = await fs.readFile(file);
-      const headers = {'Content-Type':mime[path.extname(file).toLowerCase()] ?? 'application/octet-stream'};
-      for (const rule of rules) if (rule.pattern.test(pathname)) {
-        for (const {key,value} of rule.headers) headers[key] = value;
-      }
+      const headers = cloudflareHeaders(rules,new URL(request.url,'http://localhost').pathname,
+        {'Content-Type':mime[path.extname(file).toLowerCase()] ?? 'application/octet-stream'});
       response.writeHead(200,headers);
       response.end(request.method === 'HEAD' ? undefined : body);
     } catch (error) {

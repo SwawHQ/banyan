@@ -25,7 +25,7 @@
   {{- $offlineRelPermalink := printf "%s%s/" .Home.RelPermalink $offlinePath -}}
   {{- $offlineRelPermalinks = $offlineRelPermalinks | append (lower $offlineRelPermalink) -}}
   {{- $offlineFallbacks = $offlineFallbacks | append (dict
-    "path_prefix" (lower (printf "%v" .Home.RelPermalink))
+    "path_prefix" (printf "%v" .Home.RelPermalink)
     "url" $offlineRelPermalink
   ) -}}
 {{- end -}}

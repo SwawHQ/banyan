@@ -1,4 +1,4 @@
-{{- $routes := .routes | default slice -}}
+{{- $routes := partial "system-delivery/deployment/cache-header-routes.html" (dict "routes" (.routes | default slice) "platform" "cloudflare") -}}
 {{- $lines := slice -}}
 
 {{- $lines = $lines | append "# GENERATED FILE: do not edit public/_headers by hand; update Banyan's cache policy or deployment templates instead." -}}
@@ -10,6 +10,9 @@
         {{- continue -}}
     {{- end -}}
     {{- $lines = $lines | append $path -}}
+    {{- range .unset -}}
+        {{- $lines = $lines | append (printf "  ! %s" .) -}}
+    {{- end -}}
     {{- $headers := index $route "headers" | default dict -}}
     {{- range $key, $value := $headers -}}
         {{- $lines = $lines | append (printf "  %s: %s" $key $value) -}}

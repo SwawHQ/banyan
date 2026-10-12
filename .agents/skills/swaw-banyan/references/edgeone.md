@@ -16,7 +16,7 @@ independently. Skill tool selection and portable tools belong to local use.
 
 EdgeOne provides Hugo Extended and reads `hugoVersion` from root `edgeone.json`.
 Banyan generates that field from the Hugo version used for the build; a site's
-`data/cache-policy.toml` may override `[edgeone].hugoVersion`.
+`data/cache-policy.toml` may override `[platform.edgeone].hugoVersion`.
 For Git hosting, copy the generated config to the site root before committing:
 
 ```text
@@ -26,7 +26,7 @@ swban deploy/edgeone/sync [dir]
 Sync defaults to `public`; it only copies config bytes and does not build or
 upload. Hosted builds use the theme's native Hugo command and the platform's
 tools. They do not install or invoke the Skill. Hugo Modules require host Go
-and Git. Site installation settings belong in `[edgeone]` in
+and Git. Site installation settings belong in `[platform.edgeone]` in
 `data/cache-policy.toml`; initialize submodules only when the site uses them.
 Keep `outputDirectory` consistent with the build destination.
 

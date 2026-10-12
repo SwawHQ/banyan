@@ -2,7 +2,7 @@
 title: 未发布
 slug: unreleased
 description: Banyan 主题和 Skill 的未发布变更。
-lastmod: 2026-10-11
+lastmod: 2026-10-12
 ---
 
 ## 新增
@@ -29,6 +29,11 @@ lastmod: 2026-10-11
 
 ## 调整
 
+- 缓存策略使用 `platform.edgeone` 和有序路径规则，`http` 与 `sw` 独立配置。
+  SW 只使用 `sw.bucket`（`versioned`、`fingerprinted`、`off`），支持路径任意位置的
+  单个通配符，区分路径大小写，后声明的匹配规则优先。默认覆盖同源 GET 请求，
+  包括 JSON 和 XML。按版本缓存未命中时校验 HTTP 缓存，关联资源只预热指纹 URL。
+  站点规则数组替换默认数组，不再接受旧格式。
 - 站点地图默认收录已渲染且允许索引的 HTML 页面，不受 `build.list` 影响。
   在内容前置配置中用原生 `sitemap.disable` 排除页面，
   移除 `params.sitemap.include_pages`。禁止索引的页面和被排除的译文
@@ -46,5 +51,7 @@ lastmod: 2026-10-11
 
 ## 修复
 
+- Cloudflare 缓存和 XML CSP 特例先删除继承的响应头，再设置新值，
+  避免多个冲突值被拼接。
 - 章节滚动执行时读取当前 URL 片段，避免待执行的章节滚动
   覆盖后续的“跳到正文”操作。

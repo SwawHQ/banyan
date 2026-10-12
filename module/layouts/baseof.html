@@ -8,15 +8,13 @@
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
 {{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $buildVersion := partial "system-build/version.html" $primarySite.Home -}}
-{{- $cachePolicy := partial "system-delivery/cache-policy/model.html" (dict
-  "sw_config" $swConfig
-) -}}
+{{- $cachePolicy := partial "system-delivery/cache-policy/model.html" . -}}
 {{- $siteRedirects := index hugo.Data "redirects" | default dict -}}
 {{- $siteRedirectRules := partial "system-delivery/deployment/redirect-rules.html" (dict
   "rules" (index $siteRedirects "rules" | default slice)
 ) -}}
 {{- $cachePolicyRoutes := index $cachePolicy "routes" -}}
-{{- $cachePolicyEdgeone := index $cachePolicy "edgeone" -}}
+{{- $cachePolicyEdgeone := index (index $cachePolicy "platform") "edgeone" -}}
 {{- $swRoutes := index $cachePolicy "sw_routes" -}}
 {{- $jsBuildParams := partialCached "feature-browse/js-build-params.html" site "browse-js-build-params" -}}
 {{- $routingConfig := index $jsBuildParams "navigationState" | default dict -}}
