@@ -1,6 +1,7 @@
 {{- $copy := .Page.Params.powered_by -}}
 {{- $build := site.Params.build | default dict -}}
 {{- $repo := site.Params.theme_repo | default "https://github.com/SwawHQ/banyan" -}}
+{{- $changesURL := site.Params.theme_changelog | default (printf "%s/tree/HEAD/content/changelog" $repo) -}}
 {{- $themeVersion := "" -}}
 {{- $themeFound := false -}}
 {{- range hugo.Deps -}}
@@ -14,7 +15,7 @@
 <p>{{ $copy.banyan }}</p>
 {{ if $themeFound }}<p>{{ $copy.theme_version | default "Theme version" }}: {{ if $themeVersion }}<code>{{ $themeVersion }}</code>{{ else }}{{ $copy.local_version | default "Local development" }}{{ end }}</p>{{ end }}
 {{ with $build.theme.revision }}<p>{{ $copy.revision }}: <code>{{ substr . 0 12 }}</code>{{ if $build.theme.dirty }} · {{ $copy.dirty }}{{ end }}</p>{{ end }}
-<p><a href="{{ $repo }}" target="_blank" rel="noopener noreferrer">{{ $copy.source }}</a> · <a href="{{ $repo }}/blob/HEAD/CHANGELOG.md" target="_blank" rel="noopener noreferrer">{{ $copy.changes }}</a></p>
+<p><a href="{{ $repo }}" target="_blank" rel="noopener noreferrer">{{ $copy.source }}</a> · <a href="{{ $changesURL }}" target="_blank" rel="noopener noreferrer">{{ $copy.changes }}</a></p>
 <h2 id="hugo">Hugo</h2>
 <p>{{ $copy.hugo }}</p>
 <p>{{ $copy.version }}: <code>{{ hugo.Version }}</code></p>

@@ -2,6 +2,8 @@
 
 A minimalist, multi-language Hugo theme, with a runnable demo in the repository root.
 
+See the [changelog](content/changelog/_index.md) for theme and Skill changes.
+
 ## Run the Demo
 
 The CLI currently supports Windows x64. After cloning, prepare tools through
@@ -67,6 +69,10 @@ Customize root content, `baseURL`, `title`, language settings, and deployment
 params to build your own site. Site files override corresponding module files.
 The published theme module contains only `module/`; demo content and repository
 tools are outside that module.
+
+New consumers must declare their active languages and create home and taxonomy
+bundles. The Skill's [installation guide](.agents/skills/swaw-banyan/references/install.md)
+provides an English starter and a local Module example for temporary checks.
 
 Set the shared site description in your root `hugo.toml`:
 
@@ -202,7 +208,15 @@ site customization in the root and reusable theme behavior in `module/`.
 
 ## Publish the Skill and Theme Module
 
-Set `SKILL.md` metadata to the release version and commit the release changes.
+Record changes users can observe or must act on. Group related changes;
+omit internal refactors, test details and changes limited to consumer sites.
+
+Maintain release notes in `content/changelog/unreleased/index.md`. At release,
+move it to `content/changelog/vX.Y.Z/index.md`, set its title and slug to
+`vX.Y.Z`, and set `date` and `lastmod` to the release date. Create a new
+unreleased bundle.
+The existing collection layout lists version pages automatically.
+Set `SKILL.md` metadata to that version and commit the changes.
 Publish both tags on that commit; the example uses the current `HEAD`:
 
 ```powershell
@@ -228,8 +242,18 @@ swban gh auth login --web
 swban gh release create --help
 ```
 
-Use native `gh release create <tag> <asset.zip> --verify-tag --generate-notes`
-after pushing the release tag. `--verify-tag` prevents an implicit new tag.
+The demo's planned address is `https://banyan.swaw.com/`. Build with that
+`--baseURL` for deployment. Its Powered by links to `/changelog/` through
+`params.theme_changelog`; other sites default to the repository's release notes.
+
+After publishing the version page and pushing the release tag, link the notes
+from the GitHub Release:
+
+```text
+swban gh release create v0.1.0 --verify-tag --notes https://banyan.swaw.com/changelog/v0.1.0/  #Link release notes
+```
+
+Add the Skill ZIP path to attach it. `--verify-tag` prevents an implicit new tag.
 
 ## Features
 

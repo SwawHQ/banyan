@@ -157,6 +157,6 @@ Git 常用命令：
   swban git push --atomic --no-follow-tags origin tag v0.1.0 tag module/v0.1.0     #一并推送配对标签
 
 GitHub 常用命令：
-  swban gh auth login --web        #登录 GitHub
-  swban gh auth status            #检查登录状态
-  swban gh release create v0.1.0 swaw-banyan-v0.1.0.zip --verify-tag --generate-notes  #发布已有标签与附件
+  swban gh auth login --web                                 #登录 GitHub
+  swban gh auth status                                      #检查登录状态
+  swban gh release create <tag> --verify-tag --notes <URL>  #链接版本记录

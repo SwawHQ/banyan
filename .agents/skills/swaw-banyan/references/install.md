@@ -50,6 +50,27 @@ Preserve existing imports, content, languages and URL rules when adapting a site
 If upgrading a vendored site, regenerate its vendor tree with
 `swban hugo mod vendor` after updating the dependency, then check pairing again.
 
+## Test an unpublished Module
+
+Use a temporary consumer site and call the Skill from the Banyan checkout.
+Its `go.mod` can resolve the local Module without a release:
+
+```go
+module example.test/banyan-check
+
+go 1.18
+
+require github.com/SwawHQ/banyan/module v0.0.0
+
+replace github.com/SwawHQ/banyan/module => D:/2026.7/banyan/module
+```
+
+Change the replacement path to your checkout's `module/` directory. Keep the
+Hugo import above. `check/module` reports `development` when this Module and
+the called Skill belong to the same checkout. An independently copied Skill
+with a local replacement reports `unverified`.
+After release, verify a fixed version in a fresh site without a replacement.
+
 ## Configure the site root
 
 Banyan supplies custom output format definitions, but the site must select
@@ -60,6 +81,10 @@ an existing configuration instead of replacing the whole file:
 baseURL = "https://example.com/"
 title = "My site"
 enableRobotsTXT = true
+defaultContentLanguage = "en"
+defaultContentLanguageInSubdir = false
+disableLanguages = ["zh", "zh-tw"]
+panicOnWarning = true
 
 [minify]
 disableJS = true
@@ -76,12 +101,64 @@ tag = "tags"
 
 [params]
 description = "Describe this site."
+
+[languages.en]
+languageName = "English"
+weight = 1
+
+[languages.en.params]
+locale = "en_US"
 ```
 
 `disableJS` preserves the inline bytes used for CSP hashes. Keep existing
 permalinks unless the user requests URL changes. Review language settings and
 set each language's social locale under `languages.<code>.params.locale`.
-The theme has English, Simplified Chinese and Traditional Chinese defaults.
+This starter enables English. To enable Chinese, remove it from
+`disableLanguages`, declare its root `languages` settings and locale, and add
+its translated home and taxonomy bundles. The Module supplies translated
+information and settings pages.
+
+Create `content/_index.md` for the site's home:
+
+```markdown
+---
+root_nav: true
+title: My site
+description: Describe this site.
+layout: page-home
+---
+```
+
+The declared `tags` taxonomy needs `content/tags/_index.md`:
+
+```markdown
+---
+root_nav: true
+title: Topics
+description: Browse articles by topic.
+layout: page-collection
+list: directory
+cascade:
+  - target:
+      kind: term
+    layout: page-collection
+banyan_taxonomy:
+  mode: tree
+  article_weight: 30
+  article_mode: leaf_paths
+  normalize: lower
+  term_rel: tag
+---
+```
+
+Before assigning an article to a term, create that term's bundle, such as
+`content/tags/sample/_index.md`, with a title. Add a translated bundle for each
+enabled language that uses the term.
+
+Site content, assets and data at the same paths override Module defaults.
+Keep accounts, branding and legal content in the site. `params.theme_changelog`
+can set the Powered by release-notes link; its default is the upstream
+`content/changelog/` directory.
 
 For cache or deployment overrides, create site-owned `data/cache-policy.toml`;
 the Module's `data/cache-policy-default.toml` supplies defaults. Hugo generates

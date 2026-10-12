@@ -22,6 +22,7 @@ Toolchain fixtures do not log in or publish.
 | Suite | Responsibility |
 | --- | --- |
 | `module.test.mjs`, `js-build.test.mjs` | Module pairing, Hugo resolution and JS build inputs |
+| `install.test.mjs` | Documented starter, isolated Module/Skill packages and site overrides |
 | `tasks.test.mjs`, `checks.test.mjs` | Dispatch, streams, sync faults, help, arguments and static/HTTP checks |
 | `browser.test.mjs`, `browser-site.test.mjs` | Engines, CSP, discovery, reports, isolation and cleanup |
 | `browser-{aside,breadcrumb,canvas,collection,nav,opening,presentation}.test.mjs` | Navigation, geometry, native input and first paint |

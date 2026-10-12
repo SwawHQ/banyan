@@ -157,6 +157,6 @@ Git examples:
   swban git push --atomic --no-follow-tags origin tag v0.1.0 tag module/v0.1.0     #Push the paired tags
 
 GitHub examples:
-  swban gh auth login --web        #Log in to GitHub
-  swban gh auth status            #Check login status
-  swban gh release create v0.1.0 swaw-banyan-v0.1.0.zip --verify-tag --generate-notes  #Publish an existing tag and asset
+  swban gh auth login --web                                 #Log in to GitHub
+  swban gh auth status                                      #Check login status
+  swban gh release create <tag> --verify-tag --notes <URL>  #Link release notes
