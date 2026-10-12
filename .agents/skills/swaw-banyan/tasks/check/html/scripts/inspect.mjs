@@ -1,6 +1,7 @@
 import {readPages,pageState,publishedURL} from '../../../_shared/html/read.mjs';
 import {extractExternalScriptSrcs} from '../../../_shared/html/markup.mjs';
 import {localReference,insideOutput,isFile,readOptional} from '../../../_shared/output.mjs';
+import {inspectDocumentControls} from './controls.mjs';
 
 const controllers=['preferences/language-page','preferences/back-links','updates/page'];
 const belongsTo=(reference,family)=>new RegExp('(?:^|/)js/'+family.replaceAll('.','\\.')+'(?:\\.min)?\\.[^/]+\\.js$').test(reference);
@@ -23,6 +24,7 @@ export async function inspect(directory) {
       if(relative)assets.push(relative);
     }
     if(page.isRedirect)continue;
+    for(const issue of inspectDocumentControls(page.text))issues.push(issue+': '+page.relativePath);
     if(page.relativePath==='index.html'&&assets.some(ref=>belongsTo(ref,'browse/path-entry'))) {
       issues.push('Home page must not load the path entry bundle: ' + page.relativePath);
     }

@@ -39,10 +39,10 @@ ensure 复用合格工具，缺少时下载。--force 使用便携版。
   swban check/content/share-image [站点]              #分享图字段声明
 
 构建产物（目录默认 public）：
-  swban check/html/metadata [目录]     #页面标题、语言与 canonical
+  swban check/html/metadata [目录]     #页面元数据与文章日期行
   swban check/html/headings [目录]     #可索引页面的标题数量
   swban check/html/jsonld [目录]       #结构化数据格式
-  swban check/html/scripts [目录]      #脚本引用与加载边界
+  swban check/html/scripts [目录]      #脚本引用、加载边界与页面控件
   swban check/html/styles [目录]       #样式引用与加载边界
   swban check/html/breadcrumb [目录]   #面包屑数据与标记
   swban check/sitemap [目录]           #sitemap 与索引状态

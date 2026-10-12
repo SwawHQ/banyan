@@ -28,9 +28,12 @@ Toolchain fixtures do not log in or publish.
 | `browser-{language,settings,ui}.test.mjs` | Translation, history, preferences and palette |
 | `browser-{pwa,update,disable,prefetch}.test.mjs` | Worker lifecycle, cache ownership and prefetch |
 | `output.test.mjs` | Repository budgets and retired-output faults |
+| `sitemap.test.mjs` | Rendered HTML discovery, native exclusions, translations and rebuilds |
 
 Each suite keeps its successful cases and fault fixtures. Domain suites own
 argument semantics; `checks.test.mjs` owns common help/unknown-option checks.
+It also owns shared HTML extraction, date-row ordering and static page-control
+faults. Site-specific article samples and copy stay in consumer tests.
 
 Run source-domain scripts separately:
 

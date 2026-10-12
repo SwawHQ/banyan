@@ -39,10 +39,10 @@ Content declarations (default site: current directory):
   swban check/content/share-image [site]              #Share-image fields
 
 Published output (default dir: public):
-  swban check/html/metadata [dir]     #Page metadata
+  swban check/html/metadata [dir]     #Page metadata and article date rows
   swban check/html/headings [dir]     #Heading counts
   swban check/html/jsonld [dir]       #JSON-LD syntax
-  swban check/html/scripts [dir]      #Script references
+  swban check/html/scripts [dir]      #Script references and page controls
   swban check/html/styles [dir]       #Stylesheet references
   swban check/html/breadcrumb [dir]   #Breadcrumb data
   swban check/sitemap [dir]           #Sitemap indexing

@@ -42,6 +42,10 @@ Checks do not install or switch engines.
 
 ## Compose a site suite
 
+Static site checks can import `inspectDocumentMetadata` from
+`check/html/metadata/document.mjs` and `inspectDocumentControls` from
+`check/html/scripts/controls.mjs`. Both accept HTML and return issues.
+
 Import `runScenarioSuite` from `tasks/_shared/browser/suite.mjs` through a
 site-owned entry, run with `swban bun` or `swban node`. Supply scenarios,
 the published build and a report directory. Upgrade scenarios also need a

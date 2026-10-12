@@ -1,5 +1,6 @@
 import {readPages,pageState} from '../../../_shared/html/read.mjs';
 import {extractTagAttribute,extractStartTags,extractElementText,extractMetaContent} from '../../../_shared/html/markup.mjs';
+import {inspectDocumentMetadata} from './document.mjs';
 
 function metadataRows(pages) {
   return pages.map(page => ({
@@ -25,6 +26,7 @@ export async function inspect(directory) {
   for (const row of rows) {
     if (!row.canonicalHref) issues.push('Missing canonical link: ' + row.relativePath);
     if (row.isRedirect) continue;
+    for(const issue of inspectDocumentMetadata(row.text))issues.push(issue+': '+row.relativePath);
     if (!row.htmlLang) issues.push('Missing html lang attribute: ' + row.relativePath);
     if (!row.browserTitle) issues.push('Missing browser title: ' + row.relativePath);
     if (!row.metaDescription) issues.push('Missing meta description: ' + row.relativePath);

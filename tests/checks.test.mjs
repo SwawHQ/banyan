@@ -9,6 +9,9 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
 import {hugoEnvironment} from '../.agents/skills/swaw-banyan/scripts.js/hugo/index.mjs';
+import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
+import {inspectDocumentMetadata} from '../.agents/skills/swaw-banyan/tasks/check/html/metadata/document.mjs';
+import {inspectDocumentControls} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/controls.mjs';
 
 const source = fileURLToPath(new URL('../.agents/skills/swaw-banyan/',import.meta.url));
 const parent = path.resolve(os.tmpdir());
@@ -23,6 +26,14 @@ const security = {
 };
 const rules = JSON.stringify({prefetch:[{source:'document',where:{selector_matches:'a[data-prefetch-slot=nav]'},eagerness:'eager'}]});
 const rulesPath = '/speculation-rules/document.' + hash(rules) + '.json';
+const updatePanel='<div data-site-update-panel><p>Controlled: <span data-pwa-controlled>—</span></p><p data-site-update-status role=status aria-live=polite></p></div>';
+const updateAction='<button type=button data-site-update-action=check><span data-site-update-action-label>Check</span></button>';
+const dateRow=value=>'<div class=document-meta__row><span><svg><use href=#icon-clock></use></svg></span><time datetime="'+value+'">'+value+'</time></div>';
+const metadata=inner=>'<div class=document-meta>'+inner+'</div>';
+const asideScript='<script src=/js/document/aside.fixture.js></script>';
+const tocScript='<script src=/js/document/toc.fixture.js></script>';
+const toggle='<button id=document-aside-toggle type=button aria-controls=document-aside>Chapters</button>';
+const close='<button id=document-aside-close type=button aria-controls=document-aside>Hide</button>';
 function write(root,name,text) {
   const file = path.join(root,name); fs.mkdirSync(path.dirname(file),{recursive:true}); fs.writeFileSync(file,text);
 }
@@ -128,7 +139,7 @@ test('stylesheet checks reject any family outside the current contract',()=>{
 test('script controllers follow declared page capabilities and stay out of shared bundles',() => {
   const html=fs.readFileSync(path.join(site,'public/index.html'),'utf8');
   const cases=[['preferences/language-page','<div data-language-settings></div>'],
-    ['preferences/back-links','<a data-page-action=back href=/>Back</a>'],['updates/page','<div data-site-update-panel></div>']];
+    ['preferences/back-links','<a data-page-action=back href=/>Back</a>'],['updates/page',updatePanel]];
   for(const [family,marker] of cases) {
     const src='/js/'+family+'.0123456789abcdef.js',script='<script src="'+src+'"></script>';
     const directory=output('controller-'+family.replaceAll('/','-'),html.replace('</body>',marker+script+'</body>'));
@@ -142,6 +153,61 @@ test('script controllers follow declared page capabilities and stay out of share
   const global=output('shared-sw-controller');write(global,'js/sw-manager.enable.0123456789abcdef.js','document.querySelector("[data-site-update-panel]");');
   write(global,'index.html',html.replace('</body>','<script src=/js/sw-manager.enable.0123456789abcdef.js></script></body>'));
   checked('check/html/scripts',global,/stay out of shared bundle/);
+});
+
+test('shared HTML extraction keeps nested elements and excludes raw text',()=>{
+  const html='<div title="a > b"><div>x</div><a href=/zh/><span>home</span></a></div><script>const fake="<div></div>"</script><style>x::after{content:"<div></div>"}</style><!--<div></div>-->';
+  const divs=extractBlocks(html,'div');
+  assert.equal(divs.length,2);
+  assert.equal(divs[0].inner,'<div>x</div><a href=/zh/><span>home</span></a>');
+  assert.equal(extractBlocks(divs[0].inner,'a')[0].open,'<a href=/zh/>');
+  assert.throws(()=>extractBlocks('</div>','div'),/Unexpected closing/);
+  assert.throws(()=>extractBlocks('<div>','div'),/Unclosed/);
+});
+
+test('shared metadata accepts optional dates and rejects merged or reordered rows',()=>{
+  const dates=[dateRow('2026-10-11'),dateRow('2026-10-10')];
+  const taxonomy='<nav class="document-meta__row document-meta__row--taxonomy-path"><a href=/topics/test/>Test</a></nav>';
+  const directory='<nav class="document-meta__row document-meta__row--path"><a href=/>Home</a></nav>';
+  for(const count of [0,1,2])assert.deepEqual(inspectDocumentMetadata(metadata(dates.slice(0,count).join('')+taxonomy+directory)),[]);
+  const merged=dates.join('').replace('</time></div><div class=document-meta__row><span><svg><use href=#icon-clock></use></svg></span>','</time>');
+  assert.match(inspectDocumentMetadata(metadata(merged))[0],/separate metadata rows/);
+  assert.match(inspectDocumentMetadata(metadata(taxonomy+dates.join('')))[0],/first, adjacent/);
+  assert.match(inspectDocumentMetadata(metadata(dates[0]+directory+dates[1]))[0],/first, adjacent/);
+  assert.match(inspectDocumentMetadata(metadata(dates[0].replace('#icon-clock','#icon-calendar')))[0],/clock icon/);
+  assert.match(inspectDocumentMetadata(metadata(directory+taxonomy))[0],/Taxonomy paths precede/);
+  const html=fs.readFileSync(path.join(site,'public/index.html'),'utf8');
+  const directoryOutput=output('metadata order',html.replace('</body>',metadata(directory+taxonomy)+'</body>'));
+  checked('check/html/metadata',directoryOutput,/Taxonomy paths precede.*index.html/s);
+});
+
+test('shared controls distinguish metadata-only and chapter-only asides',()=>{
+  const toc='<nav class=document-toc><ul><li><a href=#chapter>Chapter</a></li></ul></nav>';
+  const aside=inner=>'<aside id=document-aside>'+inner+'</aside>';
+  const metaOnly=toggle+aside(metadata('')+close)+asideScript;
+  const tocOnly=toggle+aside(toc+close)+asideScript+tocScript;
+  for(const html of ['',aside(metadata('')),metaOnly,tocOnly])assert.deepEqual(inspectDocumentControls(html),[]);
+  assert.match(inspectDocumentControls(metaOnly.replace(close,''))[0],/pair with one toggle/);
+  assert.match(inspectDocumentControls(metaOnly.replace('aria-controls=document-aside','aria-controls=missing'))[0],/reference the aside/);
+  assert.match(inspectDocumentControls(tocOnly.replace(tocScript,''))[0],/toc controller/);
+  assert.match(inspectDocumentControls(asideScript)[0],/aside controller/);
+  assert.match(inspectDocumentControls(metaOnly+tocScript)[0],/toc controller/);
+  const html=fs.readFileSync(path.join(site,'public/index.html'),'utf8');
+  const bad=output('unneeded aside controller',html.replace('</body>',asideScript+'</body>'));
+  write(bad,'js/document/aside.fixture.js','void 0;');
+  checked('check/html/scripts',bad,/aside controller.*index.html/s);
+  assert.equal(cli('check/html/metadata',[bad]).status,0);
+});
+
+test('shared update controls accept a disabled worker and reject broken static controls',()=>{
+  const enabled=updatePanel.replace('</div>',updateAction+'</div>');
+  for(const html of [updatePanel,enabled])assert.deepEqual(inspectDocumentControls(html),[]);
+  assert.match(inspectDocumentControls(enabled.replace('type=button','type=submit'))[0],/native button/);
+  assert.match(inspectDocumentControls(enabled.replace('data-site-update-action-label','data-removed-label'))[0],/one label/);
+  assert.match(inspectDocumentControls(enabled.replace('aria-live=polite','aria-live=off'))[0],/polite announcements/);
+  assert.match(inspectDocumentControls(enabled.replace('</div>',updateAction+'</div>'))[0],/at most one action/);
+  assert.match(inspectDocumentControls(enabled.replace('</div>','<time>Build</time></div>'))[0],/outside the update panel/);
+  assert.match(inspectDocumentControls(updatePanel+updatePanel)[0],/at most once/);
 });
 
 test('sitemap checks cross-file indexing and robots checks its own declaration',() => {
