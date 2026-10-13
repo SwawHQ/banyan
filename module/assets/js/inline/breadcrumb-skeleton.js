@@ -1,3 +1,5 @@
+import { readFragment } from '../browse/navigation-state.contract.js';
+
 function parseJson(value, fallback) {
     if (typeof value !== "string" || value === "") {
         return fallback;
@@ -9,21 +11,6 @@ function parseJson(value, fallback) {
     } catch (_) {
         return fallback;
     }
-}
-
-function readFirst(params, keys) {
-    if (!Array.isArray(keys)) {
-        return "";
-    }
-
-    for (var index = 0; index < keys.length; index += 1) {
-        var value = params.get(keys[index]);
-        if (typeof value === "string") {
-            return value;
-        }
-    }
-
-    return "";
 }
 
 function normalizePath(value) {
@@ -100,10 +87,6 @@ function start() {
 try {
     var html = document.documentElement;
     var entryPending = html.getAttribute("data-entry-breadcrumb-pending") === "true";
-    if (!entryPending) {
-        return;
-    }
-
     var body = document.body;
     if (!body) {
         return;
@@ -113,18 +96,20 @@ try {
     if (!trailContainer) {
         return;
     }
+    // Keep Hugo's default path for same-document source changes and history.
+    trailContainer.defaultPath = trailContainer.firstElementChild?.cloneNode(true);
+    if (!entryPending) return;
 
     var entryBreadcrumbSources = parseJson(body.dataset.entryBreadcrumbSources || "", []);
     if (!Array.isArray(entryBreadcrumbSources) || entryBreadcrumbSources.length === 0) {
         return;
     }
 
-    var entryLineageKeys = parseJson(html.dataset.entryLineageKeys || "", []);
-    var params = new URLSearchParams(window.location.search);
+    var params = readFragment(window.location.hash);
     var placeholderCount = 0;
 
     if (entryPending) {
-        var entrySource = findSource(entryBreadcrumbSources, readFirst(params, entryLineageKeys) || "");
+        var entrySource = findSource(entryBreadcrumbSources, params.get('from') || "");
         if (entrySource) {
             placeholderCount = countTrailItems(entrySource);
 

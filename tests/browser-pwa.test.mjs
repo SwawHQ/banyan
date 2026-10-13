@@ -172,7 +172,7 @@ test('offline declarations expose the first page and reject unhandled URL state'
   const spec=offlineCommand('offline','Offline');
   assert.equal(parseArguments(spec,[]).page,'/');
   assert.equal(parseArguments(spec,['--page',from]).page,from);
-  for(const page of [from+'?from=all',from+'#details','https://example.invalid/'])assert.throws(()=>parseArguments(spec,['--page',page]));
+  for(const page of [from+'#from=all',from+'#details','https://example.invalid/'])assert.throws(()=>parseArguments(spec,['--page',page]));
   assert.match(helpFor(spec),/--page <path>/);
 });
 

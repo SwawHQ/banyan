@@ -29,6 +29,27 @@
 
 ## URL 状态
 
+`from`、`sort`、`sorts` 是前端视图状态，统一放在 URL 的 `#` 后：
+
+```txt
+/p/example/#from=d/products&sort=name-asc&sorts=_,date-desc&anchor=installation
+```
+
+字段名是代码协议，不再通过 `navigation-state-default.toml` 配置。
+读取和写入共用 `navigation-state.contract.js`。真实查询参数仍保留在 `?` 后。
+前端不读取旧查询参数中的导航状态，也不自动迁移旧地址。
+
+`anchor` 表示正文目标元素的 ID。没有其他状态时，仍使用原生 `#installation`。
+带导航状态的章节链接使用 `&anchor=installation`；JS 负责定位，同时保留来源和排序。
+滚动正文只更新目录高亮，不改写 URL。
+
+同页片段导航通过 `hashchange` 更新来源列、根入口、排序和章节位置。
+排序控件继续使用 `history.replaceState()`，并主动刷新受影响的列；
+该接口不会触发 `hashchange`，也不会增加历史记录。
+
+片段不进入 HTTP 请求，HTTP 和 SW 缓存不需要再忽略这些参数。
+真实查询参数仍属于缓存地址。章节和导航状态由每个标签页的 URL 保存。
+
 ### `from`
 
 `from` 表示 entry 页是沿哪条 collection 路径进入的。
@@ -36,7 +57,7 @@
 例子：
 
 ```txt
-?from=d/products
+#from=d/products
 ```
 
 含义：
@@ -91,7 +112,7 @@ Hugo 已输出的 `link[rel="alternate"][hreflang]` 打开所选语言版本，�
 例子：
 
 ```txt
-?sort=name-asc
+#sort=name-asc
 ```
 
 它只服务当前页主 grid/header controls，也会同步投影到从该主列表离开的导航链接上。
@@ -104,7 +125,7 @@ breadcrumb 分栏不读取或改写 `sort`。
 例子：
 
 ```txt
-?from=d/products&sorts=name-asc,date-desc
+#from=d/products&sorts=name-asc,date-desc
 ```
 
 含义：

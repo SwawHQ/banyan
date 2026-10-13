@@ -6,15 +6,15 @@ export const columnLocator=(page,href)=>page.locator(columnsSelector+'[data-brea
 
 export function columnSort(column) {
   const url=new URL(column.toggle),depth=column.source.logical_path.split('/').filter(Boolean).length;
-  const lineage=(url.searchParams.get('from')||column.source.logical_path).split('/').filter(Boolean).length;
-  const tokens=(url.searchParams.get('sorts')||'').split(',');
+  const lineage=(new URLSearchParams(url.hash.slice(1)).get('from')||column.source.logical_path).split('/').filter(Boolean).length;
+  const tokens=(new URLSearchParams(url.hash.slice(1)).get('sorts')||'').split(',');
   const slots=[...Array(Math.max(0,lineage-tokens.length)).fill('_'),...tokens];
   const next=slots[depth-1],token=next&&next!=='_'?next:column.source.default_sort;
   return token.replace(/-(asc|desc)$/,'')+'-'+(column.indicator==='↑'?'asc':'desc');
 }
 
 export async function openPage(page,url) {
-  const response=await page.goto(url,{waitUntil:'load'});
+  const response=await page.goto(url,{waitUntil:'load'})||await page.reload({waitUntil:'load'});
   assert.ok(response?.ok(),'Page must return a successful response.');
   await waitForBrowse(page);await afterPaint(page);
 }
@@ -43,6 +43,7 @@ export async function selectColumn(page,wanted) {
 
 // Capture SSR nodes before the external controller can sort or rebuild them.
 export async function observeColumns(page,url) {
+  await page.goto('about:blank');
   await page.addInitScript(selector=>{
     const observer=new MutationObserver(()=>{
       if(!document.getElementById('main'))return;

@@ -14,7 +14,7 @@ import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_share
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
 const engines=[{name:'chromium',suffix:''},{name:'webkit',suffix:'.webkit'}];
 const commands=['aside/toggle','aside/chapters','aside/layout','aside/style','aside/print','canvas/layout'];
-const route='/d/aside-fixture/?from=all';
+const route='/d/aside-fixture/#from=all';
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){

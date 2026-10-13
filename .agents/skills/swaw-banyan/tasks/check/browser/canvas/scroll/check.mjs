@@ -16,6 +16,7 @@ export async function check({page,baseUrl,options}) {
   const cases=[];
   for(const width of options.widths.split(',').map(Number)) {
     await page.setViewportSize({width,height:300});
+    await page.goto('about:blank');
     const response=await page.goto(baseUrl+options.page,{waitUntil:'load'});
     assert.ok(response?.ok(),'Page must return a successful response.');await waitForBrowse(page);
     assert.equal(await page.locator('.page-content').count(),1,'Page must have one reading column.');

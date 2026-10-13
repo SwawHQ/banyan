@@ -27,4 +27,5 @@ export function initRootNavigation() {
         if (event.persisted) refreshRootSelection();
     });
     window.addEventListener('popstate', refreshRootSelection);
+    window.addEventListener('hashchange', refreshRootSelection);
 }

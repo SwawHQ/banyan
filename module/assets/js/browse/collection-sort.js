@@ -59,8 +59,7 @@ function applySortableGrid(grid) {
     if (!variant || !columnCount) return;
 
     const pageCollectionSource = readPageCollectionSource();
-    const queryToken = readCurrentSortToken(variantName, variant.defaultToken);
-    const currentToken = queryToken;
+    const currentToken = readCurrentSortToken(variantName, variant.defaultToken);
     const current = parseSortToken(currentToken);
     if (!variant.fields[current.field]) return;
 
@@ -107,6 +106,9 @@ function initSortableGrids() {
     document.addEventListener('click', (event) => {
         const control = event.target.closest('a[data-sort-control="true"]');
         if (!control) return;
+        if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey
+            || event.shiftKey || event.altKey || control.hasAttribute('download')
+            || (control.target && control.target !== '_self')) return;
 
         const grid = control.closest('[data-sortable="true"][data-sort-variant]');
         if (!grid) return;
@@ -115,8 +117,7 @@ function initSortableGrids() {
         const variant = SORT_VARIANTS[variantName];
         const field = (control.dataset.sortField || '').toLowerCase();
         const defaultOrder = (control.dataset.sortDefaultOrder || 'asc').toLowerCase();
-        const queryToken = readCurrentSortToken(variantName, variant?.defaultToken || '');
-        const currentToken = queryToken;
+        const currentToken = readCurrentSortToken(variantName, variant?.defaultToken || '');
         const current = parseSortToken(currentToken);
         const nextOrder = current.field === field ? toggleSortOrder(current.order) : defaultOrder;
         const nextToken = `${field}-${nextOrder}`;
@@ -132,3 +133,4 @@ function initSortableGrids() {
 document.addEventListener('DOMContentLoaded', () => {
     initSortableGrids();
 });
+window.addEventListener('hashchange', applySortableGrids);

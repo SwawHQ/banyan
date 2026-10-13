@@ -1,129 +1,43 @@
-import * as params from '@params';
+export const ENTRY_LINEAGE_FIELD = 'from';
+export const ACTIVE_SORT_FIELD = 'sort';
+export const LINEAGE_SORTS_FIELD = 'sorts';
+export const SORTS_PLACEHOLDER = '_';
 
-const REQUIRED_FIELD_KEYS = Object.freeze(['entry_lineage', 'active_sort', 'lineage_sorts']);
-
-function normalizeString(value) {
-    return typeof value === 'string' ? value.trim().toLowerCase() : '';
-}
-
-function failContract(message) {
-    throw new Error(`navigation-state.contract: ${message}`);
-}
-
-function normalizeField(rawField, semanticKey) {
-    const source = rawField && typeof rawField === 'object' ? rawField : null;
-    if (!source) {
-        failContract(`missing field config for "${semanticKey}"`);
-    }
-
-    const name = normalizeString(source.name);
-    if (!name) {
-        failContract(`field "${semanticKey}" must define a non-empty name`);
-    }
-
-    const keys = [name];
-    const location = normalizeString(source.location) || 'query';
-    const cacheKey = normalizeString(source.cache_key) || 'keep';
-    const normalized = {
-        name,
-        keys,
-        location,
-        cache_key: cacheKey
-    };
-
-    const placeholder = typeof source.placeholder === 'string' && source.placeholder
-        ? source.placeholder
-        : '';
-    if (placeholder) {
-        normalized.placeholder = placeholder;
-    }
-
-    return Object.freeze(normalized);
-}
-
-function createFieldsMap() {
-    const rawNavigationState = params && typeof params === 'object' ? params.navigationState : null;
-    const rawFields = rawNavigationState && typeof rawNavigationState.fields === 'object'
-        ? rawNavigationState.fields
-        : {};
-    const normalizedFields = {};
-
-    REQUIRED_FIELD_KEYS.forEach((semanticKey) => {
-        normalizedFields[semanticKey] = normalizeField(rawFields[semanticKey], semanticKey);
-    });
-
-    return Object.freeze(normalizedFields);
-}
-
-function getSearchParams(search) {
-    if (search instanceof URLSearchParams) {
-        return search;
-    }
-
-    if (search instanceof URL) {
-        return search.searchParams;
-    }
-
-    const value = typeof search === 'string'
-        ? search.replace(/^\?/, '')
-        : '';
-    return new URLSearchParams(value);
-}
-
-const NAVIGATION_STATE_FIELDS = createFieldsMap();
-export const ENTRY_LINEAGE_FIELD = NAVIGATION_STATE_FIELDS.entry_lineage;
-export const ACTIVE_SORT_FIELD = NAVIGATION_STATE_FIELDS.active_sort;
-export const LINEAGE_SORTS_FIELD = NAVIGATION_STATE_FIELDS.lineage_sorts;
-
-export const SORTS_PLACEHOLDER = LINEAGE_SORTS_FIELD.placeholder || '_';
-
-const CACHE_IGNORED_QUERY_KEYS = Object.freeze(
-    Object.values(NAVIGATION_STATE_FIELDS)
-        .filter((field) => field.location === 'query' && field.cache_key === 'ignore')
-        .flatMap((field) => field.keys)
-        .filter((value, index, list) => value && list.indexOf(value) === index)
-);
-
-function getFieldKeys(field) {
-    return Array.isArray(field?.keys) ? field.keys.slice() : [];
-}
-
-export function fieldHasParamName(field, paramName) {
-    const normalizedParamName = normalizeString(paramName);
-    return normalizedParamName !== '' && getFieldKeys(field).includes(normalizedParamName);
-}
-
-export function readFieldValue(search, field) {
-    const searchParams = getSearchParams(search);
-
-    for (const key of getFieldKeys(field)) {
-        const value = searchParams.get(key);
-        if (typeof value === 'string') {
-            return value;
-        }
-    }
-
-    return '';
-}
-
-export function hasFieldValue(search, field) {
-    const searchParams = getSearchParams(search);
-    return getFieldKeys(field).some((key) => searchParams.has(key));
-}
-
-export function normalizeNavigationCacheUrl(urlValue, baseUrl = '') {
+export function readFragment(hash) {
+    const raw = (hash instanceof URL ? hash.hash : hash || '').replace(/^#/, '');
+    if (!raw || raw.includes('=')) return new URLSearchParams(raw);
     try {
-        const url = new URL(
-            urlValue instanceof URL ? urlValue.toString() : urlValue,
-            baseUrl || undefined
-        );
-
-        CACHE_IGNORED_QUERY_KEYS.forEach((queryKey) => {
-            url.searchParams.delete(queryKey);
-        });
-        url.hash = '';
-        return url.toString();
-    } catch (error) {
-        return '';
+        return new URLSearchParams({ anchor: decodeURIComponent(raw) });
+    } catch {
+        return new URLSearchParams();
     }
+}
+
+export function readFieldValue(hash, field) {
+    return readFragment(hash).get(field) || '';
+}
+
+export function hasFieldValue(hash, field) {
+    return readFragment(hash).has(field);
+}
+
+export function writeFragment(url, fields) {
+    // Keep plain chapter links native when there is no other fragment state.
+    if (fields.size === 1 && fields.has('anchor')) {
+        url.hash = encodeURIComponent(fields.get('anchor'));
+    } else {
+        url.hash = fields.toString().replace(/%2F/gi, '/').replace(/%2C/gi, ',');
+    }
+    return url;
+}
+
+export function applyFragmentField(url, field, value) {
+    const fields = readFragment(url);
+    if (value) fields.set(field, value);
+    else fields.delete(field);
+    return writeFragment(url, fields);
+}
+
+export function readAnchor(hash) {
+    return readFieldValue(hash, 'anchor');
 }

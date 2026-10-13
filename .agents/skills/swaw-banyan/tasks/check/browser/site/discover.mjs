@@ -17,7 +17,7 @@ function json(text,id) {
 function localPath(href,route,canonical) {
   if(!href||href.startsWith('#'))return null;
   const base=canonical||'https://swban.invalid'+route,url=new URL(href,base);
-  return ['http:','https:'].includes(url.protocol)&&url.origin===new URL(base).origin?url.pathname+url.search:null;
+  return ['http:','https:'].includes(url.protocol)&&url.origin===new URL(base).origin?url.pathname+url.search+url.hash:null;
 }
 
 function inspect(page) {
@@ -33,11 +33,11 @@ function inspect(page) {
   // This leaf checks selected visible roots; hidden collections are valid sites.
   const sortable=Boolean(source?.logical_path&&rootHref&&roots.includes(localPath(rootHref,route,canonical))&&has(text,'data-sortable')&&
     names.some((row,i)=>names.some((other,j)=>i!==j&&row.group===other.group&&row.name!==other.name))&&
-    anchors.some(({href})=>href&&[...new URL(href,'https://swban.invalid').searchParams.values()]
+    anchors.some(({href})=>href&&[...new URLSearchParams(new URL(href,'https://swban.invalid').hash.slice(1)).values()]
       .some(value=>clean(value)===clean(source.logical_path))));
   const payload=json(text,'site-prefetch-data'),meta=json(text,'site-prefetch-runtime-meta');
   const entry=payload?.TT,config=typeof entry==='string'?payload[entry]:entry;
-  const candidates=anchors.filter(({tag,href})=>href&&href!==route&&has(tag,'data-prefetch-slot')&&
+  const candidates=anchors.map(anchor=>({...anchor,href:anchor.href?.split('#')[0]})).filter(({tag,href})=>href&&href!==route&&has(tag,'data-prefetch-slot')&&
     !has(tag,'download')&&(!attr(tag,'target')||attr(tag,'target').toLowerCase()==='_self')&&
     /^(link|sw)_[smx]f(?:_g)?$/.test(config?.[attr(tag,'data-prefetch-slot')]??''));
   const coordinated=meta?.coordination_mode==='preempt_runtime_when_supported'&&meta.owned_slots?.length&&candidates.length;

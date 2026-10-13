@@ -300,7 +300,7 @@ try {
         }
         for (const list of ['d', 'all', 'tools/contract-dates']) {
             for (const direction of ['asc', 'desc']) {
-                await gotoAndWait(page, `${baseUrl}/${list}/?sort=date-${direction}`);
+                await gotoAndWait(page, `${baseUrl}/${list}/#sort=date-${direction}`);
                 const links = '.slot-main .collection-item-link[href*="/p/contract-"]';
                 const dates = await page.locator(links).evaluateAll(nodes => nodes
                     .filter(node => /\/p\/contract-(priced|missing)\//.test(node.href))
@@ -308,7 +308,7 @@ try {
                 assert.deepEqual(dates, direction === 'asc' ? ['2026-08-01', '2026-08-02'] : ['2026-08-02', '2026-08-01']);
                 assert.match(await page.locator('.slot-main [data-sort-field="date"]').textContent(), /Updated/);
                 const ordered = await page.locator(links).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
-                await page.locator(`${links}[href*="/p/contract-missing/?"]`).click();
+                await page.locator(`${links}[href*="/p/contract-missing/#"]`).click();
                 await waitForBrowse(page);
                 const pathOrder = await page.locator('.slot-breadcrumb .collection-item-link[href*="/p/contract-"]').evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
                 assert.deepEqual(pathOrder, ordered, 'Lastmod sort survives entry into the article path column');
@@ -316,7 +316,7 @@ try {
         }
         console.log('PASS Lastmod ascending/descending display and article path order');
         for (const direction of ['asc', 'desc']) {
-            await gotoAndWait(page, `${baseUrl}/tools/free/?sort=price-${direction}`);
+            await gotoAndWait(page, `${baseUrl}/tools/free/#sort=price-${direction}`);
             const ordered = await page.locator('.slot-main .collection-list--products .collection-item-link').evaluateAll(links => links.map(link => ({
                 href: new URL(link.href).pathname,
                 price: link.closest('.collection-cell--name').dataset.sortPrice ?? ''
@@ -327,7 +327,7 @@ try {
             assert(ordered.slice(firstMissing).every(row => row.price === ''), `unpriced last on price-${direction}`);
             const amounts = ordered.slice(0, firstMissing).map(row => Number(row.price));
             assert.deepEqual(amounts, [...amounts].sort((a, b) => direction === 'asc' ? a - b : b - a));
-            const clicked = page.locator('.slot-main a[href*="/p/contract-missing/?"]');
+            const clicked = page.locator('.slot-main a[href*="/p/contract-missing/#"]');
             await clicked.click();
             await waitForBrowse(page);
             const selected = await page.locator('[data-root-href].is-current').getAttribute('data-root-href');
@@ -338,7 +338,7 @@ try {
         // Arbitrary auto terms must support article entry, not just compile a page.
         await gotoAndWait(page, `${baseUrl}/tools/`);
         await page.locator('.slot-main a').filter({ hasText: '$5~$50' }).click();
-        await page.locator('.slot-main a[href*="/p/contract-priced/?"]').click();
+        await page.locator('.slot-main a[href*="/p/contract-priced/#"]').click();
         await waitForBrowse(page);
         assert.equal(await page.locator('[data-root-href].is-current').getAttribute('data-root-href'), '/tools/');
         await context.close();
@@ -371,11 +371,11 @@ try {
         const iconsContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 960 } });
         const iconsPage = await iconsContext.newPage();
         const selectedIcon = () => iconsPage.locator('.slot-breadcrumb a.is-current[href*="/p/contract-missing/"] use').getAttribute('href');
-        await gotoAndWait(iconsPage, `${baseUrl}/tools/free/?sort=name-desc`);
-        await iconsPage.locator('.slot-main a[href*="/p/contract-missing/?"]').click();
+        await gotoAndWait(iconsPage, `${baseUrl}/tools/free/#sort=name-desc`);
+        await iconsPage.locator('.slot-main a[href*="/p/contract-missing/#"]').click();
         await waitForBrowse(iconsPage);
         assert.equal(await selectedIcon(), '#icon-product');
-        await gotoAndWait(iconsPage, `${baseUrl}/p/contract-missing/?from=tools/paid&sort=name-asc`);
+        await gotoAndWait(iconsPage, `${baseUrl}/p/contract-missing/#from=tools/paid&sort=name-asc`);
         assert.equal(await selectedIcon(), '#icon-appearance-light');
         await iconsPage.reload();
         await waitForBrowse(iconsPage);
@@ -387,8 +387,8 @@ try {
         await waitForBrowse(iconsPage);
         assert.equal(await selectedIcon(), '#icon-appearance-light');
         for (const prefix of prefixes) {
-            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/all/?sort=name-asc`);
-            await iconsPage.locator('.slot-main a[href*="/p/contract-unclassified/?"]').click();
+            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/all/#sort=name-asc`);
+            await iconsPage.locator('.slot-main a[href*="/p/contract-unclassified/#"]').click();
             const selectedAsset = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-unclassified/"] img.icon--image.icon--monochrome');
             await waitForBrowse(iconsPage);
             assert.equal(await selectedAsset().getAttribute('src'), assetImage.image);
@@ -400,8 +400,8 @@ try {
             await iconsPage.goForward();
             await waitForBrowse(iconsPage);
             assert.equal(await selectedAsset().getAttribute('src'), assetImage.image);
-            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/tools/free/?sort=name-asc`);
-            await iconsPage.locator('.slot-main a[href*="/p/contract-no-offer/?"]').click();
+            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/tools/free/#sort=name-asc`);
+            await iconsPage.locator('.slot-main a[href*="/p/contract-no-offer/#"]').click();
             const selectedImage = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-no-offer/"] img.icon--image');
             await waitForBrowse(iconsPage);
             assert.equal(await selectedImage().getAttribute('src'), ownImage.image);
@@ -414,11 +414,11 @@ try {
             await waitForBrowse(iconsPage);
             assert.equal(await selectedImage().getAttribute('src'), ownImage.image);
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/d/contract-image/child/`);
-            await iconsPage.locator('.slot-main a[href*="/p/contract-image-child/?"]').click();
+            await iconsPage.locator('.slot-main a[href*="/p/contract-image-child/#"]').click();
             await waitForBrowse(iconsPage);
             assert.equal(await iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] img.icon--image.icon--monochrome').getAttribute('src'), inheritedImage.image);
-            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/tools/free/?sort=name-asc`);
-            await iconsPage.locator('.slot-main a[href*="/p/contract-zero/?"]').click();
+            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/tools/free/#sort=name-asc`);
+            await iconsPage.locator('.slot-main a[href*="/p/contract-zero/#"]').click();
             const selectedText = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-zero/"] .icon--text').textContent();
             await waitForBrowse(iconsPage);
             assert.equal(await selectedText(), '<b>EN</b>');
@@ -432,7 +432,7 @@ try {
             await waitForBrowse(iconsPage);
             assert.equal(await selectedText(), '<b>EN</b>');
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/d/contract-text/`);
-            await iconsPage.locator('.slot-main a[href*="/p/contract-text/?"]').click();
+            await iconsPage.locator('.slot-main a[href*="/p/contract-text/#"]').click();
             await waitForBrowse(iconsPage);
             assert.equal(await iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
         }
@@ -464,7 +464,7 @@ try {
                 assert.equal(await namesPage.locator(nameGrid).getAttribute('data-sort-columns'), '1');
                 assert.equal(await namesPage.locator(nameGrid).evaluate(grid => getComputedStyle(grid).gridTemplateColumns), '225px');
                 await namesPage.locator(`${nameGrid} [data-sort-field="name"]`).click();
-                await namesPage.waitForURL(url => url.searchParams.get('sort') === 'name-desc');
+                await namesPage.waitForURL(url => new URLSearchParams(url.hash.slice(1)).get('sort') === 'name-desc');
                 const descending = [...expected].reverse();
                 assert.deepEqual(await paths(mainLinks), descending, 'Single-column sorting reverses all names');
                 const collectionUrl = namesPage.url();
@@ -474,7 +474,7 @@ try {
                 await waitForBrowse(namesPage);
                 const column = `.slot-breadcrumb [data-breadcrumb-collection-href="${prefix}/${list}/"]`;
                 const assertNameColumn = async () => {
-                    assert.equal(new URL(namesPage.url()).searchParams.get('from'), list);
+                    assert.equal(new URLSearchParams(new URL(namesPage.url()).hash.slice(1)).get('from'), list);
                     assert.deepEqual(await paths(`${column} .collection-item-link`), descending, 'Article path uses the same name list order');
                     assert.deepEqual(await paths(`${column} .collection-item-link.is-current`), [articlePath]);
                     assert.match(await namesPage.locator(`${column} .collection-column-sort`).textContent(), /↓/);
@@ -497,7 +497,7 @@ try {
         }
         await gotoAndWait(namesPage, `${baseUrl}/zh/d/`);
         await namesPage.screenshot({path: path.join(work, 'name-list-zh.png')});
-        await gotoAndWait(namesPage, `${baseUrl}/zh/p/contract-missing/?from=tools/contract-name&sort=name-desc`);
+        await gotoAndWait(namesPage, `${baseUrl}/zh/p/contract-missing/#from=tools/contract-name&sort=name-desc`);
         await namesPage.screenshot({path: path.join(work, 'name-list-path-zh.png')});
         await namesContext.close();
         console.log('PASS name-only SSR, section inheritance, taxonomy/aggregate sources, ascending/descending sort, path columns and history in three languages');

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {activate,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
 
 export async function openArticle(page,url) {
-  const response=await page.goto(url,{waitUntil:'load'});
+  const response=await page.goto(url,{waitUntil:'load'})||await page.reload({waitUntil:'load'});
   assert.ok(response?.ok(),'Article must return a successful response.');
   await waitForBrowse(page);
   assert.equal(await page.locator('#document-aside-toggle').count(),1,'Article must have one aside toggle.');

@@ -13,7 +13,7 @@ import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_share
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
 const engines=[{name:'chromium',suffix:''},{name:'webkit',suffix:'.webkit'}],commands=['scroll','scrollbar','history'];
-const route='/d/canvas-first/?from=all',next='/d/canvas-next/?from=all';
+const route='/d/canvas-first/#from=all',next='/d/canvas-next/#from=all';
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){

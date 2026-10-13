@@ -12,7 +12,7 @@ export function returnCommand(command,description) {
     {name:'page',value:'path',default:'/language/',description:'Language settings linked from the source page',parse:sitePath},
     {name:'to',value:'code',required:true,description:'Target language declared in translated settings',parse:languageCode}
   ]);
-  spec.examples=[command+' ./preview --from /article/?from=all#details --to zh',command+' ./preview --from /zh/all/?sort=name-asc --page /zh/language/ --to en --trace'];
+  spec.examples=[command+' ./preview --from /article/#from=all&anchor=details --to zh',command+' ./preview --from /zh/all/#sort=name-asc --page /zh/language/ --to en --trace'];
   return spec;
 }
 

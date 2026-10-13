@@ -1,4 +1,3 @@
-import { normalizeNavigationCacheUrl } from '../browse/navigation-state.contract.js';
 import {
     FINGERPRINT_ASSET_CACHE,
     NAVIGATION_CACHE_PREFIX,
@@ -118,23 +117,10 @@ function normalizeSameOriginUrl(urlValue, baseUrl) {
     }
 }
 
-function normalizeWarmNavigationUrl(urlValue) {
-    const normalizedUrl = normalizeNavigationCacheUrl(urlValue, self.location.origin);
-    if (!normalizedUrl) return '';
-
-    try {
-        const url = new URL(normalizedUrl);
-        if (url.origin !== self.location.origin) return '';
-        return url.toString();
-    } catch (error) {
-        return '';
-    }
-}
-
 function createNavigationCacheKeyRequest(request) {
     if (!request) return null;
 
-    const normalizedUrl = normalizeNavigationCacheUrl(request.url, self.location.origin);
+    const normalizedUrl = normalizeSameOriginUrl(request.url, self.location.origin);
     if (!normalizedUrl) return request;
 
     return new Request(normalizedUrl, {
@@ -162,7 +148,7 @@ function getOfflineFallbackUrl(pathname) {
         const normalizedPrefix = normalizePathnameForPrefixMatch(
             typeof fallback.path_prefix === 'string' ? fallback.path_prefix : ''
         );
-        const normalizedUrl = normalizeWarmNavigationUrl(fallback.url);
+        const normalizedUrl = normalizeSameOriginUrl(fallback.url);
 
         if (!normalizedPrefix || !normalizedUrl) continue;
         if (!normalizedPathname.startsWith(normalizedPrefix)) continue;
@@ -181,7 +167,7 @@ function getOfflineFallbackUrls() {
 
     for (const fallback of OFFLINE_FALLBACKS) {
         if (!fallback || typeof fallback !== 'object') continue;
-        const normalizedUrl = normalizeWarmNavigationUrl(fallback.url);
+        const normalizedUrl = normalizeSameOriginUrl(fallback.url);
         if (!normalizedUrl || seenUrls.has(normalizedUrl)) continue;
         seenUrls.add(normalizedUrl);
         urls.push(normalizedUrl);
@@ -304,7 +290,7 @@ async function warmAssetUrl(urlValue) {
 }
 
 async function warmNavigationUrl(urlValue) {
-    const href = normalizeWarmNavigationUrl(urlValue);
+    const href = normalizeSameOriginUrl(urlValue);
     if (!href) return;
     const pathname = getRequestPathname(new Request(href));
     const route = getMatchingRoute(pathname);

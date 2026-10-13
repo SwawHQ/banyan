@@ -52,7 +52,7 @@ test('breadcrumb options require explicit paths and generate complete help',{tim
 });
 
 test('sort reuses SSR nodes and restores row order with source, query and fragment intact',{timeout:45000},()=>{
-  const result=cli('sort',['--page',collection+'child/?sorts=date-desc,date-asc','--column',collection,'--trace','--out',path.join(work,'reports')]);
+  const result=cli('sort',['--page',collection+'child/#sorts=date-desc,date-asc','--column',collection,'--trace','--out',path.join(work,'reports')]);
   assert.equal(result.status,0,result.stdout+result.stderr);
   const folder=result.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
   assert.equal(report.browser,'chromium');assert.ok(report.browserVersion);assert.equal(report.details.cases.length,2);
@@ -62,19 +62,19 @@ test('sort reuses SSR nodes and restores row order with source, query and fragme
 });
 
 test('sort checks in-place reuse after an explicit source rebuild',{timeout:20000},()=>{
-  const result=cli('sort',['--page',article+'?from=all','--column','/all/','--out',path.join(work,'reports')]);assert.equal(result.status,0,result.stdout+result.stderr);
+  const result=cli('sort',['--page',article+'#from=all','--column','/all/','--out',path.join(work,'reports')]);assert.equal(result.status,0,result.stdout+result.stderr);
   const folder=result.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
   assert.equal(report.details.sourceRebuilt,true);assert.ok(report.details.prefetch.entries>0);
 });
 
 test('isolation covers ancestors and main collections, including sort previews without from',{timeout:45000},()=>{
-  for(const route of [article+'?from=d/breadcrumb-fixture',collection+'?from=d&sort=date-asc&sorts=date-asc',collection+'?sort=date-asc&sorts=date-asc,date-asc']) {
+  for(const route of [article+'#from=d/breadcrumb-fixture',collection+'#from=d&sort=date-asc&sorts=date-asc',collection+'#sort=date-asc&sorts=date-asc,date-asc']) {
     const result=cli('isolation',['--page',route]);assert.equal(result.status,0,route+'\n'+result.stdout+result.stderr);
   }
 });
 
 test('source works without JavaScript and retains runtime sorting through click and reload',{timeout:45000},()=>{
-  for(const query of ['','?from=tags/tooling','?sorts=date-desc,date-asc']) {
+  for(const query of ['','#from=tags/tooling','#sorts=date-desc,date-asc']) {
     const result=cli('source',['--page','/tags/tooling/devtools/'+query,'--column','/tags/tooling/','--article',article]);
     assert.equal(result.status,0,query+'\n'+result.stdout+result.stderr);
   }
@@ -102,24 +102,24 @@ test('sort rejects prefetch marker loss after source hydration and direction cha
     ['header-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-entry-breadcrumb-pending')||document.documentElement.hasAttribute('data-breadcrumb-sort-pending'))requestAnimationFrame(ready);else document.querySelector('.path-columns a:not([data-collection-entry])').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`]
   ]) {
     const broken=fixture(name);script(broken,article,code);
-    const result=cli('sort',['--page',article+'?from=all','--column','/all/'],broken);
+    const result=cli('sort',['--page',article+'#from=all','--column','/all/'],broken);
     assert.equal(result.status,1);assert.match(result.stderr,/Runtime breadcrumb anchors/);
   }
 });
 
 test('isolation rejects changed siblings and stale main-entry sort slots',{timeout:45000},()=>{
   const sibling=fixture('sibling');script(sibling,article,`document.addEventListener('click',event=>{if(!event.target.closest('[data-collection-sort-toggle]'))return;const own=event.target.closest('[data-collection-column]');const other=[...document.querySelectorAll('[data-collection-column]')].find(node=>node!==own);other.querySelector('[data-sort-indicator]').textContent='broken';});`);
-  const result=cli('isolation',['--page',article+'?from=d/breadcrumb-fixture'],sibling);assert.equal(result.status,1);assert.match(result.stderr,/another column order or indicator/);
-  const links=fixture('stale-links');script(links,collection,`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelectorAll('.slot-main [data-collection-entry]').forEach(link=>{const url=new URL(link.href);url.searchParams.set('sorts','date-asc,date-asc');link.href=url.href;});});`);
-  const stale=cli('isolation',['--page',collection+'?sort=date-asc&sorts=date-asc'],links);assert.equal(stale.status,1);assert.match(stale.stderr,/reflect each ancestor sort/);
+  const result=cli('isolation',['--page',article+'#from=d/breadcrumb-fixture'],sibling);assert.equal(result.status,1);assert.match(result.stderr,/another column order or indicator/);
+  const links=fixture('stale-links');script(links,collection,`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelectorAll('.slot-main [data-collection-entry]').forEach(link=>{const url=new URL(link.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('sorts','date-asc,date-asc');url.hash=fields.toString();link.href=url.href;});});`);
+  const stale=cli('isolation',['--page',collection+'#sort=date-asc&sorts=date-asc'],links);assert.equal(stale.status,1);assert.match(stale.stderr,/reflect each ancestor sort/);
 });
 
 test('source rejects wrong static and runtime lineage, missing links and malformed pages',{timeout:45000},()=>{
-  const runtime=fixture('runtime-source');script(runtime,'tags/tooling/devtools',`document.querySelectorAll('.slot-breadcrumb [data-collection-entry]').forEach(link=>{const url=new URL(link.href);if(url.pathname===${JSON.stringify(article)}){url.searchParams.set('from','wrong');link.href=url.href;}});`);
+  const runtime=fixture('runtime-source');script(runtime,'tags/tooling/devtools',`document.querySelectorAll('.slot-breadcrumb [data-collection-entry]').forEach(link=>{const url=new URL(link.href);if(url.pathname===${JSON.stringify(article)}){const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','wrong');url.hash=fields.toString();link.href=url.href;}});`);
   const args=['--page','/tags/tooling/devtools/','--column','/tags/tooling/','--article',article];
   const result=cli('source',args,runtime);assert.equal(result.status,1);assert.match(result.stderr,/declared column source/);
   const raw=fixture('static-source'),file=path.join(raw,'tags/tooling/devtools/index.html');
-  const text=fs.readFileSync(file,'utf8'),changed=text.replaceAll(article+'?from=tags/tooling',article+'?from=wrong');
+  const text=fs.readFileSync(file,'utf8'),changed=text.replaceAll(article+'#from=tags/tooling',article+'#from=wrong');
   assert.notEqual(changed,text);fs.writeFileSync(file,changed);
   const staticResult=cli('source',args,raw);assert.equal(staticResult.status,1);assert.match(staticResult.stderr,/declared column source/);
   const missing=cli('source',[...args.slice(0,-1),'/missing/']);assert.equal(missing.status,1);assert.match(missing.stderr,/requested article exactly once/);

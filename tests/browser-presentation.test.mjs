@@ -11,7 +11,7 @@ import {headerCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/b
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
-const collection='/d/presentation/child/',deep='/d/presentation/child/two/three/four/article-4/?from=d/presentation/child/two/three/four';
+const collection='/d/presentation/child/',deep='/d/presentation/child/two/three/four/article-4/#from=d/presentation/child/two/three/four';
 const engines=[{name:'chromium',suffix:''},{name:'webkit',suffix:'.webkit'}];
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
@@ -52,7 +52,7 @@ after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recu
 
 test('header options declare column paths, widths and detailed help',{timeout:20000},()=>{
   const spec=headerCommand('header','Header');assert.throws(()=>parseArguments(spec,[]),/--page is required/);
-  assert.throws(()=>parseArguments(spec,['--page',collection,'--column','/all/?sort=name-asc']),/without a query/);
+  assert.throws(()=>parseArguments(spec,['--page',collection,'--column','/all/#sort=name-asc']),/without a query/);
   assert.throws(()=>parseArguments(spec,['--page',collection,'--widths','390,390']));
   assert.match(helpFor(spec),/--column <path>/);assert.match(helpFor(spec),/default: 390,1440/);
 
@@ -80,7 +80,7 @@ test('Chromium rejects clipped controls, missing titles and spacing changed by s
 
 for(const {name,suffix} of engines){
 test(name+' checks collection startup, sort previews and deep canvas geometry',{timeout:30000},()=>{
-  for(const route of [collection,'/tags/tooling/devtools/',collection+'?sorts=date-asc,date-asc']) {
+  for(const route of [collection,'/tags/tooling/devtools/',collection+'#sorts=date-asc,date-asc']) {
     const state=report(cli('canvas/first-paint'+suffix,['--page',route,'--widths','390,1440']));
     assert.equal(state.browser,name);
     for(const result of state.details.cases)assert.equal(result.first.collection,true);

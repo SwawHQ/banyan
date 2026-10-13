@@ -12,7 +12,7 @@ import {styleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/co
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
-const article='/d/collection-fixture/one/?from=all';let work,skill,output;
+const article='/d/collection-fixture/one/#from=all';let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){
   const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/collection/'+command,directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
@@ -66,7 +66,7 @@ test('style checks actual links and choice buttons in both themes and widths',{t
   const state=report(cli('style',['--page',article,'--collection','/all/','--widths','390,1440','--trace','--out',path.join(work,'reports')]));
   assert.equal(state.browser,'chromium');assert.equal(state.details.cases.length,4);
   for(const result of state.details.cases){assert.equal(result.choiceFocus.tag,'BUTTON');assert.equal(result.pathFocus.tag,'A');assert.equal(result.mainFocus.visible,true);}
-  const translated=cli('style',['--page','/zh/p/translated-one/?from=all','--collection','/zh/all/','--choices','/zh/appearance/']);
+  const translated=cli('style',['--page','/zh/p/translated-one/#from=all','--collection','/zh/all/','--choices','/zh/appearance/']);
   assert.equal(translated.status,0,translated.stdout+translated.stderr);
 });
 

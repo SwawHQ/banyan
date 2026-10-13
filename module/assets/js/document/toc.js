@@ -1,10 +1,12 @@
+import { readAnchor } from '../browse/navigation-state.contract.js';
+
 const toc = document.querySelector('.document-toc');
 const content = document.querySelector('.page-content');
 
 if (toc && content) {
     const entries = [...toc.querySelectorAll('a[href]')].map(link => ({
         link,
-        heading: document.getElementById(decodeURIComponent(link.hash.slice(1)))
+        heading: document.getElementById(readAnchor(link.hash))
     })).filter(entry => entry.heading && content.contains(entry.heading));
     let current;
     let pending = false;
@@ -33,32 +35,8 @@ if (toc && content) {
         requestAnimationFrame(update);
     }
 
-    function reveal(entry) {
-        entry.heading.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'instant' });
-        // Reveal the whole reading column, not just the heading's visible end.
-        content.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
-        schedule();
-    }
-
-    toc.addEventListener('click', event => {
-        if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-        const entry = entries.find(entry => entry.link === event.target.closest('a'));
-        // Keep native hash history, modified clicks and the no-script links.
-        if (entry) requestAnimationFrame(openChapter);
-    });
-
-    function openChapter() {
-        // Read the current fragment when the callback runs; newer navigation wins.
-        let id;
-        try { id = decodeURIComponent(location.hash.slice(1)); } catch { /* Invalid fragments have no target. */ }
-        const entry = entries.find(entry => entry.heading.id === id);
-        // Chapter URLs reopen the chapter; reading progress is not stored.
-        if (entry) reveal(entry);
-        schedule();
-    }
-    // Native history restoration completes after pageshow dispatch.
-    window.addEventListener('pageshow', () => requestAnimationFrame(openChapter));
-    window.addEventListener('hashchange', () => requestAnimationFrame(openChapter));
+    window.addEventListener('pageshow', schedule);
+    window.addEventListener('hashchange', schedule);
     content.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
     new ResizeObserver(schedule).observe(content.querySelector('.article'));

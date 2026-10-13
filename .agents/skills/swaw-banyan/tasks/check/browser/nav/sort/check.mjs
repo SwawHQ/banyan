@@ -63,11 +63,24 @@ export async function check({page,baseUrl,options}) {
 
   const sourcePath = source.logical_path.replace(/^\/+|\/+$/g,'');
   const entries = await grid.locator('[data-collection-entry]').evaluateAll(nodes=>nodes.map(node=>node.href));
-  const entryHref = entries.find(href=>[...new URL(href).searchParams.values()].some(value=>value.replace(/^\/+|\/+$/g,'')===sourcePath));
+  const entryHref = entries.find(href=>[...new URLSearchParams(new URL(href).hash.slice(1)).values()].some(value=>value.replace(/^\/+|\/+$/g,'')===sourcePath));
   assert.ok(entryHref,'The collection must contain an article link with its declared source.');
-  assert.ok([...new URL(entryHref).searchParams.values()].some(value=>value==='name-desc'||value.split(',').includes('name-desc')),
+  assert.ok([...new URLSearchParams(new URL(entryHref).hash.slice(1)).values()].some(value=>value==='name-desc'||value.split(',').includes('name-desc')),
     'Article links must carry the active descending sort.');
-  const entry = grid.locator(`[data-collection-entry][href=${JSON.stringify(new URL(entryHref).pathname+new URL(entryHref).search)}]`);
+  const descendingUrl=page.url(),ascendingUrl=new URL(await control.getAttribute('href'),page.url()),requests=[];
+  const record=request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())requests.push(request.url());};
+  page.on('request',record);
+  try {
+    await page.evaluate(hash=>{location.hash=hash;},ascendingUrl.hash);
+    await page.waitForFunction(()=>document.querySelector('[data-sort-field="name"] [data-sort-indicator]')?.textContent==='↑');
+    assert.deepEqual((await readRows()).rows.map(row=>row.key),before.map(row=>row.key),'A fragment change must apply the requested main sort.');
+    await page.goBack();await page.waitForURL(descendingUrl);
+    await page.waitForFunction(()=>document.querySelector('[data-sort-field="name"] [data-sort-indicator]')?.textContent==='↓');
+    assert.deepEqual((await readRows()).rows.map(row=>row.key),after.rows.map(row=>row.key),'Back must restore the previous main sort.');
+    assert.equal(await page.evaluate(()=>window.__swbanSortMarker),marker,'Fragment sort history must retain the document.');
+    assert.deepEqual(requests,[],'Fragment sorting must not request another document.');
+  } finally {page.off('request',record);}
+  const entry = grid.locator(`[data-collection-entry][href=${JSON.stringify(new URL(entryHref).pathname+new URL(entryHref).search+new URL(entryHref).hash)}]`);
   await entry.click(); await page.waitForURL(entryHref);
   await page.locator(`[data-root-navigation] [data-root-href=${JSON.stringify(rootHref)}].is-current`).waitFor({state:'visible'});
   return {page:options.page,rows:before.length,source:sourcePath,root:rootHref,target:new URL(entryHref).pathname,dates};

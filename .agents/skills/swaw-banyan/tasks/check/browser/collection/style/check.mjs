@@ -3,6 +3,7 @@ import {setTheme} from '../../../../_shared/browser/theme.mjs';
 import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
 
 async function visit(page,url) {
+  await page.goto('about:blank');
   const response=await page.goto(url,{waitUntil:'load'});
   assert.ok(response?.ok(),'Page must return a successful response.');await waitForBrowse(page);await afterPaint(page);
 }

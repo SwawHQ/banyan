@@ -16,13 +16,7 @@
 {{- $cachePolicyRoutes := index $cachePolicy "routes" -}}
 {{- $cachePolicyEdgeone := index (index $cachePolicy "platform") "edgeone" -}}
 {{- $swRoutes := index $cachePolicy "sw_routes" -}}
-{{- $jsBuildParams := partialCached "feature-browse/js-build-params.html" site "browse-js-build-params" -}}
-{{- $routingConfig := index $jsBuildParams "navigationState" | default dict -}}
-{{- $routingFields := index $routingConfig "fields" | default dict -}}
-{{- $entryLineageField := index $routingFields "entry_lineage" | default dict -}}
-{{- $activeSortField := index $routingFields "active_sort" | default dict -}}
-{{- $lineageSortsField := index $routingFields "lineage_sorts" | default dict -}}
-{{- $inlineScripts := partialCached "entry-baseof/inline-scripts.html" (dict "build_params" $jsBuildParams) (printf "runtime-inline-scripts:%t" hugo.IsServer) -}}
+{{- $inlineScripts := partialCached "entry-baseof/inline-scripts.html" site (printf "runtime-inline-scripts:%t" hugo.IsServer) -}}
 {{- $themeBootInline := index $inlineScripts "theme_boot" | default "" -}}
 {{- $breadcrumbPendingInline := index $inlineScripts "breadcrumb_pending" | default "" -}}
 {{- $breadcrumbSkeletonInline := index $inlineScripts "breadcrumb_skeleton" | default "" -}}
@@ -48,9 +42,6 @@
 <html lang="{{ .Site.Language.Lang }}"
     {{- if .Sitemap.Disable }} data-sitemap-disabled="true"{{ end }}
     {{- if $hasBreadcrumbCapability }}
-    data-entry-lineage-keys='{{ (index $entryLineageField "keys" | default (slice)) | jsonify }}'
-    data-active-sort-keys='{{ (index $activeSortField "keys" | default (slice)) | jsonify }}'
-    data-lineage-sorts-keys='{{ (index $lineageSortsField "keys" | default (slice)) | jsonify }}'
     data-can-sort-collection-breadcrumb="{{ if and (gt (len $pageCollectionSource) 0) (ne .Kind "page") }}true{{ else }}false{{ end }}"
     {{- end }}>
 
@@ -95,7 +86,7 @@
     {{- end }}
     {{/* 首屏阻塞性状态初始化：同步主题以防闪烁，并恢复 MPA 跨页导航进度条。 */}}
     <script>{{ $themeBootInline | safeJS }}</script>
-    {{/* URL 带 from= 时先隐藏默认 breadcrumb，待运行时恢复来源路径；
+    {{/* URL 片段带 from= 时先隐藏默认 breadcrumb，待运行时恢复来源路径；
          article meta 始终保留 Hugo 的静态输出。 */}}
     {{- if $hasBreadcrumbCapability }}
     <script>{{ $breadcrumbPendingInline | safeJS }}</script>
@@ -112,11 +103,11 @@
     {{- hugo.Generator -}}
     {{- partial "system-metadata/seo/head.html" . -}}
     {{- /* 主站通用前端逻辑，defer 下载与执行，不阻塞 HTML 解析。 */ -}}
-    {{- $js := resources.Get "js/main.js" | js.Build (dict "params" $jsBuildParams "minify" (not hugo.IsServer)) -}}
+    {{- $js := resources.Get "js/main.js" | js.Build (dict "minify" (not hugo.IsServer)) -}}
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
     {{- if $hasBreadcrumbCapability -}}
-        {{- $breadcrumbRuntime := resources.Get "js/browse/path-entry.js" | js.Build (dict "params" $jsBuildParams "minify" (not hugo.IsServer)) -}}
+        {{- $breadcrumbRuntime := resources.Get "js/browse/path-entry.js" | js.Build (dict "minify" (not hugo.IsServer)) -}}
         {{- $breadcrumbRuntime = $breadcrumbRuntime | fingerprint -}}
     <script src="{{ $breadcrumbRuntime.RelPermalink }}" integrity="{{ $breadcrumbRuntime.Data.Integrity }}" defer></script>
     {{- end -}}
@@ -126,7 +117,6 @@
       "build_version" $buildVersion
       "offline_fallbacks" $offlineFallbacks
       "sw_routes" $swRoutes
-      "js_build_params" $jsBuildParams
       "is_offline_page" $isOfflinePage
     ) -}}
     {{- if and $manifest (eq $webAppManifestMode "defer") }}
@@ -190,7 +180,6 @@
     {{- if eq $prefetchRuntimeMode "enable" -}}
       {{- partial "system-delivery/prefetch/runtime/embed.html" (dict
         "env_config_map" $prefetchRuntimeEnvConfig
-        "js_build_params" $jsBuildParams
         "speculation_runtime_coordination" $speculationRuntimeCoordination
         "speculation_runtime_meta" (index $prefetchCoordination "runtime_meta")
       ) -}}

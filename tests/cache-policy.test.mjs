@@ -172,7 +172,7 @@ test('bucket caching preserves query keys, validates versioned responses and war
   assert.ok((await dispatch(listeners,requestFor('/validated.json'))).ok);
   assert.deepEqual(requests.slice(-2).map(request=>request.cache),['no-cache','reload'],
     'A 304 response must be retried for a complete cacheable body.');
-  await probe.warmNavigationUrl('https://example.test/about/?from=notes&sort=title&sorts=date&keep=1');
+  await probe.warmNavigationUrl('https://example.test/about/?keep=1#from=notes&sort=title&sorts=date');
   assert.equal(requests.find(request=>new URL(request.url).pathname==='/about/').cache,'no-cache');
   assert.equal(requests.find(request=>new URL(request.url).pathname==='/js/app.hash.js').cache,'default');
   assert.equal(requests.some(request=>['/unvisited/','/data.json','/sw.js'].includes(new URL(request.url).pathname)
@@ -180,7 +180,7 @@ test('bucket caching preserves query keys, validates versioned responses and war
   const navigationCache=stores.get(probe.getCacheNameForRoute(probe.getMatchingRoute('/about/'),true));
   assert.ok(navigationCache.has('https://example.test/about/?keep=1'));
   const beforeNavigation=requests.length;
-  await dispatch(listeners,requestFor('/about/?from=tags&sort=date&keep=1',true));
+  await dispatch(listeners,requestFor('/about/?keep=1',true));
   assert.equal(requests.length,beforeNavigation,'Changing UI parameters must reuse the page cache.');
   for(let attempt=0;attempt<2;attempt++) {
     assert.equal((await dispatch(listeners,requestFor('/error/',true))).status,404);

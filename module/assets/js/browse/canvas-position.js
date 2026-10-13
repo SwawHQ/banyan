@@ -1,3 +1,5 @@
+import { readAnchor } from './navigation-state.contract.js';
+
 const CANVAS_NAVIGATION_KEY = 'banyan:canvas-navigation';
 
 // Carry only the horizontal position of one same-tab collection navigation.
@@ -16,11 +18,12 @@ export function initCanvasPosition() {
             || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         const link = event.target.closest?.('[data-collection-entry][href], [data-slot="breadcrumb"] a[href]');
         if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
-        if (link.origin !== location.origin || link.hash) return;
+        if (link.origin !== location.origin || readAnchor(link.hash)) return;
         if (link.href === location.href) {
             event.preventDefault();
             return;
         }
+        if (link.pathname === location.pathname && link.search === location.search) return;
         try {
             sessionStorage[CANVAS_NAVIGATION_KEY] = JSON.stringify({
                 source: location.href.split('#')[0],
@@ -31,7 +34,7 @@ export function initCanvasPosition() {
     });
 
     const navigation = performance.getEntriesByType('navigation')[0];
-    if (navigation?.type !== 'navigate' || location.hash
+    if (navigation?.type !== 'navigate' || readAnchor(location.hash)
         || pending?.target !== location.href || pending.source !== document.referrer
         || !Number.isFinite(pending.x) || pending.x <= 0) return;
 
@@ -46,7 +49,7 @@ export function initCanvasPosition() {
         if (!main) return;
         stop();
         // Early user input, an anchor or native restoration takes priority.
-        if (location.hash || (window.visualViewport?.pageLeft ?? scrollX)
+        if (readAnchor(location.hash) || (window.visualViewport?.pageLeft ?? scrollX)
             || (window.visualViewport?.pageTop ?? scrollY)) return;
 
         // Use the existing main track as a native scroll target at the saved x.

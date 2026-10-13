@@ -1,11 +1,10 @@
 {{- $ctx := .ctx -}}
 {{- $sort := printf "%v" (.sort | default "") -}}
 {{- $href := printf "%v" (.baseHref | default $ctx.RelPermalink) -}}
-{{- $activeSortParam := partialCached "feature-browse/routing/param-name.html" (dict "semantic" "active_sort") "routing-param:active_sort" -}}
 {{- if ne $sort "" -}}
-  {{- $href = printf "%s?%s=%s" $href $activeSortParam $sort -}}
+  {{- $href = printf "%s#sort=%s" $href $sort -}}
 {{- end -}}
 {{- with .fragment -}}
-  {{- $href = printf "%s#%s" $href . -}}
+  {{- $href = printf "%s%s%s" $href (cond (ne $sort "") "&anchor=" "#") (replace (urlquery .) "+" "%20") -}}
 {{- end -}}
 {{- return $href -}}

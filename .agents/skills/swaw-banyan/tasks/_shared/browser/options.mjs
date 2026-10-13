@@ -1,8 +1,8 @@
 export function sitePath(value) {
   if (!value.startsWith('/') || value.startsWith('//') || value.includes('\\')) throw new Error('Page paths must start with a single / and stay within the local site.');
   const url = new URL(value,'http://swban.invalid');
-  if (url.origin !== 'http://swban.invalid' || url.hash) throw new Error('Page paths must stay within the local site and have no fragment.');
-  return url.pathname+url.search;
+  if (url.origin !== 'http://swban.invalid') throw new Error('Page paths must stay within the local site.');
+  return url.pathname+url.search+url.hash;
 }
 
 export function browserCommand(command,description,extraOptions=[]) {

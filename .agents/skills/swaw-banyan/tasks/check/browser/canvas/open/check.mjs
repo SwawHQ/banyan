@@ -105,7 +105,7 @@ export async function checkOpening({page,options}) {
   const selected=await checkOpenResult(page,before,name,state,target);
   const lineage=await checkOpeningSource(page,source);
   const current=await checkCurrentEntry(page,options.touch),history=await checkOpenedHistory(page,sourceUrl,target,before,state.final,source);
-  return {from:new URL(sourceUrl).pathname+new URL(sourceUrl).search,target:new URL(target).pathname+new URL(target).search,before,name,source,lineage,selected,...state,current,history};
+  return {from:new URL(sourceUrl).pathname+new URL(sourceUrl).search+new URL(sourceUrl).hash,target:new URL(target).pathname+new URL(target).search+new URL(target).hash,before,name,source,lineage,selected,...state,current,history};
 }
 
 export async function check({page,context,baseUrl,options}) {

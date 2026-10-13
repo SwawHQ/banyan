@@ -5,6 +5,7 @@ export async function check({page,baseUrl,options}) {
   const results=[];
   for(const width of options.widths.split(',').map(Number)) {
     await page.setViewportSize({width,height:options.height??900});
+    await page.goto('about:blank');
     const response=await page.goto(baseUrl+options.page,{waitUntil:'load'});
     assert.ok(response?.ok(),'Page must return a successful response.');await waitForBrowse(page);await afterPaint(page);
     const state=await page.evaluate(()=>{

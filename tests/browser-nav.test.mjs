@@ -62,10 +62,11 @@ after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recu
 test('anchor pages are required and help exposes the same argument contract',()=>{
   const spec=anchorsCommand('check/browser/nav/anchors','Anchors');
   assert.throws(()=>parseArguments(spec,[]),/--page is required/);
-  assert.equal(parseArguments(spec,['--page','/article/?from=all']).page,'/article/?from=all');
+  assert.equal(parseArguments(spec,['--page','/article/#from=all']).page,'/article/#from=all');
   assert.match(helpFor(spec).split('\n')[0],/ --page <path>/);
   assert.doesNotMatch(helpFor(spec).split('\n')[0],/\[--page/);
-  for(const args of [['--page','//elsewhere'],['--page','/article/#fragment'],['--page','/a/','--page','/b/']]) assert.throws(()=>parseArguments(spec,args));
+  assert.equal(parseArguments(spec,['--page','/article/#chapter']).page,'/article/#chapter');
+  for(const args of [['--page','//elsewhere'],['--page','/a/','--page','/b/']]) assert.throws(()=>parseArguments(spec,args));
 });
 
 for(const {name,suffix,commands} of engines){
@@ -99,7 +100,7 @@ test('chromium catches replacement of the sort grid and loss of source links',{t
   script(lost,'all',`document.addEventListener('click',event=>{
     const control=event.target.closest('[data-sort-field="name"]'),grid=control?.closest('[data-sortable]');
     if(grid&&!grid.className) queueMicrotask(()=>grid.querySelectorAll('[data-collection-entry]').forEach(link=>{
-      const url=new URL(link.href);url.searchParams.delete('from');link.href=url.href;
+      const url=new URL(link.href);const fields=new URLSearchParams(url.hash.slice(1));fields.delete('from');url.hash=fields.toString();link.href=url.href;
     }));
   });`);
   const links=cli('nav/sort',[],lost);assert.equal(links.status,1);assert.match(links.stderr,/article link with its declared source/);

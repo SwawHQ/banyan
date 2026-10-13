@@ -72,7 +72,7 @@ test('UI paths, contrast defaults and detailed help use the same declarations',(
   }
   const appearance = appearanceCommand('check/browser/appearance','Appearance');
   assert.equal(parseArguments(appearance,[]).from,'/about/');
-  assert.equal(parseArguments(appearance,['--from','/zh/all/?sort=name-asc']).from,'/zh/all/?sort=name-asc');
+  assert.equal(parseArguments(appearance,['--from','/zh/all/#sort=name-asc']).from,'/zh/all/#sort=name-asc');
 });
 
 test('chromium rejects broken palette scopes and accepts relocated role pages',{timeout:15000},() => {

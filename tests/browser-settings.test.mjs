@@ -12,7 +12,7 @@ import {historyCommand,pageList} from '../.agents/skills/swaw-banyan/tasks/check
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
-const article='/d/settings-fixture/?from=all&sorts=name-asc#details';
+const article='/d/settings-fixture/#from=all&sorts=name-asc&anchor=details';
 const pages=['/prefs/one/','/prefs/appearance/','/prefs/plain/','/prefs/language/'];
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
@@ -81,8 +81,8 @@ test('settings chains use one-step native history and language homes without pri
   const state=report(cli('history',['--from',article,'--pages',pages.join(','),'--trace','--out',path.join(work,'reports')]));
   assert.equal(state.details.returned,article);assert.deepEqual(state.details.steps,pages);
   assert.equal(state.details.empty.length,3);assert.ok(state.details.empty.every(item=>item.home==='/'));
-  const translated=report(cli('history',['--from','/zh/all/?sort=name-asc#reading-position','--pages',pages.map(page=>'/zh'+page).join(','),'--out',path.join(work,'reports')]));
-  assert.equal(translated.details.returned,'/zh/all/?sort=name-asc#reading-position');
+  const translated=report(cli('history',['--from','/zh/all/#sort=name-asc&anchor=reading-position','--pages',pages.map(page=>'/zh'+page).join(','),'--out',path.join(work,'reports')]));
+  assert.equal(translated.details.returned,'/zh/all/#sort=name-asc&anchor=reading-position');
   assert.ok(translated.details.empty.every(item=>item.home==='/zh/'));
 });
 

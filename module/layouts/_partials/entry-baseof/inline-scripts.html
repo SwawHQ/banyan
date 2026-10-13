@@ -1,4 +1,3 @@
-{{- $buildParams := .build_params | default dict -}}
 {{- $specs := dict
   "theme_boot" "js/inline/theme-boot.js"
   "breadcrumb_pending" "js/inline/breadcrumb-pending.js"
@@ -14,7 +13,6 @@
     {{- errorf "Build failed: missing inline JS resource %q." $path -}}
   {{- else -}}
     {{- $built := $source | js.Build (dict
-      "params" $buildParams
       "targetPath" (printf "js/inline/%s.inline.js" $key)
       "minify" (not hugo.IsServer)
     ) -}}

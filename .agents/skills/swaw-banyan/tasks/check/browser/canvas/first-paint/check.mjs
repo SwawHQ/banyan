@@ -49,6 +49,7 @@ export async function check({page,baseUrl,options}) {
   await installStartupProbe(page);const cases=[];
   for(const width of options.widths.split(',').map(Number)) {
     await page.setViewportSize({width,height:900});
+    await page.goto('about:blank');
     const state=await observeStartup(page,async()=>{
       const response=await page.goto(baseUrl+options.page,{waitUntil:'commit'});
       assert.ok(response?.ok(),'Page must return a successful response.');

@@ -3,38 +3,11 @@ import {
     ENTRY_LINEAGE_FIELD,
     LINEAGE_SORTS_FIELD,
     SORTS_PLACEHOLDER,
-    fieldHasParamName,
+    applyFragmentField,
     readFieldValue,
 } from './navigation-state.contract.js';
 
 export { SORTS_PLACEHOLDER };
-
-function parseSearchEntries(search) {
-    const raw = typeof search === 'string' ? search.replace(/^\?/, '') : '';
-    if (!raw) {
-        return [];
-    }
-
-    return raw
-        .split('&')
-        .filter((entry) => entry !== '')
-        .map((entry) => {
-            const separatorIndex = entry.indexOf('=');
-            if (separatorIndex === -1) {
-                return [entry, ''];
-            }
-
-            return [entry.slice(0, separatorIndex), entry.slice(separatorIndex + 1)];
-        });
-}
-
-function stringifySearchEntries(entries) {
-    if (!Array.isArray(entries) || entries.length === 0) {
-        return '';
-    }
-
-    return `?${entries.map(([key, value]) => (value === '' ? key : `${key}=${value}`)).join('&')}`;
-}
 
 function safeDecode(value) {
     if (typeof value !== 'string' || value === '') {
@@ -48,25 +21,8 @@ function safeDecode(value) {
     }
 }
 
-function readSearchParam(field, search = window.location.search) {
-    return readFieldValue(search, field);
-}
-
-function applyRawQueryParamToUrl(url, field, value) {
-    if (!(url instanceof URL) || !field?.name) {
-        return url;
-    }
-
-    const nextEntries = parseSearchEntries(url.search).filter(
-        ([paramName]) => !fieldHasParamName(field, paramName)
-    );
-    const normalizedValue = typeof value === 'string' ? value.trim() : '';
-    if (normalizedValue !== '') {
-        nextEntries.push([field.name, normalizedValue]);
-    }
-
-    url.search = stringifySearchEntries(nextEntries);
-    return url;
+function readStateParam(field) {
+    return readFieldValue(window.location.hash, field);
 }
 
 export function normalizeFromPath(value) {
@@ -89,11 +45,11 @@ function buildFromParamValue(logicalPath) {
 }
 
 export function readCurrentFromPath() {
-    return normalizeFromPath(readSearchParam(ENTRY_LINEAGE_FIELD));
+    return normalizeFromPath(readStateParam(ENTRY_LINEAGE_FIELD));
 }
 
 export function readCurrentSortTokenRaw() {
-    return safeDecode(readSearchParam(ACTIVE_SORT_FIELD)).trim().toLowerCase();
+    return safeDecode(readStateParam(ACTIVE_SORT_FIELD)).trim().toLowerCase();
 }
 
 function normalizeSortSlot(token) {
@@ -119,7 +75,7 @@ export function normalizePathname(pathname) {
 }
 
 function readCurrentSortsTokens() {
-    const rawValue = safeDecode(readSearchParam(LINEAGE_SORTS_FIELD));
+    const rawValue = safeDecode(readStateParam(LINEAGE_SORTS_FIELD));
     if (!rawValue.trim()) {
         return [];
     }
@@ -203,11 +159,11 @@ export function buildDefaultSortsTokens(logicalPath, defaultToken = '', extraDep
 }
 
 export function applyFromPathToUrl(url, fromPath) {
-    return applyRawQueryParamToUrl(url, ENTRY_LINEAGE_FIELD, buildFromParamValue(fromPath));
+    return applyFragmentField(url, ENTRY_LINEAGE_FIELD, buildFromParamValue(fromPath));
 }
 
-export function applySortQueryTokenToUrl(url, token) {
-    return applyRawQueryParamToUrl(url, ACTIVE_SORT_FIELD, token);
+export function applySortFieldToUrl(url, token) {
+    return applyFragmentField(url, ACTIVE_SORT_FIELD, token);
 }
 
 function everySortSlotIsDefault(tokens, defaultTokens) {
@@ -228,9 +184,9 @@ export function applySortsTokensToUrl(url, tokens, defaultTokens = []) {
         || normalizedTokens.every((token) => token === '')
         || everySortSlotIsDefault(normalizedTokens, normalizeSortSlots(defaultTokens))
     ) {
-        return applyRawQueryParamToUrl(url, LINEAGE_SORTS_FIELD, '');
+        return applyFragmentField(url, LINEAGE_SORTS_FIELD, '');
     }
 
     const encoded = normalizedTokens.map((token) => (token === '' ? SORTS_PLACEHOLDER : token));
-    return applyRawQueryParamToUrl(url, LINEAGE_SORTS_FIELD, encoded.join(','));
+    return applyFragmentField(url, LINEAGE_SORTS_FIELD, encoded.join(','));
 }

@@ -7,6 +7,6 @@ export function layoutCommand(command,description) {
     {name:'article',value:'path',description:'Article with this collection in its source path; also compare main and path lists',parse:sitePath},
     {name:'widths',value:'list',default:'390,1440',description:'Comma-separated viewport widths; test height: 900 pixels',parse:parseWidths}
   ]);
-  spec.examples=[command+' ./preview --page /all/',command+' ./preview --page /all/ --article /article/?from=all --trace'];
+  spec.examples=[command+' ./preview --page /all/',command+' ./preview --page /all/ --article /article/#from=all --trace'];
   return spec;
 }

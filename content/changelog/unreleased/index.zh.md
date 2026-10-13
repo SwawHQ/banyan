@@ -2,7 +2,7 @@
 title: 未发布
 slug: unreleased
 description: Banyan 主题和 Skill 的未发布变更。
-lastmod: 2026-10-12
+lastmod: 2026-10-13
 ---
 
 ## 新增
@@ -29,6 +29,10 @@ lastmod: 2026-10-12
 
 ## 调整
 
+- 来源和排序参数 `from`、`sort`、`sorts` 移到 URL 的 `#` 后，
+  章节定位与这些状态共存。浏览器后退和前进会恢复来源和路径列排序。
+  移除 `navigation-state-default.toml` 配置；
+  旧查询参数不再控制导航视图。
 - 缓存策略使用 `platform.edgeone` 和有序路径规则，`http` 与 `sw` 独立配置。
   SW 只使用 `sw.bucket`（`versioned`、`fingerprinted`、`off`），支持路径任意位置的
   单个通配符，区分路径大小写，后声明的匹配规则优先。默认覆盖同源 GET 请求，

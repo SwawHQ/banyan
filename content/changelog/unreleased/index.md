@@ -2,7 +2,7 @@
 title: Unreleased
 slug: unreleased
 description: Unreleased changes to the Banyan theme and Skill.
-lastmod: 2026-10-12
+lastmod: 2026-10-13
 ---
 
 ## Added
@@ -31,6 +31,10 @@ lastmod: 2026-10-12
 
 ## Changed
 
+- Move the frontend `from`, `sort`, and `sorts` fields into URL fragments,
+  preserving them in chapter links. Back and Forward restore the source and
+  breadcrumb sorting. Remove `navigation-state-default.toml`;
+  query parameters no longer control the navigation view.
 - Cache policy uses `platform.edgeone` and ordered path rules with independent
   `http` and `sw` fields. SW uses only `sw.bucket` (`versioned`, `fingerprinted`,
   or `off`), supports one wildcard anywhere in a case-sensitive URL path, and

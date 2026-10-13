@@ -4,13 +4,13 @@ import {readColumns,selectColumn,columnLocator,observeColumns,columnSort} from '
 import {checkPrefetchSlots} from './prefetch.mjs';
 
 function normalizedSortURL(value,defaultSort) {
-  const url=new URL(value),raw=url.searchParams.get('sorts');
+  const url=new URL(value),fields=new URLSearchParams(url.hash.slice(1)),raw=fields.get('sorts');
   if(raw) {
     const tokens=raw.split(',').map(token=>token===defaultSort?'_':token);
-    if(tokens.every(token=>token==='_'))url.searchParams.delete('sorts');
-    else url.searchParams.set('sorts',tokens.join(','));
+    if(tokens.every(token=>token==='_'))fields.delete('sorts');
+    else fields.set('sorts',tokens.join(','));
   }
-  url.searchParams.sort();return url.href;
+  fields.sort();url.hash=fields.toString();url.searchParams.sort();return url.href;
 }
 
 // Isolation checks reuse the in-place sort contract, not the CLI or page setup.
@@ -80,7 +80,7 @@ export async function check({page,baseUrl,options}) {
   const initial=await observeColumns(page,baseUrl+options.page),selected=await selectColumn(page,options.column);
   const prefetch=await checkPrefetchSlots(page);
   const parsed=initial.columns.find(column=>column.href===selected.href);
-  const slots=(new URL(page.url()).searchParams.get('sorts')||'').split(',');
+  const slots=(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('sorts')||'').split(',');
   const depth=selected.source.logical_path.split('/').filter(Boolean).length;
   const requested=slots[Math.min(depth,slots.length)-1];
   assert.equal(columnSort(selected),requested&&requested!=='_'?requested:selected.source.default_sort,
@@ -93,8 +93,8 @@ export async function check({page,baseUrl,options}) {
   const column=columnLocator(page,selected.href);
   const probe=await column.evaluate(node=>{
     const links=[...node.querySelectorAll('[data-collection-entry]')].map(link=>{
-      const url=new URL(link.href);url.searchParams.set('swban-probe','keep');url.hash='swban-reading';link.href=url.href;
-      return {key:url.pathname,from:url.searchParams.get('from')};
+      const url=new URL(link.href);url.searchParams.set('swban-probe','keep');const fields=new URLSearchParams(url.hash.slice(1));fields.set('anchor','swban-reading');url.hash=fields.toString();link.href=url.href;
+      return {key:url.pathname,from:new URLSearchParams(url.hash.slice(1)).get('from')};
     });
     node.scrollTop=Math.min(35,node.scrollHeight-node.clientHeight);
     return {links,y:node.scrollTop};
@@ -106,10 +106,25 @@ export async function check({page,baseUrl,options}) {
     for(const original of probe.links) {
       const link=new URL(result.after.rows.find(row=>row.key===original.key).href);
       assert.equal(link.searchParams.get('swban-probe'),'keep','Sorting must preserve unrelated link query parameters.');
-      assert.equal(link.hash,'#swban-reading','Sorting must preserve link fragments.');
-      assert.equal(link.searchParams.get('from'),original.from,'Sorting must preserve each row source.');
+      assert.equal(new URLSearchParams(link.hash.slice(1)).get('anchor')||decodeURIComponent(link.hash.slice(1)),'swban-reading','Sorting must preserve link fragments.');
+      assert.equal(new URLSearchParams(link.hash.slice(1)).get('from'),original.from,'Sorting must preserve each row source.');
     }
   }
   assert.deepEqual(cases[1].after.rows.map(row=>row.key),cases[0].before.rows.map(row=>row.key),'Two toggles must restore the original row order.');
+  const originalUrl=page.url(),original=await selectColumn(page,selected.href);
+  const chapters=page.locator('.document-toc a[data-chapter-anchor]');
+  const anchor=await chapters.count()?chapters.last():page.locator('a[data-chapter-anchor="main"]').first();
+  // Native anchor navigation creates an entry that sorting then replaces.
+  await anchor.evaluate(link=>link.click());await afterPaint(page);
+  await column.locator('[data-collection-sort-toggle]').evaluate(link=>link.click());await afterPaint(page);
+  const sortedUrl=page.url(),sorted=await selectColumn(page,selected.href);
+  const state=column=>({field:column.field,indicator:column.indicator,rows:column.rows});
+  for(const [navigation,url,expected] of [['goBack',originalUrl,original],['goForward',sortedUrl,sorted]]) {
+    await page[navigation]();await page.waitForURL(url);await waitForBrowse(page);await afterPaint(page);
+    assert.deepEqual(state(await selectColumn(page,selected.href)),state(expected),
+      navigation+' must restore breadcrumb row order, indicators and link sort fields.');
+    assert.equal(await page.evaluate(()=>window.__swbanColumnSort?.marker),cases[1].continuity.marker,
+      'Fragment history must retain the document.');
+  }
   return {page:options.page,column:selected.href,sourceRebuilt:initial.sourcePending,ssrRows:parsed?.rows.length??0,prefetch,cases};
 }

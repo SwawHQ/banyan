@@ -9,17 +9,13 @@
 {{- $nextOrder := cond (eq $order "asc") "desc" "asc" -}}
 {{- $nextSort := printf "%s-%s" $field $nextOrder -}}
 {{- $fromValue := partial "feature-browse/routing/lineage-value.html" (dict "logical_path" $logicalPath) -}}
-{{- $fromParam := partialCached "feature-browse/routing/param-name.html" (dict "semantic" "entry_lineage") "routing-param:entry_lineage" -}}
-{{- $sortsParam := partialCached "feature-browse/routing/param-name.html" (dict "semantic" "lineage_sorts") "routing-param:lineage_sorts" -}}
 {{- $segments := split (trim $logicalPath "/") "/" -}}
 {{- $sortSlots := slice -}}
 {{- range $index, $_ := $segments -}}
   {{- $sortSlots = $sortSlots | append (cond (eq $index (sub (len $segments) 1)) $nextSort $defaultSort) -}}
 {{- end -}}
-{{- return (printf "%s?%s=%s&%s=%s"
+{{- return (printf "%s#from=%s&sorts=%s"
   $ctx.RelPermalink
-  $fromParam
   $fromValue
-  $sortsParam
   (delimit $sortSlots ",")
 ) -}}

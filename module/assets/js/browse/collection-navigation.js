@@ -87,7 +87,7 @@ function updateCollectionEntryLinks(grid, variantName, currentToken, pageCollect
 
         applySortTokenToUrl(url, currentToken, variant.defaultToken);
         if (pageCollectionSource?.logicalPath) {
-            const isEntryLink = hasFieldValue(url.search, ENTRY_LINEAGE_FIELD);
+            const isEntryLink = hasFieldValue(url.hash, ENTRY_LINEAGE_FIELD);
             applySortsTokensToUrl(
                 url,
                 isEntryLink ? currentSorts : descendantSorts,

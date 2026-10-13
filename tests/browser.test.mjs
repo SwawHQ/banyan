@@ -97,8 +97,8 @@ test('the parameter declaration drives help, defaults and strict parsing',() => 
 });
 test('CSP declares a home default and explicit local page paths',()=>{
   const spec=cspCommand('csp','CSP');assert.equal(parseArguments(spec,[]).page,'/');
-  assert.equal(parseArguments(spec,['--page','/nested/path/?sort=name-desc']).page,'/nested/path/?sort=name-desc');
-  for(const page of ['https://outside.invalid/','//outside/','/path/#fragment','/path\\bad'])
+  assert.equal(parseArguments(spec,['--page','/nested/path/#sort=name-desc']).page,'/nested/path/#sort=name-desc');
+  for(const page of ['https://outside.invalid/','//outside/','/path\\bad'])
     assert.throws(()=>parseArguments(spec,['--page',page]));
   assert.match(helpFor(spec),/--page/);
 });
@@ -171,7 +171,7 @@ test(name+' CSP loads the selected nested page and preserves its query',{timeout
   write(directory,nested,fs.readFileSync(path.join(directory,'index.html'),'utf8'));
   // A broken home proves the selected path is actually inspected.
   fs.appendFileSync(path.join(directory,'index.html'),'<script>window.blockedHome=true;</script>');
-  const page='/nested/path/?sort=name-desc',passed=cli('check/browser/csp'+suffix,[directory,'--page',page,'--out',path.join(work,'csp-reports')]);
+  const page='/nested/path/#sort=name-desc',passed=cli('check/browser/csp'+suffix,[directory,'--page',page,'--out',path.join(work,'csp-reports')]);
   assert.equal(passed.status,0,passed.stdout+passed.stderr);
   const folder=passed.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
   assert.equal(report.details.page,page);assert.ok(report.details.headers['content-security-policy']);

@@ -2,7 +2,6 @@
 {{- $config := partial "feature-browse/collection/config.html" (dict "page" $page) -}}
 {{- $rows := partial "feature-browse/collection/rows.html" (dict "page" $page) -}}
 {{- $source := partial "feature-browse/collection/source.html" (dict "page" $page) -}}
-{{- $lineageParam := partialCached "feature-browse/routing/param-name.html" (dict "semantic" "entry_lineage") "routing-param:entry_lineage" -}}
 {{- $from := partial "feature-browse/routing/lineage-value.html" (dict "logical_path" $source.logical_path) -}}
 {{- $fields := slice "name" "date" "count" -}}
 {{- $classes := dict "name" "collection-cell--name" "date" "collection-cell--date" "count" "collection-cell--count" "size" "collection-cell--count" "path" "collection-cell--path" "price" "collection-cell--price" "value" "collection-cell--value" -}}
@@ -33,7 +32,7 @@
   {{- end -}}
   {{- range $row := $rows -}}
     {{- $href := $row.href -}}
-    {{- if eq $row.kind "page" -}}{{- $href = printf "%s?%s=%s" $href $lineageParam $from -}}{{- end -}}
+    {{- if eq $row.kind "page" -}}{{- $href = printf "%s#from=%s" $href $from -}}{{- end -}}
     {{- $attrs := dict -}}
     {{- range $key := slice "group" "name" "date" "count" "size" "path" "price" "value" -}}
       {{- if isset $row (printf "sort_%s" $key) -}}

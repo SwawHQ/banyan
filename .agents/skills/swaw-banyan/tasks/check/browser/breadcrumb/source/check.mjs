@@ -7,7 +7,7 @@ function sourceLink(column,article,origin) {
   assert.equal(rows.length,1,'Source column '+column.href+' must link to the requested article exactly once: '+article);
   const url=new URL(rows[0].href);
   assert.equal(url.origin,origin,'Source article must stay within the local site.');
-  assert.equal(url.searchParams.get('from'),column.source.logical_path.replace(/^\/+|\/+$/g,''),'Article link must retain its declared column source.');
+  assert.equal(new URLSearchParams(url.hash.slice(1)).get('from'),column.source.logical_path.replace(/^\/+|\/+$/g,''),'Article link must retain its declared column source.');
   return url.href;
 }
 
@@ -26,8 +26,8 @@ export async function check({page,baseUrl,options}) {
   } finally {await context.close();}
   await openPage(page,baseUrl+options.page);
   const column=await selectColumn(page,options.column),target=sourceLink(column,options.article,baseUrl);
-  assert.equal(new URL(target).searchParams.get('from'),new URL(raw).searchParams.get('from'),'Runtime initialization must preserve the static article source.');
-  if(column.toggle)assert.equal(new URL(target).searchParams.get('sort')||column.source.default_sort,columnSort(column),
+  assert.equal(new URLSearchParams(new URL(target).hash.slice(1)).get('from'),new URLSearchParams(new URL(raw).hash.slice(1)).get('from'),'Runtime initialization must preserve the static article source.');
+  if(column.toggle)assert.equal(new URLSearchParams(new URL(target).hash.slice(1)).get('sort')||column.source.default_sort,columnSort(column),
     'Runtime article link must carry the column sort.');
   const href=await columnLocator(page,options.column).locator('[data-collection-entry]').evaluateAll((nodes,target)=>nodes.find(node=>node.href===target)?.getAttribute('href'),target);
   await columnLocator(page,options.column).locator('[data-collection-entry][href='+JSON.stringify(href)+']').click();await page.waitForURL(target);
@@ -42,5 +42,28 @@ export async function check({page,baseUrl,options}) {
   assert.equal(page.url(),target,'Reload must preserve the source and sorting URL.');
   assert.ok((await readColumns(page)).some(column=>column.href===options.column),'Reload must retain the source column.');
   assert.equal(await current.evaluate(node=>new URL(node.href).pathname),options.article,'Reload must retain the current article selection.');
+  const snapshot=async document=>({
+    columns:(await readColumns(document)).map(({href,field,indicator,rows})=>({href,field,indicator,rows:rows.map(row=>row.key)})),
+    root:await document.locator('[data-root-navigation] .is-current').evaluateAll(nodes=>nodes.map(node=>node.dataset.rootHref))
+  });
+  const original=await snapshot(page),defaultUrl=new URL(target);defaultUrl.hash='';
+  const fresh=await page.context().newPage();
+  let defaults;
+  try {await openPage(fresh,defaultUrl.href);defaults=await snapshot(fresh);}finally {await fresh.close();}
+  const marker=await page.evaluate(()=>window.__swbanFragmentDocument=crypto.randomUUID()),requests=[];
+  const record=request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())requests.push(request.url());};
+  page.on('request',record);
+  try {
+    await page.evaluate(()=>{location.hash='';});await page.waitForURL(url=>!url.hash);await afterPaint(page);
+    const defaultTarget=page.url();
+    assert.deepEqual(await snapshot(page),defaults,'Removing fragment state must restore the default source and sort.');
+    await page.goBack();await page.waitForURL(target);await afterPaint(page);
+    assert.deepEqual(await snapshot(page),original,'Back must restore source columns, root and sorting in the same document.');
+    await page.goForward();await page.waitForURL(defaultTarget);await afterPaint(page);
+    assert.deepEqual(await snapshot(page),defaults,'Forward must restore the default navigation view.');
+    await page.goBack();await page.waitForURL(target);await afterPaint(page);
+    assert.equal(await page.evaluate(()=>window.__swbanFragmentDocument),marker,'Fragment history must retain the document.');
+    assert.deepEqual(requests,[],'Fragment navigation must not request another document.');
+  } finally {page.off('request',record);}
   return {page:options.page,column:options.column,article:options.article,raw,target};
 }

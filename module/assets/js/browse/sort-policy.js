@@ -1,5 +1,5 @@
 import {
-    applySortQueryTokenToUrl,
+    applySortFieldToUrl,
     readCurrentSortTokenRaw,
 } from './navigation-state.js';
 
@@ -160,5 +160,5 @@ export function readCurrentSortToken(variantName, defaultTokenOverride = '') {
 }
 
 export function applySortTokenToUrl(url, token, defaultToken) {
-    return applySortQueryTokenToUrl(url, !token || token === defaultToken ? '' : token);
+    return applySortFieldToUrl(url, !token || token === defaultToken ? '' : token);
 }

@@ -14,14 +14,14 @@ export async function readOpeningSource(page,canvas) {
   const root=canvas.root.roots.includes(source.root_item.href)?source.root_item.href:'';
   assertRootSelection(canvas.root,root);
   return {logicalPath:source.logical_path,rootHref:source.root_item.href,root,roots:canvas.root.roots,
-    sort:new URL(page.url()).searchParams.get('sort')||source.current_collection_source.default_sort,
+    sort:new URLSearchParams(new URL(page.url()).hash.slice(1)).get('sort')||source.current_collection_source.default_sort,
     columns:[...canvas.pathContent.map(({href,rows})=>({href,rows})),
       {href:source.current_collection_source.href,rows:state.rows}]};
 }
 
 export async function checkOpeningSource(page,source) {
   const url=new URL(page.url()),from=source.logicalPath.replace(/^\/+|\/+$/g,'');
-  assert.equal(url.searchParams.get('from'),from,'The article must retain its declared collection source.');
+  assert.equal(new URLSearchParams(url.hash.slice(1)).get('from'),from,'The article must retain its declared collection source.');
   const state=await page.evaluate(logicalPath=>({
     source:JSON.parse(document.body.dataset.entryBreadcrumbSources||'[]').find(source=>source.logical_path===logicalPath),
     selections:[...document.querySelectorAll('.slot-breadcrumb [data-collection-column]')].map(column=>({

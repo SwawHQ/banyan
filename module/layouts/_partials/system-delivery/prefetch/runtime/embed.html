@@ -1,7 +1,6 @@
 {{- $speculationRuntimeCoordination := lower (printf "%v" .speculation_runtime_coordination) -}}
 {{- $envConfigMap := .env_config_map -}}
 {{- $speculationRuntimeMeta := .speculation_runtime_meta -}}
-{{- $buildParams := .js_build_params | default dict -}}
 {{- $slotSpecs := partial "system-delivery/prefetch/targets.html" . -}}
 {{- $configPayloadByEnv := dict -}}
 {{- $canonicalEnvByFingerprint := dict -}}
@@ -67,7 +66,6 @@
     ) -}}
     {{- $runtimeBundle := $runtimeEntry | js.Build (dict
       "targetPath" (printf "js/prefetch.runtime.%s.bundle.js" $runtimeVariant)
-      "params" $buildParams
       "minify" (not $isServer)
     ) -}}
     {{- $runtimeBundle = $runtimeBundle | fingerprint -}}
