@@ -1,9 +1,9 @@
 {{- $ctx := .ctx | default . -}}
-{{- $swConfig := $ctx.Site.Params.service_worker | default dict -}}
+{{- $swConfig := .delivery.service_worker -}}
 {{- $swModeRaw := index $swConfig "mode" | default "off" -}}
 {{- $swMode := lower (printf "%v" $swModeRaw) -}}
 {{- if not (in (slice "enable" "disable" "off") $swMode) -}}
-  {{- errorf "Build failed: params.service_worker.mode only supports enable/disable/off; got %q." $swModeRaw -}}
+  {{- errorf "Build failed: delivery.service_worker.mode only supports enable/disable/off; got %q." $swModeRaw -}}
 {{- end -}}
 
 {{- $manifestConfig := $ctx.Site.Params.web_app_manifest | default dict -}}
@@ -16,7 +16,7 @@
 {{- $offlinePathRaw := printf "%v" (index $swConfig "offline_notice_path" | default "offline/") -}}
 {{- $offlinePath := trim $offlinePathRaw "/" -}}
 {{- if eq $offlinePath "" -}}
-  {{- errorf "Build failed: params.service_worker.offline_notice_path cannot be empty." -}}
+  {{- errorf "Build failed: delivery.service_worker.offline_notice_path cannot be empty." -}}
 {{- end -}}
 
 {{- $offlineRelPermalinks := slice -}}

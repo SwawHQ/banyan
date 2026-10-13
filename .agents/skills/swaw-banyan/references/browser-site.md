@@ -99,5 +99,5 @@ Use `check/browser/site --updates` for a temporary version-only update without
 editing content. To test two actual code states, build those states separately.
 
 `pwa/disable` needs an enabled build followed by one with
-`params.service_worker.mode = "disable"`. `off` does not perform cleanup.
+`service_worker.mode = "disable"`. `off` does not perform cleanup.
 Also disable SW-based prefetch transport in the second build when applicable.

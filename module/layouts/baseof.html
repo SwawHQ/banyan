@@ -1,4 +1,5 @@
-{{- $pwaConfig := partial "system-delivery/pwa/config.html" (dict "ctx" .) -}}
+{{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
+{{- $pwaConfig := partial "system-delivery/pwa/config.html" (dict "ctx" . "delivery" $delivery) -}}
 {{- $swConfig := index $pwaConfig "sw_config" -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}
 {{- $webAppManifestMode := index $pwaConfig "manifest_mode" -}}
@@ -8,14 +9,11 @@
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
 {{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $buildVersion := partial "system-build/version.html" $primarySite.Home -}}
-{{- $cachePolicy := partial "system-delivery/cache-policy/model.html" . -}}
 {{- $siteRedirects := index hugo.Data "redirects" | default dict -}}
 {{- $siteRedirectRules := partial "system-delivery/deployment/redirect-rules.html" (dict
   "rules" (index $siteRedirects "rules" | default slice)
 ) -}}
-{{- $cachePolicyRoutes := index $cachePolicy "routes" -}}
-{{- $cachePolicyEdgeone := index (index $cachePolicy "platform") "edgeone" -}}
-{{- $swRoutes := index $cachePolicy "sw_routes" -}}
+{{- $swRoutes := $delivery.sw_routes -}}
 {{- $inlineScripts := partialCached "entry-baseof/inline-scripts.html" site (printf "runtime-inline-scripts:%t" hugo.IsServer) -}}
 {{- $themeBootInline := index $inlineScripts "theme_boot" | default "" -}}
 {{- $breadcrumbPendingInline := index $inlineScripts "breadcrumb_pending" | default "" -}}
@@ -31,9 +29,10 @@
 {{- partial "feature-browse/navigation/source/register-icons.html" (dict "page" . "sources" $browserNavigationSources) -}}
 {{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
     {{- partial "system-delivery/deployment/publish.html" (dict
-      "routes" $cachePolicyRoutes
+      "routes" $delivery.routes
       "redirects" $siteRedirectRules
-      "edgeone" $cachePolicyEdgeone
+      "edgeone" $delivery.platform.edgeone.makers
+      "delivery" $delivery
       "web_app_manifest_mode" $webAppManifestMode
       "inline_scripts" $inlineScripts
     ) -}}
@@ -94,7 +93,7 @@
     {{- partial "system-ui/page-styles.html" . -}}
     <script>{{ index $inlineScripts "canvas_position" | safeJS }}</script>
     {{- block "head-extra" . -}}{{- end -}}
-    {{- $prefetch := partial "system-delivery/prefetch/config.html" (dict "sw_mode" $swMode) -}}
+    {{- $prefetch := partial "system-delivery/prefetch/config.html" (dict "sw_mode" $swMode "delivery" $delivery) -}}
     {{- $prefetchRuntimeMode := index $prefetch "runtime_mode" -}}
     {{- $prefetchRuntimeEnvConfig := index $prefetch "runtime_env" -}}
     {{- $speculationRulesMode := index $prefetch "speculation_mode" -}}

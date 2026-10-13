@@ -91,14 +91,14 @@ uses it for Open Graph locale tags.
 An optional `languages.<lang>.params.icon = { text = "EN" }` supplies the short marker shown
 by the language choice list; when absent, Banyan uses its language icon.
 
-If you need to customize cache routes, SW cache behavior, or deployment metadata,
-create a site-owned `data/cache-policy.toml`. Start from
-`module/data/cache-policy-default.toml` when changing routes: a site's `routes`
-array replaces the default array, including when empty. Platform fields merge
-with the defaults.
+To configure prefetch, Service Workers, response headers, or deployment metadata,
+create a site-owned `data/delivery.toml`. Start from
+`module/data/banyan/delivery.toml` when changing routes: a site's `routes`
+array replaces the default array, including when empty. Tables merge with the
+defaults. Runtime settings apply to all languages.
 
 ```toml
-[platform.edgeone]
+[platform.edgeone.makers]
 hugoVersion = "0.157.0"
 
 [[routes]]
@@ -109,7 +109,7 @@ sw.bucket = "versioned"
 [[routes]]
 path = "/js/*"
 http.headers.Cache-Control = "public, max-age=31536000, immutable"
-http.cloudflare.unset = ["Cache-Control"]
+http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "fingerprinted"
 
 [[routes]]
@@ -124,8 +124,8 @@ when configuring a site. Declare general rules first and exceptions last.
 SW matches the case-sensitive URL pathname, including percent encoding, without
 query or fragment. Use encoded paths for non-ASCII characters.
 
-`http.headers` applies to both platforms. `http.cloudflare.headers` and
-`http.edgeone.headers` override common values within that route; Cloudflare's
+`http.headers` applies to both platforms. `http.cloudflare.pages.headers` and
+`http.edgeone.makers.headers` override common values within that route; Cloudflare's
 `unset` removes previously applied headers before setting that route's values.
 HTTP routes keep declaration order and use each platform's native behavior.
 The generated CSP uses the actual inline scripts; keep `minify.disableJS = true`.
@@ -389,17 +389,18 @@ The current dual-stack prefetch model is documented in:
 
 - [`docs/prefetch-stacks.md`](docs/prefetch-stacks.md)
 
-Banyan keeps prefetch and Service Worker behavior opt-in by default:
+Banyan keeps prefetch and Service Worker behavior opt-in. Set these in
+`data/delivery.toml`:
 
 ```toml
-[params.prefetch_runtime]
+[prefetch_runtime]
 mode = "enable" # off | enable
 
-[params.service_worker]
+[service_worker]
 mode = "enable" # off | enable | disable
 ```
 
-If your runtime config uses `sw_*` prefetch modes, `params.service_worker.mode`
+If your runtime config uses `sw_*` prefetch modes, `service_worker.mode`
 must also be `enable`. Sites that do not want Service Worker caching can leave
 both modes as `off`, or enable `prefetch_runtime` only with link-only modes.
 

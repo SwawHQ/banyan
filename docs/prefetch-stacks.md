@@ -2,11 +2,15 @@
 
 ## 结论
 
+在站点的 `data/delivery.toml` 中配置 `[prefetch_runtime]` 和
+`[speculation_rules]`。模块默认值在 `module/data/banyan/delivery.toml`。
+配置按字段合并，并应用到所有语言。
+
 Banyan 当前的预取体系已经明确拆成两栈：
 
-1. `params.prefetch_runtime`
+1. `prefetch_runtime`
    负责 `link rel=prefetch` 与 `SW warm`
-2. `params.speculation_rules`
+2. `speculation_rules`
    可选负责 `Speculation-Rules` response header 与外部 rules JSON
 
 这不是“多一套配置而已”，而是把两种不同层级的 transport 拆开：
@@ -35,17 +39,17 @@ Banyan 当前的预取体系已经明确拆成两栈：
 
 配置入口：
 
-- `params.prefetch_runtime`
+- `prefetch_runtime`
 
 顶层开关：
 
 ```toml
-[params.prefetch_runtime]
+[prefetch_runtime]
 mode = "off" # off | enable
 ```
 
 - `off`：跳过 runtime env 校验、payload 生成和 runtime 脚本注入
-- `enable`：读取 `params.prefetch_runtime.env.*` 并启用 runtime stack
+- `enable`：读取 `prefetch_runtime.env.*` 并启用 runtime stack
 
 ### 环境键
 
@@ -107,7 +111,7 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 
 配置入口：
 
-- `params.speculation_rules`
+- `speculation_rules`
 
 ### Mode
 
@@ -124,9 +128,9 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 
 部署边界：
 
-- EdgeOne Pages 当前的 `edgeone.json` 不支持 header value 中需要转义的双引号
+- EdgeOne Makers 当前的 `edgeone.json` 不支持 header value 中需要转义的双引号
 - `Speculation-Rules` header 的标准写法需要类似 `"/site/speculation-rules/document.<hash>.json"`
-- 因此使用 EdgeOne 时，站点应优先设置 `params.speculation_rules.mode = "off"`，让 runtime stack / SW warm 作为主路径
+- 因此使用 EdgeOne 时，站点应优先设置 `speculation_rules.mode = "off"`，让 runtime stack / SW warm 作为主路径
 
 ### runtime_coordination
 
@@ -159,12 +163,12 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 
 这样做的关键好处是：
 
-- `params.speculation_rules` 只表达 speculation 自己
+- `speculation_rules` 只表达 speculation 自己
 - 不再混写 `sw_* / link_* / spec_*`
 
 ## 当前交付形态
 
-当 `params.speculation_rules.mode = "header"` 时，speculation stack 不再把规则塞进 HTML 可执行脚本，也不再为每个页面生成一条 header。
+当 `speculation_rules.mode = "header"` 时，speculation stack 不再把规则塞进 HTML 可执行脚本，也不再为每个页面生成一条 header。
 
 它的主路径是：
 
@@ -173,7 +177,7 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 3. Hugo 给默认路由补 `Speculation-Rules: "/site/speculation-rules/document.<hash>.json"`
 4. 生成规则文件的专用内容类型；默认复用 `/site/*` 的长期 HTTP 缓存和 SW `fingerprinted` 策略
 
-全站响应头要求所有语言的有效规则一致。语言覆盖导致规则不同（包括只在某种语言关闭）时，Hugo 构建报错。
+规则使用全站交付配置。所有语言使用同一份规则；语言级 `params` 配置不再接受。
 
 若 `mode = "off"`：
 
@@ -193,8 +197,8 @@ runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
 
 如果：
 
-- `params.prefetch_runtime` 命中某 slot
-- `params.speculation_rules` 也命中同一 slot
+- `prefetch_runtime` 命中某 slot
+- `speculation_rules` 也命中同一 slot
 
 Hugo 在每种语言的首页渲染时输出重叠 warning。开启 panicOnWarning 的站点会将此类 warning 视为构建失败。
 
@@ -213,8 +217,8 @@ Hugo 在每种语言的首页渲染时输出重叠 warning。开启 panicOnWarni
 在 document-rules 形态下，这里的 ownership 是 slot 级的：
 
 - `data-prefetch-slot="nav"` 只表达这条链接属于 `nav` 候选
-- `params.speculation_rules.nav` 决定 spec 如何处理这个 slot
-- `params.prefetch_runtime.env.TT.nav` 决定 runtime fallback 如何处理这个 slot
+- `speculation_rules.nav` 决定 spec 如何处理这个 slot
+- `prefetch_runtime.env.TT.nav` 决定 runtime fallback 如何处理这个 slot
 
 所以这时构建后 warning 会自然减少或消失。
 
@@ -229,7 +233,7 @@ Hugo 在每种语言的首页渲染时输出重叠 warning。开启 panicOnWarni
 - `coordination_mode`
 - `owned_slots`
 
-这份数据的来源不是浏览器回读 `Speculation-Rules` header，而是 Hugo 在构建期基于同一份 `params.speculation_rules` 上游事实，和 document rules 一起同步算出。
+这份数据的来源不是浏览器回读 `Speculation-Rules` header，而是 Hugo 在构建期基于同一份 `speculation_rules` 上游事实，和 document rules 一起同步算出。
 
 这一步的意义是：
 

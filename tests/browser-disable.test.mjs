@@ -60,8 +60,11 @@ before(()=>{
   const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n';
   const build=(name,mode,asset,code)=>{
     const assets=path.join(work,name+'-assets');if(asset)write(path.join(assets,'js/pwa/'+asset),code);
+    const data=path.join(work,name+'-data');
+    write(path.join(data,'delivery.toml'),'[service_worker]\nmode = "'+mode+'"\n');
     write(config,mounts+(asset?'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n':'')+
-      '[params.service_worker]\nmode = "'+mode+'"\n[params.build]\nversion = "v20261010001001"\n');
+      '[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+'\ntarget = "data"\n'+
+      '[[module.mounts]]\nsource = "data"\ntarget = "data"\n[params.build]\nversion = "v20261010001001"\n');
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],
       {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
     assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);return destination;
@@ -98,7 +101,8 @@ after(()=>{if(work){assert.equal(path.dirname(work),parent);assert.ok(path.basen
 test('disable declarations expose an explicit disable build and a configurable page',()=>{
   assert.throws(()=>parseArguments(command(),[]),/--next is required/);
   assert.equal(parseArguments(command(),['enabled','--next','disabled']).page,'/');
-  for(const value of ['https://example.invalid/','//example.invalid/','/page/#fragment'])assert.throws(()=>parseArguments(command(),['--next','disabled','--page',value]));
+  for(const value of ['https://example.invalid/','//example.invalid/'])assert.throws(()=>parseArguments(command(),['--next','disabled','--page',value]));
+  assert.equal(parseArguments(command(),['--next','disabled','--page','/page/#fragment']).page,'/page/#fragment');
   for(const flag of ['next','page'])assert.match(helpFor(command()),new RegExp('--'+flag+' <'));
 });
 

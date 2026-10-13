@@ -1,0 +1,5 @@
+[prefetch_runtime]
+mode = "off"
+
+[service_worker]
+mode = "off"

@@ -160,11 +160,13 @@ Keep accounts, branding and legal content in the site. `params.theme_changelog`
 can set the Powered by release-notes link; its default is the upstream
 `content/changelog/` directory.
 
-For cache or deployment overrides, create site-owned `data/cache-policy.toml`;
-the Module's `data/cache-policy-default.toml` supplies defaults. Use
-`platform.edgeone` for deployment fields and ordered `routes` with independent
+For prefetch, Service Workers, headers, or deployment, create `data/delivery.toml`;
+the Module's `data/banyan/delivery.toml` supplies defaults. Use
+`platform.edgeone.makers` for deployment fields and ordered `routes` with independent
 `http` and `sw.bucket` fields (`versioned`, `fingerprinted`, or `off`). A site
-route array replaces all default routes.
+route array replaces all default routes, including when empty. Other tables merge
+by field. `[prefetch_runtime]`, `[speculation_rules]`, and `[service_worker]`
+apply to all languages.
 Hugo generates
 `_headers` and `edgeone.json`. Do not edit those output files as configuration.
 

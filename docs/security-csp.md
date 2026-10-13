@@ -35,8 +35,8 @@ HTML 压缩不能再次改写 JS，否则 CSP 哈希失效。
 可执行内联 JS 使用哈希授权。外链 JS 提供 integrity。
 `/*.xml` 使用 cache policy 中的独立 CSP，允许 RSS/XSL 样式。
 
-其他缓存、安全和权限头来自 `module/data/cache-policy-default.toml`；
-站点可用 `data/cache-policy.toml` 覆盖。修改源配置，不手改生成产物。
+其他缓存、安全和权限头来自 `module/data/banyan/delivery.toml`；
+站点可用 `data/delivery.toml` 覆盖。修改源配置，不手改生成产物。
 默认 Permissions-Policy 关闭主题不需要的高权限能力。
 HSTS 默认 `max-age=300`，不包含 `includeSubDomains` 或 `preload`；
 扩大范围属于站点部署决策。
@@ -56,7 +56,7 @@ swban check/http/security <url>                #检查已部署的响应头
 
 ## Speculation Rules
 
-`params.speculation_rules.mode = "header"` 通过响应头交付指纹化的
+`speculation_rules.mode = "header"` 通过响应头交付指纹化的
 document rules JSON，不在运行时注入可执行内联脚本。
 不支持该能力的浏览器会忽略该头，runtime/SW 预取按自己的配置执行。
 

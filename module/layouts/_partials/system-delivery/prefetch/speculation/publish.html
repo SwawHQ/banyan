@@ -1,25 +1,11 @@
-{{- /* Build from configuration, independent of page render order. */ -}}
+{{- $config := . -}}
 {{- $rules := dict -}}
-{{- $rulesBody := "" -}}
-{{- $initialized := false -}}
-{{- range sort hugo.Sites "Language.Weight" -}}
-  {{- $config := .Params.speculation_rules | default dict -}}
-  {{- $mode := lower (printf "%v" (index $config "mode" | default "off")) -}}
-  {{- if not (in (slice "off" "header") $mode) -}}
-    {{- errorf "Build failed: params.speculation_rules.mode only supports off/header; got %q." $mode -}}
-  {{- end -}}
-  {{- $payload := dict -}}
-  {{- if eq $mode "header" -}}
-    {{- $payload = partial "system-delivery/prefetch/speculation/document.html" (dict "speculation_config" $config) -}}
-  {{- end -}}
-  {{- $body := $payload | jsonify -}}
-  {{- if not $initialized -}}
-    {{- $rules = $payload -}}
-    {{- $rulesBody = $body -}}
-    {{- $initialized = true -}}
-  {{- else if ne $body $rulesBody -}}
-    {{- errorf "Build failed: Speculation Rules use one global response header; all languages must have identical effective rules (language %q differs)." .Language.Lang -}}
-  {{- end -}}
+{{- $mode := lower (printf "%v" (index $config "mode" | default "off")) -}}
+{{- if not (in (slice "off" "header") $mode) -}}
+  {{- errorf "Build failed: delivery.speculation_rules.mode only supports off/header; got %q." $mode -}}
+{{- end -}}
+{{- if eq $mode "header" -}}
+  {{- $rules = partial "system-delivery/prefetch/speculation/document.html" (dict "speculation_config" $config) -}}
 {{- end -}}
 {{- $rulesURL := "" -}}
 {{- if gt (len $rules) 0 -}}

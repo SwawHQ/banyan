@@ -1,0 +1,26 @@
+{{- $themePolicy := hugo.Data.banyan.delivery | default dict -}}
+{{- if eq (len $themePolicy) 0 -}}
+  {{- errorf "Build failed: missing data/banyan/delivery.toml." -}}
+{{- end -}}
+{{- range $name := slice "cache-policy" "cache-policy-default" -}}
+  {{- if isset hugo.Data $name -}}{{- errorf "Build failed: replace data/%s.toml with data/delivery.toml." $name -}}{{- end -}}
+{{- end -}}
+{{- range $site := hugo.Sites -}}
+  {{- range $name := slice "prefetch_runtime" "speculation_rules" "service_worker" "link_prefetch" -}}
+    {{- if isset $site.Params $name -}}{{- errorf "Build failed: params.%s is not supported; use data/delivery.toml." $name -}}{{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $sitePolicy := hugo.Data.delivery | default dict -}}
+{{- partial "system-delivery/config/validate.html" $themePolicy -}}
+{{- partial "system-delivery/config/validate.html" $sitePolicy -}}
+{{- $routes := index $themePolicy "routes" | default slice -}}
+{{- if isset $sitePolicy "routes" -}}{{- $routes = index $sitePolicy "routes" -}}{{- end -}}
+{{- $policy := merge $themePolicy $sitePolicy -}}
+{{- $swRoutes := slice -}}
+{{- range $route := $routes -}}
+  {{- with index $route "sw" -}}
+    {{- $swRoutes = $swRoutes | append (merge . (dict "path" (index $route "path"))) -}}
+  {{- end -}}
+{{- end -}}
+{{- /* Source exceptions come last; the worker returns its first matching rule. */ -}}
+{{- return (merge $policy (dict "routes" $routes "sw_routes" (collections.Reverse $swRoutes))) -}}

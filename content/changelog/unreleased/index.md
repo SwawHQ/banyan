@@ -35,8 +35,13 @@ lastmod: 2026-10-13
   preserving them in chapter links. Back and Forward restore the source and
   breadcrumb sorting. Remove `navigation-state-default.toml`;
   query parameters no longer control the navigation view.
-- Cache policy uses `platform.edgeone` and ordered path rules with independent
-  `http` and `sw` fields. SW uses only `sw.bucket` (`versioned`, `fingerprinted`,
+- Delivery settings use `data/delivery.toml`, with Module defaults in
+  `data/banyan/delivery.toml`. Move `prefetch_runtime`, `speculation_rules`, and
+  `service_worker` from Hugo `params` to this file; they apply to all languages.
+  Tables merge by field; previous configuration entries are no longer accepted.
+  Deployment fields use `platform.edgeone.makers`; route overrides use
+  `http.edgeone.makers` and `http.cloudflare.pages`, with independent `http`
+  and `sw` fields. SW uses only `sw.bucket` (`versioned`, `fingerprinted`,
   or `off`), supports one wildcard anywhere in a case-sensitive URL path, and
   gives later matching rules priority. The default covers same-origin GET
   requests, including JSON and XML. Versioned cache misses validate the HTTP

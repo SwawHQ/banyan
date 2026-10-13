@@ -1,8 +1,7 @@
-{{- $platform := .platform -}}
 {{- $headerRoutes := slice -}}
 {{- range .routes -}}
   {{- $http := .http | default dict -}}
-  {{- $specific := index $http $platform | default dict -}}
+  {{- $specific := index $http $.platform $.product | default dict -}}
   {{- $headers := merge ($http.headers | default dict) ($specific.headers | default dict) -}}
   {{- $unset := $specific.unset | default slice -}}
   {{- if or (gt (len $headers) 0) (gt (len $unset) 0) -}}

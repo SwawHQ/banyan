@@ -8,7 +8,7 @@
   {{- $slot := index $slotSpec "slot" -}}
   {{- $mode := partial "system-delivery/prefetch/speculation/mode.html" (index $speculationConfig $configKey) -}}
   {{- if eq (index $mode "kind") "invalid" -}}
-    {{- errorf "Build failed: params.speculation_rules.%s only supports empty/off or direct modes such as prefetch_moderate or prerender_eager; got %q." $configKey (index $mode "value") -}}
+    {{- errorf "Build failed: delivery.speculation_rules.%s only supports empty/off or direct modes such as prefetch_moderate or prerender_eager; got %q." $configKey (index $mode "value") -}}
   {{- end -}}
   {{- if ne (index $mode "kind") "" -}}
     {{- $entry := dict

@@ -1,7 +1,56 @@
-# Site overrides: data/cache-policy.toml. A routes array replaces all default routes.
+# Site overrides: data/delivery.toml. Tables merge; a routes array replaces all routes.
 # Declare general rules first, then exceptions. HTTP and SW policies are independent.
 
-[platform.edgeone]
+[prefetch_runtime]
+mode = "off"
+# Runtime warmup stack:
+# - Handles link rel=prefetch and Service Worker navigation warmup.
+# - The environment key uses two capability flags:
+#   first flag = link prefetch transport is available
+#   second flag = Service Worker API is available in the current browser context
+# - Mode short codes keep the runtime dispatch compact:
+#   link_sf / link_mf / link_xf
+#   sw_sf   / sw_mf   / sw_xf
+# - The optional _g suffix enables a sessionStorage gate so identical warmup
+#   batches run only once per browser session.
+
+[prefetch_runtime.env.TT]
+nav = "sw_xf_g"
+crumb = "sw_mf_g"
+sort_siblings = "sw_xf_g"
+descendants = "sw_xf_g"
+post = "sw_mf_g"
+
+[prefetch_runtime.env.FT]
+ref = "TT"
+
+[prefetch_runtime.env.TF]
+nav = "link_xf"
+crumb = "link_mf"
+sort_siblings = "link_xf"
+descendants = "link_mf"
+post = "link_mf"
+
+[speculation_rules]
+# Header stack for external Speculation Rules JSON.
+# Edge platforms that cannot emit quoted Speculation-Rules header values should
+# keep this off and let the runtime/SW prefetch stack handle warmup.
+mode = "off"
+runtime_coordination = "preempt_runtime_when_supported"
+nav = "prefetch_eager"
+crumb = "prefetch_moderate"
+sort_siblings = "prefetch_eager"
+descendants = "prefetch_moderate"
+post = "prefetch_moderate"
+
+[service_worker]
+# Service Worker is opt-in because it changes browser caching behavior.
+mode = "off"
+update_check_interval = 15
+update_visibility_throttle = 3
+offline_notice_path = "offline/"
+
+[platform.edgeone.makers]
 installCommand = ""
 buildCommand = "hugo --minify --gc --cleanDestinationDir"
 outputDirectory = "public"
@@ -22,19 +71,19 @@ sw.bucket = "versioned"
 [[routes]]
 path = "/css/*"
 http.headers.Cache-Control = "public, max-age=31536000, immutable"
-http.cloudflare.unset = ["Cache-Control"]
+http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "fingerprinted"
 
 [[routes]]
 path = "/js/*"
 http.headers.Cache-Control = "public, max-age=31536000, immutable"
-http.cloudflare.unset = ["Cache-Control"]
+http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "fingerprinted"
 
 [[routes]]
 path = "/site/*"
 http.headers.Cache-Control = "public, max-age=31536000, immutable"
-http.cloudflare.unset = ["Cache-Control"]
+http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "fingerprinted"
 
 [[routes]]
@@ -44,29 +93,29 @@ http.headers.Content-Type = "application/manifest+json; charset=utf-8"
 [[routes]]
 path = "/media/content/*"
 http.headers.Cache-Control = "public, max-age=31536000, immutable"
-http.cloudflare.unset = ["Cache-Control"]
+http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "fingerprinted"
 
 [[routes]]
 path = "/favicon.ico"
 http.headers.Cache-Control = "public, max-age=86400, must-revalidate"
-http.cloudflare.unset = ["Cache-Control"]
+http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "off"
 
 [[routes]]
 path = "/favicon.svg"
 http.headers.Cache-Control = "public, max-age=86400, must-revalidate"
-http.cloudflare.unset = ["Cache-Control"]
+http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "off"
 
 [[routes]]
 path = "/sw.js"
 http.headers.Cache-Control = "no-cache, max-age=0, must-revalidate"
-http.cloudflare.unset = ["Cache-Control"]
+http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "off"
 
 [[routes]]
 path = "/*.xml"
 # The native XML viewer needs inline styles; replace the HTML policy on Cloudflare.
 http.headers.Content-Security-Policy = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'"
-http.cloudflare.unset = ["Content-Security-Policy"]
+http.cloudflare.pages.unset = ["Content-Security-Policy"]

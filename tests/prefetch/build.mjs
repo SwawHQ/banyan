@@ -18,7 +18,7 @@ try {
     const env = fixtureEnvironment(work);
     const rel = file => path.relative(siteRoot, file).replaceAll('\\', '/');
     const read = file => fs.readFileSync(file, 'utf8');
-    const headerConfig = `[params.speculation_rules]
+    const headerConfig = `[speculation_rules]
     mode = "header"
     nav = "prefetch_moderate"
     crumb = "prerender_conservative"
@@ -27,9 +27,13 @@ try {
     post = "off"
     `;
 
-    function build(name, config, output = path.join(work, name), expectedError = '') {
+    function build(name, policy, output = path.join(work, name), expectedError = '', config = '') {
         const configFile = path.join(work, name + '.toml');
-        fs.writeFileSync(configFile, config);
+        const data = path.join(work, name + '-data');
+        fs.mkdirSync(data,{recursive:true});
+        fs.writeFileSync(path.join(data,'delivery.toml'),policy);
+        fs.writeFileSync(configFile,config+'\n[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+
+            '\ntarget = "data"\n[[module.mounts]]\nsource = "data"\ntarget = "data"\n');
         const result = spawnSync(hugo, ['--noBuildLock',
             '--config', 'hugo.toml,' + rel(configFile), '--minify',
             '--cleanDestinationDir', '--destination', rel(output)
@@ -84,7 +88,7 @@ try {
         return value;
     }
 
-    verifyOff(build('off', '[params.speculation_rules]\nmode = "off"\n').output);
+    verifyOff(build('off', '[speculation_rules]\nmode = "off"\n').output);
     const enabled = build('header', headerConfig);
     const value = verifyHeader(enabled.output);
     for (const language of ['zh', 'zh-tw']) {
@@ -96,15 +100,15 @@ try {
     const changed = build('changed', headerConfig.replace('prefetch_moderate', 'prefetch_eager'));
     assert.notEqual(ruleHeader(changed.output), value, 'Rule changes invalidate the fingerprint');
     verifyOff(build('empty', headerConfig.replace('prefetch_moderate', 'off').replace('prerender_conservative', 'off')).output);
-    verifyOff(build('disabled-after-header', '[params.speculation_rules]\nmode = "off"\n', enabled.output).output);
-    build('language-mismatch', headerConfig + '\n[languages.zh.params.speculation_rules]\nnav = "prefetch_eager"\n',
-        undefined, 'all languages must have identical effective rules');
-    build('language-disabled', headerConfig + '\n[languages.zh.params.speculation_rules]\nmode = "off"\n',
-        undefined, 'all languages must have identical effective rules');
-    build('invalid-mode', '[params.speculation_rules]\nmode = "invalid"\n',
-        undefined, 'params.speculation_rules.mode only supports off/header');
-    const warning = build('overlap', 'panicOnWarning = false\n[params.service_worker]\nmode = "enable"\n[params.prefetch_runtime]\nmode = "enable"\n' +
-        headerConfig + 'runtime_coordination = "independent"\n');
+    verifyOff(build('disabled-after-header', '[speculation_rules]\nmode = "off"\n', enabled.output).output);
+    build('language-mismatch', headerConfig, undefined, 'params.speculation_rules is not supported',
+        '\n[languages.zh.params.speculation_rules]\nnav = "prefetch_eager"\n');
+    build('language-disabled', headerConfig, undefined, 'params.speculation_rules is not supported',
+        '\n[languages.zh.params.speculation_rules]\nmode = "off"\n');
+    build('invalid-mode', '[speculation_rules]\nmode = "invalid"\n',
+        undefined, 'delivery.speculation_rules.mode only supports off/header');
+    const warning = build('overlap', '[service_worker]\nmode = "enable"\n[prefetch_runtime]\nmode = "enable"\n' +
+        headerConfig + 'runtime_coordination = "independent"\n',undefined,'','panicOnWarning = false\n');
     assert.ok(warning.log.includes('Speculation overlap warning'), 'Overlap diagnostics survive removal of the collector');
     console.log('Speculation Rules contracts passed: direct output, CSP preservation, stable/changed fingerprints, off/empty/cleanup, language validation and overlap diagnostics.');
 } finally {

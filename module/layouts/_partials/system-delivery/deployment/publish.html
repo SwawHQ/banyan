@@ -13,7 +13,7 @@
   {{- $headerRoutes = $filtered -}}
 {{- end -}}
 {{- /* RelPermalink evaluation publishes all three generated files. */ -}}
-{{- $rulesURL := partial "system-delivery/prefetch/speculation/publish.html" . -}}
+{{- $rulesURL := partial "system-delivery/prefetch/speculation/publish.html" .delivery.speculation_rules -}}
 {{- $csp := partial "system-delivery/deployment/csp-value.html" .inline_scripts -}}
 {{- $updatedRoutes := slice -}}
 {{- $hasGlobal := false -}}

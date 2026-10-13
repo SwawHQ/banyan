@@ -1,0 +1,92 @@
+{{- range $key, $value := . -}}
+  {{- if not (in (slice "platform" "routes" "prefetch_runtime" "speculation_rules" "service_worker") $key) -}}
+    {{- errorf "Delivery config: unknown field %q." $key -}}
+  {{- end -}}
+  {{- if and (ne $key "routes") (not (reflect.IsMap $value)) -}}{{- errorf "Delivery config: %s must be a table." $key -}}{{- end -}}
+{{- end -}}
+{{- with .platform -}}
+  {{- range $name, $config := . -}}
+    {{- if ne $name "edgeone" -}}{{- errorf "Delivery config: unsupported platform %q." $name -}}{{- end -}}
+    {{- if not (reflect.IsMap $config) -}}{{- errorf "Delivery config: platform.%s must be a table." $name -}}{{- end -}}
+    {{- range $product, $settings := $config -}}
+      {{- if or (ne $product "makers") (not (reflect.IsMap $settings)) -}}{{- errorf "Delivery config: unsupported platform.%s.%s; expected a makers table." $name $product -}}{{- end -}}
+      {{- range $key, $value := $settings -}}
+        {{- if or (not (in (slice "installCommand" "buildCommand" "outputDirectory" "nodeVersion" "hugoVersion") $key)) (ne (printf "%T" $value) "string") -}}
+          {{- errorf "Delivery config: unsupported platform.%s.%s.%s or non-string value." $name $product $key -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if isset . "routes" -}}
+  {{- if not (reflect.IsSlice .routes) -}}
+    {{- errorf "Delivery config: routes must be an array." -}}
+  {{- else -}}
+    {{- range $i, $route := .routes -}}
+      {{- $path := index $route "path" -}}
+      {{- if or (ne (printf "%T" $path) "string") (eq (len (findRE `^/[^\s?#:\\]*$` (printf "%v" $path))) 0) (strings.HasPrefix (printf "%v" $path) "//") (gt (len (findRE `\*` (printf "%v" $path))) 1) -}}
+        {{- errorf "Delivery config routes[%d]: path must start with one / and contain at most one *, without whitespace, query, fragment, placeholder or backslash." $i -}}
+      {{- end -}}
+      {{- range $key, $value := $route -}}
+        {{- if not (in (slice "path" "http" "sw") $key) -}}
+          {{- errorf "Delivery config routes[%d]: unknown field %q." $i $key -}}
+        {{- end -}}
+        {{- if and (in (slice "http" "sw") $key) (not (reflect.IsMap $value)) -}}
+          {{- errorf "Delivery config routes[%d].%s must be a table." $i $key -}}
+        {{- end -}}
+      {{- end -}}
+      {{- $http := index $route "http" | default dict -}}
+      {{- range $key, $value := $http -}}
+        {{- if not (reflect.IsMap $value) -}}{{- errorf "Delivery config routes[%d].http.%s must be a table." $i $key -}}{{- end -}}
+        {{- if not (in (slice "headers" "cloudflare" "edgeone") $key) -}}
+          {{- errorf "Delivery config routes[%d].http: unknown field %q." $i $key -}}
+        {{- end -}}
+      {{- end -}}
+      {{- range $name, $product := dict "cloudflare" "pages" "edgeone" "makers" -}}
+        {{- $vendor := index $http $name | default dict -}}
+        {{- range $key, $value := $vendor -}}
+          {{- if or (ne $key $product) (not (reflect.IsMap $value)) -}}{{- errorf "Delivery config routes[%d].http.%s: unknown field %q or invalid product table." $i $name $key -}}{{- end -}}
+        {{- end -}}
+        {{- range $key, $value := (index $vendor $product | default dict) -}}
+          {{- if and (eq $key "headers") (not (reflect.IsMap $value)) -}}
+            {{- errorf "Delivery config routes[%d].http.%s.%s.headers must be a table." $i $name $product -}}
+          {{- end -}}
+          {{- if not (or (eq $key "headers") (and (eq $name "cloudflare") (eq $key "unset"))) -}}
+            {{- errorf "Delivery config routes[%d].http.%s.%s: unknown field %q." $i $name $product $key -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+      {{- range $headers := slice ($http.headers | default dict) ($http.cloudflare.pages.headers | default dict) ($http.edgeone.makers.headers | default dict) -}}
+        {{- $names := slice -}}
+        {{- range $key, $value := $headers -}}
+          {{- if or (eq (len (findRE `^[A-Za-z0-9-]+$` $key)) 0) (in $names (lower $key)) (ne (printf "%T" $value) "string") (gt (len (findRE `[\x00-\x1f\x7f]` (printf "%v" $value))) 0) -}}
+            {{- errorf "Delivery config routes[%d]: invalid or duplicate header %q; values must be strings without control characters." $i $key -}}
+          {{- end -}}
+          {{- $names = $names | append (lower $key) -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if isset ($http.cloudflare.pages | default dict) "unset" -}}
+        {{- if not (reflect.IsSlice $http.cloudflare.pages.unset) -}}
+          {{- errorf "Delivery config routes[%d].http.cloudflare.pages.unset must be an array of header names." $i -}}
+        {{- else -}}
+          {{- range $http.cloudflare.pages.unset -}}
+            {{- if or (ne (printf "%T" .) "string") (eq (len (findRE `^[A-Za-z0-9-]+$` (printf "%v" .))) 0) -}}
+              {{- errorf "Delivery config routes[%d]: invalid Cloudflare unset header %q." $i . -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if isset $route "sw" -}}
+        {{- $sw := index $route "sw" -}}
+        {{- range $key, $value := $sw -}}
+          {{- if ne $key "bucket" -}}
+            {{- errorf "Delivery config routes[%d].sw: unknown field %q." $i $key -}}
+          {{- end -}}
+        {{- end -}}
+        {{- if not (in (slice "versioned" "fingerprinted" "off") $sw.bucket) -}}
+          {{- errorf "Delivery config routes[%d].sw.bucket must be versioned, fingerprinted or off." $i -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

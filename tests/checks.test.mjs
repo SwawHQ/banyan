@@ -339,18 +339,18 @@ test('every declared task exposes help before consulting output, content or tool
 
 test('native Hugo generates EdgeOne config and respects its Hugo version override',() => {
   const theme = fileURLToPath(new URL('../module/',import.meta.url));
-  const defaults = fs.readFileSync(path.join(theme,'data/cache-policy-default.toml'),'utf8');
+  const defaults = fs.readFileSync(path.join(theme,'data/banyan/delivery.toml'),'utf8');
   for (const override of ['', '0.156.0']) {
     const fixture = path.join(work,'edgeone '+(override || 'default'));
     write(fixture,'hugo.toml','baseURL = "https://example.test/"\ndisableKinds = ["taxonomy","term","RSS","sitemap"]\n');
     write(fixture,'content/_index.md','---\ntitle: Fixture\n---\n');
-    write(fixture,'layouts/home.html','{{ partial "edgeone-config.html" (dict "edgeone" .Site.Data.policy.platform.edgeone) | jsonify }}');
+    write(fixture,'layouts/home.html','{{ partial "edgeone-config.html" (dict "edgeone" .Site.Data.policy.platform.edgeone.makers) | jsonify }}');
     write(fixture,'layouts/_partials/edgeone-config.html',fs.readFileSync(path.join(theme,
       'layouts/_partials/system-delivery/deployment/edgeone-config.html')));
     write(fixture,'layouts/_partials/system-delivery/deployment/cache-header-routes.html',fs.readFileSync(path.join(theme,
       'layouts/_partials/system-delivery/deployment/cache-header-routes.html')));
-    write(fixture,'data/policy.toml',override ? defaults.replace('[platform.edgeone]',
-      '[platform.edgeone]\nhugoVersion = "'+override+'"') : defaults);
+    write(fixture,'data/policy.toml',override ? defaults.replace('[platform.edgeone.makers]',
+      '[platform.edgeone.makers]\nhugoVersion = "'+override+'"') : defaults);
     const result = spawnSync(toolExecutable('hugo'),['--minify'],{cwd:fixture,
       env:hugoEnvironment({...process.env,GIT_OPTIONAL_LOCKS:'0',HUGO_CACHEDIR:path.join(fixture,'cache'),
         HUGO_RESOURCEDIR:path.join(fixture,'resources')}),encoding:'utf8',timeout:30000});

@@ -33,7 +33,11 @@ lastmod: 2026-10-13
   章节定位与这些状态共存。浏览器后退和前进会恢复来源和路径列排序。
   移除 `navigation-state-default.toml` 配置；
   旧查询参数不再控制导航视图。
-- 缓存策略使用 `platform.edgeone` 和有序路径规则，`http` 与 `sw` 独立配置。
+- 交付配置集中到 `data/delivery.toml`，模块默认值在 `data/banyan/delivery.toml`。
+  `prefetch_runtime`、`speculation_rules` 和 `service_worker` 从 Hugo `params`
+  移到此文件，应用到所有语言。表按字段合并，不再接受旧配置入口。
+  部署参数使用 `platform.edgeone.makers`；路径特例使用
+  `http.edgeone.makers` 和 `http.cloudflare.pages`，`http` 与 `sw` 独立配置。
   SW 只使用 `sw.bucket`（`versioned`、`fingerprinted`、`off`），支持路径任意位置的
   单个通配符，区分路径大小写，后声明的匹配规则优先。默认覆盖同源 GET 请求，
   包括 JSON 和 XML。按版本缓存未命中时校验 HTTP 缓存，关联资源只预热指纹 URL。

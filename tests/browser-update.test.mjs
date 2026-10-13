@@ -55,8 +55,11 @@ before(()=>{
   const build=(name,version=versions[0],asset,code,mode='enable')=>{
     const assets=path.join(work,name+'-assets');
     if(asset)write(path.join(assets,'js/pwa/'+asset),code);
+    const data=path.join(work,name+'-data');
+    write(path.join(data,'delivery.toml'),'[service_worker]\nmode = "'+mode+'"\n');
     write(config,mounts+(asset?'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n':'')+
-      '[params.service_worker]\nmode = "'+mode+'"\n[params.build]\nversion = "'+version+'"\n');
+      '[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+'\ntarget = "data"\n'+
+      '[[module.mounts]]\nsource = "data"\ntarget = "data"\n[params.build]\nversion = "'+version+'"\n');
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],
       {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
     assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);return destination;

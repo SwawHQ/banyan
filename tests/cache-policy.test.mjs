@@ -16,11 +16,11 @@ let work;
 function write(file,body) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,body);}
 function build(name,policy,config='') {
   const directory=path.join(work,name),overlay=path.join(directory,'data'),assets=path.join(work,'assets');
-  if(policy!==undefined)write(path.join(overlay,'cache-policy.toml'),policy);
-  const mounts=[['assets',assets],['assets','assets'],...(policy===undefined?[]:[['data',overlay],['data','data']])]
+  write(path.join(overlay,'delivery.toml'),(policy??'')+'\n[service_worker]\nmode = "enable"\n');
+  const mounts=[['assets',assets],['assets','assets'],['data',overlay],['data','data']]
     .map(([target,source])=>'[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('');
   const configFile=path.join(directory,'fixture.toml'),output=path.join(directory,'public');
-  write(configFile,mounts+'[params.service_worker]\nmode = "enable"\n'+config);
+  write(configFile,mounts+config);
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+configFile,'--destination',output],
     {cwd:root,env:fixtureEnvironment(directory),encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024});
   assert.ifError(result.error);
@@ -92,12 +92,12 @@ test('default policy generates explicit Cloudflare overrides and independent Edg
 });
 
 test('platform values override common values only within their own route and platform',()=>{
-  const policy='[platform.edgeone]\nnodeVersion = "20.18.0"\n'+
+  const policy='[platform.edgeone.makers]\nnodeVersion = "20.18.0"\n'+
     '[[routes]]\npath = "/*"\nhttp.headers.X-Common = "yes"\nhttp.headers.X-Value = "common"\n'+
-    'http.cloudflare.headers.x-value = "cf"\nhttp.edgeone.headers.X-Value = "eo"\n'+
-    '[[routes]]\npath = "/cf-only/*"\nhttp.cloudflare.headers.X-Only = "cf"\n'+
-    '[[routes]]\npath = "/eo-only/*"\nhttp.edgeone.headers.X-Only = "eo"\n'+
-    '[[routes]]\npath = "/remove/*"\nhttp.cloudflare.unset = ["X-Value"]\n';
+    'http.cloudflare.pages.headers.x-value = "cf"\nhttp.edgeone.makers.headers.X-Value = "eo"\n'+
+    '[[routes]]\npath = "/cf-only/*"\nhttp.cloudflare.pages.headers.X-Only = "cf"\n'+
+    '[[routes]]\npath = "/eo-only/*"\nhttp.edgeone.makers.headers.X-Only = "eo"\n'+
+    '[[routes]]\npath = "/remove/*"\nhttp.cloudflare.pages.unset = ["X-Value"]\n';
   const output=passed(build('platform',policy)),rules=parseHeaders(fs.readFileSync(path.join(output,'_headers'),'utf8'));
   const edge=JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8'));
   assert.equal(cloudflareHeaders(rules,'/')['x-value'],'cf');
@@ -108,6 +108,24 @@ test('platform values override common values only within their own route and pla
   assert.ok(!rules.some(route=>route.source==='/eo-only/*'));
   assert.equal(edge.nodeVersion,'20.18.0');assert.equal(edge.buildCommand,'hugo --minify --gc --cleanDestinationDir');
   assert.equal(worker(output).probe.SW_ROUTES.length,0);
+});
+
+test('delivery tables preserve nested defaults and explicit empty overrides in every language',()=>{
+  const output=passed(build('nested-defaults','[prefetch_runtime]\nmode = "enable"\n'+
+    '[prefetch_runtime.env.TT]\nnav = "sw_sf"\npost = ""\n'+
+    '[speculation_rules]\nmode = "header"\nnav = "off"\n'));
+  for(const prefix of ['','zh/','zh-tw/']) {
+    const html=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
+    const payload=JSON.parse(html.match(/<script id=["']?site-prefetch-data["']?[^>]*>([\s\S]*?)<\/script>/)[1]);
+    assert.equal(payload.TT.nav,'sw_sf');assert.equal(payload.TT.crumb,'sw_mf_g');
+    assert.equal(payload.TT.post,undefined);assert.equal(payload.FT,'TT');
+    assert.equal(payload.TF.nav,'link_xf');
+  }
+  const edge=JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8'));
+  const url=JSON.parse(edge.headers[0].headers.find(header=>header.key==='Speculation-Rules').value);
+  const rules=JSON.parse(fs.readFileSync(path.join(output,url.slice(1)),'utf8'));
+  assert.equal(rules.prefetch.length,4,'Other Speculation Rules slots inherit defaults.');
+  assert.equal(worker(output).probe.getMatchingRoute('/unconfigured.json').bucket,'versioned');
 });
 
 test('compiled worker matches one wildcard, preserves URL case and uses the last declared SW rule',()=>{
@@ -213,7 +231,7 @@ test('empty route overrides and disabled optional assets do not restore defaults
   const headers=parseHeaders(fs.readFileSync(path.join(empty,'_headers'),'utf8'));
   assert.equal(headers.length,1);assert.ok(cloudflareHeaders(headers,'/')['content-security-policy']);
   assert.equal(cloudflareHeaders(headers,'/')['cache-control'],undefined);
-  const optional=passed(build('optional',undefined,'[params.web_app_manifest]\nmode = "off"\n[params.speculation_rules]\nmode = "header"\nnav = "prefetch_moderate"\n'));
+  const optional=passed(build('optional','[speculation_rules]\nmode = "header"\nnav = "prefetch_moderate"\n','[params.web_app_manifest]\nmode = "off"\n'));
   const rules=parseHeaders(fs.readFileSync(path.join(optional,'_headers'),'utf8'));
   assert.ok(!rules.some(rule=>rule.source==='/site/pwa/*.webmanifest'));
   assert.equal(cloudflareHeaders(rules,'/site/speculation-rules/document.hash.json')['cache-control'],'public, max-age=31536000, immutable');
@@ -221,8 +239,8 @@ test('empty route overrides and disabled optional assets do not restore defaults
   assert.equal(worker(optional).probe.getMatchingRoute('/site/speculation-rules/document.hash.json').bucket,'fingerprinted');
   assert.deepEqual(rules.find(rule=>rule.source==='/site/speculation-rules/*').headers,
     [{key:'Content-Type',value:'application/speculationrules+json'}]);
-  const custom=passed(build('optional-no-cache','routes = []\n',
-    '[params.speculation_rules]\nmode = "header"\nnav = "prefetch_moderate"\n'));
+  const custom=passed(build('optional-no-cache','routes = []\n'+
+    '[speculation_rules]\nmode = "header"\nnav = "prefetch_moderate"\n'));
   const customHeaders=parseHeaders(fs.readFileSync(path.join(custom,'_headers'),'utf8'));
   assert.equal(cloudflareHeaders(customHeaders,'/site/speculation-rules/document.hash.json')['cache-control'],undefined,
     'Generated MIME headers must not restore caching removed by the site.');
@@ -234,10 +252,16 @@ test('invalid and retired policy fields fail the build instead of silently chang
     ['old-platform','[edgeone]\nhugoVersion = "0.156.0"',/unknown field/],
     ['old-route','[[routes]]\npath = "/*"\nscope = "asset"',/unknown field/],
     ['old-headers','[[routes]]\npath = "/*"\nheaders.Cache-Control = "no-cache"',/unknown field/],
-    ['platform-field','[platform.edgeone]\nheaders = "invalid"',/unsupported platform/],
+    ['platform-field','[platform.edgeone.makers]\nheaders = "invalid"',/unsupported platform/],
+    ['vendor-only','[platform.edgeone]\nnodeVersion = "22.11.0"',/unsupported platform/],
+    ['wrong-product','[platform.edgeone.pages]\nnodeVersion = "22.11.0"',/unsupported platform/],
     ['platform-type','platform = false',/must be a table/],
+    ['runtime-type','prefetch_runtime = false',/prefetch_runtime must be a table/],
+    ['speculation-type','speculation_rules = false',/speculation_rules must be a table/],
+    ['runtime-mode','[prefetch_runtime]\nmode = "invalid"',/delivery.prefetch_runtime.mode/],
+    ['old-http','[[routes]]\npath = "/*"\nhttp.cloudflare.unset = ["Cache-Control"]',/unknown field/],
     ['headers-type','[[routes]]\npath = "/*"\nhttp.headers = false',/must be a table/],
-    ['unset-type','[[routes]]\npath = "/*"\nhttp.cloudflare.unset = false',/array of header names/],
+    ['unset-type','[[routes]]\npath = "/*"\nhttp.cloudflare.pages.unset = false',/array of header names/],
     ['path','[[routes]]\npath = "/a/*/*.json"',/at most one/],
     ['query','[[routes]]\npath = "/a?x=1"',/without whitespace/],
     ['kind','[[routes]]\npath = "/*"\nsw.kind = "navigation"\nsw.bucket = "versioned"',/sw: unknown field "kind"/],
@@ -245,13 +269,24 @@ test('invalid and retired policy fields fail the build instead of silently chang
     ['bucket','[[routes]]\npath = "/*"\nsw.bucket = "ignore"',/sw.bucket must be/],
     ['missing-bucket','[[routes]]\npath = "/*"\nsw = {}',/sw.bucket must be/],
     ['bucket-type','[[routes]]\npath = "/*"\nsw.bucket = false',/sw.bucket must be/],
-    ['unset','[[routes]]\npath = "/*"\nhttp.cloudflare.unset = "Cache-Control"',/array of header names/],
+    ['unset','[[routes]]\npath = "/*"\nhttp.cloudflare.pages.unset = "Cache-Control"',/array of header names/],
     ['header','[[routes]]\npath = "/*"\nhttp.headers.X-Test = "bad\\nheader"',/without control/],
-    ['http-field','[[routes]]\npath = "/*"\nhttp.edgeone.unset = ["Cache-Control"]',/unknown field/]
+    ['http-field','[[routes]]\npath = "/*"\nhttp.edgeone.makers.unset = ["Cache-Control"]',/unknown field/]
   ];
   for(const [name,policy,message] of bad) {
     const result=build('invalid-'+name,policy);assert.notEqual(result.status,0,name);assert.match(result.log,message);
   }
+});
+
+test('former Hugo parameter entries and policy files are rejected',()=>{
+  for(const key of ['prefetch_runtime','speculation_rules','service_worker']) {
+    const result=build('retired-'+key,undefined,'[params.'+key+']\nmode = "off"\n');
+    assert.notEqual(result.status,0);assert.match(result.log,/is not supported; use data\/delivery.toml/);
+  }
+  const overlay=path.join(work,'retired-file','data');
+  write(path.join(overlay,'cache-policy.toml'),'routes = []\n');
+  const result=build('retired-file');assert.notEqual(result.status,0);
+  assert.match(result.log,/replace data\/cache-policy.toml with data\/delivery.toml/);
 });
 
 test('shared Cloudflare parsing and local serving apply append, unset and case-insensitive header names',async()=>{

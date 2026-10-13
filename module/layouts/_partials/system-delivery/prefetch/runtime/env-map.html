@@ -5,7 +5,7 @@
 {{- range $rawEnvKey, $envConfig := $rawEnvConfigMap -}}
   {{- $envKey := upper (printf "%v" $rawEnvKey) -}}
   {{- if eq (len (findRE "^[TF]{2}$" $envKey)) 0 -}}
-    {{- errorf "Build failed: params.prefetch_runtime.env only supports two-flag T/F environment keys (for example TT, FT, FF); got %q." $rawEnvKey -}}
+    {{- errorf "Build failed: delivery.prefetch_runtime.env only supports two-flag T/F environment keys (for example TT, FT, FF); got %q." $rawEnvKey -}}
   {{- end -}}
   {{- $normalizedEnvConfigMap = merge $normalizedEnvConfigMap (dict $envKey ($envConfig | default dict)) -}}
 {{- end -}}

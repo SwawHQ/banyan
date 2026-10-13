@@ -134,7 +134,7 @@ test('site content, palette and delivery data override defaults in a fresh insta
   const root=consumer('overridden consumer',{multilingual:true});
   write(root,'content/rss/index.zh.md','---\nroot_nav: true\ntitle: 本站订阅\nslug: rss\ndescription: 本站订阅地址。\nlayout: page-article\noutputs: [HTML]\nbuild: {list: local}\n---\n\n{{< rss-link >}}\n');
   write(root,'assets/css/theme.css',fs.readFileSync(path.join(moduleRoot,'assets/css/theme.css'),'utf8')+'\n:root{--consumer-palette-marker:1}\n');
-  write(root,'data/cache-policy.toml','[platform.edgeone]\nhugoVersion = "0.156.0"\n');
+  write(root,'data/delivery.toml','[platform.edgeone.makers]\nhugoVersion = "0.156.0"\n');
   const output=build(root,installed);checks(root,installed,output);
   const rss=fs.readFileSync(path.join(output,'zh/rss/index.html'),'utf8');
   assert.ok(rss.includes('本站订阅'));assert.ok(rss.includes('/zh/index.xml'));

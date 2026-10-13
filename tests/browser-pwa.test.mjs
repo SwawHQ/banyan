@@ -57,13 +57,16 @@ before(()=>{
       '---\ntitle: Independent panel source\nslug: fixture-start\nlayout: page-article\nurl: '+prefix+from+'\nroot_nav: true\nicon: code\nweight: 84\nbuild:\n  list: local\n---\n\nIndependent panel navigation source.');
   }
   const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n';
-  const build=(configuration,destination)=>{
-    write(config,configuration);
+  const build=(configuration,destination,mode='enable')=>{
+    const data=path.join(work,'delivery-data');
+    write(path.join(data,'delivery.toml'),'[service_worker]\nmode = "'+mode+'"\n');
+    write(config,configuration+'\n[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+
+      '\ntarget = "data"\n[[module.mounts]]\nsource = "data"\ntarget = "data"\n');
     const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
     assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
   };
   for(const [mode,destination] of [['off',output],['enable',enabled]]) {
-    build(mounts+'[params.service_worker]\nmode = "'+mode+'"\n',destination);
+    build(mounts,destination,mode);
   }
   const worker=fs.readFileSync(path.join(root,'module/assets/js/pwa/worker-enable.js.tmpl'),'utf8');
   for(const [name,search,replacement] of [
@@ -78,7 +81,7 @@ before(()=>{
     assert.ok(worker.includes(search),'The worker fault must change an existing behavior: '+name);
     write(path.join(assets,'js/pwa/worker-enable.js.tmpl'),worker.replace(search,replacement));
     variants[name]=path.join(work,name);
-    build(mounts+'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n[params.service_worker]\nmode = "enable"\n',variants[name]);
+    build(mounts+'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n',variants[name]);
   }
   // These page-specific assets are absent from install-time offline fallbacks.
   // Their cache entries therefore prove first-page HTML scanning.

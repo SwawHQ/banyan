@@ -25,8 +25,9 @@ function snapshot(directory){return fs.readdirSync(directory,{recursive:true}).s
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-site-'));
   source=path.join(work,'source with spaces 树');
-  const config=fs.readFileSync(path.join(root,'hugo.toml'),'utf8').replace(/(\[params\.service_worker\]\s*mode\s*=\s*)"off"/,'$1"enable"');
+  const config=fs.readFileSync(path.join(root,'hugo.toml'),'utf8');
   write(source,'hugo.toml',config);
+  write(source,'data/delivery.toml','[service_worker]\nmode = "enable"\n');
   write(source,'go.mod','module fixture.invalid/site\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\nreplace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(root,'module').replaceAll('\\','/'))+'\n');
   let panel=fs.readFileSync(path.join(root,'module/content/powered-by/index.md'),'utf8');
   panel=panel.replace(/^---\r?\n/,'---\nurl: /prefs/update/\n');
@@ -103,9 +104,9 @@ test('site --updates builds a temporary version, runs real SW checks and removes
 });
 
 test('site discovers enabled prefetch coordination and runs browser rule and diagnostic checks',{timeout:60000},async()=>{
-  const directory=path.join(work,'prefetch-build'),config=path.join(work,'prefetch.toml');
-  fs.writeFileSync(config,'[params.prefetch_runtime]\nmode = "enable"\n[params.speculation_rules]\nmode = "header"\n');
-  const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',directory],
+  const directory=path.join(work,'prefetch-build');
+  write(source,'data/delivery.toml','[service_worker]\nmode = "enable"\n[prefetch_runtime]\nmode = "enable"\n[speculation_rules]\nmode = "header"\n');
+  const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',directory],
     {cwd:source,env:fixtureEnvironment(path.join(work,'prefetch-work')),
     encoding:'utf8',timeout:30000,windowsHide:true});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);

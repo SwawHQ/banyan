@@ -9,7 +9,7 @@
 {{- $stack := .stack | default (slice) -}}
 {{- $resolvedEnvConfig := dict -}}
 {{- if in $stack $envKey -}}
-  {{- errorf "Build failed: params.prefetch_runtime.env.%s reference chain contains a cycle: %s." $envKey (delimit (append $envKey $stack) " -> ") -}}
+  {{- errorf "Build failed: delivery.prefetch_runtime.env.%s reference chain contains a cycle: %s." $envKey (delimit (append $envKey $stack) " -> ") -}}
 {{- else -}}
   {{- $rawEnvConfig := index $envConfigMap $envKey | default dict -}}
   {{- $refTargetRaw := "" -}}
@@ -21,10 +21,10 @@
     {{- $refTarget := upper $refTargetRaw -}}
     {{- $validRef := true -}}
     {{- if eq (len (findRE "^[TF]{2}$" $refTarget)) 0 -}}
-      {{- errorf "Build failed: params.prefetch_runtime.env.%s reference targets only support two-flag T/F environment keys (for example TT, FT, FF); got %q." $envKey $refTargetRaw -}}
+      {{- errorf "Build failed: delivery.prefetch_runtime.env.%s reference targets only support two-flag T/F environment keys (for example TT, FT, FF); got %q." $envKey $refTargetRaw -}}
       {{- $validRef = false -}}
     {{- else if not (isset $envConfigMap $refTarget) -}}
-      {{- errorf "Build failed: params.prefetch_runtime.env.%s references undefined environment %q." $envKey $refTarget -}}
+      {{- errorf "Build failed: delivery.prefetch_runtime.env.%s references undefined environment %q." $envKey $refTarget -}}
       {{- $validRef = false -}}
     {{- end -}}
     {{- if $validRef -}}

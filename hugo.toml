@@ -28,12 +28,6 @@ publishResources = false
 [params]
 theme_changelog = "/changelog/"
 
-[params.prefetch_runtime]
-mode = "off"
-
-[params.service_worker]
-mode = "off"
-
 [frontmatter]
 lastmod = ["lastmod", "date"]
 

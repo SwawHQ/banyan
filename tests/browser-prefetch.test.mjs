@@ -63,14 +63,15 @@ before(()=>{
   const mounts=mount(content,'content')+mount('content','content')+mount(layouts,'layouts')+mount('layouts','layouts');
   function build(name,partialRules=false,transport='link',asset,code,mode='header') {
     const assets=path.join(work,name+'-assets');if(asset)write(path.join(assets,'js/prefetch/'+asset),code);
-    let text=mounts+(asset?mount(assets,'assets')+mount('assets','assets'):'')+
-      '[params.service_worker]\nmode="enable"\n[params.prefetch_runtime]\nmode="enable"\n[params.prefetch_runtime.env.TT]\n'+
+    const data=path.join(work,name+'-data');
+    const text='[service_worker]\nmode="enable"\n[prefetch_runtime]\nmode="enable"\n[prefetch_runtime.env.TT]\n'+
       ['nav','crumb','sort_siblings','descendants','post'].map((slot,index)=>slot+'="'+transport+'_'+(index===1?'s':index===4?'m':'x')+'f"\n').join('')+
-      '[params.prefetch_runtime.env.FT]\nref=""\nnav="sw_xf"\ncrumb="sw_sf"\nsort_siblings="sw_xf"\ndescendants="sw_xf"\npost="sw_mf"\n'+
-      '[params.speculation_rules]\nmode="'+mode+'"\nruntime_coordination="preempt_runtime_when_supported"\nnav="prefetch_eager"\n'+
-      ['crumb','sort_siblings','descendants','post'].map(slot=>slot+'="'+(partialRules?'off':'prefetch_eager')+'"\n').join('')+
-      '[params.build]\nversion="v20261010002001"\n';
-    write(config,text);
+      '[prefetch_runtime.env.FT]\nref=""\nnav="sw_xf"\ncrumb="sw_sf"\nsort_siblings="sw_xf"\ndescendants="sw_xf"\npost="sw_mf"\n'+
+      '[speculation_rules]\nmode="'+mode+'"\nruntime_coordination="preempt_runtime_when_supported"\nnav="prefetch_eager"\n'+
+      ['crumb','sort_siblings','descendants','post'].map(slot=>slot+'="'+(partialRules?'off':'prefetch_eager')+'"\n').join('');
+    write(path.join(data,'delivery.toml'),text);
+    write(config,mounts+mount(data,'data')+mount('data','data')+(asset?mount(assets,'assets')+mount('assets','assets'):'')+
+      '[params.build]\nversion="v20261010002001"\n');
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],
       {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
     assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);return destination;

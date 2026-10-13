@@ -1,9 +1,10 @@
 {{ $labels := partial "feature-updates/labels.html" (dict "ctx" .) }}
+{{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
 <div class="updates-panel" data-site-update-panel data-site-update-copy='{{ $labels | jsonify }}'>
   <p>{{ $labels.controlled }}: <span data-pwa-controlled>—</span></p>
   <p class="updates-status" data-site-update-status role="status" aria-live="polite"></p>
   <div class="collection-list">
-    {{ if eq (lower (.Site.Params.service_worker.mode | default "off")) "enable" }}
+    {{ if eq (lower $delivery.service_worker.mode) "enable" }}
     <span class="collection-cell collection-cell--name" data-collection-cell="name">
       <button type="button" class="collection-item-link" data-collection-entry data-site-update-action="check">
         {{ partial "system-ui/list/item-content.html" (dict "icon" (dict "text" "↻") "text" $labels.check "labelAttr" "site-update-action-label") }}
