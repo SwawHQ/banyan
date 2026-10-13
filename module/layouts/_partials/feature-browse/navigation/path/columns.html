@@ -1,0 +1,16 @@
+{{- $columnsByHref := .columns_by_href | default dict -}}
+{{- $columns := slice -}}
+{{- range $node := .model.nodes | default slice -}}
+  {{- $collection := dict -}}
+  {{- with $node.owner -}}{{- $collection = index $columnsByHref .RelPermalink | default dict -}}{{- end -}}
+  {{- $column := dict -}}
+  {{- if gt (len $collection) 0 -}}
+    {{- $items := partial "feature-browse/navigation/path/items-from-rows.html" (dict "entries" $collection.rows "selected_href" $node.item.href) -}}
+    {{- if eq (len $items) 0 -}}{{- $items = slice $node.item -}}{{- end -}}
+    {{- $column = dict "source" $collection.source "items" $items -}}
+  {{- else -}}
+    {{- $column = partial "feature-browse/navigation/path/fallback-column.html" (dict "node" $node) -}}
+  {{- end -}}
+  {{- $columns = $columns | append $column -}}
+{{- end -}}
+{{- return $columns -}}

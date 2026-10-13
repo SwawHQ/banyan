@@ -18,7 +18,6 @@
     "key" (partial "feature-browse/collection/rows/page-key.html" (dict "ctx" $section))
     "kind" "section"
     "href" $section.RelPermalink
-    "schema_href" $section.RelPermalink
     "title" $section.Title
     "text" $text
     "prefetch_kind" "desc"
@@ -33,27 +32,7 @@
 {{- end -}}
 {{- $pageRows := slice -}}
 {{- range $child := $page.RegularPages -}}
-  {{- $bytes := len $child.RawContent -}}
-  {{- $kilobytes := div (add $bytes 1023) 1024 -}}
-  {{- $dateValue := $child.Lastmod -}}
-  {{- $text := $child.LinkTitle | default $child.Title -}}
-  {{- $pageRows = $pageRows | append (dict
-    "node" $child
-    "key" (partial "feature-browse/collection/rows/page-key.html" (dict "ctx" $child))
-    "kind" "page"
-    "href" $child.RelPermalink
-    "schema_href" $child.RelPermalink
-    "title" $child.Title
-    "text" $text
-    "prefetch_kind" "post"
-    "sort_group" "1"
-    "sort_name" $text
-    "sort_date" (cond $dateValue.IsZero "" ($dateValue.Format "20060102150405"))
-    "date_text" (cond $dateValue.IsZero "—" ($dateValue.Format "2006-01-02"))
-    "sort_count" (printf "%v" $bytes)
-    "count_text" (printf "%v" $kilobytes)
-    "count_unit" "&thinsp;KB"
-  ) -}}
+  {{- $pageRows = $pageRows | append (partial "feature-browse/collection/rows/page.html" (dict "page" $child)) -}}
 {{- end -}}
 {{- $rows := slice -}}
 {{- range sort $pageRows "sort_date" "desc" -}}{{- $rows = $rows | append . -}}{{- end -}}

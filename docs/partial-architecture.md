@@ -61,13 +61,15 @@ _partials/
 - `feature-document/`：正文外壳、标题契约、辅助列的元信息与章节目录、文章 schema、正文样式和 Markdown 图片渲染。
 - `feature-preferences/`：语言上下文、语言选项模型，以及语言页与外观页共用的返回操作。外观固定为 auto、light、dark 三项，由 `page-appearance.html` 就地装配，不单独建立选项模型；它不负责账号、会话或权限。
 - `feature-updates/`：检查更新页面及其静态状态文案；浏览器控制器只读取页面已输出的数据。
-- `system-ui/`：列表行、图标、选择控件、链接、页面 slot 与公共页面样式装配。
+- `system-ui/`：公共列表、完整条目、图标、原生控件、链接、页面 slot 与公共页面样式装配。
 - `system-assets/`：Hugo Pipes、CSS/JS 构建、页面及全局资源发布、图片处理原语。
 - `system-metadata/`：站点元信息、SEO、分享图和 agent/llms 输出。
 - `system-delivery/`：Service Worker、prefetch、缓存策略及部署平台投影。
 - `system-build/`：构建版本、时间和跨入口构建审计。只属于 `baseof.html` 入口契约的内容图标审计留在 `entry-baseof/`。
 
 `feature-browse/collection/`、`feature-browse/navigation/`、`feature-browse/taxonomy/` 等目录仍按一个功能内部的稳定子领域组织。家族前缀只表达所有权，不算一层算法包装；功能内部最多再使用两层确有意义的子领域。
+
+`collection` 保留为成员、配置、来源和排序的领域名称。公共列表与条目使用 `list-*`、`item-*`，页面列使用 `page-column`；DOM 与 CSS 归属见 [UI 命名与职责](ui-naming.md)。
 
 ## 依赖方向
 
@@ -96,11 +98,27 @@ system-*    ──X feature-*
 
 1. 普通 section 与 taxonomy 都能产出 row，但成员发现规则不同。
 2. 结构路径用于静态 HTML 和 SEO；用户进入来源可由 `from` 改变，不能作为 canonical 事实。
-3. 服务端来源模型可以包含 Hugo Page；浏览器投影必须可序列化并控制体积。
-4. collection source 是小型描述；浏览器投影把当前层与祖先层的紧凑行载荷随页面输出一次。
+3. 结构路径的 `nodes[].owner` 使用 Hugo Page，只在构建期读取；SSR 列和浏览器投影与结构路径分开生成。
+4. collection source 是小型描述；浏览器投影用 `columns` 和 `currentColumn` 保存祖先层与当前层的紧凑行载荷。
 5. Markdown 响应式图片与社交分享图具有不同尺寸和继承规则，但共用底层资源处理原语。
-6. 第一列、路径列和主列表可以共用行组件，不能共享“如何发现条目”的逻辑。
+6. 第一列、路径列和主列表共用完整列表与行组件，各功能保留成员发现规则。
 7. 更新面板是用户功能；Service Worker、缓存和预取是 delivery 机制。
+
+SSR 列表使用以下分工：
+
+| 模板 | 职责 |
+| --- | --- |
+| `system-ui/list/render.html`、`item.html` | 输出列表、表头外层和完整条目；条目包含名称控件及已生成的字段 HTML |
+| `system-ui/list/item-link.html`、`item-button.html`、`item-content.html` | 输出链接或按钮，以及共用的图标和文字 |
+| `feature-browse/navigation/root/model.html`、`root/render.html` | 模型取得结构根页面并生成可见入口；渲染器装配 `nav` 与公共列表 |
+| `feature-browse/navigation/path/columns.html`、`fallback-column.html` | 将结构节点转换为 `{source, items}` 呈现列；非集合 owner 保留静态列 |
+| `feature-browse/navigation/path/column.html`、`column-header.html` | 接收呈现列，保留滚动容器与 `from`；生成名称字段头和名称行供公共列表装配 |
+| `feature-browse/collection/render.html`、`item-fields.html`、`sort/header.html` | 保留配置、领域 row、来源链接、排序属性与 schema；生成字段和表头 HTML 供公共列表装配 |
+| `system-ui/choice/render.html`、`feature-updates/panel.html` | 生成选择项或更新操作；共用公共列表和按钮 |
+
+功能模板先生成字段 HTML，再通过 `fields` 传给完整条目。公共模板只装配 HTML，不读取集合配置或调用功能模板。公共列表接收 `title` 时保留选择页的 `h1`，接收 `header` 时为已生成的字段头添加外层行。浏览器动态路径列保留现有 DOM 绘制逻辑。
+
+`feature-browse/navigation/source/models.html` 按集合地址生成 `columns_by_href`，复用列入 `Site.Pages` 的集合的 config、rows、source 和 compact payload。主列表、SSR 路径列与浏览器投影读取这份构建数据。`build.list: local` 或 `build.list: never` 的合法集合页可独立渲染；registry 缺少该页时，`collection/render.html` 直接构建本页 config、rows 和 source，`source/context.html` 直接构建本页 source。collection source 使用 `logicalPath`、`sortVariant`、`defaultSort`，config 与领域 row 保留内部 snake_case 字段。结构模型、呈现列和浏览器来源的完整字段见 [路径模型](breadcrumb-models.md#路径模型)。
 
 页面 bundle 资源的定位与发布是两个动作：`system-assets/resolve-page.html` 只返回源 resource 和目标目录，`system-assets/publish-page.html` 才发布源文件。分享图先解析源 resource；可处理的位图只发布最终 `1200x630` JPG，非位图才发布原资源，避免为了生成衍生图而附带发布未引用的源图。
 

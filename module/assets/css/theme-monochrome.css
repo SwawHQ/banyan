@@ -36,37 +36,37 @@
     --icon-shade: color-mix(in srgb, var(--icon-accent) 80%, black);
 }
 
-.collection-item-link {
-    --collection-item-text: var(--link);
-    --collection-item-hover-text: var(--fg);
-    --collection-item-hover-bg: transparent;
-    --collection-item-hover-ring: var(--fg);
-    --collection-item-current-text: var(--monochrome-dark-fg);
-    --collection-item-current-bg: var(--fg);
-    --collection-item-current-ring: transparent;
+.item-control {
+    --item-text: var(--link);
+    --item-hover-text: var(--fg);
+    --item-hover-bg: transparent;
+    --item-hover-ring: var(--fg);
+    --item-current-text: var(--monochrome-dark-fg);
+    --item-current-bg: var(--fg);
+    --item-current-ring: transparent;
 }
 
-[data-theme="dark"] .collection-item-link {
-    --collection-item-current-text: var(--monochrome-light-fg);
-    --collection-item-current-bg: var(--fg);
+[data-theme="dark"] .item-control {
+    --item-current-text: var(--monochrome-light-fg);
+    --item-current-bg: var(--fg);
 }
 
-.collection-item-link:is(.is-current, [aria-expanded="true"]) .icon {
+.item-control:is(.is-current, [aria-expanded="true"]) .icon {
     --icon-accent: currentColor;
     --icon-shade: currentColor;
 }
 
-.collection-item-link:is(.is-current, [aria-expanded="true"]) .icon--monochrome {
+.item-control:is(.is-current, [aria-expanded="true"]) .icon--monochrome {
     filter: brightness(0) invert(1);
 }
 
-[data-theme="dark"] .collection-item-link:is(.is-current, [aria-expanded="true"]) .icon--monochrome {
+[data-theme="dark"] .item-control:is(.is-current, [aria-expanded="true"]) .icon--monochrome {
     filter: brightness(0);
 }
 
 /* Keep a visible inner focus ring even when the outer outline is clipped. */
-.collection-item-link:is(.is-current, [aria-expanded="true"]):focus-visible {
-    --collection-item-current-ring: var(--collection-item-current-text);
+.item-control:is(.is-current, [aria-expanded="true"]):focus-visible {
+    --item-current-ring: var(--item-current-text);
 }
 
 .prose {

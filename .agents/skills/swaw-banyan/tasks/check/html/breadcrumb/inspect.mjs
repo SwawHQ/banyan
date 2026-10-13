@@ -1,23 +1,14 @@
 import {readPages} from '../../../_shared/html/read.mjs';
-import {decodeHtmlAttribute,extractAttribute} from '../../../_shared/html/markup.mjs';
-import {extractTagAttribute} from '../../../_shared/html/markup.mjs';
+import {decodeHtmlAttribute,extractAttribute,extractTagAttribute,extractStartTags} from '../../../_shared/html/markup.mjs';
+import {extractBlocks} from '../../../_shared/html/blocks.mjs';
 
 function inspectBreadcrumbPrefetchContract(text) {
     const issues = [];
     let breadcrumbAnchorCount = 0;
     let breadcrumbCrumbAnchorCount = 0;
 
-    let depth = 0;
-    for (const [tag] of text.matchAll(/<\/?div\b[^>]*>|<a\b[^>]*>/gi)) {
-        if (/^<\/div/i.test(tag)) {
-            if (depth) depth -= 1;
-            continue;
-        }
-        if (/^<div/i.test(tag)) {
-            if (depth || extractTagAttribute(tag, 'data-slot') === 'breadcrumb') depth += 1;
-            continue;
-        }
-        if (!depth) continue;
+    const navigation = extractBlocks(text, 'nav', tag => extractTagAttribute(tag, 'data-slot') === 'breadcrumb');
+    for (const tag of navigation.flatMap(node => extractStartTags(node.inner, 'a'))) {
         breadcrumbAnchorCount += 1;
         const slot = extractTagAttribute(tag, 'data-prefetch-slot');
         if (slot === 'crumb') {
@@ -72,7 +63,7 @@ export function breadcrumbRows(pages) {
     }
     return {...page,breadcrumbParseError,breadcrumbPayloadBytes:Buffer.byteLength(source),
       breadcrumbSourceCount:sources.length,breadcrumbItemCount:countCompactBreadcrumbItems(sources),
-      breadcrumbSourcePaths:sources.map(value => value?.logical_path).filter(value => typeof value === 'string'),
+      breadcrumbSourcePaths:sources.map(value => value?.logicalPath).filter(value => typeof value === 'string'),
       ...inspectBreadcrumbPrefetchContract(page.text)};
   });
 }

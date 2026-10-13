@@ -66,8 +66,9 @@ test('UI paths, contrast defaults and detailed help use the same declarations',(
   assert.equal(parseArguments(spec,[]).page,'/about/');
   assert.equal(parseArguments(spec,[]).min,4.5);
   assert.equal(parseArguments(spec,['--min','5.1','--page','/zh/about/']).min,5.1);
+  assert.equal(parseArguments(spec,['--page','/about/?view=full#part']).page,'/about/?view=full#part');
   assert.match(helpFor(spec),/--page/); assert.match(helpFor(spec),/--min/);
-  for (const args of [['--min','0'],['--min','22'],['--min','NaN'],['--min','4.5x'],['--page','https://example.com'],['--page','//example.com'],['--page','/\\example.com'],['--page','/about/#part']]) {
+  for (const args of [['--min','0'],['--min','22'],['--min','NaN'],['--min','4.5x'],['--page','https://example.com'],['--page','//example.com'],['--page','/\\example.com']]) {
     assert.throws(()=>parseArguments(spec,args));
   }
   const appearance = appearanceCommand('check/browser/appearance','Appearance');

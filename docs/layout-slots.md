@@ -4,6 +4,8 @@
 
 第一列入口由内容树生成，页面无需声明菜单归属。`slots` 只控制路径和元信息是否装配；框架负责布局。正文 `main` 是内建区域，不通过 front matter 指向 fragment。
 
+`slots.breadcrumb` 装配 shell 内的 `nav.slot.path-navigation[data-slot="breadcrumb"]`，其子节点是路径列。`data-slot="breadcrumb"` 保留区域语义；屏幕上 nav 使用 `display: contents`，各列直接参与 `.page-shell` 的横向 Grid。列尺寸和打印分组见 [公共页面列](ui-naming.md#公共页面列)。
+
 布局、路径列、集合与更新模块的命名见 [UI 命名与职责](ui-naming.md)。内部 `slot_flags` 保存区域开关，不再表示片段来源。
 
 ## 第一列入口
@@ -37,7 +39,7 @@
 
 未知 slot 名和错误值类型均应在构建时失败。`slots.footer`、版权页脚片段及其专用模板和样式已移除。旧 `show_breadcrumb`、`show_meta`、`breadcrumb_variant` 和布局导向的 `rail-*`／`stage-*` 声明不属于当前约定。
 
-页面基础样式由 `baseof.html` 直接调用 `system-ui/page-styles.html`，装配为唯一且稳定的 `page.css`，包括画幅、列表、路径、元信息 slot、更新面板和 404 辅助样式；页面入口不能替换或漏掉它。真正渲染 `.prose` 的入口显式调用 `feature-document/styles.html`，取得同一个 `prose.css`。集合页只在实际输出正文时调用；模板直接生成正文结构的预取诊断页也显式调用同一装配器。不会通过页面类型或渲染后的 HTML 标签猜测需要哪些正文组件。
+页面基础样式由 `baseof.html` 直接调用 `system-ui/page-styles.html`，页面入口不能替换或漏掉它。CSS 归属与发布名见 [UI 命名与职责](ui-naming.md#css-源码与发布名)。真正渲染 `.prose` 的入口显式调用 `feature-document/styles.html`；集合页只在实际输出正文时调用，预取诊断页也显式调用同一装配器。不通过页面类型或渲染后的 HTML 标签猜测需要哪些正文组件。
 
 ## 推荐写法
 

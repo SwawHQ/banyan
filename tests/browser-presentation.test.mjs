@@ -70,11 +70,11 @@ test('Chromium keeps a long header visible before and after a native sort click'
 });
 
 test('Chromium rejects clipped controls, missing titles and spacing changed by sorting',{timeout:30000},()=>{
-  const clipped=fixture('clipped');inject(clipped,'d/presentation/child','css','.collection-column-label{min-width:600px!important}');
+  const clipped=fixture('clipped');inject(clipped,'d/presentation/child','css','.path-column-label{min-width:600px!important}');
   const clip=cli('breadcrumb/header',['--page',collection,'--widths','390'],clipped);assert.equal(clip.status,1);assert.match(clip.stderr,/clip the sort control/);
-  const title=fixture('title');inject(title,'d/presentation/child','js',"document.querySelector('.collection-column-label').removeAttribute('title');");
+  const title=fixture('title');inject(title,'d/presentation/child','js',"document.querySelector('.path-column-label').removeAttribute('title');");
   const missing=cli('breadcrumb/header',['--page',collection,'--widths','390'],title);assert.equal(missing.status,1);assert.match(missing.stderr,/full title/);
-  const gap=fixture('sort-gap');inject(gap,'d/presentation/child','js',"document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelector('.collection-column-separator').style.marginInline='12px';});");
+  const gap=fixture('sort-gap');inject(gap,'d/presentation/child','js',"document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelector('.path-column-separator').style.marginInline='12px';});");
   const changed=cli('breadcrumb/header',['--page',collection,'--widths','390'],gap);assert.equal(changed.status,1);assert.match(changed.stderr,/retain header spacing/);
 });
 
@@ -90,18 +90,20 @@ test(name+' checks collection startup, sort previews and deep canvas geometry',{
 });
 
 test(name+' rejects late collection reordering, changed header spacing and column replacement',{timeout:30000},()=>{
-  const order=fixture('order-'+name);inject(order,'d/presentation/child','js',"const list=document.querySelector('.collection-list--path-column');list.append(list.querySelector('[data-collection-entry]').closest('.collection-cell'));");
+  const order=fixture('order-'+name);inject(order,'d/presentation/child','js',"const list=document.querySelector('.item-list--path-column');list.append(list.querySelector('[data-list-item]'));");
   const reordered=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],order);assert.equal(reordered.status,1);assert.match(reordered.stderr,/retain SSR row order/);
-  const gap=fixture('gap-'+name);inject(gap,'d/presentation/child','js',"document.querySelector('.collection-column-separator').style.marginInline='12px';");
+  const gap=fixture('gap-'+name);inject(gap,'d/presentation/child','js',"document.querySelector('.path-column-separator').style.marginInline='12px';");
   const changed=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],gap);assert.equal(changed.status,1);assert.match(changed.stderr,/retain header spacing/);
-  const nodes=fixture('nodes-'+name);inject(nodes,'d/presentation/child','js',"const nav=document.querySelector('.path-navigation');nav.replaceWith(nav.cloneNode(true));");
+  const nodes=fixture('nodes-'+name);inject(nodes,'d/presentation/child','js',"const nav=document.querySelector('[data-slot=breadcrumb]');nav.replaceWith(nav.cloneNode(true));");
   const replaced=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],nodes);assert.equal(replaced.status,1);assert.match(replaced.stderr,/reuse its reserved/);
 });
 
-test(name+' rejects inconsistent canvas gaps and a breadcrumb-owned horizontal scroller',{timeout:20000},()=>{
-  const gap=fixture('layout-gap-'+name);inject(gap,'d/presentation/child/two/three/four/article-4','css','.path-columns{column-gap:3px!important}');
+test(name+' rejects inconsistent canvas gaps, detached columns and nested horizontal scrollers',{timeout:30000},()=>{
+  const gap=fixture('layout-gap-'+name);inject(gap,'d/presentation/child/two/three/four/article-4','css','.page-shell{column-gap:3px!important}');
   const uneven=cli('canvas/layout'+suffix,['--page',deep,'--widths','1280'],gap);assert.equal(uneven.status,1);assert.match(uneven.stderr,/share --page-shell-gap-inline/);
-  const nested=fixture('layout-scroll-'+name);inject(nested,'d/presentation/child/two/three/four/article-4','css','.path-columns{inline-size:240px!important;overflow-x:auto!important}');
-  const scroller=cli('canvas/layout'+suffix,['--page',deep,'--widths','1280'],nested);assert.equal(scroller.status,1);assert.match(scroller.stderr,/horizontal scroller|share --page-shell-gap-inline/);
+  const detached=fixture('layout-detached-'+name);inject(detached,'d/presentation/child/two/three/four/article-4','js',"document.querySelector('.page').append(document.querySelector('[data-slot=breadcrumb] [data-collection-column]'));");
+  const outside=cli('canvas/layout'+suffix,['--page',deep,'--widths','1280'],detached);assert.equal(outside.status,1);assert.match(outside.stderr,/same canvas grid/);
+  const nested=fixture('layout-scroll-'+name);inject(nested,'d/presentation/child/two/three/four/article-4','js',"const nav=document.querySelector('[data-slot=breadcrumb]'),group=document.createElement('div');group.style.cssText='display:grid;grid-auto-flow:column;grid-auto-columns:240px;inline-size:240px;overflow-x:auto';nav.before(group);group.append(nav);");
+  const scroller=cli('canvas/layout'+suffix,['--page',deep,'--widths','1280'],nested);assert.equal(scroller.status,1);assert.match(scroller.stderr,/nested horizontal scroller/);
 });
 }

@@ -1,6 +1,7 @@
 import { normalizeCollectionSource } from './collection-source.js';
 import { decodeItemsPayload } from './collection-items.js';
-import { normalizeFromPath, normalizePathname } from './navigation-state.js';
+import { normalizePathname } from './navigation-state.js';
+import { parseEntrySources } from './entry-source.js';
 import { normalizeIcon } from './icon-value.js';
 
 function normalizeLinkItem(item) {
@@ -23,121 +24,42 @@ function normalizeLinkItem(item) {
     }
     const icon = normalizeIcon(item.icon);
     if (icon) normalized.icon = icon;
-    for (const field of ['kind', 'collection_href', 'collection_label']) {
-        if (typeof item[field] === 'string' && item[field].trim() !== '') {
-            normalized[field] = item[field].trim();
-        }
+    if (typeof item.kind === 'string' && item.kind.trim() !== '') {
+        normalized.kind = item.kind.trim();
     }
-    if (Array.isArray(item.column_items)) {
-        const columnItems = item.column_items.map(normalizeLinkItem).filter(Boolean);
-        if (columnItems.length > 0) {
-            normalized.column_items = columnItems;
-        }
-    }
-
     return normalized;
 }
 
-export function parseEntryBreadcrumbSources(rawValue) {
-    try {
-        const parsed = JSON.parse(rawValue);
-        if (!Array.isArray(parsed)) {
-            return [];
-        }
-
-        return parsed
-            .map((source) => {
-                if (!source || typeof source !== 'object') {
-                    return null;
-                }
-
-                const logicalPath = normalizeFromPath(source.logical_path || '');
-                const rootItem = normalizeLinkItem(source.root_item);
-                if (!logicalPath || !rootItem) {
-                    return null;
-                }
-
-                const tailItemsRaw = Array.isArray(source.tail_items)
-                    ? source.tail_items
-                    : [];
-                const levelsRaw = Array.isArray(source.levels) ? source.levels : [];
-
-                return {
-                    provider: typeof source.provider === 'string' ? source.provider.trim().toLowerCase() : '',
-                    logicalPath,
-                    rootItem,
-                    tailItems: tailItemsRaw.map(normalizeLinkItem).filter(Boolean),
-                    levels: levelsRaw
-                        .map((level) => {
-                            if (!level || typeof level !== 'object') {
-                                return null;
-                            }
-
-                            const item = normalizeLinkItem(level.item);
-                            if (!item) {
-                                return null;
-                            }
-
-                            const normalized = { item };
-                            const collectionSource = normalizeCollectionSource(
-                                level.collection_source
-                            );
-                            if (collectionSource) {
-                                normalized.collectionSource = collectionSource;
-                            }
-
-                            const collectionItems = decodeItemsPayload(
-                                level.collection_items
-                            );
-                            if (collectionItems) {
-                                normalized.collectionItems = collectionItems;
-                            }
-
-                            return normalized;
-                        })
-                        .filter(Boolean),
-                    currentCollectionSource: normalizeCollectionSource(
-                        source.current_collection_source
-                    ),
-                    currentCollectionItems: decodeItemsPayload(
-                        source.current_collection_items
-                    ),
-                };
-            })
-            .filter(Boolean);
-    } catch (error) {
-        return [];
-    }
+function decodeColumn(column) {
+    return {
+        source: normalizeCollectionSource(column?.source),
+        payload: decodeItemsPayload(column?.payload),
+        items: Array.isArray(column?.items) ? column.items.map(normalizeLinkItem).filter(Boolean) : [],
+    };
 }
+
+export function parseEntryBreadcrumbSources(rawValue) {
+    return parseEntrySources(rawValue).map(source => ({
+        logicalPath: source.logicalPath,
+        rootItem: normalizeLinkItem(source.rootItem),
+        columns: (Array.isArray(source.columns) ? source.columns : []).flatMap(column => {
+            const selected = normalizeLinkItem(column?.selected);
+            return selected ? [{ ...decodeColumn(column), selected }] : [];
+        }),
+        currentColumn: decodeColumn(source.currentColumn),
+    }));
+}
+
+let cachedValue;
+let cachedSources = [];
 
 export function readEntryBreadcrumbSources() {
-    return parseEntryBreadcrumbSources(document.body?.dataset.entryBreadcrumbSources || '');
-}
-
-export function parseEntrySelection(sources, fromPath) {
-    const normalized = normalizeFromPath(fromPath);
-    if (!normalized || !Array.isArray(sources) || sources.length === 0) {
-        return null;
+    const value = document.body?.dataset.entryBreadcrumbSources || '';
+    if (value !== cachedValue) {
+        cachedSources = parseEntryBreadcrumbSources(value);
+        cachedValue = value;
     }
-
-    const source = sources.find((item) => normalizeFromPath(item?.logical_path || item?.logicalPath || '') === normalized) || null;
-    return source ? { source } : null;
-}
-
-export function pickSourceByLogicalPath(sources, logicalPath) {
-    const normalized = normalizeFromPath(logicalPath);
-    if (!normalized || !Array.isArray(sources)) {
-        return null;
-    }
-
-    for (let index = 0; index < sources.length; index += 1) {
-        const source = sources[index];
-        if (source?.logicalPath === normalized) {
-            return source;
-        }
-    }
-
-    return null;
+    return cachedSources;
 }
 
 function normalizeCollectionHref(href) {
@@ -154,39 +76,25 @@ function normalizeCollectionHref(href) {
 }
 
 function addCollectionSourceToIndex(index, source, payload = null) {
-    const collectionSource = normalizeCollectionSource(source);
-    const hrefKey = normalizeCollectionHref(collectionSource?.href || '');
+    const hrefKey = normalizeCollectionHref(source?.href || '');
     if (hrefKey) {
         index.set(hrefKey, {
-            source: collectionSource,
+            source,
             payload: payload && typeof payload === 'object' ? payload : null,
         });
     }
 }
 
-function createCollectionSourceIndex(sources) {
+export function createCollectionSourceIndex(sources) {
     const index = new Map();
 
     (Array.isArray(sources) ? sources : []).forEach((source) => {
-        addCollectionSourceToIndex(
-            index,
-            source?.current_collection_source || source?.currentCollectionSource,
-            source?.current_collection_items || source?.currentCollectionItems
-        );
-        (Array.isArray(source?.levels) ? source.levels : []).forEach((level) => {
-            addCollectionSourceToIndex(
-                index,
-                level?.collection_source || level?.collectionSource,
-                level?.collection_items || level?.collectionItems
-            );
+        [source.currentColumn, ...(source.columns || [])].forEach(column => {
+            addCollectionSourceToIndex(index, column?.source, column?.payload);
         });
     });
 
     return index;
-}
-
-export function parseCollectionSourceIndex(rawValue) {
-    return createCollectionSourceIndex(parseEntryBreadcrumbSources(rawValue));
 }
 
 export function pickCollectionSourceByHref(index, href) {

@@ -1,7 +1,7 @@
 {{- $ctx := .ctx -}}
 {{- $source := .source | default dict -}}
-{{- $logicalPath := printf "%v" (index $source "logical_path" | default "") -}}
-{{- $defaultSort := printf "%v" (index $source "default_sort" | default "") -}}
+{{- $logicalPath := printf "%v" (index $source "logicalPath" | default "") -}}
+{{- $defaultSort := printf "%v" (index $source "defaultSort" | default "") -}}
 {{- $currentSort := printf "%v" (.current_sort | default $defaultSort) -}}
 {{- $parts := split $currentSort "-" -}}
 {{- $field := index $parts 0 | default "" -}}

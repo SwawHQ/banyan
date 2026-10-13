@@ -21,7 +21,7 @@ function cli(command,args=[],directory=output){
   assert.ifError(result.error);return result;
 }
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
-function css(directory,text){write(path.join(directory,'broken.css'),text);fs.appendFileSync(path.join(directory,'d/canvas-first/index.html'),'<link rel="stylesheet" href="/broken.css">');}
+function css(directory,text,route='d/canvas-first'){write(path.join(directory,'broken.css'),text);fs.appendFileSync(path.join(directory,route,'index.html'),'<link rel="stylesheet" href="/broken.css">');}
 function script(directory,text){write(path.join(directory,'probe.js'),text);for(const name of ['canvas-first','canvas-next'])fs.appendFileSync(path.join(directory,'d',name,'index.html'),'<script src="/probe.js"></script>');}
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-canvas-'));skill=path.join(work,'skill');output=path.join(work,'public');
@@ -37,6 +37,9 @@ before(()=>{
   for(let i=0;i<24;i++)body+='## Chapter '+i+'\n\n'+('A paragraph with enough words to exercise independent columns and history restoration.\n\n'.repeat(8));
   for(const name of ['canvas-first','canvas-next'])write(path.join(content,'d',name+'.md'),
     '---\ntitle: '+name+'\nslug: '+name+'\nurl: /d/'+name+'/\ndate: "2026-01-01T00:00:00+08:00"\nlastmod: "2026-01-02T00:00:00+08:00"\n---\n\n'+body);
+  write(path.join(content,'d/canvas-names/_index.md'),'---\ntitle: Canvas names\nlist: name\n---\n\n'+
+    'Collection introduction with enough words to wrap inside the declared list width. '.repeat(16)+'\n');
+  for(let index=0;index<20;index++)write(path.join(content,'d/canvas-names',index+'.md'),`---\ntitle: Name ${index}\nslug: canvas-name-${index}\n---\nName fixture.\n`);
   write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
   const built=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(built.error);assert.equal(built.status,0,built.stdout+built.stderr);
@@ -58,6 +61,37 @@ test('canvas paths, widths, touch and history arguments have generated help',()=
 });
 
 for(const {name,suffix} of engines){
+test(name+' sizes collection columns from fixed lists and preserves reading widths',{timeout:15000},()=>{
+  for(const page of ['/d/canvas-names/','/all/',route]) {
+    const result=cli('layout'+suffix,['--page',page,'--height','240','--widths','390,1440','--out',path.join(work,'layout-reports')]);
+    assert.equal(result.status,0,result.stdout+result.stderr);
+    const folder=result.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
+    if(page==='/d/canvas-names/') {
+      assert.ok(report.details.cases[1].main.width<report.details.cases[1].declared.main,'Name-only collections must not inherit the reading minimum width.');
+      assert.equal(report.details.cases[0].main.width,report.details.cases[1].main.width);
+      assert.ok(report.details.cases.every(state=>state.prose&&state.prose.width<=state.main.width&&state.proseOverflow<=1),'The collection introduction must wrap within its fixed list width.');
+    }
+  }
+});
+
+test(name+' rejects collection width drift, narrowed reading columns and missing shared classes',{timeout:15000},()=>{
+  for(const [id,rule,message] of [
+    ['main','.slot-main--collection{min-inline-size:88ch!important}',/Collection main width must fit/],
+    ['scrollbar','.page-content:has(> .slot-main--collection){inline-size:600px!important}',/reading column must fit/],
+    ['list','.item-list--name{inline-size:100px!important}',/list width must match/]
+  ]) {
+    const broken=fixture('width-'+id+'-'+name);css(broken,rule,'d/canvas-names');
+    const result=cli('layout'+suffix,['--page','/d/canvas-names/','--widths','1440'],broken);
+    assert.equal(result.status,1);assert.match(result.stderr,message);
+  }
+  const reading=fixture('reading-width-'+name);css(reading,'.slot-main{inline-size:100px!important}');
+  const result=cli('layout'+suffix,['--page',route,'--widths','1440'],reading);
+  assert.equal(result.status,1);assert.match(result.stderr,/must not shrink below --main-column-inline/);
+  const missing=fixture('missing-column-class-'+name);script(missing,"document.querySelector('.page-rail').classList.remove('page-column');");
+  const column=cli('layout'+suffix,['--page',route,'--widths','1440'],missing);
+  assert.equal(column.status,1);assert.match(column.stderr,/Every scroll column must use \.page-column/);
+});
+
 test(name+' runs scroll, scrollbar and history on independent article fixtures',{timeout:30000},()=>{
   for(const command of commands){
     const args=['--page',route,'--out',path.join(work,'reports')];

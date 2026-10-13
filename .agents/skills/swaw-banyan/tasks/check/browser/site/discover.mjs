@@ -27,14 +27,14 @@ function inspect(page) {
   const roots=anchors.filter(({tag,href})=>href&&has(tag,'data-root-href')).map(({href})=>href);
   const rawSource=attr(body,'data-page-collection-source'),source=rawSource?JSON.parse(rawSource):null;
   const rawModels=attr(body,'data-entry-breadcrumb-sources'),models=rawModels?JSON.parse(rawModels):[];
-  const rootHref=models.find(model=>model.logical_path===source?.logical_path)?.root_item?.href;
-  const names=extractStartTags(text,'span').filter(tag=>attr(tag,'data-collection-cell')==='name'&&!has(tag,'data-collection-header'))
+  const rootHref=models.find(model=>model.logicalPath===source?.logicalPath)?.rootItem?.href;
+  const names=extractStartTags(text,'div').filter(tag=>has(tag,'data-list-item'))
     .map(tag=>({name:attr(tag,'data-sort-name'),group:attr(tag,'data-sort-group')||'0'})).filter(row=>row.name);
   // This leaf checks selected visible roots; hidden collections are valid sites.
-  const sortable=Boolean(source?.logical_path&&rootHref&&roots.includes(localPath(rootHref,route,canonical))&&has(text,'data-sortable')&&
+  const sortable=Boolean(source?.logicalPath&&rootHref&&roots.includes(localPath(rootHref,route,canonical))&&has(text,'data-sortable')&&
     names.some((row,i)=>names.some((other,j)=>i!==j&&row.group===other.group&&row.name!==other.name))&&
     anchors.some(({href})=>href&&[...new URLSearchParams(new URL(href,'https://swban.invalid').hash.slice(1)).values()]
-      .some(value=>clean(value)===clean(source.logical_path))));
+      .some(value=>clean(value)===clean(source.logicalPath))));
   const payload=json(text,'site-prefetch-data'),meta=json(text,'site-prefetch-runtime-meta');
   const entry=payload?.TT,config=typeof entry==='string'?payload[entry]:entry;
   const candidates=anchors.map(anchor=>({...anchor,href:anchor.href?.split('#')[0]})).filter(({tag,href})=>href&&href!==route&&has(tag,'data-prefetch-slot')&&

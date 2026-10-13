@@ -1,10 +1,10 @@
 {{- if or .meta .toc -}}
-<aside id="document-aside" class="document-aside" aria-label="{{ i18n .label }}">
+<aside id="document-aside" class="page-column document-aside" aria-label="{{ i18n .label }}">
   {{- with .meta -}}<div class="slot slot-meta" data-slot="meta">{{ . | safeHTML }}</div>{{- end -}}
   {{- .toc | safeHTML -}}
   {{- if .collapsible -}}
   <div class="document-tools">
-    <button id="document-aside-close" class="collection-item-link" type="button" aria-controls="document-aside"><span class="collection-item-title">{{ i18n "document_aside_close" }}</span></button>
+    <button id="document-aside-close" class="item-control" type="button" aria-controls="document-aside"><span class="item-title">{{ i18n "document_aside_close" }}</span></button>
   </div>
   {{- end -}}
 </aside>

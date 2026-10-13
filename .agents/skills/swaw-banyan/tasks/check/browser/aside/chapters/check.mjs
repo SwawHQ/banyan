@@ -10,7 +10,7 @@ export async function check({page,baseUrl,options}) {
     const structure=await page.evaluate(()=>({
       label:document.querySelector('.document-toc')?.getAttribute('aria-label'),
       headings:[...document.querySelectorAll('.prose :is(h2,h3)[id]')].map(node=>({id:node.id,text:node.textContent.trim()})),
-      entries:[...document.querySelectorAll('.document-toc a[href]')].map(node=>({id:new URLSearchParams(node.hash.slice(1)).get('anchor')||decodeURIComponent(node.hash.slice(1)),text:node.querySelector('.collection-item-title').textContent.trim()})),
+      entries:[...document.querySelectorAll('.document-toc a[href]')].map(node=>({id:new URLSearchParams(node.hash.slice(1)).get('anchor')||decodeURIComponent(node.hash.slice(1)),text:node.querySelector('.item-title').textContent.trim()})),
       nested:document.querySelectorAll('.document-toc ul ul').length
     }));
     assert.ok(structure.headings.length>=2,'Chapter checks need at least two h2/h3 headings.');
@@ -19,7 +19,7 @@ export async function check({page,baseUrl,options}) {
     assert.equal(structure.nested,0,'H2 and H3 must form one flat chapter list.');
     await openAside(page);
     const id=structure.headings[Math.floor(structure.headings.length/2)].id;
-    const link=page.locator('.document-toc a').filter({has:page.locator('.collection-item-title')}).nth(Math.floor(structure.headings.length/2)+1);
+    const link=page.locator('.document-toc a').filter({has:page.locator('.item-title')}).nth(Math.floor(structure.headings.length/2)+1);
     const assertTarget=async(document=page)=>{
       await document.waitForFunction(id=>{
         const target=document.getElementById(id),content=document.querySelector('.page-content');

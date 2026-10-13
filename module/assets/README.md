@@ -50,7 +50,7 @@ check configuration handling, both palettes, and native asset overrides.
 | --- | --- |
 | `:root` | Page background, foreground, muted text, border, accent, accent text, link states, focus ring |
 | `.icon` | Accent and shaded parts of colored icons; line icons still use `currentColor` |
-| `.collection-item-link` | Normal, visited, hover/focus, and current text; hover/current backgrounds and current ring |
+| `.item-control` | Normal, visited, hover/focus, and current text; hover/current backgrounds and current ring |
 | `.prose` | Heading and rule borders, deleted text and decoration; inline code, quotes, images, tables, code blocks, syntax tokens, and code scrollbars |
 | `.page-home` | Anchor, horizon, signals and their selected color, windsock body/stripes/pole |
 
@@ -83,7 +83,7 @@ The inputs and dependencies are deliberately small:
 | Code surfaces | Block background, border, and line highlight each derive from the page palette; scrollbar track follows the block background, thumb follows its border plus accent |
 | Prose separator | `--prose-rule-border` derives from `--bg`/`--fg` without accent |
 | Deleted prose text | `--prose-deleted-color` follows `--muted`; its separate decoration role keeps the deletion visible |
-| Other derived roles | Heading, quote, inline-code and image backgrounds, collection states, and colored icons retain their existing dependencies |
+| Other derived roles | Heading, quote, inline-code and image backgrounds, item states, and colored icons retain their existing dependencies |
 | Independent choices | Root muted text and border, syntax colors, and homepage signal color keep independent palette values |
 
 `--prose-border-neutral` replaces `--prose-border-base`; update that name in any

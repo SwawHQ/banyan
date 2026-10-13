@@ -12,13 +12,15 @@ const fragmentEntry = path.join(browseRoot, 'navigation-state.contract.js');
 const breadcrumbItemsEntry = path.join(browseRoot, 'breadcrumb-items.js');
 const breadcrumbEntry = path.join(browseRoot, 'breadcrumb-entry.js');
 const breadcrumbSourceEntry = path.join(browseRoot, 'breadcrumb-source.js');
+const entrySourceEntry = path.join(browseRoot, 'entry-source.js');
+const rootNavigationEntry = path.join(path.dirname(browseRoot), 'inline/root-navigation.js');
 const collectionItemsEntry = path.join(browseRoot, 'collection-items.js');
 const collectionSortEntry = path.join(browseRoot, 'collection-sort.js');
 const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'banyan-nav-state-'));
 
 try {
 
-    const entries = [navStateEntry, fragmentEntry, breadcrumbItemsEntry, breadcrumbEntry, breadcrumbSourceEntry, collectionItemsEntry, collectionSortEntry];
+    const entries = [navStateEntry, fragmentEntry, breadcrumbItemsEntry, breadcrumbEntry, breadcrumbSourceEntry, entrySourceEntry, rootNavigationEntry, collectionItemsEntry, collectionSortEntry];
     const jsRoot = path.dirname(browseRoot);
     const bundles = await buildJavaScript({jsRoot, work:tempRoot,
         entries:entries.map(entry => path.relative(jsRoot, entry).replace(/\\/g, '/'))
@@ -69,6 +71,12 @@ try {
         [],
         'collection sort bundle must not include path navigation runtime modules'
     );
+    const rootNavigationSources = bundleFor(rootNavigationEntry).sources;
+    assert.ok(rootNavigationSources.includes('browse/entry-source.js'),
+        'root navigation must read entry source metadata');
+    assert.deepEqual(rootNavigationSources.filter(input => [
+        'browse/collection-items.js', 'browse/breadcrumb-source.js',
+    ].includes(input)), [], 'root navigation must not decode collection rows');
 
     assert.equal(
         applySorts(
@@ -151,12 +159,13 @@ try {
     );
 
     const breadcrumbSource = await importBrowserModule(breadcrumbSourceEntry);
+    const entrySource = await importBrowserModule(entrySourceEntry);
     const breadcrumbItems = await importBrowserModule(breadcrumbItemsEntry);
     const breadcrumbPath = await importBrowserModule(breadcrumbEntry);
     const collectionItems = await importBrowserModule(collectionItemsEntry);
     assert.deepEqual(breadcrumbSource.parseEntryBreadcrumbSources(JSON.stringify([{
-        logicalPath: '/tags/windows/', rootItem: {text: 'Tags', href: '/tags/'}
-    }])), [], 'browser payloads must use the Hugo field names');
+        logical_path: '/tags/windows/', root_item: {text: 'Tags', href: '/tags/'}
+    }])), [], 'browser payloads must use the current field names');
 
     const compositeRows = [
         {
@@ -267,10 +276,10 @@ try {
     window.location.hash = '#from=all';
 
     const allCollectionSource = {
-        logical_path: '/all/',
+        logicalPath: '/all/',
         provider: 'collection',
-        sort_variant: 'all',
-        default_sort: 'date-desc',
+        sortVariant: 'all',
+        defaultSort: 'date-desc',
         label: 'All',
         href: '/zh/all/',
     };
@@ -316,10 +325,10 @@ try {
     window.location.hash = '#from=d/wsl&sorts=name-asc,date-desc';
     assert.equal(
         breadcrumbItems.buildCollectionSortToggleHref({
-            logical_path: '/d/wsl/',
+            logicalPath: '/d/wsl/',
             provider: 'collection',
-            sort_variant: 'section',
-            default_sort: 'date-desc',
+            sortVariant: 'section',
+            defaultSort: 'date-desc',
             label: 'WSL',
             href: '/zh/d/wsl/',
         }),
@@ -328,18 +337,18 @@ try {
     );
 
     const directoryCollectionSource = {
-        logical_path: '/d/',
+        logicalPath: '/d/',
         provider: 'collection',
-        sort_variant: 'section',
-        default_sort: 'date-desc',
+        sortVariant: 'section',
+        defaultSort: 'date-desc',
         label: 'Directory',
         href: '/zh/d/',
     };
     const wslCollectionSource = {
-        logical_path: '/d/wsl/',
+        logicalPath: '/d/wsl/',
         provider: 'collection',
-        sort_variant: 'section',
-        default_sort: 'date-desc',
+        sortVariant: 'section',
+        defaultSort: 'date-desc',
         label: 'WSL',
         href: '/zh/d/wsl/',
     };
@@ -409,30 +418,33 @@ try {
     window.location.hash = '#from=tags/windows';
 
     assert.deepEqual(
-        breadcrumbPath.buildCurrentPathItem(
+        breadcrumbPath.buildCurrentPathColumn(
             {},
             'Beta',
             'Beta detailed article title',
             '/zh/p/contract-beta/#from=tags/windows'
         ),
         {
-            text: 'Beta',
-            title: 'Beta detailed article title',
-            href: '/zh/p/contract-beta/#from=tags/windows',
-            current: true,
+            source: null,
+            items: [{
+                text: 'Beta',
+                title: 'Beta detailed article title',
+                href: '/zh/p/contract-beta/#from=tags/windows',
+                current: true,
+            }],
         },
         'entry preview should keep compact visible text and the full title as separate fields'
     );
 
-    const previewColumnCurrentItem = breadcrumbPath.buildCurrentPathItem(
+    const previewColumn = breadcrumbPath.buildCurrentPathColumn(
         {
-            currentCollectionSource: {
-                logical_path: '/tags/windows/',
+            currentColumn: {source: {
+                logicalPath: '/tags/windows/',
                 provider: 'collection',
-                sort_variant: 'tree',
-                default_sort: 'date-desc',
+                sortVariant: 'tree',
+                defaultSort: 'date-desc',
             },
-            currentCollectionItems: collectionItems.decodeItemsPayload({
+            payload: collectionItems.decodeItemsPayload({
                 ds: 'date-desc',
                 f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
                 lp: '/tags/windows/',
@@ -442,7 +454,7 @@ try {
                 ],
                 sv: 'tree',
                 v: 1,
-            }),
+            })},
         },
         'Beta',
         'Beta detailed article title',
@@ -450,33 +462,27 @@ try {
     );
 
     assert.equal(
-        previewColumnCurrentItem?.column_items?.find((item) => item.current === true)?.title,
+        previewColumn?.items?.find((item) => item.current === true)?.title,
         'Beta detailed article title',
         'entry preview should attach the full title to the visible current column item'
     );
 
     const sourcePayload = JSON.stringify([{
-        logical_path: '/tags/windows/',
-        provider: 'collection',
-        root_item: {
+        logicalPath: '/tags/windows/',
+        rootItem: {
             href: '/zh/tags/',
             text: 'Tags',
             title: 'Article topics'
         },
-        tail_items: [{
-            href: '/zh/tags/windows/',
-            text: 'Windows',
-            title: 'Windows development'
-        }],
-        current_collection_source: {
-            logical_path: '/tags/windows/',
+        currentColumn: {source: {
+            logicalPath: '/tags/windows/',
             provider: 'collection',
-            sort_variant: 'tree',
-            default_sort: 'date-desc',
+            sortVariant: 'tree',
+            defaultSort: 'date-desc',
             label: 'Windows',
             href: '/zh/tags/windows/'
         },
-        current_collection_items: {
+        payload: {
             ds: 'date-desc',
             f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
             lp: '/tags/windows/',
@@ -487,31 +493,85 @@ try {
             ],
             sv: 'tree',
             v: 1
-        },
-        levels: [{
-            item: {
+        }},
+        columns: [{
+            selected: {
                 href: '/zh/tags/windows/',
                 text: 'Windows',
                 title: 'Windows development'
             },
-            collection_source: {
-                logical_path: '/tags/',
+            source: {
+                logicalPath: '/tags/',
                 provider: 'collection',
-                sort_variant: 'tree',
-                default_sort: 'date-desc',
+                sortVariant: 'tree',
+                defaultSort: 'date-desc',
                 label: 'Tags',
                 href: '/zh/tags/'
-            }
+            },
+            payload: {
+                ds: 'date-desc',
+                f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
+                lp: '/tags/',
+                p: 'taxonomy',
+                rv: ['windows', 'collection', '/zh/tags/windows/', 'Windows', '0', 'Windows', '20260626', '2'],
+                sv: 'tree',
+                v: 1,
+            },
         }]
     }]);
     const sources = breadcrumbSource.parseEntryBreadcrumbSources(sourcePayload);
+    const fallbackSources = JSON.parse(sourcePayload);
+    fallbackSources[0].columns.push({
+        selected: {text: 'Information', href: '/zh/about/'},
+        source: {href: '/zh/about/', label: 'Information'},
+        items: [{text: 'Information', href: '/zh/about/'}],
+    });
+    const fallbackColumn = breadcrumbSource.parseEntryBreadcrumbSources(JSON.stringify(fallbackSources))[0].columns.at(-1);
+    assert.deepEqual(fallbackColumn.source, {href: '/zh/about/', label: 'Information'},
+        'a plain path column must retain its header source');
+    assert.deepEqual(fallbackColumn.items, [{text: 'Information', href: '/zh/about/'}],
+        'a plain path column must retain its link items without a collection payload');
+
+    const previousDocument = globalThis.document;
+    globalThis.document = {body: {dataset: {entryBreadcrumbSources: sourcePayload}}};
+    try {
+        const readers = [entrySource.readEntrySources, breadcrumbSource.readEntryBreadcrumbSources];
+        const cached = readers.map(read => read());
+        for (const [index, read] of readers.entries()) {
+            assert.equal(read(), cached[index], 'unchanged source data must reuse its parsed array');
+        }
+        const changedSources = JSON.parse(sourcePayload);
+        changedSources[0].rootItem.text = 'Updated tags';
+        document.body.dataset.entryBreadcrumbSources = JSON.stringify(changedSources);
+        for (const [index, read] of readers.entries()) {
+            const changed = read();
+            assert.notEqual(changed, cached[index], 'changed source data must refresh its parsed array');
+            assert.equal(changed[0].rootItem.text, 'Updated tags');
+            assert.equal(cached[index][0].rootItem.text, 'Tags', 'refresh must not change the previous parsed data');
+        }
+    } finally {
+        if (previousDocument === undefined) delete globalThis.document;
+        else globalThis.document = previousDocument;
+    }
+
+    const invalidPayloadSources = JSON.parse(sourcePayload);
+    invalidPayloadSources[0].currentColumn.payload = {v: 1};
+    invalidPayloadSources[0].columns[0].payload = {v: 1};
+    const metadataSources = entrySource.parseEntrySources(JSON.stringify(invalidPayloadSources));
+    assert.equal(entrySource.parseEntrySelection(metadataSources, '/tags/windows/')?.source?.rootItem?.href,
+        '/zh/tags/', 'root selection must use source metadata even when collection payloads are invalid');
+    assert.equal(entrySource.pickSourceByLogicalPath(metadataSources, '/tags/windows/'), metadataSources[0],
+        'source metadata lookup must use the exact logical path');
+    assert.equal(entrySource.parseEntrySelection(metadataSources, '/tags/unknown/'), null,
+        'invalid collection payloads must not allow unregistered source paths');
+    assert.deepEqual(entrySource.parseEntrySources('{'), [], 'malformed source JSON must not throw');
 
     assert.deepEqual(
         {
             rootText: sources[0]?.rootItem?.text,
             rootTitle: sources[0]?.rootItem?.title,
-            termText: sources[0]?.tailItems?.[0]?.text,
-            termTitle: sources[0]?.tailItems?.[0]?.title,
+            termText: sources[0]?.columns?.[0]?.selected?.text,
+            termTitle: sources[0]?.columns?.[0]?.selected?.title,
         },
         {
             rootText: 'Tags',
@@ -523,7 +583,7 @@ try {
     );
 
     assert.deepEqual(
-        breadcrumbSource.parseEntrySelection(sources, '/tags/windows/'),
+        entrySource.parseEntrySelection(sources, '/tags/windows/'),
         {
             source: sources[0],
         },
@@ -531,20 +591,20 @@ try {
     );
 
     assert.equal(
-        breadcrumbSource.parseEntrySelection(sources, '/tags/windows/contract-beta/'),
+        entrySource.parseEntrySelection(sources, '/tags/windows/contract-beta/'),
         null,
         'from values with an entry key tail should not be treated as valid navigation state'
     );
 
     for (const invalidFrom of ['/tags/', '/tags/unknown/', '/tools/windows/', '']) {
         assert.equal(
-            breadcrumbSource.parseEntrySelection(sources, invalidFrom),
+            entrySource.parseEntrySelection(sources, invalidFrom),
             null,
             'root selection must use an exact published source, never infer a root from an unregistered prefix'
         );
     }
 
-    const collectionSourceIndex = breadcrumbSource.parseCollectionSourceIndex(sourcePayload);
+    const collectionSourceIndex = breadcrumbSource.createCollectionSourceIndex(sources);
     assert.deepEqual(
         breadcrumbSource.pickCollectionSourceByHref(
             collectionSourceIndex,
@@ -604,11 +664,12 @@ try {
         'entry hrefs should write collection-only from values'
     );
 
-    const selectedItem = breadcrumbItems.buildSelectedBreadcrumbItem(
+    const selectedColumn = breadcrumbItems.buildSelectedPathColumn(
         sources[0],
         '/zh/p/contract-beta/',
         'Beta detailed article title'
     );
+    const selectedItem = selectedColumn?.items?.find((item) => item.current === true);
 
     assert.equal(
         selectedItem?.text,
@@ -622,15 +683,21 @@ try {
         'selected current item should preserve the full page title without expanding the compact collection payload'
     );
     assert.equal(
-        selectedItem?.column_items?.find((item) => item.text === 'Beta')?.current,
+        selectedColumn?.items?.find((item) => item.text === 'Beta')?.current,
         true,
         'current breadcrumb column item should be highlighted when selected by pathname'
     );
     assert.equal(
-        selectedItem?.column_items?.find((item) => item.current === true)?.title,
+        selectedColumn?.items?.find((item) => item.current === true)?.title,
         'Beta detailed article title',
         'settled entry state should attach the full title to the visible current column item'
     );
+    assert.equal(selectedColumn?.source?.logicalPath, '/tags/windows/',
+        'column source metadata must stay separate from its link items');
+    assert.equal(selectedColumn.items.filter((item) => item.current === true).length, 1,
+        'a selected column must mark one current row');
+    assert.ok(selectedColumn.items.every((item) => !('column_items' in item) && !('collection_source' in item)),
+        'path items must not contain column metadata or nested rows');
 
     console.log('Entry from checks passed.');
 } finally {

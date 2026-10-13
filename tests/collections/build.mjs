@@ -12,6 +12,8 @@ import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/cs
 import {createStaticSiteServer} from '../../.agents/skills/swaw-banyan/tasks/_shared/browser/server.mjs';
 import {gotoAndWait} from '../../.agents/skills/swaw-banyan/tasks/_shared/browser/page.mjs';
 import {waitForBrowse} from '../../.agents/skills/swaw-banyan/tasks/_shared/browser/viewport.mjs';
+import {extractBlocks} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
+import {extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 import {fixtureEnvironment} from '../_shared/hugo.mjs';
 
@@ -54,6 +56,9 @@ try {
         write(path.join(overlay, `tools/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlist: directory\n---\n');
         write(path.join(overlay, `tools/contract-name/_index${lang}.md`), '---\ntitle: Names only\nlist: name\n---\n');
         write(path.join(overlay, `contract-name-all/index${lang}.md`), '---\ntitle: All names\nslug: contract-name-all\nroot_nav: true\nlayout: page-collection\nlist: name\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
+        for (const list of ['local', 'never']) {
+            write(path.join(overlay, `contract-name-${list}/index${lang}.md`), `---\ntitle: ${list} names\nslug: contract-name-${list}\nlayout: page-collection\nlist: name\naggregate: /d\nbuild: {list: ${list}}\n---\n`);
+        }
         for (const term of [
             'contract-dates',
             'contract-dates/child',
@@ -130,9 +135,9 @@ try {
 
         const logicalPath = `/${logical.replace(/^\/+|\/+$/g, '')}/`;
         const source = readInlineSources(output, lang, logical)
-            .find((entry) => entry?.logical_path === logicalPath);
+            .find((entry) => entry?.logicalPath === logicalPath);
         assert(source, `${logical} publishes its collection source inline`);
-        const data = source.current_collection_items;
+        const data = source.currentColumn?.payload;
         assert(data && typeof data === 'object', `${logical} publishes its collection rows inline`);
         const rows = [];
         for (let offset = 0; offset < data.rv.length; offset += data.f.length) {
@@ -155,6 +160,20 @@ try {
             assert.equal(payload(output, lang, 'd/contract-inherit').sv, current.sv, 'undeclared section inherits');
             assert.equal(payload(output, lang, 'd/contract-override').sv, 'all');
             assert.equal(payload(output, lang, 'd/contract-override/child').sv, 'all', 'nearest declaration wins');
+            for (const list of ['local', 'never']) {
+                const logicalPath = `/contract-name-${list}/`;
+                const html = fs.readFileSync(path.join(output, prefixes[index].slice(1), logicalPath, 'index.html'), 'utf8');
+                const body = extractStartTags(html, 'body')[0];
+                const source = JSON.parse(extractTagAttribute(body, 'data-page-collection-source') || 'null');
+                assert.deepEqual({logicalPath: source?.logicalPath, sortVariant: source?.sortVariant, defaultSort: source?.defaultSort},
+                    {logicalPath, sortVariant: 'name', defaultSort: 'name-asc'}, `build.list: ${list} must publish its main collection source`);
+                const main = extractBlocks(html, 'main')[0];
+                assert.ok(main, `build.list: ${list} must render its main column`);
+                const rows = extractStartTags(main.inner, 'a').filter(tag => /\bdata-list-entry(?:\s|=|>)/.test(tag))
+                    .map(tag => new URL(extractTagAttribute(tag, 'href'), 'https://example.test').pathname);
+                assert.deepEqual(rows, payload(output, lang, 'contract-name-all').rows.map(row => row.href),
+                    `build.list: ${list} must retain every aggregate row in SSR`);
+            }
             const assertUpdated = (list, href, text, key) => {
                 const row = payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`);
                 assert(row, `${list} contains ${href}`);
@@ -287,7 +306,7 @@ try {
         const page = await context.newPage();
         for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
             await gotoAndWait(page, `${baseUrl}${prefixes[index]}/tools/`);
-            const names = await page.locator('.slot-main .collection-item-title').allTextContents();
+            const names = await page.locator('.slot-main .item-title').allTextContents();
             assert.deepEqual(names, payload(builds.directory, lang, 'tools').rows.map(row => row.text), 'default category order agrees before and after hydration');
             assert.equal(await page.locator(`[data-root-href="${prefixes[index]}/d/"] use`).getAttribute('href'), '#icon-info', 'root navigation honors the same own icon');
             const nav = page.locator('[data-root-href*="/contract-nav-"]');
@@ -301,25 +320,25 @@ try {
         for (const list of ['d', 'all', 'tools/contract-dates']) {
             for (const direction of ['asc', 'desc']) {
                 await gotoAndWait(page, `${baseUrl}/${list}/#sort=date-${direction}`);
-                const links = '.slot-main .collection-item-link[href*="/p/contract-"]';
+                const links = '.slot-main .item-control[href*="/p/contract-"]';
                 const dates = await page.locator(links).evaluateAll(nodes => nodes
                     .filter(node => /\/p\/contract-(priced|missing)\//.test(node.href))
-                    .map(node => node.closest('.collection-cell--name').nextElementSibling.textContent.trim()));
+                    .map(node => node.closest('[data-list-item]').querySelector('[data-item-field="date"]').textContent.trim()));
                 assert.deepEqual(dates, direction === 'asc' ? ['2026-08-01', '2026-08-02'] : ['2026-08-02', '2026-08-01']);
                 assert.match(await page.locator('.slot-main [data-sort-field="date"]').textContent(), /Updated/);
                 const ordered = await page.locator(links).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
                 await page.locator(`${links}[href*="/p/contract-missing/#"]`).click();
                 await waitForBrowse(page);
-                const pathOrder = await page.locator('.slot-breadcrumb .collection-item-link[href*="/p/contract-"]').evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
+                const pathOrder = await page.locator('[data-slot=breadcrumb] .item-control[href*="/p/contract-"]').evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
                 assert.deepEqual(pathOrder, ordered, 'Lastmod sort survives entry into the article path column');
             }
         }
         console.log('PASS Lastmod ascending/descending display and article path order');
         for (const direction of ['asc', 'desc']) {
             await gotoAndWait(page, `${baseUrl}/tools/free/#sort=price-${direction}`);
-            const ordered = await page.locator('.slot-main .collection-list--products .collection-item-link').evaluateAll(links => links.map(link => ({
+            const ordered = await page.locator('.slot-main .item-list--products .item-control').evaluateAll(links => links.map(link => ({
                 href: new URL(link.href).pathname,
-                price: link.closest('.collection-cell--name').dataset.sortPrice ?? ''
+                price: link.closest('[data-list-item]').dataset.sortPrice ?? ''
             })));
             assert.equal(ordered.length, payload(builds.directory, 'en', 'tools/free').rows.length);
             const firstMissing = ordered.findIndex(row => row.price === '');
@@ -332,7 +351,7 @@ try {
             await waitForBrowse(page);
             const selected = await page.locator('[data-root-href].is-current').getAttribute('data-root-href');
             assert.equal(selected, '/tools/');
-            const items = await page.locator('.slot-breadcrumb .collection-item-link[href*="/p/"]').evaluateAll(links => links.map(a => new URL(a.href).pathname));
+            const items = await page.locator('[data-slot=breadcrumb] .item-control[href*="/p/"]').evaluateAll(links => links.map(a => new URL(a.href).pathname));
             assert.deepEqual(items, ordered.map(row => row.href), 'path column order matches product table');
         }
         // Arbitrary auto terms must support article entry, not just compile a page.
@@ -352,25 +371,25 @@ try {
         assert.equal(await staticPage.locator('use[href="#icon-appearance-light"]').count(), 0);
         assert.equal(await staticPage.locator('symbol#icon-appearance-light').count(), 1, 'source-only SVG is packed without relying on SSR rows');
         await staticPage.goto(`${baseUrl}/d/contract-override/child/`);
-        assert.equal(await staticPage.locator('.slot-breadcrumb a[href*="/d/contract-override/child/"] use').getAttribute('href'), '#icon-rss', 'SSR column projection preserves inherited icons');
+        assert.equal(await staticPage.locator('[data-slot=breadcrumb] a[href*="/d/contract-override/child/"] use').getAttribute('href'), '#icon-rss', 'SSR column projection preserves inherited icons');
         await staticPage.goto(`${baseUrl}/p/contract-text/`);
-        assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
+        assert.equal(await staticPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
         await staticPage.goto(`${baseUrl}/tools/free/`);
         assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-no-offer/"] img.icon--image').getAttribute('src'), ownImage.image);
         assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-no-offer/"] .icon--monochrome').count(), 0, 'ordinary images retain their colors');
         assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-zero/"] .icon--text').textContent(), '<b>EN</b>');
         assert.equal(await staticPage.locator('.icon--text b').count(), 0, 'text icons are escaped during SSR');
         await staticPage.goto(`${baseUrl}/p/contract-image-child/`);
-        assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] img.icon--image').getAttribute('src'), inheritedImage.image);
-        assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] .icon--monochrome').count(), 1, 'SSR preserves inherited monochrome');
+        assert.equal(await staticPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-image-child/"] img.icon--image').getAttribute('src'), inheritedImage.image);
+        assert.equal(await staticPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-image-child/"] .icon--monochrome').count(), 1, 'SSR preserves inherited monochrome');
         await staticPage.goto(`${baseUrl}/p/contract-unclassified/`);
-        assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-unclassified/"] img.icon--image').getAttribute('src'), assetImage.image);
-        assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-unclassified/"] .icon--monochrome').count(), 1, 'SSR preserves own monochrome');
+        assert.equal(await staticPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-unclassified/"] img.icon--image').getAttribute('src'), assetImage.image);
+        assert.equal(await staticPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-unclassified/"] .icon--monochrome').count(), 1, 'SSR preserves own monochrome');
         await noJs.close();
 
         const iconsContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 960 } });
         const iconsPage = await iconsContext.newPage();
-        const selectedIcon = () => iconsPage.locator('.slot-breadcrumb a.is-current[href*="/p/contract-missing/"] use').getAttribute('href');
+        const selectedIcon = () => iconsPage.locator('[data-slot=breadcrumb] a.is-current[href*="/p/contract-missing/"] use').getAttribute('href');
         await gotoAndWait(iconsPage, `${baseUrl}/tools/free/#sort=name-desc`);
         await iconsPage.locator('.slot-main a[href*="/p/contract-missing/#"]').click();
         await waitForBrowse(iconsPage);
@@ -389,7 +408,7 @@ try {
         for (const prefix of prefixes) {
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/all/#sort=name-asc`);
             await iconsPage.locator('.slot-main a[href*="/p/contract-unclassified/#"]').click();
-            const selectedAsset = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-unclassified/"] img.icon--image.icon--monochrome');
+            const selectedAsset = () => iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-unclassified/"] img.icon--image.icon--monochrome');
             await waitForBrowse(iconsPage);
             assert.equal(await selectedAsset().getAttribute('src'), assetImage.image);
             await selectedAsset().evaluate(image => image.decode());
@@ -402,7 +421,7 @@ try {
             assert.equal(await selectedAsset().getAttribute('src'), assetImage.image);
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/tools/free/#sort=name-asc`);
             await iconsPage.locator('.slot-main a[href*="/p/contract-no-offer/#"]').click();
-            const selectedImage = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-no-offer/"] img.icon--image');
+            const selectedImage = () => iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-no-offer/"] img.icon--image');
             await waitForBrowse(iconsPage);
             assert.equal(await selectedImage().getAttribute('src'), ownImage.image);
             await selectedImage().evaluate(image => image.decode());
@@ -416,10 +435,10 @@ try {
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/d/contract-image/child/`);
             await iconsPage.locator('.slot-main a[href*="/p/contract-image-child/#"]').click();
             await waitForBrowse(iconsPage);
-            assert.equal(await iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] img.icon--image.icon--monochrome').getAttribute('src'), inheritedImage.image);
+            assert.equal(await iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-image-child/"] img.icon--image.icon--monochrome').getAttribute('src'), inheritedImage.image);
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/tools/free/#sort=name-asc`);
             await iconsPage.locator('.slot-main a[href*="/p/contract-zero/#"]').click();
-            const selectedText = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-zero/"] .icon--text').textContent();
+            const selectedText = () => iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-zero/"] .icon--text').textContent();
             await waitForBrowse(iconsPage);
             assert.equal(await selectedText(), '<b>EN</b>');
             assert.equal(await iconsPage.locator('.icon--text b').count(), 0, 'runtime icons use textContent');
@@ -434,7 +453,7 @@ try {
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/d/contract-text/`);
             await iconsPage.locator('.slot-main a[href*="/p/contract-text/#"]').click();
             await waitForBrowse(iconsPage);
-            assert.equal(await iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
+            assert.equal(await iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
         }
         await iconsContext.close();
         console.log('PASS inherited/own icons, source-only SVGs, SSR columns, reload and history');
@@ -444,7 +463,7 @@ try {
         const namesPage = await namesContext.newPage();
         const paths = selector => namesPage.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
         const nameGrid = '.slot-main [data-sortable="true"]';
-        const mainLinks = `${nameGrid} .collection-item-link`;
+        const mainLinks = `${nameGrid} .item-control`;
         for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
             const prefix = prefixes[index];
             for (const list of ['d', 'd/contract-inherit', 'tools/contract-name', 'contract-name-all']) {
@@ -456,13 +475,13 @@ try {
                     const doc = new DOMParser().parseFromString(html, 'text/html');
                     const grid = doc.querySelector('.slot-main [data-sortable]');
                     return { fields: [...grid.querySelectorAll('[data-sort-field]')].map(node => node.dataset.sortField),
-                        items: [...grid.querySelectorAll('.collection-item-link')].map(node => new URL(node.getAttribute('href'), location.href).pathname),
-                        nonNameCells: grid.querySelectorAll(':scope > :not(.collection-cell--name)').length };
+                        items: [...grid.querySelectorAll('.item-control')].map(node => new URL(node.getAttribute('href'), location.href).pathname),
+                        nonNameCells: grid.querySelectorAll('[data-item-field]:not([data-item-field="name"])').length };
                 }, address);
                 assert.deepEqual(staticRows, {fields: ['name'], items: expected, nonNameCells: 0}, 'SSR renders only name cells and canonical name order');
                 assert.deepEqual(await paths(mainLinks), expected, 'Hydration preserves SSR order');
-                assert.equal(await namesPage.locator(nameGrid).getAttribute('data-sort-columns'), '1');
-                assert.equal(await namesPage.locator(nameGrid).evaluate(grid => getComputedStyle(grid).gridTemplateColumns), '225px');
+                assert.equal(await namesPage.locator(nameGrid).getAttribute('data-sort-columns'), null);
+                assert.ok(await namesPage.locator(nameGrid).evaluate(grid => [...grid.children].every(row=>getComputedStyle(row).display==='grid'&&getComputedStyle(row).gridTemplateColumns==='225px')));
                 await namesPage.locator(`${nameGrid} [data-sort-field="name"]`).click();
                 await namesPage.waitForURL(url => new URLSearchParams(url.hash.slice(1)).get('sort') === 'name-desc');
                 const descending = [...expected].reverse();
@@ -472,12 +491,12 @@ try {
                 const articlePath = await articleLink.evaluate(node => new URL(node.href).pathname);
                 await articleLink.click();
                 await waitForBrowse(namesPage);
-                const column = `.slot-breadcrumb [data-breadcrumb-collection-href="${prefix}/${list}/"]`;
+                const column = `[data-slot=breadcrumb] [data-breadcrumb-collection-href="${prefix}/${list}/"]`;
                 const assertNameColumn = async () => {
                     assert.equal(new URLSearchParams(new URL(namesPage.url()).hash.slice(1)).get('from'), list);
-                    assert.deepEqual(await paths(`${column} .collection-item-link`), descending, 'Article path uses the same name list order');
-                    assert.deepEqual(await paths(`${column} .collection-item-link.is-current`), [articlePath]);
-                    assert.match(await namesPage.locator(`${column} .collection-column-sort`).textContent(), /↓/);
+                    assert.deepEqual(await paths(`${column} .item-control`), descending, 'Article path uses the same name list order');
+                    assert.deepEqual(await paths(`${column} .item-control.is-current`), [articlePath]);
+                    assert.match(await namesPage.locator(`${column} .path-column-sort`).textContent(), /↓/);
                 };
                 await assertNameColumn();
                 await namesPage.reload();
@@ -490,9 +509,9 @@ try {
                 await namesPage.goForward();
                 await waitForBrowse(namesPage);
                 await assertNameColumn();
-                await namesPage.locator(`${column} .collection-column-sort`).click();
-                await namesPage.waitForFunction(selector => document.querySelector(selector)?.textContent.includes('↑'), `${column} .collection-column-sort`);
-                assert.deepEqual(await paths(`${column} .collection-item-link`), expected, 'Path-column toggle uses name sorting too');
+                await namesPage.locator(`${column} .path-column-sort`).click();
+                await namesPage.waitForFunction(selector => document.querySelector(selector)?.textContent.includes('↑'), `${column} .path-column-sort`);
+                assert.deepEqual(await paths(`${column} .item-control`), expected, 'Path-column toggle uses name sorting too');
             }
         }
         await gotoAndWait(namesPage, `${baseUrl}/zh/d/`);

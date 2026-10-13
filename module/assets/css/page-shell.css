@@ -33,10 +33,7 @@ body {
 }
 
 .page-shell,
-.page-rail,
-.page-stage,
-.page-content,
-.document-aside,
+.page-column,
 .slot {
     min-width: 0;
     min-block-size: 0;
@@ -44,7 +41,8 @@ body {
 
 .page-shell {
     display: grid;
-    grid-template-columns: var(--navigation-column-inline) max-content;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
     column-gap: var(--page-shell-gap-inline);
     inline-size: max-content;
     min-inline-size: 100%;
@@ -53,29 +51,33 @@ body {
     align-items: start;
 }
 
-.page-stage {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: max-content;
-    column-gap: var(--page-shell-gap-inline);
-    align-items: start;
-    block-size: 100%;
-}
-
-.page-rail {
-    display: flex;
-    flex-direction: column;
-}
-
-.page-rail,
-.page-content,
-.document-aside,
-.path-column {
+.page-column {
     box-sizing: border-box;
     max-block-size: 100%;
     overflow-y: auto;
     /* Stop vertical boundary effects; horizontal gestures still reach the canvas. */
     overscroll-behavior-y: none;
+}
+
+.page-rail,
+.path-column {
+    inline-size: var(--navigation-column-inline);
+}
+
+.column-panel {
+    inline-size: var(--navigation-column-inline);
+    max-inline-size: 100%;
+}
+
+.column-heading {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: var(--column-line-height);
+}
+
+.column-panel > .column-heading {
+    margin: 0 0 0.14rem;
+    font-weight: 400;
 }
 
 .page-content {
@@ -113,15 +115,14 @@ body {
     }
 }
 
-/* Collection tables determine their own width and retain the external gap. */
+/* Collection lists determine their own width and retain the external gap. */
 .page-content:has(> .slot-main--collection) {
     inline-size: max-content;
 }
 
 .slot-main--collection {
-    inline-size: max-content;
+    inline-size: var(--list-inline-size, var(--navigation-column-inline));
     max-inline-size: none;
-    min-inline-size: var(--main-column-inline);
 }
 
 .article {
@@ -136,18 +137,26 @@ body {
     body,
     .page,
     .page-shell,
-    .page-stage,
-    .page-rail,
-    .page-content,
-    .document-aside,
-    .path-column {
+    .page-column {
         block-size: auto;
         max-block-size: none;
         overflow: visible;
     }
 
-    .page-stage {
-        display: block;
+    .page-shell {
+        grid-auto-flow: row;
+        grid-template-columns: var(--navigation-column-inline) max-content;
+    }
+
+    .page-rail {
+        grid-column: 1;
+        grid-row: 1 / span 3;
+    }
+
+    .path-navigation,
+    .page-content,
+    .document-aside {
+        grid-column: 2;
     }
 
     .page-content {

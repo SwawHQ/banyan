@@ -30,14 +30,14 @@
     --icon-shade: color-mix(in srgb, var(--icon-accent) 80%, black);
 }
 
-.collection-item-link {
-    --collection-item-text: var(--link);
-    --collection-item-hover-text: var(--link-hover);
-    --collection-item-current-text: var(--accent-text);
-    --collection-item-hover-bg: color-mix(in srgb, var(--accent) 8%, transparent);
-    --collection-item-hover-ring: transparent;
-    --collection-item-current-bg: color-mix(in srgb, var(--accent) 14%, transparent);
-    --collection-item-current-ring: color-mix(in srgb, var(--accent) 18%, transparent);
+.item-control {
+    --item-text: var(--link);
+    --item-hover-text: var(--link-hover);
+    --item-current-text: var(--accent-text);
+    --item-hover-bg: color-mix(in srgb, var(--accent) 8%, transparent);
+    --item-hover-ring: transparent;
+    --item-current-bg: color-mix(in srgb, var(--accent) 14%, transparent);
+    --item-current-ring: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .prose {

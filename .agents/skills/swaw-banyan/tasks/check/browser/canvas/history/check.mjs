@@ -30,7 +30,7 @@ export async function check({page,baseUrl,options}) {
   await page.goForward();await restored(page,second,'Forward must restore the next article position.');
   await page.reload();await restored(page,second,'Reload must preserve the native horizontal position.');
   assert.equal(await page.evaluate(()=>history.scrollRestoration),'auto','The browser must own history scroll restoration.');
-  const sort=page.locator('.slot-breadcrumb [data-collection-sort-toggle="true"]').first();
+  const sort=page.locator('[data-slot=breadcrumb] [data-collection-sort-toggle="true"]').first();
   assert.equal(await sort.count(),1,'The next article needs a breadcrumb sort control; include its source context.');
   await sort.scrollIntoViewIfNeeded();await sort.focus();await afterPaint(page);
   const beforeSort=await position(page),beforeUrl=page.url();

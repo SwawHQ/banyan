@@ -15,15 +15,14 @@ window.addEventListener('hashchange', (event) => {
     const nextSorts = readFieldValue(location.hash, 'sorts');
     if (from === nextFrom && sorts === nextSorts) return;
     if (from !== nextFrom) {
-        const container = document.querySelector('.path-columns .slot-breadcrumb');
-        if (container) {
-            const nav = container.defaultPath?.cloneNode(true) || document.createElement('nav');
-            nav.className = 'path-navigation';
-            container.replaceChildren(nav);
+        document.documentElement.setAttribute('data-entry-breadcrumb-pending', 'true');
+        const { entryRendered } = initializeBreadcrumb();
+        const nav = document.querySelector('[data-slot="breadcrumb"]');
+        if (!entryRendered && nav?.defaultPath) {
+            nav.replaceChildren(...nav.defaultPath.cloneNode(true).childNodes);
+            nav.removeAttribute('aria-hidden');
             nav.querySelectorAll('.path-column').forEach(initAutoScrollbar);
         }
-        document.documentElement.setAttribute('data-entry-breadcrumb-pending', 'true');
-        initializeBreadcrumb();
     }
     refreshBreadcrumbCollectionColumns();
 });

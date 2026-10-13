@@ -1,0 +1,10 @@
+<div class="item-list{{ with .class }} {{ . }}{{ end }}"{{ range $name, $value := .dataAttrs | default dict }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}>
+  {{- if isset . "title" -}}
+    <h1 class="list-item list-header" data-list-header>{{ .title }}</h1>
+  {{- else if .header -}}
+    <div class="list-item list-header{{ with .headerClass }} {{ . }}{{ end }}" data-list-header>{{ .header | safeHTML }}</div>
+  {{- end -}}
+  {{- range .items -}}
+    {{- partial "system-ui/list/item.html" . -}}
+  {{- end -}}
+</div>

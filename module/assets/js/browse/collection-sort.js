@@ -15,21 +15,21 @@ function writeSortToken(token, defaultToken) {
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
-function readRowValue(rowHead, fieldConfig) {
-    if (!rowHead || !fieldConfig) return '';
-    return rowHead.dataset?.[fieldConfig.dataKey] ?? '';
+function readRowValue(row, fieldConfig) {
+    if (!row || !fieldConfig) return '';
+    return row.dataset?.[fieldConfig.dataKey] ?? '';
 }
 
 function readRowGroup(row) {
-    return row?.head?.dataset?.sortGroup ?? 0;
+    return row?.dataset?.sortGroup ?? 0;
 }
 
 function readRowStableKey(row) {
-    const href = row?.head
-        ?.querySelector('[data-collection-entry][href]')
+    const href = row
+        ?.querySelector('[data-list-entry][href]')
         ?.getAttribute('href') || '';
     if (!href) {
-        return row?.index ?? '';
+        return '';
     }
 
     try {
@@ -39,33 +39,19 @@ function readRowStableKey(row) {
     }
 }
 
-function collectSortableRows(grid, columnCount) {
-    const rowCells = Array.from(grid.children).filter((child) => child.hasAttribute('data-collection-cell') && !child.hasAttribute('data-collection-header'));
-    const rows = [];
-
-    for (let index = 0, offset = 0; offset + columnCount <= rowCells.length; index += 1, offset += columnCount) {
-        const cells = rowCells.slice(offset, offset + columnCount);
-        const head = cells[0];
-        rows.push({ index, head, cells });
-    }
-
-    return { rows, rowCells };
-}
-
-function applySortableGrid(grid) {
-    const variantName = (grid.dataset.sortVariant || '').toLowerCase();
+function applySortableList(list) {
+    const variantName = (list.dataset.sortVariant || '').toLowerCase();
     const variant = SORT_VARIANTS[variantName];
-    const columnCount = Number(grid.dataset.sortColumns || 0);
-    if (!variant || !columnCount) return;
+    if (!variant) return;
 
     const pageCollectionSource = readPageCollectionSource();
     const currentToken = readCurrentSortToken(variantName, variant.defaultToken);
     const current = parseSortToken(currentToken);
     if (!variant.fields[current.field]) return;
 
-    const { rows, rowCells } = collectSortableRows(grid, columnCount);
+    const rows = Array.from(list.children).filter((child) => child.hasAttribute('data-list-item'));
     if (!rows.length) {
-        refreshCollectionNavigation(grid, variantName, currentToken, pageCollectionSource);
+        refreshCollectionNavigation(list, variantName, currentToken, pageCollectionSource);
         return;
     }
 
@@ -74,34 +60,29 @@ function applySortableGrid(grid) {
             variant,
             field: current.field,
             order: current.order,
-            readValue: (row, fieldConfig) => readRowValue(row.head, fieldConfig),
+            readValue: readRowValue,
             readGroup: readRowGroup,
             readStableKey: readRowStableKey,
         });
     });
 
-    const nextCells = [];
-    sortedRows.forEach((row) => {
-        row.cells.forEach((cell) => nextCells.push(cell));
-    });
-
-    const orderChanged = nextCells.length !== rowCells.length || nextCells.some((cell, index) => cell !== rowCells[index]);
+    const orderChanged = sortedRows.some((row, index) => row !== rows[index]);
     if (orderChanged) {
         const fragment = document.createDocumentFragment();
-        nextCells.forEach((cell) => fragment.appendChild(cell));
-        grid.appendChild(fragment);
+        sortedRows.forEach((row) => fragment.appendChild(row));
+        list.appendChild(fragment);
     }
 
-    refreshCollectionNavigation(grid, variantName, currentToken, pageCollectionSource);
+    refreshCollectionNavigation(list, variantName, currentToken, pageCollectionSource);
 }
 
-function applySortableGrids() {
-    const grids = Array.from(document.querySelectorAll('[data-sortable="true"][data-sort-variant]'));
-    grids.forEach((grid) => applySortableGrid(grid));
+function applySortableLists() {
+    const lists = Array.from(document.querySelectorAll('[data-sortable="true"][data-sort-variant]'));
+    lists.forEach((list) => applySortableList(list));
 }
 
-function initSortableGrids() {
-    applySortableGrids();
+function initSortableLists() {
+    applySortableLists();
 
     document.addEventListener('click', (event) => {
         const control = event.target.closest('a[data-sort-control="true"]');
@@ -110,10 +91,10 @@ function initSortableGrids() {
             || event.shiftKey || event.altKey || control.hasAttribute('download')
             || (control.target && control.target !== '_self')) return;
 
-        const grid = control.closest('[data-sortable="true"][data-sort-variant]');
-        if (!grid) return;
+        const list = control.closest('[data-sortable="true"][data-sort-variant]');
+        if (!list) return;
 
-        const variantName = (grid.dataset.sortVariant || '').toLowerCase();
+        const variantName = (list.dataset.sortVariant || '').toLowerCase();
         const variant = SORT_VARIANTS[variantName];
         const field = (control.dataset.sortField || '').toLowerCase();
         const defaultOrder = (control.dataset.sortDefaultOrder || 'asc').toLowerCase();
@@ -126,11 +107,11 @@ function initSortableGrids() {
 
         event.preventDefault();
         writeSortToken(nextToken, variant.defaultToken);
-        applySortableGrids();
+        applySortableLists();
     });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    initSortableGrids();
+    initSortableLists();
 });
-window.addEventListener('hashchange', applySortableGrids);
+window.addEventListener('hashchange', applySortableLists);

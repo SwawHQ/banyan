@@ -10,7 +10,7 @@
 /* Static HTML keeps the information accessible without scripting and in print.
    In interactive views aria-expanded is the only open/closed state. */
 @media screen and (scripting: enabled) {
-    .page-stage:has(#document-aside-toggle[aria-expanded="false"]) > .document-aside {
+    .page-shell:has(#document-aside-toggle[aria-expanded="false"]) > .document-aside {
         display: none;
     }
 
@@ -24,7 +24,7 @@
         margin-block: 0.08rem 8px;
     }
 
-    .document-tools .collection-item-link {
+    .document-tools .item-control {
         padding: 0 0.35rem;
         line-height: var(--column-line-height);
     }
@@ -50,7 +50,7 @@
     color: var(--muted);
 }
 
-.document-meta__row > .collection-item-icon {
+.document-meta__row > .item-icon {
     /* Center the icon on the first text line, including wrapped paths. */
     block-size: 1lh;
 }
@@ -69,13 +69,13 @@
     color: var(--muted);
 }
 
-.document-aside .collection-item-link {
+.document-aside .item-control {
     inline-size: 100%;
     align-items: baseline;
     padding: 0;
 }
 
-.document-aside .collection-item-title {
+.document-aside .item-title {
     overflow: visible;
     white-space: normal;
 }
@@ -98,7 +98,7 @@
     margin-block: 0.08rem;
 }
 
-.document-toc__h3 .collection-item-title {
+.document-toc__h3 .item-title {
     padding-inline-start: 1em;
 }
 

@@ -10,9 +10,9 @@
 
 使用工具分类时，在站点 `hugo.toml` 注册 `tool = "tools"`，文章用 `tools: [free, first-party]` 归类，全部入口声明 `aggregate: /tools`。主题默认入口位于 `content/tools/`、`content/all-tools/`。`list: products`、`offer`、`products_*` 文案键与 `product` 图标保留通用产品展示语义，与分类法名称独立。
 
-`/d/` 不声明 `root_nav`。它继续渲染目录页，文章的目录来源、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤仅发生在 `feature-browse/navigation/root/render.html`，`feature-browse/navigation/root/pages.html` 保留完整结构供归属与来源模型使用。
+`/d/` 不声明 `root_nav`。它继续渲染目录页，文章的目录来源、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤发生在 `feature-browse/navigation/root/model.html`，`root/pages.html` 保留完整结构供归属与来源模型使用；`root/render.html` 装配导航和公共列表。
 
-## 在哪里改表格
+## 在哪里改列表
 
 | 文件（每种语言分别配置） | 当前声明 | 列出的对象 |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ list: products
 
 原有 WSL 文章仍全部保留，只把列换成名称、价格、价值说明；没有 `offer` 的文章显示价格 `—`。改成 `list: all` 就使用名称、更新时间、大小、路径列；改成 `list: directory` 就使用名称、更新时间、数量／大小列；改成 `list: name` 就只显示带图标的名称列。没有声明时，继承最近内容祖先的 `list`。普通文章仍使用 `page-article`，不会因祖先的列表声明变成列表。
 
-新增普通列表目录时使用 `layout: page-collection`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，表格自动在介绍后出现，旧的 `section-list`、`taxonomy-list`、`all-list`、`products-list` shortcode 已删除。
+新增普通列表目录时使用 `layout: page-collection`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，列表自动在介绍后出现。
 
 `aggregate` 只用于汇总入口，指向一个 section 或 taxonomy 根。它不从父目录继承。普通目录和分类页无需写 `aggregate`，也不写 `list_source` 或 `product_filter`。主题默认页面的站点专用修改可通过项目同路径文件覆盖；三种语言各自保留完整 front matter。
 
@@ -59,17 +59,9 @@ slots:
 
 `name` 描述内容作者看到的列表类型，`base` 描述样式实现层，因此没有 `list: base` 或 `list_columns`。`choice` 同样使用单列基底；语言／外观布局提供选项，语言与外观脚本分别处理操作，不需要先转成 `name` 集合。
 
-| 样式文件 | 职责 |
-| --- | --- |
-| `assets/css/collection-item.css` | 共用条目行、图标占位、链接／按钮 reset、悬停及选中状态 |
-| `assets/css/collection-grid.css` | `.collection-list` 默认单列、列头、网格间距和路径列行结构，供 name、choice、第一列、路径列及多列表格共同使用 |
-| `assets/css/collection-table.css` | 多列表格的滚动、字段呈现，以及 `.collection-list--directory`、`--all`、`--products` 三种列定义 |
+`list` 由集合模型解析，决定渲染器输出的列表变体；`slots.breadcrumb` 决定路径区域是否存在。公共 DOM、行为标记与字段宽度见 [UI 命名与职责](ui-naming.md#样式类与行为标记)，样式归属与发布边界见 [CSS 源码与发布名](ui-naming.md#css-源码与发布名)。
 
-`list` 由集合模型解析，决定渲染器输出的列表变体；`slots.breadcrumb` 决定路径区域是否存在。`system-ui/page-styles.html` 统一发布稳定的 `page.css`，其中包含三个集合样式文件以及路径、元信息和两个小型入口功能的样式。CSS 由对应类名匹配生效，不再按 view／slot 组合生成近乎相同的文件。SSR 与动态路径列统一使用 `.collection-*` 类名，旧 `grid-*`／`cell-*` 选择器已删除。根入口、路径列、主列表和 choice 的条目状态统一由 `collection-item.css` 所有。
-
-公共单列无需单独的名称列表 CSS；带列头的网格使用 `.collection-list--headed`，多列表格使用 `.collection-list--table`，路径列使用 `.collection-list--path-column`。`.collection-panel` 仅限制容器宽度，不被视为列表。集合页只有确实渲染 `.prose` 时才取得单一 `prose.css`；纯列表不会加载正文包。
-
-行为连接独立于样式：每个单元格有 `data-collection-cell="name|date|count|size|path|price|value"`，列头另有 `data-collection-header`；可进入的条目或选择按钮有 `data-collection-entry`，排序箭头有 `data-sort-indicator`。排序按这些标记和既有 `data-sort-*` 数据处理。样式分工见 [UI 命名与职责](ui-naming.md#css-源码与发布名)。
+集合页只有确实渲染 `.prose` 时才取得单一 `prose.css`；纯列表不会加载正文包。
 
 ## 站点信息与 RSS
 
@@ -128,9 +120,11 @@ list_icon_file: product
 
 语言和外观页面在顶层 front matter 声明 `list: choice`，与 `build.list: local` 是两件事：前者选择行的呈现协议，后者控制 Hugo 是否把页面列入父页面集合。`choice` 使用与其他列表相同的行、图标槽和 `.is-current` 状态，但不排序、不注册 collection 来源，也不参与文章路径。
 
-选择列表的标题由布局传入，作为网格内的 `h1` 列头，显示“语言／外观”。它与目录表共用列头高度、间距和表头横线；共享标题单元格使用 flex 排布，避免文字图标与 SVG 的不同基线撑出额外行高。语言按配置 `weight` 排列，外观按“跟随系统、浅色、深色”排列，列头不显示排序操作或箭头。
+选择列表的标题由布局传入，显示“语言／外观”。语言按配置 `weight` 排列，外观按“跟随系统、浅色、深色”排列，列头不显示排序操作或箭头。公共列头与条目样式见 [UI 命名与职责](ui-naming.md#样式类与行为标记)。
 
-选择列表只接受两种原生控件：链接或按钮。共享模板负责文字、图标、选中样式、可访问状态和 `data-*` 输出；页面布局负责提供选项，功能脚本只响应自己的标记。语言项保留真实 `href` 和 `data-language-choice`，无 JavaScript 时仍可切换；外观项使用按钮和 `data-theme-choice`。模板不认识语言代码或主题值，front matter 也不声明脚本文件。
+选择列表只接受两种原生控件：链接或按钮。`system-ui/choice/render.html` 校验选项，再调用公共列表，保留标题的 `h1` 结构。`system-ui/list/item-link.html` 与 `item-button.html` 负责原生控件；`item-content.html` 负责文字和图标。页面布局提供选项，功能脚本只响应自己的标记。语言项保留真实 `href` 和 `data-language-choice`，无 JavaScript 时仍可切换；外观项使用按钮和 `data-theme-choice`。模板不认识语言代码或主题值，front matter 也不声明脚本文件。
+
+选择按钮显式传入 `ariaPressed` 的 `"true"` 或 `"false"`。更新检查操作使用同一个按钮模板，省略此状态；按钮将 `labelAttr` 传给文字模板，保留更新脚本使用的文案标记。
 
 外观的三个子项在 `layouts/page-appearance.html` 中通过 `icon` 分别引用 `appearance-auto`、`appearance-light`、`appearance-dark`，图形定义在 `data/icons.toml`。三个 SVG 使用相同的 `16×16` 画布、圆心、半径和描边，分别呈半实心、空心、实心，避免 Unicode 字体回退造成尺寸不一致。颜色继承 `currentColor`，图形为 `1rem`，复用共享占位及按需 sprite；图标不参与按钮的可访问名称。第一列入口继续使用页面声明的 `icon: theme` 云月图标，语言项使用相同的 `icon: { text: "…" }`，不再传递 `iconText`。
 
@@ -173,7 +167,13 @@ weight: 30
 
 ## 来源与排序
 
-主表和页面内嵌的路径来源共用 `feature-browse/collection/rows.html`；一个列表页只注册一次 `collection` 来源。目录／分类关系适配分别在 `feature-browse/collection/rows/section.html`、`feature-browse/collection/rows/taxonomy.html`，展示在 `feature-browse/collection/render.html`。排序字段由 `feature-browse/collection/config.html` 解析 `list` 后给出，浏览器不按路径或 provider 猜表格种类。
+主表和页面内嵌的路径来源共用 `feature-browse/collection/rows.html`；一个列表页只注册一次 `collection` 来源。目录／分类关系适配分别在 `rows/section.html`、`rows/taxonomy.html`，其中的文章与汇总成员共用 `rows/page.html` 构造行。排序字段由 `feature-browse/collection/config.html` 解析 `list` 后给出，浏览器不按路径或 provider 猜表格种类。
+
+`feature-browse/navigation/source/models.html` 按集合地址生成 `columns_by_href`，复用列入 `Site.Pages` 的集合的 config、rows、source 和 compact payload。`feature-browse/collection/render.html` 从中取得配置与领域 row，生成 `from` 链接及排序属性，并输出列表 schema。它调用 `item-fields.html` 生成条目字段 HTML，调用 `sort/header.html` 配置并生成表头字段，再交给 `system-ui/list/render.html` 装配完整列表。公共列表不读取集合模型。
+
+`build.list: local` 或 `build.list: never` 的合法集合页可独立渲染，但不在 `Site.Pages` 中。registry 缺少该页时，`collection/render.html` 直接用现有 config、rows 和 source 构建本页记录，`source/context.html` 直接构建本页 source；这些页面遵循相同的集合协议。
+
+collection source 统一使用 `logicalPath`、`sortVariant`、`defaultSort`，Hugo 与浏览器使用相同字段。config 和领域 row 保留内部 snake_case 名称，compact payload 保留紧凑字段协议。
 
 名称比较由 Hugo 执行一次，生成 `sort_name` 数值名次，显示文字仍保留在 `text`。这样首帧、主表与路径列使用同一名称顺序，不因浏览器语言或 ICU 实现不同而换位。更新时间降序中时间相同的条目也使用名称降序；升序相反。实现依据见 [Hugo 的稳定排序实现](https://github.com/gohugoio/hugo/blob/v0.157.0/tpl/collections/sort.go)。
 
@@ -185,6 +185,6 @@ weight: 30
 
 运行 `swban node tests/nav/rebuild.mjs` 可验证 Hugo 开发预览的增量重建：使用根站点内容和临时目录标题覆盖层，先访问正文，再修改祖先标题，检查三语言正文元信息同步更新。路径模型每次渲染读取当前祖先，不能存入跨增量重建保留的页面 Scratch，否则祖先改名后可能继续输出旧名称。
 
-路径来源直接内嵌在各语言页面，使用当前语言模型的 `current_collection_items` 和祖先层 `collection_items`。浏览器在页面边界一次解码，主表与路径列使用同一份语言和排序事实。
+路径来源直接内嵌在各语言页面，当前集合数据放在 `currentColumn.payload`，祖先集合数据放在 `columns[].payload`。非集合 owner 保留静态 `items`。主表与路径列使用同一份语言和排序事实；读取与解码缓存见 [导航状态](navigation-state.md#内嵌-collection-payload)。
 
 在根项目执行 `swban node tests/collections/build.mjs`。它只向系统临时目录写内容覆盖层，完成后清理，基于根内容构建 directory／all／products／name 四种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。name 用例同时覆盖目录、子目录继承、分类、聚合入口，检查首帧仅名称列、名称升降序、进入文章后的路径列、刷新及历史恢复。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

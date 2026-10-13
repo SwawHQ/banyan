@@ -4,7 +4,7 @@
 {{- return (dict
   "node" $page
   "key" (partial "feature-browse/collection/rows/page-key.html" (dict "ctx" $page))
-  "kind" "page" "href" $page.RelPermalink "schema_href" $page.RelPermalink
+  "kind" "page" "href" $page.RelPermalink
   "title" $page.Title "text" $text "prefetch_kind" "post"
   "sort_group" "1" "sort_name" $text
   "sort_date" (cond $page.Lastmod.IsZero "" ($page.Lastmod.Format "20060102150405")) "date_text" (cond $page.Lastmod.IsZero "—" ($page.Lastmod.Format "2006-01-02"))

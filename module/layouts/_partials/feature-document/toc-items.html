@@ -2,8 +2,8 @@
   {{- if and .ID (in (slice 2 3) .Level) -}}
     {{- $href := printf "#%s" (.ID | urlquery | replaceRE "\\+" "%20") -}}
     <li class="document-toc__h{{ .Level }}">
-      <a class="collection-item-link" href="{{ $href }}">
-        <span class="collection-item-title">{{ .Title | plainify | htmlUnescape }}</span>
+      <a class="item-control" href="{{ $href }}">
+        <span class="item-title">{{ .Title | plainify | htmlUnescape }}</span>
       </a>
     </li>
   {{- end -}}

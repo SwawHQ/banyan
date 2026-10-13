@@ -16,7 +16,7 @@ async function rendered(page,expected) {
     const status=node.querySelector('[data-site-update-status]'),action=node.querySelector('[data-site-update-action="check"]');
     return {state:node.dataset.siteUpdateState,copy,runtime,controlled:node.querySelector('[data-pwa-controlled]')?.textContent,
       hasController:Boolean(navigator.serviceWorker?.controller),status:status?.textContent,role:status?.getAttribute('role'),live:status?.getAttribute('aria-live'),
-      action:action?{tag:action.tagName,type:action.getAttribute('type'),disabled:action.disabled,label:action.querySelector('[data-site-update-action-label]')?.textContent}:null};
+      action:action?{tag:action.tagName,type:action.getAttribute('type'),pressed:action.getAttribute('aria-pressed'),disabled:action.disabled,label:action.querySelector('[data-site-update-action-label]')?.textContent}:null};
   });
   const {state,copy,runtime,action}=value;
   for(const name of ['yes','no','status','unavailable'])assert.ok(typeof copy[name]==='string'&&copy[name].trim(),'Panel labels must contain '+name+'.');
@@ -35,6 +35,7 @@ async function rendered(page,expected) {
   if(action) {
     assert.equal(action.tag,'BUTTON','The update check must be a native button.');
     assert.equal(action.type,'button','The update check must not submit a form.');
+    assert.equal(action.pressed,null,'The update check must not expose a pressed state.');
     assert.equal(action.disabled,['checking','installing','unavailable'].includes(state),'The check button must reflect whether checking is available.');
     const label=copy[state==='checking'?'checking':'check'];
     assert.ok(typeof label==='string'&&label.trim(),'The check button must have a localized label.');

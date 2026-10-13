@@ -247,20 +247,19 @@ function findSelectedRow(rows, selectedPathname = '') {
     }) || null;
 }
 
-export function buildSelectedBreadcrumbItem(source, selectedPathname = '', selectedTitle = '') {
+export function buildSelectedPathColumn(source, selectedPathname = '', selectedTitle = '') {
     const normalizedSelectedPathname = typeof selectedPathname === 'string' ? selectedPathname.trim() : '';
     const normalizedSelectedTitle = typeof selectedTitle === 'string' ? selectedTitle.trim() : '';
     if (!source || !normalizedSelectedPathname) {
         return null;
     }
 
-    const collectionSource = normalizeCollectionSource(source?.currentCollectionSource)
-        || normalizeCollectionSource(source);
+    const collectionSource = normalizeCollectionSource(source.currentColumn?.source);
     if (!collectionSource || !supportsItemsPayloadProvider(collectionSource.provider)) {
         return null;
     }
 
-    const decoded = source.currentCollectionItems;
+    const decoded = source.currentColumn?.payload;
     if (!decoded) {
         return null;
     }
@@ -281,28 +280,5 @@ export function buildSelectedBreadcrumbItem(source, selectedPathname = '', selec
             selectedColumnItem.title = normalizedSelectedTitle;
         }
     }
-    const sortState = readRequestedSortState(collectionSource, decoded.sortVariant, decoded.defaultSort);
-    const href = buildBreadcrumbRowHref(selectedRow, collectionSource, sortState);
-    if (!href) {
-        return null;
-    }
-
-    const item = {
-        text: typeof selectedRow.text === 'string' && selectedRow.text !== '' ? selectedRow.text : selectedKey,
-        href,
-        current: true,
-        column_items: columnItems,
-        collection_source: collectionSource,
-    };
-    const icon = normalizeIcon(selectedRow.icon);
-    if (icon) item.icon = icon;
-    if (normalizedSelectedTitle) {
-        item.title = normalizedSelectedTitle;
-    }
-    const kind = normalizeBreadcrumbItemKind(selectedRow.kind);
-    if (kind) {
-        item.kind = kind;
-    }
-
-    return item;
+    return { source: collectionSource, items: columnItems };
 }

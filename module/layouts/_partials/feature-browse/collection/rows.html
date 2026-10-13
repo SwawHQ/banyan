@@ -1,5 +1,6 @@
 {{- $page := .page -}}
-{{- $config := partial "feature-browse/collection/config.html" (dict "page" $page) -}}
+{{- $config := .config -}}
+{{- if not $config -}}{{- $config = partial "feature-browse/collection/config.html" (dict "page" $page) -}}{{- end -}}
 {{- $rows := slice -}}
 {{- with $page.Params.aggregate -}}
   {{- $target := $page.Site.GetPage . -}}

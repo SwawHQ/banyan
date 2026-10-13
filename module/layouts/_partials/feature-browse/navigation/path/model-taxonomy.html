@@ -10,57 +10,47 @@
   "href" $rootHref
   "current" (ne $ctx.Kind "term")
 ) -}}
+{{- $nodes := slice (dict "item" (index $items 0) "owner" false) -}}
 {{- if eq $ctx.Kind "term" -}}
   {{- if eq (index $spec "mode") "tree" -}}
     {{- $segments := split (printf "%v" $ctx.Data.Term) $separator -}}
     {{- $path := slice -}}
     {{- $lastIndex := sub (len $segments) 1 -}}
+    {{- $owner := $rootPage -}}
     {{- range $i, $seg := $segments -}}
       {{- if eq $seg "" -}}{{- continue -}}{{- end -}}
       {{- $path = $path | append $seg -}}
       {{- $fullValue := delimit $path $separator -}}
-      {{- $ownerKind := cond (eq $i 0) "root" "term" -}}
-      {{- $ownerValue := cond (eq $i 0) "" (delimit (first $i $path) $separator) -}}
       {{- $itemHref := partial "feature-browse/taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" $fullValue) -}}
       {{- $itemText := partial "feature-browse/taxonomy/value-label.html" (dict "ctx" $ctx "spec" $spec "value" $fullValue "fallback" $seg) -}}
       {{- $itemTitle := $itemText -}}
-      {{- with partial "feature-browse/taxonomy/term-page.html" (dict "ctx" $ctx "spec" $spec "value" $fullValue) -}}
+      {{- $itemPage := partial "feature-browse/taxonomy/term-page.html" (dict "ctx" $ctx "spec" $spec "value" $fullValue) -}}
+      {{- with $itemPage -}}
         {{- $itemTitle = .Title -}}
       {{- end -}}
-      {{- $columnItems := partial "feature-browse/navigation/path/taxonomy-items.html" (dict
-        "ctx" $ctx
-        "spec" $spec
-        "owner_kind" $ownerKind
-        "owner_value" $ownerValue
-        "selected_href" $itemHref
-      ) -}}
-      {{- $items = $items | append (dict
+      {{- $item := dict
         "text" $itemText
         "title" $itemTitle
         "href" $itemHref
         "current" (eq $i $lastIndex)
-        "column_items" $columnItems
-      ) -}}
+      -}}
+      {{- $items = $items | append $item -}}
+      {{- $nodes = $nodes | append (dict "item" $item "owner" $owner) -}}
+      {{- $owner = $itemPage -}}
     {{- end -}}
   {{- else -}}
-    {{- $columnItems := partial "feature-browse/navigation/path/taxonomy-items.html" (dict
-      "ctx" $ctx
-      "spec" $spec
-      "owner_kind" "root"
-      "owner_value" ""
-      "selected_href" $ctx.RelPermalink
-    ) -}}
-    {{- $items = $items | append (dict
+    {{- $item := dict
       "text" ($ctx.LinkTitle | default $ctx.Title)
       "title" $ctx.Title
       "href" $ctx.RelPermalink
       "current" true
-      "column_items" $columnItems
-    ) -}}
+    -}}
+    {{- $items = $items | append $item -}}
+    {{- $nodes = $nodes | append (dict "item" $item "owner" $rootPage) -}}
   {{- end -}}
 {{- end -}}
 {{- $result := dict
-  "items" $items
+  "nodes" $nodes
   "schema_items" $items
 -}}
 {{- return $result -}}

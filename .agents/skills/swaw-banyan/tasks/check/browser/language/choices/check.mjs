@@ -10,11 +10,11 @@ async function readChoices(page) {
         code:link.dataset.languageChoice,href:link.getAttribute('href'),tag:link.tagName,
         translated:link.dataset.hasTrans==='true',disabled:link.hasAttribute('disabled')||link.getAttribute('aria-disabled')==='true',
         current:link.getAttribute('aria-current')||'',selected:link.classList.contains('is-current'),
-        label:link.querySelector('.collection-item-title')?.textContent.trim(),
-        left:link.querySelector('.collection-item-title')?.getBoundingClientRect().left,
-        iconHidden:link.querySelector('.collection-item-icon')?.getAttribute('aria-hidden')==='true'||
-          link.querySelector('.collection-item-icon .icon')?.getAttribute('aria-hidden')==='true',
-        icon:link.querySelector('.collection-item-icon')?.textContent.trim()
+        label:link.querySelector('.item-title')?.textContent.trim(),
+        left:link.querySelector('.item-title')?.getBoundingClientRect().left,
+        iconHidden:link.querySelector('.item-icon')?.getAttribute('aria-hidden')==='true'||
+          link.querySelector('.item-icon .icon')?.getAttribute('aria-hidden')==='true',
+        icon:link.querySelector('.item-icon')?.textContent.trim()
       }))};
   });
 }

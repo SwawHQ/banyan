@@ -56,7 +56,7 @@ function buildProjectedCollectionSortsTokens(logicalPath, currentToken) {
     ];
 }
 
-function updateCollectionEntryLinks(grid, variantName, currentToken, pageCollectionSource) {
+function updateCollectionEntryLinks(list, variantName, currentToken, pageCollectionSource) {
     const variant = SORT_VARIANTS[variantName];
     if (!variant) return;
 
@@ -73,7 +73,7 @@ function updateCollectionEntryLinks(grid, variantName, currentToken, pageCollect
         ? buildDefaultSortsTokens(pageCollectionSource.logicalPath, variant.defaultToken, 1)
         : [];
 
-    grid.querySelectorAll('[data-collection-cell="name"] [data-collection-entry][href]').forEach((link) => {
+    list.querySelectorAll('[data-list-item] > [data-list-entry][href]').forEach((link) => {
         const rawHref = link.getAttribute('href') || '';
         if (!rawHref) return;
 
@@ -98,12 +98,12 @@ function updateCollectionEntryLinks(grid, variantName, currentToken, pageCollect
     });
 }
 
-function updateCollectionSortControls(grid, variantName, currentToken) {
+function updateCollectionSortControls(list, variantName, currentToken) {
     const variant = SORT_VARIANTS[variantName];
     const current = parseSortToken(currentToken);
     if (!variant || !current) return;
 
-    grid.querySelectorAll('a[data-sort-control="true"]').forEach((control) => {
+    list.querySelectorAll('a[data-sort-control="true"]').forEach((control) => {
         const field = (control.dataset.sortField || '').toLowerCase();
         const defaultOrder = (control.dataset.sortDefaultOrder || 'asc').toLowerCase();
         const active = field === current.field;
@@ -126,20 +126,20 @@ function updateCollectionSortControls(grid, variantName, currentToken) {
     });
 }
 
-export function refreshCollectionNavigation(grid, variantName, currentToken, pageCollectionSource) {
-    if (!(grid instanceof Element)) return;
-    updateCollectionSortControls(grid, variantName, currentToken);
-    updateCollectionEntryLinks(grid, variantName, currentToken, pageCollectionSource);
+export function refreshCollectionNavigation(list, variantName, currentToken, pageCollectionSource) {
+    if (!(list instanceof Element)) return;
+    updateCollectionSortControls(list, variantName, currentToken);
+    updateCollectionEntryLinks(list, variantName, currentToken, pageCollectionSource);
 }
 
 export function refreshMainCollectionNavigation() {
-    const grid = document.querySelector('.slot-main [data-sortable="true"][data-sort-variant]');
-    if (!(grid instanceof Element)) return;
+    const list = document.querySelector('.slot-main [data-sortable="true"][data-sort-variant]');
+    if (!(list instanceof Element)) return;
 
-    const variantName = (grid.dataset.sortVariant || '').toLowerCase();
+    const variantName = (list.dataset.sortVariant || '').toLowerCase();
     const variant = SORT_VARIANTS[variantName];
     if (!variant) return;
 
     const currentToken = readCurrentSortToken(variantName, variant.defaultToken);
-    refreshCollectionNavigation(grid, variantName, currentToken, readPageCollectionSource());
+    refreshCollectionNavigation(list, variantName, currentToken, readPageCollectionSource());
 }

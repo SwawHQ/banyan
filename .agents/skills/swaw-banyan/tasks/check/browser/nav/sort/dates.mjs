@@ -22,7 +22,7 @@ export async function checkDates(page,grid,readRows) {
   const ascending=dateOrder(before).map(row=>row.key),expectedDescending=[...ascending].reverse();
   assert.deepEqual(before.map(row=>row.key),expectedDescending,'Initial date order must follow the complete group/date/name/href tuple.');
   const marker=await grid.evaluate(node=>{
-    window.__swbanDateSort={node,cells:[...node.children],marker:crypto.randomUUID()};
+    window.__swbanDateSort={node,cells:[...node.querySelectorAll('*')].map(node=>({node,parent:node.parentElement})),marker:crypto.randomUUID()};
     return window.__swbanDateSort.marker;
   });
   let requests=0;
@@ -41,8 +41,9 @@ export async function checkDates(page,grid,readRows) {
         'In-place sorting must not create a pending canvas navigation.');
       assert.ok(await grid.evaluate((node,wanted)=>{
         const probe=window.__swbanDateSort;
-        return probe?.marker===wanted&&probe.node===node&&probe.cells.length===node.children.length&&probe.cells.every(cell=>cell.parentElement===node);
-      },marker),'Date sorting must reuse its document, grid, headers and cells.');
+        return probe?.marker===wanted&&probe.node===node&&probe.cells.length===node.querySelectorAll('*').length
+          &&probe.cells.every(record=>record.node.parentElement===record.parent&&node.contains(record.node));
+      },marker),'Date sorting must reuse its document, grid, headers, complete rows and cells.');
       cases.push({direction,keys:rows.map(row=>row.key)});
     }
   } finally {page.off('request',record);}

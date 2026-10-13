@@ -21,12 +21,12 @@ export async function toggleColumn(page,href) {
   assert.ok(['↑','↓'].includes(before.indicator),'Column must expose its current sort direction.');
   const marker=await column.evaluate(node=>{
     const toggle=node.querySelector('[data-collection-sort-toggle]');toggle.focus({preventScroll:true});
-    const probe=window.__swbanColumnSort={node,nodes:[...node.querySelectorAll('[data-collection-header],[data-collection-entry],.collection-item-icon')],
+    const probe=window.__swbanColumnSort={node,nodes:[...node.querySelectorAll('[data-list-header],[data-list-item],[data-item-field],.item-icon')],
       marker:crypto.randomUUID(),running:true,minimumVisibleRows:Infinity,blankObserved:false};
     const sample=()=>{
       if(!probe.running)return;
-      const rail=node.closest('.path-columns'),railStyle=getComputedStyle(rail),style=getComputedStyle(node);
-      const count=[...node.querySelectorAll('[data-collection-entry]')].filter(link=>{
+      const rail=node.closest('[data-slot=breadcrumb]'),railStyle=getComputedStyle(rail),style=getComputedStyle(node);
+      const count=[...node.querySelectorAll('[data-list-entry]')].filter(link=>{
         const box=link.getBoundingClientRect(),style=getComputedStyle(link);
         return box.width>0&&box.height>0&&style.display!=='none'&&style.visibility!=='hidden'&&Number(style.opacity)>0;
       }).length;
@@ -45,7 +45,7 @@ export async function toggleColumn(page,href) {
     // Activate without Playwright scrolling the header back into view.
     await column.locator('[data-collection-sort-toggle]').evaluate(node=>node.click());
     await waitForBrowse(page);await afterPaint(page);
-    assert.equal(normalizedSortURL(page.url(),before.source.default_sort),normalizedSortURL(before.toggle,before.source.default_sort),
+    assert.equal(normalizedSortURL(page.url(),before.source.defaultSort),normalizedSortURL(before.toggle,before.source.defaultSort),
       'Sorting must follow the declared toggle URL, treating default sort slots and placeholders equally.');
   } finally {
     page.off('request',record);
@@ -81,9 +81,9 @@ export async function check({page,baseUrl,options}) {
   const prefetch=await checkPrefetchSlots(page);
   const parsed=initial.columns.find(column=>column.href===selected.href);
   const slots=(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('sorts')||'').split(',');
-  const depth=selected.source.logical_path.split('/').filter(Boolean).length;
+  const depth=selected.source.logicalPath.split('/').filter(Boolean).length;
   const requested=slots[Math.min(depth,slots.length)-1];
-  assert.equal(columnSort(selected),requested&&requested!=='_'?requested:selected.source.default_sort,
+  assert.equal(columnSort(selected),requested&&requested!=='_'?requested:selected.source.defaultSort,
     'Initial breadcrumb sort must reflect the requested slot or declared default.');
   // A requested source can replace SSR row contents; pure sorting must reuse them.
   if(!initial.sourcePending)assert.ok(await page.evaluate(href=>{
@@ -92,7 +92,7 @@ export async function check({page,baseUrl,options}) {
   },selected.href),'Initial sorting must retain server-rendered rows, icons and headers.');
   const column=columnLocator(page,selected.href);
   const probe=await column.evaluate(node=>{
-    const links=[...node.querySelectorAll('[data-collection-entry]')].map(link=>{
+    const links=[...node.querySelectorAll('[data-list-entry]')].map(link=>{
       const url=new URL(link.href);url.searchParams.set('swban-probe','keep');const fields=new URLSearchParams(url.hash.slice(1));fields.set('anchor','swban-reading');url.hash=fields.toString();link.href=url.href;
       return {key:url.pathname,from:new URLSearchParams(url.hash.slice(1)).get('from')};
     });

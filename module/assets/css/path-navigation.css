@@ -1,21 +1,10 @@
 /* Path columns use the same layout at every width; the document scrolls horizontally. */
-html[data-entry-breadcrumb-pending="true"] .path-columns,
-html[data-breadcrumb-sort-pending="true"] .path-columns {
+html[data-entry-breadcrumb-pending="true"] .path-column,
+html[data-breadcrumb-sort-pending="true"] .path-column {
     opacity: 0;
     pointer-events: none;
 }
 
-.path-columns {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: var(--navigation-column-inline);
-    column-gap: var(--page-shell-gap-inline);
-    align-items: start;
-    block-size: 100%;
-    min-block-size: 0;
-}
-
-.slot-breadcrumb,
 .path-navigation {
     display: contents;
 }
@@ -25,51 +14,45 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
     min-inline-size: 0;
-    inline-size: var(--navigation-column-inline);
 }
 
 /* Path-specific headers and list adaptation follow the shared collection rules. */
-.collection-list--path-column .collection-header--path {
+.item-list--path-column .list-header > .item-field--name {
     display: flex;
     align-items: baseline;
     min-width: 0;
     white-space: nowrap;
 }
 
-.collection-column-label {
+.path-column-label {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.collection-column-separator,
-.collection-column-sort {
+.path-column-separator,
+.path-column-sort {
     flex: none;
 }
 
-.collection-column-separator {
+.path-column-separator {
     margin-inline: 0.24rem;
     opacity: 0.72;
 }
 
-.collection-column-label:hover,
-.collection-column-label:focus-visible,
-.collection-column-sort:hover,
-.collection-column-sort:focus-visible {
+.path-column-label:hover,
+.path-column-label:focus-visible,
+.path-column-sort:hover,
+.path-column-sort:focus-visible {
     color: var(--link-hover);
 }
 
-.collection-list--path-column .collection-item-link {
-    white-space: nowrap;
-}
-
-.collection-list--path-column .collection-item-title {
-    overflow-wrap: normal;
-    text-wrap: nowrap;
-}
-
 @media print {
-    .path-columns {
-        block-size: auto;
+    .path-navigation {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: var(--navigation-column-inline);
+        column-gap: var(--page-shell-gap-inline);
+        align-items: start;
     }
 }

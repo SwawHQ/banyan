@@ -7,12 +7,12 @@ export async function check({page,baseUrl,options}) {
   await page.emulateMedia({reducedMotion:'reduce'});
   const results=[];
   const paint=locator=>locator.evaluate(node=>({color:getComputedStyle(node).color,background:getComputedStyle(node,'::before').backgroundColor,
-    ring:getComputedStyle(node,'::before').boxShadow,underline:getComputedStyle(node.querySelector('.collection-item-title')).textDecorationThickness}));
+    ring:getComputedStyle(node,'::before').boxShadow,underline:getComputedStyle(node.querySelector('.item-title')).textDecorationThickness}));
   for(const width of options.widths.split(',').map(Number)) {
     await page.setViewportSize({width,height:900});await openArticle(page,baseUrl+options.page);
     const toggle=page.locator('#document-aside-toggle'),close=page.locator('#document-aside-close');
     const spacing=await toggle.evaluate(node=>{
-      const list=document.querySelector('[data-root-navigation] .collection-list'),row=list.querySelector('.collection-item-link'),title=document.querySelector('.prose h1');
+      const list=document.querySelector('[data-root-navigation] .item-list'),row=list.querySelector('.item-control'),title=document.querySelector('.prose h1');
       return {height:node.getBoundingClientRect().height,rowHeight:row.getBoundingClientRect().height,
         gap:node.getBoundingClientRect().top-title.getBoundingClientRect().bottom,rowGap:parseFloat(getComputedStyle(list).rowGap)};
     });
@@ -24,7 +24,7 @@ export async function check({page,baseUrl,options}) {
       'The close control must follow the chapter list.');
     for(const theme of ['light','dark']) {
       await setTheme(page,theme);
-      const reference=page.locator('[data-root-navigation] .collection-item-link:not(.is-current)').first();
+      const reference=page.locator('[data-root-navigation] .item-control:not(.is-current)').first();
       await reference.hover();await setTheme(page,theme);const preview=await paint(reference);
       await toggle.hover();await setTheme(page,theme);
       assert.deepEqual(await paint(toggle),preview,'The collapsed toggle must reuse navigation hover styles.');
@@ -39,12 +39,12 @@ export async function check({page,baseUrl,options}) {
         await taxonomy.hover();
         assert.equal(await taxonomy.evaluate(node=>getComputedStyle(node).backgroundColor),'rgba(0, 0, 0, 0)','A multi-link metadata row must have no hover background.');
       }
-      const selected=page.locator('[data-root-navigation] .collection-item-link.is-current');
+      const selected=page.locator('[data-root-navigation] .item-control.is-current');
       assert.equal(await selected.count(),1,'The page must have one selected root entry.');
       assert.deepEqual(await paint(toggle),await paint(selected),'The expanded toggle must reuse selected navigation styles.');
       assert.equal(await toggle.evaluate(node=>getComputedStyle(node).borderTopWidth),'0px');
       assert.ok(await page.evaluate(()=>{
-        const starts=['.document-toc a[data-chapter-anchor="main"] .collection-item-title','.document-toc__h2 .collection-item-title','#document-aside-close .collection-item-title']
+        const starts=['.document-toc a[data-chapter-anchor="main"] .item-title','.document-toc__h2 .item-title','#document-aside-close .item-title']
           .map(selector=>document.querySelector(selector).getBoundingClientRect().left);
         return starts.every(left=>Math.abs(left-starts[0])<0.1);
       }),'The close control and top-level chapters must align with the chapter header.');

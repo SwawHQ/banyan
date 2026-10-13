@@ -5,13 +5,13 @@ export function normalizeCollectionSource(source) {
         return null;
     }
 
-    const logicalPath = normalizeFromPath(source.logical_path || source.logicalPath || '');
+    const logicalPath = normalizeFromPath(source.logicalPath || '');
     const provider = typeof source.provider === 'string' ? source.provider.trim().toLowerCase() : '';
-    const sortVariant = typeof (source.sort_variant || source.sortVariant) === 'string'
-        ? (source.sort_variant || source.sortVariant).trim().toLowerCase()
+    const sortVariant = typeof source.sortVariant === 'string'
+        ? source.sortVariant.trim().toLowerCase()
         : '';
-    const defaultSort = typeof (source.default_sort || source.defaultSort) === 'string'
-        ? (source.default_sort || source.defaultSort).trim().toLowerCase()
+    const defaultSort = typeof source.defaultSort === 'string'
+        ? source.defaultSort.trim().toLowerCase()
         : '';
     const label = typeof source.label === 'string' ? source.label.trim() : '';
     const href = typeof source.href === 'string' ? source.href.trim() : '';

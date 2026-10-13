@@ -2,7 +2,7 @@
 {{ range slice (dict "value" .Lastmod "label" "label_updated") (dict "value" .Date "label" "label_published") }}
 {{ if .value }}
 <div class="document-meta__row" aria-label="{{ i18n "article_meta_dates" }}">
-  <span class="collection-item-icon">{{ partial "system-ui/icon/render.html" (dict "name" "clock") }}</span>
+  <span class="item-icon">{{ partial "system-ui/icon/render.html" (dict "name" "clock") }}</span>
   <time class="document-meta__value" datetime="{{ .value.Format "2006-01-02T15:04:05Z07:00" }}">
     {{ i18n .label }} {{ .value.Format "2006-01-02" }}
   </time>

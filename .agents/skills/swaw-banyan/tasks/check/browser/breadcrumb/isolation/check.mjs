@@ -8,7 +8,7 @@ const readMain=page=>page.evaluate(()=>{
   const control=grid.querySelector('[data-sort-active="true"]');
   return {source:JSON.parse(document.body.dataset.pageCollectionSource||'null'),
     field:control?.dataset.sortField,indicator:control?.querySelector('[data-sort-indicator]')?.textContent.trim(),
-    rows:[...grid.querySelectorAll('[data-collection-entry]')].map(link=>({key:new URL(link.href).pathname,href:link.href,text:link.textContent.trim()}))};
+    rows:[...grid.querySelectorAll('[data-list-entry]')].map(link=>({key:new URL(link.href).pathname,href:link.href,text:link.textContent.trim()}))};
 });
 const order=column=>({href:column.href,field:column.field,indicator:column.indicator,rows:column.rows.map(({key,text})=>({key,text}))});
 
@@ -27,8 +27,8 @@ function checkQueryPreservation(before,after) {
 
 function checkMainLinks(main,columns) {
   if(!main)return;
-  assert.ok(main.source?.logical_path,'Main collection must declare its source.');
-  const defaults=main.source.default_sort,depth=main.source.logical_path.split('/').filter(Boolean).length;
+  assert.ok(main.source?.logicalPath,'Main collection must declare its source.');
+  const defaults=main.source.defaultSort,depth=main.source.logicalPath.split('/').filter(Boolean).length;
   const active=main.field+'-'+(main.indicator==='↑'?'asc':'desc');
   const links=main.rows.filter(row=>new URLSearchParams(new URL(row.href).hash.slice(1)).has('from'));
   assert.ok(links.length>0,'Main collection must contain an article with source context.');
@@ -39,11 +39,11 @@ function checkMainLinks(main,columns) {
     assert.equal(tokenAt(depth-1,defaults),active,'Main article links must retain the active collection sort.');
     assert.equal(new URLSearchParams(url.hash.slice(1)).get('sort')||defaults,active,'Main article links must retain their own sort token.');
     for(const column of columns.filter(column=>column.toggle)) {
-      const columnDepth=column.source.logical_path.split('/').filter(Boolean).length;
+      const columnDepth=column.source.logicalPath.split('/').filter(Boolean).length;
       if(columnDepth>=depth)continue;
       const requested=(new URLSearchParams(url.hash.slice(1)).get('sorts')||'').split(',');
       assert.ok(requested.length<=depth,'Main article links must not append an extra sort slot.');
-      assert.equal(tokenAt(columnDepth-1,column.source.default_sort),columnSort(column),
+      assert.equal(tokenAt(columnDepth-1,column.source.defaultSort),columnSort(column),
         'Main article links must reflect each ancestor sort.');
     }
   }

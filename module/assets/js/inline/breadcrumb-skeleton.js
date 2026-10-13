@@ -29,37 +29,11 @@ function normalizePath(value) {
     return segments.length === 0 ? "" : "/" + segments.join("/") + "/";
 }
 
-function countVisibleItems(items) {
-    if (!Array.isArray(items) || items.length === 0) {
-        return 0;
-    }
-
-    var total = 0;
-    for (var index = 0; index < items.length; index += 1) {
-        var item = items[index];
-        if (!item || typeof item !== "object") {
-            continue;
-        }
-
-        total += 1;
-    }
-
-    return total;
-}
-
-function countTrailItems(source) {
-    var levels = Array.isArray(source && source.levels) ? source.levels : [];
-    if (levels.length > 0) {
-        return countVisibleItems(levels.map(function (level) {
-            return level && typeof level.item === "object" ? level.item : null;
-        }).filter(Boolean));
-    }
-
-    var tailItems = Array.isArray(source && source.tail_items)
-        ? source.tail_items
-        : [];
-
-    return countVisibleItems(tailItems);
+function countPathColumns(source) {
+    var columns = Array.isArray(source && source.columns) ? source.columns : [];
+    return columns.filter(function (column) {
+        return column && column.selected && typeof column.selected === "object";
+    }).length;
 }
 
 function findSource(sources, logicalPath) {
@@ -74,7 +48,7 @@ function findSource(sources, logicalPath) {
             continue;
         }
 
-        var sourcePath = normalizePath(source.logical_path || "");
+        var sourcePath = normalizePath(source.logicalPath || "");
         if (sourcePath === normalizedPath) {
             return source;
         }
@@ -92,12 +66,12 @@ try {
         return;
     }
 
-    var trailContainer = document.querySelector(".path-columns .slot-breadcrumb");
-    if (!trailContainer) {
+    var nav = document.querySelector('[data-slot="breadcrumb"]');
+    if (!nav) {
         return;
     }
     // Keep Hugo's default path for same-document source changes and history.
-    trailContainer.defaultPath = trailContainer.firstElementChild?.cloneNode(true);
+    nav.defaultPath = nav.cloneNode(true);
     if (!entryPending) return;
 
     var entryBreadcrumbSources = parseJson(body.dataset.entryBreadcrumbSources || "", []);
@@ -111,7 +85,7 @@ try {
     if (entryPending) {
         var entrySource = findSource(entryBreadcrumbSources, params.get('from') || "");
         if (entrySource) {
-            placeholderCount = countTrailItems(entrySource);
+            placeholderCount = countPathColumns(entrySource);
 
             var currentPageText = body.dataset.currentPageText || document.title || "";
             var currentPageHref = window.location.pathname + window.location.search + window.location.hash;
@@ -125,18 +99,17 @@ try {
         return;
     }
 
-    var nav = document.createElement("nav");
-    nav.className = "path-navigation";
+    var columns = document.createDocumentFragment();
     nav.setAttribute("aria-hidden", "true");
 
     for (var itemIndex = 0; itemIndex < placeholderCount; itemIndex += 1) {
         var placeholder = document.createElement("div");
-        placeholder.className = "path-column";
+        placeholder.className = "page-column path-column";
         placeholder.dataset.collectionColumn = "true";
-        nav.appendChild(placeholder);
+        columns.appendChild(placeholder);
     }
 
-    trailContainer.replaceChildren(nav);
+    nav.replaceChildren(columns);
 } catch (_) { }
 }
 

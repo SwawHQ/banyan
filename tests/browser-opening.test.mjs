@@ -193,10 +193,10 @@ test(name+' opening rejects wrong roots, sibling order, ancestor selection and s
   const args=['--from','/tags/tooling/devtools/#sort=name-desc','--page','/d/canvas-first/','--widths','1440'];
   for(const [id,code,message] of [
     ['root',"document.querySelectorAll('[data-root-href]').forEach(link=>{const current=link.dataset.rootHref==='/all/';link.classList.toggle('is-current',current);if(current)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});",/Root selection must match/],
-    ['siblings',"const list=document.querySelector('.path-column .collection-list');list.append(list.querySelector('[data-collection-entry]').closest('.collection-cell--name'));",/retain every source column/],
-    ['ancestor',"const link=document.querySelector('.path-column [data-collection-entry].is-current');link.classList.remove('is-current');link.removeAttribute('aria-current');",/Each source column must select/],
+    ['siblings',"const list=document.querySelector('.path-column .item-list');list.append(list.querySelector('[data-list-item]'));",/retain every source column/],
+    ['ancestor',"const link=document.querySelector('.path-column [data-list-entry].is-current');link.classList.remove('is-current');link.removeAttribute('aria-current');",/Each source column must select/],
     ['sort',"const indicator=[...document.querySelectorAll('.path-column [data-sort-indicator]')].at(-1);indicator.textContent=indicator.textContent==='↑'?'↓':'↑';",/retain the collection sort/],
-    ['declared-root',"const sources=JSON.parse(document.body.dataset.entryBreadcrumbSources);sources.find(source=>source.logical_path==='/tags/tooling/devtools/').root_item.href='/all/';document.body.dataset.entryBreadcrumbSources=JSON.stringify(sources);",/retain its declared source root/]
+    ['declared-root',"const sources=JSON.parse(document.body.dataset.entryBreadcrumbSources);sources.find(source=>source.logicalPath==='/tags/tooling/devtools/').rootItem.href='/all/';document.body.dataset.entryBreadcrumbSources=JSON.stringify(sources);",/retain its declared source root/]
   ]) {
     const broken=fixture('opening-'+id+'-'+name);script(broken,code);
     const result=cli('open'+suffix,args,broken);assert.equal(result.status,1,id+'\n'+result.stdout+result.stderr);assert.match(result.stderr,message);
@@ -208,13 +208,13 @@ test(name+' opening history rejects root repair on reload and changed siblings o
   const reload=fixture('opening-reload-'+name);
   script(reload,"const visits=Number(sessionStorage.getItem('swban-opening-reload')||0)+1;sessionStorage.setItem('swban-opening-reload',String(visits));if(visits>1){const link=document.querySelector('[data-root-href].is-current');link.classList.remove('is-current');link.removeAttribute('aria-current');}");
   const lost=cli('open'+suffix,args,reload);assert.equal(lost.status,1);assert.match(lost.stderr,/Root selection must match/);
-  const back=fixture('opening-back-'+name);write(path.join(back,'back.js'),"addEventListener('pageshow',()=>{const visits=Number(sessionStorage.getItem('swban-opening-back')||0)+1;sessionStorage.setItem('swban-opening-back',String(visits));if(visits>1)document.querySelector('main [data-collection-entry]').closest('.collection-cell--name').remove();});");
+  const back=fixture('opening-back-'+name);write(path.join(back,'back.js'),"addEventListener('pageshow',()=>{const visits=Number(sessionStorage.getItem('swban-opening-back')||0)+1;sessionStorage.setItem('swban-opening-back',String(visits));if(visits>1)document.querySelector('main [data-list-item]').remove();});");
   fs.appendFileSync(path.join(back,'all/index.html'),'<script defer src="/back.js"></script>');
   const changed=cli('open'+suffix,args,back);assert.equal(changed.status,1);assert.match(changed.stderr,/Back must restore the collection source/);
 });
 
 test(name+' rejects replaced reserved columns and a layout moved by late scripts',{timeout:20000},()=>{
-  const replaced=fixture('replaced-'+name);script(replaced,"const nav=document.querySelector('.path-navigation');nav.replaceWith(nav.cloneNode(true));");
+  const replaced=fixture('replaced-'+name);script(replaced,"const nav=document.querySelector('[data-slot=breadcrumb]');nav.replaceWith(nav.cloneNode(true));");
   const nodes=cli('first-paint'+suffix,['--page',route,'--widths','390'],replaced);assert.equal(nodes.status,1);assert.match(nodes.stderr,/reuse its reserved/);
   const moved=fixture('moved-'+name);script(moved,"document.querySelector('#main').style.marginInlineStart='45px';");
   const layout=cli('first-paint'+suffix,['--page',route,'--widths','390'],moved);assert.equal(layout.status,1);assert.match(layout.stderr,/Main must not move/);
@@ -253,10 +253,10 @@ test(name+' rejects a missing early position and an unconsumed navigation record
 });
 
 test(name+' rejects current-entry reloads, reading resets and history overrides',{timeout:20000},()=>{
-  const current=fixture('current-'+name);script(current,"document.addEventListener('click',event=>{if(event.target.closest('.slot-breadcrumb [aria-current=page]'))document.querySelector('.page-content').scrollTop=0;},true);");
+  const current=fixture('current-'+name);script(current,"document.addEventListener('click',event=>{if(event.target.closest('[data-slot=breadcrumb] [aria-current=page]'))document.querySelector('.page-content').scrollTop=0;},true);");
   const reset=cli('open'+suffix,['--from','/all/','--page','/d/canvas-first/','--widths','390'],current);
   assert.equal(reset.status,1);assert.match(reset.stderr,/preserve the reading position/);
-  const reloaded=fixture('reloaded-'+name);script(reloaded,"document.addEventListener('click',event=>{if(event.target.closest('.slot-breadcrumb [aria-current=page]')){event.preventDefault();location.reload();}},true);");
+  const reloaded=fixture('reloaded-'+name);script(reloaded,"document.addEventListener('click',event=>{if(event.target.closest('[data-slot=breadcrumb] [aria-current=page]')){event.preventDefault();location.reload();}},true);");
   const again=cli('open'+suffix,['--from','/all/','--page','/d/canvas-first/','--widths','390'],reloaded);
   assert.equal(again.status,1);assert.match(again.stderr,/new document|retain the document|Current article click failed/);
   const history=fixture('history-'+name);script(history,"history.scrollRestoration='manual';");
@@ -299,11 +299,11 @@ test(name+' rejects inconsistent root markers, wrong expectations and replaced r
   const incoherent=cli('first-paint'+suffix,['--page',route,'--root','/all/','--widths','390'],markers);
   assert.equal(incoherent.status,1);assert.match(incoherent.stderr,/selection and aria-current must agree/);
   const repeated=fixture('root-repeated-'+name);
-  script(repeated,"const list=document.querySelector('[data-root-navigation] .collection-list');list.append(list.firstElementChild.cloneNode(true));");
+  script(repeated,"const list=document.querySelector('[data-root-navigation] .item-list');list.append(list.firstElementChild.cloneNode(true));");
   const duplicate=cli('first-paint'+suffix,['--page',route,'--widths','390'],repeated);
   assert.equal(duplicate.status,1);assert.match(duplicate.stderr,/Root entries must be unique/);
   const replaced=fixture('root-replaced-'+name);
-  script(replaced,"const list=document.querySelector('[data-root-navigation] .collection-list');list.append(list.firstElementChild);");
+  script(replaced,"const list=document.querySelector('[data-root-navigation] .item-list');list.append(list.firstElementChild);");
   const moved=cli('first-paint'+suffix,['--page',route,'--root','/all/','--widths','390'],replaced);
   assert.equal(moved.status,1);assert.match(moved.stderr,/retain the complete root list/);
 });
@@ -343,7 +343,14 @@ test(name+' root selection survives reload and native Back/Forward',{timeout:150
     await page.goForward();assert.equal(page.url(),base+tags);
     await waitForBrowse(page);await checkRootSelection(page,'/tags/',roots);
     // The same assertion used by consumer journeys must reject broken traversal state.
-    await page.evaluate(()=>document.querySelector('[data-root-navigation] [aria-current=page]').removeAttribute('aria-current'));
+    await page.evaluate(()=>{
+      const link=document.querySelector('[data-root-navigation] [aria-current=page]');
+      // A pending history event must not repair the injected fault before it is read.
+      new MutationObserver(()=>{
+        if(link.hasAttribute('aria-current'))link.removeAttribute('aria-current');
+      }).observe(link,{attributes:true,attributeFilter:['aria-current']});
+      link.removeAttribute('aria-current');
+    });
     await assert.rejects(()=>checkRootSelection(page,'/tags/',roots),/selection and aria-current must agree/);
   } finally {try {await browser?.close();}finally{await server.stop();}}
 });

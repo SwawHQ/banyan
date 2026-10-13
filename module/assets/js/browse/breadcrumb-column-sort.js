@@ -4,7 +4,8 @@ import {
     getCollectionSortState,
 } from './breadcrumb-items.js';
 import {
-    parseCollectionSourceIndex,
+    createCollectionSourceIndex,
+    readEntryBreadcrumbSources,
     pickCollectionItemsByHref,
     pickCollectionSourceByHref,
 } from './breadcrumb-source.js';
@@ -17,15 +18,16 @@ import {
     readCurrentFromPath,
 } from './navigation-state.js';
 let cachedCollectionSourceIndex = null;
+let cachedSources = null;
 
 function readCollectionSourceIndex() {
-    if (cachedCollectionSourceIndex instanceof Map) {
+    const sources = readEntryBreadcrumbSources();
+    if (sources === cachedSources) {
         return cachedCollectionSourceIndex;
     }
 
-    cachedCollectionSourceIndex = parseCollectionSourceIndex(
-        document.body?.dataset.entryBreadcrumbSources || ''
-    );
+    cachedCollectionSourceIndex = createCollectionSourceIndex(sources);
+    cachedSources = sources;
     return cachedCollectionSourceIndex;
 }
 
@@ -57,7 +59,7 @@ function readVisibleLineageLogicalPath(sourceIndex = readCollectionSourceIndex()
         return currentFromPath;
     }
 
-    return Array.from(document.querySelectorAll('.slot-breadcrumb [data-collection-column]'))
+    return Array.from(document.querySelectorAll('[data-slot="breadcrumb"] [data-collection-column]'))
         .map((wrapper) => readWrapperCollectionSource(wrapper, sourceIndex)?.logicalPath || '')
         .reduce((deepest, logicalPath) => (
             getLogicalPathDepth(logicalPath) > getLogicalPathDepth(deepest)
@@ -79,7 +81,7 @@ function isPlainPrimaryClick(event, link) {
 
 export function refreshBreadcrumbCollectionColumns(changedLogicalPath = '') {
     const wrappers = Array.from(document.querySelectorAll(
-        '.slot-breadcrumb [data-collection-column]'
+        '[data-slot="breadcrumb"] [data-collection-column]'
     ));
     if (wrappers.length === 0) {
         return;
@@ -98,28 +100,28 @@ export function refreshBreadcrumbCollectionColumns(changedLogicalPath = '') {
 
         const decoded = readWrapperCollectionItems(wrapper, sourceIndex);
         const state = getCollectionSortState(collectionSource);
-        const header = wrapper.querySelector('[data-collection-header]');
+        const header = wrapper.querySelector('[data-list-header]');
         if (!decoded || !state || !header?.querySelector('[data-collection-sort-toggle]')) return;
 
-        const links = [...wrapper.querySelectorAll('a[data-collection-entry][href]')];
+        const links = [...wrapper.querySelectorAll('[data-list-item] > a[data-list-entry][href]')];
         const pathname = href => normalizePathname(new URL(href, window.location.origin).pathname);
-        const cellsByPath = new Map(links.map(link => [pathname(link.href), link.parentElement]));
+        const elementsByPath = new Map(links.map(link => [pathname(link.href), link.parentElement]));
         const { rows } = sortItemsRows(decoded.rows, state.sortVariant, collectionSource.logicalPath, state.defaultSort);
-        const cells = rows.map(row => cellsByPath.get(pathname(row.href)));
-        if (cells.length !== links.length || cells.some(cell => !cell)) return;
+        const rowElements = rows.map(row => elementsByPath.get(pathname(row.href)));
+        if (rowElements.length !== links.length || rowElements.some(row => !row)) return;
 
         rows.forEach((row, i) => {
-            const link = cells[i].querySelector('a[data-collection-entry]');
+            const link = rowElements[i].querySelector('a[data-list-entry]');
             const url = new URL(link.href);
             // Preserve the existing from, fragment and unrelated query fields.
             applyBreadcrumbRowSort(url, row, collectionSource, state);
             const href = `${url.pathname}${url.search}${url.hash}`;
             if (link.getAttribute('href') !== href) link.setAttribute('href', href);
         });
-        if (cells.some((cell, i) => cell !== links[i].parentElement)) {
+        if (rowElements.some((row, i) => row !== links[i].parentElement)) {
             const scrollTop = wrapper.scrollTop;
             const fragment = document.createDocumentFragment();
-            cells.forEach(cell => fragment.appendChild(cell));
+            rowElements.forEach(row => fragment.appendChild(row));
             header.parentElement.appendChild(fragment);
             wrapper.scrollTop = scrollTop;
         }

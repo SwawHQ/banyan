@@ -1,36 +1,24 @@
 {{- $ctx := .ctx | default . -}}
-{{- $item := .item | default dict -}}
-{{- $items := index $item "column_items" | default slice -}}
-{{- if eq (len $items) 0 -}}{{- $items = slice $item -}}{{- end -}}
-{{- $collectionHref := index $item "collection_href" | default "" -}}
-{{- $collectionSource := index $item "collection_source" | default dict -}}
-{{- if and (eq (len $collectionSource) 0) $collectionHref -}}
-  {{- $collectionSource = index (.collection_sources_by_href | default dict) $collectionHref | default dict -}}
-{{- end -}}
-{{- if and (eq (len $collectionSource) 0) $collectionHref -}}
-  {{- $collectionSource = dict "href" $collectionHref "label" (index $item "collection_label" | default "") -}}
-{{- end -}}
+{{- $column := .column -}}
+{{- $items := $column.items -}}
+{{- $collectionSource := $column.source | default dict -}}
+{{- $collectionHref := $collectionSource.href | default "" -}}
 {{- $header := partial "feature-browse/navigation/path/column-header.html" (dict "ctx" $ctx "source" $collectionSource) -}}
 {{- $logicalPath := partial "feature-browse/collection/logical-path.html" (dict "ctx" $ctx "href" $collectionHref) -}}
 {{- $from := partial "feature-browse/routing/lineage-value.html" (dict "logical_path" $logicalPath) -}}
-<div class="path-column" data-collection-column="true"{{ with $collectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}>
-  <div class="collection-list collection-list--path-column{{ if $header }} collection-list--headed{{ end }}">
-    {{- $header -}}
-    {{- range $row := $items -}}
-      {{- $isCurrent := eq (index $row "current") true -}}
-      {{- $kind := lower (trim (printf "%v" (index $row "kind" | default "")) " ") -}}
-      {{- $href := index $row "href" -}}
-      {{- if and (eq $kind "page") $from -}}
-        {{- $href = printf "%s#from=%s" $href $from -}}
-      {{- end -}}
-      {{ partial "system-ui/list/link-cell.html" (dict
-        "href" $href
-        "text" (index $row "text")
-        "icon" (index $row "icon" | default (cond (eq $kind "page") "file" "folder"))
-        "title" (index $row "title")
-        "isCurrent" $isCurrent
-        "prefetchSlot" "crumb"
-      ) }}
-    {{- end -}}
-  </div>
+{{- $listItems := slice -}}
+{{- range $row := $items -}}
+  {{- $kind := lower (trim (printf "%v" (index $row "kind" | default "")) " ") -}}
+  {{- $href := index $row "href" -}}
+  {{- if and (eq $kind "page") $from -}}{{- $href = printf "%s#from=%s" $href $from -}}{{- end -}}
+  {{- $listItems = $listItems | append (dict
+    "href" $href "text" (index $row "text") "title" (index $row "title")
+    "icon" (index $row "icon" | default (cond (eq $kind "page") "file" "folder"))
+    "isCurrent" (eq (index $row "current") true) "prefetchSlot" "crumb"
+  ) -}}
+{{- end -}}
+<div class="page-column path-column" data-collection-column="true"{{ with $collectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}>
+  {{- partial "system-ui/list/render.html" (dict
+    "class" "item-list--path-column" "header" $header "headerClass" "list-header--path" "items" $listItems
+  ) -}}
 </div>

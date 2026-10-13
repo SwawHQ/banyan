@@ -1,0 +1,126 @@
+:root {
+    --item-date-inline: 7rem;
+    --item-count-inline: 5rem;
+    --item-path-inline: 12rem;
+    --item-price-inline: 6rem;
+    --item-value-inline: 18rem;
+    --item-field-gap: 0.6rem;
+}
+
+.item-list {
+    --list-field-tracks: var(--navigation-column-inline);
+    --list-inline-size: var(--navigation-column-inline);
+    display: grid;
+    inline-size: var(--list-inline-size);
+    overflow: visible;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.08rem;
+    line-height: var(--column-line-height);
+}
+
+.item-list--directory,
+.slot-main--collection:has(.item-list--directory) {
+    --list-field-tracks: var(--navigation-column-inline) var(--item-date-inline) var(--item-count-inline);
+    --list-inline-size: calc(var(--navigation-column-inline) + var(--item-date-inline) + var(--item-count-inline) + 2 * var(--item-field-gap));
+}
+
+.item-list--all,
+.slot-main--collection:has(.item-list--all) {
+    --list-field-tracks: var(--navigation-column-inline) var(--item-date-inline) var(--item-count-inline) var(--item-path-inline);
+    --list-inline-size: calc(var(--navigation-column-inline) + var(--item-date-inline) + var(--item-count-inline) + var(--item-path-inline) + 3 * var(--item-field-gap));
+}
+
+.item-list--products,
+.slot-main--collection:has(.item-list--products) {
+    --list-field-tracks: var(--navigation-column-inline) var(--item-price-inline) var(--item-value-inline);
+    --list-inline-size: calc(var(--navigation-column-inline) + var(--item-price-inline) + var(--item-value-inline) + 2 * var(--item-field-gap));
+}
+
+.list-item {
+    display: grid;
+    grid-template-columns: var(--list-field-tracks);
+    column-gap: var(--item-field-gap);
+    align-items: end;
+    min-inline-size: 0;
+}
+
+.item-field {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.list-item:not(.list-header) > .item-field:not(.item-field--name) {
+    font-size: small;
+}
+
+.list-item:not(.list-header) > :is(.item-field--date, .item-field--count, .item-field--price, .item-field--value) {
+    color: var(--muted);
+}
+
+.item-field--count {
+    text-align: right;
+}
+
+.item-count-unit {
+    display: inline-block;
+    min-width: 3ch;
+    text-align: left;
+}
+
+.item-list a {
+    word-break: normal;
+}
+
+.item-list a:where(:not(.item-control)) {
+    text-decoration: none;
+}
+
+.item-list :is(a, button):focus-visible {
+    outline-offset: -2px;
+}
+
+.list-header {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: var(--column-line-height);
+}
+
+.list-item.list-header {
+    border-bottom: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+}
+
+.list-header a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.list-sort-indicator {
+    display: inline-block;
+    min-width: 1.5ch;
+    text-align: center;
+}
+
+.item-list:not(.item-list--path-column) .list-header a {
+    display: block;
+    width: 100%;
+    margin: 0;
+    text-decoration: none;
+}
+
+.item-list h1.list-header {
+    margin: 0;
+    font-weight: 400;
+}
+
+.item-list .list-header a[data-sort-active="true"] {
+    font-weight: 700;
+}
+
+.item-list .item-control {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0;
+    line-height: inherit;
+}

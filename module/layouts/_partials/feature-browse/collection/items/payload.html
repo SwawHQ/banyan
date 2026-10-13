@@ -1,7 +1,7 @@
 {{/* Compact items payload model; JSON encoding belongs to the publish/embed boundary. */}}
 {{- $source := .source -}}
-{{- $config := partial "feature-browse/collection/config.html" (dict "page" $source.page) -}}
-{{- $rows := partial "feature-browse/collection/rows.html" (dict "page" $source.page) -}}
+{{- $config := .config -}}
+{{- $rows := .rows -}}
 {{- $fields := slice "key" "kind" "href" "text" "icon" "prefetch_kind" "sort_group" "sort_name" -}}
 {{- if eq $config.view "products" -}}
   {{- $fields = $fields | append "sort_price" "sort_value" "price_text" "value_text" -}}
@@ -10,7 +10,7 @@
 {{- else if eq $config.view "directory" -}}
   {{- $fields = $fields | append "sort_date" "sort_count" "date_text" "count_text" "count_unit" -}}
 {{- end -}}
-{{- $logicalPath := trim (printf "%v" ($source.logical_path | default "")) " " -}}
+{{- $logicalPath := trim (printf "%v" ($source.logicalPath | default "")) " " -}}
 {{- $rowVector := slice -}}
 {{- $seenKeys := dict -}}
 {{- range $row := $rows -}}

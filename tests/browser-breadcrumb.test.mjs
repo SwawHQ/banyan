@@ -85,7 +85,7 @@ test('sort rejects initial node replacement and click-time loss of focus or quer
   const initial=cli('sort',['--page',article,'--column',collection],replaced);assert.equal(initial.status,1);assert.match(initial.stderr,/retain server-rendered/);
   for(const [name,change,message] of [
     ['focus','document.activeElement.blur()','retain toggle focus'],
-    ['query',`node.querySelectorAll('[data-collection-entry]').forEach(link=>{const url=new URL(link.href);url.searchParams.delete('swban-probe');link.href=url.href;})`,'preserve unrelated link query'],
+    ['query',`node.querySelectorAll('[data-list-entry]').forEach(link=>{const url=new URL(link.href);url.searchParams.delete('swban-probe');link.href=url.href;})`,'preserve unrelated link query'],
     ['nodes','node.replaceWith(node.cloneNode(true))','reuse rows, icons and headers'],
     ['record',`sessionStorage.setItem('banyan:canvas-navigation','unexpected')`,'must not create a navigation record'],
     ['blank',`node.style.visibility='hidden';requestAnimationFrame(()=>requestAnimationFrame(()=>node.style.removeProperty('visibility')))`,'must not show a blank frame']
@@ -97,9 +97,9 @@ test('sort rejects initial node replacement and click-time loss of focus or quer
 
 test('sort rejects prefetch marker loss after source hydration and direction changes',{timeout:20000},()=>{
   for(const [name,code] of [
-    ['hydrated-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-entry-breadcrumb-pending')||document.documentElement.hasAttribute('data-breadcrumb-sort-pending'))requestAnimationFrame(ready);else document.querySelector('.path-columns [data-collection-entry]').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`],
-    ['sort-slot',`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelector('.path-columns [data-collection-entry]').removeAttribute('data-prefetch-slot');});`],
-    ['header-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-entry-breadcrumb-pending')||document.documentElement.hasAttribute('data-breadcrumb-sort-pending'))requestAnimationFrame(ready);else document.querySelector('.path-columns a:not([data-collection-entry])').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`]
+    ['hydrated-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-entry-breadcrumb-pending')||document.documentElement.hasAttribute('data-breadcrumb-sort-pending'))requestAnimationFrame(ready);else document.querySelector('[data-slot=breadcrumb] [data-list-entry]').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`],
+    ['sort-slot',`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelector('[data-slot=breadcrumb] [data-list-entry]').removeAttribute('data-prefetch-slot');});`],
+    ['header-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-entry-breadcrumb-pending')||document.documentElement.hasAttribute('data-breadcrumb-sort-pending'))requestAnimationFrame(ready);else document.querySelector('[data-slot=breadcrumb] a:not([data-list-entry])').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`]
   ]) {
     const broken=fixture(name);script(broken,article,code);
     const result=cli('sort',['--page',article+'#from=all','--column','/all/'],broken);
@@ -110,12 +110,12 @@ test('sort rejects prefetch marker loss after source hydration and direction cha
 test('isolation rejects changed siblings and stale main-entry sort slots',{timeout:45000},()=>{
   const sibling=fixture('sibling');script(sibling,article,`document.addEventListener('click',event=>{if(!event.target.closest('[data-collection-sort-toggle]'))return;const own=event.target.closest('[data-collection-column]');const other=[...document.querySelectorAll('[data-collection-column]')].find(node=>node!==own);other.querySelector('[data-sort-indicator]').textContent='broken';});`);
   const result=cli('isolation',['--page',article+'#from=d/breadcrumb-fixture'],sibling);assert.equal(result.status,1);assert.match(result.stderr,/another column order or indicator/);
-  const links=fixture('stale-links');script(links,collection,`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelectorAll('.slot-main [data-collection-entry]').forEach(link=>{const url=new URL(link.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('sorts','date-asc,date-asc');url.hash=fields.toString();link.href=url.href;});});`);
+  const links=fixture('stale-links');script(links,collection,`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelectorAll('.slot-main [data-list-entry]').forEach(link=>{const url=new URL(link.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('sorts','date-asc,date-asc');url.hash=fields.toString();link.href=url.href;});});`);
   const stale=cli('isolation',['--page',collection+'#sort=date-asc&sorts=date-asc'],links);assert.equal(stale.status,1);assert.match(stale.stderr,/reflect each ancestor sort/);
 });
 
 test('source rejects wrong static and runtime lineage, missing links and malformed pages',{timeout:45000},()=>{
-  const runtime=fixture('runtime-source');script(runtime,'tags/tooling/devtools',`document.querySelectorAll('.slot-breadcrumb [data-collection-entry]').forEach(link=>{const url=new URL(link.href);if(url.pathname===${JSON.stringify(article)}){const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','wrong');url.hash=fields.toString();link.href=url.href;}});`);
+  const runtime=fixture('runtime-source');script(runtime,'tags/tooling/devtools',`document.querySelectorAll('[data-slot=breadcrumb] [data-list-entry]').forEach(link=>{const url=new URL(link.href);if(url.pathname===${JSON.stringify(article)}){const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','wrong');url.hash=fields.toString();link.href=url.href;}});`);
   const args=['--page','/tags/tooling/devtools/','--column','/tags/tooling/','--article',article];
   const result=cli('source',args,runtime);assert.equal(result.status,1);assert.match(result.stderr,/declared column source/);
   const raw=fixture('static-source'),file=path.join(raw,'tags/tooling/devtools/index.html');

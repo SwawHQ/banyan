@@ -8,11 +8,11 @@ import {touchDrag} from '../_shared/touch.mjs';
 
 async function articleLink(page,article) {
   const target=new URL(article,page.url()).pathname;
-  const matches=await page.locator('main [data-collection-entry][href]').evaluateAll((nodes,target)=>nodes
+  const matches=await page.locator('main [data-list-entry][href]').evaluateAll((nodes,target)=>nodes
     .filter(node=>new URL(node.href).pathname===target).map(node=>({href:node.getAttribute('href'),url:node.href})),target);
   assert.equal(matches.length,1,'Source collection must link to the requested article exactly once.');
   assert.equal(new URL(matches[0].url).origin,new URL(page.url()).origin,'Article must stay within the local site.');
-  return page.locator('main [data-collection-entry][href='+JSON.stringify(matches[0].href)+']');
+  return page.locator('main [data-list-entry][href='+JSON.stringify(matches[0].href)+']');
 }
 
 async function centerVertically(link) {
@@ -34,7 +34,7 @@ async function checkOpenResult(page,before,name,state,target) {
   assert.ok(after.mainDocumentX>before.mainDocumentX,'Article content must extend the canvas to the right.');
   assert.equal(after.readingY,0,'A new article must start at the top.');
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('banyan:canvas-navigation')),null,'The one-navigation record must be consumed.');
-  const selected=page.locator('.slot-breadcrumb [aria-current="page"][href]');
+  const selected=page.locator('[data-slot=breadcrumb] [aria-current="page"][href]');
   const row=await selected.evaluateAll((nodes,target)=>{
     const node=nodes.find(node=>node.href===target);if(!node)return null;
     const box=node.getBoundingClientRect();return {x:box.x-(window.visualViewport?.offsetLeft||0),width:box.width};
@@ -46,8 +46,8 @@ async function checkOpenResult(page,before,name,state,target) {
 
 async function checkCurrentEntry(page,touch) {
   const currentUrl=page.url();
-  const href=await page.locator('.slot-breadcrumb [aria-current="page"][href]').evaluateAll((nodes,url)=>nodes.find(node=>node.href===url)?.getAttribute('href'),currentUrl);
-  const selected=page.locator('.slot-breadcrumb [aria-current="page"][href='+JSON.stringify(href)+']');
+  const href=await page.locator('[data-slot=breadcrumb] [aria-current="page"][href]').evaluateAll((nodes,url)=>nodes.find(node=>node.href===url)?.getAttribute('href'),currentUrl);
+  const selected=page.locator('[data-slot=breadcrumb] [aria-current="page"][href='+JSON.stringify(href)+']');
   await centerVertically(selected);await afterPaint(page);
   const marker=await page.evaluate(()=>{
     window.__swbanCurrentDocument=crypto.randomUUID();

@@ -25,7 +25,7 @@
 {{- $navigationSources := partial "feature-browse/navigation/source/context.html" (dict "ctx" .) -}}
 {{- $pageCollectionSource := index $navigationSources "page_collection_source" -}}
 {{- $browserNavigationSources := index $navigationSources "browser_sources" -}}
-{{- $collectionSourcesByHref := index $navigationSources "collection_sources_by_href" -}}
+{{- $collectionColumnsByHref := index $navigationSources "columns_by_href" -}}
 {{- partial "feature-browse/navigation/source/register-icons.html" (dict "page" . "sources" $browserNavigationSources) -}}
 {{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
     {{- partial "system-delivery/deployment/publish.html" (dict
@@ -129,29 +129,26 @@
     <div class="page">
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         {{- $breadcrumbModel := dict -}}
+        {{- $pathColumns := slice -}}
         {{- $hasPathColumns := false -}}
         {{- if $hasBreadcrumbCapability -}}
           {{- $breadcrumbModel = partial "feature-browse/navigation/path/model.html" (dict "ctx" $) -}}
-          {{- $hasPathColumns = gt (len (index $breadcrumbModel "tail_items")) 0 -}}
+          {{- $pathColumns = partial "feature-browse/navigation/path/columns.html" (dict "model" $breadcrumbModel "columns_by_href" $collectionColumnsByHref) -}}
+          {{- $hasPathColumns = gt (len $pathColumns) 0 -}}
         {{- end -}}
         <div class="page-shell">
-            <div class="page-rail">
+            <div class="page-column page-rail">
                 {{- partial "feature-browse/navigation/root/render.html" . -}}
                 {{- if gt (len $browserNavigationSources) 0 -}}
                 <script>{{ index $inlineScripts "root_navigation" | safeJS }}</script>
                 {{- end -}}
             </div>
-            <div class="page-stage">
             {{- if $hasPathColumns -}}
-            <div class="path-columns">
-                <div class="slot slot-breadcrumb" data-slot="breadcrumb">
-                    {{- partial "feature-browse/navigation/path/render.html" (dict "ctx" $ "items" (index $breadcrumbModel "tail_items") "collection_sources_by_href" $collectionSourcesByHref) -}}
-                </div>
-            </div>
+            {{- partial "feature-browse/navigation/path/render.html" (dict "ctx" $ "columns" $pathColumns) -}}
             {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
             <script>{{ $breadcrumbSkeletonInline | safeJS }}</script>
             {{- end -}}
-            <div class="page-content">
+            <div class="page-column page-content">
             <main id="main" class="slot slot-main{{ if $hasSortableCollection }} slot-main--collection{{ end }}" data-slot="main" tabindex="-1">
                 {{- block "main" . -}}{{- end -}}
                 {{- if $hasBreadcrumbCapability -}}
@@ -160,7 +157,6 @@
             </main>
             </div>
             {{- partial "feature-document/aside.html" (partialCached "feature-document/aside-model.html" . .RelPermalink) -}}
-            </div>
         </div>
     </div>
     {{- block "body-extra" . -}}{{- end -}}

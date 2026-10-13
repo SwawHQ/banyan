@@ -71,31 +71,42 @@ test('style checks actual links and choice buttons in both themes and widths',{t
 });
 
 test('layout rejects narrowed names, changed headers, moved rows, padding and missing separators',{timeout:20000},()=>{
-  const width=fixture('name-width');css(width,'all','.collection-list--all{grid-template-columns:100px repeat(3,max-content)!important}');
+  const width=fixture('name-width');css(width,'all','.item-list--all > .list-item{grid-template-columns:100px 10ch 6ch 225px!important}');
   const narrowed=cli('layout',['--page','/all/','--widths','390'],width);assert.equal(narrowed.status,1);assert.match(narrowed.stderr,/Name column must match/);
-  const header=fixture('header');css(header,'d/collection-fixture/one','.collection-list--path-column .collection-header{padding-block-start:5px!important}');
+  const header=fixture('header');css(header,'d/collection-fixture/one','.item-list--path-column .list-header{padding-block-start:5px!important}');
   const shifted=cli('layout',['--page','/all/','--article',article,'--widths','390'],header);assert.equal(shifted.status,1);assert.match(shifted.stderr,/Main and path lists must align/);
-  const offset=fixture('offset');css(offset,'d/collection-fixture/one','.collection-list--path-column .collection-item-link{transform:translateX(12px)!important}');
+  const offset=fixture('offset');css(offset,'d/collection-fixture/one','.item-list--path-column .item-control{transform:translateX(12px)!important}');
   const moved=cli('layout',['--page','/all/','--article',article,'--widths','390'],offset);assert.equal(moved.status,1);assert.match(moved.stderr,/column start/);
-  const padding=fixture('padding');css(padding,'d/collection-fixture/one','.collection-list--path-column .collection-item-link{padding-inline-start:12px!important}');
+  const padding=fixture('padding');css(padding,'d/collection-fixture/one','.item-list--path-column .item-control{padding-inline-start:12px!important}');
   const padded=cli('layout',['--page','/all/','--article',article,'--widths','390'],padding);assert.equal(padded.status,1);assert.match(padded.stderr,/Row icons must begin/);
-  const separator=fixture('separator');css(separator,'all','.collection-list--headed::after{border-bottom:0!important}');
+  const separator=fixture('separator');css(separator,'all','.list-header{border-bottom:0!important}');
   const missing=cli('layout',['--page','/all/','--widths','390'],separator);assert.equal(missing.status,1);assert.match(missing.stderr,/below the header separator/);
 });
 
+test('layout rejects field drift, subgrid and content-sized tracks',{timeout:20000},()=>{
+  for(const [name,rule,message] of [
+    ['field-width','[data-list-item] > [data-item-field="date"]{width:1px!important}',/field must match its header width/],
+    ['subgrid','[data-list-item]{grid-template-columns:subgrid!important}',/independent Grid/],
+    ['content-track','.item-list--all{--list-field-tracks:var(--navigation-column-inline) max-content 6ch 225px!important}',/determined widths/]
+  ]) {
+    const broken=fixture(name);css(broken,'all',rule);
+    const result=cli('layout',['--page','/all/','--widths','390'],broken);assert.equal(result.status,1);assert.match(result.stderr,message);
+  }
+});
+
 test('style rejects different path selection, main hover and button focus styles',{timeout:20000},()=>{
-  const selected=fixture('selection');css(selected,'d/collection-fixture/one','.collection-list--path-column .collection-item-link.is-current::before{background:red!important}');
+  const selected=fixture('selection');css(selected,'d/collection-fixture/one','.item-list--path-column .item-control.is-current::before{background:red!important}');
   const mismatch=cli('style',['--page',article,'--collection','/all/'],selected);assert.equal(mismatch.status,1);assert.match(mismatch.stderr,/Path rows must reuse root selection/);
-  const hover=fixture('hover');css(hover,'all','.slot-main .collection-item-link:hover::before{box-shadow:none!important}');
+  const hover=fixture('hover');css(hover,'all','.slot-main .item-control:hover::before{box-shadow:none!important}');
   const different=cli('style',['--page',article,'--collection','/all/'],hover);assert.equal(different.status,1);assert.match(different.stderr,/Main collection rows must reuse root hover/);
-  const focus=fixture('focus');css(focus,'appearance','.collection-list button:focus-visible{outline:none!important}');
+  const focus=fixture('focus');css(focus,'appearance','.item-list button:focus-visible{outline:none!important}');
   const invisible=cli('style',['--page',article,'--collection','/all/'],focus);assert.equal(invisible.status,1);assert.match(invisible.stderr,/visible 2px dashed focus ring/);
 });
 
 test('style rejects changed color scheme and element backgrounds',{timeout:15000},()=>{
   const scheme=fixture('scheme');css(scheme,'appearance','html{color-scheme:light!important}');
   const wrong=cli('style',['--page',article,'--collection','/all/'],scheme);assert.equal(wrong.status,1);assert.match(wrong.stderr,/color-scheme must follow/);
-  const background=fixture('background');css(background,'appearance','button.collection-item-link.is-current{background:red!important}');
+  const background=fixture('background');css(background,'appearance','button.item-control.is-current{background:red!important}');
   const painted=cli('style',['--page',article,'--collection','/all/'],background);assert.equal(painted.status,1);assert.match(painted.stderr,/reuse root selection/);
 });
 

@@ -150,6 +150,7 @@ test('panel checks detect inaccessible announcements and incorrect check control
     ['wrong-live','document.querySelector("[data-site-update-status]").setAttribute("aria-live","off");',/politely/],
     ['missing-action','document.querySelector("[data-site-update-action]")?.remove();',/contain its check button/],
     ['wrong-action','document.querySelector("[data-site-update-action]").disabled=true;',/whether checking is available/],
+    ['wrong-pressed','document.querySelector("[data-site-update-action]").setAttribute("aria-pressed","false");',/must not expose a pressed state/],
     ['wrong-label','document.querySelector("[data-site-update-action-label]").textContent="wrong label";',/current localized label/]
   ]) {
     // Registration failure publishes after load. Keep the fault after each render,

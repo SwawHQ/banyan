@@ -145,9 +145,19 @@ breadcrumb 分栏不读取或改写 `sort`。
 
 ## 内嵌 collection payload
 
-每个页面的 `data-entry-breadcrumb-sources` 只包含该页面实际可进入的来源。每个来源携带当前层的 `current_collection_items`，各祖先 level 携带自己的 `collection_items`。
+每个页面的 `data-entry-breadcrumb-sources` 只包含该页面实际可进入的来源。浏览器来源使用以下字段：
 
-两处都使用同一种紧凑 row payload 协议。页面加载后在输入边界解码一次，路径列初始呈现和列内排序共用这份内存数据，不再生成或请求 `_items.json`／`_children.json`。
+| 字段 | 用途 |
+| --- | --- |
+| `logicalPath`、`rootItem` | 来源地址与第一列选中项 |
+| `columns: [{selected, source, payload}]` | 祖先集合列；selected 是纯路径项，payload 是紧凑 row 数据 |
+| `currentColumn: {source, payload}` | 来源集合的当前列 |
+
+两处 payload 使用同一种紧凑 row 协议。有效集合列不重复输出 items；非集合 owner 使用静态形式 `{selected, source: {href, label}, items}`。不再生成或请求 `_items.json`／`_children.json`。
+
+`browse/entry-source.js` 读取来源 metadata 并选择有效来源，不解码 row；第一列根导航只依赖这层读取。`browse/breadcrumb-source.js` 负责 row 解码与读取缓存。两种读取各自缓存原始属性对应的结果，属性不变时重复刷新不再解析。集合 source index 从已解码的 sources 生成，并随同一份结果复用。
+
+不同 `js.Build` bundle 各自保存模块缓存。内联首帧骨架也有自己的 metadata 读取；缓存不跨 bundle 共享，因此不保证整页全局只解析或解码一次。
 
 生产检查将单页解码后的 `data-entry-breadcrumb-sources` 限制为 64 KiB。这个上限约束每页实际携带的来源、层级与 row 总量；集合页自身的 HTML 预算则按“固定外壳 + 每条 row”计算，正常新增内容不会因为固定总量阈值而误报。
 
@@ -170,34 +180,26 @@ breadcrumb 分栏不读取或改写 `sort`。
 - Hugo collection model 是构建期事实源，browser source 是当前页面需要的可序列化投影
 - `from/sort/sorts` 是“当前页面运行时状态”
 
-## `collection_source`
+## 路径项目与列来源
 
-breadcrumb 中每一层 item，都应该能追溯到它所属的 collection source。
+结构路径的每个节点保存 `{item, owner}`。owner 是构建期的 Hugo Page，没有所属页面时为空；呈现列和浏览器来源分别生成，不把 Page 序列化。
 
-要区分两件事：
+| 字段 | 地址含义 |
+| --- | --- |
+| `item.href` | 路径项自身的目标 |
+| `column.source.logicalPath` | 该列兄弟条目的集合路径 |
 
-- `item.href`
-  - 点这个 crumb 自己会去哪
-- `collection_source.logical_path`
-  - 这个 crumb 的兄弟条目应从哪一层 collection 取
+例如 Products 的 `item.href` 是 `/d/products/`，所在列的兄弟条目来自 `/d/`。
 
-这两个不是一回事。
-
-例子：
-
-- crumb `Products`
-  - `item.href = /d/products/`
-  - 但它所在列的兄弟条目来自 `/d/`
-
-`item.column_items` 是按上述来源生成的可见列条目；不能仅从当前项目的链接反推整列来源。
+SSR 和浏览器绘制都接收 `{source, items}` 呈现列。items 按 source 生成，不能仅从当前项目的链接反推整列来源。collection source 使用 `logicalPath`、`sortVariant`、`defaultSort`；config 和领域 row 保留内部 snake_case 字段。
 
 ## 当前主路径
 
 当前已统一成：
 
-1. 真实根页面列表提供第一列；canonical breadcrumb/source model 提供 root item、levels 与 collection source
-2. browser source 随 HTML 输出当前层和各祖先层的紧凑 row payload
-3. runtime 在页面边界解码一次，通过内存 payload + `from/sort/sorts` 组装路径列的 `column_items`
+1. 真实根页面列表提供第一列；结构路径只保存 `schema_items`、`root_item` 和 `nodes: [{item, owner}]`
+2. Hugo 从结构节点生成 SSR `columns: [{source, items}]`，并输出独立的浏览器来源 columns 与 currentColumn
+3. runtime 读取缓存的来源，结合 `from/sort/sorts` 从已解码 payload 生成 `{source, items}` 呈现列；解码边界见 [内嵌 collection payload](#内嵌-collection-payload)
 
 entry 页与 collection 页虽然仍有不同的 orchestration，但它们共享：
 
@@ -214,4 +216,4 @@ entry 页与 collection 页虽然仍有不同的 orchestration，但它们共享
 - `from/sorts` 仍是当前页面路径状态
 - slots 不负责承载 browser 状态
 
-路径列只有一种呈现方式，不再按宽度或 `variant` 选择不同菜单。`column_items` 的同一协议贯穿 Hugo 静态输出和浏览器同步呈现；没有并行的 preview／fragment 重绘，也没有保留旧 `menu` 字段兼容读取。第一列没有 `data-prefetch-slot` 生产者，因此预取配置也不再保留 `menu` 类别。
+路径列只有一种呈现方式，不再按宽度或 `variant` 选择不同菜单。`{source, items}` 的呈现协议贯穿 Hugo 静态输出和浏览器同步绘制；没有并行的 preview／fragment 重绘，也没有保留旧 `menu` 字段兼容读取。第一列根入口输出 `data-prefetch-slot="nav"`，与站内导航候选共用 `nav`，不另设 `menu` 类别。预取规则见 [prefetch-stacks.md](prefetch-stacks.md)。

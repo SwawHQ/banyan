@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDocumentAnchors();
     initThemePreference();
     initLanguageReturn();
-    document.querySelectorAll('.page-rail, .path-column, .page-content, .document-aside')
+    document.querySelectorAll('.page-column')
         .forEach(initAutoScrollbar);
 });
 

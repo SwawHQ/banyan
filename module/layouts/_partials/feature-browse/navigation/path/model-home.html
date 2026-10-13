@@ -9,7 +9,7 @@
   "current" true
 ) -}}
 {{- $result := dict
-  "items" $items
+  "nodes" (slice (dict "item" (index $items 0) "owner" false))
   "schema_items" $items
 -}}
 {{- return $result -}}

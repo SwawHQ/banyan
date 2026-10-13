@@ -1,7 +1,7 @@
 import {
     parseEntrySelection,
-    readEntryBreadcrumbSources,
-} from './breadcrumb-source.js';
+    readEntrySources,
+} from './entry-source.js';
 import { readCurrentFromPath } from './navigation-state.js';
 
 export function renderRootSelection(rootItem) {
@@ -17,7 +17,7 @@ export function renderRootSelection(rootItem) {
 }
 
 export function refreshRootSelection() {
-    const sources = readEntryBreadcrumbSources();
+    const sources = readEntrySources();
     const source = parseEntrySelection(sources, readCurrentFromPath())?.source;
     renderRootSelection(source?.rootItem);
 }

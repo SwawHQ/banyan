@@ -99,7 +99,7 @@ test('chromium catches replacement of the sort grid and loss of source links',{t
   const lost=fixture('lost');
   script(lost,'all',`document.addEventListener('click',event=>{
     const control=event.target.closest('[data-sort-field="name"]'),grid=control?.closest('[data-sortable]');
-    if(grid&&!grid.className) queueMicrotask(()=>grid.querySelectorAll('[data-collection-entry]').forEach(link=>{
+    if(grid&&!grid.className) queueMicrotask(()=>grid.querySelectorAll('[data-list-entry]').forEach(link=>{
       const url=new URL(link.href);const fields=new URLSearchParams(url.hash.slice(1));fields.delete('from');url.hash=fields.toString();link.href=url.href;
     }));
   });`);
@@ -108,15 +108,39 @@ test('chromium catches replacement of the sort grid and loss of source links',{t
 
 test('chromium catches blocked value cells and detached values',{timeout:15000},()=>{
   const pointer=fixture('pointer');
-  write(path.join(pointer,'broken.css'),'[data-collection-cell="date"]:not([data-collection-header]){pointer-events:none!important}');
+  write(path.join(pointer,'broken.css'),'[data-list-item] > [data-item-field="date"]{pointer-events:none!important}');
   fs.appendFileSync(path.join(pointer,'all/index.html'),'<link rel="stylesheet" href="/broken.css">');
   const blocked=cli('nav/sort',[],pointer);assert.equal(blocked.status,1);assert.match(blocked.stderr,/remain pointer targets/);
   const cells=fixture('cells');
   script(cells,'all',`document.addEventListener('click',event=>{
     const control=event.target.closest('[data-sort-field="name"]'),grid=control?.closest('[data-sortable]');
-    if(grid&&!grid.className) queueMicrotask(()=>grid.querySelector('[data-collection-cell="date"]:not([data-collection-header])').textContent='Detached value');
+    if(grid&&!grid.className) queueMicrotask(()=>grid.querySelector('[data-list-item] > [data-item-field="date"]').textContent='Detached value');
   });`);
   const result=cli('nav/sort',[],cells);assert.equal(result.status,1);assert.match(result.stderr,/all of its cell values/);
+});
+
+test('chromium accepts selectable text clipped by fixed field widths',{timeout:10000},()=>{
+  const clipped=fixture('clipped-value');
+  write(path.join(clipped,'clipped.css'),':root{--item-date-inline:1.5rem}');
+  fs.appendFileSync(path.join(clipped,'all/index.html'),'<link rel="stylesheet" href="/clipped.css">');
+  const result=cli('nav/sort',['--timeout','5000'],clipped);
+  assert.equal(result.status,0,result.stdout+result.stderr);
+});
+
+test('chromium rejects unselectable values and replaced row containers',{timeout:15000},()=>{
+  const selection=fixture('selection');
+  write(path.join(selection,'broken.css'),'[data-list-item] > [data-item-field="date"]{user-select:none!important}');
+  fs.appendFileSync(path.join(selection,'all/index.html'),'<link rel="stylesheet" href="/broken.css">');
+  const blocked=cli('nav/sort',[],selection);assert.equal(blocked.status,1);assert.match(blocked.stderr,/remain selectable with the mouse/);
+  const replaced=fixture('replaced-row');
+  script(replaced,'all',`document.addEventListener('click',event=>{
+    const control=event.target.closest('[data-sort-field="name"]'),grid=control?.closest('[data-sortable]');
+    if(grid&&!grid.className) queueMicrotask(()=>{
+      const row=grid.querySelector('[data-list-item]'),replacement=row.cloneNode(false);
+      replacement.append(...row.childNodes);row.replaceWith(replacement);
+    });
+  });`);
+  const result=cli('nav/sort',[],replaced);assert.equal(result.status,1);assert.match(result.stderr,/reuse its grid, headers, complete rows and cells/);
 });
 
 test('chromium rejects pending navigation records created by in-place sorting',{timeout:15000},()=>{
@@ -137,14 +161,13 @@ test('chromium rejects shortened date keys and a descending sort with ascending 
   script(tie,'all',`document.addEventListener('click',event=>{
     const control=event.target.closest('[data-sort-field="date"]');if(!control)return;
     requestAnimationFrame(()=>{
-      const grid=control.closest('[data-sortable]'),width=Number(grid.dataset.sortColumns);
-      const cells=[...grid.children].filter(cell=>cell.hasAttribute('data-collection-cell')&&!cell.hasAttribute('data-collection-header'));
-      const rows=[];for(let i=0;i<cells.length;i+=width)rows.push(cells.slice(i,i+width));
-      const positions=rows.flatMap((row,index)=>row[0].querySelector('[data-collection-entry]').href.includes('/swban-sort-tie-')?[index]:[]);
+      const grid=control.closest('[data-sortable]');
+      const rows=[...grid.querySelectorAll(':scope > [data-list-item]')];
+      const positions=rows.flatMap((row,index)=>row.querySelector('[data-list-entry]').href.includes('/swban-sort-tie-')?[index]:[]);
       if(positions.length!==2)throw new Error('Date tie fixture must contain two rows.');
-      const ascending=positions.map(index=>rows[index]).sort((a,b)=>a[0].dataset.sortName.localeCompare(b[0].dataset.sortName,undefined,{numeric:true}));
+      const ascending=positions.map(index=>rows[index]).sort((a,b)=>a.dataset.sortName.localeCompare(b.dataset.sortName,undefined,{numeric:true}));
       positions.forEach((index,offset)=>{rows[index]=ascending[offset];});
-      rows.flat().forEach(cell=>grid.append(cell));
+      rows.forEach(row=>grid.append(row));
     });
   });`);
   const wrong=cli('nav/sort',[],tie);assert.equal(wrong.status,1);assert.match(wrong.stderr,/complete group\/date\/name\/href tuple: desc/);

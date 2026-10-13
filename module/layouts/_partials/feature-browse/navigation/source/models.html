@@ -1,39 +1,33 @@
 {{- $ctx := .ctx | default . -}}
 {{- $entries := slice -}}
+{{- $columnsByHref := dict -}}
 {{- range $page := sort $ctx.Site.Pages "RelPermalink" -}}
   {{- if eq $page.Layout "page-collection" -}}
-    {{- $entries = $entries | append (partial "feature-browse/navigation/source/page-model.html" (dict "page" $page)) -}}
+    {{- $model := partial "feature-browse/navigation/source/page-model.html" (dict "page" $page) -}}
+    {{- $entries = $entries | append $model -}}
+    {{- $columnsByHref = merge $columnsByHref (dict $page.RelPermalink $model.currentColumn) -}}
   {{- end -}}
 {{- end -}}
-{{- $itemsBySource := dict -}}
+{{- $models := slice -}}
 {{- range $model := $entries -}}
-  {{- $provider := printf "%v" (index $model "provider" | default "") -}}
-  {{- $logicalPath := printf "%v" (index $model "logical_path" | default "") -}}
-  {{- $currentItems := index $model "current_collection_items" | default dict -}}
-  {{- if and (ne $provider "") (ne $logicalPath "") (gt (len $currentItems) 0) -}}
-    {{- $itemsBySource = merge $itemsBySource (dict (printf "%s|%s" $provider $logicalPath) $currentItems) -}}
-  {{- end -}}
-{{- end -}}
-{{- $enrichedEntries := slice -}}
-{{- range $model := $entries -}}
-  {{- $levelsRaw := index $model "levels" | default slice -}}
-  {{- if gt (len $levelsRaw) 0 -}}
-    {{- $levels := slice -}}
-    {{- range $level := $levelsRaw -}}
-      {{- $collectionSource := index $level "collection_source" | default dict -}}
-      {{- $levelModel := $level -}}
-      {{- if gt (len $collectionSource) 0 -}}
-        {{- $provider := printf "%v" (index $collectionSource "provider" | default "") -}}
-        {{- $logicalPath := printf "%v" (index $collectionSource "logical_path" | default "") -}}
-        {{- $lookupKey := printf "%s|%s" $provider $logicalPath -}}
-        {{- with index $itemsBySource $lookupKey -}}
-          {{- $levelModel = merge $levelModel (dict "collection_items" .) -}}
-        {{- end -}}
-      {{- end -}}
-      {{- $levels = $levels | append $levelModel -}}
+  {{- $columns := slice -}}
+  {{- range $node := $model.nodes -}}
+    {{- $collection := dict -}}
+    {{- with $node.owner -}}{{- $collection = index $columnsByHref .RelPermalink | default dict -}}{{- end -}}
+    {{- $column := dict "selected" $node.item -}}
+    {{- if gt (len $collection) 0 -}}
+      {{- $column = merge $column (dict "source" $collection.source "payload" $collection.payload) -}}
+    {{- else -}}
+      {{- $column = merge $column (partial "feature-browse/navigation/path/fallback-column.html" (dict "node" $node)) -}}
     {{- end -}}
-    {{- $model = merge $model (dict "levels" $levels) -}}
+    {{- $columns = $columns | append $column -}}
   {{- end -}}
-  {{- $enrichedEntries = $enrichedEntries | append $model -}}
+  {{- $models = $models | append (dict
+    "logicalPath" $model.logicalPath
+    "rootItem" $model.rootItem
+    "columns" $columns
+    "currentColumn" $model.currentColumn
+    "entryHrefs" $model.entryHrefs
+  ) -}}
 {{- end -}}
-{{- return $enrichedEntries -}}
+{{- return (dict "models" $models "columns_by_href" $columnsByHref) -}}

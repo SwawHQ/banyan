@@ -4,7 +4,7 @@ import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs
 
 async function readHeader(header) {
   return header.evaluate(node=>{
-    const label=node.querySelector('.collection-column-label'),separator=node.querySelector('.collection-column-separator');
+    const label=node.querySelector('.path-column-label'),separator=node.querySelector('.path-column-separator');
     const sort=node.querySelector('[data-collection-sort-toggle]'),arrow=sort?.querySelector('[data-sort-indicator]');
     if(!label||!separator||!sort||!arrow)return null;
     const bounds=node.getBoundingClientRect(),labelBox=label.getBoundingClientRect(),sepBox=separator.getBoundingClientRect();
@@ -30,7 +30,7 @@ export async function check({page,baseUrl,options}) {
   const cases=[];
   for(const width of options.widths.split(',').map(Number)) {
     await page.setViewportSize({width,height:900});await openPage(page,baseUrl+options.page);
-    const column=await selectColumn(page,options.column),header=page.locator(columnsSelector+'[data-breadcrumb-collection-href='+JSON.stringify(column.href)+'] .collection-header--path');
+    const column=await selectColumn(page,options.column),header=page.locator(columnsSelector+'[data-breadcrumb-collection-href='+JSON.stringify(column.href)+'] .list-header--path');
     const initial=await readHeader(header);checkHeader(initial);
     const toggle=header.locator('[data-collection-sort-toggle]');await toggle.click();
     await page.waitForFunction(({selector,previous})=>document.querySelector(selector)?.textContent.trim()!==previous,

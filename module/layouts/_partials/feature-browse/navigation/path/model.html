@@ -12,23 +12,13 @@
 {{- with partial "feature-browse/navigation/root/selected.html" $ctx -}}
   {{- $rootItem = dict "text" (.LinkTitle | default .Title) "title" .Title "href" .RelPermalink -}}
 {{- end -}}
-{{- $tailItems := slice -}}
-{{- $levels := slice -}}
-{{- $collectionHref := index $rootItem "href" | default "" -}}
-{{- $collectionLabel := index $rootItem "text" | default "" -}}
-{{- range $item := index $base "items" | default slice -}}
-  {{- if eq (index $item "href") (index $rootItem "href") -}}{{- continue -}}{{- end -}}
-  {{- if ne $collectionHref "" -}}
-    {{- $item = merge $item (dict "collection_href" $collectionHref "collection_label" $collectionLabel) -}}
-  {{- end -}}
-  {{- $tailItems = $tailItems | append $item -}}
-  {{- $levels = $levels | append (dict "item" $item "collection_href" $collectionHref) -}}
-  {{- $collectionHref = index $item "href" -}}
-  {{- $collectionLabel = index $item "text" -}}
+{{- $nodes := slice -}}
+{{- range $node := index $base "nodes" | default slice -}}
+  {{- if eq $node.item.href (index $rootItem "href") -}}{{- continue -}}{{- end -}}
+  {{- $nodes = $nodes | append $node -}}
 {{- end -}}
 {{- return (dict
   "schema_items" (index $base "schema_items")
   "root_item" $rootItem
-  "tail_items" $tailItems
-  "levels" $levels
+  "nodes" $nodes
 ) -}}

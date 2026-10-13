@@ -29,12 +29,14 @@ export async function check({page,baseUrl,options}) {
   }
   try {
     for(const width of options.widths.split(',').map(Number)) {
+      // Start each mobile width without the previous document's retained scale.
+      await page.goto('about:blank');
       await page.setViewportSize({width,height:844});
       await openArticle(page,baseUrl+options.page);
       await page.locator('.page-shell').evaluate(node=>node.scrollIntoView({inline:'end',block:'nearest',behavior:'instant'}));
       await afterPaint(page);
       const collapsed=await readingState(page),toggle=page.locator('#document-aside-toggle'),close=page.locator('#document-aside-close');
-      assert.ok(collapsed.left>=-1&&collapsed.right<=collapsed.viewport+1,'Reading column must fit in the viewport.');
+      assert.ok(collapsed.left>=-1&&collapsed.right<=collapsed.viewport+1,'Reading column must fit in the viewport. '+JSON.stringify(collapsed));
       assert.equal(await toggle.getAttribute('aria-controls'),'document-aside');
       assert.equal(await close.getAttribute('aria-controls'),'document-aside');
       let progress;

@@ -66,9 +66,17 @@ lastmod: 2026-10-13
   keep native behavior.
 - List dates and date sorting use `lastmod`, then `date`. Git commits and
   filesystem times do not change editorial dates.
+- List fields use fixed widths. Long values stay within their fields;
+  tooltips retain the full values. Name-only collections use one navigation
+  column without reserving extra reading width.
+  Custom list styles use `item-list`, `list-item`, `item-field`, and
+  `item-control`; custom palettes use `--item-*` color roles. List field
+  widths use `--item-*-inline` and `--item-field-gap`.
 
 ## Fixed
 
+- Navigation sorting checks accept selectable text truncated by fixed field widths.
+- Mobile aside checks evaluate each requested width without retained browser zoom.
 - Cloudflare cache and XML CSP overrides explicitly remove inherited headers
   before setting their values, preventing conflicting values from being combined.
 - Chapter navigation uses the current URL fragment when scrolling runs,

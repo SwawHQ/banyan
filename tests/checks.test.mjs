@@ -12,6 +12,7 @@ import {hugoEnvironment} from '../.agents/skills/swaw-banyan/scripts.js/hugo/ind
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {inspectDocumentMetadata} from '../.agents/skills/swaw-banyan/tasks/check/html/metadata/document.mjs';
 import {inspectDocumentControls} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/controls.mjs';
+import {breadcrumbRows} from '../.agents/skills/swaw-banyan/tasks/check/html/breadcrumb/inspect.mjs';
 
 const source = fileURLToPath(new URL('../.agents/skills/swaw-banyan/',import.meta.url));
 const parent = path.resolve(os.tmpdir());
@@ -230,7 +231,7 @@ test('sitemap checks cross-file indexing and robots checks its own declaration',
 });
 test('breadcrumb and prefetch payload checks keep parsing failures and runtime pairing separate',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
-  const breadcrumb = output('bad breadcrumb',html.replace('<body>','<body><div data-slot=breadcrumb data-entry-breadcrumb-sources="{"><a href=/other/>Other</a></div>'));
+  const breadcrumb = output('bad breadcrumb',html.replace('<body>','<body><nav data-slot=breadcrumb data-entry-breadcrumb-sources="{"><a href=/other/>Other</a></nav>'));
   checked('check/html/breadcrumb',breadcrumb,/Invalid breadcrumb payload/);
   assert.equal(cli('check/prefetch/payload',[breadcrumb]).status,0);
   const prefetch = output('bad prefetch',html.replace('</body>','<script type=application/json id=site-prefetch-data>{broken}</script></body>'));
@@ -238,6 +239,23 @@ test('breadcrumb and prefetch payload checks keep parsing failures and runtime p
   assert.equal(cli('check/html/breadcrumb',[prefetch]).status,0);
   const paired = output('unpaired prefetch',html.replace('</body>','<script type=application/json id=site-prefetch-data>{"tt":{}}</script></body>'));
   checked('check/prefetch/payload',paired,/Missing prefetch runtime/);
+});
+test('breadcrumb prefetch checks count merged navigation anchors and retain slot failures',() => {
+  const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
+  const nav = '<nav class="slot path-navigation" data-slot=breadcrumb aria-label=Breadcrumb><div class=page-column><a href=/one/ data-prefetch-slot=crumb>One</a><div><a href=/two/ data-prefetch-slot=crumb>Two</a></div></div></nav>';
+  const text = html.replace('</body>',nav+'<a href=/outside/ data-prefetch-slot=nav>Outside</a></body>');
+  const row = breadcrumbRows([{text}])[0];
+  assert.equal(row.breadcrumbAnchorCount,2);assert.equal(row.breadcrumbCrumbAnchorCount,2);
+  assert.deepEqual(row.breadcrumbPrefetchIssues,[]);
+  assert.equal(cli('check/html/breadcrumb',[output('merged breadcrumb',text)]).status,0);
+  for (const [name,slot] of [['missing',''],['wrong','data-prefetch-slot=nav']]) {
+    const broken = text.replace('data-prefetch-slot=crumb',slot);
+    const fault = breadcrumbRows([{text:broken}])[0];
+    assert.equal(fault.breadcrumbAnchorCount,2);assert.equal(fault.breadcrumbCrumbAnchorCount,1);
+    assert.equal(fault.breadcrumbPrefetchIssues.length,1);
+    assert.equal(fault.breadcrumbPrefetchIssues[0].href,'/one/');
+    checked('check/html/breadcrumb',output(name+' merged breadcrumb',broken),/Breadcrumb anchor must use/);
+  }
 });
 test('shared rules checking covers disabled, enabled, stale, changed and mismatched outputs',() => {
   const directory = output('rules');
