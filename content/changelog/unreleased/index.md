@@ -77,6 +77,7 @@ lastmod: 2026-10-13
 
 - Navigation sorting checks accept selectable text truncated by fixed field widths.
 - Mobile aside checks evaluate each requested width without retained browser zoom.
+- Browser checks retry local ports denied by the operating system.
 - Cloudflare cache and XML CSP overrides explicitly remove inherited headers
   before setting their values, preventing conflicting values from being combined.
 - Chapter navigation uses the current URL fragment when scrolling runs,

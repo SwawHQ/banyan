@@ -57,7 +57,8 @@ export async function createStaticSiteServer(directory) {
           server.listen(randomInt(49152,65536),'127.0.0.1');
           await ready;return;
         } catch(error) {
-          if(error.code!=='EADDRINUSE'||attempt===9)throw error;
+          // Windows can reject unavailable ports with EACCES.
+          if(!['EADDRINUSE','EACCES'].includes(error.code)||attempt===9)throw error;
         }
       }
     },

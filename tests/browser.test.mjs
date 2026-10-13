@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
+import http from 'node:http';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/server.mjs';
 import {browserCommand} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/options.mjs';
 import {cspCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/csp/options.mjs';
@@ -200,6 +201,28 @@ test('an artifact destination inside the build is rejected before writing',() =>
   assert.equal(cli('check/browser/home',['--out',outputDir]).status,1);
   assert.equal(fs.existsSync(outputDir),false);
 });
+test('local server retries occupied and reserved ports with a bounded attempt count',async () => {
+  for(const [code,blocked,attempts] of [['EACCES',1,2],['EADDRINUSE',1,2],['EACCES',Infinity,10],['EINVAL',Infinity,1]]) {
+    const create=http.createServer,error=Object.assign(new Error('Fixture listen failure'),{code});
+    let calls=0,server;
+    http.createServer=(...args)=>{
+      const native=create(...args),listen=native.listen.bind(native);
+      native.listen=()=>{
+        calls++;
+        if(calls<=blocked){queueMicrotask(()=>native.emit('error',error));return native;}
+        return listen(0,'127.0.0.1');
+      };
+      return native;
+    };
+    try {
+      server=await createStaticSiteServer(output('listen-'+code+'-'+attempts));
+      if(blocked===Infinity)await assert.rejects(()=>server.start(),value=>value===error);
+      else {await server.start();assert.equal((await fetch(server.getBaseUrl())).status,200);}
+      assert.equal(calls,attempts);
+    } finally {http.createServer=create;await server?.stop();}
+  }
+});
+
 test('local server uses generated headers, supports HEAD, and contains file reads',async () => {
   const directory = output('server');
   write(directory,'private-name.txt','Inside file');
