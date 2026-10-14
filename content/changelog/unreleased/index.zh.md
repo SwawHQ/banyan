@@ -7,6 +7,7 @@ lastmod: 2026-10-14
 
 ## 新增
 
+- 官网提供中文使用指南和开发资料，站点生产地址为 `https://banyan.swaw.com/`。
 - 通过 `github.com/SwawHQ/banyan/module` 发布 Hugo Module，
   `swaw-banyan` Skill 使用对应版本。`check/module` 检查发布版本、
   vendor 依赖和本地开发状态。

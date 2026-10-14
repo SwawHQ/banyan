@@ -1,4 +1,8 @@
-# UI 命名与职责
+---
+title: UI 命名与职责
+slug: ui-naming
+description: 约定页面列、列表、条目、样式类与行为标记的命名。
+---
 
 名称按当前职责组织，不再描述已经退役的主菜单、顶部面包屑和下拉布局。
 
@@ -26,13 +30,13 @@ layout: page-collection
 list: name
 ```
 
-`layout` 选择页面模板，`list` 选择列表展示；集合成员来自 Hugo 的目录／分类结构，或 `aggregate` 指向的集合。更名没有改变这三个职责，也没有提供 `article-list` 旧模板别名。根项目、主题内容和 `exampleSite` 均已迁移到当前命名。
+`layout` 选择页面模板，`list` 选择列表展示；集合成员来自 Hugo 的目录／分类结构，或 `aggregate` 指向的集合。更名没有改变这三个职责，也没有提供 `article-list` 旧模板别名。根站点与模块内容使用同一命名。
 
 ## 路径数据与显示
 
 服务端的 `feature-browse/navigation/path/` 与浏览器端的 `browse/path-entry.js`、`browse/path-render.js`、`browse/breadcrumb-*.js` 共同处理结构路径、浏览来源及恢复。`system-metadata/seo/breadcrumb.html` 输出 SEO 的 BreadcrumbList；`slots.breadcrumb` 和网址 `from / sort / sorts` 保持既有约定。
 
-可见路径列通过 `renderPathColumns()` 装配，通过 `renderPathColumn()` 重绘单列，列模型统一使用 `{source, items}`。结构路径项与列条目分开保存。浏览器来源列的 `selected` 是纯路径项，行的选中状态使用 `current`；输入参数 `selected_href` 仍表示用哪个地址寻找当前行。条目模块接收已解码的 payload，读取与缓存边界见 [导航状态](navigation-state.md#内嵌-collection-payload)。
+可见路径列通过 `renderPathColumns()` 装配，通过 `renderPathColumn()` 重绘单列，列模型统一使用 `{source, items}`。结构路径项与列条目分开保存。浏览器来源列的 `selected` 是纯路径项，行的选中状态使用 `current`；输入参数 `selected_href` 仍表示用哪个地址寻找当前行。条目模块接收已解码的 payload，读取与缓存边界见 [导航状态](/zh/docs/development/navigation-state/#内嵌-collection-payload)。
 
 首页、普通页面、分类法分别使用 `model-home`、`model-page`、`model-taxonomy` 生成结构路径；`model.html` 保留按页面类型选择模型的显式分支，不再使用没有对应手动模式的 `-auto` 后缀。
 

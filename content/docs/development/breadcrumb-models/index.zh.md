@@ -1,4 +1,8 @@
-# Banyan Breadcrumb Model
+---
+title: 路径导航模型
+slug: breadcrumb-models
+description: 说明根导航、来源列和文章进入路径的构建及呈现模型。
+---
 
 ## 第一列与进入路径
 
@@ -6,7 +10,7 @@
 
 `feature-browse/navigation/root/model.html` 从结构根页面生成可见入口，负责 `root_nav: true` 过滤、名称、地址、图标和默认选中状态。名称取 `LinkTitle` / `Title`，地址取 `RelPermalink`；`build.list: local` 的系统页面也可以参与。`root/render.html` 只装配 `nav` 与公共列表。
 
-首页自身作为普通根入口，使用版权文字与字符图标。页面不声明主菜单归属，也没有独立的菜单项目白名单。
+首页自身作为普通根入口，名称与图标由站点首页声明。页面不声明主菜单归属，也没有独立的菜单项目白名单。
 新增入口时，创建真实的根页面并设置 `root_nav: true`、名称和权重；新增某个入口的子项时，把它放在相应内容目录中。
 
 ## 选中规则
@@ -16,7 +20,7 @@
 
 有效的 `from` 指向当前页面已发布的来源集合。运行时根据浏览器来源的 `rootItem` 调整第一列选中项，完整入口列表始终保留。
 从“标签”进入同一篇文章就选中“标签”，从“产品－全部”进入就选中“产品－全部”。不存在或不属于当前文章的来源不参与选中，继续使用内容祖先。
-系统页面选中自己的根入口，使用普通页面网址；返回按钮使用浏览器历史记录，不另存原阅读地址。语言选择后的返回行为见 [navigation-state.md](navigation-state.md#系统页面与返回)。首页作为显式根入口时选中自己；没有根入口祖先的内部页不强制选中一项。
+系统页面选中自己的根入口，使用普通页面网址；返回按钮使用浏览器历史记录，不另存原阅读地址。语言选择后的返回行为见 [导航状态协议](/zh/docs/development/navigation-state/#系统页面与返回)。首页作为显式根入口时选中自己；没有根入口祖先的内部页不强制选中一项。
 
 ## 路径模型
 
@@ -40,7 +44,7 @@
 
 有效集合列只携带 compact payload，不重复输出可见 items。非集合 owner 使用静态形式 `{selected, source: {href, label}, items}`。collection source 统一使用 `logicalPath`、`sortVariant`、`defaultSort`；所有列表页仍使用 collection provider，排序字段由 `list` 声明决定。不再发布或请求 `_items.json`。
 
-浏览器解码来源并结合网址状态生成 `{source, items}` 呈现列，由 `assets/js/browse/path-render.js`／`path-navigation.css` 绘制。`renderPathColumns()` 装配所有列，`renderPathColumn()` 重绘单列；行选中状态使用 `current`。读取与缓存边界见 [导航状态](navigation-state.md#内嵌-collection-payload)，命名约定见 [UI 命名与职责](ui-naming.md)。
+浏览器解码来源并结合网址状态生成 `{source, items}` 呈现列，由 `assets/js/browse/path-render.js`／`path-navigation.css` 绘制。`renderPathColumns()` 装配所有列，`renderPathColumn()` 重绘单列；行选中状态使用 `current`。读取与缓存边界见 [导航状态](/zh/docs/development/navigation-state/#内嵌-collection-payload)，命名约定见 [UI 命名与职责](/zh/docs/development/ui-naming/)。
 
 首页、普通页面和 taxonomy 的模型生成器负责不同的路径来源，最终共用一个列渲染器。`feature-browse/navigation/path/model.html` 直接按 Hugo 页面种类调用相应生成器；模型不返回 `variant` 或 `strategy` 标签，也没有额外的字符串分发层。
 
@@ -48,7 +52,7 @@
 
 ## 布局与维护边界
 
-第一列、路径列和内容列表在 SSR 中使用公共列表与完整条目组件。`feature-browse/navigation/path/column.html` 保留滚动容器、集合来源与 `from`，再把名称行交给 `system-ui/list/render.html`。`path/column-header.html` 只输出名称字段，公共列表输出表头外层并保留 `list-header--path`。浏览器动态路径列继续按现有 DOM 协议绘制。DOM 与样式归属见 [UI 命名与职责](ui-naming.md#样式类与行为标记)。版权、备案等信息使用普通根入口。
+第一列、路径列和内容列表在 SSR 中使用公共列表与完整条目组件。`feature-browse/navigation/path/column.html` 保留滚动容器、集合来源与 `from`，再把名称行交给 `system-ui/list/render.html`。`path/column-header.html` 只输出名称字段，公共列表输出表头外层并保留 `list-header--path`。浏览器动态路径列继续按现有 DOM 协议绘制。DOM 与样式归属见 [UI 命名与职责](/zh/docs/development/ui-naming/#样式类与行为标记)。版权、备案等信息使用普通根入口。
 `slots.breadcrumb` 仅控制路径栏是否显示；它不控制全站入口初始化，也不存放进入路径状态。
 
 移动与桌面共用 Finder 风格的横向列布局：每个尾部路径项目是一列普通列表，直接展示兄弟项目；没有兄弟列表时仍显示该项目的一行链接。SSR 与客户端重绘使用相同的列头、图标与选中规则。
@@ -63,7 +67,7 @@ Hydration 填充已有列容器，保留原 nav 与相同位置的 `.path-column
 
 同一文档的 `from` 变化先调用 `initializeBreadcrumb()`，能生成来源列时直接填充已有容器。只有 `entryRendered` 为 `false` 时，才将 `nav.defaultPath` 的子节点恢复进原 nav，并清除 `aria-hidden`。只改变排序时继续复用已有列和表头。
 
-文档负责整页横向滚动，各页面列独立纵向滚动。列角色、尺寸与滚动容器见 [公共页面列](ui-naming.md#公共页面列)。辅助列随画幅横向移动，正文滚动时保持原位；无需 fixed、sticky 或滚动同步脚本。主列表随内容列参与整页画幅，不增加内部横向滚动。
+文档负责整页横向滚动，各页面列独立纵向滚动。列角色、尺寸与滚动容器见 [公共页面列](/zh/docs/development/ui-naming/#公共页面列)。辅助列随画幅横向移动，正文滚动时保持原位；无需 fixed、sticky 或滚动同步脚本。主列表随内容列参与整页画幅，不增加内部横向滚动。
 
 `slots.meta` 控制元信息，`page-article` 布局独立装配章节。长分类路径在辅助列内换行。打印时元信息排在正文后，章节导航隐藏。章节 URL 的进入、刷新、返回和前进均定位到该章节，不存储章节内阅读进度。`canvas-document-aside` 验证三语言、窄屏与宽屏、独立滚动、列顶对齐、无空列和打印行为。
 
@@ -77,4 +81,4 @@ Hydration 填充已有列容器，保留原 nav 与相同位置的 `.path-column
 
 整页以 `overscroll-behavior: none` 限制边界回弹和下拉刷新；各列只设置 `overscroll-behavior-y: none`，阻止纵向回弹和滚动传递，保留横向手势传给文档。不要在整页设置 `touch-action: pan-x`，否则子列的纵向触控也会被禁止。Safari 浏览器层的下拉刷新仍需真机验证，不通过全局触摸拦截或自定义滚动模拟补偿。
 
-修改路径排序协议参见 [navigation-state.md](navigation-state.md)。列表与产品声明见 [collection-lists.md](collection-lists.md)。主题状态由外观选择页切换，语义颜色由 `params.appearance.palette` 指定的文件提供；黑白灰方案使用 `css/theme-monochrome.css`，详见 [配色约定](../module/assets/README.md#select-a-palette)。
+修改路径排序协议参见 [导航状态协议](/zh/docs/development/navigation-state/)。列表与产品声明见 [列表与产品声明](/zh/docs/guide/collection-lists/)。主题状态由外观选择页切换，语义颜色由 `params.appearance.palette` 指定的文件提供；黑白灰方案使用 `css/theme-monochrome.css`，详见 [配色约定](https://github.com/SwawHQ/banyan/blob/main/module/assets/README.md#select-a-palette)。

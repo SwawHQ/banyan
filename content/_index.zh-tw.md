@@ -5,7 +5,7 @@ linkTitle: Banyan
 icon: { text: "B" }
 weight: 110
 browser_title: Banyan — 極簡 Hugo 發布主題
-description: Banyan Hugo 主題的最小示例站點。
+description: Banyan Hugo 主題的官方文件與發佈說明。
 layout: page-home
 brand_line: 為探索型發布提供清晰結構。
 home_signals:

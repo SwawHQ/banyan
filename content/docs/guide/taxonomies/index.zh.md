@@ -1,4 +1,8 @@
-# Banyan Taxonomies
+---
+title: 分类法
+slug: taxonomies
+description: 定义分类根、词项和文章的多条分类路径。
+---
 
 ## 默认模型
 
@@ -15,7 +19,7 @@ tag = "tags"
 tool = "tools"
 ```
 
-`tools` 使用平面分类，根配置位于 `content/tools/_index*.md`，文章声明 `tools: [free, first-party]`。`content/all-tools/` 以 `aggregate: /tools` 汇总成员；`list: products` 只控制价格／用途列，与分类法名称无关。具体约定见 [列表与产品声明](collection-lists.md#怎样收录工具)。
+`tools` 使用平面分类，根配置位于 `content/tools/_index*.md`，文章声明 `tools: [free, first-party]`。`content/all-tools/` 以 `aggregate: /tools` 汇总成员；`list: products` 只控制价格／用途列，与分类法名称无关。具体约定见 [列表与产品声明](/zh/docs/guide/collection-lists/#怎样收录工具)。
 
 一篇文章可以属于多条独立路径：
 

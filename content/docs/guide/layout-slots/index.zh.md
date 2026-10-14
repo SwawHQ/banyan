@@ -1,12 +1,16 @@
-# Banyan Layout Slots
+---
+title: 页面区域与布局
+slug: layout-slots
+description: 配置根导航入口、路径区域和文章元信息。
+---
 
 ## 当前约定
 
 第一列入口由内容树生成，页面无需声明菜单归属。`slots` 只控制路径和元信息是否装配；框架负责布局。正文 `main` 是内建区域，不通过 front matter 指向 fragment。
 
-`slots.breadcrumb` 装配 shell 内的 `nav.slot.path-navigation[data-slot="breadcrumb"]`，其子节点是路径列。`data-slot="breadcrumb"` 保留区域语义；屏幕上 nav 使用 `display: contents`，各列直接参与 `.page-shell` 的横向 Grid。列尺寸和打印分组见 [公共页面列](ui-naming.md#公共页面列)。
+`slots.breadcrumb` 装配 shell 内的 `nav.slot.path-navigation[data-slot="breadcrumb"]`，其子节点是路径列。`data-slot="breadcrumb"` 保留区域语义；屏幕上 nav 使用 `display: contents`，各列直接参与 `.page-shell` 的横向 Grid。列尺寸和打印分组见 [公共页面列](/zh/docs/development/ui-naming/#公共页面列)。
 
-布局、路径列、集合与更新模块的命名见 [UI 命名与职责](ui-naming.md)。内部 `slot_flags` 保存区域开关，不再表示片段来源。
+布局、路径列、集合与更新模块的命名见 [UI 命名与职责](/zh/docs/development/ui-naming/)。内部 `slot_flags` 保存区域开关，不再表示片段来源。
 
 ## 第一列入口
 
@@ -35,11 +39,11 @@
 | `breadcrumb` | `true`／`false` | 当前页面的集合路径及各级条目 |
 | `meta` | `true`／`false` | 正文右侧辅助列中的路径、taxonomy、日期与外链 |
 
-文章布局另行提供章节导航，不需要 `list` 或新的 slot 声明，详见 [布局与章节定位](breadcrumb-models.md#布局与维护边界)。`slots.meta: false` 只关闭元信息，仍可显示章节。`document-aside` 是布局 block，Markdown 内容不能将它声明为 slot。
+文章布局另行提供章节导航，不需要 `list` 或新的 slot 声明，详见 [布局与章节定位](/zh/docs/development/breadcrumb-models/#布局与维护边界)。`slots.meta: false` 只关闭元信息，仍可显示章节。`document-aside` 是布局 block，Markdown 内容不能将它声明为 slot。
 
 未知 slot 名和错误值类型均应在构建时失败。`slots.footer`、版权页脚片段及其专用模板和样式已移除。旧 `show_breadcrumb`、`show_meta`、`breadcrumb_variant` 和布局导向的 `rail-*`／`stage-*` 声明不属于当前约定。
 
-页面基础样式由 `baseof.html` 直接调用 `system-ui/page-styles.html`，页面入口不能替换或漏掉它。CSS 归属与发布名见 [UI 命名与职责](ui-naming.md#css-源码与发布名)。真正渲染 `.prose` 的入口显式调用 `feature-document/styles.html`；集合页只在实际输出正文时调用，预取诊断页也显式调用同一装配器。不通过页面类型或渲染后的 HTML 标签猜测需要哪些正文组件。
+页面基础样式由 `baseof.html` 直接调用 `system-ui/page-styles.html`，页面入口不能替换或漏掉它。CSS 归属与发布名见 [UI 命名与职责](/zh/docs/development/ui-naming/#css-源码与发布名)。真正渲染 `.prose` 的入口显式调用 `feature-document/styles.html`；集合页只在实际输出正文时调用，预取诊断页也显式调用同一装配器。不通过页面类型或渲染后的 HTML 标签猜测需要哪些正文组件。
 
 ## 推荐写法
 
@@ -70,8 +74,8 @@ Powered by 总览 `content/powered-by/index*.md` 使用 `page-powered-by` 布局
 
 `slots` 决定页面装配哪些区域；`from / sort / sorts` 表示当次浏览来源及排序。有效 `from` 决定来源根，没有有效来源时按真实内容祖先确定归属。来源根须声明 `root_nav: true` 才有对应的第一列选中项；隐藏的目录仍保留右侧路径和探索能力。不能从公开网址前缀推断归属：例如 Xvenv 的正文位于 `d/products/`，直接访问归属隐藏的目录，第一列不选中；通过产品分类进入时选中“工具 - 分类”。
 
-系统页使用普通链接，不携带 `return`；语言与外观页的返回行为见 `navigation-state.md`。切换语言留在对应语言的设置页，不改变当前系统入口的选中态。首页选中自身；其他页面匹配自身和最近的可列出祖先，但不把首页当成所有页面的默认选中项。没有可列出根祖先的内部页不强行选中入口。
+系统页使用普通链接，不携带 `return`；语言与外观页的返回行为见 [导航状态协议](/zh/docs/development/navigation-state/)。切换语言留在对应语言的设置页，不改变当前系统入口的选中态。首页选中自身；其他页面匹配自身和最近的可列出祖先，但不把首页当成所有页面的默认选中项。没有可列出根祖先的内部页不强行选中入口。
 
 第一列的存在不表示页面具有 collection browser。集合路径仍由 `slots.breadcrumb`、集合来源和 provider 决定；不要新增 `slots.browser_mode`，也不要把来源、排序和列状态写入 front matter。
 
-同一份入口列表和 slot 声明用于各屏幕宽度。整页横向画幅保持原有浏览位置；外观选择页在跟随系统、浅色和深色之间切换，所有页面共同消费 `params.appearance.palette` 指定文件中的语义色变量，默认使用 `css/theme.css`，也可选择 `css/theme-monochrome.css`。配色文件选择不属于 slot 契约，详见 `assets/README.md`。
+同一份入口列表和 slot 声明用于各屏幕宽度。整页横向画幅保持原有浏览位置；外观选择页在跟随系统、浅色和深色之间切换，所有页面共同消费 `params.appearance.palette` 指定文件中的语义色变量，默认使用 `css/theme.css`，也可选择 `css/theme-monochrome.css`。配色文件选择不属于 slot 契约，详见 [配色约定](https://github.com/SwawHQ/banyan/blob/main/module/assets/README.md#select-a-palette)。

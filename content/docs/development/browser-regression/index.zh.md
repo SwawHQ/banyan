@@ -1,7 +1,11 @@
-# Banyan 浏览器检查
+---
+title: 浏览器检查
+slug: browser-regression
+description: 使用 Skill 对已完成的站点构建运行代表页面和专项检查。
+---
 
 在目标站点根目录调用已安装的 `swban.cmd`。参数、默认值和页面要求以任务的
-`--help` 为准，检查范围见 Skill 的[浏览器说明](../.agents/skills/swaw-banyan/references/browser-site.md)。
+`--help` 为准，检查范围见 Skill 的[浏览器说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/browser-site.md)。
 
 ```text
 swban ensure/browser                                         #准备 Chromium
@@ -24,5 +28,5 @@ swban check/browser/site --help                              #查看参数
 
 派生配色角色及引擎敏感行为使用单项检查；已有 `.webkit` 入口复用同一契约。
 业务文案、账户、品牌和专用旅程留在消费站，组合方式见
-[任务维护](../.agents/skills/swaw-banyan/references/tasks.md#compose-a-site-suite)。
-主题源码与故障 fixture 见 [tests/README.md](../tests/README.md)。
+[任务维护](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/tasks.md#compose-a-site-suite)。
+主题源码与故障 fixture 见 [tests/README.md](https://github.com/SwawHQ/banyan/blob/main/tests/README.md)。

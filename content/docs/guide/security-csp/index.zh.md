@@ -1,4 +1,8 @@
-# Banyan Security and CSP
+---
+title: 安全策略与 CSP
+slug: security-csp
+description: 配置发布响应头，管理内联脚本与原生规则的 CSP 哈希。
+---
 
 ## 生成与配置
 
@@ -51,16 +55,19 @@ swban check/http/security <url>                #检查已部署的响应头
 
 静态检查覆盖最终 HTML、两种部署头文件的一致性和 XML 策略。
 浏览器检查使用该构建的实际响应头。部署后还需检查真实 HTTP 响应。
-浏览器范围见[浏览器检查](browser-regression.md)，源码 fixture 见
-[tests/README.md](../tests/README.md)。
+浏览器范围见[浏览器检查](/zh/docs/development/browser-regression/)，源码 fixture 见
+[tests/README.md](https://github.com/SwawHQ/banyan/blob/main/tests/README.md)。
 
 ## Speculation Rules
 
-`speculation_rules.mode = "header"` 通过响应头交付指纹化的
-document rules JSON，不在运行时注入可执行内联脚本。
-不支持该能力的浏览器会忽略该头，runtime/SW 预取按自己的配置执行。
+原生 document rules 静态内联到 HTML。其精确正文与可执行内联脚本一样，
+通过 CSP 哈希许可；不增加 `unsafe-inline`。
+构建和检查都使用压缩后的最终正文。
 
-两栈在 `independent` 模式命中同一 slot 时，Hugo 输出 overlap warning；
-`panicOnWarning=true` 会使构建失败。使用 `prefetch/rules`、
-`prefetch/overlap` 和 `prefetch/debug` 检查生成、协调和诊断行为。
-配置与边界见 [prefetch-stacks.md](prefetch-stacks.md)。
+规则先等待导航和排序，再等待前端选中原生机制。
+选择 SW 或 link 时，原生选择器保持关闭。
+不支持原生规则时，前端选择可用的 SW 或 link。
+
+使用 `prefetch/rules`、`prefetch/overlap` 和 `prefetch/debug`
+检查规则解析、单机制发送和诊断行为。
+配置与边界见 [prefetch-stacks.md](/zh/docs/guide/prefetch-stacks/)。

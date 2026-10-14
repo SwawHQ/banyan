@@ -1,4 +1,8 @@
-# Banyan Navigation State
+---
+title: 导航状态协议
+slug: navigation-state
+description: 说明来源、排序、章节与浏览器历史之间的边界。
+---
 
 ## 目的
 
@@ -115,7 +119,7 @@ Hugo 已输出的 `link[rel="alternate"][hreflang]` 打开所选语言版本，�
 #sort=name-asc
 ```
 
-它只服务当前页主 grid/header controls，也会同步投影到从该主列表离开的导航链接上。
+它只服务当前页主列表与列头控件，也会同步投影到从该主列表离开的导航链接上。
 breadcrumb 分栏不读取或改写 `sort`。
 
 ### `sorts`
@@ -216,4 +220,4 @@ entry 页与 collection 页虽然仍有不同的 orchestration，但它们共享
 - `from/sorts` 仍是当前页面路径状态
 - slots 不负责承载 browser 状态
 
-路径列只有一种呈现方式，不再按宽度或 `variant` 选择不同菜单。`{source, items}` 的呈现协议贯穿 Hugo 静态输出和浏览器同步绘制；没有并行的 preview／fragment 重绘，也没有保留旧 `menu` 字段兼容读取。第一列根入口输出 `data-prefetch-slot="nav"`，与站内导航候选共用 `nav`，不另设 `menu` 类别。预取规则见 [prefetch-stacks.md](prefetch-stacks.md)。
+路径列只有一种呈现方式，不再按宽度或 `variant` 选择不同菜单。`{source, items}` 的呈现协议贯穿 Hugo 静态输出和浏览器同步绘制；没有并行的 preview／fragment 重绘，也没有保留旧 `menu` 字段兼容读取。预取使用主图标和列范围生成的共享选择器，根导航使用 `root` 范围；链接不输出预取属性。预取规则见 [prefetch-stacks.md](/zh/docs/guide/prefetch-stacks/)。

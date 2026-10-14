@@ -1,10 +1,11 @@
 # Banyan for Hugo
 
-A minimalist, multi-language Hugo theme, with a runnable demo in the repository root.
+A minimalist, multi-language Hugo theme. The repository root builds the
+[official documentation site](https://banyan.swaw.com/).
 
 See the [changelog](content/changelog/_index.md) for theme and Skill changes.
 
-## Run the Demo
+## Preview the Site
 
 The CLI currently supports Windows x64. After cloning, prepare tools through
 the bundled Skill. It reuses compatible system tools or downloads portable
@@ -60,14 +61,14 @@ esbuild output used for inline CSP hashes:
 disableJS = true
 ```
 
-The repository's root `hugo.toml` is the starter configuration. The demo consumes
+The repository's root `hugo.toml` is the starter configuration. The site consumes
 `github.com/SwawHQ/banyan/module` through Hugo Modules; its root `go.mod` replaces
 that dependency with `./module` for local development. No module release is
-needed to build the demo or preview changes.
+needed to build the site or preview changes.
 
 Customize root content, `baseURL`, `title`, language settings, and deployment
 params to build your own site. Site files override corresponding module files.
-The published theme module contains only `module/`; demo content and repository
+The published theme module contains only `module/`; documentation content and repository
 tools are outside that module.
 
 New consumers must declare their active languages and create home and taxonomy
@@ -157,18 +158,20 @@ status = 301
 
 ## Repository Layout and Local Development
 
-The root demo is a consumer of the local theme module:
+The documentation site is a consumer of the local theme module:
 
 ```text
 banyan/
-├── hugo.toml, go.mod                # Demo configuration
-├── content/, data/                 # Demo content and site-owned data
+├── hugo.toml, go.mod                # Documentation site configuration
+├── content/                        # Site content
+│   ├── docs/                       # Configuration guides and development reference
+│   └── changelog/                  # Theme and Skill release notes
+├── data/                           # Site-owned data
 ├── module/                         # Published Hugo Module and defaults
 │   ├── go.mod, hugo.toml
 │   └── layouts/, assets/, content/, data/, i18n/, static/, archetypes/
 ├── .agents/skills/swaw-banyan/       # Portable toolchain and tasks
-├── tests/                          # Theme and tooling source tests
-└── docs/
+└── tests/                          # Theme and tooling source tests
 ```
 
 Run from the repository root. Below, `swban` means the bundled
@@ -375,19 +378,19 @@ their lists independently because their platform publications may differ.
 Banyan's current page shell is assembled from a small fixed slot set rather than
 free-form fragment injection.
 
-See [`docs/layout-slots.md`](docs/layout-slots.md) for the current slot names,
+See [Layout slots](content/docs/guide/layout-slots/index.zh.md) for the current slot names,
 their semantics, and the boundary between page slots and site configuration.
 
 ## Security
 
 The current CSP and browser-security regression path is documented in:
 
-- [`docs/security-csp.md`](docs/security-csp.md)
-- [`docs/browser-regression.md`](docs/browser-regression.md)
+- [Security and CSP](content/docs/guide/security-csp/index.zh.md)
+- [Browser checks](content/docs/development/browser-regression/index.zh.md)
 
 The prefetch configuration and backend selection are documented in:
 
-- [`docs/prefetch-stacks.md`](docs/prefetch-stacks.md)
+- [Prefetch configuration](content/docs/guide/prefetch-stacks/index.zh.md)
 
 Banyan keeps prefetch and Service Worker behavior opt-in. Set these in
 `data/delivery.toml`:
@@ -472,8 +475,8 @@ Notes:
 - `linkTitle` is optional compact text for navigation, breadcrumbs, lists, and article taxonomy labels; it falls back to `title`.
 - Required `[banyan_taxonomy]` keys are: `mode`, `article_weight`, `normalize`, and `article_mode`.
 - Attach taxonomy metadata and resources with `content/<plural>/_index.<lang>.md`; terms used by content require matching bundles such as `content/<plural>/<term>/_index.<lang>.md`.
-- Follow the current bundle contract in [docs/taxonomies.md](docs/taxonomies.md); module content participates in the live build and provides overridable defaults.
-- See [docs/taxonomies.md](docs/taxonomies.md) for hierarchical tags and multi-path behavior.
+- Follow the current bundle contract in [Taxonomies](content/docs/guide/taxonomies/index.zh.md); module content participates in the live build and provides overridable defaults.
+- See [Taxonomies](content/docs/guide/taxonomies/index.zh.md) for hierarchical tags and multi-path behavior.
 
 ## License
 

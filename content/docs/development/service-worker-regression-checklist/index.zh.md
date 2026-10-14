@@ -1,6 +1,10 @@
-# Service Worker 回归检查
+---
+title: Service Worker 回归检查
+slug: service-worker-regression-checklist
+description: 检查安装、缓存、升级、导航、失败处理和停用行为。
+---
 
-本清单描述当前行为。仅使用项目根内容构建测试，不使用 exampleSite。
+本清单描述当前行为。使用根站点内容构建测试。
 
 ## 更新契约
 
@@ -67,27 +71,14 @@
 
 使用独立构建对运行 `swban check/browser/pwa/disable <enabled> --next <disabled>`。
 正常更新失败不调用这套停用流程，site 批量入口也不会额外生成停用版本。
+## 检查流程
 
-## 历史验证（2026-09-15）
+在站点根目录调用已安装的 Skill，对已完成的构建运行检查：
 
-根内容生产构建对：`temp_workspace/public/2609152303-pwa-navigation-final-from` → `2609152303-pwa-navigation-final-to`。132 页 HTML 审计通过。
+```text
+swban check/csp <build>                      #检查内联哈希与发布响应头
+swban check/browser/site <build> --updates  #检查代表页面与 SW 升级
+swban check/http/security <url>             #部署后检查实际响应头
+```
 
-16 项浏览器检查通过：`temp_workspace/regression/260915230441-browser`（11 项）、`260915230601-browser`（取消跳转）、`260915230515-browser-security`（3 项）、`260915230640-browser-sw-disable`（停用）。停用产物使用临时配置同时关闭依赖 SW 的预取运行时，未改项目配置。
-
-## Powered by 与检查行为验证（2026-09-16）
-
-根内容生产构建对：`temp_workspace/public/2609161139-powered-by-final-from` → `2609161139-powered-by-final-to`。129 页 HTML 审计通过。
-
-`temp_workspace/regression/260916114003-browser` 的 16 项浏览器检查通过，覆盖三语言技术总览与 SVG、PWA 子页、重复检查不刷新、站内跳转升级、其他标签页状态同步与草稿保留、原生历史、激活异常和首次导航资源预热。`260916114003-browser-security` 的 3 项检查验证 CSP、SW 响应头和 navigation preload。
-
-## PWA 面板内嵌验证（2026-09-16）
-
-`powered-by/` 已合并 PWA 状态与检查；构建时间只在总览显示一次，删除独立 PWA 子页。生产构建对为 `2609161156-powered-by-inline-from` → `2609161156-powered-by-inline-to`，126 页 HTML 审计通过。
-
-`temp_workspace/regression/260916115710-browser` 的 7 项检查通过：三语言总览与内嵌面板、脚本加载边界、根导航、离线重试与重复检查不刷新、首页／列表跳转升级、跨标签页草稿保留和原生刷新／历史行为。桌面及手机端截图已检查。
-
-## 提交前复核（2026-09-16）
-
-根内容构建对 `2609161316-reviewed-from` → `2609161316-reviewed-to` 的 17 项浏览器回归全部通过（`temp_workspace/regression/260916131657-browser`），另有 3 项安全检查通过（`260916131644-browser-security`）。覆盖根入口、三语言账号链接、页面脚本边界、首次导航资源预热、重复检查、升级与旧导航缓存清理、跨标签页保留状态、超时／异常／取消跳转及原生历史。桌面和手机端截图已检查。
-
-最终构建 `2609161318-reviewed-final` 的 126 页 HTML 审计通过；按站点维护者决定，不为已删除的 Updates/check/changelog 地址增加迁移跳转，三语言旧产物及对应重定向均不存在。源码发布契约审计亦已通过。
+按报告处理失败项与跳过项。测试停用功能时，另行提供启用与停用两份实际构建。

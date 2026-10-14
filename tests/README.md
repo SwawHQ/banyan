@@ -31,6 +31,7 @@ Toolchain fixtures do not log in or publish.
 | `browser-{pwa,update,disable,prefetch}.test.mjs` | Worker lifecycle, cache ownership and prefetch |
 | `output.test.mjs` | Repository budgets and retired-output faults |
 | `sitemap.test.mjs` | Rendered HTML discovery, native exclusions, translations and rebuilds |
+| `documentation.test.mjs` | Official documentation routes, links, language indexes and discovery URLs |
 
 Each suite keeps its successful cases and fault fixtures. Domain suites own
 argument semantics; `checks.test.mjs` owns common help/unknown-option checks.

@@ -1,4 +1,8 @@
-# 列表与产品声明
+---
+title: 列表与产品声明
+slug: collection-lists
+description: 配置目录、分类、条目图标和产品列表。
+---
 
 页面的 `list` 只声明子项怎么展示。内容集合的成员来自页面本身的目录或 Hugo 分类关系；选择页的选项由对应布局提供。入口归属继续由真实根页面及有效 `from` 决定，不在内容 front matter 中写菜单。
 
@@ -59,7 +63,7 @@ slots:
 
 `name` 描述内容作者看到的列表类型，`base` 描述样式实现层，因此没有 `list: base` 或 `list_columns`。`choice` 同样使用单列基底；语言／外观布局提供选项，语言与外观脚本分别处理操作，不需要先转成 `name` 集合。
 
-`list` 由集合模型解析，决定渲染器输出的列表变体；`slots.breadcrumb` 决定路径区域是否存在。公共 DOM、行为标记与字段宽度见 [UI 命名与职责](ui-naming.md#样式类与行为标记)，样式归属与发布边界见 [CSS 源码与发布名](ui-naming.md#css-源码与发布名)。
+`list` 由集合模型解析，决定渲染器输出的列表变体；`slots.breadcrumb` 决定路径区域是否存在。公共 DOM、行为标记与字段宽度见 [UI 命名与职责](/zh/docs/development/ui-naming/#样式类与行为标记)，样式归属与发布边界见 [CSS 源码与发布名](/zh/docs/development/ui-naming/#css-源码与发布名)。
 
 集合页只有确实渲染 `.prose` 时才取得单一 `prose.css`；纯列表不会加载正文包。
 
@@ -71,13 +75,13 @@ slots:
 | --- | --- |
 | 主题 `content/about/index*.md` | Banyan 介绍，站点可同路径覆盖内容与入口声明 |
 | 主题 `content/github/index*.md` | Banyan 仓库说明，站点可同路径覆盖 |
-| 主题 `content/rss/index*.md` | 当前语言的 RSS 订阅说明，正文调用 `{{< rss-link >}}` |
+| 主题 `content/rss/index*.md` | 当前语言的 RSS 订阅说明，正文调用 `{{</* rss-link */>}}` |
 
 `layouts/_shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址，并在新标签打开。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。
 
-GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/" >}}链接文字{{< /new-tab >}}`，头像可在其中嵌套 `asset` 短代码；加粗可在短代码外侧使用 Markdown `**`。该短代码复用 `system-ui/link.html` 输出 `target="_blank"`、`rel="noopener noreferrer"`，不需要 JavaScript，也无需开启 Markdown 原始 HTML。第一列入口仍使用当前标签打开说明页。
+GitHub 和备案页的目标链接使用 `{{</* new-tab href="https://example.com/" */>}}链接文字{{</* /new-tab */>}}`，头像可在其中嵌套 `asset` 短代码；加粗可在短代码外侧使用 Markdown `**`。该短代码复用 `system-ui/link.html` 输出 `target="_blank"`、`rel="noopener noreferrer"`，不需要 JavaScript，也无需开启 Markdown 原始 HTML。第一列入口仍使用当前标签打开说明页。
 
-正文中的小图标可使用 `{{< asset src="badge.webp" alt="图标说明" class="md-inline-image" width="16" height="16" >}}`。该 class 只排除普通正文图片的块布局、边框、内边距和阴影，保留浏览器默认的行内图片排版。图标与文字用普通空格分隔，可放进同一个链接，沿用普通链接的下划线。
+正文中的小图标可使用 `{{</* asset src="badge.webp" alt="图标说明" class="md-inline-image" width="16" height="16" */>}}`。该 class 只排除普通正文图片的块布局、边框、内边距和阴影，保留浏览器默认的行内图片排版。图标与文字用普通空格分隔，可放进同一个链接，沿用普通链接的下划线。
 
 ## 统一更新时间
 
@@ -114,13 +118,13 @@ list_icon_file: product
 
 `aggregate` 只提供集合成员，不参与默认图标继承；`/all-tools/` 与 `/tools/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。访问首页只选中首页，其他页面按真实入口或有效来源选中。
 
-图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。浏览器用 `assets/js/browse/icon-value.js` 保留同样的值结构，JSON 编解码不得把对象转成字符串。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主表、页面内嵌 source payload 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
+图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。浏览器用 `assets/js/browse/icon-value.js` 保留同样的值结构，JSON 编解码不得把对象转成字符串。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主表、页面内嵌 source payload 和路径列共用；站点列表与第一列也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
 
 ## 怎样声明选择列表
 
 语言和外观页面在顶层 front matter 声明 `list: choice`，与 `build.list: local` 是两件事：前者选择行的呈现协议，后者控制 Hugo 是否把页面列入父页面集合。`choice` 使用与其他列表相同的行、图标槽和 `.is-current` 状态，但不排序、不注册 collection 来源，也不参与文章路径。
 
-选择列表的标题由布局传入，显示“语言／外观”。语言按配置 `weight` 排列，外观按“跟随系统、浅色、深色”排列，列头不显示排序操作或箭头。公共列头与条目样式见 [UI 命名与职责](ui-naming.md#样式类与行为标记)。
+选择列表的标题由布局传入，显示“语言／外观”。语言按配置 `weight` 排列，外观按“跟随系统、浅色、深色”排列，列头不显示排序操作或箭头。公共列头与条目样式见 [UI 命名与职责](/zh/docs/development/ui-naming/#样式类与行为标记)。
 
 选择列表只接受两种原生控件：链接或按钮。`system-ui/choice/render.html` 校验选项，再调用公共列表，保留标题的 `h1` 结构。`system-ui/list/item-link.html` 与 `item-button.html` 负责原生控件；`item-content.html` 负责文字和图标。页面布局提供选项，功能脚本只响应自己的标记。语言项保留真实 `href` 和 `data-language-choice`，无 JavaScript 时仍可切换；外观项使用按钮和 `data-theme-choice`。模板不认识语言代码或主题值，front matter 也不声明脚本文件。
 
@@ -138,7 +142,7 @@ icon = { text = "EN" }
 
 站点可选择 `EN`、`简`、`繁` 等文字图标。未设置 `icon` 时使用主题的语言 SVG。
 
-语言页的选择仍留在设置页；返回原内容时优先打开刚选语言的真实译文。此行为由语言脚本处理，不属于 `choice` 渲染协议，具体规则见 [系统页面与返回](navigation-state.md#系统页面与返回)。
+语言页的选择仍留在设置页；返回原内容时优先打开刚选语言的真实译文。此行为由语言脚本处理，不属于 `choice` 渲染协议，具体规则见 [系统页面与返回](/zh/docs/development/navigation-state/#系统页面与返回)。
 
 ## 怎样收录工具
 
@@ -185,6 +189,6 @@ collection source 统一使用 `logicalPath`、`sortVariant`、`defaultSort`，H
 
 运行 `swban node tests/nav/rebuild.mjs` 可验证 Hugo 开发预览的增量重建：使用根站点内容和临时目录标题覆盖层，先访问正文，再修改祖先标题，检查三语言正文元信息同步更新。路径模型每次渲染读取当前祖先，不能存入跨增量重建保留的页面 Scratch，否则祖先改名后可能继续输出旧名称。
 
-路径来源直接内嵌在各语言页面，当前集合数据放在 `currentColumn.payload`，祖先集合数据放在 `columns[].payload`。非集合 owner 保留静态 `items`。主表与路径列使用同一份语言和排序事实；读取与解码缓存见 [导航状态](navigation-state.md#内嵌-collection-payload)。
+路径来源直接内嵌在各语言页面，当前集合数据放在 `currentColumn.payload`，祖先集合数据放在 `columns[].payload`。非集合 owner 保留静态 `items`。主表与路径列使用同一份语言和排序事实；读取与解码缓存见 [导航状态](/zh/docs/development/navigation-state/#内嵌-collection-payload)。
 
 在根项目执行 `swban node tests/collections/build.mjs`。它只向系统临时目录写内容覆盖层，完成后清理，基于根内容构建 directory／all／products／name 四种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。name 用例同时覆盖目录、子目录继承、分类、聚合入口，检查首帧仅名称列、名称升降序、进入文章后的路径列、刷新及历史恢复。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

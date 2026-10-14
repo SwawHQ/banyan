@@ -7,6 +7,7 @@ lastmod: 2026-10-14
 
 ## Added
 
+- Chinese guides and developer documentation at `https://banyan.swaw.com/`.
 - Hugo Module at `github.com/SwawHQ/banyan/module`, with matching
   `swaw-banyan` Skill versions. `check/module` checks release versions,
   vendored dependencies and local development.

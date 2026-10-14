@@ -1,4 +1,8 @@
-# Layout 与 partial 架构
+---
+title: 布局与 partial 架构
+slug: partial-architecture
+description: 说明页面入口、功能模板与系统机制的所有权和依赖方向。
+---
 
 Banyan 使用 Hugo 0.146 之后的模板目录结构。主题要求 Hugo 0.157.0 或更高版本：页面入口直接放在 `layouts/`，可复用模板放在 `layouts/_partials/`，短代码放在 `layouts/_shortcodes/`，Markdown render hooks 放在 `layouts/_markup/`。不再保留 `_default/`、`partials/`、`shortcodes/` 的旧兼容目录。
 
@@ -69,7 +73,7 @@ _partials/
 
 `feature-browse/collection/`、`feature-browse/navigation/`、`feature-browse/taxonomy/` 等目录仍按一个功能内部的稳定子领域组织。家族前缀只表达所有权，不算一层算法包装；功能内部最多再使用两层确有意义的子领域。
 
-`collection` 保留为成员、配置、来源和排序的领域名称。公共列表与条目使用 `list-*`、`item-*`，页面列使用 `page-column`；DOM 与 CSS 归属见 [UI 命名与职责](ui-naming.md)。
+`collection` 保留为成员、配置、来源和排序的领域名称。公共列表与条目使用 `list-*`、`item-*`，页面列使用 `page-column`；DOM 与 CSS 归属见 [UI 命名与职责](/zh/docs/development/ui-naming/)。
 
 ## 依赖方向
 
@@ -118,7 +122,7 @@ SSR 列表使用以下分工：
 
 功能模板先生成字段 HTML，再通过 `fields` 传给完整条目。公共模板只装配 HTML，不读取集合配置或调用功能模板。公共列表接收 `title` 时保留选择页的 `h1`，接收 `header` 时为已生成的字段头添加外层行。浏览器动态路径列保留现有 DOM 绘制逻辑。
 
-`feature-browse/navigation/source/models.html` 按集合地址生成 `columns_by_href`，复用列入 `Site.Pages` 的集合的 config、rows、source 和 compact payload。主列表、SSR 路径列与浏览器投影读取这份构建数据。`build.list: local` 或 `build.list: never` 的合法集合页可独立渲染；registry 缺少该页时，`collection/render.html` 直接构建本页 config、rows 和 source，`source/context.html` 直接构建本页 source。collection source 使用 `logicalPath`、`sortVariant`、`defaultSort`，config 与领域 row 保留内部 snake_case 字段。结构模型、呈现列和浏览器来源的完整字段见 [路径模型](breadcrumb-models.md#路径模型)。
+`feature-browse/navigation/source/models.html` 按集合地址生成 `columns_by_href`，复用列入 `Site.Pages` 的集合的 config、rows、source 和 compact payload。主列表、SSR 路径列与浏览器投影读取这份构建数据。`build.list: local` 或 `build.list: never` 的合法集合页可独立渲染；registry 缺少该页时，`collection/render.html` 直接构建本页 config、rows 和 source，`source/context.html` 直接构建本页 source。collection source 使用 `logicalPath`、`sortVariant`、`defaultSort`，config 与领域 row 保留内部 snake_case 字段。结构模型、呈现列和浏览器来源的完整字段见 [路径模型](/zh/docs/development/breadcrumb-models/#路径模型)。
 
 页面 bundle 资源的定位与发布是两个动作：`system-assets/resolve-page.html` 只返回源 resource 和目标目录，`system-assets/publish-page.html` 才发布源文件。分享图先解析源 resource；可处理的位图只发布最终 `1200x630` JPG，非位图才发布原资源，避免为了生成衍生图而附带发布未引用的源图。
 

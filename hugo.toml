@@ -1,12 +1,12 @@
-# Banyan demo site.
+# Banyan documentation and demo site.
 #
 # This file intentionally includes Hugo structural settings that are not
 # inherited from theme configuration. Copy the relevant parts into a real site's
 # root hugo.toml when adopting Banyan.
 
-baseURL = "http://localhost:1313/"
+baseURL = "https://banyan.swaw.com/"
 languageCode = "en-us"
-title = "Banyan Example"
+title = "Banyan"
 preserveTaxonomyNames = true
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
