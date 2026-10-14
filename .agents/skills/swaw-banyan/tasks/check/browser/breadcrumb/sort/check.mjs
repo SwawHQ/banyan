@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
 import {readColumns,selectColumn,columnLocator,observeColumns,columnSort} from '../_shared/page.mjs';
-import {checkPrefetchSlots} from './prefetch.mjs';
+import {checkPrefetchSelectors} from './prefetch.mjs';
 
 function normalizedSortURL(value,defaultSort) {
   const url=new URL(value),fields=new URLSearchParams(url.hash.slice(1)),raw=fields.get('sorts');
@@ -72,13 +72,13 @@ export async function toggleColumn(page,href) {
   assert.deepEqual(content(after.rows),content(before.rows),'Sorting must retain every row and its text.');
   assert.notDeepEqual(after.rows.map(row=>row.key),before.rows.map(row=>row.key),'Choose distinct sort values; toggling must change row order.');
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('banyan:canvas-navigation')),null,'In-place sorting must not create a navigation record.');
-  return {before,after,continuity,requests,url:page.url(),prefetch:await checkPrefetchSlots(page)};
+  return {before,after,continuity,requests,url:page.url(),prefetch:await checkPrefetchSelectors(page)};
 }
 
 export async function check({page,baseUrl,options}) {
   await page.setViewportSize({width:1440,height:130});
   const initial=await observeColumns(page,baseUrl+options.page),selected=await selectColumn(page,options.column);
-  const prefetch=await checkPrefetchSlots(page);
+  const prefetch=await checkPrefetchSelectors(page);
   const parsed=initial.columns.find(column=>column.href===selected.href);
   const slots=(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('sorts')||'').split(',');
   const depth=selected.source.logicalPath.split('/').filter(Boolean).length;

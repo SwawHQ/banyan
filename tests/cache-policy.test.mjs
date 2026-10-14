@@ -110,21 +110,44 @@ test('platform values override common values only within their own route and pla
   assert.equal(worker(output).probe.SW_ROUTES.length,0);
 });
 
-test('delivery tables preserve nested defaults and explicit empty overrides in every language',()=>{
-  const output=passed(build('nested-defaults','[prefetch_runtime]\nmode = "enable"\n'+
-    '[prefetch_runtime.env.TT]\nnav = "sw_sf"\npost = ""\n'+
-    '[speculation_rules]\nmode = "header"\nnav = "off"\n'));
+test('delivery tables preserve nested defaults and explicit off overrides in every language',()=>{
+  const output=passed(build('nested-defaults','[prefetch]\nenabled = true\ndefault = "off"\n'+
+    '[prefetch.icons.folder]\nroot = "conservative"\n'));
+  let targets,nativeBody;
   for(const prefix of ['','zh/','zh-tw/']) {
     const html=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
     const payload=JSON.parse(html.match(/<script id=["']?site-prefetch-data["']?[^>]*>([\s\S]*?)<\/script>/)[1]);
-    assert.equal(payload.TT.nav,'sw_sf');assert.equal(payload.TT.crumb,'sw_mf_g');
-    assert.equal(payload.TT.post,undefined);assert.equal(payload.FT,'TT');
-    assert.equal(payload.TF.nav,'link_xf');
+    assert.deepEqual(Object.keys(payload).sort(),['enabled','modes','prerender','sw']);
+    assert.equal(payload.enabled,true);
+    assert.equal(payload.modes['folder/root'],'conservative');assert.equal(payload.modes['folder/all'],'conservative');
+    assert.equal(payload.modes['folder/tail'],'eager');assert.equal(payload.modes['folder/tail-1'],'moderate');
+    assert.equal(payload.modes.default,'off');
+    assert.equal(payload.prerender['folder/tail'],'moderate');
+    assert.deepEqual(payload.sw,{enabled:true,url:'/sw.js',scope:'/'});
+    const pageTargets=JSON.parse(html.match(/<script id=["']?site-prefetch-rules["']?[^>]*>([\s\S]*?)<\/script>/)[1]);
+    assert.deepEqual(pageTargets.prefetch.map(target=>target.id),['folder/root','folder/tail','folder/tail-1','folder/all','default']);
+    if(targets)assert.deepEqual(pageTargets,targets);else targets=pageTargets;
+    const body=html.match(/<script id=["']?site-speculation-rules["']?[^>]*>([\s\S]*?)<\/script>/)[1];
+    if(nativeBody)assert.equal(body,nativeBody);else nativeBody=body;
+    assert.equal(html.includes('site-prefetch-runtime-meta'),false);
   }
   const edge=JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8'));
-  const url=JSON.parse(edge.headers[0].headers.find(header=>header.key==='Speculation-Rules').value);
-  const rules=JSON.parse(fs.readFileSync(path.join(output,url.slice(1)),'utf8'));
-  assert.equal(rules.prefetch.length,4,'Other Speculation Rules slots inherit defaults.');
+  assert.ok(!edge.headers.some(route=>route.headers.some(header=>header.key==='Speculation-Rules')));
+  const rules=JSON.parse(nativeBody);
+  assert.deepEqual(rules.prefetch.map(rule=>rule.where.and[0].selector_matches),
+    targets.prefetch.filter(target=>target.id!=='default').map(target=>target.selector),
+    'Other icon scopes and the default rule inherit their modes.');
+  assert.equal(rules.prerender.length,1);
+  assert.equal(rules.prerender[0].eagerness,'moderate');
+  assert.equal(rules.prerender[0].where.and[0].selector_matches,targets.prerender.find(target=>target.id==='folder/tail').selector);
+  for(const rule of rules.prefetch) {
+    assert.equal(rule.source,'document');
+    assert.deepEqual(rule.where.and.slice(1),[
+      {selector_matches:'html[data-prefetch-native-ready] a'},
+      {href_matches:['/','/*/','/*.html','/*.htm'],relative_to:'document'},
+      {not:{href_matches:'#*',relative_to:'document'}}
+    ]);
+  }
   assert.equal(worker(output).probe.getMatchingRoute('/unconfigured.json').bucket,'versioned');
 });
 
@@ -231,19 +254,21 @@ test('empty route overrides and disabled optional assets do not restore defaults
   const headers=parseHeaders(fs.readFileSync(path.join(empty,'_headers'),'utf8'));
   assert.equal(headers.length,1);assert.ok(cloudflareHeaders(headers,'/')['content-security-policy']);
   assert.equal(cloudflareHeaders(headers,'/')['cache-control'],undefined);
-  const optional=passed(build('optional','[speculation_rules]\nmode = "header"\nnav = "prefetch_moderate"\n','[params.web_app_manifest]\nmode = "off"\n'));
+  const optional=passed(build('optional','[prefetch]\nenabled = true\n'+
+    '[prefetch.icons.folder]\nroot = "moderate"\n','[params.web_app_manifest]\nmode = "off"\n'));
   const rules=parseHeaders(fs.readFileSync(path.join(optional,'_headers'),'utf8'));
   assert.ok(!rules.some(rule=>rule.source==='/site/pwa/*.webmanifest'));
-  assert.equal(cloudflareHeaders(rules,'/site/speculation-rules/document.hash.json')['cache-control'],'public, max-age=31536000, immutable');
-  assert.equal(cloudflareHeaders(rules,'/site/speculation-rules/document.hash.json')['content-type'],'application/speculationrules+json');
-  assert.equal(worker(optional).probe.getMatchingRoute('/site/speculation-rules/document.hash.json').bucket,'fingerprinted');
-  assert.deepEqual(rules.find(rule=>rule.source==='/site/speculation-rules/*').headers,
-    [{key:'Content-Type',value:'application/speculationrules+json'}]);
+  assert.equal(cloudflareHeaders(rules,'/site/generated.hash.json')['cache-control'],'public, max-age=31536000, immutable');
+  assert.equal(cloudflareHeaders(rules,'/site/generated.hash.json')['content-type'],undefined);
+  assert.equal(worker(optional).probe.getMatchingRoute('/site/generated.hash.json').bucket,'fingerprinted');
+  assert.ok(!rules.some(rule=>rule.source==='/site/speculation-rules/*'));
   const custom=passed(build('optional-no-cache','routes = []\n'+
-    '[speculation_rules]\nmode = "header"\nnav = "prefetch_moderate"\n'));
+    '[prefetch]\nenabled = true\n'+
+    '[prefetch.icons.folder]\nroot = "moderate"\n'));
   const customHeaders=parseHeaders(fs.readFileSync(path.join(custom,'_headers'),'utf8'));
-  assert.equal(cloudflareHeaders(customHeaders,'/site/speculation-rules/document.hash.json')['cache-control'],undefined,
-    'Generated MIME headers must not restore caching removed by the site.');
+  assert.equal(cloudflareHeaders(customHeaders,'/site/generated.hash.json')['cache-control'],undefined,
+    'Native rules must not restore caching removed by the site.');
+  assert.equal(customHeaders.length,1);
   assert.equal(worker(custom).probe.SW_ROUTES.length,0);
 });
 
@@ -256,9 +281,10 @@ test('invalid and retired policy fields fail the build instead of silently chang
     ['vendor-only','[platform.edgeone]\nnodeVersion = "22.11.0"',/unsupported platform/],
     ['wrong-product','[platform.edgeone.pages]\nnodeVersion = "22.11.0"',/unsupported platform/],
     ['platform-type','platform = false',/must be a table/],
-    ['runtime-type','prefetch_runtime = false',/prefetch_runtime must be a table/],
-    ['speculation-type','speculation_rules = false',/speculation_rules must be a table/],
-    ['runtime-mode','[prefetch_runtime]\nmode = "invalid"',/delivery.prefetch_runtime.mode/],
+    ['prefetch-type','prefetch = false',/prefetch must be a table/],
+    ['old-runtime','[prefetch_runtime]\nmode = "off"',/unknown field "prefetch_runtime"/],
+    ['old-speculation','[speculation_rules]\nmode = "off"',/unknown field "speculation_rules"/],
+    ['prefetch-enabled','[prefetch]\nenabled = "off"',/prefetch.enabled must be a boolean/],
     ['old-http','[[routes]]\npath = "/*"\nhttp.cloudflare.unset = ["Cache-Control"]',/unknown field/],
     ['headers-type','[[routes]]\npath = "/*"\nhttp.headers = false',/must be a table/],
     ['unset-type','[[routes]]\npath = "/*"\nhttp.cloudflare.pages.unset = false',/array of header names/],
@@ -279,7 +305,7 @@ test('invalid and retired policy fields fail the build instead of silently chang
 });
 
 test('former Hugo parameter entries and policy files are rejected',()=>{
-  for(const key of ['prefetch_runtime','speculation_rules','service_worker']) {
+  for(const key of ['prefetch','prefetch_runtime','speculation_rules','service_worker']) {
     const result=build('retired-'+key,undefined,'[params.'+key+']\nmode = "off"\n');
     assert.notEqual(result.status,0);assert.match(result.log,/is not supported; use data\/delivery.toml/);
   }

@@ -1,0 +1,3 @@
+{{- $selector := printf ":not(:has(%s))" .path -}}
+{{- if gt .count 0 -}}{{- $selector = printf ":has(%s:nth-child(%d):last-child)" .path .count -}}{{- end -}}
+{{- return $selector -}}

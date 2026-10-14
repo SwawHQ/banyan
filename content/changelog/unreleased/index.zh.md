@@ -2,7 +2,7 @@
 title: 未发布
 slug: unreleased
 description: Banyan 主题和 Skill 的未发布变更。
-lastmod: 2026-10-13
+lastmod: 2026-10-14
 ---
 
 ## 新增
@@ -29,21 +29,27 @@ lastmod: 2026-10-13
 
 ## 调整
 
+- 预取使用统一的 `[prefetch]` 配置，按图标和列范围设置
+  `conservative`、`moderate`、`eager` 或 `immediate`。
+  列范围使用 `root`、`tail`、`"root+N"`、`"tail-N"` 和 `all`；根导航参与编号。
+  基础预取和预渲染独立解析，尾列文件夹默认使用 `moderate` 预渲染。
+  前端自动选择原生规则、活动的 Banyan SW 或 link；可选范围支持原生 prerender。
+  原生规则静态内联并由 CSP 哈希许可，待导航和排序就绪后激活。
+  自实现只初始化一次，保留页面内去重，移除会话去重。
+  诊断页提供单页机制选择、重载测试和发送状态；未配置图标使用默认策略。
+  预取体积报告移除无效的旧 URL 计数。
 - 来源和排序参数 `from`、`sort`、`sorts` 移到 URL 的 `#` 后，
   章节定位与这些状态共存。浏览器后退和前进会恢复来源和路径列排序。
   移除 `navigation-state-default.toml` 配置；
   旧查询参数不再控制导航视图。
 - 交付配置集中到 `data/delivery.toml`，模块默认值在 `data/banyan/delivery.toml`。
-  `prefetch_runtime`、`speculation_rules` 和 `service_worker` 从 Hugo `params`
-  移到此文件，应用到所有语言。表按字段合并，不再接受旧配置入口。
+  预取和 SW 配置应用到所有语言。表按字段合并，不再接受旧配置入口。
   部署参数使用 `platform.edgeone.makers`；路径特例使用
   `http.edgeone.makers` 和 `http.cloudflare.pages`，`http` 与 `sw` 独立配置。
   SW 只使用 `sw.bucket`（`versioned`、`fingerprinted`、`off`），支持路径任意位置的
   单个通配符，区分路径大小写，后声明的匹配规则优先。默认覆盖同源 GET 请求，
   包括 JSON 和 XML。按版本缓存未命中时校验 HTTP 缓存，关联资源只预热指纹 URL。
   站点规则数组替换默认数组，不再接受旧格式。
-  Speculation Rules 发布到 `/site/speculation-rules/`，复用默认 `/site/*` 的
-  HTTP 和 SW 缓存策略。
   移除未使用的 `/icon/*` 不可变缓存规则。
 - 站点地图默认收录已渲染且允许索引的 HTML 页面，不受 `build.list` 影响。
   在内容前置配置中用原生 `sitemap.disable` 排除页面，
@@ -62,6 +68,7 @@ lastmod: 2026-10-13
 
 ## 修复
 
+- 未注册 Service Worker 时，预取诊断页仍能显示配置和运行状态。
 - Cloudflare 缓存和 XML CSP 特例先删除继承的响应头，再设置新值，
   避免多个冲突值被拼接。
 - 章节滚动执行时读取当前 URL 片段，避免待执行的章节滚动

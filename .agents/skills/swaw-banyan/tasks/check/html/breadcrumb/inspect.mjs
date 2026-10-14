@@ -5,16 +5,12 @@ import {extractBlocks} from '../../../_shared/html/blocks.mjs';
 function inspectBreadcrumbPrefetchContract(text) {
     const issues = [];
     let breadcrumbAnchorCount = 0;
-    let breadcrumbCrumbAnchorCount = 0;
 
     const navigation = extractBlocks(text, 'nav', tag => extractTagAttribute(tag, 'data-slot') === 'breadcrumb');
     for (const tag of navigation.flatMap(node => extractStartTags(node.inner, 'a'))) {
         breadcrumbAnchorCount += 1;
         const slot = extractTagAttribute(tag, 'data-prefetch-slot');
-        if (slot === 'crumb') {
-            breadcrumbCrumbAnchorCount += 1;
-            continue;
-        }
+        if (!slot && !/\sdata-prefetch-slot(?:\s|=|>)/i.test(tag)) continue;
 
         issues.push({
             href: extractTagAttribute(tag, 'href'),
@@ -24,7 +20,6 @@ function inspectBreadcrumbPrefetchContract(text) {
 
     return {
         breadcrumbAnchorCount,
-        breadcrumbCrumbAnchorCount,
         breadcrumbPrefetchIssues: issues
     };
 }
@@ -75,7 +70,7 @@ export async function inspect(directory) {
       issues.push('Breadcrumb collection source JSON must come from the page registry: ' + row.relativePath);
     }
     for (const issue of row.breadcrumbPrefetchIssues) {
-      issues.push(`Breadcrumb anchor must use data-prefetch-slot="crumb": ${row.relativePath} href=${issue.href || '<empty>'} slot=${issue.slot}`);
+      issues.push(`Breadcrumb anchor must not use data-prefetch-slot: ${row.relativePath} href=${issue.href || '<empty>'}`);
     }
   }
   return {issues};

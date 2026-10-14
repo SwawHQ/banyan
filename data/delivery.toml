@@ -1,5 +1,5 @@
-[prefetch_runtime]
-mode = "off"
+[prefetch]
+enabled = false
 
 [service_worker]
 mode = "off"

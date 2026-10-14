@@ -1,7 +1,67 @@
-{{- return slice
-  (dict "config_key" "nav" "slot" "nav")
-  (dict "config_key" "crumb" "slot" "crumb")
-  (dict "config_key" "sort_siblings" "slot" "sort")
-  (dict "config_key" "descendants" "slot" "desc")
-  (dict "config_key" "post" "slot" "post")
--}}
+{{- $iconScopes := dict -}}
+{{- range $id, $_ := .modes -}}
+  {{- if ne $id "default" -}}
+    {{- $parts := split $id "/" -}}
+    {{- $icon := index $parts 0 -}}
+    {{- $scopes := index $iconScopes $icon | default dict -}}
+    {{- $iconScopes = merge $iconScopes (dict $icon (merge $scopes (dict (index $parts 1) true))) -}}
+  {{- end -}}
+{{- end -}}
+{{- $base := "html[data-prefetch-ready]:not([data-entry-breadcrumb-pending]):not([data-breadcrumb-sort-pending]) a[href]:not([download]):not([data-sort-control]):not([aria-hidden=\"true\"] a):is(:not([target]),[target=\"\"],[target=\"_self\" i])" -}}
+{{- $root := "[data-root-navigation] a" -}}
+{{- $path := "[data-slot=\"breadcrumb\"]:not([aria-hidden=\"true\"]) > .path-column" -}}
+{{- $collection := "html:has(.slot-main--collection)" -}}
+{{- $document := "html:not(:has(.slot-main--collection))" -}}
+{{- $targets := slice -}}
+{{- $matched := slice -}}
+{{- range $icon, $scopes := $iconScopes -}}
+  {{- $ordered := slice -}}
+  {{- range slice "root" "tail" -}}{{- if isset $scopes . -}}{{- $ordered = $ordered | append . -}}{{- end -}}{{- end -}}
+  {{- range $prefix := slice "tail-" "root+" -}}
+    {{- $offsets := slice -}}
+    {{- range $scope, $_ := $scopes -}}
+      {{- if strings.HasPrefix $scope $prefix -}}
+        {{- $offsets = $offsets | append (dict "scope" $scope "distance" (int (strings.TrimPrefix $prefix $scope))) -}}
+      {{- end -}}
+    {{- end -}}
+    {{- range sort $offsets "distance" "asc" -}}{{- $ordered = $ordered | append .scope -}}{{- end -}}
+  {{- end -}}
+  {{- if isset $scopes "all" -}}{{- $ordered = $ordered | append "all" -}}{{- end -}}
+  {{- $claimed := slice -}}
+  {{- range $scope := $ordered -}}
+    {{- $positions := slice -}}
+    {{- if eq $scope "root" -}}
+      {{- $positions = $positions | append $root -}}
+    {{- else if eq $scope "tail" -}}
+      {{- $positions = slice
+        (printf "%s [data-slot=\"main\"] a" $collection)
+        (printf "%s %s:nth-last-child(1) a" $document $path)
+        (printf "%s:not(:has(%s)) %s" $document $path $root)
+      -}}
+    {{- else if strings.HasPrefix $scope "root+" -}}
+      {{- $distance := int (strings.TrimPrefix "root+" $scope) -}}
+      {{- $positions = $positions | append (printf "%s:nth-child(%d) a" $path $distance) -}}
+      {{- $count := partial "system-delivery/prefetch/path-count.html" (dict "path" $path "count" (sub $distance 1)) -}}
+      {{- $positions = $positions | append (printf "%s%s [data-slot=\"main\"] a" $collection $count) -}}
+    {{- else if strings.HasPrefix $scope "tail-" -}}
+      {{- $distance := int (strings.TrimPrefix "tail-" $scope) -}}
+      {{- $positions = slice
+        (printf "%s %s:nth-last-child(%d) a" $collection $path $distance)
+        (printf "%s %s:nth-last-child(%d) a" $document $path (add $distance 1))
+      -}}
+      {{- range slice (dict "page" $collection "count" (sub $distance 1)) (dict "page" $document "count" $distance) -}}
+        {{- $count := partial "system-delivery/prefetch/path-count.html" (dict "path" $path "count" .count) -}}
+        {{- $positions = $positions | append (printf "%s%s %s" .page $count $root) -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $selector := printf "%s[data-list-entry]:has(> .item-icon > svg.icon-%s)" $base $icon -}}
+    {{- if gt (len $positions) 0 -}}{{- $selector = printf "%s:is(%s)" $selector (delimit $positions ", ") -}}{{- end -}}
+    {{- if gt (len $claimed) 0 -}}{{- $selector = printf "%s:not(:is(%s))" $selector (delimit $claimed ", ") -}}{{- end -}}
+    {{- $targets = $targets | append (dict "id" (printf "%s/%s" $icon $scope) "selector" $selector) -}}
+    {{- $matched = $matched | append $selector -}}
+    {{- $claimed = $claimed | append $positions -}}
+  {{- end -}}
+{{- end -}}
+{{- $defaultSelector := $base -}}
+{{- if gt (len $matched) 0 -}}{{- $defaultSelector = printf "%s:not(:is(%s))" $base (delimit $matched ", ") -}}{{- end -}}
+{{- return ($targets | append (dict "id" "default" "selector" $defaultSelector)) -}}

@@ -86,3 +86,46 @@ other = '章節'
 other = '目錄與資訊'
 [document_aside_close]
 other = '收起'
+
+[prefetch_debug_intro]
+other = '測試僅適用於本頁。選擇預取方式，然後套用並重新載入。'
+[prefetch_debug_backend]
+other = '預取方式'
+[prefetch_debug_auto]
+other = '自動'
+[prefetch_debug_native]
+other = '原生'
+[prefetch_debug_sw]
+other = 'SW'
+[prefetch_debug_link]
+other = 'Link'
+[prefetch_debug_off]
+other = '關閉'
+[prefetch_debug_apply]
+other = '套用並重新載入'
+[prefetch_debug_loading]
+other = '載入中…'
+[prefetch_debug_unavailable]
+other = '無法使用'
+[prefetch_debug_scope]
+other = '此選擇不會繞過 SW 攔截，也不會取消註冊 SW。'
+[prefetch_debug_devtools]
+other = '要繞過 SW 攔截，在 DevTools → Application → Service Workers 中選取 Bypass for network。在 Application → Speculative loads 中檢查原生預取。'
+[prefetch_debug_collection]
+other = '集合'
+[prefetch_debug_article]
+other = '文章'
+[prefetch_debug_test_links]
+other = '測試連結'
+[prefetch_debug_test_help]
+other = '將游標移到連結或聚焦連結。觸控裝置可輕觸連結。瀏覽器決定原生預取的時間。'
+[prefetch_debug_support]
+other = '瀏覽器支援'
+[prefetch_debug_env]
+other = '所選後端'
+[prefetch_debug_actions]
+other = '潛在候選'
+[prefetch_debug_runtime]
+other = '自實作預取傳送'
+[prefetch_debug_payload]
+other = '發佈的設定和規則'

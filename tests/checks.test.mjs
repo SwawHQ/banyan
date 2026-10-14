@@ -25,8 +25,7 @@ const security = {
   'X-Content-Type-Options':'nosniff',
   'Referrer-Policy':'strict-origin-when-cross-origin'
 };
-const rules = JSON.stringify({prefetch:[{source:'document',where:{selector_matches:'a[data-prefetch-slot=nav]'},eagerness:'eager'}]});
-const rulesPath = '/site/speculation-rules/document.' + hash(rules) + '.json';
+const rules = JSON.stringify({prefetch:[{source:'document',where:{and:[{selector_matches:'html[data-prefetch-native-ready] a'},{selector_matches:'html[data-prefetch-ready] a:has(> .item-icon > svg.icon-folder)'},{href_matches:'/*',relative_to:'document'}]},eagerness:'eager'}]});
 const updatePanel='<div data-site-update-panel><p>Controlled: <span data-pwa-controlled>—</span></p><p data-site-update-status role=status aria-live=polite></p></div>';
 const updateAction='<button type=button data-site-update-action=check><span data-site-update-action-label>Check</span></button>';
 const dateRow=value=>'<div class=document-meta__row><span><svg><use href=#icon-clock></use></svg></span><time datetime="'+value+'">'+value+'</time></div>';
@@ -84,18 +83,14 @@ before(async () => {
   write(site,'public/sitemap.xml','<urlset><url><loc>https://example.test/</loc></url></urlset>');
   server = createServer((request,response) => {
     const url = new URL(request.url,'http://localhost');
-    if (url.pathname.startsWith('/site/speculation-rules/')) {
-      response.setHeader('Content-Type','application/json');
-      response.end(url.searchParams.has('bad') ? '{}' : rules); return;
-    }
     if (url.pathname === '/failed') {response.statusCode=503; response.end(); return;}
     for (const [key,value] of Object.entries(security)) response.setHeader(key,value);
     response.setHeader('Cache-Control','no-cache, max-age=0, must-revalidate');
     if (url.searchParams.has('bad-csp')) response.removeHeader('Content-Security-Policy');
     if (url.searchParams.has('bad-cache')) response.setHeader('Cache-Control','public, max-age=3600, immutable');
-    if (url.searchParams.has('spec')) response.setHeader('Speculation-Rules','"' + rulesPath + '"');
-    if (url.searchParams.has('bad-spec')) response.setHeader('Speculation-Rules','"https://other.test/rules.json"');
-    response.end();
+    response.setHeader('Content-Type','text/html');
+    const documentRules=url.searchParams.has('bad-spec')?'{broken':rules;
+    response.end(url.searchParams.has('spec')||url.searchParams.has('bad-spec')?'<script id=site-speculation-rules type=speculationrules>'+documentRules+'</script>':'');
   });
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
   origin = 'http://127.0.0.1:' + server.address().port;
@@ -122,6 +117,22 @@ test('individual HTML checks and reports ignore defects outside their own respon
   write(pathEntry,'js/browse/path-entry.fixture.js','void 0;');
   checked('check/html/scripts',pathEntry,/Home page must not load the path entry bundle/);
   assert.equal(cli('check/html/metadata',[pathEntry]).status,0);
+});
+
+test('prefetch cost reports omit retired URL counts and retain bytes and rule counts',()=>{
+  const html=fs.readFileSync(path.join(site,'public/index.html'),'utf8');
+  const empty=cli('report/payload/prefetch',[output('empty-prefetch-report',html)]);
+  assert.equal(empty.status,0,empty.stdout+empty.stderr);
+  assert.match(empty.stdout,/Total bytes\t0/);
+  assert.doesNotMatch(empty.stdout,/Unique URLs/);
+  const payload=JSON.stringify({enabled:true,modes:{default:'moderate','folder/root':'off'},
+    prerender:{default:'off','folder/tail':'moderate'},sw:{enabled:false,url:'/sw.js',scope:'/'}});
+  const configured=cli('report/payload/prefetch',[output('configured-prefetch-report',
+    html.replace('</body>','<script id=site-prefetch-data type=application/json>'+payload+'</script></body>'))]);
+  assert.equal(configured.status,0,configured.stdout+configured.stderr);
+  assert.match(configured.stdout,new RegExp('Total bytes\\t'+Buffer.byteLength(payload)));
+  assert.match(configured.stdout,/index.html\tbytes=\d+\trules=1\tprerender=1/);
+  assert.doesNotMatch(configured.stdout,/Unique URLs/);
 });
 
 test('stylesheet checks reject any family outside the current contract',()=>{
@@ -237,42 +248,39 @@ test('breadcrumb and prefetch payload checks keep parsing failures and runtime p
   const prefetch = output('bad prefetch',html.replace('</body>','<script type=application/json id=site-prefetch-data>{broken}</script></body>'));
   checked('check/prefetch/payload',prefetch,/Invalid prefetch payload/);
   assert.equal(cli('check/html/breadcrumb',[prefetch]).status,0);
-  const paired = output('unpaired prefetch',html.replace('</body>','<script type=application/json id=site-prefetch-data>{"tt":{}}</script></body>'));
+  const paired = output('unpaired prefetch',html.replace('</body>','<script type=application/json id=site-prefetch-data>{"enabled":true,"modes":{"default":"moderate"},"prerender":{},"sw":{"enabled":false,"url":"/sw.js","scope":"/"}}</script></body>'));
   checked('check/prefetch/payload',paired,/Missing prefetch runtime/);
 });
-test('breadcrumb prefetch checks count merged navigation anchors and retain slot failures',() => {
+test('breadcrumb checks count merged navigation anchors and reject legacy slot markers',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
-  const nav = '<nav class="slot path-navigation" data-slot=breadcrumb aria-label=Breadcrumb><div class=page-column><a href=/one/ data-prefetch-slot=crumb>One</a><div><a href=/two/ data-prefetch-slot=crumb>Two</a></div></div></nav>';
-  const text = html.replace('</body>',nav+'<a href=/outside/ data-prefetch-slot=nav>Outside</a></body>');
+  const nav = '<nav class="slot path-navigation" data-slot=breadcrumb aria-label=Breadcrumb><div class=page-column><a href=/one/>One</a><div><a href=/two/>Two</a></div></div></nav>';
+  const text = html.replace('</body>',nav+'<a href=/outside/>Outside</a></body>');
   const row = breadcrumbRows([{text}])[0];
-  assert.equal(row.breadcrumbAnchorCount,2);assert.equal(row.breadcrumbCrumbAnchorCount,2);
+  assert.equal(row.breadcrumbAnchorCount,2);
   assert.deepEqual(row.breadcrumbPrefetchIssues,[]);
   assert.equal(cli('check/html/breadcrumb',[output('merged breadcrumb',text)]).status,0);
-  for (const [name,slot] of [['missing',''],['wrong','data-prefetch-slot=nav']]) {
-    const broken = text.replace('data-prefetch-slot=crumb',slot);
+  for (const [name,slot] of [['empty','data-prefetch-slot'],['old','data-prefetch-slot=crumb']]) {
+    const broken = text.replace('href=/one/', 'href=/one/ '+slot);
     const fault = breadcrumbRows([{text:broken}])[0];
-    assert.equal(fault.breadcrumbAnchorCount,2);assert.equal(fault.breadcrumbCrumbAnchorCount,1);
+    assert.equal(fault.breadcrumbAnchorCount,2);
     assert.equal(fault.breadcrumbPrefetchIssues.length,1);
     assert.equal(fault.breadcrumbPrefetchIssues[0].href,'/one/');
-    checked('check/html/breadcrumb',output(name+' merged breadcrumb',broken),/Breadcrumb anchor must use/);
+    checked('check/html/breadcrumb',output(name+' merged breadcrumb',broken),/Breadcrumb anchor must not use/);
   }
 });
-test('shared rules checking covers disabled, enabled, stale, changed and mismatched outputs',() => {
-  const directory = output('rules');
-  function headers(value) {
-    write(directory,'_headers',value ? '/*\n  Speculation-Rules: "' + value + '"' : '/*\n  Cache-Control: no-cache');
-    write(directory,'edgeone.json',JSON.stringify({headers:[{source:'/*',headers:value ? [{key:'Speculation-Rules',value:'"' + value + '"'}] : []}]}));
-  }
-  headers('');
+test('shared inline rules checks cover disabled, accepted, invalid JSON and missing native gate',() => {
+  const directory=output('rules');
+  write(directory,'_headers','/*\n  Cache-Control: no-cache');
+  write(directory,'edgeone.json',JSON.stringify({headers:[{source:'/*',headers:[]}]}));
+  const html=fs.readFileSync(path.join(directory,'index.html'),'utf8');
+  const put=value=>write(directory,'index.html',html.replace('</body>','<script id=site-speculation-rules type=speculationrules>'+value+'</script></body>'));
   assert.equal(cli('check/prefetch/rules',[directory]).status,0);
-  headers(rulesPath); write(directory,rulesPath.slice(1),rules);
-  assert.equal(cli('check/prefetch/rules',[directory]).status,0);
-  write(directory,rulesPath.slice(1),'{}');
-  checked('check/prefetch/rules',directory,/fingerprint differs/);
-  write(directory,rulesPath.slice(1),rules); headers('');
-  checked('check/prefetch/rules',directory,/stale files/);
-  headers(rulesPath); write(directory,'_headers','/*\n  Speculation-Rules: "/wrong.json"');
-  checked('check/prefetch/rules',directory,/must agree/);
+  put(rules);assert.equal(cli('check/prefetch/rules',[directory]).status,0);
+  put('{broken');checked('check/prefetch/rules',directory,/Invalid speculation rules JSON/);
+  put(JSON.stringify({prefetch:[{source:'document',where:{and:[{selector_matches:'a'}]},eagerness:'moderate'}]}));
+  checked('check/prefetch/rules',directory,/Invalid shared document rules/);
+  put(rules);write(directory,'_headers','/*\n  Speculation-Rules: "/wrong.json"');
+  checked('check/prefetch/rules',directory,/must not also/);
 });
 test('build version checks compare the rendered version with service-worker bytes',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
@@ -332,7 +340,7 @@ test('HTTP checks validate supplied URLs and separate security, cache and specul
   const cacheResult = await cliAsync('check/http/cache',[origin+'/sw.js?bad-cache']);
   assert.equal(cacheResult.status,1); assert.match(cacheResult.stderr,/no-cache|immutable/);
   const spec = await cliAsync('check/http/speculation',[origin+'/?bad-spec']);
-  assert.equal(spec.status,1); assert.match(spec.stderr,/same-origin/);
+  assert.equal(spec.status,1); assert.match(spec.stderr,/Invalid speculation rules JSON/);
   assert.equal((await cliAsync('check/http/speculation',[origin])).status,0);
   assert.equal((await cliAsync('check/http/security',[origin+'/failed'])).status,1);
   for (const command of ['check/http/security','check/http/cache','check/http/speculation']) for (const args of [[],['file:///etc/passwd'],[origin,origin]]) {

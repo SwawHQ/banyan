@@ -53,19 +53,23 @@ test('site discovery uses actual translated paths, source links and sort data',a
   const minimal=await discoverSite(tiny);
   assert.equal(minimal.pages,2);assert.equal(minimal.prose,'/reader/deep/');assert.equal(minimal.collection,null);
   assert.equal(minimal.rules,false);
-  write(tiny,'site/speculation-rules/document.hash.json','{}');
-  assert.equal((await discoverSite(tiny)).rules,true,'Rules files must be discovered under /site/.');
+  write(tiny,'index.html','<html lang=en><body><script id=site-speculation-rules type=speculationrules>{"prefetch":[{}]}</script></body></html>');
+  assert.equal((await discoverSite(tiny)).rules,true,'Inline rules must be discovered per page.');
   const runtime=path.join(work,'runtime');fs.cpSync(tiny,runtime,{recursive:true});
-  write(runtime,'custom/diagnostics/index.html',`<html lang=en><body>
-    <script id=site-prefetch-data type=application/json>{"TT":"config","config":{"nav":"link_sf_g","post":"link_xf_g"}}</script>
-    <script id=site-prefetch-runtime-meta type=application/json>{"coordination_mode":"preempt_runtime_when_supported","owned_slots":["nav"]}</script>
-    <pre id=prefetch-debug-support></pre><a href=/other/ data-prefetch-slot=nav>Owned</a>
-    <a href=/reader/deep/ data-prefetch-slot=post>Unowned</a></body></html>`);
-  write(runtime,'_headers','/*\n  Speculation-Rules: "/site/speculation-rules/document.json"\n');
+  write(runtime,'custom/diagnostics/index.html',`<html lang=en><body data-prefetch-debug>
+    <script id=site-prefetch-data type=application/json>{"enabled":true,"modes":{"folder/root":"moderate","default":"immediate"},"prerender":{},"sw":{"enabled":false,"url":"/sw.js","scope":"/"}}</script>
+    <script id=site-speculation-rules type=speculationrules>{"prefetch":[{}]}</script>
+    <script id=site-prefetch-rules type=application/json>{"prefetch":[{"id":"folder/root","selector":"html[data-prefetch-ready] [data-root-navigation] a:has(> .item-icon > svg.icon-folder)"},{"id":"default","selector":"html[data-prefetch-ready] a:not(:has(> .item-icon > svg.icon-folder))"}],"prerender":[]}</script>
+    <pre id=prefetch-debug-support></pre><nav data-root-navigation><a href=/other/><span class=item-icon><svg class=icon-folder></svg></span>Owned</a></nav>
+    <a href=/reader/deep/>Unowned</a></body></html>`);
   const coordinated=await discoverSite(runtime);
   assert.equal(coordinated.overlap,'/custom/diagnostics/');assert.equal(coordinated.debug,'/custom/diagnostics/');
-  fs.appendFileSync(path.join(runtime,'custom/diagnostics/index.html'),'<a href=/other/ data-prefetch-slot=post>Also unowned</a>');
-  assert.equal((await discoverSite(runtime)).overlap,null,'A shared unowned URL must not be treated as suppressed.');
+  fs.appendFileSync(path.join(runtime,'custom/diagnostics/index.html'),'<a href=/other/>Also unowned</a>');
+  assert.equal((await discoverSite(runtime)).overlap,'/custom/diagnostics/','Backend exclusion is checked by the browser leaf.');
+  const nativeOnly=fs.readFileSync(path.join(runtime,'custom/diagnostics/index.html'),'utf8').replace(/<script id=site-prefetch-data[^>]*>[\s\S]*?<\/script>/,'');
+  write(runtime,'custom/diagnostics/index.html',nativeOnly);
+  const nativeFound=await discoverSite(runtime);
+  assert.equal(nativeFound.overlap,null);assert.equal(nativeFound.debug,'/custom/diagnostics/','Native-only diagnostics remain discoverable.');
 });
 
 test('site checks reuse one build, report skipped coverage and retain failures',{timeout:120000},()=>{
@@ -103,9 +107,9 @@ test('site --updates builds a temporary version, runs real SW checks and removes
   assert.deepEqual(fs.readdirSync(os.tmpdir()).filter(name=>name.startsWith('swban-site-build-')).sort(),temporary);
 });
 
-test('site discovers enabled prefetch coordination and runs browser rule and diagnostic checks',{timeout:60000},async()=>{
+test('site discovers enabled automatic prefetch and runs browser rule and diagnostic checks',{timeout:60000},async()=>{
   const directory=path.join(work,'prefetch-build');
-  write(source,'data/delivery.toml','[service_worker]\nmode = "enable"\n[prefetch_runtime]\nmode = "enable"\n[speculation_rules]\nmode = "header"\n');
+  write(source,'data/delivery.toml','[service_worker]\nmode = "enable"\n[prefetch]\nenabled = true\n');
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',directory],
     {cwd:source,env:fixtureEnvironment(path.join(work,'prefetch-work')),
     encoding:'utf8',timeout:30000,windowsHide:true});

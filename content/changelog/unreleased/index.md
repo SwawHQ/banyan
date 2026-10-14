@@ -2,7 +2,7 @@
 title: Unreleased
 slug: unreleased
 description: Unreleased changes to the Banyan theme and Skill.
-lastmod: 2026-10-13
+lastmod: 2026-10-14
 ---
 
 ## Added
@@ -31,13 +31,23 @@ lastmod: 2026-10-13
 
 ## Changed
 
+- Use unified `[prefetch]` settings by icon and column scope, with
+  conservative, moderate, eager and immediate levels. Scopes use `root`, `tail`,
+  `"root+N"`, `"tail-N"`, and `all`; root navigation is column zero.
+  Prefetch and prerender resolve independently; tail folder links default to
+  moderate prerender. Select native rules,
+  an active Banyan SW, or link automatically; optional scopes enable native
+  prerender. Inline native rules use CSP hashes and wait for navigation and
+  sorting. Initialize custom prefetch once, keep page URL deduplication and
+  remove session gates. The diagnostic page provides per-page backend
+  selection, reload testing and dispatch status; unconfigured icons use the default.
+  Remove the invalid legacy URL count from prefetch size reports.
 - Move the frontend `from`, `sort`, and `sorts` fields into URL fragments,
   preserving them in chapter links. Back and Forward restore the source and
   breadcrumb sorting. Remove `navigation-state-default.toml`;
   query parameters no longer control the navigation view.
 - Delivery settings use `data/delivery.toml`, with Module defaults in
-  `data/banyan/delivery.toml`. Move `prefetch_runtime`, `speculation_rules`, and
-  `service_worker` from Hugo `params` to this file; they apply to all languages.
+  `data/banyan/delivery.toml`. Prefetch and Service Worker settings apply to all languages.
   Tables merge by field; previous configuration entries are no longer accepted.
   Deployment fields use `platform.edgeone.makers`; route overrides use
   `http.edgeone.makers` and `http.cloudflare.pages`, with independent `http`
@@ -47,8 +57,6 @@ lastmod: 2026-10-13
   requests, including JSON and XML. Versioned cache misses validate the HTTP
   cache; related-resource warmup selects only fingerprinted URLs.
   Site route arrays replace the defaults; the previous format is no longer accepted.
-  Speculation rules publish under `/site/speculation-rules/` and share the
-  default `/site/*` HTTP and SW cache policies.
   Remove the unused `/icon/*` immutable-cache rule.
 - Sitemaps include rendered, indexable HTML pages regardless of `build.list`.
   Use native `sitemap.disable` in content front matter to exclude a page;
@@ -75,6 +83,7 @@ lastmod: 2026-10-13
 
 ## Fixed
 
+- Prefetch diagnostics display configuration and runtime state without a registered Service Worker.
 - Navigation sorting checks accept selectable text truncated by fixed field widths.
 - Mobile aside checks evaluate each requested width without retained browser zoom.
 - Browser checks retry local ports denied by the operating system.

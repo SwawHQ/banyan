@@ -41,7 +41,6 @@
       "class" "document-meta__label"
       "title" $homeLabel
       "label" $homeLabel
-      "prefetchSlot" "nav"
     ) -}}
     {{- range $index, $item := $directoryItems -}}
       {{- if eq $index 0 -}}{{ " " }}{{- end -}}
@@ -55,7 +54,6 @@
         "text" $itemText
         "title" (index $item "title")
         "ariaCurrent" (cond (eq (index $item "current") true) "page" "")
-        "prefetchSlot" "nav"
       ) -}}
     {{- end -}}
     </span>

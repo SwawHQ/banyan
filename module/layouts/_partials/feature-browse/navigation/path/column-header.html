@@ -10,7 +10,7 @@
 {{- if gt (len $parts) 1 -}}{{- $order = index $parts 1 -}}{{- end -}}
 {{- if and $label $href -}}
 <span class="item-field item-field--name" data-item-field="name">
-  <a class="path-column-label" href="{{ $href }}" title="{{ $label }}" data-prefetch-slot="crumb">{{ $label }}</a>
+  <a class="path-column-label" href="{{ $href }}" title="{{ $label }}">{{ $label }}</a>
 {{- if and $sortVariant $field $order -}}
   {{- $sortCopy := partial "feature-browse/collection/sort/copy.html" $ctx -}}
   {{- $fieldLabels := index $sortCopy "fields" -}}
@@ -21,7 +21,7 @@
   {{- $actionLabel := index $actionLabels $nextSort | default (index $actionLabels "name-asc") -}}
   {{- $toggleHref := partial "feature-browse/navigation/path/column-sort-url.html" (dict "ctx" $ctx "source" $source "current_sort" $currentSort) -}}
   <span class="path-column-separator" aria-hidden="true">·</span>
-  <a class="path-column-sort" href="{{ $toggleHref }}" title="{{ $actionLabel }}" aria-label="{{ $actionLabel }}" data-prefetch-slot="crumb" data-collection-sort-toggle="true">
+  <a class="path-column-sort" href="{{ $toggleHref }}" title="{{ $actionLabel }}" aria-label="{{ $actionLabel }}" data-collection-sort-toggle="true">
     <span class="path-sort-label">{{ $fieldLabel }}</span><span class="list-sort-indicator" data-sort-indicator aria-hidden="true">{{ cond (eq $order "asc") "↑" "↓" }}</span>
   </a>
 {{- end -}}

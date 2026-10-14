@@ -13,14 +13,12 @@
   {{- $headerRoutes = $filtered -}}
 {{- end -}}
 {{- /* RelPermalink evaluation publishes all three generated files. */ -}}
-{{- $rulesURL := partial "system-delivery/prefetch/speculation/publish.html" .delivery.speculation_rules -}}
-{{- $csp := partial "system-delivery/deployment/csp-value.html" .inline_scripts -}}
+{{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" .delivery) "prefetch" -}}
+{{- $nativeBody := partial "system-delivery/prefetch/native.html" (dict "config" $prefetch) -}}
+{{- $csp := partial "system-delivery/deployment/csp-value.html" (merge .inline_scripts (dict "prefetch_native" $nativeBody)) -}}
 {{- $updatedRoutes := slice -}}
 {{- $hasGlobal := false -}}
 {{- $generatedHeaders := dict "Content-Security-Policy" $csp -}}
-{{- if $rulesURL -}}
-  {{- $generatedHeaders = merge $generatedHeaders (dict "Speculation-Rules" (printf "%q" $rulesURL)) -}}
-{{- end -}}
 {{- range $route := $headerRoutes -}}
   {{- if and (not $hasGlobal) (eq (index $route "path") "/*") -}}
     {{- $http := index $route "http" | default dict -}}
@@ -33,16 +31,6 @@
 {{- $headerRoutes = $updatedRoutes -}}
 {{- if not $hasGlobal -}}
   {{- $headerRoutes = (slice (dict "path" "/*" "http" (dict "headers" $generatedHeaders))) | append $headerRoutes -}}
-{{- end -}}
-{{- if $rulesURL -}}
-  {{- $headerRoutes = $headerRoutes | append (dict
-    "path" (printf "%s/*" (path.Dir $rulesURL))
-    "http" (dict
-      "headers" (dict
-        "Content-Type" "application/speculationrules+json"
-      )
-    )
-  ) -}}
 {{- end -}}
 {{- $headersBody := partial "system-delivery/deployment/cloudflare-headers.txt" (dict "routes" $headerRoutes) -}}
 {{- $headersResource := resources.FromString "_headers" $headersBody -}}

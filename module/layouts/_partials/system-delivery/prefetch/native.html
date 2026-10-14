@@ -1,0 +1,21 @@
+{{- $config := .config -}}
+{{- $rules := dict -}}
+{{- range $kind := slice "prefetch" "prerender" -}}
+  {{- $modes := $config.modes -}}
+  {{- if eq $kind "prerender" -}}{{- $modes = $config.prerender -}}{{- end -}}
+  {{- $entries := slice -}}
+  {{- range index $config.targets $kind -}}
+    {{- $mode := index $modes .id -}}
+    {{- if ne $mode "off" -}}
+      {{- $where := dict "and" (slice
+        (dict "selector_matches" .selector)
+        (dict "selector_matches" "html[data-prefetch-native-ready] a")
+        (dict "href_matches" (slice "/" "/*/" "/*.html" "/*.htm") "relative_to" "document")
+        (dict "not" (dict "href_matches" "#*" "relative_to" "document"))
+      ) -}}
+      {{- $entries = $entries | append (dict "source" "document" "where" $where "eagerness" $mode) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if gt (len $entries) 0 -}}{{- $rules = merge $rules (dict $kind $entries) -}}{{- end -}}
+{{- end -}}
+{{- return ($rules | jsonify) -}}

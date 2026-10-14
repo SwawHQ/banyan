@@ -1,0 +1,34 @@
+{{- $config := .config -}}
+{{- $context := .context -}}
+{{- $values := dict "default" "off" -}}
+{{- if isset $config "default" -}}{{- $values = dict "default" $config.default -}}{{- end -}}
+{{- $icons := dict -}}
+{{- if isset $config "icons" -}}{{- $icons = $config.icons -}}{{- end -}}
+{{- if not (reflect.IsMap $icons) -}}
+  {{- errorf "Build failed: %s.icons must be a table." $context -}}
+  {{- $icons = dict -}}
+{{- end -}}
+{{- range $icon, $scopes := $icons -}}
+  {{- if or (eq (len (findRE "^[a-z][a-z0-9_-]*$" $icon)) 0) (not (index hugo.Data.icons $icon)) -}}
+    {{- errorf "Build failed: %s.icons.%s must name an SVG defined in data/icons.toml." $context $icon -}}
+  {{- end -}}
+  {{- if not (reflect.IsMap $scopes) -}}
+    {{- errorf "Build failed: %s.icons.%s must be a scope table." $context $icon -}}
+  {{- else -}}
+    {{- range $scope, $value := $scopes -}}
+      {{- if not (or (in (slice "all" "root" "tail") $scope) (gt (len (findRE "^(root\\+|tail-)[1-9][0-9]*$" $scope)) 0)) -}}
+        {{- errorf "Build failed: %s.icons.%s has unknown scope %q; use all/root/tail/root+<positive integer>/tail-<positive integer>." $context $icon $scope -}}
+      {{- end -}}
+      {{- $values = merge $values (dict (printf "%s/%s" $icon $scope) $value) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $normalized := dict -}}
+{{- range $id, $value := $values -}}
+  {{- $mode := lower (trim (printf "%v" $value) " \r\n\t") -}}
+  {{- if or (ne (printf "%T" $value) "string") (not (in (slice "off" "conservative" "moderate" "eager" "immediate") $mode)) -}}
+    {{- errorf "Build failed: %s rule %s must use off/conservative/moderate/eager/immediate; got %q." $context $id $value -}}
+  {{- end -}}
+  {{- $normalized = merge $normalized (dict $id $mode) -}}
+{{- end -}}
+{{- return $normalized -}}

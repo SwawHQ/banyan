@@ -6,7 +6,7 @@
       {{- $items = $items | append (dict
         "control" "link" "href" .href "title" .name "text" .name
         "icon" .icon "isCurrent" (eq .code $.Language.Lang)
-        "prefetchSlot" "nav" "dataAttrs" (dict "language-choice" .code "language-name" .name "has-trans" (printf "%v" .translated))
+        "dataAttrs" (dict "language-choice" .code "language-name" .name "has-trans" (printf "%v" .translated))
       ) -}}
     {{- end -}}
     {{- $items = $items | append (dict

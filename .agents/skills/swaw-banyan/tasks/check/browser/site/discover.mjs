@@ -1,9 +1,6 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import {readPages} from '../../../_shared/html/read.mjs';
 import {extractStartTags,extractTagAttribute,extractInlineScriptTextById,extractCanonicalHref,
   extractExternalScriptSrcs,hasClassToken,isRedirectPage} from '../../../_shared/html/markup.mjs';
-import {readOptional} from '../../../_shared/output.mjs';
 
 const has=(tag,name)=>new RegExp('(?:^|\\s)'+name+'(?:\\s|=|>)','i').test(tag);
 const attr=extractTagAttribute;
@@ -35,19 +32,17 @@ function inspect(page) {
     names.some((row,i)=>names.some((other,j)=>i!==j&&row.group===other.group&&row.name!==other.name))&&
     anchors.some(({href})=>href&&[...new URLSearchParams(new URL(href,'https://swban.invalid').hash.slice(1)).values()]
       .some(value=>clean(value)===clean(source.logicalPath))));
-  const payload=json(text,'site-prefetch-data'),meta=json(text,'site-prefetch-runtime-meta');
-  const entry=payload?.TT,config=typeof entry==='string'?payload[entry]:entry;
-  const candidates=anchors.map(anchor=>({...anchor,href:anchor.href?.split('#')[0]})).filter(({tag,href})=>href&&href!==route&&has(tag,'data-prefetch-slot')&&
-    !has(tag,'download')&&(!attr(tag,'target')||attr(tag,'target').toLowerCase()==='_self')&&
-    /^(link|sw)_[smx]f(?:_g)?$/.test(config?.[attr(tag,'data-prefetch-slot')]??''));
-  const coordinated=meta?.coordination_mode==='preempt_runtime_when_supported'&&meta.owned_slots?.length&&candidates.length;
-  const remaining=new Set(candidates.filter(({tag})=>!meta?.owned_slots?.includes(attr(tag,'data-prefetch-slot'))).map(({href})=>href));
+  const payload=json(text,'site-prefetch-data'),rules=json(text,'site-prefetch-rules'),native=json(text,'site-speculation-rules');
+  const candidates=anchors.filter(({tag,href})=>href&&href!==route&&!has(tag,'download')&&
+    (!attr(tag,'target')||attr(tag,'target').toLowerCase()==='_self'));
+  const nativeDeclared=Boolean((native?.prefetch?.length??0)+(native?.prerender?.length??0));
+  const exclusive=payload?.enabled&&nativeDeclared&&Object.values(payload.modes??{}).some(mode=>mode!=='off')&&candidates.length;
   return {route,language:attr(extractStartTags(text,'html')[0]??'','lang'),roots,sortable,
     prose:hasClassToken(text,'prose'),panel:has(text,'data-site-update-panel'),
     version:has(text,'data-site-update-version'),
     worker:extractExternalScriptSrcs(text).some(src=>/\/sw-manager\.enable\./.test(src)),
-    overlap:Boolean(coordinated&&candidates.some(({href})=>!remaining.has(href))),
-    debug:Boolean(coordinated&&extractStartTags(text,'pre').some(tag=>attr(tag,'id')==='prefetch-debug-support'))};
+    overlap:Boolean(exclusive),rules:nativeDeclared,
+    debug:Boolean(rules?.prefetch?.length&&has(body,'data-prefetch-debug')&&extractStartTags(text,'pre').some(tag=>attr(tag,'id')==='prefetch-debug-support'))};
 }
 
 export async function discoverSite(directory) {
@@ -63,13 +58,10 @@ export async function discoverSite(directory) {
   }));
   const from=panel&&pages.find(page=>page.route!==panel.route&&page.worker&&page.roots.includes(panel.route)&&panel.roots.includes(page.route));
   const collectionFrom=panel&&pages.find(page=>page.sortable&&page.worker&&page.roots.includes(panel.route));
-  let ruleFiles=[];
-  try {ruleFiles=await fs.readdir(path.join(root,'site','speculation-rules'));}
-  catch(error){if(error.code!=='ENOENT')throw error;}
-  const rules=ruleFiles.some(file=>file.endsWith('.json'))||/\bSpeculation-Rules\s*:/i.test(await readOptional(path.join(root,'_headers')));
-  return {root,pages:pages.length,home:home.route,prose:prose?.route??null,collection:collection?.route??null,
+  const rules=pages.some(page=>page.rules),rulesByPage=Object.fromEntries(pages.map(page=>[page.route,page.rules]));
+  return {root,rulesByPage,pages:pages.length,home:home.route,prose:prose?.route??null,collection:collection?.route??null,
     rules,overlap:rules?pages.find(page=>page.overlap)?.route??null:null,
-    debug:rules?pages.find(page=>page.debug)?.route??null:null,
+    debug:pages.find(page=>page.debug)?.route??null,
     offline:pages.find(page=>page.worker)?.route??null,panel:panel?.route??null,
     from:from?.route??null,collectionFrom:collectionFrom?.route??null};
 }

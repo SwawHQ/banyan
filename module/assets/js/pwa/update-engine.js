@@ -1,3 +1,5 @@
+import { readRequestedPrefetchBackend } from '../prefetch/browser.js';
+
 const SW_ACTIVATION_TIMEOUT_MS = 4000;
 
 let updateCheckTimer = null;
@@ -59,6 +61,7 @@ async function checkForUpdates(runtime) {
 }
 
 async function warmCurrentPage(runtime) {
+    if (document.prerendering || ['off', 'native', 'link'].includes(readRequestedPrefetchBackend())) return;
     const currentUrl = new URL(window.location.href);
     currentUrl.hash = '';
     const href = currentUrl.toString();
@@ -231,7 +234,14 @@ export function startEnableMode(runtime) {
         return updateController;
     }
     updateStatus = 'checking';
-    if (document.readyState === 'complete') void handleEnableMode(runtime);
-    else window.addEventListener('load', () => void handleEnableMode(runtime), { once: true });
+    const start = () => {
+        if (document.prerendering) {
+            document.addEventListener('prerenderingchange', () => void handleEnableMode(runtime), { once: true });
+        } else {
+            void handleEnableMode(runtime);
+        }
+    };
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start, { once: true });
     return updateController;
 }

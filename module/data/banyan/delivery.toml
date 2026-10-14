@@ -1,75 +1,91 @@
-# Site overrides: data/delivery.toml. Tables merge; a routes array replaces all routes.
-# Declare general rules first, then exceptions. HTTP and SW policies are independent.
+# 站点在 data/delivery.toml 中覆盖默认值。配置表按字段合并。
+# 站点声明 routes 时，整个数组替换默认路由；routes = [] 表示不使用默认路由。
+# 通用路由写在前面，例外写在后面。HTTP 缓存和 SW 缓存独立配置。
 
-[prefetch_runtime]
-mode = "off"
-# Runtime warmup stack:
-# - Handles link rel=prefetch and Service Worker navigation warmup.
-# - The environment key uses two capability flags:
-#   first flag = link prefetch transport is available
-#   second flag = Service Worker API is available in the current browser context
-# - Mode short codes keep the runtime dispatch compact:
-#   link_sf / link_mf / link_xf
-#   sw_sf   / sw_mf   / sw_xf
-# - The optional _g suffix enables a sessionStorage gate so identical warmup
-#   batches run only once per browser session.
+# 预取规则说明
+# https://banyan.swaw.com/zh/docs/guide/prefetch-stacks/
+[prefetch]
+# 总开关。开启后依次检查原生 Speculation Rules、活动的本站 SW、浏览器 link prefetch。
+enabled = false
+# 未单独配置的图标及其他页面链接使用此档位。
+# off：关闭；conservative：鼠标或触碰按下(未抬起)或键盘操作聚焦时；moderate：鼠标悬停；eager：鼠标扫过或触屏则链接接入可见区。
+# immediate：页面就绪后直接批量预取（原生Speculation Rules触发细节由浏览器决定）
+default = "conservative"
 
-[prefetch_runtime.env.TT]
-nav = "sw_xf_g"
-crumb = "sw_mf_g"
-sort_siblings = "sw_xf_g"
-descendants = "sw_xf_g"
-post = "sw_mf_g"
+[prefetch.icons.folder]
+# folder 是 data/icons.toml 中定义的图标名称；all 覆盖未单独指定的条目列。
+# root：根导航，第 0 列；tail：最后的条目列。正文、章节和元信息不参与编号。
+# "root+N"：从根导航向右 N 列；"tail-N"：从尾列向左 N 列；N 为正整数，越界不匹配。
+# 重叠优先级：root > tail > tail-N > root+N > all > default；off 也参与，声明顺序无关。
+all = "conservative"
+root = "moderate"
+tail = "eager"
+"tail-1" = "moderate"
 
-[prefetch_runtime.env.FT]
-ref = "TT"
+[prefetch.prerender]
+# 原生 Speculation Rules 的增强。未指定范围默认关闭，下面单独开启尾列文件夹。
+# 基础规则为 off 时不生效；SW 和 link 仍使用基础预取档位。
+default = "off"
+# 一样也可按图标和列范围开启，加载资源并预渲染页面：
+[prefetch.prerender.icons.folder]
+tail = "moderate"
 
-[prefetch_runtime.env.TF]
-nav = "link_xf"
-crumb = "link_mf"
-sort_siblings = "link_xf"
-descendants = "link_mf"
-post = "link_mf"
 
-[speculation_rules]
-# Header stack for external Speculation Rules JSON.
-# Edge platforms that cannot emit quoted Speculation-Rules header values should
-# keep this off and let the runtime/SW prefetch stack handle warmup.
-mode = "off"
-runtime_coordination = "preempt_runtime_when_supported"
-nav = "prefetch_eager"
-crumb = "prefetch_moderate"
-sort_siblings = "prefetch_eager"
-descendants = "prefetch_moderate"
-post = "prefetch_moderate"
+
+
 
 [service_worker]
-# Service Worker is opt-in because it changes browser caching behavior.
+# enable：注册并启用；disable：客户端运行时触发，注销本站 SW 并清除受管缓存。
+# off：不加载 SW 管理逻辑，已安装的 SW 不会因此自动注销。
 mode = "off"
+# 后台检查 SW 更新的间隔，单位：分钟。
 update_check_interval = 15
+# 页面重新可见时，两次更新检查的最小间隔，单位：分钟。
 update_visibility_throttle = 3
+# 离线提示页的站内路径；每种语言使用自己的提示页。
 offline_notice_path = "offline/"
 
+
+
+
+
 [platform.edgeone.makers]
+# EdgeOne Makers 部署设置；响应头由下面的路由生成。
 installCommand = ""
 buildCommand = "hugo --minify --gc --cleanDestinationDir"
 outputDirectory = "public"
 nodeVersion = "22.11.0"
 
+
+
+
+
+# 路由使用 URL 路径，不含域名、查询参数或片段；* 可匹配任意路径字符。
+# http.headers：Edgone\Claudeflare 两平台共用头；http.<平台>.<产品>.headers：当前路由的平台覆盖值。
+# http.cloudflare.pages.unset：针对 Cloudflare _headers 生成 ! Cache-Control (移除此前匹配规则中的同名响应头)
+# HTTP 路由按声明顺序输出，最终匹配和合并由部署平台处理。
+# 只有声明 sw 的路由参与 SW 匹配；并且同时命中多个时，针对 SW 会按最后声明的 SW 规则优先。
+# sw.bucket 取值：
+# versioned：按站点构建版本缓存；新版 SW 激活时删除旧版本缓存。
+# fingerprinted：跨构建版本复用；用于 URL 含内容指纹、内容变化会换 URL 的资源。
+# off：不进入 SW 缓存，交给浏览器请求；HTTP 缓存仍可生效。
+# 两种缓存均先读 SW 缓存，命中后不按 HTTP max-age 自动过期。
+# versioned 未命中时校验 HTTP 缓存；只配置 http 不会改变已有的 SW 匹配结果。
 [[routes]]
 path = "/*"
-# CSP is generated from the inline JS bytes. Keep minify.disableJS = true.
+# CSP 根据实际内联脚本和原生规则正文生成；保留 minify.disableJS = true。
 http.headers.Referrer-Policy = "strict-origin-when-cross-origin"
 http.headers.X-Content-Type-Options = "nosniff"
 http.headers.X-Frame-Options = "SAMEORIGIN"
 http.headers.Permissions-Policy = "accelerometer=(), bluetooth=(), browsing-topics=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=()"
 http.headers.Strict-Transport-Security = "max-age=300"
 http.headers.Cache-Control = "public, max-age=900, must-revalidate"
-# Cache remaining same-origin GET requests for this build, including JSON and XML.
+# 默认缓存同源 GET 请求，包括 HTML、JSON 和 XML。
 sw.bucket = "versioned"
 
 [[routes]]
 path = "/css/*"
+# 指纹资源长期使用 HTTP 缓存，并跨版本复用 SW 缓存。
 http.headers.Cache-Control = "public, max-age=31536000, immutable"
 http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "fingerprinted"
@@ -88,6 +104,7 @@ sw.bucket = "fingerprinted"
 
 [[routes]]
 path = "/site/pwa/*.webmanifest"
+# 此项只补充 Content-Type；SW 继续使用此前 /site/* 的分类。
 http.headers.Content-Type = "application/manifest+json; charset=utf-8"
 
 [[routes]]
@@ -98,6 +115,7 @@ sw.bucket = "fingerprinted"
 
 [[routes]]
 path = "/favicon.ico"
+# 固定 URL 的图标交给 HTTP 缓存管理，不进入 SW 缓存。
 http.headers.Cache-Control = "public, max-age=86400, must-revalidate"
 http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "off"
@@ -110,12 +128,13 @@ sw.bucket = "off"
 
 [[routes]]
 path = "/sw.js"
+# SW 脚本每次检查时校验更新，不进入 SW 自己的缓存。
 http.headers.Cache-Control = "no-cache, max-age=0, must-revalidate"
 http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "off"
 
 [[routes]]
 path = "/*.xml"
-# The native XML viewer needs inline styles; replace the HTML policy on Cloudflare.
+# 原生 XML 查看器需要内联样式；Cloudflare 先移除通用 HTML CSP，再设置此策略。
 http.headers.Content-Security-Policy = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'"
 http.cloudflare.pages.unset = ["Content-Security-Policy"]

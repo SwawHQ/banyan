@@ -385,7 +385,7 @@ The current CSP and browser-security regression path is documented in:
 - [`docs/security-csp.md`](docs/security-csp.md)
 - [`docs/browser-regression.md`](docs/browser-regression.md)
 
-The current dual-stack prefetch model is documented in:
+The prefetch configuration and backend selection are documented in:
 
 - [`docs/prefetch-stacks.md`](docs/prefetch-stacks.md)
 
@@ -393,16 +393,16 @@ Banyan keeps prefetch and Service Worker behavior opt-in. Set these in
 `data/delivery.toml`:
 
 ```toml
-[prefetch_runtime]
-mode = "enable" # off | enable
+[prefetch]
+enabled = true
 
 [service_worker]
 mode = "enable" # off | enable | disable
 ```
 
-If your runtime config uses `sw_*` prefetch modes, `service_worker.mode`
-must also be `enable`. Sites that do not want Service Worker caching can leave
-both modes as `off`, or enable `prefetch_runtime` only with link-only modes.
+Prefetch selects one backend: native Speculation Rules, an active matching
+Banyan Service Worker, or link prefetch. Service Worker caching has its own
+switch. Leave `service_worker.mode` as `off` when the site does not need it.
 
 ## Web App Manifest
 

@@ -2,7 +2,7 @@
 {{- $source := .source -}}
 {{- $config := .config -}}
 {{- $rows := .rows -}}
-{{- $fields := slice "key" "kind" "href" "text" "icon" "prefetch_kind" "sort_group" "sort_name" -}}
+{{- $fields := slice "key" "kind" "href" "text" "icon" "sort_group" "sort_name" -}}
 {{- if eq $config.view "products" -}}
   {{- $fields = $fields | append "sort_price" "sort_value" "price_text" "value_text" -}}
 {{- else if eq $config.view "all" -}}

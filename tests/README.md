@@ -41,7 +41,7 @@ Run source-domain scripts separately:
 
 ```text
 swban bun tests/csp/build.mjs              #Inline hashes and minification
-swban bun tests/prefetch/build.mjs         #Rules, config variants and fingerprints
+swban bun tests/prefetch/build.mjs         #Rules, config variants and CSP
 swban bun tests/prefetch/policy.mjs        #Prefetch decisions
 swban bun tests/nav/state.mjs              #Navigation, selection and sorting
 swban bun tests/nav/rebuild.mjs            #Incremental ancestor-title rebuilds

@@ -60,7 +60,7 @@ Published output (default dir: public):
 HTTP responses:
   swban check/http/security <url>     #Security response headers
   swban check/http/cache <url>        #Resource cache headers
-  swban check/http/speculation <url>  #Speculation header and JSON
+  swban check/http/speculation <url>  #Inline speculation rules
 
 Browser checks (dir: public; append --help for all options):
   swban ensure/browser                                                                          #Prepare Playwright/Chromium
@@ -70,8 +70,8 @@ Browser checks (dir: public; append --help for all options):
   swban check/browser/home.webkit [dir] [--headed] [--trace]                                    #Home page; WebKit
   swban check/browser/csp [dir] [--page path] [--headed] [--trace]                              #CSP enforcement; Chromium
   swban check/browser/csp.webkit [dir] [--page path] [--headed] [--trace]                       #CSP enforcement; WebKit
-  swban check/browser/prefetch/rules [dir] [--page path] [--expect header|off] [--eager slots]  #Browser rule acceptance; Chromium
-  swban check/browser/prefetch/overlap [dir] --page path                                        #Owned-slot suppression and remaining runtime actions; Chromium
+  swban check/browser/prefetch/rules [dir] [--page path] [--expect inline|off] [--eager rules]  #Browser rule acceptance; Chromium
+  swban check/browser/prefetch/overlap [dir] --page path                                        #Native selection suppresses custom prefetch; Chromium
   swban check/browser/prefetch/debug [dir] --page path                                          #Prefetch diagnostic panels and page payloads; Chromium
   swban check/browser/palette/contrast [dir] [--page path] [--min N]                            #Prose/code contrast; Chromium
   swban check/browser/palette/contrast.webkit [dir] [--page path] [--min N]                     #Prose/code contrast; WebKit

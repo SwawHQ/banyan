@@ -1,5 +1,5 @@
 {{- range $key, $value := . -}}
-  {{- if not (in (slice "platform" "routes" "prefetch_runtime" "speculation_rules" "service_worker") $key) -}}
+  {{- if not (in (slice "platform" "routes" "prefetch" "service_worker") $key) -}}
     {{- errorf "Delivery config: unknown field %q." $key -}}
   {{- end -}}
   {{- if and (ne $key "routes") (not (reflect.IsMap $value)) -}}{{- errorf "Delivery config: %s must be a table." $key -}}{{- end -}}

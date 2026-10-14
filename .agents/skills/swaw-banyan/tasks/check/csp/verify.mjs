@@ -5,7 +5,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 
 const executableTypes = new Set(['', 'text/javascript', 'application/javascript',
-    'text/ecmascript', 'application/ecmascript', 'module']);
+    'text/ecmascript', 'application/ecmascript', 'module', 'speculationrules']);
 const xmlPolicy = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'";
 
 function attribute(attributes, name) {

@@ -23,6 +23,8 @@
 # 24px 线描图标使用 2 单位描边，在默认 15px 显示尺寸下约为 1.25px。
 # 其他 viewBox 按实际显示线宽调整，并为外缘描边保留空间。
 
+# 系统语义图标：条目链接的预取规则按这些名称匹配。
+# file 使用内容页面策略；folder 使用集合入口策略。正文装饰图标不参与分类。
 [file]
 viewBox = "0 0 24 24"
 body = '<path fill="var(--icon-accent)" d="M3 1h12.414L21 6.586V23H3V1Zm2 2v18h14V9h-6V3H5Zm10 .414V7h3.586L15 3.414Z"/>'
@@ -31,6 +33,7 @@ body = '<path fill="var(--icon-accent)" d="M3 1h12.414L21 6.586V23H3V1Zm2 2v18h1
 viewBox = "0 0 48 48"
 body = '<path fill="var(--icon-shade)" d="M40 12H22l-4-4H8c-2.2 0-4 1.8-4 4v8h40v-4c0-2.2-1.8-4-4-4"/><path fill="var(--icon-accent)" d="M40 12H8c-2.2 0-4 1.8-4 4v20c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4"/>'
 
+# 其他图标：可按名称声明预取策略；未配置的图标、文字和图片使用默认策略。
 [tag]
 viewBox = "0 0 24 24"
 fill = "none"

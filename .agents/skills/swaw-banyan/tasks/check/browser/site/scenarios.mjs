@@ -28,7 +28,7 @@ export function siteScenarios(site,options) {
   add('prose-layout',prose,site.prose);
   add('collection-sort',sort,site.collection);
   for(const [name,page] of [['home',site.home],['collection',site.collection],['debug',site.debug]])
-    add('prefetch-rules-'+name,rules,page,{args:{expect:site.rules?'header':'off'}});
+    add('prefetch-rules-'+name,rules,page,{args:{expect:site.rulesByPage?.[page]?'inline':'off'}});
   add('prefetch-overlap',overlap,site.overlap,{workers:true});
   add('prefetch-debug',debug,site.debug,{workers:true});
   add('pwa-offline',offline,site.offline,{workers:true});

@@ -41,7 +41,7 @@ try {
     const summary = verifyCspOutput(production);
     assert.deepEqual((await inspectSri(production)).issues,[]);
     await verifyRetiredOutput(production);
-    assert.equal(summary.uniqueHashes, 5, 'All five registered entries are exercised by the real site');
+    assert.equal(summary.uniqueHashes, 6, 'Five executable entries and native rules are exercised by the real site');
     assert.equal(fs.existsSync(path.join(production, '__csp')), false, 'Hash-only resources are never published');
     assert.equal(scriptPolicy(build('without-html-minify', '', [])), scriptPolicy(production),
         'HTML minification cannot change the CSP policy or its script bytes');

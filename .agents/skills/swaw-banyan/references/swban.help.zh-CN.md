@@ -70,8 +70,8 @@ HTTP 响应：
   swban check/browser/home.webkit [目录] [--headed] [--trace]                                    #首页加载与运行；WebKit
   swban check/browser/csp [目录] [--page path] [--headed] [--trace]                              #CSP 执行；Chromium
   swban check/browser/csp.webkit [目录] [--page path] [--headed] [--trace]                       #CSP 执行；WebKit
-  swban check/browser/prefetch/rules [目录] [--page path] [--expect header|off] [--eager slots]  #浏览器实际接收并解析规则；Chromium
-  swban check/browser/prefetch/overlap [目录] --page path                                        #接管槽去重与未接管的运行时预取；Chromium
+  swban check/browser/prefetch/rules [目录] [--page path] [--expect inline|off] [--eager rules]  #浏览器实际接收并解析规则；Chromium
+  swban check/browser/prefetch/overlap [目录] --page path                                        #选择原生机制后不发送自实现预取；Chromium
   swban check/browser/prefetch/debug [目录] --page path                                          #预取诊断面板与页面负载一致性；Chromium
   swban check/browser/palette/contrast [目录] [--page path] [--min N]                            #正文与代码对比度；Chromium
   swban check/browser/palette/contrast.webkit [目录] [--page path] [--min N]                     #正文与代码对比度；WebKit

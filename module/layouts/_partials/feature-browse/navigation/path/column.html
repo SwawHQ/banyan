@@ -13,8 +13,8 @@
   {{- if and (eq $kind "page") $from -}}{{- $href = printf "%s#from=%s" $href $from -}}{{- end -}}
   {{- $listItems = $listItems | append (dict
     "href" $href "text" (index $row "text") "title" (index $row "title")
-    "icon" (index $row "icon" | default (cond (eq $kind "page") "file" "folder"))
-    "isCurrent" (eq (index $row "current") true) "prefetchSlot" "crumb"
+    "icon" (index $row "icon" | default (cond (and $kind (ne $kind "page")) "folder" "file"))
+    "isCurrent" (eq (index $row "current") true)
   ) -}}
 {{- end -}}
 <div class="page-column path-column" data-collection-column="true"{{ with $collectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}>

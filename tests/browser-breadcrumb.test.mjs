@@ -95,10 +95,10 @@ test('sort rejects initial node replacement and click-time loss of focus or quer
   }
 });
 
-test('sort rejects prefetch marker loss after source hydration and direction changes',{timeout:20000},()=>{
+test('sort rejects legacy prefetch markers after source hydration and direction changes',{timeout:20000},()=>{
   for(const [name,code] of [
     ['hydrated-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-entry-breadcrumb-pending')||document.documentElement.hasAttribute('data-breadcrumb-sort-pending'))requestAnimationFrame(ready);else document.querySelector('[data-slot=breadcrumb] [data-list-entry]').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`],
-    ['sort-slot',`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelector('[data-slot=breadcrumb] [data-list-entry]').removeAttribute('data-prefetch-slot');});`],
+    ['sort-slot',`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelector('[data-slot=breadcrumb] [data-list-entry]').dataset.prefetchSlot='crumb';});`],
     ['header-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-entry-breadcrumb-pending')||document.documentElement.hasAttribute('data-breadcrumb-sort-pending'))requestAnimationFrame(ready);else document.querySelector('[data-slot=breadcrumb] a:not([data-list-entry])').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`]
   ]) {
     const broken=fixture(name);script(broken,article,code);

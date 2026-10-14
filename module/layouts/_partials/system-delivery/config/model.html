@@ -6,7 +6,7 @@
   {{- if isset hugo.Data $name -}}{{- errorf "Build failed: replace data/%s.toml with data/delivery.toml." $name -}}{{- end -}}
 {{- end -}}
 {{- range $site := hugo.Sites -}}
-  {{- range $name := slice "prefetch_runtime" "speculation_rules" "service_worker" "link_prefetch" -}}
+  {{- range $name := slice "prefetch" "prefetch_runtime" "speculation_rules" "service_worker" "link_prefetch" -}}
     {{- if isset $site.Params $name -}}{{- errorf "Build failed: params.%s is not supported; use data/delivery.toml." $name -}}{{- end -}}
   {{- end -}}
 {{- end -}}

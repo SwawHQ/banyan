@@ -70,7 +70,7 @@
 <nav class="document-meta__row document-meta__row--{{ $plural }} document-meta__row--taxonomy-path" aria-label="{{ printf "%s: %s" $labelTitle $leafTitle }}" data-taxonomy-path="{{ $term }}">
 <span class="item-icon">{{ partial "system-ui/icon/render.html" (dict "name" "tag") }}</span>
 <span class="document-meta__path">
-{{ partial "system-ui/link.html" (dict "href" $taxonomyHref "text" $label "class" "document-meta__label" "title" $labelTitle "prefetchSlot" "nav") }}
+{{ partial "system-ui/link.html" (dict "href" $taxonomyHref "text" $label "class" "document-meta__label" "title" $labelTitle) }}
     {{ range $pathValue := $pathValues }}
       {{ $display := partial "feature-browse/taxonomy/value-label.html" (dict "ctx" $page "spec" $spec "value" $pathValue) }}
       {{ $fullTitle := $display }}
@@ -78,7 +78,7 @@
         {{ $fullTitle = .Title }}
       {{ end }}
   <span class="document-meta__separator" aria-hidden="true">/</span>
-{{ partial "system-ui/link.html" (dict "href" (partial "feature-browse/taxonomy/url.html" (dict "ctx" $page "spec" $spec "value" $pathValue)) "rel" (index $spec "term_rel") "text" $display "title" $fullTitle "prefetchSlot" "nav") }}
+{{ partial "system-ui/link.html" (dict "href" (partial "feature-browse/taxonomy/url.html" (dict "ctx" $page "spec" $spec "value" $pathValue)) "rel" (index $spec "term_rel") "text" $display "title" $fullTitle) }}
     {{ end }}
 </span>
 </nav>

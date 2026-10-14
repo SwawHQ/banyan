@@ -24,7 +24,7 @@
   {{- end -}}
   {{- $items = $items | append (dict
     "href" $href "title" $row.title "text" $row.text "icon" $row.icon
-    "prefetchSlot" $row.prefetch_kind "rowDataAttrs" $attrs
+    "rowDataAttrs" $attrs
     "fields" (partial "feature-browse/collection/item-fields.html" (dict "row" $row "view" $config.view))
   ) -}}
 {{- end -}}

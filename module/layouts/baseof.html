@@ -5,6 +5,8 @@
 {{- $webAppManifestMode := index $pwaConfig "manifest_mode" -}}
 {{- $offlineFallbacks := index $pwaConfig "offline_fallbacks" -}}
 {{- $isOfflinePage := index $pwaConfig "is_offline_page" -}}
+{{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" $delivery) "prefetch" -}}
+{{- $isPrefetchDebug := eq .Layout "page-prefetch-debug" -}}
 {{- partialCached "system-build/audit/permalink-collision.html" (dict "ctx" .) "audit-permalink-collision" -}}
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
 {{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
@@ -93,12 +95,6 @@
     {{- partial "system-ui/page-styles.html" . -}}
     <script>{{ index $inlineScripts "canvas_position" | safeJS }}</script>
     {{- block "head-extra" . -}}{{- end -}}
-    {{- $prefetch := partial "system-delivery/prefetch/config.html" (dict "sw_mode" $swMode "delivery" $delivery) -}}
-    {{- $prefetchRuntimeMode := index $prefetch "runtime_mode" -}}
-    {{- $prefetchRuntimeEnvConfig := index $prefetch "runtime_env" -}}
-    {{- $speculationRulesMode := index $prefetch "speculation_mode" -}}
-    {{- $speculationRulesConfig := index $prefetch "speculation_config" -}}
-    {{- $speculationRuntimeCoordination := index $prefetch "coordination" -}}
     {{- hugo.Generator -}}
     {{- partial "system-metadata/seo/head.html" . -}}
     {{- /* 主站通用前端逻辑，defer 下载与执行，不阻塞 HTML 解析。 */ -}}
@@ -122,7 +118,7 @@
     <link rel="manifest" href="{{ $manifest.RelPermalink }}" fetchpriority="low">
     {{- end }}
 </head>
-<body data-language-return-missing="{{ i18n "language_return_missing" }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}">
+<body data-language-return-missing="{{ i18n "language_return_missing" }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}"{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
     {{- if and .IsPage (not .Params.slug) -}}
 {{- errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title -}}
     {{- end -}}
@@ -160,25 +156,11 @@
         </div>
     </div>
     {{- block "body-extra" . -}}{{- end -}}
-    {{- if not $isOfflinePage -}}
-    {{- $prefetchCoordination := partial "system-delivery/prefetch/coordination.html" (dict
-      "speculation_mode" $speculationRulesMode
-      "runtime_coordination" $speculationRuntimeCoordination
-      "speculation_config" $speculationRulesConfig
-      "runtime_env_config_map" $prefetchRuntimeEnvConfig
-    ) -}}
-    {{- if .IsHome -}}
-      {{- range index $prefetchCoordination "overlap_warnings" -}}
-        {{- warnf "Speculation overlap warning for language %s: %s." $.Site.Language.Lang . -}}
-      {{- end -}}
-    {{- end -}}
-    {{- if eq $prefetchRuntimeMode "enable" -}}
+    {{- if and (not $isOfflinePage) (or $prefetch.enabled $isPrefetchDebug) -}}
       {{- partial "system-delivery/prefetch/runtime/embed.html" (dict
-        "env_config_map" $prefetchRuntimeEnvConfig
-        "speculation_runtime_coordination" $speculationRuntimeCoordination
-        "speculation_runtime_meta" (index $prefetchCoordination "runtime_meta")
+        "config" $prefetch
+        "sw_mode" $swMode
       ) -}}
-    {{- end -}}
     {{- end -}}
     {{- partial "system-ui/icon/sprite.html" . -}}
 </body>

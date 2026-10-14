@@ -83,7 +83,7 @@ actual site; default example routes may not exist in a customized site.
 | `canvas/history`, `canvas/touch` | Two scrollable articles; history needs sorting on the second, touch needs an aside on the source. |
 | `canvas/open` | A collection and a long article linked from it. Chromium `--drag` requires touch mode and a distance that reveals the article link. |
 | `canvas/first-paint` | Article, collection or settings pages; include source/sort URLs when testing reserved columns. |
-| `prefetch/rules`, `prefetch/overlap`, `prefetch/debug` | Match rules to the build's configured mode; overlap/debug require enabled runtime preemption and the relevant collection/debug page. |
+| `prefetch/rules`, `prefetch/overlap`, `prefetch/debug` | Match inline rules to each page; overlap requires automatic native selection and candidates. Debug checks its five backend choices and published state. |
 | `pwa/panel` | Two pages with reciprocal root links. This tests panel UI with workers blocked, not real updates. |
 | `pwa/offline` | An SW-enabled build. This checks actual offline responses, not just registration. |
 
@@ -100,4 +100,4 @@ editing content. To test two actual code states, build those states separately.
 
 `pwa/disable` needs an enabled build followed by one with
 `service_worker.mode = "disable"`. `off` does not perform cleanup.
-Also disable SW-based prefetch transport in the second build when applicable.
+Disable prefetch in the second build when checking SW removal without prefetch hints.

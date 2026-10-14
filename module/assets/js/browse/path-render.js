@@ -7,23 +7,15 @@ import { normalizeCollectionSource } from './collection-source.js';
 import { normalizeIcon } from './icon-value.js';
 import { initAutoScrollbar } from './auto-scrollbar.js';
 
-const PATH_PREFETCH_SLOT = 'crumb';
-
 function normalizeBreadcrumbItemKind(item) {
     const kind = item && typeof item.kind === 'string' ? item.kind.trim().toLowerCase() : '';
     return kind || '';
 }
 
-function applyBreadcrumbPrefetchSlot(element) {
-    if (element instanceof Element) {
-        element.dataset.prefetchSlot = PATH_PREFETCH_SLOT;
-    }
-}
-
 function buildCollectionItemContent(item) {
     const fragment = document.createDocumentFragment();
     const kind = normalizeBreadcrumbItemKind(item);
-    const value = normalizeIcon(item?.icon) || (kind === 'page' ? 'file' : 'folder');
+    const value = normalizeIcon(item?.icon) || (kind && kind !== 'page' ? 'folder' : 'file');
     const icon = document.createElement('span');
     icon.className = 'item-icon';
     if (typeof value === 'object' && value.image) {
@@ -102,7 +94,6 @@ function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
     label.href = collectionSource.href;
     label.title = collectionSource.label;
     label.textContent = collectionSource.label;
-    applyBreadcrumbPrefetchSlot(label);
     field.appendChild(label);
 
     const state = getCollectionSortState(collectionSource);
@@ -117,7 +108,6 @@ function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
     const toggle = document.createElement('a');
     toggle.className = 'path-column-sort';
     toggle.dataset.collectionSortToggle = 'true';
-    applyBreadcrumbPrefetchSlot(toggle);
 
     const sortLabel = document.createElement('span');
     sortLabel.className = 'path-sort-label';
@@ -156,7 +146,6 @@ function buildListItem(item, current) {
         : 'item-control item-field item-field--name';
     option.dataset.itemField = 'name';
     option.dataset.listEntry = '';
-    applyBreadcrumbPrefetchSlot(option);
     if (current) {
         option.setAttribute('aria-current', 'page');
     }

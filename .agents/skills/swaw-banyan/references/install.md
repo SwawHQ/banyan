@@ -165,8 +165,10 @@ the Module's `data/banyan/delivery.toml` supplies defaults. Use
 `platform.edgeone.makers` for deployment fields and ordered `routes` with independent
 `http` and `sw.bucket` fields (`versioned`, `fingerprinted`, or `off`). A site
 route array replaces all default routes, including when empty. Other tables merge
-by field. `[prefetch_runtime]`, `[speculation_rules]`, and `[service_worker]`
-apply to all languages.
+by field. `[prefetch]` and `[service_worker]` apply to all languages.
+Set `[prefetch] enabled = true` to use automatic native/SW/link selection.
+`prefetch.prerender` settings control native prerender for selected icon scopes; tail folder links default to moderate.
+Column scopes are `root`, `tail`, `"root+N"`, `"tail-N"`, and `all`.
 Hugo generates
 `_headers` and `edgeone.json`. Do not edit those output files as configuration.
 

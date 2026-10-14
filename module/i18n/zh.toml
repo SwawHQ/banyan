@@ -86,3 +86,46 @@ other = '章节'
 other = '目录与信息'
 [document_aside_close]
 other = '收起'
+
+[prefetch_debug_intro]
+other = '测试仅适用于本页。选择预取方式，然后应用并重载。'
+[prefetch_debug_backend]
+other = '预取方式'
+[prefetch_debug_auto]
+other = '自动'
+[prefetch_debug_native]
+other = '原生'
+[prefetch_debug_sw]
+other = 'SW'
+[prefetch_debug_link]
+other = 'Link'
+[prefetch_debug_off]
+other = '关闭'
+[prefetch_debug_apply]
+other = '应用并重载'
+[prefetch_debug_loading]
+other = '加载中…'
+[prefetch_debug_unavailable]
+other = '不可用'
+[prefetch_debug_scope]
+other = '此选择不会绕过 SW 拦截，也不会注销 SW。'
+[prefetch_debug_devtools]
+other = '要绕过 SW 拦截，在 DevTools → Application → Service Workers 中选中 Bypass for network。在 Application → Speculative loads 中检查原生预取。'
+[prefetch_debug_collection]
+other = '集合'
+[prefetch_debug_article]
+other = '文章'
+[prefetch_debug_test_links]
+other = '测试链接'
+[prefetch_debug_test_help]
+other = '悬停或聚焦链接。触屏设备可轻触链接。浏览器决定原生预取的时间。'
+[prefetch_debug_support]
+other = '浏览器支持'
+[prefetch_debug_env]
+other = '所选后端'
+[prefetch_debug_actions]
+other = '潜在候选'
+[prefetch_debug_runtime]
+other = '自实现预取发送'
+[prefetch_debug_payload]
+other = '发布的配置和规则'

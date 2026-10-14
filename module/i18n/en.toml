@@ -86,3 +86,46 @@ other = 'On this page'
 other = 'Contents & info'
 [document_aside_close]
 other = 'Hide'
+
+[prefetch_debug_intro]
+other = 'This test applies to this page. Choose a transport, then apply and reload.'
+[prefetch_debug_backend]
+other = 'Prefetch transport'
+[prefetch_debug_auto]
+other = 'Auto'
+[prefetch_debug_native]
+other = 'Native'
+[prefetch_debug_sw]
+other = 'SW'
+[prefetch_debug_link]
+other = 'Link'
+[prefetch_debug_off]
+other = 'Off'
+[prefetch_debug_apply]
+other = 'Apply and reload'
+[prefetch_debug_loading]
+other = 'Loading...'
+[prefetch_debug_unavailable]
+other = 'Unavailable'
+[prefetch_debug_scope]
+other = 'This choice does not bypass SW interception or remove its registration.'
+[prefetch_debug_devtools]
+other = 'To bypass SW interception, use DevTools → Application → Service Workers → Bypass for network. Inspect native prefetch in Application → Speculative loads.'
+[prefetch_debug_collection]
+other = 'Collection'
+[prefetch_debug_article]
+other = 'Article'
+[prefetch_debug_test_links]
+other = 'Test links'
+[prefetch_debug_test_help]
+other = 'Hover or focus a link. On a touch screen, tap it. The browser schedules native prefetch.'
+[prefetch_debug_support]
+other = 'Browser support'
+[prefetch_debug_env]
+other = 'Selected backend'
+[prefetch_debug_actions]
+other = 'Potential candidates'
+[prefetch_debug_runtime]
+other = 'Custom dispatch'
+[prefetch_debug_payload]
+other = 'Published configuration and rules'
