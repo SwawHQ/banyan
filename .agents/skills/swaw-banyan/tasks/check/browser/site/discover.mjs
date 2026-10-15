@@ -41,7 +41,7 @@ function inspect(page) {
     prose:hasClassToken(text,'prose'),panel:has(text,'data-site-update-panel'),
     version:has(text,'data-site-update-version'),
     worker:extractExternalScriptSrcs(text).some(src=>/\/sw-manager\.enable\./.test(src)),
-    overlap:Boolean(exclusive),rules:nativeDeclared,
+    overlap:Boolean(exclusive),rules:native!==null,
     debug:Boolean(rules?.prefetch?.length&&has(body,'data-prefetch-debug')&&extractStartTags(text,'pre').some(tag=>attr(tag,'id')==='prefetch-debug-support'))};
 }
 

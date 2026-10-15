@@ -53,6 +53,10 @@ test('site discovery uses actual translated paths, source links and sort data',a
   const minimal=await discoverSite(tiny);
   assert.equal(minimal.pages,2);assert.equal(minimal.prose,'/reader/deep/');assert.equal(minimal.collection,null);
   assert.equal(minimal.rules,false);
+  write(tiny,'index.html','<html lang=en><body><script id=site-speculation-rules type=speculationrules>{}</script></body></html>');
+  const empty=await discoverSite(tiny);
+  assert.equal(empty.rules,true);assert.equal(empty.rulesByPage['/'],true);
+  assert.equal(empty.overlap,null,'An empty rule block does not enable native prefetch.');
   write(tiny,'index.html','<html lang=en><body><script id=site-speculation-rules type=speculationrules>{"prefetch":[{}]}</script></body></html>');
   assert.equal((await discoverSite(tiny)).rules,true,'Inline rules must be discovered per page.');
   const runtime=path.join(work,'runtime');fs.cpSync(tiny,runtime,{recursive:true});
@@ -92,7 +96,16 @@ test('site checks reuse one build, report skipped coverage and retain failures',
   const nested=path.join(tiny,'reports');assert.equal(cli(tiny,['--out',nested]).status,1);assert.equal(fs.existsSync(nested),false);
 });
 
-test('site --updates builds a temporary version, runs real SW checks and removes generated files',{timeout:120000},()=>{
+test('site browser checks accept a published empty speculation-rules block',{timeout:30000},()=>{
+  const tiny=path.join(work,'empty-rules'),rules='{}',hash=createHash('sha256').update(rules).digest('base64');
+  write(tiny,'index.html','<html lang=en><head><title>Empty rules</title></head><body><main class=slot-main>Home</main><script id=site-speculation-rules type=speculationrules>'+rules+'</script></body></html>');
+  write(tiny,'_headers',"/*\n  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-"+hash+"'\n");
+  const result=cli(tiny,['--out',path.join(work,'empty-rules-reports')]),saved=report(result);
+  assert.equal(result.status,0,result.stdout+result.stderr);
+  assert.equal(saved.scenarios.find(item=>item.id==='prefetch-rules-home').status,'passed');
+});
+
+test('site --updates builds a temporary program revision, runs real SW checks and removes generated files',{timeout:120000},()=>{
   const original=snapshot(source),published=snapshot(build);
   const result=cli(build,['--updates','--site',source,'--out',path.join(work,'updates')]),saved=report(result);
   assert.equal(result.status,0,result.stdout+result.stderr);

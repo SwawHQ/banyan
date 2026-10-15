@@ -175,6 +175,22 @@ test('inline rules, overlap and diagnostics use the unified contract',{timeout:6
   fails('rules',tampered,/register the inline|CSP/);
 });
 
+test('inline empty rules are accepted without accepting invalid rules or blocked CSP',{timeout:30000},()=>{
+  const directory=output('empty-rules',off),file=path.join(directory,probePage,'index.html');
+  const html=fs.readFileSync(file,'utf8'),headers=fs.readFileSync(path.join(directory,'_headers'),'utf8');
+  function put(source,authorize=true) {
+    write(file,html.replace('</body>','<script id=site-speculation-rules type=speculationrules>'+source+'</script></body>'));
+    const hash=" 'sha256-"+createHash('sha256').update(source).digest('base64')+"'";
+    write(path.join(directory,'_headers'),authorize?headers.replace(/script-src([^;\r\n]*)/,match=>match+hash):headers);
+  }
+  put('{}');assert.deepEqual(passed('rules',directory).payload,{});
+  fails('rules',directory,/Off mode must not declare/,['--expect','off']);
+  put('{broken');fails('rules',directory,/Chromium rejected rules/);
+  put('{"prefetch":[{"source":"document","where":{"href_matches":"/*"},"eagerness":"moderate"}]}');
+  fails('rules',directory,/valid shared rules/);
+  put('{}',false);fails('rules',directory,/register the inline|CSP/);
+});
+
 test('direct anchors use the default policy without a link partial or prefetch markers',{timeout:20000},async()=>{
   await scenarios('direct-anchors',rawLinks,[{id:'shared-selector-contract',run:async({page,baseUrl})=>{
     await page.addInitScript(recordRuntime);await visit(page,baseUrl,'native');

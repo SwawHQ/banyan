@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {setTimeout} from 'node:timers/promises';
 import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {ruleIssues} from '../../../prefetch/rules/inspect.mjs';
 
 export async function check({page,baseUrl,options}) {
   const expect=options.expect??'inline',timeout=options.timeout??15000,href=new URL(options.page??'/',baseUrl).href;
@@ -42,11 +43,8 @@ export async function check({page,baseUrl,options}) {
     assert.ok(!ruleSet.errorType&&!ruleSet.errorMessage,'Chromium rejected rules: '+(ruleSet.errorMessage??ruleSet.errorType));
     assert.ok(ruleSet.backendNodeId,'The accepted rules must come from the inline script node.');
     const payload=JSON.parse(ruleSet.sourceText);
-    assert.ok((payload.prefetch?.length??0)+(payload.prerender?.length??0)>0,'Chromium must receive at least one rule.');
-    for(const rule of [...payload.prefetch??[],...payload.prerender??[]])
-      assert.ok(rule.where?.and?.some(condition=>condition.selector_matches==='html[data-prefetch-native-ready] a'),
-        'Native rules must wait for backend selection.');
-    const selectors=await page.locator('#site-prefetch-rules').evaluate(node=>JSON.parse(node.textContent));
+    assert.deepEqual(ruleIssues(payload),[],'The inline document must use valid shared rules.');
+    const selectors=options.eager?await page.locator('#site-prefetch-rules').evaluate(node=>JSON.parse(node.textContent)):null;
     for(const id of options.eager?options.eager.split(','):[]) {
       const selector=selectors.prefetch.find(entry=>entry.id===id)?.selector;
       assert.ok(selector&&payload.prefetch?.some(rule=>rule.source==='document'&&rule.eagerness==='eager'&&
