@@ -14,9 +14,9 @@ import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/_share
 const root=fileURLToPath(new URL('../',import.meta.url)),parent=fs.realpathSync(os.tmpdir());
 let work;
 function write(file,body) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,body);}
-function build(name,policy,config='') {
+function build(name,policy,config='',workerConfig='') {
   const directory=path.join(work,name),overlay=path.join(directory,'data'),assets=path.join(work,'assets');
-  write(path.join(overlay,'delivery.toml'),(policy??'')+'\n[service_worker]\nmode = "enable"\n');
+  write(path.join(overlay,'delivery.toml'),(policy??'')+'\n[service_worker]\nmode = "enable"\n'+workerConfig);
   const mounts=[['assets',assets],['assets','assets'],['data',overlay],['data','data']]
     .map(([target,source])=>'[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('');
   const configFile=path.join(directory,'fixture.toml'),output=path.join(directory,'public');
@@ -29,22 +29,32 @@ function build(name,policy,config='') {
 function passed(result) {assert.equal(result.status,0,result.log);assert.doesNotMatch(result.log,/\bWARN\b/);return result.output;}
 function worker(output,environment={}) {
   const listeners={};
-  const context=vm.createContext({URL,URLSearchParams,Request,Response,...environment,
-    self:{location:new URL('https://example.test/sw.js'),addEventListener:(name,handler)=>{listeners[name]=handler;}}});
+  const context=vm.createContext({URL,URLSearchParams,Request,Response,AbortController,DOMException,setTimeout,clearTimeout,...environment,
+    self:{location:new URL('https://example.test/sw.js'),
+      registration:{active:null,installing:null,waiting:null,addEventListener(){}},clients:{async claim(){}},
+      ...environment.self,addEventListener:(name,handler)=>{listeners[name]=handler;}}});
   vm.runInContext(fs.readFileSync(path.join(output,'sw.js'),'utf8'),context);
-  return {probe:context.probe,listeners};
+  return {probe:context.probe,listeners,context};
 }
-function cachedWorker(output,respond) {
-  const stores=new Map(),requests=[];
-  const caches={async open(name) {
+function cachedWorker(output,respond,environment={},stores=new Map()) {
+  const requests=[],key=request=>typeof request==='string'?new URL(request,'https://example.test/').href:request.url;
+  if(!stores.has('sw-content-state'))stores.set('sw-content-state',new Map([
+    ['https://example.test/sw-version.json',Response.json({version:'v-fixture',lastAttemptAt:environment.Date?.now()??Date.now()})]
+  ]));
+  const caches={async keys(){return [...stores.keys()];},async delete(name){return stores.delete(name);},async open(name) {
     if(!stores.has(name))stores.set(name,new Map());
     const entries=stores.get(name);
     return {
-      async match(request){return entries.get(request.url)?.clone();},
-      async put(request,response){entries.set(request.url,response.clone());}
+      async match(request){return entries.get(key(request))?.clone();},
+      async put(request,response){entries.set(key(request),response.clone());}
     };
   }};
-  const runtime=worker(output,{caches,fetch:async request=>{requests.push(request);return respond(request);}});
+  const runtime=worker(output,{caches,fetch:async(input,init)=>{
+    const request=typeof input==='string'?new Request(input,init):input;
+    requests.push(request);
+    if(request.signal.aborted)throw new DOMException('Aborted','AbortError');
+    return respond(request);
+  },...environment});
   return {...runtime,stores,requests};
 }
 function requestFor(pathname,navigation=false) {
@@ -54,14 +64,62 @@ function requestFor(pathname,navigation=false) {
 }
 function dispatch(listeners,request) {
   let response;
-  listeners.fetch({request,respondWith:promise=>{response=promise;}});
+  listeners.fetch({request,respondWith:promise=>{response=promise;},waitUntil:promise=>{void promise.catch(()=>{});}});
   return response;
 }
+function fakeClock() {
+  let now=Date.UTC(2026,9,15),sequence=0;
+  const timers=new Map();
+  return {
+    Date:class extends Date{static now(){return now;}},
+    setTimeout(callback,delay){const id=++sequence;timers.set(id,{at:now+delay,callback});return id;},
+    clearTimeout(id){timers.delete(id);},
+    jump(milliseconds){now+=milliseconds;},
+    async tick(milliseconds){
+      const end=now+milliseconds;
+      for(;;){
+        const next=[...timers].filter(([,timer])=>timer.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];
+        if(!next)break;
+        now=next[1].at;timers.delete(next[0]);next[1].callback();await new Promise(setImmediate);
+      }
+      now=end;await new Promise(setImmediate);
+    }
+  };
+}
+let contentOutput;
+function contentRuntime({clock=fakeClock(),stores=new Map(),respond}={}) {
+  contentOutput??=passed(build('content-version'));
+  if(!stores.has('sw-content-state'))stores.set('sw-content-state',new Map([
+    ['https://example.test/sw-version.json',Response.json({version:'v-one',lastAttemptAt:clock.Date.now()-300000})]
+  ]));
+  const registration=new EventTarget();
+  Object.assign(registration,{active:{},installing:null,waiting:null});
+  const control={version:'v-two',fail:false,invalid:false};
+  const runtime=cachedWorker(contentOutput,request=>{
+    const pathname=new URL(request.url).pathname;
+    if(respond){const result=respond(request,control);if(result!==undefined)return result;}
+    if(control.fail)throw new TypeError('Network unavailable');
+    if(pathname==='/sw-version.json')return Response.json(control.invalid?{version:''}:{version:control.version});
+    return new Response('<script src="/js/common.hash.js"></script><p>'+control.version+'</p>',
+      {headers:{'Content-Type':pathname.startsWith('/js/')?'text/javascript':'text/html'}});
+  },{...clock,self:{registration}},stores);
+  return {...runtime,clock,control,registration};
+}
+async function navigation(runtime,pathname='/cached/') {
+  const tasks=[];let response;
+  runtime.listeners.fetch({request:requestFor(pathname,true),respondWith:promise=>{response=promise;},waitUntil:promise=>tasks.push(promise)});
+  const result=await response;
+  await new Promise(setImmediate);
+  return {response:result,done:Promise.all(tasks)};
+}
+function versionRequests(runtime){return runtime.requests.filter(request=>new URL(request.url).pathname==='/sw-version.json');}
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-policy-'));
   const source=fs.readFileSync(path.join(root,'module/assets/js/pwa/worker-enable.js.tmpl'),'utf8');
   write(path.join(work,'assets/js/pwa/worker-enable.js.tmpl'),source+
-    '\nglobalThis.probe = {SW_ROUTES,matchesRoutePath,getMatchingRoute,getRequestPathname,isHtmlDocumentRequest,getCacheNameForRoute,warmNavigationUrl};\n');
+    '\nglobalThis.probe = {SW_ROUTES,PROGRAM_OFFLINE_CACHE,matchesRoutePath,getMatchingRoute,getRequestPathname,isHtmlDocumentRequest,getCacheNameForRoute,warmNavigationUrl,'+
+    'getCurrentGeneration,readContentState,scheduleContentVersionCheck,cancelContentVersionCheck,'+
+    'get currentGeneration(){return currentGeneration;},get contentCheckTask(){return contentCheckTask;}};\n');
 });
 after(()=>{if(work){assert.equal(path.dirname(fs.realpathSync(work)),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
@@ -76,7 +134,7 @@ test('default policy generates explicit Cloudflare overrides and independent Edg
     ['/js/main.hash.js','public, max-age=31536000, immutable'],
     ['/site/pwa/app.hash.webmanifest','public, max-age=31536000, immutable'],
     ['/favicon.ico','public, max-age=86400, must-revalidate'],
-    ['/sw.js','no-cache, max-age=0, must-revalidate']])
+    ['/sw.js','no-cache, max-age=0, must-revalidate'],['/sw-version.json','no-cache, max-age=0, must-revalidate']])
     assert.equal(cloudflareHeaders(rules,url)['cache-control'],expected,url);
   assert.equal(cloudflareHeaders(rules,'/site/pwa/app.hash.webmanifest')['content-type'],'application/manifest+json; charset=utf-8');
   const xml=cloudflareHeaders(rules,'/zh/index.xml')['content-security-policy'];
@@ -86,6 +144,7 @@ test('default policy generates explicit Cloudflare overrides and independent Edg
   assert.equal(probe.getMatchingRoute('/icp/').bucket,'versioned');
   assert.equal(probe.getMatchingRoute('/site/pwa/app.hash.webmanifest').bucket,'fingerprinted');
   assert.equal(probe.getMatchingRoute('/sw.js').bucket,'off');
+  assert.equal(probe.getMatchingRoute('/sw-version.json').bucket,'off');
   assert.equal(probe.getMatchingRoute('/unconfigured.txt').bucket,'versioned');
   for(const route of probe.SW_ROUTES) assert.deepEqual(Object.keys(route).sort(),['bucket','path']);
   assert.equal(fs.existsSync(path.join(output,'sw-policy.json')),false);
@@ -190,6 +249,7 @@ test('bucket caching preserves query keys, validates versioned responses and war
   const runtime=cachedWorker(output,request=>{
     if(offline)throw new TypeError('Network unavailable');
     const url=new URL(request.url);
+    if(url.pathname==='/sw-version.json')return Response.json({version:'v-fixture'});
     if(url.pathname==='/validated.json'&&request.cache!=='reload')return new Response(null,{status:304});
     if(url.pathname.endsWith('/offline/'))return new Response('Offline page',{headers:{'Content-Type':'text/html'}});
     if(url.pathname==='/about/')return new Response('<a href="/unvisited/">Page</a><a href="/data.json">Data</a>'+
@@ -230,6 +290,7 @@ test('bucket caching preserves query keys, validates versioned responses and war
   assert.equal(navigationCache.has('https://example.test/error/'),false);
   assert.equal(navigationCache.has('https://example.test/not-html/'),false);
   let installed;listeners.install({waitUntil:promise=>{installed=promise;}});await installed;
+  let activated;listeners.activate({waitUntil:promise=>{activated=promise;}});await activated;
   offline=true;
   assert.equal(await (await dispatch(listeners,requestFor('/unvisited/',true))).text(),'Offline page');
   assert.equal(await (await dispatch(listeners,requestFor('/js/app.hash.js'))).text(),'/* script */');
@@ -241,11 +302,318 @@ test('bucket caching preserves query keys, validates versioned responses and war
 test('off rules also exclude offline-page installation and fallback',async()=>{
   const policy='[[routes]]\npath = "/*"\nsw.bucket = "versioned"\n'+
     '[[routes]]\npath = "/*offline/"\nsw.bucket = "off"\n';
-  const {listeners,requests}=cachedWorker(passed(build('offline-off',policy)),()=>{throw new TypeError('Offline');});
+  const {listeners,requests}=cachedWorker(passed(build('offline-off',policy)),request=>{
+    if(new URL(request.url).pathname==='/sw-version.json')return Response.json({version:'v-fixture'});
+    throw new TypeError('Offline');
+  },{},new Map([['sw-content-state',new Map()]]));
   let installed;listeners.install({waitUntil:promise=>{installed=promise;}});await installed;
-  assert.equal(requests.length,0);
+  assert.equal(requests.length,1,'Installation only fetches the content version when offline pages are disabled.');
+  let activated;listeners.activate({waitUntil:promise=>{activated=promise;}});await activated;
   await assert.rejects(dispatch(listeners,requestFor('/uncached/',true)),/no cached response/);
-  assert.equal(requests.length,1,'Disabled offline pages must not be fetched through fallback.');
+  assert.equal(requests.length,2,'Disabled offline pages must not be fetched through fallback.');
+});
+
+test('content versions change JSON without changing the worker program, and intervals require positive integers',()=>{
+  const first=passed(build('version-one',undefined,'[params.build]\nversion = "v-one"\n'));
+  const second=passed(build('version-two',undefined,'[params.build]\nversion = "v-two"\n'));
+  assert.equal(fs.readFileSync(path.join(first,'sw.js'),'utf8'),fs.readFileSync(path.join(second,'sw.js'),'utf8'));
+  assert.match(worker(first).probe.PROGRAM_OFFLINE_CACHE,/^sw-program-offline-[a-f0-9]{64}$/);
+  assert.doesNotMatch(fs.readFileSync(path.join(first,'sw.js'),'utf8'),/__BANYAN_SW_PROGRAM_HASH__/);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(first,'sw-version.json'),'utf8')),{version:'v-one'});
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(second,'sw-version.json'),'utf8')),{version:'v-two'});
+  for(const value of ['0','-1','1.5','"5"']){
+    const result=build('interval-'+value.replace(/\W/g,'x'),undefined,'','content_check_interval = '+value+'\n');
+    assert.notEqual(result.status,0);assert.match(result.log,/content_check_interval must be a positive integer/);
+  }
+});
+
+test('concurrent navigations share one delayed content check and retain only the committed cache generation',async()=>{
+  const runtime=contentRuntime();
+  const first=await navigation(runtime),second=await navigation(runtime,'/other/');
+  assert.equal(versionRequests(runtime).length,0,'Navigation must not await the version request.');
+  await runtime.clock.tick(14999);assert.equal(versionRequests(runtime).length,0);
+  await runtime.clock.tick(1);await Promise.all([first.done,second.done]);
+  assert.equal(versionRequests(runtime).length,1);
+  assert.equal(runtime.probe.currentGeneration.version,'v-two');
+  assert.ok(runtime.stores.has('asset-fingerprint'));
+  assert.deepEqual([...runtime.stores.keys()].filter(name=>/^(nav-html-|asset-versioned-)/.test(name)).sort(),
+    ['asset-versioned-v-two','nav-html-v-two']);
+  const state=await runtime.probe.readContentState();assert.equal(state.version,'v-two');
+  assert.equal(state.lastAttemptAt,runtime.clock.Date.now());
+  const third=await navigation(runtime);await third.done;await runtime.clock.tick(30000);
+  assert.equal(versionRequests(runtime).length,1,'The minimum interval must not install a second timer.');
+});
+
+test('content check state survives worker restart and clock rollback permits a new check',async()=>{
+  const first=contentRuntime(),job=await navigation(first);
+  await first.clock.tick(15000);await job.done;
+  const restarted=contentRuntime({stores:first.stores,clock:first.clock});
+  restarted.control.fail=true;
+  const cached=await navigation(restarted);await cached.done;
+  assert.equal(versionRequests(restarted).length,0,'Restart must restore the last attempt without requiring a network.');
+  assert.equal(restarted.probe.currentGeneration.version,'v-two');
+  restarted.control.fail=false;restarted.control.version='v-three';restarted.clock.jump(-60000);
+  const rolledBack=await navigation(restarted);await restarted.clock.tick(15000);await rolledBack.done;
+  assert.equal(versionRequests(restarted).length,1);
+  assert.equal(restarted.probe.currentGeneration.version,'v-three');
+});
+
+test('failed JSON and failed offline preparation keep the old generation, release the task and obey the interval',async()=>{
+  for(const fault of ['json','offline']){
+    const runtime=contentRuntime({respond:(request,control)=>{
+      if(fault==='offline'&&new URL(request.url).pathname.endsWith('/offline/'))throw new TypeError('Offline preparation failed');
+      if(fault==='json'&&new URL(request.url).pathname==='/sw-version.json')return Response.json({version:''});
+    }});
+    const job=await navigation(runtime);await runtime.clock.tick(15000);await job.done;
+    assert.equal(runtime.probe.currentGeneration.version,'v-one');
+    assert.equal(runtime.probe.contentCheckTask,null);
+    assert.equal(runtime.stores.has('nav-html-v-two'),false,'A failed candidate must not accumulate.');
+    const again=await navigation(runtime);await again.done;assert.equal(versionRequests(runtime).length,1);
+  }
+});
+
+test('a slow old response cannot recreate deleted versioned caches',async()=>{
+  let release;
+  const runtime=contentRuntime({respond:request=>new URL(request.url).pathname==='/slow/'?
+    new Promise(resolve=>{release=()=>resolve(new Response('Old response',{headers:{'Content-Type':'text/html'}}));}):undefined});
+  const slow=dispatch(runtime.listeners,requestFor('/slow/',true));
+  await runtime.probe.getCurrentGeneration();await new Promise(setImmediate);
+  const job=await navigation(runtime);await runtime.clock.tick(15000);await job.done;
+  release();assert.equal(await (await slow).text(),'Old response');await new Promise(setImmediate);
+  assert.equal(runtime.stores.has('nav-html-v-one'),false);
+  assert.equal(runtime.stores.has('asset-versioned-v-one'),false);
+});
+
+test('program updates cancel pending content checks instead of retaining the old worker for fifteen seconds',async()=>{
+  const runtime=contentRuntime(),job=await navigation(runtime);
+  runtime.registration.installing={};runtime.registration.dispatchEvent(new Event('updatefound'));
+  await job.done;
+  assert.equal(runtime.probe.contentCheckTask,null);
+  await runtime.clock.tick(15000);assert.equal(versionRequests(runtime).length,0);
+});
+
+test('program installation stages offline pages without touching an active commit; restart activates offline into the final version',async()=>{
+  const runtime=contentRuntime(),url='https://example.test/sw-version.json';
+  runtime.stores.set('nav-html-v-one',new Map());
+  runtime.stores.set('nav-html-v-two',new Map());
+  runtime.stores.set('asset-versioned-v-two',new Map());
+  runtime.stores.set('sw-program-offline-another-install',new Map());
+  const before=await runtime.probe.readContentState();
+  let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
+  assert.deepEqual(await runtime.probe.readContentState(),before);
+  assert.equal(runtime.probe.currentGeneration,null,'Installing must not load or clean content generations.');
+  assert.equal(versionRequests(runtime).length,0);
+  assert.ok(runtime.stores.has('nav-html-v-two'),'An active candidate must survive program installation.');
+  assert.ok(runtime.stores.get(runtime.probe.PROGRAM_OFFLINE_CACHE).has('https://example.test/offline/'));
+  runtime.stores.get('sw-content-state').set(url,Response.json({version:'v-two',lastAttemptAt:runtime.clock.Date.now()}));
+  runtime.stores.delete('nav-html-v-one');
+  const restarted=contentRuntime({stores:runtime.stores,clock:runtime.clock});restarted.control.fail=true;
+  let activated;restarted.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
+  assert.equal(restarted.requests.length,0,'Activation must not wait on the network.');
+  assert.equal(restarted.probe.currentGeneration.version,'v-two');
+  assert.equal(runtime.stores.has(runtime.probe.PROGRAM_OFFLINE_CACHE),false);
+  assert.ok(runtime.stores.has('sw-program-offline-another-install'),'Another program stage must survive activation.');
+  const response=await dispatch(restarted.listeners,requestFor('/unvisited-after-program-update/',true));
+  assert.equal(response.ok,true);assert.match(await response.text(),/v-two/);
+});
+
+test('missing or invalid content state is staged and initialized offline on activation for every offline policy',async()=>{
+  const url='https://example.test/sw-version.json';
+  for(const bucket of ['versioned','fingerprinted','off'])for(const invalid of [false,true]){
+    const entries=new Map(invalid?[[url,Response.json({version:'',lastAttemptAt:1})]]:[]);
+    const runtime=contentRuntime({stores:new Map([['sw-content-state',entries]])});
+    runtime.probe.SW_ROUTES.unshift({path:'/*offline/',bucket});
+    runtime.stores.set('nav-html-obsolete',new Map());
+    const before=await runtime.probe.readContentState();
+    let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
+    assert.deepEqual(await runtime.probe.readContentState(),before,'Install must not publish bootstrap metadata.');
+    assert.equal(runtime.probe.currentGeneration,null);
+    assert.ok(runtime.stores.has('nav-html-obsolete'),'Install must not clean content buckets.');
+    assert.equal(versionRequests(runtime).length,1);
+    assert.equal(versionRequests(runtime)[0].cache,'no-store');
+    const restarted=contentRuntime({stores:runtime.stores,clock:runtime.clock});
+    restarted.probe.SW_ROUTES.unshift({path:'/*offline/',bucket});restarted.control.fail=true;
+    let activated;restarted.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
+    assert.equal(restarted.requests.length,0,'Bootstrap activation must use only prepared data.');
+    assert.equal(restarted.probe.currentGeneration.version,'v-two');
+    assert.deepEqual(await restarted.probe.readContentState(),{version:'v-two',lastAttemptAt:runtime.clock.Date.now()});
+    assert.equal(runtime.stores.has('nav-html-obsolete'),false);
+    assert.equal(runtime.stores.has(runtime.probe.PROGRAM_OFFLINE_CACHE),false);
+    const response=dispatch(restarted.listeners,requestFor('/unvisited-after-enable/',true));
+    if(bucket==='off')await assert.rejects(response,/no cached response/);
+    else assert.match(await (await response).text(),/v-two/);
+  }
+});
+
+test('bootstrap staging does not overwrite a concurrent active content commit',async()=>{
+  let release,start;
+  const started=new Promise(resolve=>{start=resolve;});
+  const runtime=contentRuntime({stores:new Map([['sw-content-state',new Map()]]),respond:request=>{
+    if(new URL(request.url).pathname==='/sw-version.json')return new Promise(resolve=>{release=resolve;start();});
+  }});
+  let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await started;
+  const finalState={version:'v-final',lastAttemptAt:runtime.clock.Date.now()+1};
+  runtime.stores.get('sw-content-state').set('https://example.test/sw-version.json',Response.json(finalState));
+  runtime.stores.set('nav-html-v-final',new Map());runtime.stores.set('asset-versioned-v-final',new Map());
+  release(Response.json({version:'v-bootstrap'}));await installed;
+  assert.deepEqual(await runtime.probe.readContentState(),finalState);
+  assert.ok(runtime.stores.has('nav-html-v-final'));assert.ok(runtime.stores.has('asset-versioned-v-final'));
+  assert.equal(runtime.stores.has('nav-html-v-bootstrap'),false);
+  const restarted=contentRuntime({stores:runtime.stores,clock:runtime.clock});restarted.control.fail=true;
+  let activated;restarted.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
+  assert.equal(restarted.requests.length,0);assert.equal(restarted.probe.currentGeneration.version,'v-final');
+  assert.deepEqual(await restarted.probe.readContentState(),finalState);
+  assert.equal(runtime.stores.has('nav-html-v-bootstrap'),false);
+});
+
+test('reinstalling the same program replaces its stale stage without touching another program',async()=>{
+  const runtime=contentRuntime(),stage=runtime.probe.PROGRAM_OFFLINE_CACHE;
+  runtime.stores.set(stage,new Map(['','zh/','zh-tw/'].map(prefix=>[
+    'https://example.test/'+prefix+'offline/',new Response('Old offline page',{headers:{'Content-Type':'text/html'}})
+  ])));
+  runtime.stores.get(stage).set('https://example.test/sw-version.json',Response.json({version:'v-stale'}));
+  const another=new Map([['https://example.test/keep/',new Response('Keep')]]);
+  runtime.stores.set('sw-program-offline-another-install',another);
+  const before=await runtime.probe.readContentState();
+  let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
+  assert.equal(runtime.requests.filter(request=>new URL(request.url).pathname.endsWith('/offline/')).length,3);
+  assert.equal(runtime.stores.get(stage).has('https://example.test/sw-version.json'),false);
+  assert.equal(runtime.stores.get('sw-program-offline-another-install'),another);
+  assert.deepEqual(await runtime.probe.readContentState(),before);
+  runtime.control.fail=true;
+  let activated;runtime.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
+  assert.match(await (await dispatch(runtime.listeners,requestFor('/after-reinstall/',true))).text(),/v-two/);
+});
+
+test('first installation publishes content before activation and removes a stage left after unregistering',async()=>{
+  const runtime=contentRuntime(),stage=runtime.probe.PROGRAM_OFFLINE_CACHE;
+  runtime.registration.active=null;
+  runtime.stores.set(stage,new Map(['','zh/','zh-tw/'].map(prefix=>[
+    'https://example.test/'+prefix+'offline/',new Response('Old offline page',{headers:{'Content-Type':'text/html'}})
+  ])));
+  runtime.stores.set('sw-program-offline-another-install',new Map());
+  let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
+  assert.equal(runtime.probe.currentGeneration.version,'v-two','Early page warmup must have a usable generation.');
+  assert.equal((await runtime.probe.readContentState()).version,'v-two');
+  assert.equal(runtime.stores.has(stage),false);
+  assert.ok(runtime.stores.has('sw-program-offline-another-install'));
+  runtime.control.fail=true;
+  let activated;runtime.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
+  assert.match(await (await dispatch(runtime.listeners,requestFor('/after-unregister-reinstall/',true))).text(),/v-two/);
+});
+
+test('bootstrap JSON failures reject installation without publishing content state',async()=>{
+  for(const fault of ['invalid','network','timeout']){
+    const runtime=contentRuntime({stores:new Map([['sw-content-state',new Map()]]),respond:request=>{
+      if(new URL(request.url).pathname!=='/sw-version.json')return;
+      if(fault==='invalid')return Response.json({version:''});
+      if(fault==='network')throw new TypeError('Network unavailable');
+      return new Promise((resolve,reject)=>request.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true}));
+    }});
+    runtime.stores.set('sw-program-offline-another-install',new Map());
+    let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});
+    const rejected=assert.rejects(installed,/Invalid content version|Network unavailable|Aborted/);
+    if(fault==='timeout'){await new Promise(setImmediate);await runtime.clock.tick(10000);}
+    await rejected;
+    assert.equal(await runtime.probe.readContentState(),null);
+    assert.equal(runtime.stores.has(runtime.probe.PROGRAM_OFFLINE_CACHE),false);
+    assert.ok(runtime.stores.has('sw-program-offline-another-install'));
+    assert.ok(![...runtime.stores.keys()].some(name=>/^(nav-html-|asset-versioned-)/.test(name)));
+  }
+});
+
+test('metadata storage errors reject installation instead of treating unknown state as missing',async()=>{
+  const output=contentOutput??=passed(build('content-version'));
+  for(const operation of ['open','match']){
+    const stores=new Set(['sw-program-offline-another-install']);let requests=0;
+    const runtime=worker(output,{self:{registration:{active:{},addEventListener(){}}},
+      fetch:async()=>{requests++;throw new Error('Unexpected fetch');},caches:{
+      async delete(name){return stores.delete(name);},
+      async open(name){
+        if(name==='sw-content-state'&&operation==='open')throw new Error('Storage failed');
+        stores.add(name);return {async match(){throw new Error('Storage failed');}};
+      }
+    }});
+    let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});
+    await assert.rejects(installed,/Storage failed/);
+    assert.equal(requests,0);assert.equal(stores.has(runtime.probe.PROGRAM_OFFLINE_CACHE),false);
+    assert.ok(stores.has('sw-program-offline-another-install'));
+  }
+});
+
+test('failed or timed-out program offline preparation rejects installation and removes only its own stage',async()=>{
+  for(const fault of ['html','asset','timeout']) {
+    const runtime=contentRuntime({respond:request=>{
+      const pathname=new URL(request.url).pathname;
+      if(fault==='asset'&&pathname==='/js/common.hash.js')throw new TypeError('Asset unavailable');
+      if(!pathname.endsWith('/offline/'))return;
+      if(fault==='html')return new Response('Missing offline page',{status:404});
+      if(fault==='timeout')return new Promise((resolve,reject)=>request.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true}));
+    }});
+    runtime.stores.set('nav-html-v-one',new Map());
+    runtime.stores.set('sw-program-offline-another-install',new Map());
+    const before=await runtime.probe.readContentState();
+    let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});
+    const rejected=assert.rejects(installed,/Program offline fallback preparation failed/);
+    if(fault==='timeout'){await new Promise(setImmediate);await runtime.clock.tick(10000);}
+    await rejected;
+    assert.deepEqual(await runtime.probe.readContentState(),before);
+    assert.equal(runtime.stores.has(runtime.probe.PROGRAM_OFFLINE_CACHE),false);
+    assert.ok(runtime.stores.has('nav-html-v-one'));
+    assert.ok(runtime.stores.has('sw-program-offline-another-install'));
+  }
+});
+
+test('program preparation and activation preserve fingerprinted offline routes',async()=>{
+  const runtime=contentRuntime();
+  runtime.probe.SW_ROUTES.unshift({path:'/*offline/',bucket:'fingerprinted'});
+  let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
+  assert.ok(runtime.stores.get('asset-fingerprint').has('https://example.test/offline/'));
+  runtime.control.fail=true;
+  let activated;runtime.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
+  assert.equal(runtime.stores.has(runtime.probe.PROGRAM_OFFLINE_CACHE),false);
+  const response=await dispatch(runtime.listeners,requestFor('/uncached-fingerprinted-offline/',true));
+  assert.equal(response.ok,true);assert.match(await response.text(),/v-two/);
+});
+
+test('hung JSON requests time out and release the shared check task',async()=>{
+  const runtime=contentRuntime({respond:request=>new URL(request.url).pathname==='/sw-version.json'?
+    new Promise((resolve,reject)=>request.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})):undefined});
+  const job=await navigation(runtime);await runtime.clock.tick(15000);
+  assert.equal(versionRequests(runtime).length,1);
+  await runtime.clock.tick(10000);await job.done;
+  assert.equal(runtime.probe.contentCheckTask,null);
+  assert.equal(runtime.probe.currentGeneration.version,'v-one');
+});
+
+test('unchanged-version checks do not wait on an older uncancellable warmup',{timeout:5000},async()=>{
+  let releaseOld,startOld,startCheck,offlineRequests=0,deadlineTimer;
+  const oldStarted=new Promise(resolve=>{startOld=resolve;});
+  const checkStarted=new Promise(resolve=>{startCheck=resolve;});
+  const runtime=contentRuntime({respond:request=>{
+    if(!new URL(request.url).pathname.endsWith('/offline/'))return;
+    if(++offlineRequests===1)return new Promise(resolve=>{
+      releaseOld=()=>resolve(new Response('Offline',{headers:{'Content-Type':'text/html'}}));
+      startOld();
+    });
+    startCheck();
+    return new Promise((resolve,reject)=>request.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true}));
+  }});
+  runtime.control.version='v-one';
+  const oldWarmup=runtime.probe.warmNavigationUrl('https://example.test/offline/');
+  await oldStarted;
+  const deadline=new Promise((resolve,reject)=>{
+    deadlineTimer=setTimeout(()=>reject(new Error('The version check must finish without releasing the older warmup.')),2000);
+  });
+  try{
+    const job=await navigation(runtime);await runtime.clock.tick(15000);
+    await Promise.race([checkStarted,deadline]);
+    await runtime.clock.tick(10000);await Promise.race([job.done,deadline]);
+    assert.equal(runtime.probe.contentCheckTask,null);
+    assert.equal(runtime.probe.currentGeneration.version,'v-one');
+  }finally{
+    clearTimeout(deadlineTimer);runtime.probe.cancelContentVersionCheck();releaseOld();await oldWarmup;
+  }
 });
 
 test('empty route overrides and disabled optional assets do not restore defaults',()=>{

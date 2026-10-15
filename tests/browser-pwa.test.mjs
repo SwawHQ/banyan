@@ -72,14 +72,14 @@ before(()=>{
   for(const [name,search,replacement] of [
     ['no-warm','event.waitUntil(warmNavigationUrls(event.data.urls));','// Fault: ignore first-page warm messages.'],
     ['no-scan','const assetUrls = getAssetUrlsFromHtml(htmlText, baseUrl);','const assetUrls = [];'],
-    ['fixed-cache',"const NAVIGATION_CACHE = NAVIGATION_CACHE_PREFIX +", "const NAVIGATION_CACHE = 'nav-html-fixed-' +"],
+    ['fixed-cache','NAVIGATION_CACHE_PREFIX +', "'nav-html-fixed-' +"],
     ['cached-worker','await self.clients.claim();',"const incorrect = await caches.open('incorrect-worker'); await incorrect.put(self.location.href+'?incorrect-cache-key', await fetch(self.location.href)); await self.clients.claim();"],
     ['enabled-preload','await self.registration.navigationPreload.disable();','await self.registration.navigationPreload.enable();'],
-    ['network-only','event.respondWith(handleNavigationRequest(request));','event.respondWith(fetch(request));']
+    ['network-only','async function handleNavigationRequest(request) {','async function handleNavigationRequest(request) { return fetch(request);']
   ]) {
     const assets=path.join(work,name+'-assets');
     assert.ok(worker.includes(search),'The worker fault must change an existing behavior: '+name);
-    write(path.join(assets,'js/pwa/worker-enable.js.tmpl'),worker.replace(search,replacement));
+    write(path.join(assets,'js/pwa/worker-enable.js.tmpl'),worker.replaceAll(search,replacement));
     variants[name]=path.join(work,name);
     build(mounts+'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n',variants[name]);
   }
@@ -199,7 +199,7 @@ test('disabled, broken and unwarmed workers cannot pass the first-visit boundary
 });
 
 test('offline checks require first-page asset scanning and a versioned navigation cache',{timeout:10000},()=>{
-  for(const [name,message] of [['no-scan',/enter their caches before reload/],['fixed-cache',/carry the build version/]]) {
+  for(const [name,message] of [['no-scan',/enter their caches before reload/],['fixed-cache',/carry the content version/]]) {
     const result=offline(['--page',from,'--timeout','1500'],variants[name]);
     assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,message);
   }

@@ -1,14 +1,26 @@
 import {
     FINGERPRINT_ASSET_CACHE,
+    CONTENT_STATE_CACHE,
+    PROGRAM_OFFLINE_CACHE_PREFIX,
     NAVIGATION_CACHE_PREFIX,
     VERSIONED_ASSET_CACHE_PREFIX,
     shouldDeleteVersionedCache,
 } from './cache-names.js';
-const NAVIGATION_CACHE = NAVIGATION_CACHE_PREFIX + '{{ .build_version }}';
-const VERSIONED_ASSET_CACHE = VERSIONED_ASSET_CACHE_PREFIX + '{{ .build_version }}';
+const CONTENT_VERSION_URL = new URL({{ .version_url | jsonify }}, self.location.origin).href;
+const CONTENT_CHECK_INTERVAL_MS = {{ .content_check_interval_ms }};
+const CONTENT_CHECK_DELAY_MS = 15000;
+const CONTENT_CHECK_TIMEOUT_MS = 10000;
+const PROGRAM_OFFLINE_CACHE = PROGRAM_OFFLINE_CACHE_PREFIX + '__BANYAN_SW_PROGRAM_HASH__';
 const OFFLINE_FALLBACKS = {{ .offline_fallbacks | jsonify }};
 const SW_ROUTES = {{ .sw_routes | jsonify }};
-const navigationWarmupTasks = new Map();
+let currentGeneration = null;
+let generationPromise = null;
+let lastAttemptAt = 0;
+let contentCheckTask = null;
+let contentCheckController = null;
+let contentCheckTimer = null;
+let contentCheckDelayResolve = null;
+let contentCheckCancelled = false;
 const HTML_ASSET_ATTR_PATTERN = /\b(?:href|src)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s"'=<>`]+))/ig;
 
 function isSameOriginRequest(request) {
@@ -82,26 +94,91 @@ function shouldHandleRoute(route) {
     return route && (route.bucket === 'versioned' || route.bucket === 'fingerprinted');
 }
 
-function getCacheNameForRoute(route, navigation = false) {
+function getCacheNameForRoute(route, navigation = false, version = currentGeneration?.version) {
     if (!route) return '';
     if (route.bucket === 'fingerprinted') return FINGERPRINT_ASSET_CACHE;
     if (route.bucket === 'versioned') {
-        return navigation ? NAVIGATION_CACHE : VERSIONED_ASSET_CACHE;
+        if (!isValidContentVersion(version)) return '';
+        return (navigation ? NAVIGATION_CACHE_PREFIX : VERSIONED_ASSET_CACHE_PREFIX) + version;
     }
     return '';
 }
 
-function shouldDeleteOnActivate(key) {
-    return shouldDeleteVersionedCache(key, NAVIGATION_CACHE, VERSIONED_ASSET_CACHE);
+function isValidContentVersion(version) {
+    return typeof version === 'string' && version.length > 0 && version.length <= 128
+        && version.trim() === version && !/[\u0000-\u001f\u007f]/.test(version);
 }
 
-async function fetchCacheResponse(request, route) {
+async function readContentState() {
+    const cache = await caches.open(CONTENT_STATE_CACHE);
+    const response = await cache.match(CONTENT_VERSION_URL);
+    if (!response) return null;
+    try {
+        const state = await response.json();
+        return state && typeof state === 'object' ? state : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+async function saveContentState(version, attemptedAt) {
+    const cache = await caches.open(CONTENT_STATE_CACHE);
+    await cache.put(CONTENT_VERSION_URL, new Response(JSON.stringify({
+        version,
+        lastAttemptAt: attemptedAt,
+    }), { headers: { 'Content-Type': 'application/json' } }));
+}
+
+async function openGeneration(version) {
+    const [navigationCache, assetCache] = await Promise.all([
+        caches.open(NAVIGATION_CACHE_PREFIX + version),
+        caches.open(VERSIONED_ASSET_CACHE_PREFIX + version),
+    ]);
+    return { version, navigationCache, assetCache, warmupTasks: new Map() };
+}
+
+async function cleanupVersionedCaches(generation) {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => shouldDeleteVersionedCache(key,
+        NAVIGATION_CACHE_PREFIX + generation.version,
+        VERSIONED_ASSET_CACHE_PREFIX + generation.version
+    )).map((key) => caches.delete(key)));
+}
+
+function getCurrentGeneration() {
+    if (!generationPromise) {
+        generationPromise = (async () => {
+            const state = await readContentState();
+            lastAttemptAt = Number.isFinite(state?.lastAttemptAt) && state.lastAttemptAt > 0
+                ? state.lastAttemptAt : 0;
+            currentGeneration = isValidContentVersion(state?.version)
+                ? await openGeneration(state.version) : null;
+            if (currentGeneration) {
+                await cleanupVersionedCaches(currentGeneration).catch(() => { });
+            }
+            return currentGeneration;
+        })().catch((error) => {
+            generationPromise = null;
+            throw error;
+        });
+    }
+    return generationPromise;
+}
+
+async function getCacheForRoute(route, generation, navigation = false) {
+    if (route.bucket === 'fingerprinted') return caches.open(FINGERPRINT_ASSET_CACHE);
+    if (!generation) return null;
+    return navigation ? generation.navigationCache : generation.assetCache;
+}
+
+async function fetchCacheResponse(request, route, signal) {
     // A fresh versioned SW cache must not be populated from an older HTTP cache.
     let response = await fetch(route.bucket === 'versioned'
-        ? new Request(request, { cache: 'no-cache' }) : request);
+        ? new Request(request, { cache: 'no-cache', signal })
+        : signal ? new Request(request, { signal }) : request);
     if (response && response.status === 304) {
         // Cache Storage needs a full body, including after browser prefetch validation.
-        response = await fetch(new Request(request, { cache: 'reload' }));
+        response = await fetch(new Request(request, { cache: 'reload', signal }));
     }
     return response;
 }
@@ -173,7 +250,7 @@ function getOfflineFallbackUrls() {
         urls.push(normalizedUrl);
     }
 
-    return urls;
+    return urls.filter((url) => shouldHandleRoute(getMatchingRoute(new URL(url).pathname)));
 }
 
 function getAssetUrlsFromHtml(htmlText, baseUrl) {
@@ -201,25 +278,28 @@ function getAssetUrlsFromHtml(htmlText, baseUrl) {
     return urls;
 }
 
-async function warmAssetsFromHtmlResponse(response, baseUrl) {
-    if (!isCacheableHtmlResponse(response)) return;
+async function warmAssetsFromHtmlResponse(response, baseUrl, signal) {
+    if (!isCacheableHtmlResponse(response)) return false;
 
     try {
         const htmlText = await response.text();
         const assetUrls = getAssetUrlsFromHtml(htmlText, baseUrl);
-        await Promise.all(assetUrls.map((assetUrl) => warmAssetUrl(assetUrl)));
-    } catch (error) { }
+        const results = await Promise.all(assetUrls.map((assetUrl) => warmAssetUrl(assetUrl, signal)));
+        return results.every(Boolean);
+    } catch (error) {
+        return false;
+    }
 }
 
-async function updateNavigationCache(request, cache, route, waitForAssetWarmup = false) {
+async function updateNavigationCache(request, cache, route, waitForAssetWarmup = false, signal) {
     try {
         const cacheKeyRequest = createNavigationCacheKeyRequest(request);
-        const response = await fetchCacheResponse(request, route);
+        const response = await fetchCacheResponse(request, route, signal);
         if (isCacheableHtmlResponse(response)) {
             await cache.put(cacheKeyRequest || request, response.clone());
-            const assetWarmupTask = warmAssetsFromHtmlResponse(response.clone(), response.url || request.url);
+            const assetWarmupTask = warmAssetsFromHtmlResponse(response.clone(), response.url || request.url, signal);
             if (waitForAssetWarmup) {
-                await assetWarmupTask;
+                if (!await assetWarmupTask) return null;
             } else {
                 assetWarmupTask.catch(() => { });
             }
@@ -230,9 +310,9 @@ async function updateNavigationCache(request, cache, route, waitForAssetWarmup =
     }
 }
 
-async function updateAssetCache(request, cache, route) {
+async function updateAssetCache(request, cache, route, signal) {
     try {
-        const response = await fetchCacheResponse(request, route);
+        const response = await fetchCacheResponse(request, route, signal);
         if (isCacheableAssetResponse(response)) {
             await cache.put(request, response.clone());
         }
@@ -242,7 +322,7 @@ async function updateAssetCache(request, cache, route) {
     }
 }
 
-async function getOfflineFallbackResponse(pathname) {
+async function getOfflineFallbackResponse(pathname, generation) {
     const offlineUrl = getOfflineFallbackUrl(pathname);
     if (!offlineUrl) return null;
 
@@ -254,7 +334,8 @@ async function getOfflineFallbackResponse(pathname) {
     });
     const route = getMatchingRoute(getRequestPathname(offlineRequest));
     if (!shouldHandleRoute(route)) return null;
-    const cache = await caches.open(getCacheNameForRoute(route, true));
+    const cache = await getCacheForRoute(route, generation, true);
+    if (!cache) return null;
     const cachedResponse = await cache.match(createNavigationCacheKeyRequest(offlineRequest) || offlineRequest);
     if (cachedResponse) {
         return cachedResponse;
@@ -268,41 +349,43 @@ async function getOfflineFallbackResponse(pathname) {
     return null;
 }
 
-async function warmAssetUrl(urlValue) {
+async function warmAssetUrl(urlValue, signal) {
     const href = normalizeSameOriginUrl(urlValue, self.location.origin);
-    if (!href) return;
+    if (!href) return false;
 
     const pathname = getRequestPathname(new Request(href));
     const route = getMatchingRoute(pathname);
-    if (route?.bucket !== 'fingerprinted') return;
+    if (route?.bucket !== 'fingerprinted') return false;
 
     const cacheName = getCacheNameForRoute(route);
-    if (!cacheName) return;
+    if (!cacheName) return false;
 
     const cache = await caches.open(cacheName);
     const request = new Request(href, {
         credentials: 'same-origin'
     });
     const cachedResponse = await cache.match(request);
-    if (cachedResponse) return;
+    if (cachedResponse) return true;
 
-    await updateAssetCache(request, cache, route);
+    return isCacheableAssetResponse(await updateAssetCache(request, cache, route, signal));
 }
 
-async function warmNavigationUrl(urlValue) {
+async function warmNavigationUrl(urlValue, generation, signal) {
     const href = normalizeSameOriginUrl(urlValue);
-    if (!href) return;
+    if (!href) return false;
     const pathname = getRequestPathname(new Request(href));
     const route = getMatchingRoute(pathname);
-    if (!shouldHandleRoute(route)) return;
+    if (!shouldHandleRoute(route)) return false;
 
-    if (navigationWarmupTasks.has(href)) {
-        await navigationWarmupTasks.get(href);
-        return;
+    if (generation === undefined) generation = await getCurrentGeneration();
+    if (!generation) return false;
+
+    if (generation.warmupTasks.has(href)) {
+        return generation.warmupTasks.get(href);
     }
 
     const task = (async () => {
-        const cache = await caches.open(getCacheNameForRoute(route, true));
+        const cache = await getCacheForRoute(route, generation, true);
         const request = new Request(href, {
             credentials: 'same-origin',
             headers: {
@@ -312,29 +395,26 @@ async function warmNavigationUrl(urlValue) {
         const cacheKeyRequest = createNavigationCacheKeyRequest(request);
         const cachedResponse = await cache.match(cacheKeyRequest || request);
         if (cachedResponse) {
-            await warmAssetsFromHtmlResponse(cachedResponse.clone(), href);
-            return;
+            return warmAssetsFromHtmlResponse(cachedResponse.clone(), href, signal);
         }
-        await updateNavigationCache(request, cache, route, true);
+        return isCacheableHtmlResponse(await updateNavigationCache(request, cache, route, true, signal));
     })();
 
-    navigationWarmupTasks.set(href, task);
+    generation.warmupTasks.set(href, task);
     try {
-        await task;
+        return await task;
     } finally {
-        navigationWarmupTasks.delete(href);
+        generation.warmupTasks.delete(href);
     }
 }
 
-async function warmNavigationUrls(urlValues) {
+async function warmNavigationUrls(urlValues, generation, signal) {
+    let warmed = true;
     for (const urlValue of urlValues) {
-        await warmNavigationUrl(urlValue);
+        if (!await warmNavigationUrl(urlValue, generation, signal)) warmed = false;
     }
+    return warmed;
 }
-
-self.addEventListener('install', (event) => {
-    event.waitUntil(warmNavigationUrls(getOfflineFallbackUrls()));
-});
 
 async function handleNavigationRequest(request) {
     const pathname = getRequestPathname(request);
@@ -343,7 +423,9 @@ async function handleNavigationRequest(request) {
         return fetch(request);
     }
 
-    const cache = await caches.open(getCacheNameForRoute(route, true));
+    const generation = await getCurrentGeneration();
+    const cache = await getCacheForRoute(route, generation, true);
+    if (!cache) return fetchCacheResponse(request, route);
     const cacheKeyRequest = createNavigationCacheKeyRequest(request);
     const cachedResponse = await cache.match(cacheKeyRequest || request);
     if (cachedResponse) {
@@ -355,7 +437,7 @@ async function handleNavigationRequest(request) {
         return networkResponse;
     }
 
-    const offlineFallbackResponse = await getOfflineFallbackResponse(pathname);
+    const offlineFallbackResponse = await getOfflineFallbackResponse(pathname, generation);
     if (offlineFallbackResponse) {
         return offlineFallbackResponse;
     }
@@ -369,12 +451,9 @@ async function handleAssetRequest(request, pathname) {
         return fetch(request);
     }
 
-    const cacheName = getCacheNameForRoute(route);
-    if (!cacheName) {
-        return fetch(request);
-    }
-
-    const cache = await caches.open(cacheName);
+    const generation = await getCurrentGeneration();
+    const cache = await getCacheForRoute(route, generation);
+    if (!cache) return fetchCacheResponse(request, route);
     const cachedResponse = await cache.match(request);
     if (cachedResponse) {
         return cachedResponse;
@@ -388,6 +467,170 @@ async function handleAssetRequest(request, pathname) {
     throw new Error('Asset request failed with no network response.');
 }
 
+async function fetchContentVersion(signal) {
+    const response = await fetch(CONTENT_VERSION_URL, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        signal,
+    });
+    if (!response.ok) throw new Error('Content version request failed.');
+    const data = await response.json();
+    if (!isValidContentVersion(data?.version)) throw new Error('Invalid content version.');
+    return data.version;
+}
+
+async function refreshContentVersion(signal) {
+    const generation = await getCurrentGeneration();
+    if (signal.aborted) throw new Error('Content version check cancelled.');
+
+    lastAttemptAt = Date.now();
+    await saveContentState(generation?.version || '', lastAttemptAt);
+    if (signal.aborted) throw new Error('Content version check cancelled.');
+
+    const version = await fetchContentVersion(signal);
+
+    let committed = generation?.version === version;
+    try {
+        const candidate = committed ? { ...generation, warmupTasks: new Map() } : await openGeneration(version);
+        const offlineUrls = getOfflineFallbackUrls();
+        if (!await warmNavigationUrls(offlineUrls, candidate, signal)) {
+            throw new Error('Content offline fallback preparation failed.');
+        }
+        if (signal.aborted) throw new Error('Content version check cancelled.');
+
+        if (!committed) {
+            // After preparation, publishing the generation must finish even if cancellation arrives.
+            await saveContentState(candidate.version, lastAttemptAt);
+            currentGeneration = candidate;
+            generationPromise = Promise.resolve(candidate);
+            committed = true;
+        }
+        await cleanupVersionedCaches(candidate);
+    } finally {
+        if (!committed) {
+            await Promise.all([
+                caches.delete(NAVIGATION_CACHE_PREFIX + version),
+                caches.delete(VERSIONED_ASSET_CACHE_PREFIX + version),
+            ]).catch(() => { });
+        }
+    }
+}
+
+async function prepareProgramOffline(signal) {
+    await caches.delete(PROGRAM_OFFLINE_CACHE);
+    // Initial page warmup can arrive during activation, so publish its content state during install.
+    if (!self.registration.active) return refreshContentVersion(signal);
+    try {
+        const cache = await caches.open(PROGRAM_OFFLINE_CACHE);
+        const state = await readContentState();
+        if (signal.aborted) throw new Error('Program offline fallback preparation cancelled.');
+        if (!isValidContentVersion(state?.version)) {
+            const attemptedAt = Date.now();
+            const version = await fetchContentVersion(signal);
+            await cache.put(CONTENT_VERSION_URL, new Response(JSON.stringify({
+                version,
+                lastAttemptAt: attemptedAt,
+            }), { headers: { 'Content-Type': 'application/json' } }));
+        }
+        const generation = { navigationCache: cache, warmupTasks: new Map() };
+        if (!await warmNavigationUrls(getOfflineFallbackUrls(), generation, signal) || signal.aborted) {
+            throw new Error('Program offline fallback preparation failed.');
+        }
+    } catch (error) {
+        await caches.delete(PROGRAM_OFFLINE_CACHE).catch(() => { });
+        throw error;
+    }
+}
+
+async function restoreProgramOffline(generation) {
+    if (!(await caches.keys()).includes(PROGRAM_OFFLINE_CACHE)) return;
+    const cache = await caches.open(PROGRAM_OFFLINE_CACHE);
+    let bootstrapState;
+    if (!generation) {
+        const response = await cache.match(CONTENT_VERSION_URL);
+        bootstrapState = response ? await response.json() : null;
+        if (!isValidContentVersion(bootstrapState?.version)) throw new Error('Program activation needs a content version.');
+        generation = await openGeneration(bootstrapState.version);
+    }
+    const pages = await Promise.all(getOfflineFallbackUrls().filter((url) =>
+        getMatchingRoute(new URL(url).pathname).bucket === 'versioned').map(async (url) => {
+        const request = createNavigationCacheKeyRequest(new Request(url));
+        const response = await cache.match(request);
+        if (!isCacheableHtmlResponse(response)) throw new Error('Prepared program offline fallback is missing.');
+        return { request, response };
+    }));
+    for (const { request, response } of pages) await generation.navigationCache.put(request, response);
+    if (bootstrapState) {
+        lastAttemptAt = Number.isFinite(bootstrapState.lastAttemptAt) && bootstrapState.lastAttemptAt > 0
+            ? bootstrapState.lastAttemptAt : 0;
+        await saveContentState(generation.version, lastAttemptAt);
+        currentGeneration = generation;
+        generationPromise = Promise.resolve(generation);
+        await cleanupVersionedCaches(generation);
+    }
+    // shortcut: replaced waiting stages persist until disable; add GC if program replacements become frequent.
+    await caches.delete(PROGRAM_OFFLINE_CACHE);
+}
+
+async function runCachePreparation(prepare) {
+    const controller = new AbortController();
+    contentCheckController = controller;
+    const timeout = setTimeout(() => controller.abort(), CONTENT_CHECK_TIMEOUT_MS);
+    try {
+        await prepare(controller.signal);
+    } finally {
+        controller.abort();
+        clearTimeout(timeout);
+        if (contentCheckController === controller) contentCheckController = null;
+    }
+}
+
+function cancelContentVersionCheck() {
+    contentCheckCancelled = true;
+    if (contentCheckTimer !== null) {
+        clearTimeout(contentCheckTimer);
+        contentCheckTimer = null;
+    }
+    const resolve = contentCheckDelayResolve;
+    contentCheckDelayResolve = null;
+    if (resolve) resolve(false);
+    contentCheckController?.abort();
+}
+
+function scheduleContentVersionCheck() {
+    if (contentCheckTask) return contentCheckTask;
+    if (self.registration.installing || self.registration.waiting) return Promise.resolve();
+
+    contentCheckCancelled = false;
+    contentCheckTask = (async () => {
+        await getCurrentGeneration();
+        const elapsed = Date.now() - lastAttemptAt;
+        if (lastAttemptAt > 0 && elapsed >= 0 && elapsed < CONTENT_CHECK_INTERVAL_MS) return;
+        if (contentCheckCancelled || self.registration.installing || self.registration.waiting) return;
+
+        const delayed = await new Promise((resolve) => {
+            contentCheckDelayResolve = resolve;
+            contentCheckTimer = setTimeout(() => {
+                contentCheckTimer = null;
+                contentCheckDelayResolve = null;
+                resolve(true);
+            }, CONTENT_CHECK_DELAY_MS);
+        });
+        if (!delayed || contentCheckCancelled || self.registration.installing || self.registration.waiting) return;
+        await runCachePreparation(refreshContentVersion);
+    })().catch(() => { }).finally(() => {
+        contentCheckTask = null;
+    });
+    return contentCheckTask;
+}
+
+self.registration.addEventListener('updatefound', cancelContentVersionCheck);
+
+self.addEventListener('install', (event) => {
+    // An active program may still commit a version; stage its replacement without publishing content state.
+    event.waitUntil(runCachePreparation(prepareProgramOffline));
+});
+
 self.addEventListener('activate', (event) => {
     event.waitUntil((async () => {
         if (self.registration.navigationPreload) {
@@ -395,12 +638,10 @@ self.addEventListener('activate', (event) => {
             // extra network work and Chrome warnings when cached HTML wins.
             await self.registration.navigationPreload.disable();
         }
-        const keys = await caches.keys();
-        await Promise.all(
-            keys
-                .filter((key) => shouldDeleteOnActivate(key))
-                .map((key) => caches.delete(key))
-        );
+        currentGeneration = null;
+        generationPromise = null;
+        lastAttemptAt = 0;
+        await restoreProgramOffline(await getCurrentGeneration());
         await self.clients.claim();
     })());
 });
@@ -425,7 +666,13 @@ self.addEventListener('fetch', (event) => {
         const route = getMatchingRoute(pathname);
         if (!shouldHandleRoute(route)) return;
 
-        event.respondWith(handleNavigationRequest(request));
+        const responsePromise = handleNavigationRequest(request);
+        event.respondWith(responsePromise);
+        if (request.mode === 'navigate') {
+            event.waitUntil(responsePromise.then((response) => {
+                if (isCacheableHtmlResponse(response)) return scheduleContentVersionCheck();
+            }).catch(() => { }));
+        }
         return;
     }
 

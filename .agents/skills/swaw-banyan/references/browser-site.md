@@ -45,9 +45,11 @@ history, cancellation, timeout and error checks. Collection activation also
 runs when a suitable collection links to the panel.
 
 The command uses the selected Hugo, Go and Git to produce a temporary next
-production build. It reads the source site's normal config, changes only the
-build version through the child environment, and isolates output, cache and
-resources. Source defaults to the caller's current directory; use `--site` for
+production build. It reads the source site's normal config, changes the build
+version through the child environment, and adds a harmless SW revision probe
+comment to the temporary output. Content-only releases keep `sw.js` unchanged;
+the probe lets these checks exercise waiting-worker activation. Output, cache
+and resources are isolated. Source defaults to the caller's current directory; use `--site` for
 another source. Source and published build must use the same site/config.
 Generated files are removed after execution. Existing builds and content are
 preserved. To test two actual code states, pass explicit builds to the leaf
@@ -95,9 +97,16 @@ supply an initial build and `--next` with a second SW-enabled build whose
 Most update tasks need reciprocal links between the chosen page and source;
 language needs the actual target-language link. Use `--help` for each task.
 
-Use `check/browser/site --updates` for a temporary version-only update without
+Use `check/browser/site --updates` for a temporary program-update probe without
 editing content. To test two actual code states, build those states separately.
 
 `pwa/disable` needs an enabled build followed by one with
 `service_worker.mode = "disable"`. `off` does not perform cleanup.
 Disable prefetch in the second build when checking SW removal without prefetch hints.
+
+For `pwa/content`, supply two builds with identical `sw.js` bytes and different
+`sw-version.json` versions. The check covers the real 15-second delay, concurrent
+navigation, cache replacement, fingerprint reuse, preserved readers and cancellation
+when a program update arrives. Use `--page` for the build-version panel and `--from`
+for a second cached page. The check advances only the worker's clock to cross the
+minimum check interval; it does not change the configured interval.

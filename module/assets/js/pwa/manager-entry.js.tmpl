@@ -4,9 +4,7 @@ import { initUpdateNavigation } from './navigation.js';
 
 const runtime = createServiceWorkerManagerRuntime({
     swUrl: {{ printf "%q" .sw_url }},
-    swScope: '/',
-    updateCheckInterval: {{ mul .check_interval 60000 }},
-    updateVisibilityThrottle: {{ mul .visibility_throttle 60000 }}
+    swScope: '/'
 });
 
 runtime.updates = startEnableMode(runtime);

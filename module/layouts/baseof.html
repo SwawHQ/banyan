@@ -1,7 +1,7 @@
 {{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
 {{- $pwaConfig := partial "system-delivery/pwa/config.html" (dict "ctx" . "delivery" $delivery) -}}
-{{- $swConfig := index $pwaConfig "sw_config" -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}
+{{- $contentCheckIntervalMs := index $pwaConfig "content_check_interval_ms" -}}
 {{- $webAppManifestMode := index $pwaConfig "manifest_mode" -}}
 {{- $offlineFallbacks := index $pwaConfig "offline_fallbacks" -}}
 {{- $isOfflinePage := index $pwaConfig "is_offline_page" -}}
@@ -108,8 +108,8 @@
     {{- end -}}
     {{- partial "system-delivery/pwa/service-worker.html" (dict
       "sw_mode" $swMode
-      "sw_config" $swConfig
       "build_version" $buildVersion
+      "content_check_interval_ms" $contentCheckIntervalMs
       "offline_fallbacks" $offlineFallbacks
       "sw_routes" $swRoutes
       "is_offline_page" $isOfflinePage

@@ -16,7 +16,7 @@ test('cache cleanup keeps current and unrelated caches',()=>{
     assert.equal(isManagedCacheKey(key),true);
     assert.equal(shouldDeleteVersionedCache(key,'nav-html-current','asset-versioned-current'),true);
   }
-  for(const key of ['nav-html-current','asset-versioned-current','asset-fingerprint']) {
+  for(const key of ['nav-html-current','asset-versioned-current','asset-fingerprint','sw-content-state','sw-program-offline-probe']) {
     assert.equal(isManagedCacheKey(key),true);
     assert.equal(shouldDeleteVersionedCache(key,'nav-html-current','asset-versioned-current'),false);
   }

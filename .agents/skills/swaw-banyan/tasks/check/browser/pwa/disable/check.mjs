@@ -6,8 +6,8 @@ import {waitForState} from '../_shared/state.mjs';
 import {visit,observe,quiet} from '../_shared/update.mjs';
 import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
 
-const managed=key=>key==='asset-fingerprint'||['nav-html-','asset-versioned-'].some(prefix=>key.startsWith(prefix));
-const probes=['swban-unrelated-cache','asset-fingerprint-unrelated','nav-htmlish-unrelated'];
+const managed=key=>['asset-fingerprint','sw-content-state'].includes(key)||['nav-html-','asset-versioned-','sw-program-offline-'].some(prefix=>key.startsWith(prefix));
+const probes=['swban-unrelated-cache','asset-fingerprint-unrelated','nav-htmlish-unrelated','sw-program-offlineish-unrelated'];
 const storageKey='swban-disable-probe';
 
 async function read(page) {
@@ -61,7 +61,7 @@ export async function check({page,server,baseUrl,options}) {
       return assets.length>0&&counts.some(count=>count>0);
     }),timeout,'The enabled worker must establish real navigation and fingerprinted asset caches.');
     await page.evaluate(async({probes,storageKey})=>{
-      for(const key of ['asset-versioned-swban-probe',...probes]) {
+      for(const key of ['asset-versioned-swban-probe','sw-content-state','sw-program-offline-swban-probe',...probes]) {
         await (await caches.open(key)).put(location.origin+'/swban-cache-probe',new Response(key));
       }
       localStorage.setItem(storageKey,'local preserved');sessionStorage.setItem(storageKey,'session preserved');
@@ -80,7 +80,7 @@ export async function check({page,server,baseUrl,options}) {
       const registration=await navigator.serviceWorker.getRegistration(location.origin+'/');
       const keys=await caches.keys(),controller=navigator.serviceWorker.controller;
       return registration?.active?.state==='activated'&&controller===registration.active&&controller!==window.__swbanDisableController
-        &&!keys.some(key=>key==='asset-fingerprint'||['nav-html-','asset-versioned-'].some(prefix=>key.startsWith(prefix)));
+        &&!keys.some(key=>['asset-fingerprint','sw-content-state'].includes(key)||['nav-html-','asset-versioned-','sw-program-offline-'].some(prefix=>key.startsWith(prefix)));
     }),timeout,'The disable worker must take control and remove managed caches before reload.');
     const worker=await read(page);preserved(worker,otherRegistrations);
     assert.equal(await page.evaluate(()=>window.__swbanDisableDocument),'preserved','Worker cleanup must keep the open document.');
@@ -91,7 +91,7 @@ export async function check({page,server,baseUrl,options}) {
 
     // Recreate managed caches: the manager must also clean without worker repair.
     await page.evaluate(async()=>{
-      for(const key of ['nav-html-swban-manager-probe','asset-versioned-swban-manager-probe','asset-fingerprint'])
+      for(const key of ['nav-html-swban-manager-probe','asset-versioned-swban-manager-probe','asset-fingerprint','sw-content-state','sw-program-offline-swban-manager-probe'])
         await (await caches.open(key)).put(location.origin+'/swban-manager-probe',new Response('manager cleanup'));
     });
     const response=await page.reload({waitUntil:'load'});

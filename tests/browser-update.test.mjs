@@ -62,30 +62,33 @@ before(()=>{
       '[[module.mounts]]\nsource = "data"\ntarget = "data"\n[params.build]\nversion = "'+version+'"\n');
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],
       {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
-    assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);return destination;
+    assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
+    if(mode==='enable')fs.appendFileSync(path.join(destination,'sw.js'),'\n// swban program-update probe: '+version+'\n');
+    return destination;
   };
   old=build('old');next=build('next',versions[1]);off=build('off',versions[0],undefined,undefined,'off');
-  const worker=fs.readFileSync(path.join(root,'module/assets/js/pwa/worker-enable.js.tmpl'),'utf8');
   const navigation=fs.readFileSync(path.join(root,'module/assets/js/pwa/navigation.js'),'utf8');
   const engine=fs.readFileSync(path.join(root,'module/assets/js/pwa/update-engine.js'),'utf8');
   for(const [name,asset,input,search,replacement,version] of [
-    ['auto-activate','worker-enable.js.tmpl',worker,"self.addEventListener('install',", "self.addEventListener('install', () => { void self.skipWaiting(); });\nself.addEventListener('install',",versions[1]],
-    ['old-cache','worker-enable.js.tmpl',worker,'return shouldDeleteVersionedCache(key, NAVIGATION_CACHE, VERSIONED_ASSET_CACHE);','return false;',versions[1]],
+    ['auto-activate','update-engine.js',engine,"updateStatus = 'ready';", "updateStatus = 'ready'; void activateWaitingWorker(runtime);",versions[0]],
     ['reload-reader','update-engine.js',engine,"navigator.serviceWorker.addEventListener('controllerchange', () => {", "navigator.serviceWorker.addEventListener('controllerchange', () => { if (document.querySelector('#swban-unsaved-draft')) location.reload(); });\nnavigator.serviceWorker.addEventListener('controllerchange', () => {",versions[0]],
     ['check-activates','update-engine.js',engine,'if (bindWaitingWorker(runtime, registration)) return;','if (bindWaitingWorker(runtime, registration)) { void activateWaitingWorker(runtime); return; }',versions[0]],
     ['ignore-cancel','navigation.js',navigation,'const cancelNavigation = () => { navigationId++; navigating = false; };','const cancelNavigation = () => {};',versions[0]],
     ['blocks-failure','navigation.js',navigation,'await runtime.updates.activate();','if (!(await runtime.updates.activate())) return;',versions[0]],
     ['clears-failure','navigation.js',navigation,'await runtime.updates.activate();','await runtime.updates.activate(); await Promise.all((await caches.keys()).map(key => caches.delete(key)));',versions[0]],
-    ['native-activates','update-engine.js',engine,'function markBackgroundUpdateChecked(runtime, registration) {','function markBackgroundUpdateChecked(runtime, registration) { if (registration?.waiting) void activateWaitingWorker(runtime);',versions[0]],
+    ['native-activates','update-engine.js',engine,'function syncRegistrationStatus(runtime, registration) {','function syncRegistrationStatus(runtime, registration) { if (registration?.waiting) void activateWaitingWorker(runtime);',versions[0]],
+    ['startup-check','update-engine.js',engine,'        void warmCurrentPage(runtime);','        void checkForUpdates(runtime);\n        void warmCurrentPage(runtime);',versions[0]],
+    ['polls','update-engine.js',engine,'        void warmCurrentPage(runtime);','        window.setInterval(() => void checkForUpdates(runtime), 15 * 60 * 1000);\n        void warmCurrentPage(runtime);',versions[0]],
+    ['visibility-checks','update-engine.js',engine,'        void warmCurrentPage(runtime);',"        document.addEventListener('visibilitychange', () => void checkForUpdates(runtime));\n        void warmCurrentPage(runtime);",versions[0]],
     ['captures-modifiers','navigation.js',navigation,'|| event.metaKey || event.ctrlKey || event.shiftKey || event.altKey','',versions[0]]
   ]) {
     assert.ok(input.includes(search),'Fault must alter real source: '+name);
     faults[name]=build(name,version,asset,input.replace(search,replacement));
   }
-  faults['delayed-reload']=path.join(work,'delayed-reload');fs.cpSync(next,faults['delayed-reload'],{recursive:true});
-  write(path.join(faults['delayed-reload'],'delayed-reload.js'),'setTimeout(()=>location.reload(),3500);');
-  const document=path.join(faults['delayed-reload'],panel,'index.html');
-  write(document,fs.readFileSync(document,'utf8').replace('</head>','<script defer src="/delayed-reload.js"></script></head>'));
+  const delayedReload="if(sessionStorage.getItem('swban-delayed-reload')) { sessionStorage.removeItem('swban-delayed-reload'); setTimeout(()=>location.reload(),3500); }\n"+
+    engine.replace("navigator.serviceWorker.addEventListener('controllerchange', () => {",
+      "let precedingController=navigator.serviceWorker.controller;\nnavigator.serviceWorker.addEventListener('controllerchange', () => { if(precedingController)sessionStorage.setItem('swban-delayed-reload','yes'); precedingController=navigator.serviceWorker.controller;");
+  faults['delayed-reload']=build('delayed-reload',versions[0],'update-engine.js',delayedReload);
 },{timeout:60000});
 after(()=>{if(work){assert.equal(path.dirname(work),parent);assert.ok(path.basename(work).startsWith('banyan-browser-update-'));fs.rmSync(work,{recursive:true,force:true});}});
 
@@ -109,14 +112,23 @@ test('update artifacts cannot be written inside either published build',{timeout
 
 test('checks retry offline, remain quiet when hidden and activate only on a native link',{timeout:15000},()=>{
   const state=report(cli('check',['--out',path.join(work,'reports')]));
-  assert.equal(state.details.before,versions[0]);assert.equal(state.details.after,versions[1]);assert.ok(state.details.hiddenControl);
+  assert.equal(state.details.before,versions[0]);assert.equal(state.details.after,versions[0]);assert.ok(state.details.hiddenControl);
+  assert.equal(state.details.controllerChanged,true);
+  assert.equal(state.details.automaticChecks,false);
 });
 
-test('link activation replaces cached destinations and preserves unsaved reader tabs in two languages',{timeout:30000},()=>{
+test('checks reject automatic startup and recurring checks',{timeout:15000},()=>{
+  for(const fault of ['startup-check','polls','visibility-checks']) {
+    const result=cli('check',['--timeout','5000'],faults[fault]);
+    assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,/must not check/);
+  }
+});
+
+test('link activation changes controllers and preserves cached content and unsaved reader tabs in two languages',{timeout:30000},()=>{
   for(const prefix of ['','/zh']) {
     const state=report(cli('activate',['--page',prefix+panel,'--from',prefix+from,'--trace','--out',path.join(work,'reports')]));
-    assert.equal(state.details.before,versions[0]);assert.equal(state.details.after,versions[1]);assert.equal(state.details.readerPreserved,true);
-    assert.ok(state.details.cachesBefore.some(key=>key.endsWith(versions[0])));assert.ok(state.details.cachesAfter.some(key=>key.endsWith(versions[1])));
+    assert.equal(state.details.before,versions[0]);assert.equal(state.details.after,versions[0]);assert.equal(state.details.readerPreserved,true);
+    assert.equal(state.details.controllerChanged,true);assert.equal(state.details.loads,1);
   }
 });
 
@@ -145,10 +157,9 @@ test('update checks reject identical builds and disabled workers',{timeout:10000
   }
 });
 
-test('activation rejects automatic updates and retained old navigation caches',{timeout:15000},()=>{
-  for(const [name,message] of [['auto-activate',/waiting service worker|retained|new controller/],['old-cache',/old navigation caches/]]) {
-    const result=cli('activate',['--timeout','1500'],old,faults[name]);assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,message);
-  }
+test('activation rejects automatic updates',{timeout:20000},()=>{
+  const result=cli('activate',['--timeout','1500'],faults['auto-activate']);
+  assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,/waiting service worker|old controller/);
 });
 
 test('activation rejects reloading another reader tab',{timeout:15000},()=>{
@@ -156,7 +167,7 @@ test('activation rejects reloading another reader tab',{timeout:15000},()=>{
 });
 
 test('activation observes delayed reloads beyond navigation completion',{timeout:15000},()=>{
-  const result=cli('activate',[],old,faults['delayed-reload']);assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,/delayed reload/);
+  const result=cli('activate',[],faults['delayed-reload']);assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,/delayed reload/);
 });
 
 test('manual and native checks detect unwanted activation',{timeout:15000},()=>{

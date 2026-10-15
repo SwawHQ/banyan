@@ -282,13 +282,25 @@ test('shared inline rules checks cover disabled, accepted, invalid JSON and miss
   put(rules);write(directory,'_headers','/*\n  Speculation-Rules: "/wrong.json"');
   checked('check/prefetch/rules',directory,/must not also/);
 });
-test('build version checks compare the rendered version with service-worker bytes',() => {
+test('build version checks compare the rendered version with the content-version JSON',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
   const directory = output('version',html.replace('</body>','<time data-site-update-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>2026-10-08 12:00</time></body>'));
-  write(directory,'sw.js','const cache = "nav-html-v20261008120000";');
+  write(directory,'sw.js','const versionURL = "/sw-version.json";');
+  write(directory,'sw-version.json',JSON.stringify({version:'v20261008120000'}));
   assert.equal(cli('check/build-version',[directory]).status,0);
-  write(directory,'sw.js','const cache = "nav-html-v20261008130000";');
-  checked('check/build-version',directory,/does not appear to use|outside update/);
+  write(directory,'sw-version.json',JSON.stringify({version:'v20261008130000'}));
+  checked('check/build-version',directory,/sw-version\.json.*does not match/);
+  write(directory,'sw-version.json','{broken');
+  checked('check/build-version',directory,/Invalid sw-version\.json/);
+  write(directory,'sw-version.json','{}');
+  checked('check/build-version',directory,/version undefined does not match/);
+  fs.unlinkSync(path.join(directory,'sw-version.json'));
+  assert.equal(cli('check/build-version',[directory]).status,0,'Disabled service workers do not publish a content version.');
+  const index=path.join(directory,'index.html');
+  fs.writeFileSync(index,fs.readFileSync(index,'utf8').replace('</body>','<script src="/js/sw-manager.enable.fixture.js"></script></body>'));
+  checked('check/build-version',directory,/sw-version\.json must be published/);
+  write(directory,'sw-version.json',JSON.stringify({version:'v20261008120000'}));
+  assert.equal(cli('check/build-version',[directory]).status,0);
 });
 test('image checks split responsive, share and icon failures and read resolved Hugo config',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');

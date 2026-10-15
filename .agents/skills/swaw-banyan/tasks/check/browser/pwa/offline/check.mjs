@@ -9,12 +9,13 @@ async function cacheState(page,assets,worker) {
     const assetCache=keys.includes('asset-fingerprint')?await caches.open('asset-fingerprint'):null;
     const missing=[];
     for(const url of assets)if(!(await assetCache?.match(url))?.ok)missing.push(url);
-    const cachedWorkers=[],script=new URL(worker);
+    const cachedWorkers=[],cachedVersions=[],script=new URL(worker);
     for(const key of keys)for(const request of await (await caches.open(key)).keys()) {
       const url=new URL(request.url);
       if(url.origin===script.origin&&url.pathname===script.pathname)cachedWorkers.push(key);
+      if(key!=='sw-content-state'&&url.origin===script.origin&&url.pathname==='/sw-version.json')cachedVersions.push(key);
     }
-    return {keys,pages,missing,cachedWorkers};
+    return {keys,pages,missing,cachedWorkers,cachedVersions};
   },{assets,worker});
 }
 
@@ -46,6 +47,11 @@ export async function check({page,baseUrl,options}) {
     const workerResponse=await context.request.get(registration.worker);
     assert.ok(workerResponse.ok(),'The active worker script must be available.');
     assert.equal(workerResponse.headers()['cache-control'],'no-cache, max-age=0, must-revalidate','The worker script must revalidate on every request.');
+    const versionResponse=await context.request.get(new URL('/sw-version.json',baseUrl).href);
+    assert.ok(versionResponse.ok(),'The content version JSON must be available.');
+    assert.equal(versionResponse.headers()['cache-control'],'no-cache, max-age=0, must-revalidate','The content version JSON must revalidate on every request.');
+    const {version:contentVersion}=await versionResponse.json();
+    assert.ok(typeof contentVersion==='string'&&contentVersion.trim(),'The content version JSON must identify the current content.');
     for(const url of await page.locator('link[rel="stylesheet"][href],script[src]').evaluateAll(nodes=>nodes.map(node=>node.href||node.src))) {
       const value=new URL(url);
       if(value.origin===new URL(baseUrl).origin&&/\.[a-f\d]{32,}\.(?:css|js)$/i.test(value.pathname))assets.add(value.href);
@@ -60,8 +66,9 @@ export async function check({page,baseUrl,options}) {
     }catch(error){
       error.details=await cacheState(page,[...assets],registration.worker);throw error;
     }
-    assert.match(before.pages[0].key,/^nav-html-v\d{14}$/,'The navigation cache must carry the build version.');
+    assert.equal(before.pages[0].key,'nav-html-'+contentVersion,'The navigation cache must carry the content version.');
     assert.deepEqual(before.cachedWorkers,[],'The worker script must never enter Cache Storage.');
+    assert.deepEqual(before.cachedVersions,[],'The content version JSON must not enter content caches.');
     // Remove HTTP cache as an alternative source of offline CSS/JS. Cache Storage stays intact.
     const session=await context.newCDPSession(page);
     try{await session.send('Network.clearBrowserCache');}finally{await session.detach();}
@@ -81,6 +88,7 @@ export async function check({page,baseUrl,options}) {
     for(const url of assets)assert.deepEqual(responses.get(url),{ok:true,worker:true},'Offline CSS/JS must come from the worker: '+new URL(url).pathname);
     const after=await cacheState(page,[...assets],registration.worker);
     assert.deepEqual(after.cachedWorkers,[],'Offline reload must not cache the worker script.');
+    assert.deepEqual(after.cachedVersions,[],'Offline reload must not cache the content version JSON.');
     assert.deepEqual(errors,[],'The first visit and offline reload must not raise uncaught errors.');
     return {page:options.page,registration,navigationCache:before.pages[0].key,assets:[...assets].map(url=>new URL(url).pathname),offlineDocument:true,offlineAssets:responses.size};
   }finally{

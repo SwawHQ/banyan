@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {extractTagAttribute,decodeHtmlAttribute} from '../../_shared/html/markup.mjs';
+import {extractTagAttribute,decodeHtmlAttribute,extractExternalScriptSrcs} from '../../_shared/html/markup.mjs';
 import {readPages} from '../../_shared/html/read.mjs';
 
 async function readUtf8IfExists(absolutePath) {
@@ -29,9 +29,11 @@ function extractUpdateVersionElements(text) {
 async function inspectBuildVersionContract(rootDir, rows) {
     const issues = [];
     let buildVersion = '';
+    let serviceWorkerEnabled = false;
     const updateVersions = [];
     for (const row of rows) {
         const text = await fs.readFile(row.absolutePath, 'utf8');
+        serviceWorkerEnabled ||= extractExternalScriptSrcs(text).some(src => /\/sw-manager\.enable\./.test(src));
         const elements = extractUpdateVersionElements(text);
         if (elements.length > 1) {
             issues.push(`${row.relativePath} contains ${elements.length} update version elements; expected at most one.`);
@@ -70,15 +72,17 @@ async function inspectBuildVersionContract(rootDir, rows) {
         }
     }
 
-    const swText = await readUtf8IfExists(path.join(rootDir, 'sw.js'));
-    if (buildVersion && swText) {
-        const swVersions = [...new Set([...swText.matchAll(/\bv\d{14}\b/g)].map((match) => match[0]))].sort();
-        const unexpectedSwVersions = swVersions.filter((entry) => entry !== buildVersion);
-        if (!swText.includes('nav-html-') || !swText.includes(buildVersion)) {
-            issues.push(`sw.js does not appear to use update-page buildVersion ${buildVersion}.`);
-        }
-        if (unexpectedSwVersions.length > 0) {
-            issues.push(`sw.js contains buildVersion values outside update-page buildVersion ${buildVersion}: ${unexpectedSwVersions.join(', ')}.`);
+    const versionText = await readUtf8IfExists(path.join(rootDir, 'sw-version.json'));
+    if (!versionText && serviceWorkerEnabled) {
+        issues.push('sw-version.json must be published when service workers are enabled.');
+    } else if (versionText) {
+        try {
+            const version = JSON.parse(versionText).version;
+            if (buildVersion && version !== buildVersion) {
+                issues.push(`sw-version.json version ${JSON.stringify(version)} does not match update-page buildVersion ${buildVersion}.`);
+            }
+        } catch (error) {
+            issues.push('Invalid sw-version.json: ' + error.message);
         }
     }
 

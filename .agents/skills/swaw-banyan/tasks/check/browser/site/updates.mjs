@@ -5,13 +5,12 @@ import {toolExecutable} from '../../../../scripts.js/_toolchain/operations.mjs';
 import {hugoEnvironment} from '../../../../scripts.js/hugo/index.mjs';
 import {builds} from '../pwa/_shared/update.mjs';
 
-// Only test metadata changes. Hugo uses the source site's normal config discovery.
+// Hugo uses normal source config; a temporary probe also exercises program activation.
 export async function buildNext(site,old,work) {
   const next=path.join(work,'next'),timestamp=new Date();
   const version=()=> 'v'+timestamp.toISOString().replace(/\D/g,'').slice(0,14);
-  const oldScript=await fs.readFile(path.join(old,'sw.js'),'utf8');
-  // A same-second build must still have a different cache version.
-  while(oldScript.includes(version()))timestamp.setUTCSeconds(timestamp.getUTCSeconds()+1);
+  const oldVersion=JSON.parse(await fs.readFile(path.join(old,'sw-version.json'),'utf8')).version;
+  while(oldVersion===version())timestamp.setUTCSeconds(timestamp.getUTCSeconds()+1);
   const env=hugoEnvironment({...process.env,HUGO_CACHEDIR:path.join(work,'cache'),HUGO_RESOURCEDIR:path.join(work,'resources'),
     HUGO_PARAMS_BUILD_VERSION:version(),GIT_OPTIONAL_LOCKS:'0'});
   await new Promise((resolve,reject)=>{
@@ -23,6 +22,8 @@ export async function buildNext(site,old,work) {
     child.on('error',error=>{clearTimeout(timer);reject(new Error('Temporary Hugo build failed: '+error.message));});
     child.on('close',code=>{clearTimeout(timer);code===0?resolve():reject(new Error('Temporary Hugo build failed: '+log.trim()));});
   });
+  // Content releases leave sw.js unchanged, so the check needs an explicit program revision.
+  await fs.appendFile(path.join(next,'sw.js'),'\n// swban program-update probe: '+version()+'\n');
   await builds({dir:old,next});
   return {fromDir:old,toDir:next};
 }

@@ -67,19 +67,13 @@ export async function oldCaches(page,timeout=15000) {
   }),timeout,'The old build must have a navigation cache.');
 }
 
-export async function clearedCaches(page,before,timeout=15000) {
-  return waitForState(()=>page.evaluate(async before=>{
-    const after=await caches.keys();
-    return before.filter(key=>key.startsWith('nav-html-')).every(key=>!after.includes(key))?after:null;
-  },before),timeout,'Activation must remove the old navigation caches.');
-}
-
 export function observe(page) {
-  const value={loads:0,dialogs:[],errors:[]};
+  const value={loads:0,navigationRequests:0,dialogs:[],errors:[]};
   const onLoad=()=>value.loads++,onError=error=>value.errors.push(error.message);
+  const onRequest=request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())value.navigationRequests++;};
   const onDialog=dialog=>{value.dialogs.push(dialog.type()+': '+dialog.message());void dialog.dismiss().catch(()=>{});};
-  page.on('load',onLoad);page.on('pageerror',onError);page.on('dialog',onDialog);
-  value.stop=()=>{page.off('load',onLoad);page.off('pageerror',onError);page.off('dialog',onDialog);};
+  page.on('load',onLoad);page.on('pageerror',onError);page.on('dialog',onDialog);page.on('request',onRequest);
+  value.stop=()=>{page.off('load',onLoad);page.off('pageerror',onError);page.off('dialog',onDialog);page.off('request',onRequest);};
   return value;
 }
 

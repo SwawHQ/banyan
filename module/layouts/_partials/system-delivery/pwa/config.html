@@ -6,6 +6,11 @@
   {{- errorf "Build failed: delivery.service_worker.mode only supports enable/disable/off; got %q." $swModeRaw -}}
 {{- end -}}
 
+{{- $contentCheckInterval := index $swConfig "content_check_interval" -}}
+{{- if not (and (in (slice "int" "int64") (printf "%T" $contentCheckInterval)) (gt $contentCheckInterval 0)) -}}
+  {{- errorf "Build failed: delivery.service_worker.content_check_interval must be a positive integer in minutes; got %v." $contentCheckInterval -}}
+{{- end -}}
+
 {{- $manifestConfig := $ctx.Site.Params.web_app_manifest | default dict -}}
 {{- $manifestModeRaw := index $manifestConfig "mode" | default "link" -}}
 {{- $manifestMode := lower (printf "%v" $manifestModeRaw) -}}
@@ -31,8 +36,8 @@
 {{- end -}}
 
 {{- return (dict
-  "sw_config" $swConfig
   "sw_mode" $swMode
+  "content_check_interval_ms" (mul $contentCheckInterval 60000)
   "manifest_mode" $manifestMode
   "offline_fallbacks" $offlineFallbacks
   "is_offline_page" (in $offlineRelPermalinks (lower $ctx.RelPermalink))

@@ -38,10 +38,8 @@ tail = "moderate"
 # enable：注册并启用；disable：客户端运行时触发，注销本站 SW 并清除受管缓存。
 # off：不加载 SW 管理逻辑，已安装的 SW 不会因此自动注销。
 mode = "off"
-# 后台检查 SW 更新的间隔，单位：分钟。
-update_check_interval = 15
-# 页面重新可见时，两次更新检查的最小间隔，单位：分钟。
-update_visibility_throttle = 3
+# 内容版本检查的最小间隔，单位：分钟。
+content_check_interval = 5
 # 离线提示页的站内路径；每种语言使用自己的提示页。
 offline_notice_path = "offline/"
 
@@ -66,7 +64,7 @@ nodeVersion = "22.11.0"
 # HTTP 路由按声明顺序输出，最终匹配和合并由部署平台处理。
 # 只有声明 sw 的路由参与 SW 匹配；并且同时命中多个时，针对 SW 会按最后声明的 SW 规则优先。
 # sw.bucket 取值：
-# versioned：按站点构建版本缓存；新版 SW 激活时删除旧版本缓存。
+# versioned：按内容版本缓存；内容版本切换时删除旧版本缓存。
 # fingerprinted：跨构建版本复用；用于 URL 含内容指纹、内容变化会换 URL 的资源。
 # off：不进入 SW 缓存，交给浏览器请求；HTTP 缓存仍可生效。
 # 两种缓存均先读 SW 缓存，命中后不按 HTTP max-age 自动过期。
@@ -129,6 +127,13 @@ sw.bucket = "off"
 [[routes]]
 path = "/sw.js"
 # SW 脚本每次检查时校验更新，不进入 SW 自己的缓存。
+http.headers.Cache-Control = "no-cache, max-age=0, must-revalidate"
+http.cloudflare.pages.unset = ["Cache-Control"]
+sw.bucket = "off"
+
+[[routes]]
+path = "/sw-version.json"
+# 内容版本每次检查时校验更新，不进入 SW 缓存。
 http.headers.Cache-Control = "no-cache, max-age=0, must-revalidate"
 http.cloudflare.pages.unset = ["Cache-Control"]
 sw.bucket = "off"

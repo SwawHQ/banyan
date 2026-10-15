@@ -2,7 +2,6 @@ import { readRequestedPrefetchBackend } from '../prefetch/browser.js';
 
 const SW_ACTIVATION_TIMEOUT_MS = 4000;
 
-let updateCheckTimer = null;
 let warmedCurrentUrl = '';
 let updateController = null;
 const statusListeners = new Set();
@@ -100,10 +99,7 @@ function watchInstallingWorker(runtime, registration) {
         if (!['installed', 'redundant'].includes(installing.state)) return;
         installing.removeEventListener('statechange', onStateChange);
         if (installing.state === 'installed') {
-            if (!bindWaitingWorker(runtime, registration)) {
-                updateStatus = 'current';
-                publishUpdateStatus();
-            }
+            syncRegistrationStatus(runtime, registration);
         } else if (!registration.waiting) {
             updateStatus = 'failed';
             publishUpdateStatus();
@@ -112,37 +108,15 @@ function watchInstallingWorker(runtime, registration) {
     installing.addEventListener('statechange', onStateChange);
 }
 
-function markBackgroundUpdateChecked(runtime, registration) {
+function syncRegistrationStatus(runtime, registration) {
     if (bindWaitingWorker(runtime, registration)) return;
+    if (updateCheckPromise) {
+        publishUpdateStatus();
+        return;
+    }
     updateLatencyMs = null;
     updateStatus = registration.installing ? 'installing' : 'current';
     publishUpdateStatus();
-}
-
-function scheduleRegistrationUpdates(runtime, registration) {
-    if (updateCheckTimer) return;
-
-    const intervalMs = runtime.updateCheckInterval || 15 * 60 * 1000;
-    const throttleMs = runtime.updateVisibilityThrottle || 3 * 60 * 1000;
-
-    updateCheckTimer = window.setInterval(() => {
-        registration.update()
-            .then(() => markBackgroundUpdateChecked(runtime, registration))
-            .catch(() => { });
-    }, intervalMs);
-
-    let lastUpdateCheck = 0;
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState !== 'visible') return;
-
-        const now = Date.now();
-        if (now - lastUpdateCheck <= throttleMs) return;
-
-        lastUpdateCheck = now;
-        registration.update()
-            .then(() => markBackgroundUpdateChecked(runtime, registration))
-            .catch(() => { });
-    });
 }
 
 function activateWaitingWorker(runtime) {
@@ -197,11 +171,10 @@ async function handleEnableMode(runtime) {
         });
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            markBackgroundUpdateChecked(runtime, registration);
+            syncRegistrationStatus(runtime, registration);
         });
-        markBackgroundUpdateChecked(runtime, registration);
+        syncRegistrationStatus(runtime, registration);
 
-        scheduleRegistrationUpdates(runtime, registration);
         void warmCurrentPage(runtime);
         navigator.serviceWorker.ready.then((readyRegistration) => {
             if (readyRegistration?.active) runtime.setActiveRegistration(readyRegistration);

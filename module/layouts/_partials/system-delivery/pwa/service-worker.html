@@ -1,5 +1,4 @@
 {{- $swMode := .sw_mode -}}
-{{- $swConfig := .sw_config -}}
 {{- $buildVersion := .build_version -}}
 {{- $offlineFallbacks := .offline_fallbacks -}}
 {{- $swRoutes := .sw_routes -}}
@@ -10,11 +9,14 @@
     {{- $swScriptTemplatePath := "js/pwa/worker-enable.js.tmpl" -}}
     {{- $swScriptTemplate := resources.Get $swScriptTemplatePath -}}
     {{- $swUrl := "sw.js" | relURL -}}
+    {{- $versionResource := resources.FromString "sw-version.json" (dict "version" $buildVersion | jsonify) -}}
+    {{- $publishVersion := $versionResource.RelPermalink -}}
     {{- if not $swScriptTemplate -}}
       {{- errorf "Build failed: missing resource %q." $swScriptTemplatePath -}}
     {{- else -}}
       {{- $swScriptContext := dict
-        "build_version" $buildVersion
+        "content_check_interval_ms" .content_check_interval_ms
+        "version_url" ("sw-version.json" | relURL)
         "offline_fallbacks" $offlineFallbacks
         "sw_routes" $swRoutes
       -}}
@@ -23,6 +25,8 @@
         "targetPath" "sw.js"
         "minify" (not hugo.IsServer)
       ) -}}
+      {{- $swProgram := $swScript.Content -}}
+      {{- $swScript = resources.FromString "sw.js" (replace $swProgram "__BANYAN_SW_PROGRAM_HASH__" (sha256 $swProgram)) -}}
       {{- $publishSw := $swScript.RelPermalink -}}
     {{- end -}}
     {{- $swManagerEntryPath := "js/pwa/manager-entry.js.tmpl" -}}
@@ -30,13 +34,7 @@
     {{- if not $swManagerEntryTemplate -}}
       {{- errorf "Build failed: missing resource %q." $swManagerEntryPath -}}
     {{- else -}}
-      {{- $swCheckInterval := index $swConfig "update_check_interval" | default 15 -}}
-      {{- $swVisibilityThrottle := index $swConfig "update_visibility_throttle" | default 3 -}}
-      {{- $swManagerEntryCtx := dict
-        "sw_url" $swUrl
-        "check_interval" $swCheckInterval
-        "visibility_throttle" $swVisibilityThrottle
-      -}}
+      {{- $swManagerEntryCtx := dict "sw_url" $swUrl -}}
       {{- $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" $swManagerEntryCtx -}}
       {{- /* Hugo 当前会为这条 bundle 生成错误的 SRI；保留指纹 URL 做缓存失效，避免浏览器因假阳性 integrity 直接拦截。 */ -}}
       {{- $swManagerTargetPath := cond hugo.IsServer "js/sw-manager.enable.bundle.js" "js/sw-manager.enable.bundle.min.js" -}}
