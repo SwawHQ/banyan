@@ -19,7 +19,7 @@ description: 约定页面列、列表、条目、样式类与行为标记的命�
 | 区域开关 | `slot_flags`、`slotFlags`；值是布尔值，不再是 fragment 来源 |
 | 浏览来源与排序状态 | `browse/navigation-state.js`、`browse/navigation-state.contract.js` |
 | 语言和外观偏好 | `preferences/language-page.js` 仅用于选择页；`preferences/language-return.js` 与 `preferences/theme.js` 负责跨页面行为；静态选项和返回链接在模板输出 |
-| PWA 状态与检查 | `updates/page.js` 连接页面、更新引擎与状态呈现；模板为 `feature-updates/panel.html`、`feature-updates/labels.html` |
+| PWA 状态与检查 | `updates/page.js` 查询本页 registration 并显示状态；模板为 `feature-updates/panel.html`、`feature-updates/labels.html` |
 
 ## 内容声明
 
@@ -103,7 +103,7 @@ JS 的 `pageHomes` 表示首页根节点，`scenePauseStates` 表示场景暂停
 
 ## 更新模块
 
-`feature-updates/labels.html` 返回 Powered by 页提供的文案，`feature-updates/panel.html` 负责 HTML，`assets/css/updates-panel.css` 负责呈现，`assets/js/updates/page.js` 负责读取本页静态文案并绑定状态与操作。该小型 CSS 源码仍由公共 `page.css` 装配；页面脚本只由 `page-powered-by.html` 加载。页面通过 `window.BanyanServiceWorkerManagerRuntime.updates.subscribe(listener)` 接收 `{status, latencyMs, controlled}`，通过 `check()` 只检查新版，永不激活或重载。`pwa/navigation.js` 只在普通站内同标签页链接跳转前调用 `activate()` 激活已就绪版本，然后直接打开目标地址；激活操作本身不重载页面。引擎不查询页面控件或加载文案，刷新、历史和其他标签页不触发自动重载。未启用 SW 时检查页显示不可用。
+`feature-updates/labels.html` 返回 Powered by 页提供的文案，`feature-updates/panel.html` 负责 HTML，`assets/css/updates-panel.css` 负责呈现。`assets/js/updates/page.js` 读取本页文案、查询原生 registration，并绑定状态与手动检查按钮。该小型 CSS 源码仍由公共 `page.css` 装配；页面脚本只由 `page-powered-by.html` 加载。普通页面的 `pwa/manager-entry.js.tmpl` 只在加载后注册 SW；预渲染页面等到激活后再注册。页面不创建全局更新运行时，不补当前页缓存，不拦截链接，也不主动激活程序。程序更新和激活由浏览器管理；手动检查不激活或重载。未启用 SW 时，面板显示不可用。
 
 ## 样式类与行为标记
 

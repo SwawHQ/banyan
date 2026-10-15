@@ -11,7 +11,6 @@ function readCopy() {
 
 function getStatusValue(copy, status, latencyMs) {
     if (status === 'unavailable') return copy.unavailable;
-    if (status === 'idle') return '';
     if (status === 'checking') return copy.checking;
     if (status === 'installing') return copy.installing;
     if (status === 'failed') return `${copy.check_failed} · ${copy.status_click_retry}`;
@@ -38,15 +37,94 @@ function render(copy, status, latencyMs, controlled) {
 }
 
 const copy = panel ? readCopy() : null;
-const updates = window.BanyanServiceWorkerManagerRuntime?.updates;
-if (panel && copy) {
-    if (updates) {
-        updates.subscribe(({ status, latencyMs, controlled }) => render(copy, status, latencyMs, controlled));
-        panel.querySelector('[data-site-update-action="check"]')?.addEventListener('click', (event) => {
-            event.preventDefault();
-            void updates.check();
+const action = panel?.querySelector('[data-site-update-action="check"]');
+let registration = null;
+let checking = false;
+let latencyMs = null;
+
+function showStatus(status) {
+    render(copy, status, latencyMs, Boolean(navigator.serviceWorker?.controller));
+}
+
+function syncRegistrationStatus() {
+    if (registration) showStatus(registration.waiting ? 'ready' : registration.installing ? 'installing' : 'current');
+}
+
+function watchInstallingWorker() {
+    const installing = registration.installing;
+    if (!installing) return;
+    latencyMs = null;
+    showStatus('installing');
+    const onStateChange = () => {
+        if (!['installed', 'redundant'].includes(installing.state)) return;
+        installing.removeEventListener('statechange', onStateChange);
+        if (installing.state === 'installed' || registration.waiting) syncRegistrationStatus();
+        else showStatus('failed');
+    };
+    installing.addEventListener('statechange', onStateChange);
+    onStateChange();
+}
+
+async function readRegistration() {
+    const found = await navigator.serviceWorker.getRegistration('/')
+        || await navigator.serviceWorker.register(panel.dataset.siteSwUrl, {
+            scope: '/',
+            updateViaCache: 'none'
         });
+    if (found !== registration) {
+        registration = found;
+        registration.addEventListener('updatefound', watchInstallingWorker);
+        watchInstallingWorker();
+    }
+    return registration;
+}
+
+async function checkForUpdates() {
+    if (checking) return;
+    latencyMs = null;
+    if (navigator.onLine === false) {
+        showStatus('offline');
+        return;
+    }
+    checking = true;
+    showStatus('checking');
+    const startedAt = performance.now();
+    try {
+        const current = await readRegistration();
+        await current.update();
+        latencyMs = Math.max(0, performance.now() - startedAt);
+        syncRegistrationStatus();
+    } catch {
+        showStatus(navigator.onLine === false ? 'offline' : 'failed');
+    } finally {
+        checking = false;
+    }
+}
+
+async function start() {
+    try {
+        await readRegistration();
+        syncRegistrationStatus();
+    } catch {
+        showStatus(navigator.onLine === false ? 'offline' : 'failed');
+    }
+}
+
+if (panel && copy) {
+    if (action && 'serviceWorker' in navigator) {
+        action.addEventListener('click', (event) => {
+            event.preventDefault();
+            void checkForUpdates();
+        });
+        navigator.serviceWorker.addEventListener('controllerchange', syncRegistrationStatus);
+        showStatus('checking');
+        const ready = () => {
+            if (document.prerendering) document.addEventListener('prerenderingchange', () => void start(), { once: true });
+            else void start();
+        };
+        if (document.readyState === 'complete') ready();
+        else window.addEventListener('load', ready, { once: true });
     } else {
-        render(copy, 'unavailable', null, Boolean(navigator.serviceWorker?.controller));
+        showStatus('unavailable');
     }
 }

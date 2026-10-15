@@ -23,12 +23,12 @@ Toolchain fixtures do not log in or publish.
 | --- | --- |
 | `module.test.mjs`, `js-build.test.mjs` | Module pairing, Hugo resolution and JS build inputs |
 | `install.test.mjs` | Documented starter, isolated Module/Skill packages and site overrides |
-| `cache-policy.test.mjs` | Delivery configuration, platform output, worker matching, bucket caching and warmup |
+| `cache-policy.test.mjs` | Delivery configuration, platform output, worker matching, versioned caching and controlled-navigation warmup |
 | `tasks.test.mjs`, `checks.test.mjs` | Dispatch, streams, sync faults, help, arguments and static/HTTP checks |
 | `browser.test.mjs`, `browser-site.test.mjs` | Engines, CSP, discovery, reports, isolation and cleanup |
 | `browser-{aside,breadcrumb,canvas,collection,nav,opening,presentation}.test.mjs` | Navigation, geometry, native input and first paint |
 | `browser-{language,settings,ui}.test.mjs` | Translation, history, preferences and palette |
-| `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Worker lifecycle, offline-page migration, content versions, cache ownership and prefetch |
+| `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
 | `output.test.mjs` | Repository budgets and retired-output faults |
 | `sitemap.test.mjs` | Rendered HTML discovery, native exclusions, translations and rebuilds |
 | `documentation.test.mjs` | Official documentation routes, links, language indexes and discovery URLs |

@@ -327,6 +327,31 @@ test('content versions change JSON without changing the worker program, and inte
   }
 });
 
+test('the page entry only registers after load and prerender activation, without a manager or warmup',async()=>{
+  contentOutput??=passed(build('content-version'));
+  const file=fs.readdirSync(path.join(contentOutput,'js')).find(name=>name.startsWith('sw-manager.enable.')&&name.endsWith('.js'));
+  const source=fs.readFileSync(path.join(contentOutput,'js',file),'utf8');
+  for(const [supported,loaded,prerendering] of [[true,false,false],[true,true,false],[true,true,true],[false,true,false]]){
+    const windowEvents=new Map(),documentEvents=new Map(),registrations=[];
+    const navigator=supported?{serviceWorker:{register(...args){registrations.push(args);return Promise.resolve();}}}:{};
+    const document={readyState:loaded?'complete':'loading',prerendering,
+      addEventListener:(name,handler)=>documentEvents.set(name,handler)};
+    const window={addEventListener:(name,handler)=>windowEvents.set(name,handler)};
+    vm.runInNewContext(source,{navigator,document,window});
+    assert.equal(registrations.length,supported&&loaded&&!prerendering?1:0);
+    if(supported&&!loaded)windowEvents.get('load')();
+    if(supported&&prerendering){document.prerendering=false;documentEvents.get('prerenderingchange')();}
+    assert.equal(registrations.length,supported?1:0);
+    if(supported){
+      assert.equal(registrations[0][0],'/sw.js');
+      assert.deepEqual(JSON.parse(JSON.stringify(registrations[0][1])),{scope:'/',updateViaCache:'none'});
+    }
+    assert.deepEqual([...windowEvents.keys()],supported&&!loaded?['load']:[]);
+    assert.deepEqual([...documentEvents.keys()],supported&&prerendering?['prerenderingchange']:[]);
+    assert.equal(window.BanyanServiceWorkerManagerRuntime,undefined);
+  }
+});
+
 test('concurrent navigations share one delayed content check and retain only the committed cache generation',async()=>{
   const runtime=contentRuntime();
   const first=await navigation(runtime),second=await navigation(runtime,'/other/');
@@ -384,12 +409,19 @@ test('a slow old response cannot recreate deleted versioned caches',async()=>{
   assert.equal(runtime.stores.has('asset-versioned-v-one'),false);
 });
 
-test('program updates cancel pending content checks instead of retaining the old worker for fifteen seconds',async()=>{
+test('program installation cancels pending checks and a waiting program permits content updates',async()=>{
   const runtime=contentRuntime(),job=await navigation(runtime);
   runtime.registration.installing={};runtime.registration.dispatchEvent(new Event('updatefound'));
   await job.done;
   assert.equal(runtime.probe.contentCheckTask,null);
   await runtime.clock.tick(15000);assert.equal(versionRequests(runtime).length,0);
+  runtime.registration.installing=null;runtime.registration.waiting={};
+  const active=runtime.registration.active,waiting=runtime.registration.waiting;
+  const next=await navigation(runtime);await runtime.clock.tick(15000);await next.done;
+  assert.equal(versionRequests(runtime).length,1);
+  assert.equal(runtime.probe.currentGeneration.version,'v-two');
+  assert.equal(runtime.registration.active,active);
+  assert.equal(runtime.registration.waiting,waiting);
 });
 
 test('program installation stages offline pages without touching an active commit; restart activates offline into the final version',async()=>{
@@ -415,6 +447,30 @@ test('program installation stages offline pages without touching an active commi
   assert.ok(runtime.stores.has('sw-program-offline-another-install'),'Another program stage must survive activation.');
   const response=await dispatch(restarted.listeners,requestFor('/unvisited-after-program-update/',true));
   assert.equal(response.ok,true);assert.match(await response.text(),/v-two/);
+});
+
+test('program activation preserves newer content and fills missing offline pages after a waiting-period commit',async()=>{
+  for(const bootstrap of [false,true]){
+    const runtime=contentRuntime(bootstrap?{stores:new Map([['sw-content-state',new Map()]])}:{});
+    let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
+    const active=contentRuntime({stores:runtime.stores,clock:runtime.clock});
+    active.probe.SW_ROUTES.unshift({path:'/zh/offline/',bucket:'off'});
+    active.registration.waiting={};active.control.version='v-three';
+    const job=await navigation(active);await active.clock.tick(15000);await job.done;
+    const state=await active.probe.readContentState();
+    assert.equal(state.version,'v-three');
+    assert.equal(active.stores.get('nav-html-v-three').has('https://example.test/zh/offline/'),false);
+    const restarted=contentRuntime({stores:runtime.stores,clock:runtime.clock});restarted.control.fail=true;
+    let activated;restarted.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
+    assert.equal(restarted.requests.length,0,'Activation must use prepared data without network requests.');
+    assert.deepEqual(await restarted.probe.readContentState(),state,'Activation must retain the active program\'s final content state.');
+    for(const prefix of ['','zh-tw/']){
+      const response=await dispatch(restarted.listeners,requestFor('/'+prefix+'uncached-after-activation/',true));
+      assert.match(await response.text(),/v-three/,'Prepared pages must not replace newer offline responses.');
+    }
+    const added=await dispatch(restarted.listeners,requestFor('/zh/uncached-after-activation/',true));
+    assert.match(await added.text(),/v-two/,'The new program must still fill its missing offline path.');
+  }
 });
 
 test('missing or invalid content state is staged and initialized offline on activation for every offline policy',async()=>{
@@ -468,6 +524,8 @@ test('bootstrap staging does not overwrite a concurrent active content commit',a
 
 test('reinstalling the same program replaces its stale stage without touching another program',async()=>{
   const runtime=contentRuntime(),stage=runtime.probe.PROGRAM_OFFLINE_CACHE;
+  runtime.stores.set('nav-html-v-one',new Map([['https://example.test/offline/',
+    new Response('Previous program offline page',{headers:{'Content-Type':'text/html'}})]]));
   runtime.stores.set(stage,new Map(['','zh/','zh-tw/'].map(prefix=>[
     'https://example.test/'+prefix+'offline/',new Response('Old offline page',{headers:{'Content-Type':'text/html'}})
   ])));
@@ -477,7 +535,7 @@ test('reinstalling the same program replaces its stale stage without touching an
   const before=await runtime.probe.readContentState();
   let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
   assert.equal(runtime.requests.filter(request=>new URL(request.url).pathname.endsWith('/offline/')).length,3);
-  assert.equal(runtime.stores.get(stage).has('https://example.test/sw-version.json'),false);
+  assert.deepEqual(await runtime.stores.get(stage).get('https://example.test/sw-version.json').clone().json(),before);
   assert.equal(runtime.stores.get('sw-program-offline-another-install'),another);
   assert.deepEqual(await runtime.probe.readContentState(),before);
   runtime.control.fail=true;
@@ -493,7 +551,7 @@ test('first installation publishes content before activation and removes a stage
   ])));
   runtime.stores.set('sw-program-offline-another-install',new Map());
   let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
-  assert.equal(runtime.probe.currentGeneration.version,'v-two','Early page warmup must have a usable generation.');
+  assert.equal(runtime.probe.currentGeneration.version,'v-two','First installation must prepare its initial content generation.');
   assert.equal((await runtime.probe.readContentState()).version,'v-two');
   assert.equal(runtime.stores.has(stage),false);
   assert.ok(runtime.stores.has('sw-program-offline-another-install'));

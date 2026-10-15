@@ -26,7 +26,7 @@ powered_by:
   build: "本站构建"
   time: "构建时间"
   commit: "站点提交"
-  pwa: "支持离线访问；新版准备好后，会在下一次站内同标签页跳转时启用。"
+  pwa: "支持离线访问；Service Worker 程序更新由浏览器管理。"
 site_update:
   labels:
     check: "检查更新"
@@ -36,7 +36,7 @@ site_update:
     unavailable: "当前环境未启用或不支持 Service Worker 更新。"
     status: "更新状态"
     status_current: "暂无等待启用的新版"
-    status_ready: "新版已准备好，将在下一次站内同标签页跳转时启用。"
+    status_ready: "新版程序已准备好，浏览器将在使用旧程序的页面关闭后启用。"
     status_offline: "离线"
     status_click_retry: "请重新检查"
     controlled: "当前页面受 Service Worker 控制"

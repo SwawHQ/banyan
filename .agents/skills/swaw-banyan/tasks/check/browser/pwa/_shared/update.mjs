@@ -37,6 +37,26 @@ export async function update(page,timeout=15000) {
   return waiting(page,timeout);
 }
 
+export async function naturallyActivate(page,timeout=15000) {
+  const context=page.context(),script=await page.evaluate(async()=>{
+    const registration=await navigator.serviceWorker.getRegistration();
+    if(!registration?.waiting)throw new Error('Natural activation needs a waiting worker.');
+    return registration.waiting.scriptURL;
+  });
+  const reopened=await context.newPage();
+  // A blank tab keeps the context alive without retaining an old controlled client.
+  await Promise.all(context.pages().filter(tab=>tab!==reopened).map(tab=>tab.close()));
+  await waitForState(async()=>{
+    for(const worker of context.serviceWorkers().filter(worker=>worker.url()===script)){
+      try{
+        if(await worker.evaluate(()=>self.registration.active?.state==='activated'&&!self.registration.waiting))return true;
+      }catch{}
+    }
+    return false;
+  },timeout,'The waiting worker must activate after all old controlled pages close.');
+  return reopened;
+}
+
 export async function rootLink(page,href) {
   const links=page.locator('[data-root-navigation] a[data-root-href]');
   const index=await links.evaluateAll((nodes,href)=>nodes.findIndex(node=>node.href===href),href);
@@ -61,12 +81,6 @@ export async function version(page) {
   return version;
 }
 
-export async function oldCaches(page,timeout=15000) {
-  return waitForState(()=>page.evaluate(async()=>{
-    const keys=await caches.keys();return keys.some(key=>key.startsWith('nav-html-'))?keys:null;
-  }),timeout,'The old build must have a navigation cache.');
-}
-
 export function observe(page) {
   const value={loads:0,navigationRequests:0,dialogs:[],errors:[]};
   const onLoad=()=>value.loads++,onError=error=>value.errors.push(error.message);
@@ -82,6 +96,5 @@ export function quiet(value) {
   assert.deepEqual(value.errors,[],'Update navigation must not raise uncaught errors.');
 }
 
-// Watch beyond the shipped 4-second activation deadline. A state sampled only
-// at navigation completion would miss a delayed reload or canceled redirect.
+// Observe beyond navigation completion to catch delayed application reloads.
 export async function settled(page) {await page.waitForTimeout(4500);await afterPaint(page);}

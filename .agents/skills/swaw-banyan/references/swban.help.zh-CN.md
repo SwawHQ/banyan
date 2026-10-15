@@ -83,14 +83,12 @@ HTTP 响应：
   swban check/browser/language/bfcache [目录] --from path --to code [--next code]                #真实 BFCache 恢复后的语言返回；Chromium
   swban check/browser/settings/url [目录] --page path                                            #设置页保留未使用的 URL 和历史数据；Chromium
   swban check/browser/settings/history [目录] --from path --pages paths                          #设置链、原生新标签页和后退；Chromium
-  swban check/browser/pwa/panel [目录] --page path --from path [--widths pixels]                 #更新面板显示、本地化与历史；Chromium
-  swban check/browser/pwa/offline [目录] [--page path]                                           #真实 SW 注册、首次缓存与离线重载；Chromium
+  swban check/browser/pwa/panel [目录] --page path --from path [--widths pixels]                   #更新面板显示、本地化与历史；Chromium
+  swban check/browser/pwa/offline [目录] [--page path]                                             #注册、受控导航与离线重载；Chromium
   swban check/browser/pwa/check [目录] --next 目录 [--page path] [--from path]                     #手动检查、离线重试与隐藏控件；Chromium
-  swban check/browser/pwa/activate [目录] --next 目录 [--page path] [--from path]                  #链接激活、缓存更新与阅读页保留；Chromium
-  swban check/browser/pwa/native [目录] --next 目录 [--page path] [--from path]                    #刷新、历史、锚点和新标签页保留等待更新；Chromium
-  swban check/browser/pwa/cancel [目录] --next 目录 [--page path] [--from path]                    #后续锚点取消待执行的更新导航；Chromium
-  swban check/browser/pwa/timeout [目录] --next 目录 [--page path] [--from path]                   #激活超时仍导航，保留缓存；Chromium
-  swban check/browser/pwa/error [目录] --next 目录 [--page path] [--from path]                     #激活异常仍导航，保留缓存；Chromium
+  swban check/browser/pwa/lifecycle [目录] --next 目录 [--page path] [--from path]                 #等待更新，关闭受控页面后由浏览器激活；Chromium
+  swban check/browser/pwa/native [目录] --next 目录 [--page path] [--from path]                    #链接、历史、锚点和新标签页保留等待更新；Chromium
+  swban check/browser/pwa/content [目录] --next 目录 [--page path] [--from path]                   #切换内容版本，保留活动 SW；Chromium
   swban check/browser/pwa/language [目录] --next 目录 --to code [--page path]                      #等待更新时语言链接仍可用；Chromium
   swban check/browser/pwa/disable [目录] --next 目录 [--page path]                                 #禁用 SW，清理主题状态并保留其他数据；Chromium
   swban check/browser/nav/tabs [目录] --page path [--selector css]                               #原生新标签页与 opener 隔离；Chromium

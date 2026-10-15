@@ -518,20 +518,22 @@ async function refreshContentVersion(signal) {
 
 async function prepareProgramOffline(signal) {
     await caches.delete(PROGRAM_OFFLINE_CACHE);
-    // Initial page warmup can arrive during activation, so publish its content state during install.
+    // Without an active program, installation can publish content state directly.
     if (!self.registration.active) return refreshContentVersion(signal);
     try {
         const cache = await caches.open(PROGRAM_OFFLINE_CACHE);
-        const state = await readContentState();
+        let state = await readContentState();
         if (signal.aborted) throw new Error('Program offline fallback preparation cancelled.');
         if (!isValidContentVersion(state?.version)) {
             const attemptedAt = Date.now();
-            const version = await fetchContentVersion(signal);
-            await cache.put(CONTENT_VERSION_URL, new Response(JSON.stringify({
-                version,
+            state = {
+                version: await fetchContentVersion(signal),
                 lastAttemptAt: attemptedAt,
-            }), { headers: { 'Content-Type': 'application/json' } }));
+            };
         }
+        await cache.put(CONTENT_VERSION_URL, new Response(JSON.stringify(state), {
+            headers: { 'Content-Type': 'application/json' },
+        }));
         const generation = { navigationCache: cache, warmupTasks: new Map() };
         if (!await warmNavigationUrls(getOfflineFallbackUrls(), generation, signal) || signal.aborted) {
             throw new Error('Program offline fallback preparation failed.');
@@ -545,13 +547,11 @@ async function prepareProgramOffline(signal) {
 async function restoreProgramOffline(generation) {
     if (!(await caches.keys()).includes(PROGRAM_OFFLINE_CACHE)) return;
     const cache = await caches.open(PROGRAM_OFFLINE_CACHE);
-    let bootstrapState;
-    if (!generation) {
-        const response = await cache.match(CONTENT_VERSION_URL);
-        bootstrapState = response ? await response.json() : null;
-        if (!isValidContentVersion(bootstrapState?.version)) throw new Error('Program activation needs a content version.');
-        generation = await openGeneration(bootstrapState.version);
-    }
+    const stateResponse = await cache.match(CONTENT_VERSION_URL);
+    const preparedState = stateResponse ? await stateResponse.json() : null;
+    if (!isValidContentVersion(preparedState?.version)) throw new Error('Program activation needs a content version.');
+    const bootstrapState = generation ? null : preparedState;
+    if (!generation) generation = await openGeneration(preparedState.version);
     const pages = await Promise.all(getOfflineFallbackUrls().filter((url) =>
         getMatchingRoute(new URL(url).pathname).bucket === 'versioned').map(async (url) => {
         const request = createNavigationCacheKeyRequest(new Request(url));
@@ -559,7 +559,12 @@ async function restoreProgramOffline(generation) {
         if (!isCacheableHtmlResponse(response)) throw new Error('Prepared program offline fallback is missing.');
         return { request, response };
     }));
-    for (const { request, response } of pages) await generation.navigationCache.put(request, response);
+    for (const { request, response } of pages) {
+        // Preserve pages refreshed while this program was waiting.
+        if (generation.version !== preparedState.version
+            && isCacheableHtmlResponse(await generation.navigationCache.match(request))) continue;
+        await generation.navigationCache.put(request, response);
+    }
     if (bootstrapState) {
         lastAttemptAt = Number.isFinite(bootstrapState.lastAttemptAt) && bootstrapState.lastAttemptAt > 0
             ? bootstrapState.lastAttemptAt : 0;
@@ -599,14 +604,14 @@ function cancelContentVersionCheck() {
 
 function scheduleContentVersionCheck() {
     if (contentCheckTask) return contentCheckTask;
-    if (self.registration.installing || self.registration.waiting) return Promise.resolve();
+    if (self.registration.installing) return Promise.resolve();
 
     contentCheckCancelled = false;
     contentCheckTask = (async () => {
         await getCurrentGeneration();
         const elapsed = Date.now() - lastAttemptAt;
         if (lastAttemptAt > 0 && elapsed >= 0 && elapsed < CONTENT_CHECK_INTERVAL_MS) return;
-        if (contentCheckCancelled || self.registration.installing || self.registration.waiting) return;
+        if (contentCheckCancelled || self.registration.installing) return;
 
         const delayed = await new Promise((resolve) => {
             contentCheckDelayResolve = resolve;
@@ -616,7 +621,7 @@ function scheduleContentVersionCheck() {
                 resolve(true);
             }, CONTENT_CHECK_DELAY_MS);
         });
-        if (!delayed || contentCheckCancelled || self.registration.installing || self.registration.waiting) return;
+        if (!delayed || contentCheckCancelled || self.registration.installing) return;
         await runCachePreparation(refreshContentVersion);
     })().catch(() => { }).finally(() => {
         contentCheckTask = null;
@@ -647,11 +652,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-        return;
-    }
-
     if (event.data && event.data.type === 'WARM_NAV_BATCH' && Array.isArray(event.data.urls)) {
         event.waitUntil(warmNavigationUrls(event.data.urls));
     }

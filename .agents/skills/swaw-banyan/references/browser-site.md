@@ -40,9 +40,8 @@ Palette roles remain separate because custom fixed surfaces can be valid.
 
 Ordinary checks share the supplied build and one static server. They do not
 invoke Hugo. `--updates` requires an enabled SW and a versioned update panel
-with reciprocal native root links. It runs activation, manual checks, native
-history, cancellation, timeout and error checks. Collection activation also
-runs when a suitable collection links to the panel.
+with reciprocal native root links. It checks manual updates, native navigation
+and browser activation after old controlled pages close.
 
 The command uses the selected Hugo, Go and Git to produce a temporary next
 production build. It reads the source site's normal config, changes the build
@@ -87,11 +86,11 @@ actual site; default example routes may not exist in a customized site.
 | `canvas/first-paint` | Article, collection or settings pages; include source/sort URLs when testing reserved columns. |
 | `prefetch/rules`, `prefetch/overlap`, `prefetch/debug` | Match inline rules to each page; overlap requires automatic native selection and candidates. Debug checks its five backend choices and published state. |
 | `pwa/panel` | Two pages with reciprocal root links. This tests panel UI with workers blocked, not real updates. |
-| `pwa/offline` | An SW-enabled build. This checks actual offline responses, not just registration. |
+| `pwa/offline` | An SW-enabled build. The first visit only registers; a later controlled navigation supplies the HTML and resources for offline reload. |
 
 ## Explicit SW build pairs
 
-For `pwa/check`, `activate`, `native`, `cancel`, `timeout`, `error` and `language`,
+For `pwa/check`, `lifecycle`, `native` and `language`,
 supply an initial build and `--next` with a second SW-enabled build whose
 `sw.js` bytes differ. The server switches files and headers at the same origin.
 Most update tasks need reciprocal links between the chosen page and source;
@@ -106,7 +105,7 @@ Disable prefetch in the second build when checking SW removal without prefetch h
 
 For `pwa/content`, supply two builds with identical `sw.js` bytes and different
 `sw-version.json` versions. The check covers the real 15-second delay, concurrent
-navigation, cache replacement, fingerprint reuse, preserved readers and cancellation
-when a program update arrives. Use `--page` for the build-version panel and `--from`
+navigation, cache replacement, fingerprint reuse and preserved readers. Content
+checks continue while a program waits for activation. Use `--page` for the build-version panel and `--from`
 for a second cached page. The check advances only the worker's clock to cross the
 minimum check interval; it does not change the configured interval.

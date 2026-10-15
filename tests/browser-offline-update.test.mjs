@@ -8,13 +8,13 @@ import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
 import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/suite.mjs';
-import {visit,update,observe,quiet,settled} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
+import {visit,update,naturallyActivate,observe,quiet,settled} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
 import {waitForState} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/state.mjs';
 import {verifyCspOutput} from '../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),parent=fs.realpathSync.native(os.tmpdir());
-const versions=['v20261015001001','v20261015001002'];
-let work,old,next,disabled,third,replacement;
+const versions=['v20261015001001','v20261015001002','v20261015001003'];
+let work,old,next,disabled,third,replacement,latest;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 async function contentVersion(page){return page.evaluate(async()=>{
   const response=await (await caches.open('sw-content-state')).match(new URL('/sw-version.json',location.href));
@@ -33,9 +33,11 @@ before(()=>{
         .replace(/^---\r?\n/,'---\nurl: '+prefix+'/'+offline+'/\n')
         .replace(/^title:.*$/m,'title: "Offline fixture '+name+'"');
       write(path.join(content,'offline/index'+suffix+'.md'),text);
+      if(name==='latest')write(path.join(content,'offline-current/index'+suffix+'.md'),
+        text.replace('url: '+prefix+'/offline-next/','url: '+prefix+'/offline/'));
     }
     write(path.join(data,'delivery.toml'),'[service_worker]\nmode = "'+mode+'"\ncontent_check_interval = 5\noffline_notice_path = "'+offline+'/"\n'+routes+
-      (name==='next'?'\n[[routes]]\npath = "/*offline-next/"\nhttp.headers.Vary = "Accept"\n':''));
+      (['next','latest'].includes(name)?'\n[[routes]]\npath = "/*offline-next/"\nhttp.headers.Vary = "Accept"\n':''));
     write(config,[['content',content],['content','content'],['data',data],['data','data']]
       .map(([target,directory])=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+
       '[params.build]\nversion = "'+version+'"\n');
@@ -47,6 +49,8 @@ before(()=>{
   };
   old=build('old',versions[0]);next=build('next',versions[1]);
   disabled=build('disabled',versions[1],'disable');third=build('third',versions[1]);
+  latest=build('latest',versions[2]);
+  assert.deepEqual(fs.readFileSync(path.join(next,'sw.js')),fs.readFileSync(path.join(latest,'sw.js')));
   replacement=path.join(work,'replacement');fs.cpSync(next,replacement,{recursive:true});
   for(const prefix of ['','zh','zh-tw']){
     const file=path.join(replacement,prefix,'offline-next/index.html');
@@ -58,7 +62,7 @@ before(()=>{
 },{timeout:60000});
 after(()=>{if(work){assert.equal(path.dirname(fs.realpathSync.native(work)),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
-test('program updates preserve offline pages across path changes, disable mode and replaced waiting workers',{timeout:60000},async()=>{
+test('program updates preserve offline pages across lifecycle and content changes',{timeout:60000},async()=>{
   const result=await runScenarioSuite({primaryBuildDir:old,outputDir:path.join(work,'reports'),timeout:15000,
     scenarios:[{id:'offline-path-update',kind:'single',async run({page,context,baseUrl,server}){
       await visit(page,baseUrl+'/');
@@ -68,7 +72,6 @@ test('program updates preserve offline pages across path changes, disable mode a
       assert.ok(initial?.ok()&&initial.fromServiceWorker());
       assert.match(await page.title(),/^Offline fixture old(?: - |$)/);
       await context.setOffline(false);
-      await page.evaluate(()=>{window.originalController=navigator.serviceWorker.controller;});
       await server.setRoot(next);
       for(const prefix of ['','/zh','/zh-tw']){
         const response=await context.request.get(baseUrl+prefix+'/offline-next/');
@@ -80,21 +83,17 @@ test('program updates preserve offline pages across path changes, disable mode a
         Boolean((await caches.match(new Request(new URL(prefix+'/offline-next/',location.href),{headers:{Accept:'text/html'}})))?.ok))));
       assert.deepEqual(prepared,[true,true,true],'Every language fallback must be ready before activation.');
       assert.equal(await page.evaluate(async()=>(await caches.keys()).filter(key=>key.startsWith('sw-program-offline-')).length),1);
-      const observed=observe(page);
+      let observed;
       try{
         await context.setOffline(true);
         const activationRequests=[],onRequest=request=>activationRequests.push(request.url());
         context.on('request',onRequest);
         try{
-          await page.evaluate(async()=>{(await navigator.serviceWorker.getRegistration()).waiting.postMessage({type:'SKIP_WAITING'});});
-          await waitForState(()=>page.evaluate(async()=>{
-            const registration=await navigator.serviceWorker.getRegistration();
-            return registration?.active?.state==='activated'&&navigator.serviceWorker.controller!==window.originalController;
-          }),
-            4000,'The prepared program must activate offline within the navigation deadline.');
+          page=await naturallyActivate(page,15000);
         }finally{context.off('request',onRequest);}
         assert.deepEqual(activationRequests,[],'Activation must restore prepared pages without network requests.');
-        assert.equal(observed.loads,0,'Activation must not reload the reader.');
+        await page.goto(baseUrl+'/offline-next/',{waitUntil:'load'});
+        observed=observe(page);
         assert.equal(await page.evaluate(async()=>(await caches.keys()).filter(key=>key.startsWith('sw-program-offline-')).length),0,
           'Activation must remove its temporary program cache.');
         for(const prefix of ['','/zh','/zh-tw']){
@@ -106,7 +105,7 @@ test('program updates preserve offline pages across path changes, disable mode a
         await settled(page);
         assert.equal(observed.loads,3);assert.equal(observed.navigationRequests,3);quiet(observed);
         assert.equal(await contentVersion(page),versions[0],'Offline fallback preparation must retain the active content version.');
-      }finally{observed.stop();await context.setOffline(false);}
+      }finally{observed?.stop();await context.setOffline(false);}
     }},{id:'offline-enable-after-disable',kind:'single',async run({page,context,baseUrl,server}){
       await visit(page,baseUrl+'/');
       await page.evaluate(()=>{window.originalController=navigator.serviceWorker.controller;});
@@ -118,7 +117,6 @@ test('program updates preserve offline pages across path changes, disable mode a
         return registration?.active?.state==='activated'&&navigator.serviceWorker.controller!==window.originalController&&
           !(await caches.keys()).includes('sw-content-state');
       }),15000,'The active disable worker must clear metadata without unregistering.');
-      await page.evaluate(()=>{window.disabledController=navigator.serviceWorker.controller;});
       await server.setRoot(next);await update(page);
       const stagedVersion=await page.evaluate(async()=>{
         const key=(await caches.keys()).find(key=>key.startsWith('sw-program-offline-'));
@@ -129,11 +127,7 @@ test('program updates preserve offline pages across path changes, disable mode a
       assert.equal(await contentVersion(page),undefined,'Installation must leave the active metadata unchanged.');
       await context.setOffline(true);
       try{
-        await page.evaluate(async()=>{(await navigator.serviceWorker.getRegistration()).waiting.postMessage({type:'SKIP_WAITING'});});
-        await waitForState(()=>page.evaluate(async()=>{
-          const registration=await navigator.serviceWorker.getRegistration();
-          return registration?.active?.state==='activated'&&navigator.serviceWorker.controller!==window.disabledController;
-        }),4000,'The re-enabled worker must activate while offline.');
+        page=await naturallyActivate(page,15000);
         const response=await page.goto(baseUrl+'/uncached-after-disable/',{waitUntil:'load'});
         assert.ok(response?.ok()&&response.fromServiceWorker());
         assert.match(await page.title(),/^Offline fixture next(?: - |$)/);
@@ -156,19 +150,50 @@ test('program updates preserve offline pages across path changes, disable mode a
       }
       assert.equal(requests.length,3,'Reinstalling the same program must fetch its current offline pages again.');
       assert.equal(await contentVersion(page),versions[0]);
-      await page.evaluate(()=>{window.originalController=navigator.serviceWorker.controller;});
       await context.setOffline(true);
       try{
-        await page.evaluate(async()=>{(await navigator.serviceWorker.getRegistration()).waiting.postMessage({type:'SKIP_WAITING'});});
-        await waitForState(()=>page.evaluate(async()=>{
-          const registration=await navigator.serviceWorker.getRegistration();
-          return registration?.active?.state==='activated'&&navigator.serviceWorker.controller!==window.originalController;
-        }),4000,'The refreshed waiting program must activate offline.');
+        page=await naturallyActivate(page,15000);
         for(const prefix of ['','/zh','/zh-tw']){
           const response=await page.goto(baseUrl+prefix+'/uncached-after-reinstallation/',{waitUntil:'load'});
           assert.ok(response?.ok()&&response.fromServiceWorker());
           assert.match(await page.title(),/^Offline fixture replacement(?: - |$)/);
         }
+      }finally{await context.setOffline(false);}
+    }},{id:'offline-waiting-content-update',kind:'single',async run({page,context,baseUrl,server}){
+      await visit(page,baseUrl+'/');
+      const worker=context.serviceWorkers()[0];
+      await server.setRoot(next);await update(page);
+      await server.setRoot(latest);
+      await worker.evaluate(()=>{
+        const now=Date.now.bind(Date);Date.now=()=>now()+6*60*1000;
+      });
+      await visit(page,baseUrl+'/');
+      await waitForState(async()=>await contentVersion(page)===versions[2],30000,
+        'The active program must publish new content while the next program waits.');
+      assert.equal(await page.evaluate(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.waiting)),true);
+      const response=await page.goto(baseUrl+'/offline-next/',{waitUntil:'load'});
+      assert.ok(response?.ok()&&response.fromServiceWorker());
+      assert.match(await page.title(),/^Offline fixture latest(?: - |$)/);
+      const cached=await page.evaluate(async(version)=>{
+        const cache=await caches.open('nav-html-'+version);
+        return Promise.all(['','/zh','/zh-tw'].map(async prefix=>Boolean((await cache.match(
+          new Request(new URL(prefix+'/offline-next/',location.href),{headers:{Accept:'text/html'}})))?.ok)));
+      },versions[2]);
+      assert.deepEqual(cached,[true,false,false],'The latest content must own the existing page while added paths remain missing.');
+      await context.setOffline(true);
+      try{
+        const activationRequests=[],onRequest=request=>activationRequests.push(request.url());
+        context.on('request',onRequest);
+        try{page=await naturallyActivate(page,15000);}finally{context.off('request',onRequest);}
+        assert.deepEqual(activationRequests,[],'Natural activation must restore missing pages without network requests.');
+        for(const prefix of ['','/zh','/zh-tw']){
+          const response=await page.goto(baseUrl+prefix+'/uncached-after-content-update/',{waitUntil:'load'});
+          assert.ok(response?.ok()&&response.fromServiceWorker());
+          assert.match(await page.title(),prefix?/^Offline fixture next(?: - |$)/:/^Offline fixture latest(?: - |$)/,
+            'Activation must retain current offline content and fill only the missing paths.');
+        }
+        assert.equal(await contentVersion(page),versions[2]);
+        assert.equal(await page.evaluate(async()=>(await caches.keys()).filter(key=>key.startsWith('sw-program-offline-')).length),0);
       }finally{await context.setOffline(false);}
     }}]});
   assert.equal(result.totals.failed,0,result.scenarios.filter(value=>value.status==='failed').map(value=>value.message).join('\n'));

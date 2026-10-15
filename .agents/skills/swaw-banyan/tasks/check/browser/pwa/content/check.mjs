@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import {setTimeout} from 'node:timers/promises';
 import {waitForState,waiting} from '../_shared/state.mjs';
-import {visit,version,observe,quiet} from '../_shared/update.mjs';
+import {visit,update,version,observe,quiet} from '../_shared/update.mjs';
 
 async function contentBuilds(options) {
   const old=await fs.realpath(options.dir),next=await fs.realpath(options.next);
@@ -37,7 +38,7 @@ export async function check({page,context=page.context(),server,baseUrl,options}
   const pair=await contentBuilds(options),target=new URL(options.page,baseUrl).href,from=new URL(options.from,baseUrl).href;
   assert.notEqual(from,target,'Content checks need two different page paths.');
   const timeout=options.timeout??15000,events=observe(page),extra=[];
-  let readerEvents,requests=0;
+  let readerEvents,requests=0,programDirectory;
   const onRequest=request=>{if(new URL(request.url()).pathname==='/sw-version.json')requests++;};
   try {
     await server.setRoot(pair.old);await visit(page,target,timeout);
@@ -56,7 +57,10 @@ export async function check({page,context=page.context(),server,baseUrl,options}
     },timeout,'The old content and fingerprinted resources must enter their caches.');
     const burst=await Promise.all([context.newPage(),context.newPage()]);extra.push(...burst);
     const workers=context.serviceWorkers();assert.equal(workers.length,1,'Content checks need one active SW program.');
-    await server.setRoot(pair.next);
+    programDirectory=await fs.mkdtemp(path.join(os.tmpdir(),'swban-content-program-'));
+    await fs.cp(pair.next,programDirectory,{recursive:true});
+    await fs.appendFile(path.join(programDirectory,'sw.js'),'\n// Waiting program probe\n');
+    await server.setRoot(programDirectory);await update(page,timeout);
     await workers[0].evaluate(()=>{
       const now=Date.now.bind(Date);Date.now=()=>now()+6*60*1000;
     });
@@ -77,8 +81,7 @@ export async function check({page,context=page.context(),server,baseUrl,options}
     for(const url of cachesBefore.fingerprints)assert.ok(cachesAfter.fingerprints.includes(url),'Content changes must retain cached fingerprinted resources.');
     assert.equal(await reader.evaluate(()=>navigator.serviceWorker.controller===window.__swbanContentController),true,
       'Content changes must retain the active controller.');
-    assert.equal(await reader.evaluate(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.waiting)),false,
-      'A content-only release must not install a waiting worker.');
+    await waiting(reader,timeout);
     assert.equal(context.serviceWorkers()[0],workers[0],'Content changes must retain the SW program.');
     assert.equal(await reader.evaluate(()=>window.__swbanContentDraft),'preserved','Content changes must preserve another tab.');
     assert.equal(await reader.locator('#swban-content-draft').inputValue(),'An unsaved draft','Content changes must preserve unsaved input.');
@@ -90,25 +93,15 @@ export async function check({page,context=page.context(),server,baseUrl,options}
     assert.equal(requests,1,'Navigations within the check interval must not request the version again.');
     quiet(events);quiet(readerEvents);
 
-    // A real program update must cancel the active worker's delayed task.
-    await workers[0].evaluate(()=>{
-      const now=Date.now.bind(Date);Date.now=()=>now()+6*60*1000;
-    });
-    await visit(page,from,timeout);
-    await page.evaluate(async()=>{
-      await navigator.serviceWorker.register('/sw.js?swban-content-program=1',{scope:'/',updateViaCache:'none'});
-    });
-    await waiting(page,timeout);
-    await page.evaluate(async()=>{
-      const registration=await navigator.serviceWorker.getRegistration();
-      registration.waiting.postMessage({type:'SKIP_WAITING'});
-    });
-    await waitForState(()=>reader.evaluate(()=>navigator.serviceWorker.controller!==window.__swbanContentController),4000,
-      'A program update must cancel the content timer and activate within the normal navigation deadline.');
     return {page:options.page,from:options.from,before,after,requests,cachesBefore:cachesBefore.keys,cachesAfter:cachesAfter.keys,
-      fingerprintedResources:cachesBefore.fingerprints.length,readerPreserved:true,controllerPreserved:true,programUpdateUnblocked:true};
+      fingerprintedResources:cachesBefore.fingerprints.length,readerPreserved:true,controllerPreserved:true,waitingProgramContentUpdated:true};
   }finally{
     context.off('request',onRequest);events.stop();readerEvents?.stop();
     await Promise.all(extra.map(tab=>tab.close()));
+    if(programDirectory){
+      assert.equal(path.dirname(programDirectory),os.tmpdir());
+      assert.ok(path.basename(programDirectory).startsWith('swban-content-program-'));
+      await fs.rm(programDirectory,{recursive:true,force:true});
+    }
   }
 }

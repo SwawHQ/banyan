@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {active} from '../_shared/state.mjs';
+import {active,waiting} from '../_shared/state.mjs';
 import {builds,visit,update,observe,quiet} from '../_shared/update.mjs';
 
 async function links(page) {
@@ -21,6 +21,7 @@ export async function check({page,server,baseUrl,options}) {
     assert.deepEqual(await links(page),before,'A waiting update must not replace or disable language links.');
     await page.locator('[data-language-settings] [data-language-choice]').nth(index).click();
     await page.waitForURL(before[index].href,{waitUntil:'load'});await active(page,options.timeout);
+    await waiting(page,options.timeout);
     await page.waitForSelector('[data-language-settings] [aria-current="page"]');
     const current=(await links(page)).filter(link=>link.current==='page');
     assert.deepEqual(current.map(link=>link.code),[options.to],'The destination must select its language.');

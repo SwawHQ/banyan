@@ -370,7 +370,7 @@ test('every declared task exposes help before consulting output, content or tool
     }
     assert.equal(cli(command,['--unknown'],work).status,1,command);
   }
-  for (const command of ['check/html','report/html','report/assets','check/http','check/img','check/content','check/browser/settings','check/html/budget','sync/edgeone','deploy/edgeone','deploy/edgeone/build']) {
+  for (const command of ['check/html','report/html','report/assets','check/http','check/img','check/content','check/browser/settings','check/html/budget','check/browser/pwa/activate','check/browser/pwa/cancel','check/browser/pwa/error','check/browser/pwa/timeout','sync/edgeone','deploy/edgeone','deploy/edgeone/build']) {
     const result = cli(command); assert.equal(result.status,1); assert.match(result.stderr,/unknown_command:/);
   }
 });

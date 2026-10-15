@@ -26,7 +26,7 @@ powered_by:
   build: "Site build"
   time: "Build time"
   commit: "Site commit"
-  pwa: "Offline access and updates that activate before the next same-tab site navigation once ready."
+  pwa: "Offline access. The browser manages Service Worker program updates."
 site_update:
   labels:
     check: "Check for updates"
@@ -36,7 +36,7 @@ site_update:
     unavailable: "Service Worker updates are unavailable in this environment."
     status: "Update status"
     status_current: "No update waiting to activate"
-    status_ready: "New version ready; it will activate on your next same-tab site navigation."
+    status_ready: "New program ready; the browser will activate it after pages using the old program are closed."
     status_offline: "Offline"
     status_click_retry: "try checking again"
     controlled: "Page controlled by a Service Worker"

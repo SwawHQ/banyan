@@ -370,7 +370,7 @@ test('worker selection is bounded, matches Banyan, and rolls back known sends',{
     for(const backend of ['off','native','link']) {
       await visit(page,baseUrl,backend);await page.waitForTimeout(60);
       assert.deepEqual(await page.evaluate(()=>window.__swbanPrefetchTrace.messages),[],
-        'forced '+backend+' diagnostics suppress the PWA current-page warmup');
+        'Registration must not send an implicit current-page warmup in '+backend+' mode.');
     }
     return page.evaluate(()=>window.banyanPrefetchState);
   }},{id:'third-party-worker-is-not-banyan',serviceWorkers:'allow',run:async({page,baseUrl})=>{
@@ -381,7 +381,7 @@ test('worker selection is bounded, matches Banyan, and rolls back known sends',{
       registration?.active?.scriptURL.endsWith('/foreign-worker.js')&&registration.active.state==='activated'));
     assert.equal((await visit(page,baseUrl,'auto')).backend,'link');
     return page.evaluate(()=>window.banyanPrefetchState);
-  }},{id:'prerender-manager-waits-for-activation',serviceWorkers:'allow',run:async({page,baseUrl})=>{
+  }},{id:'prerender-registration-waits-for-activation',serviceWorkers:'allow',run:async({page,baseUrl})=>{
     await page.addInitScript(recordRuntime);
     await page.addInitScript(()=>{
       Object.defineProperty(document,'prerendering',{value:true,writable:true,configurable:true});
@@ -395,8 +395,9 @@ test('worker selection is bounded, matches Banyan, and rolls back known sends',{
     await page.evaluate(()=>{document.prerendering=false;document.dispatchEvent(new Event('prerenderingchange'));});
     await page.waitForFunction(()=>window.__registrationCalls===1);
     await page.evaluate(()=>navigator.serviceWorker.ready);
-    await page.waitForFunction(()=>window.__swbanPrefetchTrace.messages.length>0);
-    assert.equal(await page.evaluate(()=>window.__registrationCalls),1,'activation starts the ordinary manager once');
+    await page.waitForFunction(()=>navigator.serviceWorker.getRegistration('/').then(registration=>registration?.active?.state==='activated'));
+    assert.deepEqual(await page.evaluate(()=>window.__swbanPrefetchTrace.messages),[],'Activation must not warm the current page.');
+    assert.equal(await page.evaluate(()=>window.__registrationCalls),1,'Activation registers the worker once.');
   }}]);
 });
 

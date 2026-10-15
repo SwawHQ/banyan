@@ -44,7 +44,7 @@ list: products
 
 Powered by 由主题 `content/powered-by/index*.md` 提供，使用 `page-powered-by` 展示技术总览，声明 `root_nav: true`、`weight: 96` 与 SVG `icon: code`。`powered-by` shortcode 展示 Banyan、Hugo 实际构建版本、站点构建信息和内嵌 PWA 状态面板。`params.theme_changelog` 指定 Banyan 变更记录地址；默认链接仓库的 `content/changelog/`。演示站点将它设为 `/changelog/`，复用 `page-collection` 与 `list: directory` 展示版本列表。记录只在根站点维护：开发期间写入 `content/changelog/unreleased/index.md`，发布时归档为 `content/changelog/v版本号/index.md`。主题版本来自 `hugo.Deps`；站点可通过 `params.build.theme` 提供提交和未提交修改状态。
 
-PWA 状态面板直接位于总览页的 PWA 段落，`site_update.labels` 与技术说明同存于 `content/powered-by/index*.md`，不依赖其他内容页面。面板显示是否受 Service Worker 控制及检查/安装/等待状态；构建信息只在上方显示一次。检查按钮始终只检查，不激活或刷新。普通站内同标签页链接在已有 waiting worker 时先激活再跳转，其他标签页不重载；刷新、历史和锚点保持原生行为。
+PWA 状态面板直接位于总览页的 PWA 段落，`site_update.labels` 与技术说明同存于 `content/powered-by/index*.md`，不依赖其他内容页面。面板自行读取 registration，显示是否受 Service Worker 控制及检查/安装/等待状态；构建信息只在上方显示一次。检查按钮始终只检查，不激活或刷新。程序更新和激活由浏览器管理；普通链接、刷新、历史和锚点保持原生行为。
 
 旧更新目录、主题及根站点的 changelog 占位页、`changelog-fallback` shortcode 已移除，构建信息并入技术总览。已有 `data/redirects.toml` 中旧 PWA/site 迁移的目标同步指向新路径。总览是根级普通页面，不再保留 PWA 子页、子页路径列及其专用布局。
 

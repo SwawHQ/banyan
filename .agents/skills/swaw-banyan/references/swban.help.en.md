@@ -84,13 +84,11 @@ Browser checks (dir: public; append --help for all options):
   swban check/browser/settings/url [dir] --page path                                            #Unused settings URL and history data; Chromium
   swban check/browser/settings/history [dir] --from path --pages paths                          #Settings chains, native tabs and Back; Chromium
   swban check/browser/pwa/panel [dir] --page path --from path [--widths pixels]                 #Update panel display, locale and history; Chromium
-  swban check/browser/pwa/offline [dir] [--page path]                                           #Real SW registration, first-page cache and offline reload; Chromium
+  swban check/browser/pwa/offline [dir] [--page path]                                           #Registration, controlled navigation and offline reload; Chromium
   swban check/browser/pwa/check [dir] --next dir [--page path] [--from path]                    #Manual/offline checks and hidden controls; Chromium
-  swban check/browser/pwa/activate [dir] --next dir [--page path] [--from path]                 #Link activation, caches and reader preservation; Chromium
-  swban check/browser/pwa/native [dir] --next dir [--page path] [--from path]                   #Refresh/history/anchors/tabs keep updates waiting; Chromium
-  swban check/browser/pwa/cancel [dir] --next dir [--page path] [--from path]                   #Later anchors cancel pending update navigation; Chromium
-  swban check/browser/pwa/timeout [dir] --next dir [--page path] [--from path]                  #Activation timeout preserves navigation and caches; Chromium
-  swban check/browser/pwa/error [dir] --next dir [--page path] [--from path]                    #Activation errors preserve navigation and caches; Chromium
+  swban check/browser/pwa/lifecycle [dir] --next dir [--page path] [--from path]                #Waiting updates and browser activation after pages close; Chromium
+  swban check/browser/pwa/native [dir] --next dir [--page path] [--from path]                   #Links, history, anchors and tabs keep updates waiting; Chromium
+  swban check/browser/pwa/content [dir] --next dir [--page path] [--from path]                  #Content versions change without replacing the active SW; Chromium
   swban check/browser/pwa/language [dir] --next dir --to code [--page path]                     #Native language links with a waiting update; Chromium
   swban check/browser/pwa/disable [dir] --next dir [--page path]                                #Disable SW, clean theme state and preserve other data; Chromium
   swban check/browser/nav/tabs [dir] --page path [--selector css]                               #Native new tabs and opener isolation; Chromium

@@ -26,7 +26,7 @@ powered_by:
   build: "本站建置"
   time: "建置時間"
   commit: "網站提交"
-  pwa: "支援離線存取；新版準備好後，會在下一次站內同分頁跳轉時啟用。"
+  pwa: "支援離線存取；Service Worker 程式更新由瀏覽器管理。"
 site_update:
   labels:
     check: "檢查更新"
@@ -36,7 +36,7 @@ site_update:
     unavailable: "目前環境未啟用或不支援 Service Worker 更新。"
     status: "更新狀態"
     status_current: "暫無等待啟用的新版"
-    status_ready: "新版已準備好，將在下一次站內同分頁跳轉時啟用。"
+    status_ready: "新版程式已準備好，瀏覽器將在使用舊程式的頁面關閉後啟用。"
     status_offline: "離線"
     status_click_retry: "請重新檢查"
     controlled: "目前頁面受 Service Worker 控制"

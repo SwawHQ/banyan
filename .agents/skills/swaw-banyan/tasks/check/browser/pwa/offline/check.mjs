@@ -44,6 +44,10 @@ export async function check({page,baseUrl,options}) {
     assert.equal(new URL(registration.worker).origin,new URL(baseUrl).origin,'The worker must belong to the local site.');
     assert.equal(registration.updateViaCache,'none','Worker update checks must bypass the HTTP cache.');
     if(registration.preload)assert.equal(registration.preload.enabled,false,'Cache-first navigation must keep navigation preload disabled.');
+    const initialDocumentCached=(await cacheState(page,[],registration.worker)).pages.some(value=>value.cached);
+    const controlled=await page.reload({waitUntil:'load'});
+    assert.ok(controlled?.ok()&&controlled.fromServiceWorker(),'A controlled navigation must load through the worker.');
+    await waitForBrowse(page);await afterPaint(page);
     const workerResponse=await context.request.get(registration.worker);
     assert.ok(workerResponse.ok(),'The active worker script must be available.');
     assert.equal(workerResponse.headers()['cache-control'],'no-cache, max-age=0, must-revalidate','The worker script must revalidate on every request.');
@@ -62,7 +66,7 @@ export async function check({page,baseUrl,options}) {
       before=await waitForState(async()=>{
         const state=await cacheState(page,[...assets],registration.worker);
         return state.pages.length===1&&state.pages[0].cached&&state.keys.includes('asset-fingerprint')&&!state.missing.length?state:null;
-      },timeout,'The first page and its fingerprinted CSS/JS must enter their caches before reload.');
+      },timeout,'The controlled page and its fingerprinted CSS/JS must enter their caches before going offline.');
     }catch(error){
       error.details=await cacheState(page,[...assets],registration.worker);throw error;
     }
@@ -90,7 +94,7 @@ export async function check({page,baseUrl,options}) {
     assert.deepEqual(after.cachedWorkers,[],'Offline reload must not cache the worker script.');
     assert.deepEqual(after.cachedVersions,[],'Offline reload must not cache the content version JSON.');
     assert.deepEqual(errors,[],'The first visit and offline reload must not raise uncaught errors.');
-    return {page:options.page,registration,navigationCache:before.pages[0].key,assets:[...assets].map(url=>new URL(url).pathname),offlineDocument:true,offlineAssets:responses.size};
+    return {page:options.page,registration,navigationCache:before.pages[0].key,assets:[...assets].map(url=>new URL(url).pathname),initialDocumentCached,controlledNavigation:true,offlineDocument:true,offlineAssets:responses.size};
   }finally{
     if(offline)await context.setOffline(false);
     page.off('pageerror',onError);page.off('response',onResponse);page.off('requestfailed',onFailure);

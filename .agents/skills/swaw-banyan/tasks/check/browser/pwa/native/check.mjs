@@ -32,7 +32,12 @@ export async function check({page,context=page.context(),server,baseUrl,options}
       assert.equal(await version(page),before,'New tabs must not activate the waiting worker.');
       await popup.close();popup=null;
     }
+    events.loads=0;events.navigationRequests=0;
+    await (await rootLink(page,from)).click();await page.waitForURL(from,{waitUntil:'load'});await waiting(page,options.timeout);
+    await settled(page);
+    assert.equal(events.loads,1,'An ordinary link must load once without an application reload.');
+    assert.equal(events.navigationRequests,1,'An ordinary link must issue only one navigation request.');
     quiet(events);
-    return {page:options.page,from:options.from,version:before,refreshLoads:1,waitingAfter:['refresh','back','forward','anchor','new-tab']};
+    return {page:options.page,from:options.from,version:before,refreshLoads:1,waitingAfter:['refresh','back','forward','anchor','new-tab','link']};
   }finally{events.stop();if(popup)await popup.close();}
 }

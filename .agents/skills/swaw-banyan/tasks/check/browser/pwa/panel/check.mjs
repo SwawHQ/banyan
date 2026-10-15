@@ -10,18 +10,16 @@ async function rendered(page,expected) {
   await page.waitForFunction(()=>Boolean(document.querySelector('[data-site-update-panel]')?.dataset.siteUpdateState));
   await panel.scrollIntoViewIfNeeded();
   const value=await panel.evaluate(node=>{
-    const copy=JSON.parse(node.dataset.siteUpdateCopy),updates=window.BanyanServiceWorkerManagerRuntime?.updates;
-    let runtime;
-    if(updates){const unsubscribe=updates.subscribe(value=>{runtime=value;});unsubscribe();}
+    const copy=JSON.parse(node.dataset.siteUpdateCopy);
     const status=node.querySelector('[data-site-update-status]'),action=node.querySelector('[data-site-update-action="check"]');
-    return {state:node.dataset.siteUpdateState,copy,runtime,controlled:node.querySelector('[data-pwa-controlled]')?.textContent,
+    return {state:node.dataset.siteUpdateState,copy,controlled:node.querySelector('[data-pwa-controlled]')?.textContent,
       hasController:Boolean(navigator.serviceWorker?.controller),status:status?.textContent,role:status?.getAttribute('role'),live:status?.getAttribute('aria-live'),
       action:action?{tag:action.tagName,type:action.getAttribute('type'),pressed:action.getAttribute('aria-pressed'),disabled:action.disabled,label:action.querySelector('[data-site-update-action-label]')?.textContent}:null};
   });
-  const {state,copy,runtime,action}=value;
+  const {state,copy,action}=value;
   for(const name of ['yes','no','status','unavailable'])assert.ok(typeof copy[name]==='string'&&copy[name].trim(),'Panel labels must contain '+name+'.');
   assert.equal(value.controlled,copy[value.hasController?'yes':'no'],'Panel control status must use the current runtime and locale.');
-  assert.equal(state,runtime?.status??'unavailable','Panel state must follow its update subscription or show unavailable.');
+  if(!action)assert.equal(state,'unavailable','A panel without a check button must show unavailable.');
   assert.equal(value.role,'status','Panel status must have an accessible status role.');
   assert.equal(value.live,'polite','Panel status must announce changes politely.');
   if(state==='idle')assert.equal(value.status,'','Idle panels must have no status message.');
@@ -31,7 +29,6 @@ async function rendered(page,expected) {
     assert.ok(field&&typeof copy[field]==='string'&&copy[field].trim(),'Panel state must have a localized message.');
     assert.ok(value.status.includes(copy[field]),'Panel status must contain the current localized message.');
   }
-  if(runtime)assert.ok(action,'An enabled update panel must contain its check button.');
   if(action) {
     assert.equal(action.tag,'BUTTON','The update check must be a native button.');
     assert.equal(action.type,'button','The update check must not submit a form.');

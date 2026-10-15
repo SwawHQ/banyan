@@ -7,12 +7,9 @@ import {check as rules} from '../prefetch/rules/check.mjs';
 import {check as overlap} from '../prefetch/overlap/check.mjs';
 import {check as debug} from '../prefetch/debug/check.mjs';
 import {check as offline} from '../pwa/offline/check.mjs';
-import {check as activate} from '../pwa/activate/check.mjs';
+import {check as lifecycle} from '../pwa/lifecycle/check.mjs';
 import {check as manual} from '../pwa/check/check.mjs';
 import {check as native} from '../pwa/native/check.mjs';
-import {check as cancel} from '../pwa/cancel/check.mjs';
-import {check as timeout} from '../pwa/timeout/check.mjs';
-import {check as error} from '../pwa/error/check.mjs';
 
 export function siteScenarios(site,options) {
   const scenarios=[];
@@ -35,9 +32,7 @@ export function siteScenarios(site,options) {
   const updateSkip=!site.offline?'Service workers are not enabled in this build.':
     !site.panel?'No versioned update panel with reciprocal root links.':
     !options.updates?'Use --updates to build and check a next version.':null;
-  for(const [name,check] of [['activate',activate],['check',manual],['native',native],['cancel',cancel],['timeout',timeout],['error',error]])
+  for(const [name,check] of [['lifecycle',lifecycle],['check',manual],['native',native]])
     add('pwa-'+name,check,site.panel,{upgrade:true,workers:true,skipReason:updateSkip,args:{from:site.from}});
-  add('pwa-activate-collection',activate,site.panel,{upgrade:true,workers:true,
-    skipReason:updateSkip??(!site.collectionFrom?'No sortable collection links to the update panel.':null),args:{from:site.collectionFrom}});
   return scenarios;
 }

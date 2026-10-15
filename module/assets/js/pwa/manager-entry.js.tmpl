@@ -1,11 +1,12 @@
-import { createServiceWorkerManagerRuntime } from './manager-runtime.js';
-import { startEnableMode } from './update-engine.js';
-import { initUpdateNavigation } from './navigation.js';
-
-const runtime = createServiceWorkerManagerRuntime({
-    swUrl: {{ printf "%q" .sw_url }},
-    swScope: '/'
-});
-
-runtime.updates = startEnableMode(runtime);
-initUpdateNavigation(runtime);
+if ('serviceWorker' in navigator) {
+    const register = () => navigator.serviceWorker.register({{ printf "%q" .sw_url }}, {
+        scope: '/',
+        updateViaCache: 'none'
+    }).catch(() => { });
+    const start = () => {
+        if (document.prerendering) document.addEventListener('prerenderingchange', register, { once: true });
+        else void register();
+    };
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start, { once: true });
+}

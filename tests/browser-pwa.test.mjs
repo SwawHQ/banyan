@@ -70,12 +70,10 @@ before(()=>{
   }
   const worker=fs.readFileSync(path.join(root,'module/assets/js/pwa/worker-enable.js.tmpl'),'utf8');
   for(const [name,search,replacement] of [
-    ['no-warm','event.waitUntil(warmNavigationUrls(event.data.urls));','// Fault: ignore first-page warm messages.'],
-    ['no-scan','const assetUrls = getAssetUrlsFromHtml(htmlText, baseUrl);','const assetUrls = [];'],
     ['fixed-cache','NAVIGATION_CACHE_PREFIX +', "'nav-html-fixed-' +"],
     ['cached-worker','await self.clients.claim();',"const incorrect = await caches.open('incorrect-worker'); await incorrect.put(self.location.href+'?incorrect-cache-key', await fetch(self.location.href)); await self.clients.claim();"],
     ['enabled-preload','await self.registration.navigationPreload.disable();','await self.registration.navigationPreload.enable();'],
-    ['network-only','async function handleNavigationRequest(request) {','async function handleNavigationRequest(request) { return fetch(request);']
+    ['network-only','async function handleNavigationRequest(request) {','async function handleNavigationRequest(request) { await fetch(request);']
   ]) {
     const assets=path.join(work,name+'-assets');
     assert.ok(worker.includes(search),'The worker fault must change an existing behavior: '+name);
@@ -84,7 +82,7 @@ before(()=>{
     build(mounts+'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n',variants[name]);
   }
   // These page-specific assets are absent from install-time offline fallbacks.
-  // Their cache entries therefore prove first-page HTML scanning.
+  // Their cache entries therefore belong to the controlled page.
   const samples=[['css','.offline-fixture { color: inherit; }'],['js','document.documentElement.dataset.offlineFixture="loaded";']];
   for(const directory of [enabled,...Object.values(variants)]) {
     const tags=[];
@@ -135,7 +133,7 @@ test('panel checks detect missing controllers and incorrect localized state',{ti
   assert.equal(absent.status,1,absent.stdout+absent.stderr);assert.match(absent.stderr,/Timeout/);
   for(const [name,code,message] of [
     ['wrong-controlled','document.querySelector("[data-pwa-controlled]").textContent="wrong locale";',/current runtime and locale/],
-    ['wrong-state','document.querySelector("[data-site-update-panel]").dataset.siteUpdateState="ready";',/update subscription/],
+    ['wrong-state','document.querySelector("[data-site-update-panel]").dataset.siteUpdateState="ready";',/show unavailable/],
     ['missing-status','document.querySelector("[data-site-update-status]").textContent="";',/localized label/]
   ]) {
     const broken=fixture(name);probe(broken,name,'document.addEventListener("DOMContentLoaded",()=>{'+code+'});');
@@ -148,7 +146,7 @@ test('panel checks detect inaccessible announcements and incorrect check control
   for(const [name,code,message] of [
     ['wrong-role','document.querySelector("[data-site-update-status]").setAttribute("role","alert");',/status role/],
     ['wrong-live','document.querySelector("[data-site-update-status]").setAttribute("aria-live","off");',/politely/],
-    ['missing-action','document.querySelector("[data-site-update-action]")?.remove();',/contain its check button/],
+    ['missing-action','document.querySelector("[data-site-update-action]")?.remove();',/without a check button/],
     ['wrong-action','document.querySelector("[data-site-update-action]").disabled=true;',/whether checking is available/],
     ['wrong-pressed','document.querySelector("[data-site-update-action]").setAttribute("aria-pressed","false");',/must not expose a pressed state/],
     ['wrong-label','document.querySelector("[data-site-update-action-label]").textContent="wrong label";',/current localized label/]
@@ -180,9 +178,10 @@ test('offline declarations expose the first page and reject unhandled URL state'
   assert.match(helpFor(spec),/--page <path>/);
 });
 
-test('real workers cache the first page and its unique assets before an offline reload',{timeout:20000},()=>{
+test('real workers cache a controlled navigation and its assets before an offline reload',{timeout:20000},()=>{
   for(const page of [from,'/zh'+from,'/']) {
     const state=report(offline(['--page',page,'--trace','--out',path.join(work,'reports')]));
+    assert.equal(state.details.initialDocumentCached,false);assert.equal(state.details.controlledNavigation,true);
     assert.equal(state.details.offlineDocument,true);assert.equal(state.details.offlineAssets,state.details.assets.length);
     assert.ok(state.details.assets.length>0);assert.match(state.details.navigationCache,/^nav-html-v\d{14}$/);
     assert.equal(state.details.registration.updateViaCache,'none');assert.equal(state.details.registration.preload.enabled,false);
@@ -190,19 +189,17 @@ test('real workers cache the first page and its unique assets before an offline 
   }
 });
 
-test('disabled, broken and unwarmed workers cannot pass the first-visit boundary',{timeout:15000},()=>{
+test('disabled and broken workers cannot pass the controlling-worker boundary',{timeout:15000},()=>{
   const broken=fixture('broken-worker',enabled);fs.appendFileSync(path.join(broken,'sw.js'),'\nthis is invalid JavaScript !\n');
-  for(const [directory,message] of [[output,/active controlling/],[broken,/active controlling/],[variants['no-warm'],/enter their caches before reload/]]) {
+  for(const [directory,message] of [[output,/active controlling/],[broken,/active controlling/]]) {
     const result=offline(['--page',from,'--timeout','1500'],directory);
     assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,message);
   }
 });
 
-test('offline checks require first-page asset scanning and a versioned navigation cache',{timeout:10000},()=>{
-  for(const [name,message] of [['no-scan',/enter their caches before reload/],['fixed-cache',/carry the content version/]]) {
-    const result=offline(['--page',from,'--timeout','1500'],variants[name]);
-    assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,message);
-  }
+test('offline checks require a versioned navigation cache',{timeout:10000},()=>{
+  const result=offline(['--page',from,'--timeout','1500'],variants['fixed-cache']);
+  assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,/carry the content version/);
 });
 
 test('offline checks reject worker caching, enabled preload and incorrect revalidation headers',{timeout:15000},()=>{

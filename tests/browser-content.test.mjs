@@ -53,12 +53,12 @@ after(()=>{
   if(work){assert.equal(path.dirname(fs.realpathSync.native(work)),parent);assert.ok(path.basename(work).startsWith('banyan-browser-content-'));fs.rmSync(work,{recursive:true,force:true});}
 });
 
-test('content releases switch caches once after navigation without replacing the SW or reader',{timeout:70000},()=>{
+test('content releases switch caches once while a program waits without replacing the active worker or reader',{timeout:70000},()=>{
   const result=cli();assert.equal(result.status,0,result.stdout+result.stderr);
   const state=JSON.parse(fs.readFileSync(path.join(result.stdout.match(/Artifacts: (.+)/)[1].trim(),'result.json'),'utf8'));
   assert.equal(state.details.before,versions[0]);assert.equal(state.details.after,versions[1]);
   assert.equal(state.details.requests,1);assert.equal(state.details.readerPreserved,true);assert.equal(state.details.controllerPreserved,true);
-  assert.equal(state.details.programUpdateUnblocked,true);
+  assert.equal(state.details.waitingProgramContentUpdated,true);
   assert.ok(state.details.fingerprintedResources>0);
   assert.ok(state.details.cachesAfter.includes('nav-html-'+versions[1]));
   assert.ok(!state.details.cachesAfter.includes('nav-html-'+versions[0]));

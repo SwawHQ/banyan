@@ -84,7 +84,7 @@ test('site checks reuse one build, report skipped coverage and retain failures',
   assert.equal(result.status,0,result.stdout+result.stderr);
   assert.equal(saved.totals.passed,3);assert.equal(saved.totals.failed,0);
   assert.ok(saved.scenarios.find(item=>item.id==='prose-layout').status==='skipped');
-  assert.match(saved.scenarios.find(item=>item.id==='pwa-activate').message,/not enabled/);
+  assert.match(saved.scenarios.find(item=>item.id==='pwa-lifecycle').message,/not enabled/);
   assert.deepEqual(snapshot(tiny),before);
   const broken=path.join(work,'broken');fs.cpSync(tiny,broken,{recursive:true});
   fs.appendFileSync(path.join(broken,'index.html'),'<script>window.blocked=true;</script>');
@@ -110,7 +110,7 @@ test('site --updates builds a temporary program revision, runs real SW checks an
   const result=cli(build,['--updates','--site',source,'--out',path.join(work,'updates')]),saved=report(result);
   assert.equal(result.status,0,result.stdout+result.stderr);
   assert.equal(saved.discovery.panel,'/prefs/update/');assert.ok(saved.temporaryUpgradeBuild);
-  for(const id of ['pwa-offline','pwa-activate','pwa-check','pwa-native','pwa-cancel','pwa-timeout','pwa-error','pwa-activate-collection'])
+  for(const id of ['pwa-offline','pwa-lifecycle','pwa-check','pwa-native'])
     assert.equal(saved.scenarios.find(item=>item.id===id).status,'passed',id);
   assert.equal(fs.existsSync(saved.upgradeToDir),false,'Temporary next output must be removed.');
   assert.deepEqual(snapshot(source),original);assert.deepEqual(snapshot(build),published);
