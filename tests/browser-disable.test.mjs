@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
 import {command} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/disable/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -61,7 +61,7 @@ before(()=>{
   const build=(name,mode,asset,code)=>{
     const assets=path.join(work,name+'-assets');if(asset)write(path.join(assets,'js/pwa/'+asset),code);
     const data=path.join(work,name+'-data');
-    write(path.join(data,'delivery.toml'),'[service_worker]\nmode = "'+mode+'"\n');
+    write(path.join(data,'delivery.toml'),serviceWorkerPolicy(mode));
     write(config,mounts+(asset?'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n':'')+
       '[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+'\ntarget = "data"\n'+
       '[[module.mounts]]\nsource = "data"\ntarget = "data"\n[params.build]\nversion = "v20261010001001"\n');

@@ -161,22 +161,43 @@ can set the Powered by release-notes link; its default is the upstream
 `content/changelog/` directory.
 
 For prefetch, Service Workers, headers, or deployment, create `data/delivery.toml`;
-the Module's `data/banyan/delivery.toml` supplies defaults. Use
+the Module's `data/delivery.toml` supplies defaults. Hugo replaces each top-level
+field declared by the site. Copy a complete table to change it; nested fields
+do not inherit omitted Module values. Use
 `platform.edgeone.makers` for deployment fields and ordered `routes` with independent
 `http` and `sw.bucket` fields (`versioned`, `fingerprinted`, or `off`). A site
-route array replaces all default routes, including when empty. Other tables merge
-by field. `[prefetch]` and `[service_worker]` apply to all languages.
-Set `[prefetch] enabled = true` to use automatic native/SW/link selection.
-`prefetch.prerender` settings control native prerender for selected icon scopes; tail folder links default to moderate.
+route array replaces all default routes, including when empty, and preserves order.
+`[prefetch]` and `[service_worker]` apply to all languages.
+Enable prefetch with a complete table to use automatic native/SW/link selection:
+
+```toml
+[prefetch]
+enabled = true
+default = "conservative"
+
+[prefetch.prerender]
+default = "off"
+
+[service_worker]
+mode = "enable"
+content_check_interval = 5
+offline_notice_path = "offline/"
+```
+
+`prefetch.prerender` settings control native prerender for selected icon scopes.
+The Module uses moderate prerender for tail folder links.
 Column scopes are `root`, `tail`, `"root+N"`, `"tail-N"`, and `all`.
-Hugo generates
-`_headers` and `edgeone.json`. Do not edit those output files as configuration.
+The example replaces the Module's folder settings; add icon scopes when needed.
+Platform `enabled` switches control `_headers`, `_redirects` and `edgeone.json`.
+Declaring `platform` replaces the entire table; an omitted platform is disabled.
+Do not edit output files as configuration. See [delivery checks](delivery.md).
 
 ## Verify the result
 
 ```text
 swban check/module
 swban hugo --minify --destination ./preview
+swban check/delivery ./preview
 swban check/csp ./preview
 ```
 

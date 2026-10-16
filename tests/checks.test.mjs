@@ -377,7 +377,7 @@ test('every declared task exposes help before consulting output, content or tool
 
 test('native Hugo generates EdgeOne config and respects its Hugo version override',() => {
   const theme = fileURLToPath(new URL('../module/',import.meta.url));
-  const defaults = fs.readFileSync(path.join(theme,'data/banyan/delivery.toml'),'utf8');
+  const defaults = fs.readFileSync(path.join(theme,'data/delivery.toml'),'utf8');
   for (const override of ['', '0.156.0']) {
     const fixture = path.join(work,'edgeone '+(override || 'default'));
     write(fixture,'hugo.toml','baseURL = "https://example.test/"\ndisableKinds = ["taxonomy","term","RSS","sitemap"]\n');

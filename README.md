@@ -93,13 +93,22 @@ An optional `languages.<lang>.params.icon = { text = "EN" }` supplies the short 
 by the language choice list; when absent, Banyan uses its language icon.
 
 To configure prefetch, Service Workers, response headers, or deployment metadata,
-create a site-owned `data/delivery.toml`. Start from
-`module/data/banyan/delivery.toml` when changing routes: a site's `routes`
-array replaces the default array, including when empty. Tables merge with the
-defaults. Runtime settings apply to all languages.
+create a site-owned `data/delivery.toml`. Module defaults use the same path,
+`module/data/delivery.toml`. Hugo replaces each top-level field declared by the
+site; nested tables do not inherit omitted fields. Copy the complete top-level
+table you want to change. A site's `routes` array replaces the default array,
+including when empty. Runtime settings apply to all languages.
 
 ```toml
+[platform.cloudflare.pages]
+enabled = true
+
 [platform.edgeone.makers]
+enabled = true
+installCommand = ""
+buildCommand = "hugo --minify --gc --cleanDestinationDir"
+outputDirectory = "public"
+nodeVersion = "22.11.0"
 hugoVersion = "0.157.0"
 
 [[routes]]
@@ -120,6 +129,9 @@ sw.bucket = "off"
 
 This abbreviated example shows the format; retain the other default routes
 when configuring a site. Declare general rules first and exceptions last.
+Route arrays retain their declaration order. A declared `platform` table replaces
+all platform settings; an omitted platform is disabled. Cloudflare Pages generates
+`_headers` and `_redirects` when enabled; EdgeOne Makers generates `edgeone.json`.
 `path` supports exact paths or one `*` anywhere, including `/*.xml` and
 `/site/pwa/*.webmanifest`. The wildcard can match an empty string or cross `/`.
 SW matches the case-sensitive URL pathname, including percent encoding, without
@@ -136,6 +148,9 @@ SW uses `sw.bucket`: `versioned` caches responses for the current build,
 requests to the browser. Both cache buckets use cache-first for same-origin
 GET requests. The last matching SW rule wins; HTTP-only rules do not change
 SW behavior. Unmatched requests are not cached by SW.
+When SW is enabled, `sw-policy.json` copies its path/bucket rules in actual
+matching order, with the first matching rule taking priority. The `off` and
+`disable` modes do not generate this copy; `disable` still generates the cleanup worker.
 
 The default `/*` rule covers pages and other same-origin GET requests, including
 JSON and XML. Use a later `off` rule to exclude a path. On a cache miss, versioned
@@ -190,6 +205,7 @@ an output directory and `hugo server` to preview the site. See
 These checks and reports use the selected Bun or Node without npm dependencies:
 
 ```powershell
+swban check/delivery
 swban check/csp
 swban check/sri
 swban check/html/metadata
@@ -206,6 +222,11 @@ accept a different directory as their first argument.
 Content field checks and responsive images use the selected Hugo's resolved
 configuration. They need prepared Hugo, Go and Git but no site npm packages.
 Run `swban help` for all fine-grained check and report commands.
+`check/delivery` reads generated platform files and the SW policy copy, then
+checks policy agreement and published file names. It does not read source TOML
+or verify content hashes. See the [delivery checks](.agents/skills/swaw-banyan/references/delivery.md)
+for skipped coverage and platform limits.
+For a build published under `/base/`, use `swban check/delivery --base-path /base/`.
 
 Browser checks use the Skill's prepared browsers. Start with representative
 site coverage and select leaf checks for changed behavior:
@@ -398,10 +419,19 @@ Banyan keeps prefetch and Service Worker behavior opt-in. Set these in
 ```toml
 [prefetch]
 enabled = true
+default = "conservative"
+
+[prefetch.prerender]
+default = "off"
 
 [service_worker]
 mode = "enable" # off | enable | disable
+content_check_interval = 5
+offline_notice_path = "offline/"
 ```
+
+These are complete replacement tables. Add icon scopes to `prefetch` when needed;
+omitted scopes do not inherit the Module's folder settings.
 
 Prefetch selects one backend: native Speculation Rules, an active matching
 Banyan Service Worker, or link prefetch. Service Worker caching has its own

@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
 import {readBindings} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/bindings.mjs';
 import {command as rulesCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/rules/options.mjs';
@@ -96,14 +96,10 @@ before(()=>{
   const mounts=mount(content,'content')+mount('content','content')+mount(layouts,'layouts')+mount('layouts','layouts');
   function build(name,enabled=true,runtimeSource,prerenderOnly=false,columnPolicy='') {
     const data=path.join(work,name+'-data'),assets=path.join(work,name+'-assets');
-    if(columnPolicy) {
-      const defaults=fs.readFileSync(path.join(root,'module/data/banyan/delivery.toml'),'utf8');
-      write(path.join(data,'banyan/delivery.toml'),'[prefetch]\nenabled=false\ndefault="off"\n'+defaults.slice(defaults.indexOf('[service_worker]')));
-    }
-    write(path.join(data,'delivery.toml'),columnPolicy||'[service_worker]\nmode="'+(enabled?'enable':'off')+'"\n[prefetch]\nenabled='+enabled+
+    write(path.join(data,'delivery.toml'),serviceWorkerPolicy(!columnPolicy&&enabled?'enable':'off')+(columnPolicy||'[prefetch]\nenabled='+enabled+
       '\ndefault="off"\n[prefetch.icons.folder]\nall="conservative"\n[prefetch.icons.tag]\nall="moderate"\n[prefetch.icons.product]\nall="eager"\n[prefetch.icons.file]\nall="'+(prerenderOnly?'off':'immediate')+'"\n'+
       '[prefetch.prerender.icons.folder]\ntail="off"\n'+
-      (prerenderOnly?'[prefetch.prerender.icons.file]\nall="moderate"\n':''));
+      (prerenderOnly?'[prefetch.prerender.icons.file]\nall="moderate"\n':'')));
     if(runtimeSource)write(path.join(assets,'js/prefetch/runtime-entry.js'),runtimeSource);
     write(config,mounts+mount(data,'data')+mount('data','data')+(runtimeSource?mount(assets,'assets')+mount('assets','assets'):'')+
       '[params.build]\nversion="v20261014000101"\n');

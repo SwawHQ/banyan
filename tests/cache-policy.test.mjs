@@ -6,7 +6,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
 import {parseHeaders,cloudflareHeaders} from '../.agents/skills/swaw-banyan/tasks/_shared/headers.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/server.mjs';
@@ -14,14 +14,14 @@ import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/_share
 const root=fileURLToPath(new URL('../',import.meta.url)),parent=fs.realpathSync(os.tmpdir());
 let work;
 function write(file,body) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,body);}
-function build(name,policy,config='',workerConfig='') {
+function build(name,policy,config='',workerConfig=serviceWorkerPolicy('enable')) {
   const directory=path.join(work,name),overlay=path.join(directory,'data'),assets=path.join(work,'assets');
-  write(path.join(overlay,'delivery.toml'),(policy??'')+'\n[service_worker]\nmode = "enable"\n'+workerConfig);
+  write(path.join(overlay,'delivery.toml'),(policy??'')+'\n'+workerConfig);
   const mounts=[['assets',assets],['assets','assets'],['data',overlay],['data','data']]
     .map(([target,source])=>'[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('');
   const configFile=path.join(directory,'fixture.toml'),output=path.join(directory,'public');
   write(configFile,mounts+config);
-  const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+configFile,'--destination',output],
+  const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--cleanDestinationDir','--config','hugo.toml,'+configFile,'--destination',output],
     {cwd:root,env:fixtureEnvironment(directory),encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024});
   assert.ifError(result.error);
   return {...result,log:result.stdout+result.stderr,output};
@@ -147,11 +147,12 @@ test('default policy generates explicit Cloudflare overrides and independent Edg
   assert.equal(probe.getMatchingRoute('/sw-version.json').bucket,'off');
   assert.equal(probe.getMatchingRoute('/unconfigured.txt').bucket,'versioned');
   for(const route of probe.SW_ROUTES) assert.deepEqual(Object.keys(route).sort(),['bucket','path']);
-  assert.equal(fs.existsSync(path.join(output,'sw-policy.json')),false);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(output,'sw-policy.json'),'utf8')),JSON.parse(JSON.stringify(probe.SW_ROUTES)));
 });
 
 test('platform values override common values only within their own route and platform',()=>{
-  const policy='[platform.edgeone.makers]\nnodeVersion = "20.18.0"\n'+
+  const policy='[platform.cloudflare.pages]\nenabled = true\n[platform.edgeone.makers]\nenabled = true\n'+
+    'installCommand = ""\nbuildCommand = "hugo --minify --gc --cleanDestinationDir"\noutputDirectory = "public"\nnodeVersion = "20.18.0"\n'+
     '[[routes]]\npath = "/*"\nhttp.headers.X-Common = "yes"\nhttp.headers.X-Value = "common"\n'+
     'http.cloudflare.pages.headers.x-value = "cf"\nhttp.edgeone.makers.headers.X-Value = "eo"\n'+
     '[[routes]]\npath = "/cf-only/*"\nhttp.cloudflare.pages.headers.X-Only = "cf"\n'+
@@ -169,7 +170,7 @@ test('platform values override common values only within their own route and pla
   assert.equal(worker(output).probe.SW_ROUTES.length,0);
 });
 
-test('delivery tables preserve nested defaults and explicit off overrides in every language',()=>{
+test('delivery top-level tables replace nested defaults in every language',()=>{
   const output=passed(build('nested-defaults','[prefetch]\nenabled = true\ndefault = "off"\n'+
     '[prefetch.icons.folder]\nroot = "conservative"\n'));
   let targets,nativeBody;
@@ -178,13 +179,13 @@ test('delivery tables preserve nested defaults and explicit off overrides in eve
     const payload=JSON.parse(html.match(/<script id=["']?site-prefetch-data["']?[^>]*>([\s\S]*?)<\/script>/)[1]);
     assert.deepEqual(Object.keys(payload).sort(),['enabled','modes','prerender','sw']);
     assert.equal(payload.enabled,true);
-    assert.equal(payload.modes['folder/root'],'conservative');assert.equal(payload.modes['folder/all'],'conservative');
-    assert.equal(payload.modes['folder/tail'],'eager');assert.equal(payload.modes['folder/tail-1'],'moderate');
+    assert.equal(payload.modes['folder/root'],'conservative');assert.equal(payload.modes['folder/all'],undefined);
+    assert.equal(payload.modes['folder/tail'],undefined);assert.equal(payload.modes['folder/tail-1'],undefined);
     assert.equal(payload.modes.default,'off');
-    assert.equal(payload.prerender['folder/tail'],'moderate');
+    assert.equal(payload.prerender['folder/tail'],undefined);
     assert.deepEqual(payload.sw,{enabled:true,url:'/sw.js',scope:'/'});
     const pageTargets=JSON.parse(html.match(/<script id=["']?site-prefetch-rules["']?[^>]*>([\s\S]*?)<\/script>/)[1]);
-    assert.deepEqual(pageTargets.prefetch.map(target=>target.id),['folder/root','folder/tail','folder/tail-1','folder/all','default']);
+    assert.deepEqual(pageTargets.prefetch.map(target=>target.id),['folder/root','default']);
     if(targets)assert.deepEqual(pageTargets,targets);else targets=pageTargets;
     const body=html.match(/<script id=["']?site-speculation-rules["']?[^>]*>([\s\S]*?)<\/script>/)[1];
     if(nativeBody)assert.equal(body,nativeBody);else nativeBody=body;
@@ -195,10 +196,8 @@ test('delivery tables preserve nested defaults and explicit off overrides in eve
   const rules=JSON.parse(nativeBody);
   assert.deepEqual(rules.prefetch.map(rule=>rule.where.and[0].selector_matches),
     targets.prefetch.filter(target=>target.id!=='default').map(target=>target.selector),
-    'Other icon scopes and the default rule inherit their modes.');
-  assert.equal(rules.prerender.length,1);
-  assert.equal(rules.prerender[0].eagerness,'moderate');
-  assert.equal(rules.prerender[0].where.and[0].selector_matches,targets.prerender.find(target=>target.id==='folder/tail').selector);
+    'Only explicitly configured icon scopes are present.');
+  assert.equal(rules.prerender,undefined);
   for(const rule of rules.prefetch) {
     assert.equal(rule.source,'document');
     assert.deepEqual(rule.where.and.slice(1),[
@@ -219,6 +218,7 @@ test('compiled worker matches one wildcard, preserves URL case and uses the last
     '[[routes]]\npath = "/private/help.json"\nhttp.headers.Cache-Control = "no-store"\n';
   const output=passed(build('worker',policy)),{probe,listeners}=worker(output);
   assert.deepEqual(Array.from(probe.SW_ROUTES,route=>route.path),['/private/*.json','/*.json','/account/help/*','/account/*','/*']);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(output,'sw-policy.json'),'utf8')),JSON.parse(JSON.stringify(probe.SW_ROUTES)));
   for(const [pattern,url,expected] of [
     ['/*','/',true],['/a/*','/a/',true],['/a/*','/a/b/c',true],['/a/*','/a',false],
     ['/*.xml','/zh/index.xml',true],['/*.xml','/index.xmlx',false],
@@ -240,6 +240,42 @@ test('compiled worker matches one wildcard, preserves URL case and uses the last
   for(const request of [new Request('https://example.test/no-rule.txt'),new Request('https://example.test/private/a.json'),
     new Request('https://other.test/a.json'),new Request('https://example.test/a.json',{method:'POST'})]) {
     listeners.fetch({request,respondWith:()=>assert.fail('Request must not enter the SW cache: '+request.url)});
+  }
+});
+
+test('platform switches publish only their enabled artifacts and do not inherit omitted platforms',()=>{
+  for(const cloudflare of [false,true])for(const edgeone of [false,true]) {
+    const policy='[platform.cloudflare.pages]\nenabled = '+cloudflare+'\n[platform.edgeone.makers]\nenabled = '+edgeone+'\n'+
+      (edgeone?'installCommand = ""\nbuildCommand = "hugo"\noutputDirectory = "public"\nnodeVersion = "22.11.0"\n':'');
+    const output=passed(build('platform-switch-'+cloudflare+'-'+edgeone,policy));
+    assert.equal(fs.existsSync(path.join(output,'_headers')),cloudflare);
+    assert.equal(fs.existsSync(path.join(output,'_redirects')),cloudflare);
+    assert.equal(fs.existsSync(path.join(output,'edgeone.json')),edgeone);
+    if(edgeone)assert.equal('enabled' in JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8')),false);
+  }
+  const onlyCloudflare=passed(build('platform-only-cloudflare','[platform.cloudflare.pages]\nenabled = true\n'));
+  assert.equal(fs.existsSync(path.join(onlyCloudflare,'_headers')),true);
+  assert.equal(fs.existsSync(path.join(onlyCloudflare,'edgeone.json')),false);
+  const none=passed(build('platform-empty','platform = {}\n'));
+  for(const file of ['_headers','_redirects','edgeone.json'])assert.equal(fs.existsSync(path.join(none,file)),false);
+  const incomplete=build('platform-incomplete','[platform.edgeone.makers]\nenabled = true\nnodeVersion = "22.11.0"\n');
+  assert.notEqual(incomplete.status,0);assert.match(incomplete.log,/enabled platform.edgeone.makers requires installCommand/);
+  const cleaned=passed(build('platform-switch-true-true','platform = {}\n','',serviceWorkerPolicy('off')));
+  for(const file of ['_headers','_redirects','edgeone.json','sw.js','sw-policy.json','sw-version.json'])
+    assert.equal(fs.existsSync(path.join(cleaned,file)),false,'Clean builds remove the disabled artifact '+file);
+});
+
+test('disabled and off workers do not publish a policy copy, and worker tables must be complete',()=>{
+  for(const mode of ['disable','off']) {
+    const output=passed(build('worker-'+mode,undefined,'',serviceWorkerPolicy(mode)));
+    assert.equal(fs.existsSync(path.join(output,'sw.js')),mode==='disable');
+    assert.equal(fs.existsSync(path.join(output,'sw-policy.json')),false);
+    assert.equal(fs.existsSync(path.join(output,'sw-version.json')),false);
+  }
+  for(const field of ['mode','content_check_interval','offline_notice_path']) {
+    const policy=serviceWorkerPolicy('enable').replace(new RegExp('^'+field+' = .*\\n','m'),'');
+    const result=build('worker-missing-'+field,undefined,'',policy);
+    assert.notEqual(result.status,0);assert.match(result.log,new RegExp('service_worker requires '+field));
   }
 });
 
@@ -322,7 +358,7 @@ test('content versions change JSON without changing the worker program, and inte
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(first,'sw-version.json'),'utf8')),{version:'v-one'});
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(second,'sw-version.json'),'utf8')),{version:'v-two'});
   for(const value of ['0','-1','1.5','"5"']){
-    const result=build('interval-'+value.replace(/\W/g,'x'),undefined,'','content_check_interval = '+value+'\n');
+    const result=build('interval-'+value.replace(/\W/g,'x'),undefined,'',serviceWorkerPolicy('enable',value));
     assert.notEqual(result.status,0);assert.match(result.log,/content_check_interval must be a positive integer/);
   }
 });
@@ -677,6 +713,7 @@ test('unchanged-version checks do not wait on an older uncancellable warmup',{ti
 test('empty route overrides and disabled optional assets do not restore defaults',()=>{
   const empty=passed(build('empty','routes = []\n'));
   assert.equal(worker(empty).probe.SW_ROUTES.length,0);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(empty,'sw-policy.json'),'utf8')),[]);
   const headers=parseHeaders(fs.readFileSync(path.join(empty,'_headers'),'utf8'));
   assert.equal(headers.length,1);assert.ok(cloudflareHeaders(headers,'/')['content-security-policy']);
   assert.equal(cloudflareHeaders(headers,'/')['cache-control'],undefined);
@@ -706,6 +743,8 @@ test('invalid and retired policy fields fail the build instead of silently chang
     ['platform-field','[platform.edgeone.makers]\nheaders = "invalid"',/unsupported platform/],
     ['vendor-only','[platform.edgeone]\nnodeVersion = "22.11.0"',/unsupported platform/],
     ['wrong-product','[platform.edgeone.pages]\nnodeVersion = "22.11.0"',/unsupported platform/],
+    ['missing-enabled','[platform.cloudflare.pages]\n',/enabled must be a boolean/],
+    ['enabled-type','[platform.edgeone.makers]\nenabled = "false"',/enabled must be a boolean/],
     ['platform-type','platform = false',/must be a table/],
     ['prefetch-type','prefetch = false',/prefetch must be a table/],
     ['old-runtime','[prefetch_runtime]\nmode = "off"',/unknown field "prefetch_runtime"/],

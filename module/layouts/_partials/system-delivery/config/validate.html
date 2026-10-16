@@ -6,13 +6,20 @@
 {{- end -}}
 {{- with .platform -}}
   {{- range $name, $config := . -}}
-    {{- if ne $name "edgeone" -}}{{- errorf "Delivery config: unsupported platform %q." $name -}}{{- end -}}
+    {{- if not (in (slice "cloudflare" "edgeone") $name) -}}{{- errorf "Delivery config: unsupported platform %q." $name -}}{{- end -}}
     {{- if not (reflect.IsMap $config) -}}{{- errorf "Delivery config: platform.%s must be a table." $name -}}{{- end -}}
     {{- range $product, $settings := $config -}}
-      {{- if or (ne $product "makers") (not (reflect.IsMap $settings)) -}}{{- errorf "Delivery config: unsupported platform.%s.%s; expected a makers table." $name $product -}}{{- end -}}
+      {{- $expectedProduct := cond (eq $name "cloudflare") "pages" "makers" -}}
+      {{- if or (ne $product $expectedProduct) (not (reflect.IsMap $settings)) -}}{{- errorf "Delivery config: unsupported platform.%s.%s; expected a %s table." $name $product $expectedProduct -}}{{- end -}}
+      {{- if ne (printf "%T" $settings.enabled) "bool" -}}{{- errorf "Delivery config: platform.%s.%s.enabled must be a boolean." $name $product -}}{{- end -}}
       {{- range $key, $value := $settings -}}
-        {{- if or (not (in (slice "installCommand" "buildCommand" "outputDirectory" "nodeVersion" "hugoVersion") $key)) (ne (printf "%T" $value) "string") -}}
+        {{- if and (ne $key "enabled") (or (ne $name "edgeone") (not (in (slice "installCommand" "buildCommand" "outputDirectory" "nodeVersion" "hugoVersion") $key)) (ne (printf "%T" $value) "string")) -}}
           {{- errorf "Delivery config: unsupported platform.%s.%s.%s or non-string value." $name $product $key -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if and (eq $name "edgeone") (eq $settings.enabled true) -}}
+        {{- range $key := slice "installCommand" "buildCommand" "outputDirectory" "nodeVersion" -}}
+          {{- if not (isset $settings $key) -}}{{- errorf "Delivery config: enabled platform.edgeone.makers requires %s." $key -}}{{- end -}}
         {{- end -}}
       {{- end -}}
     {{- end -}}

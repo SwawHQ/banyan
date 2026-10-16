@@ -14,6 +14,7 @@ if it has none, use `swban node.ensure --force` for the portable Node package.
 Checks serve a completed build locally with its generated `_headers`, then
 inspect it in an isolated browser context. They do not inspect a running Hugo
 server. Use HTTP tasks for actual deployed responses.
+Without `_headers`, site coverage skips HTTP CSP; EdgeOne headers are not simulated.
 
 Start with representative site coverage below. Add targeted checks for changed
 features; `.webkit` commands provide selected WebKit coverage. Use `--headed`

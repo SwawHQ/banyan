@@ -23,5 +23,5 @@ export async function inspect(directory) {
     try {issues.push(...ruleIssues(JSON.parse(text)).map(issue=>page.relativePath+': '+issue));}
     catch(error){issues.push(page.relativePath+': Invalid speculation rules JSON: '+error.message);}
   }
-  return {issues};
+  return {issues,warnings:policies.text===null&&policies.edge===null?['HTTP speculation headers not checked: no platform output is available.']:[]};
 }

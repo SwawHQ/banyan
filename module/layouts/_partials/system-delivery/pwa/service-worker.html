@@ -6,6 +6,8 @@
 {{- if and (ne $swMode "off") (not $isOfflinePage) -}}
   {{- /* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */ -}}
   {{- if eq $swMode "enable" -}}
+    {{- $policyResource := resources.FromString "sw-policy.json" ($swRoutes | jsonify) -}}
+    {{- $publishPolicy := $policyResource.RelPermalink -}}
     {{- $swScriptTemplatePath := "js/pwa/worker-enable.js.tmpl" -}}
     {{- $swScriptTemplate := resources.Get $swScriptTemplatePath -}}
     {{- $swUrl := "sw.js" | relURL -}}

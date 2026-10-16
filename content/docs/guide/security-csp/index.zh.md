@@ -6,7 +6,8 @@ description: 配置发布响应头，管理内联脚本与原生规则的 CSP �
 
 ## 生成与配置
 
-Hugo 生成 HTML、`_headers` 和 `edgeone.json`。主题 JS 由 `js.Build` 构建；
+Hugo 生成 HTML，并为已启用的平台生成 `_headers` 或 `edgeone.json`。
+主题 JS 由 `js.Build` 构建；
 生产构建使用 esbuild 压缩。站点根 `hugo.toml` 须保留：
 
 ```toml
@@ -39,8 +40,11 @@ HTML 压缩不能再次改写 JS，否则 CSP 哈希失效。
 可执行内联 JS 使用哈希授权。外链 JS 提供 integrity。
 `/*.xml` 使用 cache policy 中的独立 CSP，允许 RSS/XSL 样式。
 
-其他缓存、安全和权限头来自 `module/data/banyan/delivery.toml`；
-站点可用 `data/delivery.toml` 覆盖。修改源配置，不手改生成产物。
+其他缓存、安全和权限头来自 `module/data/delivery.toml`；
+站点可用 `data/delivery.toml` 按顶层字段替换。修改路由时填写完整的
+`routes` 数组；修改平台时填写完整的 `platform` 表。
+`platform.cloudflare.pages.enabled` 控制 `_headers` 和 `_redirects`，
+`platform.edgeone.makers.enabled` 控制 `edgeone.json`。修改源配置，不手改生成产物。
 默认 Permissions-Policy 关闭主题不需要的高权限能力。
 HSTS 默认 `max-age=300`，不包含 `includeSubDomains` 或 `preload`；
 扩大范围属于站点部署决策。
@@ -48,13 +52,16 @@ HSTS 默认 `max-age=300`，不包含 `includeSubDomains` 或 `preload`；
 ## 验证
 
 ```text
+swban check/delivery <build>                   #检查交付配置与指纹发布路径
 swban check/csp <build>                        #检查哈希、integrity 和响应头
 swban check/browser/csp <build> --page <path>  #检查浏览器实际 CSP 违规
 swban check/http/security <url>                #检查已部署的响应头
 ```
 
-静态检查覆盖最终 HTML、两种部署头文件的一致性和 XML 策略。
-浏览器检查使用该构建的实际响应头。部署后还需检查真实 HTTP 响应。
+静态 CSP 检查覆盖最终 HTML、已生成的部署头文件和 XML 策略。
+交付检查读取生成产物，不读取源 TOML 或重算资源内容哈希；缺少的渠道报告未检查。
+浏览器本地服务器使用该构建的 Cloudflare 响应头。部署后还需检查真实 HTTP 响应，
+尤其是 EdgeOne 重叠规则的处理结果。
 浏览器范围见[浏览器检查](/zh/docs/development/browser-regression/)，源码 fixture 见
 [tests/README.md](https://github.com/SwawHQ/banyan/blob/main/tests/README.md)。
 

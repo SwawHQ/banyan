@@ -2,7 +2,7 @@
 title: 未发布
 slug: unreleased
 description: Banyan 主题和 Skill 的未发布变更。
-lastmod: 2026-10-15
+lastmod: 2026-10-16
 ---
 
 ## 新增
@@ -24,6 +24,8 @@ lastmod: 2026-10-15
 - 静态检查和 HTTP 检查覆盖内容声明、HTML、站点地图、robots、LLMS、
   图片、CSP、SRI、缓存响应头和预取。提供资源体积和页面数据体积报告。
   HTML 检查也验证文章日期行、路径顺序、侧栏控制脚本和静态更新控件。
+  `check/delivery` 检查生成的平台格式、指纹策略一致性和发布文件名，不读取资源正文。
+  子目录部署使用 `--base-path` 指定 URL 前缀；路径字符和 EdgeOne 域名重定向按平台语法处理。
 - `sync/ext` 同步声明的外部资源；`deploy/edgeone/sync`
   同步构建生成的部署配置。
 - 仓库、Module 和 Skill 均包含 MIT 许可证，并保留第三方许可声明。
@@ -43,14 +45,18 @@ lastmod: 2026-10-15
   章节定位与这些状态共存。浏览器后退和前进会恢复来源和路径列排序。
   移除 `navigation-state-default.toml` 配置；
   旧查询参数不再控制导航视图。
-- 交付配置集中到 `data/delivery.toml`，模块默认值在 `data/banyan/delivery.toml`。
-  预取和 SW 配置应用到所有语言。表按字段合并，不再接受旧配置入口。
+- 模块和站点的交付配置均使用 `data/delivery.toml`。
+  预取和 SW 配置应用到所有语言。站点声明按顶层字段整体替换，嵌套表和路由数组
+  不按字段合并；修改表时须完整填写。空路由数组移除全部默认路由。
   部署参数使用 `platform.edgeone.makers`；路径特例使用
   `http.edgeone.makers` 和 `http.cloudflare.pages`，`http` 与 `sw` 独立配置。
   SW 只使用 `sw.bucket`（`versioned`、`fingerprinted`、`off`），支持路径任意位置的
   单个通配符，区分路径大小写，后声明的匹配规则优先。默认覆盖同源 GET 请求，
   包括 JSON 和 XML。按版本缓存未命中时校验 HTTP 缓存，关联资源只预热指纹 URL。
-  站点规则数组替换默认数组，不再接受旧格式。
+  平台 `enabled` 开关控制 Cloudflare Pages 的 `_headers`、`_redirects`
+  和 EdgeOne Makers 的 `edgeone.json`；未声明的平台关闭。
+  启用 SW 时生成 `sw-policy.json`，按实际匹配顺序复制 path/bucket 规则；
+  关闭或停用时不输出该副本。
   移除未使用的 `/icon/*` 不可变缓存规则。
 - 站点地图默认收录已渲染且允许索引的 HTML 页面，不受 `build.list` 影响。
   在内容前置配置中用原生 `sitemap.disable` 排除页面，

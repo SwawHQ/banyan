@@ -37,10 +37,14 @@ export function cloudflareHeaders(rules,pathname,defaults={}) {
 }
 export async function generatedHeaders(directory) {
   const root = path.resolve(directory);
-  const text = await fs.readFile(path.join(root,'_headers'),'utf8');
-  const edge = JSON.parse(await fs.readFile(path.join(root,'edgeone.json'),'utf8'));
-  if (!Array.isArray(edge.headers)) throw new Error('edgeone.json must contain a headers array.');
-  return {text:parseHeaders(text),edge:edge.headers};
+  async function read(name) {
+    try {return await fs.readFile(path.join(root,name),'utf8');}
+    catch(error) {if(error.code==='ENOENT')return null;throw error;}
+  }
+  const [text,body]=await Promise.all([read('_headers'),read('edgeone.json')]);
+  const edge=body===null?null:JSON.parse(body);
+  if (body!==null&&(!edge||!Array.isArray(edge.headers))) throw new Error('edgeone.json must contain a headers array.');
+  return {text:text===null?null:parseHeaders(text),edge:edge?.headers??null};
 }
-export const headerValues = (rules,source,key) => rules.filter(rule => rule.source === source)
+export const headerValues = (rules,source,key) => (rules??[]).filter(rule => rule.source === source)
   .flatMap(rule => rule.headers ?? []).filter(header => header.key.toLowerCase() === key.toLowerCase()).map(header => header.value);

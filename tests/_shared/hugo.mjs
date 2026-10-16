@@ -8,3 +8,8 @@ export function fixtureEnvironment(work) {
     GIT_OPTIONAL_LOCKS:'0'
   });
 }
+
+export function serviceWorkerPolicy(mode,contentCheckInterval=5,offlineNoticePath='offline/') {
+  return '[service_worker]\nmode = '+JSON.stringify(mode)+'\ncontent_check_interval = '+contentCheckInterval+
+    '\noffline_notice_path = '+JSON.stringify(offlineNoticePath)+'\n';
+}

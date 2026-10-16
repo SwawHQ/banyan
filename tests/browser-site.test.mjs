@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {discoverSite} from '../.agents/skills/swaw-banyan/tasks/check/browser/site/discover.mjs';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),skill=path.join(root,'.agents/skills/swaw-banyan');
@@ -27,7 +27,7 @@ before(()=>{
   source=path.join(work,'source with spaces 树');
   const config=fs.readFileSync(path.join(root,'hugo.toml'),'utf8');
   write(source,'hugo.toml',config);
-  write(source,'data/delivery.toml','[service_worker]\nmode = "enable"\n');
+  write(source,'data/delivery.toml',serviceWorkerPolicy('enable'));
   write(source,'go.mod','module fixture.invalid/site\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\nreplace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(root,'module').replaceAll('\\','/'))+'\n');
   let panel=fs.readFileSync(path.join(root,'module/content/powered-by/index.md'),'utf8');
   panel=panel.replace(/^---\r?\n/,'---\nurl: /prefs/update/\n');
@@ -122,7 +122,8 @@ test('site --updates builds a temporary program revision, runs real SW checks an
 
 test('site discovers enabled automatic prefetch and runs browser rule and diagnostic checks',{timeout:60000},async()=>{
   const directory=path.join(work,'prefetch-build');
-  write(source,'data/delivery.toml','[service_worker]\nmode = "enable"\n[prefetch]\nenabled = true\n');
+  write(source,'data/delivery.toml',serviceWorkerPolicy('enable')+
+    '[prefetch]\nenabled = true\ndefault = "conservative"\n[prefetch.prerender]\ndefault = "off"\n');
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',directory],
     {cwd:source,env:fixtureEnvironment(path.join(work,'prefetch-work')),
     encoding:'utf8',timeout:30000,windowsHide:true});

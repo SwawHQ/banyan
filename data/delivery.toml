@@ -3,3 +3,5 @@ enabled = false
 
 [service_worker]
 mode = "off"
+content_check_interval = 5
+offline_notice_path = "offline/"

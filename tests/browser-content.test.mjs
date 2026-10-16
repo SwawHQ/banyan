@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
 import {verifyCspOutput} from '../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 
@@ -37,7 +37,7 @@ before(()=>{
     write(path.join(content,'content-start/index'+suffix+'.md'),'---\ntitle: Independent content source\nslug: content-start\nurl: '+prefix+from+
       '\nlayout: page-article\nroot_nav: true\nicon: code\nweight: 87\nbuild:\n  list: local\n---\n\nIndependent content source.');
   }
-  write(path.join(data,'delivery.toml'),'[service_worker]\nmode = "enable"\ncontent_check_interval = 5\n');
+  write(path.join(data,'delivery.toml'),serviceWorkerPolicy('enable'));
   const mounts=[['content',content],['content','content'],['data',data],['data','data']]
     .map(([target,directory])=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('');
   const build=(name,version)=>{

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import {parseHeaders,headerValues} from '../../_shared/headers.mjs';
 
 const executableTypes = new Set(['', 'text/javascript', 'application/javascript',
     'text/ecmascript', 'application/ecmascript', 'module', 'speculationrules']);
@@ -26,17 +27,22 @@ function htmlFiles(dir) {
 
 export function verifyCspOutput(directory) {
     const root = path.resolve(directory);
-    const headers = fs.readFileSync(path.join(root, '_headers'), 'utf8');
-    const routes = JSON.parse(fs.readFileSync(path.join(root, 'edgeone.json'), 'utf8')).headers;
+    const policies=[];
+    if(fs.existsSync(path.join(root,'_headers')))policies.push({name:'_headers',rules:parseHeaders(fs.readFileSync(path.join(root,'_headers'),'utf8'))});
+    if(fs.existsSync(path.join(root,'edgeone.json'))) {
+        const rules=JSON.parse(fs.readFileSync(path.join(root,'edgeone.json'),'utf8')).headers;
+        assert.ok(Array.isArray(rules),'edgeone.json must contain a headers array');
+        policies.push({name:'edgeone.json',rules});
+    }
+    assert.ok(policies.length,'HTTP CSP not checked: no platform output is available.');
     function policyFor(source) {
-        const block = headers.split(/\r?\n\s*\r?\n/).find(block => block.split(/\r?\n/)[0] === source);
-        const values = [...(block || '').matchAll(/^\s+Content-Security-Policy:\s*(.+)$/gm)];
-        assert.equal(values.length, 1, source + ' must declare one enforced CSP in _headers');
-        const edgeValues = routes.find(route => route.source === source)?.headers
-            .filter(header => header.key.toLowerCase() === 'content-security-policy') || [];
-        assert.equal(edgeValues.length, 1, source + ' must declare one enforced CSP in edgeone.json');
-        assert.equal(edgeValues[0].value, values[0][1].trim(), source + ' policies must agree');
-        return edgeValues[0].value;
+        const values=policies.map(({name,rules})=>{
+            const values=headerValues(rules,source,'Content-Security-Policy');
+            assert.equal(values.length,1,source+' must declare one enforced CSP in '+name);
+            return values[0].trim();
+        });
+        for(const value of values)assert.equal(value,values[0],source+' policies must agree');
+        return values[0];
     }
     const policy = policyFor('/*');
     assert.equal(policyFor('/*.xml'), xmlPolicy, 'Preserve the XML stylesheet CSP override');

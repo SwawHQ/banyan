@@ -20,7 +20,8 @@ export function siteScenarios(site,options) {
         ...(settings.upgrade?{dir:args.upgradePair.fromDir,next:args.upgradePair.toDir}:{})}})});
   }
   add('home',home,site.home);
-  add('csp',csp,site.home);
+  add('csp',csp,site.home,{skipReason:site.httpHeaders===false?
+    'Local HTTP CSP not checked: _headers is absent; EdgeOne response headers are not simulated.':null});
   add('palette-contrast',contrast,site.prose,{args:{min:4.5}});
   add('prose-layout',prose,site.prose);
   add('collection-sort',sort,site.collection);

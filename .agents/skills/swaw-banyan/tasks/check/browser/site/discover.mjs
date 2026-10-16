@@ -1,4 +1,6 @@
 import {readPages} from '../../../_shared/html/read.mjs';
+import path from 'node:path';
+import {isFile} from '../../../_shared/output.mjs';
 import {extractStartTags,extractTagAttribute,extractInlineScriptTextById,extractCanonicalHref,
   extractExternalScriptSrcs,hasClassToken,isRedirectPage} from '../../../_shared/html/markup.mjs';
 
@@ -59,7 +61,7 @@ export async function discoverSite(directory) {
   const from=panel&&pages.find(page=>page.route!==panel.route&&page.worker&&page.roots.includes(panel.route)&&panel.roots.includes(page.route));
   const collectionFrom=panel&&pages.find(page=>page.sortable&&page.worker&&page.roots.includes(panel.route));
   const rules=pages.some(page=>page.rules),rulesByPage=Object.fromEntries(pages.map(page=>[page.route,page.rules]));
-  return {root,rulesByPage,pages:pages.length,home:home.route,prose:prose?.route??null,collection:collection?.route??null,
+  return {root,httpHeaders:await isFile(path.join(root,'_headers')),rulesByPage,pages:pages.length,home:home.route,prose:prose?.route??null,collection:collection?.route??null,
     rules,overlap:rules?pages.find(page=>page.overlap)?.route??null:null,
     debug:pages.find(page=>page.debug)?.route??null,
     offline:pages.find(page=>page.worker)?.route??null,panel:panel?.route??null,

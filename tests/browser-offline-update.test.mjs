@@ -22,7 +22,7 @@ async function contentVersion(page){return page.evaluate(async()=>{
 });}
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-offline-update-'));
-  const delivery=fs.readFileSync(path.join(root,'module/data/banyan/delivery.toml'),'utf8');
+  const delivery=fs.readFileSync(path.join(root,'module/data/delivery.toml'),'utf8');
   const routes=delivery.slice(delivery.indexOf('[[routes]]'));
   const build=(name,version,mode='enable')=>{
     const content=path.join(work,name+'-content'),data=path.join(work,name+'-data'),config=path.join(work,name+'.toml');

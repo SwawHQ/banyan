@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
 import {panelCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/panel/options.mjs';
 import {offlineCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/offline/options.mjs';
@@ -59,7 +59,7 @@ before(()=>{
   const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n';
   const build=(configuration,destination,mode='enable')=>{
     const data=path.join(work,'delivery-data');
-    write(path.join(data,'delivery.toml'),'[service_worker]\nmode = "'+mode+'"\n');
+    write(path.join(data,'delivery.toml'),serviceWorkerPolicy(mode));
     write(config,configuration+'\n[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+
       '\ntarget = "data"\n[[module.mounts]]\nsource = "data"\ntarget = "data"\n');
     const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});

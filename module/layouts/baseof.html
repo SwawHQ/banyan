@@ -33,7 +33,6 @@
     {{- partial "system-delivery/deployment/publish.html" (dict
       "routes" $delivery.routes
       "redirects" $siteRedirectRules
-      "edgeone" $delivery.platform.edgeone.makers
       "delivery" $delivery
       "web_app_manifest_mode" $webAppManifestMode
       "inline_scripts" $inlineScripts

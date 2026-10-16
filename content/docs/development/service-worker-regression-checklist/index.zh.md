@@ -32,10 +32,13 @@ description: 检查注册、缓存、浏览器激活、内容版本和停用行�
 
 ```toml
 [service_worker]
+mode = "enable"
 content_check_interval = 5
+offline_notice_path = "offline/"
 ```
 
-单位为分钟，默认 5 分钟。达到间隔后的首次成功导航响应会安排 15 秒后的检查；
+此表整体替换模块默认值。间隔单位为分钟，默认 5 分钟。
+达到间隔后的首次成功导航响应会安排 15 秒后的检查；
 后续导航不重复安排，也不重置延迟。没有导航时不检查。JSON 请求由 SW 发出，
 不依赖页面通知，不阻塞导航响应。
 
@@ -57,6 +60,8 @@ content_check_interval = 5
 
 ## 缓存契约
 
+- 缓存路径规则只来自 `data/delivery.toml`。启用时，`sw-policy.json` 复制
+  `sw.js` 中实际使用的 path/bucket 数组，首个匹配项优先；关闭或停用时不输出副本。
 - navigation：cache-first，缓存名按内容版本区分。
 - 导航缓存未命中时，HTTP 请求使用 `cache: no-cache` 重新验证，避免旧 HTTP HTML 写入新版 SW 缓存。
 - assets：cache-first，指纹资源跨版本保留。
@@ -100,6 +105,7 @@ content_check_interval = 5
 在站点根目录调用已安装的 Skill，对已完成的构建运行检查：
 
 ```text
+swban check/delivery <build>                 #检查交付配置与指纹发布路径
 swban check/csp <build>                      #检查内联哈希与发布响应头
 swban check/browser/site <build> --updates  #检查代表页面与 SW 更新
 swban check/http/security <url>             #部署后检查实际响应头

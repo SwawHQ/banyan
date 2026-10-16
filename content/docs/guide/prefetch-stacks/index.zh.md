@@ -5,7 +5,8 @@ description: 按图标和列范围设置预取强度，并检查所选预取机�
 ---
 
 在站点的 `data/delivery.toml` 中配置。模块默认值在
-`module/data/banyan/delivery.toml`；表按字段合并，应用到所有语言。
+`module/data/delivery.toml`。Hugo 按顶层字段替换；站点声明 `[prefetch]` 后，
+须填写完整的预取表，未填写的图标和范围不继承模块值。配置应用到所有语言。
 
 预取按条目主图标名称和列范围匹配。Hugo 生成一份共享 CSS 选择器：
 Speculation Rules 直接匹配文档；自实现 JS 用同一选择器收集链接。
@@ -58,6 +59,9 @@ tail = "eager"
 # "root+1" = "moderate"
 
 # 原生增强；模块默认对尾列文件夹使用 moderate，可改为 off。
+[prefetch.prerender]
+default = "off"
+
 [prefetch.prerender.icons.folder]
 tail = "moderate"
 ```
@@ -67,7 +71,15 @@ tail = "moderate"
 没有可用机制时停止。浏览器支持原生规则但因设置或资源限制拒绝预取时，
 不额外用另一套机制强制请求。
 
-SW 缓存与预取独立；启用 SW 仍使用 `[service_worker] mode = "enable"`。
+SW 缓存与预取独立。启用 SW 时，完整填写顶层表：
+
+```toml
+[service_worker]
+mode = "enable"
+content_check_interval = 5
+offline_notice_path = "offline/"
+```
+
 没有活动 SW 时，启动查找最多等待 250ms，然后使用 link。
 每页只选择一次机制，之后不自动切换。
 

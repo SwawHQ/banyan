@@ -2,7 +2,7 @@
 title: Unreleased
 slug: unreleased
 description: Unreleased changes to the Banyan theme and Skill.
-lastmod: 2026-10-15
+lastmod: 2026-10-16
 ---
 
 ## Added
@@ -26,6 +26,10 @@ lastmod: 2026-10-15
   CSP, SRI, cache headers and prefetch, plus asset-size and payload reports.
   HTML checks also validate article date rows, path order, aside controllers
   and static update controls.
+  `check/delivery` checks generated platform formats, fingerprint policy agreement
+  and published file names without reading resource bodies. Use `--base-path`
+  for subdirectory deployments; URL path characters and EdgeOne host redirects
+  retain their platform syntax.
 - `sync/ext` for declared external resources and `deploy/edgeone/sync`
   for generated deployment configuration.
 - MIT licenses for the repository, Module and Skill, with third-party notices.
@@ -47,9 +51,10 @@ lastmod: 2026-10-15
   preserving them in chapter links. Back and Forward restore the source and
   breadcrumb sorting. Remove `navigation-state-default.toml`;
   query parameters no longer control the navigation view.
-- Delivery settings use `data/delivery.toml`, with Module defaults in
-  `data/banyan/delivery.toml`. Prefetch and Service Worker settings apply to all languages.
-  Tables merge by field; previous configuration entries are no longer accepted.
+- Delivery settings use `data/delivery.toml` in both the Module and site.
+  Prefetch and Service Worker settings apply to all languages. Site declarations
+  replace complete top-level fields, including nested tables and route arrays;
+  copy the complete table to change it. Empty route arrays remove all default routes.
   Deployment fields use `platform.edgeone.makers`; route overrides use
   `http.edgeone.makers` and `http.cloudflare.pages`, with independent `http`
   and `sw` fields. SW uses only `sw.bucket` (`versioned`, `fingerprinted`,
@@ -57,7 +62,10 @@ lastmod: 2026-10-15
   gives later matching rules priority. The default covers same-origin GET
   requests, including JSON and XML. Versioned cache misses validate the HTTP
   cache; related-resource warmup selects only fingerprinted URLs.
-  Site route arrays replace the defaults; the previous format is no longer accepted.
+  Platform `enabled` switches control Cloudflare Pages `_headers`/`_redirects`
+  and EdgeOne Makers `edgeone.json`; omitted platforms are disabled.
+  Enabled SW builds also publish `sw-policy.json`, a copy of their path/bucket
+  rules in matching order. Off and disable builds omit this copy.
   Remove the unused `/icon/*` immutable-cache rule.
 - Sitemaps include rendered, indexable HTML pages regardless of `build.list`.
   Use native `sitemap.disable` in content front matter to exclude a page;

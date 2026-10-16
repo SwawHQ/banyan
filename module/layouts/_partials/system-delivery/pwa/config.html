@@ -1,8 +1,11 @@
 {{- $ctx := .ctx | default . -}}
 {{- $swConfig := .delivery.service_worker -}}
-{{- $swModeRaw := index $swConfig "mode" | default "off" -}}
+{{- range $key := slice "mode" "content_check_interval" "offline_notice_path" -}}
+  {{- if not (isset $swConfig $key) -}}{{- errorf "Build failed: delivery.service_worker requires %s." $key -}}{{- end -}}
+{{- end -}}
+{{- $swModeRaw := index $swConfig "mode" -}}
 {{- $swMode := lower (printf "%v" $swModeRaw) -}}
-{{- if not (in (slice "enable" "disable" "off") $swMode) -}}
+{{- if or (ne (printf "%T" $swModeRaw) "string") (not (in (slice "enable" "disable" "off") $swMode)) -}}
   {{- errorf "Build failed: delivery.service_worker.mode only supports enable/disable/off; got %q." $swModeRaw -}}
 {{- end -}}
 
@@ -18,7 +21,8 @@
   {{- errorf "Build failed: params.web_app_manifest.mode only supports link/defer/off; got %q." $manifestModeRaw -}}
 {{- end -}}
 
-{{- $offlinePathRaw := printf "%v" (index $swConfig "offline_notice_path" | default "offline/") -}}
+{{- $offlinePathRaw := index $swConfig "offline_notice_path" -}}
+{{- if ne (printf "%T" $offlinePathRaw) "string" -}}{{- errorf "Build failed: delivery.service_worker.offline_notice_path must be a string." -}}{{- end -}}
 {{- $offlinePath := trim $offlinePathRaw "/" -}}
 {{- if eq $offlinePath "" -}}
   {{- errorf "Build failed: delivery.service_worker.offline_notice_path cannot be empty." -}}

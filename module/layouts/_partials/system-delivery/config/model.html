@@ -1,6 +1,6 @@
-{{- $themePolicy := hugo.Data.banyan.delivery | default dict -}}
-{{- if eq (len $themePolicy) 0 -}}
-  {{- errorf "Build failed: missing data/banyan/delivery.toml." -}}
+{{- $policy := hugo.Data.delivery | default dict -}}
+{{- if eq (len $policy) 0 -}}
+  {{- errorf "Build failed: missing data/delivery.toml." -}}
 {{- end -}}
 {{- range $name := slice "cache-policy" "cache-policy-default" -}}
   {{- if isset hugo.Data $name -}}{{- errorf "Build failed: replace data/%s.toml with data/delivery.toml." $name -}}{{- end -}}
@@ -10,12 +10,8 @@
     {{- if isset $site.Params $name -}}{{- errorf "Build failed: params.%s is not supported; use data/delivery.toml." $name -}}{{- end -}}
   {{- end -}}
 {{- end -}}
-{{- $sitePolicy := hugo.Data.delivery | default dict -}}
-{{- partial "system-delivery/config/validate.html" $themePolicy -}}
-{{- partial "system-delivery/config/validate.html" $sitePolicy -}}
-{{- $routes := index $themePolicy "routes" | default slice -}}
-{{- if isset $sitePolicy "routes" -}}{{- $routes = index $sitePolicy "routes" -}}{{- end -}}
-{{- $policy := merge $themePolicy $sitePolicy -}}
+{{- partial "system-delivery/config/validate.html" $policy -}}
+{{- $routes := index $policy "routes" | default slice -}}
 {{- $swRoutes := slice -}}
 {{- range $route := $routes -}}
   {{- with index $route "sw" -}}

@@ -60,11 +60,14 @@ swban hugo server -D --disableFastRender --port 13241  #开发预览
 若站点配置在开发环境也启用了压缩，可用 `--minify=false` 关闭。
 
 CSP 和部署响应头由 Hugo 生成。修改其源配置，不要直接修改生成的
-`_headers` 或 `edgeone.json`。
+`_headers` 或 `edgeone.json`。模块和站点均使用 `data/delivery.toml`；
+站点声明整体替换同名顶层字段，嵌套表不继承。修改表时完整填写，
+`routes` 整组替换并保留声明顺序。
 
 ## 根据改动选择检查
 
 - 静态检查和体积报告读取已完成的构建，默认目录为 `public`。
+  修改交付配置或资源发布路径后，运行 `check/delivery`；
   修改脚本或安全响应头后，运行 `check/csp`。
 - 内容检查读取站点源文件，默认检查当前站点。
   HTTP 检查需要明确指定已部署的 URL。
@@ -88,6 +91,7 @@ CSP 和部署响应头由 Hugo 生成。修改其源配置，不要直接修改�
 | 安装 Module 或与当前 Skill 配对 | [安装说明](references/install.md) |
 | 查找可用命令 | [中文帮助](references/swban.help.zh-CN.md)或[英文帮助](references/swban.help.en.md) |
 | 执行浏览器检查，包括 SW 更新 | [浏览器检查](references/browser-site.md) |
+| 检查交付产物和指纹发布路径 | [交付检查](references/delivery.md) |
 | 用 `sync/ext` 下载已声明的外部资源 | [外部资源](references/external-resources.md) |
 | 同步生成的 EdgeOne 配置或规划部署 | [EdgeOne](references/edgeone.md) |
 | 添加任务或编排站点测试套件 | [任务维护](references/tasks.md) |

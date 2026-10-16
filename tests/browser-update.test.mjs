@@ -8,7 +8,7 @@ import {spawnSync} from 'node:child_process';
 import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/suite.mjs';
 import {active} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/state.mjs';
 import {panelState} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
 import {command as lifecycleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/lifecycle/options.mjs';
 import {command as languageCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/language/options.mjs';
@@ -59,7 +59,7 @@ before(()=>{
     const assets=path.join(work,name+'-assets');
     if(asset)write(path.join(assets,asset),code);
     const data=path.join(work,name+'-data');
-    write(path.join(data,'delivery.toml'),'[service_worker]\nmode = "'+mode+'"\n');
+    write(path.join(data,'delivery.toml'),serviceWorkerPolicy(mode));
     write(config,mounts+(asset?'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n':'')+
       '[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+'\ntarget = "data"\n'+
       '[[module.mounts]]\nsource = "data"\ntarget = "data"\n[params.build]\nversion = "'+version+'"\n');

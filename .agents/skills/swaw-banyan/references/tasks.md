@@ -12,6 +12,9 @@ and arguments, use `swban help` and the selected task's `--help`.
   parser without importing a CLI entry.
 - Put reusable mechanics in `_shared/`; keep behavioral assertions in the
   owning leaf. Avoid shared functions that dispatch by task name.
+  Shared methods used only by delivery checks stay in `check/delivery/_shared/`.
+  Keep platform parsing, policy comparison and file inspection in their own
+  `check/delivery/` subdirectories; they are not separate commands.
 - Generic checks belong in the Skill. Theme source tests and fixed demo
   fixtures belong in the Banyan repository's `tests/`. Business expectations
   and site-specific routes belong in the consuming site's tests.

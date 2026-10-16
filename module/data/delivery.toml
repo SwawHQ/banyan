@@ -47,8 +47,12 @@ offline_notice_path = "offline/"
 
 
 
+[platform.cloudflare.pages]
+enabled = true
+
 [platform.edgeone.makers]
 # EdgeOne Makers 部署设置；响应头由下面的路由生成。
+enabled = true
 installCommand = ""
 buildCommand = "hugo --minify --gc --cleanDestinationDir"
 outputDirectory = "public"

@@ -4,6 +4,7 @@ Run from the site root:
 
 ```text
 swban hugo --minify --gc --cleanDestinationDir
+swban check/delivery
 swban check/csp
 swban check/llms
 swban check/robots
@@ -11,12 +12,16 @@ swban check/robots
 
 Hugo builds minified production output in `public`. Checks inspect that output
 independently. Skill tool selection and portable tools belong to local use.
+Enable EdgeOne output with `platform.edgeone.makers.enabled = true` in
+`data/delivery.toml`. A site-owned `platform` table replaces the complete Module
+table; include every platform and build setting the site needs.
 
 ## Git hosting
 
 EdgeOne provides Hugo Extended and reads `hugoVersion` from root `edgeone.json`.
 Banyan generates that field from the Hugo version used for the build; a site's
 `data/delivery.toml` may override `[platform.edgeone.makers].hugoVersion`.
+Include the other required platform fields when making this override.
 For Git hosting, copy the generated config to the site root before committing:
 
 ```text

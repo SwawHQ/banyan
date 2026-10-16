@@ -1,6 +1,6 @@
 {{- $routes := .routes | default slice -}}
 {{- $redirects := .redirects | default slice -}}
-{{- $edgeone := .edgeone | default dict -}}
+{{- $platform := .delivery.platform | default dict -}}
 {{- $webAppManifestMode := lower (printf "%v" (.web_app_manifest_mode | default "link")) -}}
 {{- $headerRoutes := $routes -}}
 {{- if eq $webAppManifestMode "off" -}}
@@ -12,7 +12,7 @@
   {{- end -}}
   {{- $headerRoutes = $filtered -}}
 {{- end -}}
-{{- /* RelPermalink evaluation publishes all three generated files. */ -}}
+{{- /* RelPermalink evaluation publishes each enabled platform's files. */ -}}
 {{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" .delivery) "prefetch" -}}
 {{- $nativeBody := partial "system-delivery/prefetch/native.html" (dict "config" $prefetch) -}}
 {{- $csp := partial "system-delivery/deployment/csp-value.html" (merge .inline_scripts (dict "prefetch_native" $nativeBody)) -}}
@@ -32,16 +32,20 @@
 {{- if not $hasGlobal -}}
   {{- $headerRoutes = (slice (dict "path" "/*" "http" (dict "headers" $generatedHeaders))) | append $headerRoutes -}}
 {{- end -}}
-{{- $headersBody := partial "system-delivery/deployment/cloudflare-headers.txt" (dict "routes" $headerRoutes) -}}
-{{- $headersResource := resources.FromString "_headers" $headersBody -}}
-{{- $publishHeaders := $headersResource.RelPermalink -}}
-{{- $redirectsBody := partial "system-delivery/deployment/cloudflare-redirects.txt" (dict "redirects" $redirects) -}}
-{{- $redirectsResource := resources.FromString "_redirects" $redirectsBody -}}
-{{- $publishRedirects := $redirectsResource.RelPermalink -}}
+{{- if eq $platform.cloudflare.pages.enabled true -}}
+  {{- $headersBody := partial "system-delivery/deployment/cloudflare-headers.txt" (dict "routes" $headerRoutes) -}}
+  {{- $headersResource := resources.FromString "_headers" $headersBody -}}
+  {{- $publishHeaders := $headersResource.RelPermalink -}}
+  {{- $redirectsBody := partial "system-delivery/deployment/cloudflare-redirects.txt" (dict "redirects" $redirects) -}}
+  {{- $redirectsResource := resources.FromString "_redirects" $redirectsBody -}}
+  {{- $publishRedirects := $redirectsResource.RelPermalink -}}
+{{- end -}}
+{{- if eq $platform.edgeone.makers.enabled true -}}
 {{- $edgeoneConfig := partial "system-delivery/deployment/edgeone-config.html" (dict
-  "edgeone" $edgeone
+  "edgeone" $platform.edgeone.makers
   "routes" $headerRoutes
   "redirects" $redirects
 ) -}}
 {{- $edgeoneResource := resources.FromString "edgeone.json" ($edgeoneConfig | jsonify (dict "indent" "  ")) -}}
 {{- $publishEdgeone := $edgeoneResource.RelPermalink -}}
+{{- end -}}

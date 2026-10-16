@@ -19,6 +19,13 @@ Run `toolchain.ps1` with Windows PowerShell 5.1. It compiles a native fixture
 and runs the installer tests with portable Bun and a system Node.
 Toolchain fixtures do not log in or publish.
 
+Generic delivery format and fingerprint tests ship with the Skill:
+
+```powershell
+$deliveryTests = Get-ChildItem ./.agents/skills/swaw-banyan/tasks/check/delivery/_tests -Filter '*.test.mjs' -File
+.\.agents\skills\swaw-banyan\swban.cmd node --test $deliveryTests.FullName
+```
+
 | Suite | Responsibility |
 | --- | --- |
 | `module.test.mjs`, `js-build.test.mjs` | Module pairing, Hugo resolution and JS build inputs |

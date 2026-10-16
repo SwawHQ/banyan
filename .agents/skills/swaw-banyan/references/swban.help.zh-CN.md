@@ -48,6 +48,7 @@ ensure 复用合格工具，缺少时下载。--force 使用便携版。
   swban check/sitemap [目录]           #sitemap 与索引状态
   swban check/robots [目录]            #robots.txt 声明
   swban check/llms [目录]              #llms.txt 与入口链接
+  swban check/delivery [目录]          #交付配置与指纹发布路径
   swban check/csp [目录]               #内联哈希与生成的 CSP
   swban check/sri [目录]               #外部脚本完整性哈希
   swban check/build-version [目录]     #页面与 SW 构建版本

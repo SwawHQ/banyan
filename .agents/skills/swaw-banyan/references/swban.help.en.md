@@ -48,6 +48,7 @@ Published output (default dir: public):
   swban check/sitemap [dir]           #Sitemap indexing
   swban check/robots [dir]            #robots.txt declarations
   swban check/llms [dir]              #llms.txt and links
+  swban check/delivery [dir]          #Delivery output and fingerprint paths
   swban check/csp [dir]               #Inline hashes and CSP
   swban check/sri [dir]               #Script integrity hashes
   swban check/build-version [dir]     #Build version agreement
