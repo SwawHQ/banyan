@@ -1,6 +1,6 @@
 ---
 title: 开发资料
-description: 维护布局、路径导航、运行时协议和检查流程。
+description: 本地预览与构建，维护源码协议，检查并发布主题。
 layout: page-collection
 list: directory
 outputs: [HTML]
@@ -8,4 +8,6 @@ slots:
   breadcrumb: true
 ---
 
-修改源码前，先查看对应协议和模板职责。修改后，按影响范围选择检查。
+从[本地开发](/zh/docs/development/local-development/)预览和构建站点。
+修改源码前，先查看对应协议和模板职责；修改后按影响范围选择检查。
+准备发布时，按[发布版本](/zh/docs/development/releasing/)整理记录和标签。

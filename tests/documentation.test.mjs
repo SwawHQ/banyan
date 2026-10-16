@@ -14,8 +14,8 @@ import {stripRawText} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blo
 import {readAnchor} from '../module/assets/js/browse/navigation-state.contract.js';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),origin='https://banyan.swaw.com';
-const groups={guide:['collection-lists','taxonomies','layout-slots','prefetch-stacks','security-csp'],
-  development:['breadcrumb-models','navigation-state','partial-architecture','ui-naming','browser-regression','service-worker-regression-checklist']};
+const groups={guide:['getting-started','site-configuration','collection-lists','taxonomies','layout-slots','prefetch-stacks','security-csp','delivery','discovery','web-app'],
+  development:['local-development','releasing','breadcrumb-models','navigation-state','partial-architecture','ui-naming','browser-regression','service-worker-regression-checklist']};
 let work,output;
 before(()=>{
   work=fs.mkdtempSync(path.join(os.tmpdir(),'banyan-documentation-'));
