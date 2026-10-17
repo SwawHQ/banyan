@@ -33,14 +33,13 @@ Download and extract this repository. Run in PowerShell from its root
 (Windows x64):
 
 ```powershell
-.\.agents\skills\swaw-banyan\swban.cmd git.ensure                                       #Prepare Git and the JS runtime
-.\.agents\skills\swaw-banyan\swban.cmd go.ensure                                        #Prepare Go
-.\.agents\skills\swaw-banyan\swban.cmd hugo.ensure                                      #Prepare Hugo
-.\.agents\skills\swaw-banyan\swban.cmd hugo server -D --disableFastRender --port 13241  #Start the preview
+.\.agents\skills\swaw-banyan\swban.cmd base/hugo server -D --disableFastRender --port 13241  #Start the preview
 ```
 
-The preparation commands reuse compatible tools or download missing tools.
-Open <http://127.0.0.1:13241/>. For later previews, run only the last command.
+The entry prepares the JS runtime, Git, Go and Hugo as needed. It reuses compatible
+tools or downloads missing tools. It can use Bun or Node; if neither is available,
+it downloads portable Bun. GitHub CLI is prepared when you use `base/gh`.
+Open <http://127.0.0.1:13241/>.
 
 To install Banyan in your own site, see
 [Getting started](content/docs/guide/getting-started/index.zh.md).
@@ -62,5 +61,5 @@ The guides are currently in Chinese.
 
 ## License
 
-[MIT License](LICENSE)  
+[MIT License](LICENSE)
 Copyright (c) 2026 WY Swaw LLC  https://swaw.com

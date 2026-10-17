@@ -1,0 +1,36 @@
+{
+  "en": {
+    "summary": "Discover pages and check; optionally build a next SW version",
+    "usage": "swban check/browser/site [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--updates] [--site <dir>]",
+    "details": [
+      "  dir             Published site directory; default: public",
+      "  --headed        Show the browser window",
+      "  --trace         Save a trace for each executed check",
+      "  --out <dir>     Save JSON, summary and failure screenshots in a new subdirectory",
+      "  --timeout <ms>  Browser launch and individual action timeout; default: 15000",
+      "  --updates       Build a temporary next version and test SW updates",
+      "  --site <dir>    Hugo source for --updates; default: .",
+      "",
+      "swban check/browser/site ./public",
+      "swban check/browser/site ./public --updates",
+      "swban check/browser/site ./preview --headed --trace --out ./browser-report"
+    ]
+  },
+  "zh": {
+    "summary": "自动选页批量检查；可临时构建 SW 新版",
+    "usage": "swban check/browser/site [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--updates] [--site <dir>]",
+    "details": [
+      "  dir             已完成的站点构建目录；默认：public",
+      "  --headed        显示浏览器窗口",
+      "  --trace         为每项已执行检查保存 trace",
+      "  --out <dir>     在新子目录保存 JSON、摘要和失败截图",
+      "  --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
+      "  --updates       临时构建下一版本并检查 SW 更新",
+      "  --site <dir>    --updates 使用的 Hugo 站点源目录；默认：.",
+      "",
+      "swban check/browser/site ./public",
+      "swban check/browser/site ./public --updates",
+      "swban check/browser/site ./preview --headed --trace --out ./browser-report"
+    ]
+  }
+}

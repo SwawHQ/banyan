@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "llms.txt and links",
+    "usage": "swban check/llms [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "llms.txt 与入口链接",
+    "usage": "swban check/llms [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

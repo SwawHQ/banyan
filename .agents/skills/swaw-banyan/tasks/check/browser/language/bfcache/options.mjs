@@ -1,10 +1,9 @@
 import {returnCommand,languageCode} from '../return/options.mjs';
 
-export function bfcacheCommand(command,description) {
-  const spec=returnCommand(command,description);
-  spec.options.push({name:'next',value:'code',description:'Second target; default: source language',parse:languageCode});
-  spec.examples=[command+' ./preview --from /article/#from=all&anchor=details --to zh',
-    command+' ./preview --from /article/ --to zh --next zh-tw --trace'];
+export function bfcacheCommand(command) {
+  const spec=returnCommand(command);
+  spec.options.push({name:'next',value:'code',parse:languageCode});
+
   return spec;
 }
 

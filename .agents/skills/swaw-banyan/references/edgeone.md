@@ -3,7 +3,7 @@
 Run from the site root:
 
 ```text
-swban hugo --minify --gc --cleanDestinationDir
+swban base/hugo --minify --gc --cleanDestinationDir
 swban check/delivery
 swban check/csp
 swban check/llms

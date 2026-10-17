@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {verifyCspOutput} from '../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan');
@@ -15,7 +15,7 @@ const versions=['v20261015000001','v20261015000002'];
 let work,skill,old,next;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(newBuild=next){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/pwa/content',old,
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/pwa/content','entry.mjs'),old,
     '--next',newBuild,'--page',panel,'--from',from,'--out',path.join(work,'reports')],
     {cwd:work,encoding:'utf8',timeout:60000});
   assert.ifError(result.error);return result;

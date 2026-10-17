@@ -1,0 +1,20 @@
+{
+  "en": {
+    "summary": "Run Hugo; use --help for details",
+    "usage": "swban base/hugo [arguments...]",
+    "details": [
+      "Pass arguments to the selected tool.",
+      "",
+      "swban base/hugo --help"
+    ]
+  },
+  "zh": {
+    "summary": "运行 Hugo；--help 查看原生帮助",
+    "usage": "swban base/hugo [arguments...]",
+    "details": [
+      "将参数传给已选工具。",
+      "",
+      "swban base/hugo --help"
+    ]
+  }
+}

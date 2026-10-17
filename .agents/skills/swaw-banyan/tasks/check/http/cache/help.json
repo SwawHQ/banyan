@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Resource cache headers",
+    "usage": "swban check/http/cache <url>",
+    "details": []
+  },
+  "zh": {
+    "summary": "实际资源缓存头",
+    "usage": "swban check/http/cache <url>",
+    "details": []
+  }
+}

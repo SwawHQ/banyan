@@ -2,12 +2,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {toolExecutable} from '../../scripts.js/_toolchain/operations.mjs';
-import {hugoEnvironment} from '../../scripts.js/hugo/index.mjs';
+import {toolExecutable} from './toolchain/operations.mjs';
+import {hugoEnvironment,prepareHugo} from '../base/hugo/run.mjs';
 
 // Build source-test modules with the same bundler and @params handling as a site.
 // The caller owns an isolated work directory and removes it after the assertions.
 export async function buildJavaScript({jsRoot, entries, params = {}, work}) {
+  await prepareHugo();
   const site = path.join(work, 'site');
   const output = path.join(work, 'output');
   await fs.mkdir(path.join(site, 'layouts'), {recursive:true});

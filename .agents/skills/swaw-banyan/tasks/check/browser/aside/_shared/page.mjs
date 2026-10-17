@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {activate,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {activate,waitForBrowse} from '../../_shared/viewport.mjs';
 
 export async function openArticle(page,url) {
   const response=await page.goto(url,{waitUntil:'load'})||await page.reload({waitUntil:'load'});

@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {toggleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/aside/toggle/options.mjs';
 import {canvasLayoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/layout/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -18,7 +18,7 @@ const route='/d/aside-fixture/#from=all';
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/'+command,directory,...args],{cwd:work,encoding:'utf8',timeout:45000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/'+command,'entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:45000});
   assert.ifError(result.error);return result;
 }
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
@@ -45,17 +45,17 @@ before(()=>{
 after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
 test('aside paths, viewport widths and touch options have one argument contract',()=>{
-  const spec=toggleCommand('check/browser/aside/toggle','Toggle');
+  const spec=toggleCommand('check/browser/aside/toggle');
   assert.throws(()=>parseArguments(spec,[]),/--page is required/);
   const options=parseArguments(spec,['--page',route,'--widths','0320,390','--touch']);
   assert.equal(options.page,route);assert.equal(options.widths,'320,390');assert.equal(options.touch,true);
-  assert.match(helpFor(spec),/--touch/);assert.match(helpFor(spec),/default: 390,768,1800/);
+  assert.match(helpFor(spec,'en'),/--touch/);assert.match(helpFor(spec,'en'),/default: 390,768,1800/);
   for(const widths of ['','319','3841','390,390','390,','390px','390, 768','-320'])assert.throws(()=>parseArguments(spec,['--page',route,'--widths',widths]));
-  const layout=canvasLayoutCommand('canvas/layout','Canvas');
+  const layout=canvasLayoutCommand('check/browser/canvas/layout');
   assert.equal(parseArguments(layout,[]).height,900);
   assert.equal(parseArguments(layout,['--height','844']).height,844);
   for(const height of ['0','239','3841','844px','1.5'])assert.throws(()=>parseArguments(layout,['--height',height]));
-  assert.match(helpFor(layout),/--height/);
+  assert.match(helpFor(layout,'en'),/--height/);
 });
 
 for(const {name,suffix} of engines){

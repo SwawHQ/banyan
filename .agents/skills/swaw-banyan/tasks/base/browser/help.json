@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Browser preparation",
+    "usage": "swban help/en base/browser",
+    "details": []
+  },
+  "zh": {
+    "summary": "浏览器准备",
+    "usage": "swban help/zh base/browser",
+    "details": []
+  }
+}

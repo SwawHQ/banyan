@@ -6,14 +6,14 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {openCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/open/options.mjs';
 import {firstPaintCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/first-paint/options.mjs';
 import {command as touchCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/touch/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 import {loadChromium,loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
-import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/server.mjs';
-import {waitForBrowse} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/viewport.mjs';
+import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {waitForBrowse} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/viewport.mjs';
 import {readRootState,checkRootSelection} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/_shared/root.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
@@ -22,7 +22,7 @@ const route='/d/canvas-first/#from=all',next='/d/canvas-next/#from=all';
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/canvas/'+command,directory,...args],{cwd:work,encoding:'utf8',timeout:45000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/canvas/'+command,'entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:45000});
   assert.ifError(result.error);return result;
 }
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
@@ -60,7 +60,7 @@ test('touch requires two local paths and fixes native mobile input',()=>{
   assert.equal(parseArguments(spec,['--page',route,'--next',next]).page,route);
   for(const page of ['https://outside.invalid/','//outside/'])
     assert.throws(()=>parseArguments(spec,['--page',page,'--next',next]));
-  assert.match(helpFor(spec),/--next/);
+  assert.match(helpFor(spec,'en'),/--next/);
 });
 
 test('Chromium uses real drags across roots, prose and metadata before native Back',{timeout:30000},()=>{
@@ -100,21 +100,21 @@ test('native touch rejects cross-axis resets, blocked reading and manual history
 after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
 test('opening and first-paint options declare paths, widths, pan and touch',()=>{
-  const spec=openCommand('open','Open');
+  const spec=openCommand('check/browser/canvas/open');
   assert.throws(()=>parseArguments(spec,[]),/--from is required/);
   assert.throws(()=>parseArguments(spec,['--from','/all/']),/--page is required/);
   const options=parseArguments(spec,['--from','/all/#sort=name-desc','--page','/d/canvas-first/','--widths','390,1440','--pan','120','--touch']);
   assert.equal(options.pan,120);assert.equal(options.touch,true);assert.equal(options.from,'/all/#sort=name-desc');
   for(const pan of ['-1','1.5','no','9007199254740992'])assert.throws(()=>parseArguments(spec,['--from','/all/','--page','/article/','--pan',pan]));
   assert.throws(()=>parseArguments(spec,['--from','/all/','--page','/article/#from=all']),/article pathname/);
-  assert.match(helpFor(spec),/--touch/);assert.match(helpFor(spec),/default: 390,1024,1440/);
-  const paint=firstPaintCommand('first-paint','Paint');
-  assert.throws(()=>parseArguments(paint,[]),/--page is required/);assert.match(helpFor(paint),/default: 390,1440/);
+  assert.match(helpFor(spec,'en'),/--touch/);assert.match(helpFor(spec,'en'),/default: 390,1024,1440/);
+  const paint=firstPaintCommand('check/browser/canvas/first-paint');
+  assert.throws(()=>parseArguments(paint,[]),/--page is required/);assert.match(helpFor(paint,'en'),/default: 390,1440/);
   assert.equal(parseArguments(paint,['--page',route,'--root','none']).root,'');
   assert.equal(parseArguments(paint,['--page',route,'--root','/all/']).root,'/all/');
   for(const root of ['https://outside.invalid/','//outside/','/all/#from=bad','/all/#fragment'])
     assert.throws(()=>parseArguments(paint,['--page',route,'--root',root]));
-  assert.match(helpFor(paint),/--root <path\|none>/);
+  assert.match(helpFor(paint,'en'),/--root <path\|none>/);
 });
 
 test('native drag opening uses real touch and retains source sort and history',{timeout:30000},()=>{
@@ -142,7 +142,7 @@ test('native drag opening rejects incompatible options and engines',{timeout:300
   const outside=cli('open',[...args.slice(0,-1),'1000','--touch']);
   assert.equal(outside.status,1);assert.match(outside.stderr,/inside every viewport/);
   const webkit=cli('open.webkit',[...args,'--touch']);assert.equal(webkit.status,1);assert.match(webkit.stderr,/Unknown or repeated option/);
-  for(const drag of ['0','-1','1.5','invalid'])assert.throws(()=>parseArguments(openCommand('open','Open'),
+  for(const drag of ['0','-1','1.5','invalid'])assert.throws(()=>parseArguments(openCommand('check/browser/canvas/open'),
     ['--from','/all/','--page','/article/','--drag',drag]),/positive integer/);
 });
 

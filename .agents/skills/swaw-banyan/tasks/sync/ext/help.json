@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Sync external files; default all",
+    "usage": "swban sync/ext [id...]",
+    "details": [
+      "Default: all declared resource IDs."
+    ]
+  },
+  "zh": {
+    "summary": "同步声明的外部资源；默认全部",
+    "usage": "swban sync/ext [id...]",
+    "details": [
+      "默认同步全部已声明资源。"
+    ]
+  }
+}

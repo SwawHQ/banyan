@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {sortCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/sort/options.mjs';
 import {isolationCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/isolation/options.mjs';
 import {sourceCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/source/options.mjs';
@@ -17,7 +17,7 @@ const article='/d/breadcrumb-fixture/one/',collection='/d/breadcrumb-fixture/';
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/breadcrumb/'+command,directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/breadcrumb/'+command,'entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
@@ -45,10 +45,10 @@ after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recu
 
 test('breadcrumb options require explicit paths and generate complete help',{timeout:45000},()=>{
   for(const factory of [sortCommand,isolationCommand,sourceCommand])assert.throws(()=>parseArguments(factory('check','Check'),[]),/--page is required/);
-  const spec=sourceCommand('source','Source');
+  const spec=sourceCommand('check/browser/breadcrumb/source');
   assert.throws(()=>parseArguments(spec,['--page','/page/','--column','/all/']),/--article is required/);
   assert.throws(()=>parseArguments(spec,['--page','/page/','--column','/all/?x=1','--article','/article/']),/must not contain a query/);
-  assert.match(helpFor(spec),/--column <path>/);assert.match(helpFor(spec),/--article <path>/);
+  assert.match(helpFor(spec,'en'),/--column <path>/);assert.match(helpFor(spec,'en'),/--article <path>/);
 });
 
 test('sort reuses SSR nodes and restores row order with source, query and fragment intact',{timeout:45000},()=>{

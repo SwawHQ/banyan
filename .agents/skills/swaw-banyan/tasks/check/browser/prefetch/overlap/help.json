@@ -1,0 +1,32 @@
+{
+  "en": {
+    "summary": "Native selection suppresses custom prefetch; Chromium",
+    "usage": "swban check/browser/prefetch/overlap [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path>",
+    "details": [
+      "  dir             Published site directory; default: public",
+      "  --headed        Show the browser window",
+      "  --trace         Save trace.zip; default output: system temporary directory",
+      "  --out <dir>     Save JSON and screenshot in a new subdirectory",
+      "  --timeout <ms>  Browser launch and individual action timeout; default: 15000",
+      "  --page <path>   Page with enabled prefetch candidates",
+      "",
+      "swban check/browser/prefetch/overlap ./preview --page /all/",
+      "swban check/browser/prefetch/overlap ./preview --page /tags/topic/ --trace --out ./browser-report"
+    ]
+  },
+  "zh": {
+    "summary": "选择原生机制后不发送自实现预取；Chromium",
+    "usage": "swban check/browser/prefetch/overlap [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path>",
+    "details": [
+      "  dir             已完成的站点构建目录；默认：public",
+      "  --headed        显示浏览器窗口",
+      "  --trace         保存 trace.zip；默认输出到系统临时目录",
+      "  --out <dir>     在新子目录保存 JSON 和截图",
+      "  --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
+      "  --page <path>   含已启用预取候选项的页面",
+      "",
+      "swban check/browser/prefetch/overlap ./preview --page /all/",
+      "swban check/browser/prefetch/overlap ./preview --page /tags/topic/ --trace --out ./browser-report"
+    ]
+  }
+}

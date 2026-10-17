@@ -1,4 +1,4 @@
-import {request} from '../../../_shared/http.mjs';
+import {request} from '../_shared/request.mjs';
 export async function inspect(url) {
   const response = await request(url), cache = response.headers.get('cache-control') ?? '', issues = [];
   if (!cache) issues.push('Response is missing Cache-Control.');

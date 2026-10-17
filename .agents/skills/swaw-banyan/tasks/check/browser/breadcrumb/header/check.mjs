@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {openPage,selectColumn,columnsSelector} from '../_shared/page.mjs';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 
 async function readHeader(header) {
   return header.evaluate(node=>{

@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Page payload reports",
+    "usage": "swban help/en report/payload",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "页面数据体积报告",
+    "usage": "swban help/zh report/payload",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

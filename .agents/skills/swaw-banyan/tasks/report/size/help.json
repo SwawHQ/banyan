@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "File and page size reports",
+    "usage": "swban help/en report/size",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "文件和页面体积报告",
+    "usage": "swban help/zh report/size",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

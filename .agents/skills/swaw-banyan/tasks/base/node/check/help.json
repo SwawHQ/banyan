@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Check selected Node",
+    "usage": "swban base/node/check",
+    "details": []
+  },
+  "zh": {
+    "summary": "检查所选 Node",
+    "usage": "swban base/node/check",
+    "details": []
+  }
+}

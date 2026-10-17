@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {assertChoices,chooseLanguage} from '../choices/check.mjs';
 import {checkExplicitVisits} from './visits.mjs';
 import {checkMissingNotice} from './missing.mjs';

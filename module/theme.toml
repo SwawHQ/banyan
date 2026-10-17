@@ -1,4 +1,5 @@
 name = "banyan"
+version = "0.1.0"
 license = "MIT"
 licenselink = "https://github.com/SwawHQ/banyan/blob/main/module/LICENSE"
 description = "A Explorer-like Hugo theme."

@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {layoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/collection/layout/options.mjs';
 import {styleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/collection/style/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -15,7 +15,7 @@ const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'
 const article='/d/collection-fixture/one/#from=all';let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/collection/'+command,directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/collection/'+command,'entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
@@ -44,12 +44,12 @@ after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recu
 
 test('collection options declare pages, comparisons, settings and widths',()=>{
   for(const factory of [layoutCommand,styleCommand])assert.throws(()=>parseArguments(factory('check','Check'),[]),/--page is required/);
-  const layout=layoutCommand('layout','Layout'),style=styleCommand('style','Style');
+  const layout=layoutCommand('check/browser/collection/layout'),style=styleCommand('check/browser/collection/style');
   assert.throws(()=>parseArguments(style,['--page',article]),/--collection is required/);
   assert.throws(()=>parseArguments(layout,['--page','/all/','--article','https://example.invalid/article/']));
   assert.throws(()=>parseArguments(layout,['--page','/all/','--widths','390,390']));
-  assert.match(helpFor(layout),/--article <path>/);assert.match(helpFor(layout),/default: 390,1440/);
-  assert.match(helpFor(style),/--choices <path>/);assert.match(helpFor(style),/default: \/appearance\//);
+  assert.match(helpFor(layout,'en'),/--article <path>/);assert.match(helpFor(layout,'en'),/default: 390,1440/);
+  assert.match(helpFor(style,'en'),/--choices <path>/);assert.match(helpFor(style,'en'),/default: \/appearance\//);
 });
 
 test('layout checks directory, flat and taxonomy lists at narrow and wide widths',{timeout:20000},()=>{

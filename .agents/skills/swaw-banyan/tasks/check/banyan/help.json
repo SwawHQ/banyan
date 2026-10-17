@@ -1,0 +1,22 @@
+{
+  "en": {
+    "summary": "Check that the site theme matches this Skill",
+    "usage": "swban check/banyan [directory]",
+    "details": [
+      "Check the active Banyan Module or local theme against this Skill.",
+      "Local themes read their version from theme.toml.",
+      "Local theme sources from the same Banyan Git checkout report development.",
+      "Default: current directory."
+    ]
+  },
+  "zh": {
+    "summary": "检查主题与本 Skill 是否配套",
+    "usage": "swban check/banyan [目录]",
+    "details": [
+      "检查站点实际使用的 Banyan Module 或本地主题是否与本 Skill 配套。",
+      "本地主题版本读取自 theme.toml。",
+      "同一 Git 工作副本中的本地主题显示 development。",
+      "默认检查当前目录的站点。"
+    ]
+  }
+}

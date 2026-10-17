@@ -1,11 +1,11 @@
-import {browserCommand,sitePath} from '../../../../_shared/browser/options.mjs';
+import {browserCommand,sitePath} from '../../_shared/options.mjs';
 
-export function updateCommand(command,description,paths=[]) {
-  const spec=browserCommand(command,description,[
-    {name:'next',value:'dir',required:true,description:'Next SW-enabled build; sw.js must differ'},
-    ...paths.map(([name,value,description])=>({name,value:'path',default:value,description,parse:sitePath}))
+export function updateCommand(command,paths=[]) {
+  const spec=browserCommand(command,[
+    {name:'next',value:'dir',required:true},
+    ...paths.map(([name,value])=>({name,value:'path',default:value,parse:sitePath}))
   ]);
   spec.buildDirectories=['dir','next'];
-  spec.examples=[command+' ./old --next ./new',command+' ./old --next ./new --trace --out ./browser-report'];
+
   return spec;
 }

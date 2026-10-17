@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint} from '../../_shared/viewport.mjs';
 
 const compareNames=(left,right)=>left.localeCompare(right,undefined,{numeric:true,sensitivity:'base'});
 const dateOrder=rows=>[...rows].sort((left,right)=>Number(left.group)-Number(right.group)

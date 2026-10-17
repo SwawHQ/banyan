@@ -7,11 +7,11 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {loadChromium} from '../../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
-import {toolExecutable} from '../../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
-import {createStaticSiteServer} from '../../.agents/skills/swaw-banyan/tasks/_shared/browser/server.mjs';
-import {gotoAndWait} from '../../.agents/skills/swaw-banyan/tasks/_shared/browser/page.mjs';
-import {waitForBrowse} from '../../.agents/skills/swaw-banyan/tasks/_shared/browser/viewport.mjs';
+import {createStaticSiteServer} from '../../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {gotoAndWait} from '../../.agents/skills/swaw-banyan/tasks/check/browser/_shared/page.mjs';
+import {waitForBrowse} from '../../.agents/skills/swaw-banyan/tasks/check/browser/_shared/viewport.mjs';
 import {extractBlocks} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 

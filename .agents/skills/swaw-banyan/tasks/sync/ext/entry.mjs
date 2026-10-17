@@ -1,3 +1,4 @@
+import {helpFor} from '../../_shared/arguments.mjs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {writeSiteFile} from '../../_shared/files.mjs';
@@ -7,7 +8,7 @@ import {downloadResource} from './download.mjs';
 try {
   const ids = process.argv.slice(2);
   if (ids.length === 1 && ['--help','-h'].includes(ids[0])) {
-    console.log('swban sync/ext [id...]  #Fetch declared resources; default: all declared ids');
+    console.log(helpFor({command:'sync/ext'}));
   } else {
     if (ids.some(id => !id || id.startsWith('-'))) throw new Error('Expected resource ids; use --help for usage');
     const siteRoot = path.resolve(process.cwd());

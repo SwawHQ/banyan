@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {setTimeout} from 'node:timers/promises';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {ruleIssues} from '../../../prefetch/rules/inspect.mjs';
 
 export async function check({page,baseUrl,options}) {

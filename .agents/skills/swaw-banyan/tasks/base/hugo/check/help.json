@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Check selected Hugo",
+    "usage": "swban base/hugo/check",
+    "details": []
+  },
+  "zh": {
+    "summary": "检查所选 Hugo",
+    "usage": "swban base/hugo/check",
+    "details": []
+  }
+}

@@ -6,11 +6,11 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {anchorsCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/anchors/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 import {loadChromium,loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
-import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/server.mjs';
+import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
@@ -23,7 +23,7 @@ const routes={'nav/sort':'/all/','nav/anchors':'/d/swban-nav-long/','nav/keyboar
 let work,skill,output;
 function write(file,text) { fs.mkdirSync(path.dirname(file),{recursive:true}); fs.writeFileSync(file,text); }
 function cli(name,args=[],directory=output) {
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/'+name,directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/'+name,'entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error); return result;
 }
 function fixture(name) { const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory; }
@@ -60,11 +60,11 @@ before(()=>{
 after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
 test('anchor pages are required and help exposes the same argument contract',()=>{
-  const spec=anchorsCommand('check/browser/nav/anchors','Anchors');
+  const spec=anchorsCommand('check/browser/nav/anchors');
   assert.throws(()=>parseArguments(spec,[]),/--page is required/);
   assert.equal(parseArguments(spec,['--page','/article/#from=all']).page,'/article/#from=all');
-  assert.match(helpFor(spec).split('\n')[0],/ --page <path>/);
-  assert.doesNotMatch(helpFor(spec).split('\n')[0],/\[--page/);
+  assert.match(helpFor(spec,'en').split('\n')[0],/ --page <path>/);
+  assert.doesNotMatch(helpFor(spec,'en').split('\n')[0],/\[--page/);
   assert.equal(parseArguments(spec,['--page','/article/#chapter']).page,'/article/#chapter');
   for(const args of [['--page','//elsewhere'],['--page','/a/','--page','/b/']]) assert.throws(()=>parseArguments(spec,args));
 });

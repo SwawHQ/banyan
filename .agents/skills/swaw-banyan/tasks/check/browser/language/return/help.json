@@ -1,0 +1,36 @@
+{
+  "en": {
+    "summary": "Language returns, missing translations and isolation; Chromium",
+    "usage": "swban check/browser/language/return [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> [--page <path>] --to <code>",
+    "details": [
+      "  dir             Published site directory; default: public",
+      "  --headed        Show the browser window",
+      "  --trace         Save trace.zip; default output: system temporary directory",
+      "  --out <dir>     Save JSON and screenshot in a new subdirectory",
+      "  --timeout <ms>  Browser launch and individual action timeout; default: 15000",
+      "  --from <path>   Source page; retain its query and fragment",
+      "  --page <path>   Language settings linked from the source page; default: /language/",
+      "  --to <code>     Target language declared in translated settings",
+      "",
+      "swban check/browser/language/return ./preview --from /article/#from=all&anchor=details --to zh",
+      "swban check/browser/language/return ./preview --from /zh/all/#sort=name-asc --page /zh/language/ --to en --trace"
+    ]
+  },
+  "zh": {
+    "summary": "语言返回、缺失翻译与状态隔离；Chromium",
+    "usage": "swban check/browser/language/return [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> [--page <path>] --to <code>",
+    "details": [
+      "  dir             已完成的站点构建目录；默认：public",
+      "  --headed        显示浏览器窗口",
+      "  --trace         保存 trace.zip；默认输出到系统临时目录",
+      "  --out <dir>     在新子目录保存 JSON 和截图",
+      "  --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
+      "  --from <path>   来源页面，保留查询参数和片段",
+      "  --page <path>   来源页面链接的语言设置页；默认：/language/",
+      "  --to <code>     翻译设置中声明的目标语言",
+      "",
+      "swban check/browser/language/return ./preview --from /article/#from=all&anchor=details --to zh",
+      "swban check/browser/language/return ./preview --from /zh/all/#sort=name-asc --page /zh/language/ --to en --trace"
+    ]
+  }
+}

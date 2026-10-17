@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {openArticle} from '../../aside/_shared/page.mjs';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 
 const position=page=>page.evaluate(()=>({x:scrollX,y:document.querySelector('.page-content').scrollTop}));
 async function pan(page,fraction) {

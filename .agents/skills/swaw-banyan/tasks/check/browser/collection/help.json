@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Collection list checks",
+    "usage": "swban help/en check/browser/collection",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "集合列表检查",
+    "usage": "swban help/zh check/browser/collection",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

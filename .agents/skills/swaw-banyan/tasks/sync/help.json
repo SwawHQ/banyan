@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "External resource sync",
+    "usage": "swban help/en sync",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "外部资源同步",
+    "usage": "swban help/zh sync",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

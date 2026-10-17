@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Stylesheet references",
+    "usage": "swban check/html/styles [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "样式引用与加载边界",
+    "usage": "swban check/html/styles [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

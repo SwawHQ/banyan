@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {chooseLanguage} from '../choices/check.mjs';
 
 export async function checkCanceledReturn(page,source,settings,code,language) {

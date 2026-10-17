@@ -3,33 +3,47 @@
 Use the `module` path and `version` from `SKILL.md` metadata. In the commands
 below, replace `<module>` with that path and `<version>` with that version
 without a leading `v`. `swban` means this Skill's `swban.cmd`, invoked from the
-target site's root. Prepare CLI, Git, Go and Hugo as described in `SKILL.md`.
+target site's root. The entry prepares the JS runtime and required tools on demand.
 
 ## Inspect an existing site
 
-Run `swban check/module`. It reads Hugo's dependency graph, including effective
-vendor versions and replacements. Resolution may populate Hugo's cache and
+Run `swban check/banyan`. It reads Hugo's dependency graph, including effective
+vendor versions, replacements and theme directories. A theme selected with
+`theme = "banyan"` is checked using its `theme.toml` name and version. Hugo supplies
+the active directory, including custom `themesDir` settings and renamed folders.
+Resolution may populate Hugo's cache and
 dependency sums; it does not request a version upgrade.
+The swban entry performs the same check before site tasks. Only `matched` and
+`development` continue. Help, `base/` tools and `check/banyan` remain available.
 
 | Result | Action |
 | --- | --- |
 | `matched` | Continue with this Skill. |
-| `development` | Continue joint development of the local Skill and Module. |
-| `missing` | Inspect the site's imports and follow setup below if adopting Banyan. |
-| `mismatch` | Use the Skill matching the resolved Module, or perform the authorized Module upgrade. |
-| `unverified` | Inspect the local replacement and establish its pairing before version-specific changes. |
+| `development` | Continue joint development of the local Skill and theme. |
+| `missing` | Inspect the site's imports or theme setting. |
+| `mismatch` | Use the Skill matching the theme, or perform the authorized theme upgrade. |
+| `unverified` | Inspect the local replacement or theme metadata before version-specific changes. |
 
 To retain a published Module version `vX.Y.Z`, obtain this Skill's directory
-from the Banyan repository tag `vX.Y.Z`. A local replacement from another
+from the [Banyan project](https://github.com/SwawHQ/banyan) tag `vX.Y.Z`.
+A local replacement from another
 checkout cannot be identified as a release by its `go.mod` requirement.
-Version matching does not verify that vendored source files are unmodified.
+Version matching does not verify that local or vendored source files are unmodified.
+An extracted project ZIP needs no `.git` directory. Its
+`.agents/skills/swaw-banyan/` and `module/` use `module/theme.toml` for version pairing.
+
+The project tag `vX.Y.Z` and Module tag `module/vX.Y.Z` point to the same
+repository commit. Go requires the `module/` tag prefix because the Module
+root is the `module/` subdirectory. Sites still request `<module>@vX.Y.Z`.
 
 ## Add the Module
+
+Hugo commands and pairing checks prepare Git, Go and Hugo as needed.
 
 If the site has no `go.mod`, initialize its own module identity first:
 
 ```text
-swban hugo mod init <your-site-module-path>
+swban base/hugo mod init <your-site-module-path>
 ```
 
 Add one import to the site's Hugo configuration. Use the metadata module path:
@@ -42,13 +56,34 @@ path = "github.com/SwawHQ/banyan/module"
 Pin the matching release:
 
 ```text
-swban hugo mod get <module>@v<version>
+swban base/hugo mod get <module>@v<version>
 ```
 
 Do not copy the demo's `replace ... => ./module` into a published-Module site.
 Preserve existing imports, content, languages and URL rules when adapting a site.
 If upgrading a vendored site, regenerate its vendor tree with
-`swban hugo mod vendor` after updating the dependency, then check pairing again.
+`swban base/hugo mod vendor` after updating the dependency, then check pairing again.
+
+## Change the version
+
+Choose the target release first. Upgrades and downgrades use the same steps.
+Open [project releases](https://github.com/SwawHQ/banyan/releases), select the
+target version and download **Source code (zip)**. A tag's ZIP is also available
+at `https://github.com/SwawHQ/banyan/archive/refs/tags/vX.Y.Z.zip`.
+
+- **Skill:** obtain `.agents/skills/swaw-banyan/` from project tag `vX.Y.Z`.
+  Update the complete Skill source, not just `metadata.version`.
+- **Module:** run `swban base/hugo mod get <module>@vX.Y.Z` from the site root.
+  If `_vendor/` is used, run
+  `swban base/hugo mod vendor` after the version change. A local `replace`
+  still takes precedence; remove it to use a published version.
+- **Theme directory:** use the extracted archive's `module/` as the active
+  theme directory, such as `themes/banyan/`. The directory must contain
+  `theme.toml`, `layouts/` and `assets/`. Review local theme edits before replacement;
+  keep site customizations in the site. Do not change only `theme.toml` version.
+
+Run `swban check/banyan` after aligning the Skill and theme. Use a fixed release
+instead of `@latest` when choosing a known pair.
 
 ## Test an unpublished Module
 
@@ -66,8 +101,8 @@ replace github.com/SwawHQ/banyan/module => D:/2026.7/banyan/module
 ```
 
 Change the replacement path to your checkout's `module/` directory. Keep the
-Hugo import above. `check/module` reports `development` when this Module and
-the called Skill belong to the same checkout. An independently copied Skill
+Hugo import above. `check/banyan` reports `development` when this Module and
+the called Skill belong to the same Git checkout. An independently copied Skill
 with a local replacement reports `unverified`.
 After release, verify a fixed version in a fresh site without a replacement.
 
@@ -195,8 +230,8 @@ Do not edit output files as configuration. See [delivery checks](delivery.md).
 ## Verify the result
 
 ```text
-swban check/module
-swban hugo --minify --destination ./preview
+swban check/banyan
+swban base/hugo --minify --destination ./preview
 swban check/delivery ./preview
 swban check/csp ./preview
 ```

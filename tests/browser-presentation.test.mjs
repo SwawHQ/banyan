@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {headerCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/header/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
@@ -16,7 +16,7 @@ const engines=[{name:'chromium',suffix:''},{name:'webkit',suffix:'.webkit'}];
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/'+command,directory,...args,'--out',path.join(work,'reports')],{cwd:work,encoding:'utf8',timeout:30000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/'+command,'entry.mjs'),directory,...args,'--out',path.join(work,'reports')],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
@@ -51,10 +51,10 @@ before(()=>{
 after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
 test('header options declare column paths, widths and detailed help',{timeout:20000},()=>{
-  const spec=headerCommand('header','Header');assert.throws(()=>parseArguments(spec,[]),/--page is required/);
+  const spec=headerCommand('check/browser/breadcrumb/header');assert.throws(()=>parseArguments(spec,[]),/--page is required/);
   assert.throws(()=>parseArguments(spec,['--page',collection,'--column','/all/#sort=name-asc']),/without a query/);
   assert.throws(()=>parseArguments(spec,['--page',collection,'--widths','390,390']));
-  assert.match(helpFor(spec),/--column <path>/);assert.match(helpFor(spec),/default: 390,1440/);
+  assert.match(helpFor(spec,'en'),/--column <path>/);assert.match(helpFor(spec,'en'),/default: 390,1440/);
 
 });
 

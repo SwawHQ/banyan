@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Shared speculation rules",
+    "usage": "swban check/prefetch/rules [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "共享预取规则与生成头",
+    "usage": "swban check/prefetch/rules [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

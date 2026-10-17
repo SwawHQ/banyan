@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse,visiblePoint} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse,visiblePoint} from '../../_shared/viewport.mjs';
 import {readCanvas,waitForCanvasX} from '../_shared/state.mjs';
 import {touchDrag,touchPosition} from '../_shared/touch.mjs';
 import {openAside} from '../../aside/_shared/page.mjs';

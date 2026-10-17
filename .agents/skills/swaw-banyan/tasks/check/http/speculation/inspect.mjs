@@ -1,4 +1,4 @@
-import {request} from '../../../_shared/http.mjs';
+import {request} from '../_shared/request.mjs';
 import {extractInlineScriptTextById} from '../../../_shared/html/markup.mjs';
 import {ruleIssues} from '../../prefetch/rules/inspect.mjs';
 export async function inspect(url) {

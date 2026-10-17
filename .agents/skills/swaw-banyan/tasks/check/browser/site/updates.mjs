@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
-import {toolExecutable} from '../../../../scripts.js/_toolchain/operations.mjs';
-import {hugoEnvironment} from '../../../../scripts.js/hugo/index.mjs';
+import {toolExecutable} from '../../../_shared/toolchain/operations.mjs';
+import {hugoEnvironment,prepareHugo} from '../../../base/hugo/run.mjs';
 import {builds} from '../pwa/_shared/update.mjs';
 
 // Hugo uses normal source config; a temporary probe also exercises program activation.
@@ -11,6 +11,7 @@ export async function buildNext(site,old,work) {
   const version=()=> 'v'+timestamp.toISOString().replace(/\D/g,'').slice(0,14);
   const oldVersion=JSON.parse(await fs.readFile(path.join(old,'sw-version.json'),'utf8')).version;
   while(oldVersion===version())timestamp.setUTCSeconds(timestamp.getUTCSeconds()+1);
+  await prepareHugo();
   const env=hugoEnvironment({...process.env,HUGO_CACHEDIR:path.join(work,'cache'),HUGO_RESOURCEDIR:path.join(work,'resources'),
     HUGO_PARAMS_BUILD_VERSION:version(),GIT_OPTIONAL_LOCKS:'0'});
   await new Promise((resolve,reject)=>{

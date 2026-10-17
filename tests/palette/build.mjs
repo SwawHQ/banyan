@@ -6,9 +6,9 @@ import path from 'node:path';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 import {loadChromium,loadWebkit} from '../../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
-import {toolExecutable} from '../../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
-import {createStaticSiteServer} from '../../.agents/skills/swaw-banyan/tasks/_shared/browser/server.mjs';
+import {createStaticSiteServer} from '../../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {check as checkContrast} from '../../.agents/skills/swaw-banyan/tasks/check/browser/palette/contrast/check.mjs';
 import {check as checkRoles} from '../../.agents/skills/swaw-banyan/tasks/check/browser/palette/roles/check.mjs';
 

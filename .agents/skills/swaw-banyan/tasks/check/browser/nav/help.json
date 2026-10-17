@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Navigation checks",
+    "usage": "swban help/en check/browser/nav",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "导航检查",
+    "usage": "swban help/zh check/browser/nav",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

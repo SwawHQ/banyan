@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Copy generated config to the site root",
+    "usage": "swban deploy/edgeone/sync [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "复制生成配置到站点根",
+    "usage": "swban deploy/edgeone/sync [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

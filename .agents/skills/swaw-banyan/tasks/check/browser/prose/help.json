@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Prose layout checks",
+    "usage": "swban help/en check/browser/prose",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "正文排版检查",
+    "usage": "swban help/zh check/browser/prose",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

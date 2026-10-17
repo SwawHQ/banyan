@@ -5,11 +5,11 @@ parameters, defaults and examples.
 
 ## Prepare and choose coverage
 
-Run `swban ensure/browser` for Chromium. Prepare `ensure/browser.webkit` only
+Run `swban base/browser/ensure` for Chromium. Prepare `base/browser/ensure.webkit` only
 for a selected WebKit check. Dependencies stay in the Skill's
 `tasks/_shared/browser/node_modules`; browser binaries stay in `.tools/browser`.
 Both are ignored by Git. A Node runtime needs npm for browser preparation;
-if it has none, use `swban node.ensure --force` for the portable Node package.
+if it has none, use `swban base/node/ensure --force` for the portable Node package.
 
 Checks serve a completed build locally with its generated `_headers`, then
 inspect it in an isolated browser context. They do not inspect a running Hugo
@@ -31,7 +31,7 @@ swban check/browser/site ./preview --trace --out ./browser-report
 swban check/browser/site --help
 ```
 
-Prepare Chromium with `ensure/browser`. The command samples published HTML by
+Prepare Chromium with `base/browser/ensure`. The command samples published HTML by
 feature markers, language and native links. It checks the home, CSP, prose,
 contrast, a sortable collection, speculation rules, runtime coordination,
 diagnostics and SW offline behavior where suitable pages exist. Selected paths

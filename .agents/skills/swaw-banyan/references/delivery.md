@@ -1,9 +1,9 @@
 # Delivery checks
 
 ```text
-swban hugo --minify --gc --cleanDestinationDir        #Build production output
+swban base/hugo --minify --gc --cleanDestinationDir  #Build production output
 swban check/delivery [dir]                           #Check delivery output and fingerprint paths
-swban check/delivery ./public --base-path /base/      #Check a build published under /base/
+swban check/delivery ./public --base-path /base/     #Check a build published under /base/
 ```
 
 The check reads a completed build, defaulting to `public`. Use a clean destination

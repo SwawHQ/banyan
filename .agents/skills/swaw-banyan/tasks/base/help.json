@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Base tools",
+    "usage": "swban help/en base",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "基础工具",
+    "usage": "swban help/zh base",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

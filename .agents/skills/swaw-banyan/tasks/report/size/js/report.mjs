@@ -1,5 +1,5 @@
 import {readPages} from '../../../_shared/html/read.mjs';
-import {measureJs} from '../../../_shared/size-js.mjs';
+import {measureJs} from '../_shared/js.mjs';
 export async function report(directory,top) {
   const {root,pages} = await readPages(directory), {assets} = await measureJs(root,pages);
   const hashes = new Map(), families = new Map();

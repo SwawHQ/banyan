@@ -66,28 +66,44 @@ function Find-Engine($Manifest, [string]$SkipManaged) {
     return $null
 }
 try {
-    if ($args.Count -eq 0 -or $args[0] -in @('help','--help','-h')) {
-        if ($args.Count -gt 2) { throw 'invalid_help_arguments; run swban help en or swban help zh' }
-        $language = if ($args.Count -eq 2) {
-            switch ($args[1]) { 'en' { 'en' }; 'zh' { 'zh-CN' }; default { throw 'unsupported_help_language; use en or zh' } }
-        } elseif ([Globalization.CultureInfo]::CurrentUICulture.Name -match '^zh(?:-|$)') { 'zh-CN' } else { 'en' }
-        [Console]::Write([IO.File]::ReadAllText((Join-Path $skillRoot "references/swban.help.$language.md"), [Text.Encoding]::UTF8))
-        exit 0
+    $helpCommand = if ($args.Count) { [string]$args[0] } else { 'help' }
+    if ($helpCommand -in @('--help','-h')) { $helpCommand = 'help' }
+    if ($helpCommand -cmatch '^help(?:/(en|zh))?$') {
+        $language = if ($Matches[1]) { $Matches[1] } elseif ([Globalization.CultureInfo]::CurrentUICulture.Name -match '^zh(?:-|$)') { 'zh' } else { 'en' }
+        $helpArgs = @()
+        if ($args.Count -gt 1) { $helpArgs = @($args[1..($args.Count-1)]) }
+        if ($helpArgs.Count -eq 1 -and $helpArgs[0] -in @('--help','-h')) { $helpArgs = @($helpCommand) }
+        & (Join-Path $skillRoot 'tasks/help/cold.ps1') $language @helpArgs
+        exit $LASTEXITCODE
     }
-    $preparing = $args[0] -match '^(ensure|(bun|node|hugo|go|git|gh)\.ensure)$'
+    $directory = Join-Path $skillRoot 'tasks'
+    foreach ($part in $helpCommand.Split('/')) {
+        if ($part -cnotmatch '^[a-z_][a-z0-9_-]*(?:\.[a-z_][a-z0-9_-]*)*$') { throw "unknown_command:$helpCommand; run swban help" }
+        $directory = Join-Path $directory $part
+    }
+    $entry = Join-Path $directory 'entry.mjs'
+    if (-not [IO.File]::Exists($entry)) { throw "unknown_command:$helpCommand; run swban help" }
+    Assert-PlainBootstrapPath $entry
+    $native = $helpCommand -cmatch '^base/(bun|node|hugo|go|git|gh)(?:/(npm|npx))?$'
+    if (-not $native -and $args.Count -eq 2 -and $args[1] -in @('--help','-h')) {
+        $language = if ([Globalization.CultureInfo]::CurrentUICulture.Name -match '^zh(?:-|$)') { 'zh' } else { 'en' }
+        & (Join-Path $skillRoot 'tasks/help/cold.ps1') $language $helpCommand
+        exit $LASTEXITCODE
+    }
+    $preparing = $args[0] -match '^base/(bun|node|hugo|go|git|gh)/ensure$'
     if ($preparing -and ($args.Count -gt 2 -or ($args.Count -eq 2 -and $args[1] -ne '--force'))) { throw 'invalid_ensure_arguments' }
     $force = $preparing -and $args.Count -eq 2
     $architecture = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
     if ($env:OS -ne 'Windows_NT' -or $architecture -ne 'AMD64') { throw 'supported_bootstrap_platform_is_windows_x64' }
     $manifest = [IO.File]::ReadAllText((Join-Path $skillRoot 'toolchain.json')) | ConvertFrom-Json
     if ($manifest.schema -ne 'swaw-banyan.toolchain/v2') { throw 'invalid_toolchain_manifest' }
-    $skip = if (-not $force) { '' } elseif ($args[0] -eq 'ensure') { 'all' } else { $args[0].Split('.')[0] }
+    $skip = if ($force) { $args[0].Split('/')[1] } else { '' }
     $available = Find-Engine $manifest $skip
     if ($available) {
-        & $available (Join-Path $skillRoot 'scripts.js/swban.mjs') @args
+        & $available (Join-Path $skillRoot 'tasks/_cli/main.mjs') @args
         exit $LASTEXITCODE
     }
-    if (-not $preparing) { throw 'runtime_not_ready; run swban ensure' }
+    if ($helpCommand -cmatch '^base/[^/]+/check$') { throw 'runtime_not_ready; run swban base/bun/ensure or base/node/ensure' }
     $definitions = @($manifest.platforms.'windows-x64'.tools | Where-Object name -eq 'bun')
     if ($definitions.Count -ne 1) { throw 'missing_or_duplicate_runtime:bun' }
     $definition = $definitions[0]
@@ -139,7 +155,7 @@ try {
             $output = [IO.File]::Open($engine, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write)
             try { $inputStream.CopyTo($output); $output.Flush($true) } finally { $inputStream.Dispose(); $output.Dispose() }
         } finally { $zip.Dispose() }
-        $arguments = @((Join-Path $skillRoot 'scripts.js/bootstrap-bun.mjs'), $archive) + $args
+        $arguments = @((Join-Path $skillRoot 'tasks/_cli/bootstrap-bun.mjs'), $archive) + $args
         & $engine @arguments
         $result = $LASTEXITCODE
     } finally {

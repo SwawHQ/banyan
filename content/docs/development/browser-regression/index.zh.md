@@ -8,7 +8,7 @@ description: 使用 Skill 对已完成的站点构建运行代表页面和专项
 `--help` 为准，检查范围见 Skill 的[浏览器说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/browser-site.md)。
 
 ```text
-swban ensure/browser                                         #准备 Chromium
+swban base/browser/ensure                                    #准备 Chromium
 swban check/browser/site <build>                             #检查代表页面
 swban check/browser/site <build> --updates                   #检查 SW 更新
 swban check/browser/site <build> --updates --site <source>   #指定更新构建源码

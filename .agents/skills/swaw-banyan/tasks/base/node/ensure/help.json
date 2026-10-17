@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Prepare Node; portable adds npm",
+    "usage": "swban base/node/ensure [--force]",
+    "details": [
+      "  --force  Install the pinned portable tool"
+    ]
+  },
+  "zh": {
+    "summary": "准备 Node；便携版含 npm/npx",
+    "usage": "swban base/node/ensure [--force]",
+    "details": [
+      "  --force  安装固定版本的便携工具"
+    ]
+  }
+}

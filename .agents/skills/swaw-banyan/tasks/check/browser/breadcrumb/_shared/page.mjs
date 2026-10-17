@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 
 export const columnsSelector='[data-slot=breadcrumb] [data-collection-column]';
 export const columnLocator=(page,href)=>page.locator(columnsSelector+'[data-breadcrumb-collection-href='+JSON.stringify(href)+']');

@@ -19,7 +19,6 @@ defaultContentLanguageInSubdir = true
 enableRobotsTXT = true
 timeZone = "Asia/Shanghai"
 
-enableGitInfo = true
 panicOnWarning = true
 
 [languages]

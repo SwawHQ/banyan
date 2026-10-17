@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import {setTheme} from '../../../../_shared/browser/theme.mjs';
-import {activate} from '../../../../_shared/browser/viewport.mjs';
+import {setTheme} from '../../_shared/theme.mjs';
+import {activate} from '../../_shared/viewport.mjs';
 import {openArticle,openAside} from '../_shared/page.mjs';
 
 export async function check({page,baseUrl,options}) {

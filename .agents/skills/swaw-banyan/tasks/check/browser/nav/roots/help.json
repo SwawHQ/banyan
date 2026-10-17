@@ -1,0 +1,32 @@
+{
+  "en": {
+    "summary": "Root visits, selection and native history; Chromium",
+    "usage": "swban check/browser/nav/roots [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> --pages <paths>",
+    "details": [
+      "  dir              Published site directory; default: public",
+      "  --headed         Show the browser window",
+      "  --trace          Save trace.zip; default output: system temporary directory",
+      "  --out <dir>      Save JSON and screenshot in a new subdirectory",
+      "  --timeout <ms>   Browser launch and individual action timeout; default: 15000",
+      "  --from <path>    Published root page; fragment context is allowed",
+      "  --pages <paths>  Other root page paths, separated by commas",
+      "",
+      "swban check/browser/nav/roots ./preview --from /powered-by/ --pages /about/,/rss/"
+    ]
+  },
+  "zh": {
+    "summary": "根入口点击、选中与原生历史；Chromium",
+    "usage": "swban check/browser/nav/roots [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> --pages <paths>",
+    "details": [
+      "  dir              已完成的站点构建目录；默认：public",
+      "  --headed         显示浏览器窗口",
+      "  --trace          保存 trace.zip；默认输出到系统临时目录",
+      "  --out <dir>      在新子目录保存 JSON 和截图",
+      "  --timeout <ms>   浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
+      "  --from <path>    已构建的根页面，可带状态片段",
+      "  --pages <paths>  其他根页面路径，用逗号分隔",
+      "",
+      "swban check/browser/nav/roots ./preview --from /powered-by/ --pages /about/,/rss/"
+    ]
+  }
+}

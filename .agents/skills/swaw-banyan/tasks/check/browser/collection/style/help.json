@@ -1,0 +1,38 @@
+{
+  "en": {
+    "summary": "Shared selection, hover and focus; Chromium",
+    "usage": "swban check/browser/collection/style [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> --collection <path> [--choices <path>] [--widths <list>]",
+    "details": [
+      "  dir                  Published site directory; default: public",
+      "  --headed             Show the browser window",
+      "  --trace              Save trace.zip; default output: system temporary directory",
+      "  --out <dir>          Save JSON and screenshot in a new subdirectory",
+      "  --timeout <ms>       Browser launch and individual action timeout; default: 15000",
+      "  --page <path>        Article with a selected source row and another path row, e.g. /article/#from=all",
+      "  --collection <path>  Collection page with entry links for hover and focus checks",
+      "  --choices <path>     Appearance settings page with light and dark choice buttons; default: /appearance/",
+      "  --widths <list>      Comma-separated viewport widths; test height: 900 pixels; default: 1440",
+      "",
+      "swban check/browser/collection/style ./preview --page /article/#from=all --collection /all/",
+      "swban check/browser/collection/style ./preview --page /zh/article/#from=all --collection /zh/all/ --choices /zh/appearance/ --widths 390,1440"
+    ]
+  },
+  "zh": {
+    "summary": "选中、悬停与焦点样式；Chromium",
+    "usage": "swban check/browser/collection/style [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> --collection <path> [--choices <path>] [--widths <list>]",
+    "details": [
+      "  dir                  已完成的站点构建目录；默认：public",
+      "  --headed             显示浏览器窗口",
+      "  --trace              保存 trace.zip；默认输出到系统临时目录",
+      "  --out <dir>          在新子目录保存 JSON 和截图",
+      "  --timeout <ms>       浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
+      "  --page <path>        含选中来源行和另一路径行的文章，例如 /article/#from=all",
+      "  --collection <path>  用于检查悬停和焦点状态的集合页",
+      "  --choices <path>     包含浅色和深色选项的外观设置页；默认：/appearance/",
+      "  --widths <list>      视口宽度，用逗号分隔；检查高度为 900 像素；默认：1440",
+      "",
+      "swban check/browser/collection/style ./preview --page /article/#from=all --collection /all/",
+      "swban check/browser/collection/style ./preview --page /zh/article/#from=all --collection /zh/all/ --choices /zh/appearance/ --widths 390,1440"
+    ]
+  }
+}

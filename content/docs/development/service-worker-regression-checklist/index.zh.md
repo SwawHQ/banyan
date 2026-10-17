@@ -105,8 +105,8 @@ offline_notice_path = "offline/"
 在站点根目录调用已安装的 Skill，对已完成的构建运行检查：
 
 ```text
-swban check/delivery <build>                 #检查交付配置与指纹发布路径
-swban check/csp <build>                      #检查内联哈希与发布响应头
+swban check/delivery <build>                #检查交付配置与指纹发布路径
+swban check/csp <build>                     #检查内联哈希与发布响应头
 swban check/browser/site <build> --updates  #检查代表页面与 SW 更新
 swban check/http/security <url>             #部署后检查实际响应头
 ```

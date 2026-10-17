@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {setTheme} from '../../../../_shared/browser/theme.mjs';
+import {setTheme} from '../../_shared/theme.mjs';
 import {tableSamples,checkTableStyles} from './tables.mjs';
 
 export async function check({page,baseUrl,options}) {

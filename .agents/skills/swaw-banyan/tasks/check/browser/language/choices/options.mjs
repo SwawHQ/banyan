@@ -1,7 +1,7 @@
-import {browserCommand,sitePath} from '../../../../_shared/browser/options.mjs';
+import {browserCommand,sitePath} from '../../_shared/options.mjs';
 
-export function choicesCommand(command,description) {
-  return browserCommand(command,description,[
-    {name:'page',value:'path',default:'/language/',description:'Language settings page with translated choices',parse:sitePath}
+export function choicesCommand(command) {
+  return browserCommand(command,[
+    {name:'page',value:'path',default:'/language/',parse:sitePath}
   ]);
 }

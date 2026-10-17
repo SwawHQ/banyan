@@ -1,0 +1,40 @@
+{
+  "en": {
+    "summary": "Open articles, retain ancestry/sort and history; WebKit",
+    "usage": "swban check/browser/canvas/open.webkit [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> --page <path> [--widths <list>] [--pan <px>] [--touch]",
+    "details": [
+      "  dir              Published site directory; default: public",
+      "  --headed         Show the browser window",
+      "  --trace          Save trace.zip; default output: system temporary directory",
+      "  --out <dir>      Save JSON and screenshot in a new subdirectory",
+      "  --timeout <ms>   Browser launch and individual action timeout; default: 15000",
+      "  --from <path>    Published source collection; include the desired sorting fragment",
+      "  --page <path>    Article pathname linked from the source collection",
+      "  --widths <list>  Comma-separated viewport widths; test height: 900 pixels; default: 390,1024,1440",
+      "  --pan <px>       Canvas offset; default: keep the article link visible, pan narrow viewports",
+      "  --touch          Use native taps in a mobile touch context",
+      "",
+      "swban check/browser/canvas/open.webkit ./preview --from /all/ --page /article/",
+      "swban check/browser/canvas/open.webkit ./preview --from /all/#sort=name-desc --page /article/ --touch"
+    ]
+  },
+  "zh": {
+    "summary": "打开文章、保留来源排序与历史；WebKit",
+    "usage": "swban check/browser/canvas/open.webkit [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> --page <path> [--widths <list>] [--pan <px>] [--touch]",
+    "details": [
+      "  dir              已完成的站点构建目录；默认：public",
+      "  --headed         显示浏览器窗口",
+      "  --trace          保存 trace.zip；默认输出到系统临时目录",
+      "  --out <dir>      在新子目录保存 JSON 和截图",
+      "  --timeout <ms>   浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
+      "  --from <path>    已构建的来源集合，含目标排序片段",
+      "  --page <path>    来源集合链接的文章路径",
+      "  --widths <list>  视口宽度，用逗号分隔；检查高度为 900 像素；默认：390,1024,1440",
+      "  --pan <px>       画幅偏移，单位为像素；默认：保持文章链接可见，并平移窄视口",
+      "  --touch          在移动触摸环境中使用原生点按",
+      "",
+      "swban check/browser/canvas/open.webkit ./preview --from /all/ --page /article/",
+      "swban check/browser/canvas/open.webkit ./preview --from /all/#sort=name-desc --page /article/ --touch"
+    ]
+  }
+}

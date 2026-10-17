@@ -1,0 +1,36 @@
+{
+  "en": {
+    "summary": "Appearance preferences; Chromium",
+    "usage": "swban check/browser/appearance [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>] [--from <path>]",
+    "details": [
+      "  dir             Published site directory; default: public",
+      "  --headed        Show the browser window",
+      "  --trace         Save trace.zip; default output: system temporary directory",
+      "  --out <dir>     Save JSON and screenshot in a new subdirectory",
+      "  --timeout <ms>  Browser launch and individual action timeout; default: 15000",
+      "  --page <path>   Published appearance settings page; default: /appearance/",
+      "  --from <path>   Page whose settings link and history return are checked; default: /about/",
+      "",
+      "swban check/browser/appearance ./preview",
+      "swban check/browser/appearance ./preview --headed",
+      "swban check/browser/appearance ./preview --trace --out ./browser-report"
+    ]
+  },
+  "zh": {
+    "summary": "外观偏好与同步；Chromium",
+    "usage": "swban check/browser/appearance [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>] [--from <path>]",
+    "details": [
+      "  dir             已完成的站点构建目录；默认：public",
+      "  --headed        显示浏览器窗口",
+      "  --trace         保存 trace.zip；默认输出到系统临时目录",
+      "  --out <dir>     在新子目录保存 JSON 和截图",
+      "  --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
+      "  --page <path>   已构建的外观设置页；默认：/appearance/",
+      "  --from <path>   用于检查设置链接和历史返回的页面；默认：/about/",
+      "",
+      "swban check/browser/appearance ./preview",
+      "swban check/browser/appearance ./preview --headed",
+      "swban check/browser/appearance ./preview --trace --out ./browser-report"
+    ]
+  }
+}

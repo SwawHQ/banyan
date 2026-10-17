@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Build version agreement",
+    "usage": "swban check/build-version [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "页面与 SW 构建版本",
+    "usage": "swban check/build-version [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

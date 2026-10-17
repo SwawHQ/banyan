@@ -2,15 +2,20 @@
 title: Unreleased
 slug: unreleased
 description: Unreleased changes to the Banyan theme and Skill.
-lastmod: 2026-10-16
+lastmod: 2026-10-17
 ---
 
 ## Added
 
 - Chinese guides and developer documentation at `https://banyan.swaw.com/`.
 - Hugo Module at `github.com/SwawHQ/banyan/module`, with matching
-  `swaw-banyan` Skill versions. `check/module` checks release versions,
-  vendored dependencies and local development.
+  `swaw-banyan` Skill versions. `check/banyan [directory]` checks Module and
+  theme-directory versions, vendored dependencies and local development.
+  Local theme versions come from `theme.toml`. The CLI checks pairing before
+  site tasks and stops on failure. Extracted project ZIPs pair their built-in
+  Skill and Module using `module/theme.toml`, without a `.git` directory.
+  Recovery messages include the project URL,
+  theme source ZIP and Module version commands.
 - Windows x64 CLI with Bun or Node, Git, Go, Hugo and optional GitHub CLI.
   Portable downloads are checksum-verified; sites need no npm dependencies.
 - Name and product list views with shared column navigation and sorting.
@@ -35,6 +40,20 @@ lastmod: 2026-10-16
 - MIT licenses for the repository, Module and Skill, with third-party notices.
 
 ## Changed
+
+- Skill tool commands use `base/<tool>`, `base/<tool>/check` and
+  `base/<tool>/ensure`. The entry prepares its JS runtime and required tools on
+  demand; `base/ensure` is removed. Hugo and Go prepare Git as needed. The theme
+  no longer enables unused Git page information. GitHub CLI is prepared when used.
+  Run npm and npx with `base/node/npm` and `base/node/npx`.
+  Prepare browsers with `base/browser/ensure` and `base/browser/ensure.webkit`.
+  `help/en [depth|path [depth]]` and `help/zh [depth|path [depth]]` list commands
+  and categories or show full help. Depth can start below a selected path;
+  lists retain full paths and mark categories with a trailing `/`.
+  With no argument, help shows common commands, including
+  build, preview and release examples.
+  `help` selects the system language. Invalid help files report their path and
+  the JSON parse reason or specific field.
 
 - Use unified `[prefetch]` settings by icon and column scope, with
   conservative, moderate, eager and immediate levels. Scopes use `root`, `tail`,

@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Responsive images",
+    "usage": "swban check/img/responsive [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "响应式图片交付",
+    "usage": "swban check/img/responsive [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

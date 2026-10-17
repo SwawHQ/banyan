@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Script references and page controls",
+    "usage": "swban check/html/scripts [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "脚本引用、加载边界与页面控件",
+    "usage": "swban check/html/scripts [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

@@ -2,10 +2,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {toolExecutable} from '../../scripts.js/_toolchain/operations.mjs';
-import {hugoEnvironment} from '../../scripts.js/hugo/index.mjs';
+import {toolExecutable} from './toolchain/operations.mjs';
+import {hugoEnvironment,prepareHugo} from '../base/hugo/run.mjs';
 
-export function readHugoConfig(site = process.cwd(),language = '') {
+export async function readHugoConfig(site = process.cwd(),language = '') {
+  await prepareHugo();
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(),'swban-config-'));
   try {
     const args = ['config','--format','json','--printZero','--noBuildLock','--cacheDir',path.join(temporary,'cache')];

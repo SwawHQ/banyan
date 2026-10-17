@@ -6,13 +6,13 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {choicesCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/choices/options.mjs';
 import {returnCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/return/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 import {inspect} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/inspect.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
-import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/server.mjs';
+import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {checkCanceledReturn} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/return/cancel.mjs';
 import {checkOptionalLabels} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/return/labels.mjs';
 import {check as checkBFCache} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/bfcache/check.mjs';
@@ -26,7 +26,7 @@ let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
 function cli(command,args=[],directory=output){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/language/'+command,directory,...args],{cwd:work,encoding:'utf8',timeout:45000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/language/'+command,'entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:45000});
   assert.ifError(result.error);return result;
 }
 function report(result){
@@ -65,17 +65,17 @@ before(()=>{
 after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
 test('language options expose paths, target codes and source fragments',()=>{
-  const spec=returnCommand('return','Return');
+  const spec=returnCommand('check/browser/language/return');
   assert.throws(()=>parseArguments(spec,[]),/--from is required/);
   assert.throws(()=>parseArguments(spec,['--from',article]),/--to is required/);
   assert.throws(()=>parseArguments(spec,['--from','https://example.invalid/','--to','zh']));
   assert.throws(()=>parseArguments(spec,['--from',article,'--to','../zh']));
   assert.equal(parseArguments(spec,['--from',article,'--to','zh']).from,article);
-  assert.match(helpFor(spec),/--to <code>/);
-  assert.match(helpFor(choicesCommand('choices','Choices')),/default: \/language\//);
-  const cached=bfcacheCommand('bfcache','BFCache');
+  assert.match(helpFor(spec,'en'),/--to <code>/);
+  assert.match(helpFor(choicesCommand('check/browser/language/choices'),'en'),/default: \/language\//);
+  const cached=bfcacheCommand('check/browser/language/bfcache');
   assert.equal(parseArguments(cached,['--from',article,'--to','zh','--next','zh-tw']).next,'zh-tw');
-  assert.match(helpFor(cached),/Second target; default: source language/);
+  assert.match(helpFor(cached,'en'),/Second target; default: source language/);
   assert.throws(()=>parseArguments(cached,['--from',article,'--to','zh','--next','../en']));
 });
 

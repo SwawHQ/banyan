@@ -1,4 +1,4 @@
-import {afterPaint} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint} from '../../_shared/viewport.mjs';
 
 export const touchPosition=page=>page.evaluate(()=>({
   x:window.visualViewport?.pageLeft??scrollX,y:document.querySelector('.page-content').scrollTop

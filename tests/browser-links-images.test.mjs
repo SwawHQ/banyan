@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {tabsCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/tabs/options.mjs';
 import {rootsCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/roots/options.mjs';
 import {imageCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/img/load/options.mjs';
@@ -22,7 +22,7 @@ function script(directory,route,name,code){
   write(path.join(directory,name+'.js'),code);edit(directory,route,html=>html.replace('</head>','<script defer src="/'+name+'.js"></script></head>'));
 }
 function cli(command,args=[],directory=output){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/'+command,directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/'+command,'entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }
 function report(result){

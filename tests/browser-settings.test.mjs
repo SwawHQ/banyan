@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {urlCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/settings/url/options.mjs';
 import {historyCommand,pageList} from '../.agents/skills/swaw-banyan/tasks/check/browser/settings/history/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -18,7 +18,7 @@ let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
 function cli(command,args=[],directory=output){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/settings/'+command,directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/settings/'+command,'entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }
 function report(result){
@@ -59,14 +59,14 @@ before(()=>{
 after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
 test('settings declarations expose source fragments, page order and detailed help',()=>{
-  const history=historyCommand('history','History'),url=urlCommand('url','URL');
+  const history=historyCommand('check/browser/settings/history'),url=urlCommand('check/browser/settings/url');
   assert.throws(()=>parseArguments(history,[]),/--from is required/);
   assert.throws(()=>parseArguments(history,['--from',article]),/--pages is required/);
   assert.throws(()=>parseArguments(url,[]),/--page is required/);
   for(const value of ['/one/','/one/,/one/','/one/?return=x,/two/','/one/,https://example.invalid/'])assert.throws(()=>pageList(value));
   const options=parseArguments(history,['--from',article,'--pages',pages.join(',')]);
   assert.equal(options.from,article);assert.deepEqual(options.pages,pages);
-  assert.match(helpFor(history),/--pages <paths>/);assert.match(helpFor(url),/--page <path>/);
+  assert.match(helpFor(history,'en'),/--pages <paths>/);assert.match(helpFor(url,'en'),/--page <path>/);
 });
 
 test('settings URL checks retain unknown query, fragment and state through visits and reloads',{timeout:20000},()=>{

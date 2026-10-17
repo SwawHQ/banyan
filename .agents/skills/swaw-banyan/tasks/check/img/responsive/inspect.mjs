@@ -21,10 +21,10 @@ export async function inspect(directory) {
       if (extractTagAttribute(tag,'class').split(/\s+/).some(name => ['icon--image','md-inline-image'].includes(name)) || !generatedImage(src,siteURL)) continue;
       const configKey = language || '';
       if (!configs.has(configKey)) {
-        baseConfig ??= readHugoConfig();
+        baseConfig ??= await readHugoConfig();
         const matchingKey = Object.keys(baseConfig.languages ?? {}).find(key =>
           key.toLowerCase() === configKey.toLowerCase() || baseConfig.languages[key].languagecode?.toLowerCase() === configKey.toLowerCase());
-        const cfg = (matchingKey ? readHugoConfig(process.cwd(),matchingKey) : baseConfig).params?.media?.responsive_images;
+        const cfg = (matchingKey ? await readHugoConfig(process.cwd(),matchingKey) : baseConfig).params?.media?.responsive_images;
         if (!cfg || !Number.isInteger(cfg.max_width) || cfg.max_width <= 0 || typeof cfg.sizes !== 'string' || !cfg.sizes.trim()) {
           throw new Error('Resolved Hugo params.media.responsive_images must define max_width and sizes.');
         }

@@ -1,4 +1,4 @@
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {readCanvas} from './state.mjs';
 
 export async function installStartupProbe(page) {

@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Canvas and scrolling checks",
+    "usage": "swban help/en check/browser/canvas",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "画幅和滚动检查",
+    "usage": "swban help/zh check/browser/canvas",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

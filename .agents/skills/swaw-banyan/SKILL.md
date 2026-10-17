@@ -17,44 +17,54 @@ metadata:
 在目标站点目录中，通过绝对路径调用本技能的 `swban.cmd`。
 下文的 `swban` 均代表这个路径。
 
-- 用 `swban help zh` 或 `swban help en` 查找命令；
+- 用 `swban help` 按系统语言查看常用命令。
+  用 `swban help/zh 1` 或 `swban help/en 1` 查找分类；数字指定最大层级。
+  用 `swban help/zh check 2` 列出 `check` 下两层命令和分类，保留完整路径。
+  清单中以 `/` 结尾的路径表示分类，其余为可执行命令。
+  用 `swban help/zh check/csp` 查看指定任务的完整帮助；
   用 `swban <command> --help` 查看参数和默认值。
-- 用 `swban ensure` 准备命令行运行环境。它优先复用兼容的 Bun 或 Node，
+- 入口自动准备命令行运行环境，优先复用兼容的 Bun 或 Node，
   两者都不可用时才下载便携版 Bun。使用本工具不需要在站点根目录添加
   package.json 或执行 npm install。
-- 执行 Hugo 操作前，先用 `git.ensure`、`go.ensure`、`hugo.ensure` 准备工具。
-  其他工具按需准备；`gh.ensure` 为可选项。
-- `*.ensure` 复用兼容工具；加 `--force` 则安装固定版本的便携工具。
-  `*.check` 检查已选工具。普通命令不会安装或重新选择工具。
+- 直接执行 Hugo 命令即可；需要时自动准备 Git、Go 和 Hugo。
+  GitHub CLI 在执行 `base/gh` 时准备。
+  `help [path]` 和工具状态检查不会安装工具。
+- `base/<tool>/ensure` 可重新选择兼容工具；加 `--force` 则安装固定版本的便携工具。
+  `base/<tool>/check` 检查已选工具。普通命令复用已有选择；损坏时用准备命令修复。
 - 依赖和便携工具放在技能指定的位置，不要向站点根目录添加本技能的工具依赖。
 
-## 修改站点前检查版本配对
+## 版本配对
 
-文件顶部的 front matter 是版本信息的唯一来源：
-Skill 的 `metadata.version` 对应 `metadata.module` 指定的
-Module 的 `v<metadata.version>` 版本。
+Skill 的版本由文件顶部的 `metadata.version` 声明，
+对应 `metadata.module` 指定的 Module 的 `v<metadata.version>` 版本。
+以主题目录安装时，主题版本读取自该目录的 `theme.toml`。
+整仓源码 ZIP 解压后，内置 Skill 按项目根目录 `module/theme.toml` 的版本配对。
 
-进行与版本有关的配置、模板修改或迁移前，运行 `swban check/module [site]`。
+站点任务由 swban 入口统一检查版本；默认检查当前目录，
+显式指定源站点目录时检查该目录。只有 `matched` 和 `development` 可继续。
+帮助、`base/` 工具和 `check/banyan` 本身不受此拦截。
+
+进行与版本有关的配置、模板修改或迁移前，运行 `swban check/banyan [目录]`。
 检查时使用与目标构建一致的 Hugo 环境。
 
 - 新站点：按[安装说明](references/install.md)安装固定版本的 Module 并配置站点。
   单纯安装 Skill 不会自动执行任何操作。
 - 已有 Module：优先使用与它匹配的 Skill。版本不匹配时，报告双方版本，
   明确是升级 Module 还是更换 Skill。用户已授权升级时，不必再次询问。
-- `development` 表示本地 Module 与 Skill 位于同一个 Banyan 工作副本，可继续开发。
+- `development` 表示本地主题与 Skill 位于同一个 Banyan Git 工作副本，可继续开发。
   `missing`（缺少）、`mismatch`（不匹配）或 `unverified`（无法确认）需要先处理，
   再进行与版本有关的修改。调整后重新检查。
 
-版本不匹配时，原生工具和无关检查仍可使用。
+版本不匹配时，可用基础工具调整版本，再运行检查。
 
 ## 构建与预览
 
 ```text
-swban hugo --minify --gc --cleanDestinationDir         #生产构建
-swban hugo server -D --disableFastRender --port 13241  #开发预览
+swban base/hugo --minify --gc --cleanDestinationDir         #生产构建
+swban base/hugo server -D --disableFastRender --port 13241  #开发预览
 ```
 
-`hugo` 直接传递原生参数。用 `--destination <dir>` 指定其他输出目录。
+`base/hugo` 直接传递原生参数。用 `--destination <dir>` 指定其他输出目录。
 站点配置须保留 `[minify] disableJS = true`，确保 HTML 压缩不会改变
 计算 CSP 哈希时使用的内联 JS 字节。生产产物应压缩；
 若站点配置在开发环境也启用了压缩，可用 `--minify=false` 关闭。
@@ -89,7 +99,7 @@ CSP 和部署响应头由 Hugo 生成。修改其源配置，不要直接修改�
 | 任务 | 参考文档 |
 | --- | --- |
 | 安装 Module 或与当前 Skill 配对 | [安装说明](references/install.md) |
-| 查找可用命令 | [中文帮助](references/swban.help.zh-CN.md)或[英文帮助](references/swban.help.en.md) |
+| 查找可用命令 | `swban help/zh 1` 或 `swban help/en 1` |
 | 执行浏览器检查，包括 SW 更新 | [浏览器检查](references/browser-site.md) |
 | 检查交付产物和指纹发布路径 | [交付检查](references/delivery.md) |
 | 用 `sync/ext` 下载已声明的外部资源 | [外部资源](references/external-resources.md) |

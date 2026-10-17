@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Breadcrumb data",
+    "usage": "swban check/html/breadcrumb [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "面包屑数据与标记",
+    "usage": "swban check/html/breadcrumb [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "en": {
+    "summary": "Run Git; use help for details",
+    "usage": "swban base/git [arguments...]",
+    "details": [
+      "Pass arguments to the selected tool.",
+      "",
+      "swban base/git --help"
+    ]
+  },
+  "zh": {
+    "summary": "运行 Git；help 查看原生帮助",
+    "usage": "swban base/git [arguments...]",
+    "details": [
+      "将参数传给已选工具。",
+      "",
+      "swban base/git --help"
+    ]
+  }
+}

@@ -1,18 +1,19 @@
 import {test, expect} from 'bun:test';
+import {help as helpText} from '../.agents/skills/swaw-banyan/tasks/help/run.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {zip} from './fixtures/zip.mjs';
-import {definition, skillRoot} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/manifest.mjs';
-import {stat, sha256, tree, installLock, removeTree} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/filesystem.mjs';
-import {download} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/download.mjs';
-import {extractZip} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/archive.mjs';
-import {receipt, definitionMatches, versionMatches} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/managed.mjs';
-import {ensure, recover, retireBackup} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/install.mjs';
-import {probe, execute} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/process.mjs';
-import {inspect, inspectBinding, compatible} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/selection.mjs';
-import {readBindings} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/bindings.mjs';
+import {definition, skillRoot} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/manifest.mjs';
+import {stat, sha256, tree, installLock, removeTree} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/filesystem.mjs';
+import {download} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/download.mjs';
+import {extractZip} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/archive.mjs';
+import {receipt, definitionMatches, versionMatches} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/managed.mjs';
+import {ensure, recover, retireBackup} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/install.mjs';
+import {probe, execute} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/process.mjs';
+import {inspect, inspectBinding, compatible} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/selection.mjs';
+import {readBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/bindings.mjs';
 const work = process.env.BANYAN_TEST_WORKSPACE;
 if (!work || !fs.existsSync(path.join(work, 'fixture.exe'))) throw new Error('Run tests/toolchain.ps1 to prepare the Windows process fixture');
 const binary = fs.readFileSync(path.join(work, 'fixture.exe'));
@@ -138,37 +139,35 @@ test('a junction inside an SDK is rejected without following or deleting it', ()
   } finally { fs.unlinkSync(source); fs.renameSync(moved,source); }
 });
 const fresh = copySkill('uninitialized');
-test('both help languages work without Bun; checks and execution never install it', () => {
+test('help and tool checks never prepare tools, including without a JS runtime', () => {
   for (const language of ['en','zh']) {
-    const expected = fs.readFileSync(path.join(fresh,`references/swban.help.${language === 'zh' ? 'zh-CN' : 'en'}.md`),'utf8');
-    for (const entry of ['help','--help','-h']) {
-      const result = cli(fresh,`${entry} ${language}`);
-      expect(result.status).toBe(0); expect(result.stdout).toBe(expected);
-    }
+    const expected = helpText([],language,path.join(fresh,'tasks'))+'\n';
+    const result = cli(fresh,`help/${language}`);
+    expect(result.status).toBe(0); expect(result.stdout).toBe(expected);
   }
-  for (const command of ['help xx','help zh extra','bun.check','node.check','gh.check','bun --version','node --version','hugo --help','gh --version','bun.ensure --invalid','gh.ensure --invalid']) expect(cli(fresh,command).status).not.toBe(0);
+  const env={...process.env,PATH:''};
+  for (const command of ['check/csp --help','check/banyan --help','base/browser/ensure --help','base/browser/ensure.webkit --help','base/hugo/ensure --help','base/bun/ensure --help']) expect(cli(fresh,command,{env}).status).toBe(0);
+  for (const command of ['help en','help zh','help xx','help zh extra','base/ensure','check/module','ensure/browser','ensure/browser.webkit','base/bun/check','base/node/check','base/gh/check','base/bun/ensure --invalid','base/gh/ensure --invalid']) expect(cli(fresh,command,{env}).status).not.toBe(0);
   expect(stat(path.join(fresh,'.tools'))).toBeNull();
 }, 15000);
 let portable = copySkill('便携 skill ! with spaces',true);
 const site = mkdir('caller site'), externalNode = mkdir('external-node');
 test('installed JS entry supports help, relocation and read-only checks', () => {
-  expect(cli(portable,'ensure').status).toBe(0);
+  expect(cli(portable,'base/bun --version').status).toBe(0);
   const relocated = path.join(work,'relocated skill ! with spaces');
   fs.renameSync(portable,relocated); portable = relocated;
   const before = fs.readFileSync(path.join(portable,'.tools/bun/install.json'),'utf8');
   for (const language of ['en','zh']) {
-    const expected = fs.readFileSync(path.join(portable,`references/swban.help.${language === 'zh' ? 'zh-CN' : 'en'}.md`),'utf8');
-    for (const entry of ['help','--help','-h']) {
-      const result = cli(portable,`${entry} ${language}`);
-      expect(result.status).toBe(0); expect(result.stdout).toBe(expected);
-    }
+    const expected = helpText([],language,path.join(portable,'tasks'))+'\n';
+    const result = cli(portable,`help/${language}`);
+    expect(result.status).toBe(0); expect(result.stdout).toBe(expected);
   }
   for (const command of ['help','--help','-h','']) expect(cli(portable,command).status).toBe(0);
-  const checked = cli(portable,'bun.check'); expect(checked.status).toBe(0);
+  const checked = cli(portable,'base/bun/check'); expect(checked.status).toBe(0);
   expect(JSON.parse(checked.stdout).path).toBe(path.join(portable,'.tools/bun/bun.exe'));
-  expect(JSON.parse(cli(portable,'bun.ensure').stdout).action).toBe('reused');
-  for (const command of ['bun.check --force','go.ensure --force --force','gh.ensure --force --force','invalid.ensure','help zh extra']) expect(cli(portable,command).status).not.toBe(0);
-  for (const command of ['build','dev','release','release.check']) {
+  expect(JSON.parse(cli(portable,'base/bun/ensure').stdout).action).toBe('reused');
+  for (const command of ['base/bun/check --force','base/go/ensure --force --force','base/gh/ensure --force --force','invalid.ensure','help zh extra']) expect(cli(portable,command).status).not.toBe(0);
+  for (const command of ['base/ensure','build','dev','release','release.check','ensure','bun','node','npm','npx','git','gh','go','hugo',...['bun','node','git','gh','go','hugo'].flatMap(name=>[name+'.check',name+'.ensure'])]) {
     const result = cli(portable, command);
     expect(result.status).toBe(1); expect(result.stderr).toContain(`unknown_command:${command}`);
   }
@@ -186,10 +185,10 @@ test('public execution preserves empty/quoted arguments, Unicode, streams, cwd a
   const npm = path.join(node,'node_modules/npm/bin'); fs.mkdirSync(npm,{recursive:true});
   for (const name of ['npm','npx']) fs.writeFileSync(path.join(npm,`${name}-cli.js`),'fixture');
   const env = {...process.env,PATH:node};
-  expect(cli(portable,'node.ensure',{env}).status).toBe(0);
+  expect(cli(portable,'base/node/ensure',{env}).status).toBe(0);
   const values = ['value with spaces','','trailing\\','unicode-树','literal ! & | < > ^','quote"value'];
   const input = 'stdin line one\nstdin line two';
-  const result = cli(portable,['node','--probe',...values].map(quote).join(' '),{cwd:site,input});
+  const result = cli(portable,['base/node','--probe',...values].map(quote).join(' '),{cwd:site,input});
   expect(result.status).toBe(17); expect(result.stderr).toBe('stderr-from-runtime');
   const lines = decodeLines(result.stdout);
   expect(lines.find(([key])=>key === 'cwd')[1]).toBe(site);
@@ -199,7 +198,7 @@ test('public execution preserves empty/quoted arguments, Unicode, streams, cwd a
 });
 test('an active managed engine cannot replace itself through the direct JS entry', () => {
   const before = fs.readFileSync(path.join(portable,'.tools/bindings.json'),'utf8');
-  const result = spawnSync(path.join(portable,'.tools/bun/bun.exe'),[path.join(portable,'scripts.js/swban.mjs'),'ensure','--force'],{encoding:'utf8',timeout:15000});
+  const result = spawnSync(path.join(portable,'.tools/bun/bun.exe'),[path.join(portable,'tasks/_cli/main.mjs'),'base/bun/ensure','--force'],{encoding:'utf8',timeout:15000});
   expect(result.status).toBe(1);expect(result.stderr).toContain('active_runtime_requires_bootstrap');
   expect(result.stderr).not.toContain('Banyan download:');
   expect(fs.readFileSync(path.join(portable,'.tools/bindings.json'),'utf8')).toBe(before);
@@ -208,24 +207,23 @@ test('npm and npx run their own CLI with the selected Node', () => {
   const directory = path.join(externalNode,'node_modules/npm/bin');
   for (const name of ['npm','npx']) {
     const file = path.join(directory,`${name}-cli.js`); fs.writeFileSync(file,'fixture');
-    const result = cli(portable,`${name} --version`);
+    const result = cli(portable,`base/node/${name} --version`);
     expect(result.status).toBe(23); expect(result.stdout.trim().split(/\r?\n/)).toEqual([file,'--version']);
   }
 });
-test('Hugo requires selected Go and Git, and isolates SDK selection', () => {
+test('Hugo execution prepares Git, Go and Hugo on demand and isolates SDK selection', () => {
   const env = {...process.env}; for (const key of Object.keys(env)) if (key.toLowerCase() === 'path') delete env[key];
-  env.PATH = path.join(sdk,'hugo');
-  expect(cli(portable,'hugo.ensure',{env}).status).toBe(0);
-  expect(cli(portable,'hugo version').stderr).toContain('git.ensure');
-  env.PATH = path.join(sdk,'go/bin');
-  expect(cli(portable,'go.ensure',{env}).status).toBe(0);
-  env.PATH = ''; expect(cli(portable,'hugo version',{env}).stderr).toContain('git.ensure');
   const git = mkdir('fake-git'); fs.writeFileSync(path.join(git,'git.exe'),binary);
-  env.PATH = git; expect(cli(portable,'git.ensure',{env}).status).toBe(0);
-  env.PATH = git; env.GOROOT = 'unrelated'; env.GOTOOLCHAIN = 'auto';
+  env.PATH = [git,path.join(sdk,'go/bin'),path.join(sdk,'hugo')].join(path.delimiter);
+  env.GOROOT = 'unrelated'; env.GOTOOLCHAIN = 'auto';
   env.GIT_EXEC_PATH = 'unrelated/git';
+  expect(cli(portable,'base/hugo version',{env}).status).toBe(0);
+  const record=readBindings(path.join(portable,'.tools'));
+  expect(Object.keys(record.tools).sort()).toEqual(['bun','git','go','hugo','node']);
+  expect(record.tools.gh).toBeUndefined();
+  env.PATH = git;
   for (const name of ['go','hugo']) {
-    const result = cli(portable,`${name} --probe`,{env,cwd:site}); expect(result.status).toBe(17);
+    const result = cli(portable,`base/${name} --probe`,{env,cwd:site}); expect(result.status).toBe(17);
     const lines = Object.fromEntries(decodeLines(result.stdout));
     expect(lines.goroot).toBe(path.join(sdk,'go')); expect(lines.toolchain).toBe('local');
     expect(lines.gitexec).toBe('');
@@ -240,7 +238,7 @@ test('native Hugo build and server preserve arguments and caller metadata, with 
     ['server','-D','--disableFastRender','--port','13241','--minify=false']
   ];
   for (const values of commands) {
-    const result = cli(portable,['hugo','--probe',...values].map(quote).join(' '),{cwd:site,env});
+    const result = cli(portable,['base/hugo','--probe',...values].map(quote).join(' '),{cwd:site,env});
     expect(result.status).toBe(17); expect(result.stderr).toBe('stderr-from-runtime');
     const lines = decodeLines(result.stdout);
     expect(lines.filter(([key]) => key === 'arg').map(([,value]) => value)).toEqual(values);
@@ -249,7 +247,7 @@ test('native Hugo build and server preserve arguments and caller metadata, with 
     expect(metadata.goroot).toBe(path.join(sdk,'go'));
     expect(metadata.REVISION).toBe(''); expect(metadata.THEME_REVISION).toBe(''); expect(metadata.THEME_DIRTY).toBe('');
   }
-  const result = cli(portable,'hugo --probe',{cwd:site,env:{...env,HUGO_PARAMS_BUILD_REVISION:'explicit',HUGO_PARAMS_BUILD_THEME_DIRTY:'false'}});
+  const result = cli(portable,'base/hugo --probe',{cwd:site,env:{...env,HUGO_PARAMS_BUILD_REVISION:'explicit',HUGO_PARAMS_BUILD_THEME_DIRTY:'false'}});
   const metadata = Object.fromEntries(decodeLines(result.stdout));
   expect(metadata.REVISION).toBe('explicit'); expect(metadata.THEME_DIRTY).toBe('false');
 });
@@ -259,25 +257,25 @@ test('probe has a deadline while ordinary execution can exceed five seconds', as
   expect(await execute(binaryPath,['--wait'])).toBe(0);
 }, 10000);
 
-test('a system Node alone initializes and runs the CLI without downloading Bun', () => {
+test('a system Node initializes for native execution without installing other tools', () => {
   const skill = copySkill('node-only'), node = path.join(path.dirname(process.env.BANYAN_SYSTEM_NODE),'node.exe');
   const env = {...process.env,PATH:path.dirname(node)};
-  const result = cli(skill,'ensure',{env});
+  const result = cli(skill,'base/node --version',{env});
   if (result.status !== 0) throw new Error(result.stderr);
   expect(result.status).toBe(0);
-  expect(JSON.parse(result.stdout)).toMatchObject({runtime:'node',source:'path',action:'reused'});
+  expect(result.stdout.trim()).toMatch(/^v\d+\.\d+\.\d+$/);
   expect(readBindings(path.join(skill,'.tools')).runtime).toBe('node');
   expect(stat(path.join(skill,'.tools/bun'))).toBeNull();
   expect(stat(path.join(skill,'.tools/node'))).toBeNull();
-  expect(cli(skill,'node --version',{env}).status).toBe(0);
+  expect(cli(skill,'base/node --version',{env}).status).toBe(0);
   if (readBindings(path.join(skill,'.tools')).tools.node.npmDirectory) {
-    expect(cli(skill,'npm --version',{env}).status).toBe(0);
-    expect(cli(skill,'npx --version',{env}).status).toBe(0);
+    expect(cli(skill,'base/node/npm --version',{env}).status).toBe(0);
+    expect(cli(skill,'base/node/npx --version',{env}).status).toBe(0);
   } else {
-    for (const name of ['npm','npx']) expect(cli(skill,name + ' --version',{env}).stderr).toContain('node.ensure --force');
+    for (const name of ['npm','npx']) expect(cli(skill,'base/node/' + name + ' --version',{env}).stderr).toContain('base/node/ensure --force');
   }
-  expect(cli(skill,'help zh',{env}).stdout).toBe(fs.readFileSync(path.join(skill,'references/swban.help.zh-CN.md'),'utf8'));
-  expect(cli(skill,'bun --version',{env}).stderr).toContain('bun.ensure');
+  expect(cli(skill,'help/zh',{env}).stdout).toBe(helpText([],'zh',path.join(skill,'tasks'))+'\n');
+  for (const name of ['git','go','hugo','gh']) expect(readBindings(path.join(skill,'.tools')).tools[name]).toBeUndefined();
   expect(stat(path.join(skill,'.tools/bun'))).toBeNull();
 });
 test('qualification rejects old versions, plain Hugo and incomplete SDK; bare Node remains a CLI engine', async () => {
@@ -307,18 +305,47 @@ test('GitHub CLI accepts native multiline versions within the supported major ve
   }
 });
 
+test('explicit Git execution prepares Git and shares its selected environment with Hugo and Go', () => {
+  const git=path.join(work,'fake-git'),env={...process.env,PATH:git,GIT_EXEC_PATH:'unrelated/git'};
+  expect(cli(portable,'base/git --version',{env}).status).toBe(0);
+  expect(readBindings(path.join(portable,'.tools')).tools.git.path).toBe(path.join(git,'git.exe'));
+  for (const name of ['go','hugo']) {
+    const result=cli(portable,`base/${name} --probe`,{env:{...env,PATH:''}});
+    expect(result.status).toBe(17);
+    const lines=Object.fromEntries(decodeLines(result.stdout));
+    expect(lines.gitexec).toBe('');
+    expect(lines.path).toContain(git);
+  }
+});
+
+test('automatic tool preparation downloads missing tools once and preserves existing bindings', async () => {
+  const skill=copySkill('automatic-tools'),root=path.join(skill,'.tools'),git=fixture('git');
+  const fixtures={git,go,hugo},manifest=JSON.parse(fs.readFileSync(path.join(skill,'toolchain.json'),'utf8'));
+  manifest.platforms['windows-x64'].tools=manifest.platforms['windows-x64'].tools.map(tool=>fixtures[tool.name]?.tool??tool);
+  fs.writeFileSync(path.join(skill,'toolchain.json'),JSON.stringify(manifest));
+  const module=await import(pathToFileURL(path.join(skill,'tasks/_shared/toolchain/selection.mjs')).href);
+  const receive=(url,target,hash)=>fixtures[path.basename(new URL(url).pathname,'.zip')].receive(url,target,hash);
+  const counts=Object.fromEntries(Object.entries(fixtures).map(([name,item])=>[name,item.downloads]));
+  await module.prepareTools(['git','go','hugo'],{root,env:{PATH:''},receive});
+  const before=fs.readFileSync(path.join(root,'bindings.json'),'utf8');
+  expect(Object.keys(readBindings(root).tools).sort()).toEqual(['git','go','hugo']);
+  await module.prepareTools(['git','go','hugo'],{root,env:{PATH:'changed'},receive});
+  expect(fs.readFileSync(path.join(root,'bindings.json'),'utf8')).toBe(before);
+  for (const [name,item] of Object.entries(fixtures)) expect(item.downloads).toBe(counts[name]+1);
+});
+
 test('GitHub CLI reuses PATH without a login; check is read-only and native execution uses selected Git', () => {
   const gh = mkdir('external-gh'); fs.writeFileSync(path.join(gh,'gh.exe'),binary);
-  expect(cli(portable,'gh.check').stderr).toContain('gh.ensure');
-  expect(cli(portable,'gh.ensure',{env:{...process.env,PATH:gh}}).status).toBe(0);
+  expect(cli(portable,'base/gh/check').stderr).toContain('base/gh/ensure');
+  expect(cli(portable,'base/gh/ensure',{env:{...process.env,PATH:gh}}).status).toBe(0);
   const before = fs.readFileSync(path.join(portable,'.tools/bindings.json'),'utf8');
   const env = {...process.env,PATH:'unrelated',GIT_EXEC_PATH:'unrelated/git',GH_CONFIG_DIR:path.join(site,'GitHub profile'),GH_TOKEN:'fixture-token'};
-  const checked = cli(portable,'gh.check',{env}); expect(checked.status).toBe(0);
+  const checked = cli(portable,'base/gh/check',{env}); expect(checked.status).toBe(0);
   expect(JSON.parse(checked.stdout)).toMatchObject({source:'path',version:'2.98.0',path:path.join(gh,'gh.exe')});
-  expect(cli(portable,'gh.check --force').stderr).toContain('check_is_read_only');
+  expect(cli(portable,'base/gh/check --force').stderr).toContain('check_is_read_only');
   const values = ['release','create','v0.1.0','asset with spaces.zip','','unicode-树','trailing\\','literal ! & | < > ^','quote"value'];
   const input = 'native stdin';
-  const result = cli(portable,['gh','--probe',...values].map(quote).join(' '),{cwd:site,env,input});
+  const result = cli(portable,['base/gh','--probe',...values].map(quote).join(' '),{cwd:site,env,input});
   if (result.status !== 17) throw new Error(result.stdout + result.stderr);
   expect(result.status).toBe(17); expect(result.stderr).toBe('stderr-from-runtime');
   const lines = decodeLines(result.stdout), metadata = Object.fromEntries(lines);
@@ -332,23 +359,23 @@ test('GitHub CLI reuses PATH without a login; check is read-only and native exec
   expect(stat(path.join(portable,'.tools/gh'))).toBeNull();
   const git = path.join(selectedGit,'git.exe'); fs.renameSync(git,git + '.moved');
   try {
-    expect(cli(portable,'gh --version').stderr).toContain('tool_binding_unusable:git');
-    expect(cli(portable,'gh.check').status).toBe(0);
+    expect(cli(portable,'base/gh --version').stderr).toContain('tool_binding_unusable:git');
+    expect(cli(portable,'base/gh/check').status).toBe(0);
   } finally { fs.renameSync(git + '.moved',git); }
 });
 
 test('a Node CLI runs GitHub CLI without a Git binding and never installs optional tools', () => {
   const skill = copySkill('node-gh'), root = path.join(skill,'.tools');
   const env = {...process.env,PATH:path.dirname(process.env.BANYAN_SYSTEM_NODE)};
-  expect(cli(skill,'ensure',{env}).status).toBe(0);
+  expect(cli(skill,'base/node --version',{env}).status).toBe(0);
   expect(readBindings(root).runtime).toBe('node');
   expect(readBindings(root).tools.gh).toBeUndefined();
   const gh = mkdir('node-gh-bin'); fs.writeFileSync(path.join(gh,'gh.exe'),binary);
   env.PATH = gh;
-  expect(cli(skill,'gh.ensure',{env}).status).toBe(0);
-  expect(cli(skill,'gh.check',{env}).status).toBe(0);
-  expect(cli(skill,'gh --version',{env}).stdout).toContain('gh version 2.98.0');
-  const result = cli(skill,'gh --probe auth status',{env,cwd:site});
+  expect(cli(skill,'base/gh/ensure',{env}).status).toBe(0);
+  expect(cli(skill,'base/gh/check',{env}).status).toBe(0);
+  expect(cli(skill,'base/gh --version',{env}).stdout).toContain('gh version 2.98.0');
+  const result = cli(skill,'base/gh --probe auth status',{env,cwd:site});
   expect(result.status).toBe(17);
   expect(Object.fromEntries(decodeLines(result.stdout)).path).toBe(`${gh};${gh}`);
   expect(readBindings(root).tools.git).toBeUndefined();
@@ -356,10 +383,10 @@ test('a Node CLI runs GitHub CLI without a Git binding and never installs option
 });
 test('normal execution keeps its binding when PATH changes and never repairs a missing tool', async () => {
   const before = fs.readFileSync(path.join(portable,'.tools/bindings.json'),'utf8');
-  expect(cli(portable,'node --version',{env:{...process.env,PATH:''}}).status).toBe(0);
+  expect(cli(portable,'base/node --version',{env:{...process.env,PATH:''}}).status).toBe(0);
   const file = path.join(externalNode,'node.exe');fs.renameSync(file,file + '.moved');
   try {
-    expect(cli(portable,'node --version').stderr).toContain('tool_binding_unusable:node');
+    expect(cli(portable,'base/node --version').stderr).toContain('tool_binding_unusable:node');
     await expect(inspectBinding('node',{root:path.join(portable,'.tools')})).rejects.toThrow('tool_binding_unusable');
     expect(fs.readFileSync(path.join(portable,'.tools/bindings.json'),'utf8')).toBe(before);
     expect(stat(path.join(portable,'.tools/node'))).toBeNull();
@@ -369,19 +396,19 @@ test('check detects a changed system version; explicit ensure records that versi
   const file = path.join(externalNode,'version-output'), env = {...process.env,PATH:externalNode};
   fs.writeFileSync(file,'v24.19.0');
   try {
-    expect(cli(portable,'node.check',{env}).stderr).toContain('tool_binding_changed:node');
-    const result = cli(portable,'node.ensure',{env});expect(result.status).toBe(0);
+    expect(cli(portable,'base/node/check',{env}).stderr).toContain('tool_binding_changed:node');
+    const result = cli(portable,'base/node/ensure',{env});expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({version:'24.19.0',source:'path',action:'reused'});
-    expect(cli(portable,'node.check',{env}).status).toBe(0);
+    expect(cli(portable,'base/node/check',{env}).status).toBe(0);
   } finally { fs.unlinkSync(file); }
-  expect(cli(portable,'node.ensure',{env}).status).toBe(0);
+  expect(cli(portable,'base/node/ensure',{env}).status).toBe(0);
 });
 test('force replaces a system binding with an owned portable copy without changing the system tool', async () => {
   const skill = copySkill('force-node'), root = path.join(skill,'.tools'), node = fixture('node');
   const manifest = JSON.parse(fs.readFileSync(path.join(skill,'toolchain.json'),'utf8'));
   manifest.platforms['windows-x64'].tools = manifest.platforms['windows-x64'].tools.map(tool => tool.name === 'node' ? node.tool : tool);
   fs.writeFileSync(path.join(skill,'toolchain.json'),JSON.stringify(manifest));
-  const module = await import(pathToFileURL(path.join(skill,'scripts.js/_toolchain/selection.mjs')).href);
+  const module = await import(pathToFileURL(path.join(skill,'tasks/_shared/toolchain/selection.mjs')).href);
   const externalBefore = sha256(path.join(externalNode,'node.exe'));
   const reused = await module.prepareTool('node',[],{root,env:{...process.env,PATH:externalNode}});
   expect(reused.source).toBe('path');expect(node.downloads).toBe(0);
@@ -399,7 +426,7 @@ test('force installs portable GitHub CLI while preserving the external tool', as
   const manifest = JSON.parse(fs.readFileSync(path.join(skill,'toolchain.json'),'utf8'));
   manifest.platforms['windows-x64'].tools = manifest.platforms['windows-x64'].tools.map(tool => tool.name === 'gh' ? gh.tool : tool);
   fs.writeFileSync(path.join(skill,'toolchain.json'),JSON.stringify(manifest));
-  const module = await import(pathToFileURL(path.join(skill,'scripts.js/_toolchain/selection.mjs')).href);
+  const module = await import(pathToFileURL(path.join(skill,'tasks/_shared/toolchain/selection.mjs')).href);
   const external = mkdir('force-gh-external'), executable = path.join(external,'gh.exe');
   fs.writeFileSync(executable,binary); const before = sha256(executable);
   expect((await module.prepareTool('gh',[],{root,env:{PATH:external}})).source).toBe('path');

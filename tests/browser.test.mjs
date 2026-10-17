@@ -6,8 +6,8 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import http from 'node:http';
-import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/server.mjs';
-import {browserCommand} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/options.mjs';
+import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {browserCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/options.mjs';
 import {cspCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/csp/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
@@ -19,7 +19,7 @@ function write(root,name,text) {
   const file = path.join(root,name); fs.mkdirSync(path.dirname(file),{recursive:true}); fs.writeFileSync(file,text);
 }
 function cli(command,args=[],cwd=site) {
-  const result = spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),command,...args],{cwd,encoding:'utf8',timeout:30000});
+  const result = spawnSync(process.execPath,[path.join(skill,'tasks',command,'entry.mjs'),...args],{cwd,encoding:'utf8',timeout:30000});
   assert.ifError(result.error); return result;
 }
 function output(name) {
@@ -34,7 +34,7 @@ before(() => {
   skill = path.join(work,'skill'); site = path.join(work,'site');
   fs.cpSync(source,skill,{recursive:true,filter:file => !path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const dependencies = 'tasks/_shared/browser/node_modules';
-  assert.ok(fs.existsSync(path.join(source,dependencies)), 'Run swban ensure/browser and ensure/browser.webkit before browser tests.');
+  assert.ok(fs.existsSync(path.join(source,dependencies)), 'Run swban base/browser/ensure and base/browser/ensure.webkit before browser tests.');
   fs.symlinkSync(path.join(source,dependencies),path.join(skill,dependencies),'junction');
   const runtime = process.versions.bun ? 'bun' : 'node';
   write(skill,'.tools/bindings.json',JSON.stringify({schema:'swaw-banyan.bindings/v1',runtime,tools:{
@@ -46,7 +46,7 @@ before(() => {
   write(site,'public/preload/index.html','<!doctype html><title>Preload fixture</title><link rel="preload" href="/main.js" as="script" crossorigin="anonymous"><script src="/main.js"></script><main class="slot-main">Preload fixture</main>');
   write(site,'public/js/browse/path-entry.fixture.js','void 0;');
   write(site,'public/_headers',"/*\n  Content-Security-Policy: default-src 'self'; script-src 'self'\n");
-  const suiteModule=new URL('file:///'+path.join(skill,'tasks/_shared/browser/suite.mjs').replaceAll('\\','/')).href;
+  const suiteModule=new URL('file:///'+path.join(skill,'tasks/check/browser/_shared/suite.mjs').replaceAll('\\','/')).href;
   const runtimeModule=new URL('file:///'+path.join(skill,'tasks/_shared/browser/runtime.mjs').replaceAll('\\','/')).href;
   write(site,'suite.mjs',[
     "import assert from 'node:assert/strict';",
@@ -87,29 +87,29 @@ after(() => {
   if (work) { assert.equal(path.dirname(work),parent); fs.rmSync(work,{recursive:true,force:true}); }
 });
 
-test('the parameter declaration drives help, defaults and strict parsing',() => {
-  const spec = browserCommand('check/browser/home','Home');
+test('argument declarations and localized help cover the same options and defaults',() => {
+  const spec = browserCommand('check/browser/home');
   assert.deepEqual(parseArguments(spec,[]),{dir:'public',headed:false,trace:false,out:false,timeout:15000});
   assert.equal(parseArguments(spec,['--timeout=1000','--headed','--out','space here','build']).dir,'build');
-  for (const option of spec.options) assert.ok(helpFor(spec).includes('--'+option.name));
+  for (const option of spec.options) assert.ok(helpFor(spec,'en').includes('--'+option.name));
   for (const args of [['--no-such-flag'],['--headed=false'],['--timeout','0'],['--timeout','1x'],['--out'],['a','b'],['--trace','--trace']]) {
     assert.throws(()=>parseArguments(spec,args));
   }
 });
 test('CSP declares a home default and explicit local page paths',()=>{
-  const spec=cspCommand('csp','CSP');assert.equal(parseArguments(spec,[]).page,'/');
+  const spec=cspCommand('check/browser/csp');assert.equal(parseArguments(spec,[]).page,'/');
   assert.equal(parseArguments(spec,['--page','/nested/path/#sort=name-desc']).page,'/nested/path/#sort=name-desc');
   for(const page of ['https://outside.invalid/','//outside/','/path\\bad'])
     assert.throws(()=>parseArguments(spec,['--page',page]));
-  assert.match(helpFor(spec),/--page/);
+  assert.match(helpFor(spec,'en'),/--page/);
 });
 test('missing browser packages fail without installing dependencies',() => {
   const modules = path.join(skill,'tasks/_shared/browser/node_modules');
   fs.unlinkSync(modules);
   try {
     const result = cli('check/browser/home');
-    assert.equal(result.status,1); assert.match(result.stderr,/ensure\/browser/);
-    assert.match(cli('check/browser/home.webkit').stderr,/ensure\/browser\.webkit/);
+    assert.equal(result.status,1); assert.match(result.stderr,/base\/browser\/ensure/);
+    assert.match(cli('check/browser/home.webkit').stderr,/base\/browser\/ensure\.webkit/);
     assert.equal(fs.existsSync(modules),false,'Checks must not install packages.');
   } finally { fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),modules,'junction'); }
 });
@@ -122,7 +122,7 @@ test('missing WebKit fails explicitly without installing or switching to Chromiu
     }
     const before = fs.readdirSync(cache);
     const missing = cli('check/browser/home.webkit');
-    assert.equal(missing.status,1); assert.match(missing.stderr,/WebKit is missing; run swban ensure\/browser\.webkit/);
+    assert.equal(missing.status,1); assert.match(missing.stderr,/WebKit is missing; run swban base\/browser\/ensure\.webkit/);
     assert.deepEqual(fs.readdirSync(cache),before,'Checks must not download browser files.');
     assert.equal(cli('check/browser/home').status,0,'Chromium remains usable independently.');
   } finally {

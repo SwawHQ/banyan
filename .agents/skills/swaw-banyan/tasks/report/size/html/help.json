@@ -1,0 +1,18 @@
+{
+  "en": {
+    "summary": "Page and cold-load bytes",
+    "usage": "swban report/size/html [dir] [--top N]",
+    "details": [
+      "  dir    Published site directory; default: public",
+      "  --top  Number of ranked results; default: 8"
+    ]
+  },
+  "zh": {
+    "summary": "页面与首次加载体积",
+    "usage": "swban report/size/html [dir] [--top N]",
+    "details": [
+      "  dir    已完成的站点构建目录；默认：public",
+      "  --top  排行条数；默认：8"
+    ]
+  }
+}

@@ -1,8 +1,8 @@
-import {browserCommand,sitePath} from '../../../_shared/browser/options.mjs';
+import {browserCommand,sitePath} from '../_shared/options.mjs';
 
-export function paletteCommand(command,description,extraOptions=[]) {
-  return browserCommand(command,description,[
-    {name:'page',value:'path',default:'/about/',description:'Published page with prose styles',parse:sitePath},
+export function paletteCommand(command,extraOptions=[]) {
+  return browserCommand(command,[
+    {name:'page',value:'path',default:'/about/',parse:sitePath},
     ...extraOptions
   ]);
 }

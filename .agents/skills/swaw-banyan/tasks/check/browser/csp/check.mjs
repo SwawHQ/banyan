@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {waitForBrowse} from '../../../_shared/browser/viewport.mjs';
+import {waitForBrowse} from '../_shared/viewport.mjs';
 
 export async function check({page,baseUrl,options={page:'/'}}) {
   const consoleMessages = [],preloadMessages=[];

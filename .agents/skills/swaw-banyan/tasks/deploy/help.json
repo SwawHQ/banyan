@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Deployment configuration",
+    "usage": "swban help/en deploy",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "部署配置",
+    "usage": "swban help/zh deploy",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {openProse} from '../page.mjs';
-import {setTheme} from '../../../../_shared/browser/theme.mjs';
+import {setTheme} from '../../_shared/theme.mjs';
 
 export async function check({page,baseUrl,options}) {
   await openProse(page,baseUrl,options.page);

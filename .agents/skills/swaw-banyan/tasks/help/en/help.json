@@ -1,0 +1,32 @@
+{
+  "en": {
+    "summary": "Show English help",
+    "usage": "swban help/en [depth|path [depth]]",
+    "details": [
+      "With no argument, show common commands.",
+      "Paths ending in / are categories; other paths are executable commands.",
+      "depth  Maximum depth below path, or below the root when path is omitted",
+      "path   Command or category for full help",
+      "",
+      "swban help/en 2                #List paths up to two levels",
+      "swban help/en check 2          #List two levels below check",
+      "swban help/en check/browser 3  #List three levels below check/browser",
+      "swban help/en check/csp        #Show full command help"
+    ]
+  },
+  "zh": {
+    "summary": "查看英文帮助",
+    "usage": "swban help/en [depth|path [depth]]",
+    "details": [
+      "不带参数时显示常用命令。",
+      "路径末尾的 / 表示分类，其余为可执行命令。",
+      "depth  从指定路径向下计算的最大层级；省略路径时从根目录计算",
+      "path   查看指定命令或分类的完整帮助",
+      "",
+      "swban help/en 2                #列出一至二级命令和分类",
+      "swban help/en check 2          #列出 check 下两层命令和分类",
+      "swban help/en check/browser 3  #列出 check/browser 下三层命令和分类",
+      "swban help/en check/csp        #查看完整命令说明"
+    ]
+  }
+}

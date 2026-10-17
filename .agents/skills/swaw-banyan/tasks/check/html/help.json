@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Published HTML checks",
+    "usage": "swban help/en check/html",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "构建产物 HTML 检查",
+    "usage": "swban help/zh check/html",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

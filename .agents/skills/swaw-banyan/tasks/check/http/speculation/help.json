@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Inline speculation rules",
+    "usage": "swban check/http/speculation <url>",
+    "details": []
+  },
+  "zh": {
+    "summary": "预取响应头与规则 JSON",
+    "usage": "swban check/http/speculation <url>",
+    "details": []
+  }
+}

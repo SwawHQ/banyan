@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Page prefetch payloads",
+    "usage": "swban check/prefetch/payload [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "页面预取数据与脚本",
+    "usage": "swban check/prefetch/payload [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

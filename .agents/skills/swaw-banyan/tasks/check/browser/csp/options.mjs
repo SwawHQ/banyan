@@ -1,7 +1,7 @@
-import {browserCommand,sitePath} from '../../../_shared/browser/options.mjs';
+import {browserCommand,sitePath} from '../_shared/options.mjs';
 
-export function cspCommand(command,description) {
-  return browserCommand(command,description,[
-    {name:'page',value:'path',default:'/',description:'Page to load under enforced CSP',parse:sitePath}
+export function cspCommand(command) {
+  return browserCommand(command,[
+    {name:'page',value:'path',default:'/',parse:sitePath}
   ]);
 }

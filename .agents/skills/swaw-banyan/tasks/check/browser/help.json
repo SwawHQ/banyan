@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Browser checks",
+    "usage": "swban help/en check/browser",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "浏览器检查",
+    "usage": "swban help/zh check/browser",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

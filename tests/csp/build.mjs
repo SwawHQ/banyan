@@ -6,7 +6,7 @@ import os from 'node:os';
 import net from 'node:net';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import {toolExecutable} from '../../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 import {inspect as inspectSri} from '../../.agents/skills/swaw-banyan/tasks/check/sri/inspect.mjs';
 import {verifyRetiredOutput} from '../output/retired.mjs';

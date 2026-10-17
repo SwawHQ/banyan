@@ -4,7 +4,7 @@ import path from 'node:path';
 import {insideOutput,localReference} from '../../../../_shared/output.mjs';
 import {waitForState} from '../_shared/state.mjs';
 import {visit,observe,quiet} from '../_shared/update.mjs';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 
 const managed=key=>['asset-fingerprint','sw-content-state'].includes(key)||['nav-html-','asset-versioned-','sw-program-offline-'].some(prefix=>key.startsWith(prefix));
 const probes=['swban-unrelated-cache','asset-fingerprint-unrelated','nav-htmlish-unrelated','sw-program-offlineish-unrelated'];

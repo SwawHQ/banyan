@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "robots.txt declarations",
+    "usage": "swban check/robots [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "robots.txt 声明",
+    "usage": "swban check/robots [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

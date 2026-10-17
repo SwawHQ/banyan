@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "EdgeOne configuration",
+    "usage": "swban help/en deploy/edgeone",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "EdgeOne 配置",
+    "usage": "swban help/zh deploy/edgeone",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

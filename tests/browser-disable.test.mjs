@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {command} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/disable/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 import {isManagedCacheKey,shouldDeleteVersionedCache} from '../module/assets/js/pwa/cache-names.js';
@@ -32,7 +32,7 @@ let work,skill,enabled,disabled,off;
 const faults={};
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(args=[],first=enabled,next=disabled) {
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/pwa/disable',first,'--next',next,
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/pwa/disable','entry.mjs'),first,'--next',next,
     ...(args.includes('--page')?[]:['--page',page]),...args],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }

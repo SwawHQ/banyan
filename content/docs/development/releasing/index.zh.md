@@ -1,7 +1,7 @@
 ---
 title: 发布版本
 slug: releasing
-description: 整理变更记录，并发布同版本的 Skill 和 Hugo Module 标签。
+description: 整理变更记录，为同一提交创建项目和 Go Module 版本标签，并发布 GitHub Release。
 ---
 
 ## 变更记录
@@ -15,18 +15,22 @@ description: 整理变更记录，并发布同版本的 Skill 和 Hugo Module �
 
 ## 配套标签
 
-将 `SKILL.md` 的 `metadata.version` 更新为本次版本并提交。
+将 `SKILL.md` 的 `metadata.version` 和 `module/theme.toml` 的 `version`
+更新为同一本次版本号并提交。
 在同一提交上创建两个标签；下面以 `0.1.0` 和当前 `HEAD` 为例：
 
 ```text
-swban git tag v0.1.0 HEAD                                                        #标记 Skill
-swban git tag module/v0.1.0 HEAD                                                 #标记 Hugo Module
-swban git push --atomic --no-follow-tags origin tag v0.1.0 tag module/v0.1.0      #发布两个标签
+swban base/git tag v0.1.0 HEAD                                                     #标记项目版本
+swban base/git tag module/v0.1.0 HEAD                                              #标记 Go Module 版本
+swban base/git push --atomic --no-follow-tags origin tag v0.1.0 tag module/v0.1.0  #发布两个标签
 ```
 
 此处 `swban` 代表已准备的 Skill 入口。
-`module/v0.1.0` 使 Go 能单独解析 `module/` 子目录。
-在 `v0.1.0` 上创建一个 GitHub Release。
+两个标签都指向整个仓库的同一提交。`v0.1.0` 用于项目发布和提取 Skill；
+`module/v0.1.0` 供 Go 将子目录 Module 识别为 `v0.1.0`。
+因为 Module 根目录是 `module/`，仅有项目标签不能提供该 Module 的语义版本。
+这是 [Go 的子目录 Module 标签规则](https://go.dev/ref/mod#vcs-version)。
+GitHub Release 使用 `v0.1.0`，无需再为 `module/v0.1.0` 创建 Release。
 若附带 Skill ZIP，包含 Skill 目录和许可证，排除 `.tools`、`node_modules` 和缓存。
 
 ## GitHub Release
@@ -34,14 +38,14 @@ swban git push --atomic --no-follow-tags origin tag v0.1.0 tag module/v0.1.0    
 需要 GitHub CLI 时再准备和登录：
 
 ```text
-swban gh.ensure            #准备 GitHub CLI
-swban gh auth login --web  #登录 GitHub
+swban base/gh/ensure            #准备 GitHub CLI
+swban base/gh auth login --web  #登录 GitHub
 ```
 
 版本页面上线、标签推送完成后，为 GitHub Release 添加说明链接：
 
 ```text
-swban gh release create v0.1.0 --verify-tag --notes https://banyan.swaw.com/changelog/v0.1.0/  #链接发布说明
+swban base/gh release create v0.1.0 --verify-tag --notes https://banyan.swaw.com/changelog/v0.1.0/  #链接发布说明
 ```
 
 需要附件时，追加 Skill ZIP 路径。`--verify-tag` 防止命令隐式新建标签。

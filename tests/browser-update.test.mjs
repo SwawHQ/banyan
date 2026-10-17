@@ -5,11 +5,11 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/suite.mjs';
+import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
 import {active} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/state.mjs';
 import {panelState} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
 import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {command as lifecycleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/lifecycle/options.mjs';
 import {command as languageCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/language/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -21,7 +21,7 @@ let work,skill,old,next,off;
 const faults={};
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(name,args=[],directory=old,newBuild=next){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/pwa/'+name,directory,
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/pwa/'+name,'entry.mjs'),directory,
     '--next',newBuild,...(args.includes('--page')?[]:['--page',panel]),...(args.includes('--from')?[]:['--from',from]),...args],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }
@@ -30,7 +30,7 @@ function report(result){
   return JSON.parse(fs.readFileSync(path.join(result.stdout.match(/Artifacts: (.+)/)[1].trim(),'result.json'),'utf8'));
 }
 function languageCLI(page=language,to='zh',directory=old){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/pwa/language',directory,
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/pwa/language','entry.mjs'),directory,
     '--next',next,'--page',page,'--to',to,'--out',path.join(work,'reports')],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }
@@ -97,7 +97,7 @@ test('update declarations require the next build and describe all paths',()=>{
   assert.throws(()=>parseArguments(lifecycleCommand(),['--next','new','--page','https://example.invalid/']));
   const options=parseArguments(lifecycleCommand(),['old','--next','new']);
   assert.equal(options.page,'/powered-by/');assert.equal(options.from,'/about/');
-  for(const flag of ['next','page','from'])assert.match(helpFor(lifecycleCommand()),new RegExp('--'+flag+' <'));
+  for(const flag of ['next','page','from'])assert.match(helpFor(lifecycleCommand(),'en'),new RegExp('--'+flag+' <'));
   assert.throws(()=>parseArguments(languageCommand(),['--next','new']),/--to is required/);
   assert.throws(()=>parseArguments(languageCommand(),['--next','new','--to','bad value']),/language code/);
 });

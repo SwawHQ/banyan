@@ -7,9 +7,9 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {zip} from './fixtures/zip.mjs';
 import {filesUnder,relativeName} from '../.agents/skills/swaw-banyan/tasks/_shared/output.mjs';
-import {readBindings,resolveBinding,writeBindings} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/bindings.mjs';
-import {hugoEnvironment} from '../.agents/skills/swaw-banyan/scripts.js/hugo/index.mjs';
-import {readRelease} from '../.agents/skills/swaw-banyan/tasks/check/module/inspect.mjs';
+import {readBindings,resolveBinding,writeBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/bindings.mjs';
+import {hugoEnvironment} from '../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
+import {readRelease} from '../.agents/skills/swaw-banyan/tasks/check/banyan/inspect.mjs';
 
 const repository=fileURLToPath(new URL('../',import.meta.url));
 const skill=path.join(repository,'.agents/skills/swaw-banyan'),moduleRoot=path.join(repository,'module');
@@ -24,8 +24,8 @@ function write(root,name,value) {
 function command(root,owner,args) {
   const toolRoot=path.join(owner,'.tools'),record=readBindings(toolRoot);
   const runtime=resolveBinding(record.runtime,record,toolRoot).path;
-  const result=spawnSync(runtime,[path.join(owner,'scripts.js/swban.mjs'),...args],
-    {cwd:root,env:environment,encoding:'utf8',timeout:30000,windowsHide:true});
+  const result=spawnSync(runtime,[path.join(owner,'tasks/_cli/main.mjs'),...args],
+    {cwd:root,env:{...environment,PATH:''},encoding:'utf8',timeout:30000,windowsHide:true});
   assert.ifError(result.error);return result;
 }
 function passed(root,owner,args) {
@@ -50,7 +50,7 @@ function consumer(name,{replacement='',multilingual=false}={}) {
   return root;
 }
 function build(root,owner) {
-  const result=passed(root,owner,['hugo','--minify','--noBuildLock']);
+  const result=passed(root,owner,['base/hugo','--minify','--noBuildLock']);
   assert.doesNotMatch(result,/\bWARN\b/,'Starter must build without missing layouts or defaults.');
   return path.join(root,'public');
 }
@@ -85,9 +85,9 @@ before(async()=>{
   assert.equal(fs.existsSync(path.join(installed,'tasks/_shared/browser/node_modules')),false);
   assert.ok(fs.existsSync(path.join(installed,'LICENSE')));
   assert.ok(fs.existsSync(path.join(installed,'tasks/check/http/cache/entry.mjs')));
-  const help=spawnSync(process.execPath,[path.join(installed,'scripts.js/swban.mjs'),'help','en'],{encoding:'utf8',timeout:15000});
+  const help=spawnSync(process.execPath,[path.join(installed,'tasks/_cli/main.mjs'),'help/en'],{encoding:'utf8',timeout:15000});
   assert.ifError(help.error);assert.equal(help.status,0,help.stdout+help.stderr);
-  assert.ok(help.stdout.includes('check/module'));assert.equal(fs.existsSync(path.join(installed,'.tools')),false);
+  assert.ok(help.stdout.includes('check/banyan'));assert.equal(fs.existsSync(path.join(installed,'.tools')),false);
   const tools=Object.fromEntries(['hugo','go','git'].map(name=>[name,{...resolveBinding(name),source:'path'}]));
   const runtime=process.versions.bun?'bun':'node';
   tools[runtime]={source:'path',path:process.execPath,version:process.versions.bun??process.versions.node};
@@ -101,9 +101,9 @@ after(()=>{
   }
 });
 
-test('documented starter builds through a local Module without demo files or Git',()=>{
+test('documented starter builds through a local Module without demo files or a Git repository',()=>{
   const root=consumer('local consumer',{replacement:moduleRoot});
-  assert.match(passed(root,skill,['check/module']),/Pairing: development/);
+  assert.match(passed(root,skill,['check/banyan']),/Pairing: development/);
   const output=build(root,skill);checks(root,skill,output);
   assert.ok(fs.existsSync(path.join(output,'rss/index.html')));
   assert.equal(fs.existsSync(path.join(output,'zh')),false);
@@ -112,9 +112,9 @@ test('documented starter builds through a local Module without demo files or Git
   assert.equal(fs.existsSync(path.join(root,'.git')),false);
 });
 
-test('packaged Skill and versioned Module install from an isolated proxy',()=>{
+test('packaged Skill and versioned Module build from an isolated proxy',()=>{
   const root=consumer('packaged consumer',{multilingual:true});
-  assert.match(passed(root,installed,['check/module']),/Pairing: matched/);
+  assert.match(passed(root,installed,['check/banyan']),/Pairing: matched/);
   const output=build(root,installed);checks(root,installed,output);
   for(const prefix of ['','zh/','zh-tw/']) {
     assert.ok(fs.existsSync(path.join(output,prefix,'index.html')));
@@ -127,6 +127,17 @@ test('packaged Skill and versioned Module install from an isolated proxy',()=>{
   assert.equal(fs.existsSync(path.join(root,'node_modules')),false);
   assert.equal(fs.existsSync(path.join(root,'themes')),false);
   assert.ok(!fs.readFileSync(path.join(root,'go.mod'),'utf8').includes('replace'));
+  assert.equal(fs.existsSync(path.join(root,'.git')),false);
+});
+
+test('the release module directory also installs and builds as a local Hugo theme',()=>{
+  const root=consumer('theme-directory consumer'),directory=path.join(root,'themes/banyan');
+  fs.unlinkSync(path.join(root,'go.mod'));
+  write(root,'hugo.toml','theme="banyan"\n'+toml[1]);
+  fs.cpSync(moduleRoot,directory,{recursive:true});
+  assert.match(passed(root,installed,['check/banyan']),/Pairing: matched/);
+  const output=build(root,installed);checks(root,installed,output);
+  assert.equal(fs.existsSync(path.join(root,'go.mod')),false);
   assert.equal(fs.existsSync(path.join(root,'.git')),false);
 });
 
@@ -145,7 +156,7 @@ test('site content, palette and delivery data override defaults in a fresh insta
   assert.equal(JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8')).hugoVersion,'0.156.0');
   const mismatched=fs.readFileSync(path.join(installed,'SKILL.md'),'utf8').replace('version: "'+release.version+'"','version: "9.9.9"');
   fs.writeFileSync(path.join(installed,'SKILL.md'),mismatched);
-  const mod=fs.readFileSync(path.join(root,'go.mod'),'utf8'),failure=command(root,installed,['check/module']);
+  const mod=fs.readFileSync(path.join(root,'go.mod'),'utf8'),failure=command(root,installed,['check/banyan']);
   assert.equal(failure.status,1);assert.match(failure.stdout,/Pairing: mismatch/);
   assert.equal(fs.readFileSync(path.join(root,'go.mod'),'utf8'),mod);
 });

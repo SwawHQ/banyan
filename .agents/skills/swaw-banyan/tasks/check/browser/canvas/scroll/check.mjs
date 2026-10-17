@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {openAside} from '../../aside/_shared/page.mjs';
 
 const columns='.page-rail,.path-column,.page-content,.document-aside:not([hidden])';

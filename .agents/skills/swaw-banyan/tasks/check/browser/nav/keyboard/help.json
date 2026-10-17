@@ -1,0 +1,34 @@
+{
+  "en": {
+    "summary": "Column keyboard order; Chromium",
+    "usage": "swban check/browser/nav/keyboard [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>]",
+    "details": [
+      "  dir             Published site directory; default: public",
+      "  --headed        Show the browser window",
+      "  --trace         Save trace.zip; default output: system temporary directory",
+      "  --out <dir>     Save JSON and screenshot in a new subdirectory",
+      "  --timeout <ms>  Browser launch and individual action timeout; default: 15000",
+      "  --page <path>   Published page with root links and a tabbable control in the next column; default: /appearance/",
+      "",
+      "swban check/browser/nav/keyboard ./preview",
+      "swban check/browser/nav/keyboard ./preview --headed",
+      "swban check/browser/nav/keyboard ./preview --trace --out ./browser-report"
+    ]
+  },
+  "zh": {
+    "summary": "列间键盘顺序；Chromium",
+    "usage": "swban check/browser/nav/keyboard [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>]",
+    "details": [
+      "  dir             已完成的站点构建目录；默认：public",
+      "  --headed        显示浏览器窗口",
+      "  --trace         保存 trace.zip；默认输出到系统临时目录",
+      "  --out <dir>     在新子目录保存 JSON 和截图",
+      "  --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
+      "  --page <path>   已构建且含根链接和下一列键盘控件的页面；默认：/appearance/",
+      "",
+      "swban check/browser/nav/keyboard ./preview",
+      "swban check/browser/nav/keyboard ./preview --headed",
+      "swban check/browser/nav/keyboard ./preview --trace --out ./browser-report"
+    ]
+  }
+}

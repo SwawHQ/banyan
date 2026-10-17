@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "All file counts and bytes",
+    "usage": "swban report/size/assets [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "全部文件数量与体积",
+    "usage": "swban report/size/assets [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

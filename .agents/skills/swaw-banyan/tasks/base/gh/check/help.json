@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Check selected GitHub CLI",
+    "usage": "swban base/gh/check",
+    "details": []
+  },
+  "zh": {
+    "summary": "检查所选 GitHub CLI",
+    "usage": "swban base/gh/check",
+    "details": []
+  }
+}

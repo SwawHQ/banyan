@@ -1,0 +1,18 @@
+{
+  "en": {
+    "summary": "Delivery output and fingerprint paths",
+    "usage": "swban check/delivery [dir] [--base-path <path>]",
+    "details": [
+      "  dir          Published site directory; default: public",
+      "  --base-path  Published URL prefix; default: /"
+    ]
+  },
+  "zh": {
+    "summary": "交付配置与指纹发布路径",
+    "usage": "swban check/delivery [dir] [--base-path <path>]",
+    "details": [
+      "  dir          已完成的站点构建目录；默认：public",
+      "  --base-path  发布 URL 前缀；默认：/"
+    ]
+  }
+}

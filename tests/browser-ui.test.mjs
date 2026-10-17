@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
 import {verifyRetiredOutput} from './output/retired.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {contrastCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/palette/contrast/options.mjs';
 import {appearanceCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/appearance/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -23,7 +23,7 @@ const engines = [
 let work,skill,output;
 function write(file,text) { fs.mkdirSync(path.dirname(file),{recursive:true}); fs.writeFileSync(file,text); }
 function cli(command,args=[]) {
-  const result = spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),command,output,...args],{
+  const result = spawnSync(process.execPath,[path.join(skill,'tasks',command,'entry.mjs'),output,...args],{
     cwd:work,encoding:'utf8',timeout:30000
   });
   assert.ifError(result.error); return result;
@@ -32,7 +32,7 @@ function fixture(name) {
   const directory = path.join(work,name); fs.cpSync(output,directory,{recursive:true}); return directory;
 }
 function checkFixture(command,directory,args=[]) {
-  const result = spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),command,directory,...args],{
+  const result = spawnSync(process.execPath,[path.join(skill,'tasks',command,'entry.mjs'),directory,...args],{
     cwd:work,encoding:'utf8',timeout:30000
   });
   assert.ifError(result.error); return result;
@@ -62,16 +62,16 @@ after(() => {
 });
 
 test('UI paths, contrast defaults and detailed help use the same declarations',() => {
-  const spec = contrastCommand('check/browser/palette/contrast','Contrast');
+  const spec = contrastCommand('check/browser/palette/contrast');
   assert.equal(parseArguments(spec,[]).page,'/about/');
   assert.equal(parseArguments(spec,[]).min,4.5);
   assert.equal(parseArguments(spec,['--min','5.1','--page','/zh/about/']).min,5.1);
   assert.equal(parseArguments(spec,['--page','/about/?view=full#part']).page,'/about/?view=full#part');
-  assert.match(helpFor(spec),/--page/); assert.match(helpFor(spec),/--min/);
+  assert.match(helpFor(spec,'en'),/--page/); assert.match(helpFor(spec,'en'),/--min/);
   for (const args of [['--min','0'],['--min','22'],['--min','NaN'],['--min','4.5x'],['--page','https://example.com'],['--page','//example.com'],['--page','/\\example.com']]) {
     assert.throws(()=>parseArguments(spec,args));
   }
-  const appearance = appearanceCommand('check/browser/appearance','Appearance');
+  const appearance = appearanceCommand('check/browser/appearance');
   assert.equal(parseArguments(appearance,[]).from,'/about/');
   assert.equal(parseArguments(appearance,['--from','/zh/all/#sort=name-asc']).from,'/zh/all/#sort=name-asc');
 });

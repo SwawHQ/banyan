@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Breadcrumb checks",
+    "usage": "swban help/en check/browser/breadcrumb",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "路径列检查",
+    "usage": "swban help/zh check/browser/breadcrumb",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

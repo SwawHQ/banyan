@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {scrollbarCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/scrollbar/options.mjs';
 import {historyCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/history/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -17,7 +17,7 @@ const route='/d/canvas-first/#from=all',next='/d/canvas-next/#from=all';
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/canvas/'+command,directory,...args],{cwd:work,encoding:'utf8',timeout:45000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/canvas/'+command,'entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:45000});
   assert.ifError(result.error);return result;
 }
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
@@ -47,17 +47,17 @@ before(()=>{
 after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
 test('canvas paths, widths, touch and history arguments have generated help',()=>{
-  const spec=scrollbarCommand('scrollbar','Scrollbar');
+  const spec=scrollbarCommand('check/browser/canvas/scrollbar');
   assert.throws(()=>parseArguments(spec,[]),/--page is required/);
   const options=parseArguments(spec,['--page',route,'--widths','390,1800','--touch']);
   assert.equal(options.page,route);assert.equal(options.widths,'390,1800');assert.equal(options.touch,true);
-  assert.match(helpFor(spec),/--touch/);assert.match(helpFor(spec),/default: 390,768,1800/);
+  assert.match(helpFor(spec,'en'),/--touch/);assert.match(helpFor(spec,'en'),/default: 390,768,1800/);
   assert.throws(()=>parseArguments(spec,['--page',route,'--widths','390,390']),/distinct integers/);
-  const history=historyCommand('history','History');
+  const history=historyCommand('check/browser/canvas/history');
   assert.throws(()=>parseArguments(history,['--page',route]),/--next is required/);
   assert.throws(()=>parseArguments(history,['--page',route,'--next','https://example.com/']));
   assert.equal(parseArguments(history,['--page',route,'--next',next]).next,next);
-  assert.match(helpFor(history),/--next/);
+  assert.match(helpFor(history,'en'),/--next/);
 });
 
 for(const {name,suffix} of engines){

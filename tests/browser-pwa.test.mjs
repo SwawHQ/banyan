@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {panelCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/panel/options.mjs';
 import {offlineCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/offline/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -19,11 +19,11 @@ const variants={};
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function fixture(name,directory=output){const target=path.join(work,name);fs.cpSync(directory,target,{recursive:true});return target;}
 function cli(args=[],directory=output){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/pwa/panel',directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/pwa/panel','entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }
 function offline(args=[],directory=enabled){
-  const result=spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),'check/browser/pwa/offline',directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
+  const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/pwa/offline','entry.mjs'),directory,...args],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }
 function report(result){
@@ -100,13 +100,13 @@ before(()=>{
 after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
 test('panel declarations expose paths, widths and detailed help',()=>{
-  const spec=panelCommand('panel','Panel');
+  const spec=panelCommand('check/browser/pwa/panel');
   assert.throws(()=>parseArguments(spec,[]),/--page is required/);
   assert.throws(()=>parseArguments(spec,['--page',panel]),/--from is required/);
   assert.throws(()=>parseArguments(spec,['--page',panel,'--from',from,'--widths','390,390']),/distinct integers/);
   assert.throws(()=>parseArguments(spec,['--page','https://example.invalid/','--from',from]),/single \//);
   assert.equal(parseArguments(spec,['--page',panel,'--from',from]).widths,'390,1024');
-  assert.match(helpFor(spec),/--page <path>/);assert.match(helpFor(spec),/--from <path>/);assert.match(helpFor(spec),/--widths <pixels>/);
+  assert.match(helpFor(spec,'en'),/--page <path>/);assert.match(helpFor(spec,'en'),/--from <path>/);assert.match(helpFor(spec,'en'),/--widths <pixels>/);
 });
 
 test('unavailable panels render localized copy across visits, reloads and native history',{timeout:20000},()=>{
@@ -171,11 +171,11 @@ test('panel checks detect history-only failures and hidden narrow panels',{timeo
 });
 
 test('offline declarations expose the first page and reject unhandled URL state',()=>{
-  const spec=offlineCommand('offline','Offline');
+  const spec=offlineCommand('check/browser/pwa/offline');
   assert.equal(parseArguments(spec,[]).page,'/');
   assert.equal(parseArguments(spec,['--page',from]).page,from);
   for(const page of [from+'#from=all',from+'#details','https://example.invalid/'])assert.throws(()=>parseArguments(spec,['--page',page]));
-  assert.match(helpFor(spec),/--page <path>/);
+  assert.match(helpFor(spec,'en'),/--page <path>/);
 });
 
 test('real workers cache a controlled navigation and its assets before an offline reload',{timeout:20000},()=>{

@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Settings and history checks",
+    "usage": "swban help/en check/browser/settings",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "设置和历史检查",
+    "usage": "swban help/zh check/browser/settings",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

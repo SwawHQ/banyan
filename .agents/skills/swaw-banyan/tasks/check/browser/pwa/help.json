@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Service Worker and PWA checks",
+    "usage": "swban help/en check/browser/pwa",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "Service Worker 和 PWA 检查",
+    "usage": "swban help/zh check/browser/pwa",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

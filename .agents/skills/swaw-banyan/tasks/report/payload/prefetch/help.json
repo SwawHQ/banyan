@@ -1,0 +1,18 @@
+{
+  "en": {
+    "summary": "Prefetch payload sizes",
+    "usage": "swban report/payload/prefetch [dir] [--top N]",
+    "details": [
+      "  dir    Published site directory; default: public",
+      "  --top  Number of ranked results; default: 8"
+    ]
+  },
+  "zh": {
+    "summary": "预取数据体积",
+    "usage": "swban report/payload/prefetch [dir] [--top N]",
+    "details": [
+      "  dir    已完成的站点构建目录；默认：public",
+      "  --top  排行条数；默认：8"
+    ]
+  }
+}

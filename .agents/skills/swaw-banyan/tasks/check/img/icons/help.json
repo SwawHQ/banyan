@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Image icon resources",
+    "usage": "swban check/img/icons [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "图片图标引用与尺寸",
+    "usage": "swban check/img/icons [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

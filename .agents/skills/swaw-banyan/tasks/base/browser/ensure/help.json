@@ -1,0 +1,18 @@
+{
+  "en": {
+    "summary": "Prepare Playwright/Chromium",
+    "usage": "swban base/browser/ensure",
+    "details": [
+      "",
+      "swban base/browser/ensure"
+    ]
+  },
+  "zh": {
+    "summary": "准备 Playwright/Chromium",
+    "usage": "swban base/browser/ensure",
+    "details": [
+      "",
+      "swban base/browser/ensure"
+    ]
+  }
+}

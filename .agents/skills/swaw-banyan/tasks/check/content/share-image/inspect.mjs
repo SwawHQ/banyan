@@ -1,4 +1,4 @@
-import {readContent} from '../../../_shared/content.mjs';
+import {readContent} from '../_shared/read.mjs';
 export async function inspect(site) {
   const {records,issues} = await readContent(site);
   for (const {relativePath,data} of records) {

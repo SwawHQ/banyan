@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {waitForBrowse,afterPaint} from '../../../../_shared/browser/viewport.mjs';
+import {waitForBrowse,afterPaint} from '../../_shared/viewport.mjs';
 import {readColumns,selectColumn,columnLocator,openPage,columnSort} from '../_shared/page.mjs';
 
 function sourceLink(column,article,origin) {

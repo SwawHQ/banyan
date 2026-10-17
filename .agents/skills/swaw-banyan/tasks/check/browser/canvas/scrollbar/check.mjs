@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {openArticle,openAside} from '../../aside/_shared/page.mjs';
-import {afterPaint} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint} from '../../_shared/viewport.mjs';
 
 const read=page=>page.locator('.page-content').evaluate(column=>{
   const aside=document.querySelector('.document-aside').getBoundingClientRect();

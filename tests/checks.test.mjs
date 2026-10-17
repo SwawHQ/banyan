@@ -7,12 +7,13 @@ import {spawn,spawnSync} from 'node:child_process';
 import {createServer} from 'node:http';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
-import {hugoEnvironment} from '../.agents/skills/swaw-banyan/scripts.js/hugo/index.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
+import {hugoEnvironment} from '../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {inspectDocumentMetadata} from '../.agents/skills/swaw-banyan/tasks/check/html/metadata/document.mjs';
 import {inspectDocumentControls} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/controls.mjs';
 import {breadcrumbRows} from '../.agents/skills/swaw-banyan/tasks/check/html/breadcrumb/inspect.mjs';
+import {fixturePairing,fixtureEnvironment} from './_shared/hugo.mjs';
 
 const source = fileURLToPath(new URL('../.agents/skills/swaw-banyan/',import.meta.url));
 const parent = path.resolve(os.tmpdir());
@@ -38,12 +39,12 @@ function write(root,name,text) {
   const file = path.join(root,name); fs.mkdirSync(path.dirname(file),{recursive:true}); fs.writeFileSync(file,text);
 }
 function cli(command,args=[],cwd=site) {
-  const result = spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),command,...args],{cwd,encoding:'utf8',timeout:15000});
+  const result = spawnSync(process.execPath,[path.join(skill,'tasks/_cli/main.mjs'),command,...args],{cwd,env:fixtureEnvironment(work),encoding:'utf8',timeout:15000});
   assert.ifError(result.error); return result;
 }
 function cliAsync(command,args) {
   return new Promise((resolve,reject) => {
-    const child = spawn(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),command,...args],{cwd:site,stdio:['ignore','pipe','pipe']});
+    const child = spawn(process.execPath,[path.join(skill,'tasks/_cli/main.mjs'),command,...args],{cwd:site,env:fixtureEnvironment(work),stdio:['ignore','pipe','pipe']});
     let stdout = '',stderr = '';
     const timer = setTimeout(() => child.kill(),15000);
     child.stdout.on('data',chunk => {stdout += chunk;});
@@ -69,13 +70,14 @@ before(async () => {
   fs.mkdirSync(skill); fs.mkdirSync(site);
   for (const name of fs.readdirSync(source)) if (!['.tools','node_modules'].includes(name)) fs.cpSync(path.join(source,name),path.join(skill,name),{recursive:true,filter:file => !file.split(path.sep).includes('node_modules')});
   const runtime = process.versions.bun ? 'bun' : 'node';
-  const {resolveBinding} = await import(pathToFileURL(path.join(source,'scripts.js/_toolchain/bindings.mjs')));
+  const {resolveBinding} = await import(pathToFileURL(path.join(source,'tasks/_shared/toolchain/bindings.mjs')));
   const tools = {};
   for (const name of ['hugo','go','git']) tools[name] = {...resolveBinding(name),source:'path'};
   tools[runtime] = {source:'path',path:process.execPath,version:process.versions.bun ?? process.versions.node};
-  const {writeBindings} = await import(pathToFileURL(path.join(skill,'scripts.js/_toolchain/bindings.mjs')));
+  const {writeBindings} = await import(pathToFileURL(path.join(skill,'tasks/_shared/toolchain/bindings.mjs')));
   writeBindings({schema:'swaw-banyan.bindings/v1',runtime,tools},path.join(skill,'.tools'));
   write(site,'hugo.toml','baseURL = "https://example.test/"\n[params.media.responsive_images]\nmax_width = 600\nsizes = "auto, 600px"\n');
+  fixturePairing(site);
   write(site,'content/_index.md','---\ntitle: Home\nshare_image: false\n---\n');
   write(site,'public/index.html','<html lang=en><head><title>Home</title><meta name=description content="Home description"><link rel=canonical href="https://example.test/"></head><body><h1>Home</h1><script src="/js/main.0123456789abcdef.js"></script></body></html>');
   write(site,'public/js/main.0123456789abcdef.js','void 0;');
@@ -362,13 +364,15 @@ test('HTTP checks validate supplied URLs and separate security, cache and specul
 test('every declared task exposes help before consulting output, content or tools; parent and retired routes stay absent',{timeout:60000},() => {
   const tasksRoot = path.join(skill,'tasks');
   const commands = fs.readdirSync(tasksRoot,{recursive:true}).filter(name => path.basename(name) === 'entry.mjs').map(name => path.dirname(name).split(path.sep).join('/'));
-  for (const command of commands) {
+  for (const command of commands.filter(command=>command!=='help'&&!/^base\/(?:bun|node|git|gh|go|hugo)(?:\/(?:npm|npx))?$/.test(command))) {
     for (const arg of ['--help','-h']) {
       const result=cli(command,[arg],work);
       assert.equal(result.status,0,command);
       assert.ok(result.stdout.includes('swban '+command),'Help must identify its task: '+command);
     }
-    assert.equal(cli(command,['--unknown'],work).status,1,command);
+    const invalid=spawnSync(process.execPath,[path.join(skill,'tasks',command,'entry.mjs'),'--unknown'],
+      {cwd:work,env:fixtureEnvironment(work),encoding:'utf8',timeout:15000});
+    assert.ifError(invalid.error);assert.equal(invalid.status,1,command);
   }
   for (const command of ['check/html','report/html','report/assets','check/http','check/img','check/content','check/browser/settings','check/html/budget','check/browser/pwa/activate','check/browser/pwa/cancel','check/browser/pwa/error','check/browser/pwa/timeout','sync/edgeone','deploy/edgeone','deploy/edgeone/build']) {
     const result = cli(command); assert.equal(result.status,1); assert.match(result.stderr,/unknown_command:/);

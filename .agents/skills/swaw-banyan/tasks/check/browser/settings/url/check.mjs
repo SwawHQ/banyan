@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 
 export async function check({page,baseUrl,options}) {
   const cases=[],errors=[],dialogs=[],onError=error=>errors.push(error.message),onDialog=async dialog=>{dialogs.push(dialog.message());await dialog.dismiss();};

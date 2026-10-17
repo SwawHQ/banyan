@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
-import {toolsRoot} from '../../../scripts.js/_toolchain/manifest.mjs';
+import {toolsRoot} from '../toolchain/manifest.mjs';
 
 export const dependencyRoot = fileURLToPath(new URL('.',import.meta.url));
 const browserCache = path.join(toolsRoot,'browser');
@@ -20,13 +20,13 @@ function loadPlaywright(command) {
 }
 
 export function loadChromium() {
-  const {chromium} = loadPlaywright('ensure/browser');
-  if (!fs.existsSync(chromium.executablePath())) throw new Error('Chromium is missing; run swban ensure/browser');
+  const {chromium} = loadPlaywright('base/browser/ensure');
+  if (!fs.existsSync(chromium.executablePath())) throw new Error('Chromium is missing; run swban base/browser/ensure');
   return chromium;
 }
 
 export function loadWebkit() {
-  const {webkit} = loadPlaywright('ensure/browser.webkit');
-  if (!fs.existsSync(webkit.executablePath())) throw new Error('WebKit is missing; run swban ensure/browser.webkit');
+  const {webkit} = loadPlaywright('base/browser/ensure.webkit');
+  if (!fs.existsSync(webkit.executablePath())) throw new Error('WebKit is missing; run swban base/browser/ensure.webkit');
   return webkit;
 }

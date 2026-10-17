@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {visit,runtimeState,targets,requireNativeBackend} from '../_shared/page.mjs';
-import {afterPaint} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint} from '../../_shared/viewport.mjs';
 
 export function recordRuntime() {
   const state={links:[],messages:[]};window.__swbanPrefetchTrace=state;

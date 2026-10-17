@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 
 export async function check({page,context,baseUrl,options}) {
   const response=await page.goto(baseUrl+options.page,{waitUntil:'load'});

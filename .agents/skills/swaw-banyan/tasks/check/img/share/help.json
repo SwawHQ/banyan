@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Generated share images",
+    "usage": "swban check/img/share [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "生成分享图的格式与体积",
+    "usage": "swban check/img/share [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

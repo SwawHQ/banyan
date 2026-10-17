@@ -2,15 +2,18 @@
 title: 未发布
 slug: unreleased
 description: Banyan 主题和 Skill 的未发布变更。
-lastmod: 2026-10-16
+lastmod: 2026-10-17
 ---
 
 ## 新增
 
 - 官网提供中文使用指南和开发资料，站点生产地址为 `https://banyan.swaw.com/`。
 - 通过 `github.com/SwawHQ/banyan/module` 发布 Hugo Module，
-  `swaw-banyan` Skill 使用对应版本。`check/module` 检查发布版本、
-  vendor 依赖和本地开发状态。
+  `swaw-banyan` Skill 使用对应版本。`check/banyan [目录]` 检查 Module 和
+  主题目录的版本配对、vendor 依赖及本地开发状态。
+  主题目录的版本读取自 `theme.toml`。站点任务由入口统一检查，配对失败时停止；
+  整仓源码 ZIP 中的 Skill 与 `module/` 按 `module/theme.toml` 版本配对，无需 `.git`。
+  修复提示包含项目地址、主题源码 ZIP 和 Module 版本调整命令。
 - 提供 Windows x64 命令行工具，支持 Bun 或 Node、Git、Go、Hugo
   和可选的 GitHub CLI。便携版下载使用校验和验证；站点不需要安装 npm 依赖。
 - 新增名称列表和产品列表，复用多列导航和排序。产品分类由站点定义。
@@ -31,6 +34,16 @@ lastmod: 2026-10-16
 - 仓库、Module 和 Skill 均包含 MIT 许可证，并保留第三方许可声明。
 
 ## 调整
+
+- Skill 基础工具使用 `base/<tool>`、`base/<tool>/check` 和
+  `base/<tool>/ensure`。入口按需准备 JS 运行时和所需工具，移除 `base/ensure`。
+  Hugo 和 Go 按需准备 Git；主题不再启用未使用的 Git 页面信息。
+  GitHub CLI 在使用时准备；npm 和 npx 分别使用 `base/node/npm` 和 `base/node/npx`。
+  浏览器准备改用 `base/browser/ensure` 和 `base/browser/ensure.webkit`。
+  `help/en [depth|path [depth]]` 和 `help/zh [depth|path [depth]]` 按层级列出命令和分类，
+  支持从指定路径向下计算深度并保留完整路径，分类路径以 `/` 结尾，
+  或显示指定路径的完整帮助；不带参数时显示常用命令，含构建、预览和发布示例。
+  `help` 默认使用系统语言。帮助文件格式错误时，提示文件路径及 JSON 解析原因或具体字段。
 
 - 预取使用统一的 `[prefetch]` 配置，按图标和列范围设置
   `conservative`、`moderate`、`eager` 或 `immediate`。

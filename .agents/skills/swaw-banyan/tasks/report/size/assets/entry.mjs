@@ -1,3 +1,4 @@
+import {helpFor} from '../../../_shared/arguments.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -78,7 +79,7 @@ function printSection(title, rows) {
 async function main() {
     const directory = parseDirectory(process.argv.slice(2));
     if (directory === null) {
-        console.log('swban report/size/assets [dir]  #File counts and bytes; default: public');
+        console.log(helpFor({command:'report/size/assets'}));
         return;
     }
     const reportRoot = path.resolve(directory);

@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Document aside checks",
+    "usage": "swban help/en check/browser/aside",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "文档侧栏检查",
+    "usage": "swban help/zh check/browser/aside",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {readColumns,selectColumn,columnLocator,observeColumns,columnSort} from '../_shared/page.mjs';
 import {checkPrefetchSelectors} from './prefetch.mjs';
 

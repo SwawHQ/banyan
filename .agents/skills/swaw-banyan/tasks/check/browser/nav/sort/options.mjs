@@ -1,7 +1,7 @@
-import {browserCommand,sitePath} from '../../../../_shared/browser/options.mjs';
+import {browserCommand,sitePath} from '../../_shared/options.mjs';
 
-export function sortCommand(command,description) {
-  return browserCommand(command,description,[
-    {name:'page',value:'path',default:'/all/',description:'Collection with distinct names and a navigable article',parse:sitePath}
+export function sortCommand(command) {
+  return browserCommand(command,[
+    {name:'page',value:'path',default:'/all/',parse:sitePath}
   ]);
 }

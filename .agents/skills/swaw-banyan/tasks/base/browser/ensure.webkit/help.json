@@ -1,0 +1,18 @@
+{
+  "en": {
+    "summary": "Prepare Playwright/WebKit",
+    "usage": "swban base/browser/ensure.webkit",
+    "details": [
+      "",
+      "swban base/browser/ensure.webkit"
+    ]
+  },
+  "zh": {
+    "summary": "准备 Playwright/WebKit",
+    "usage": "swban base/browser/ensure.webkit",
+    "details": [
+      "",
+      "swban base/browser/ensure.webkit"
+    ]
+  }
+}

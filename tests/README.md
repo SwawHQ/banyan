@@ -10,8 +10,8 @@ Select the files explicitly in PowerShell:
 
 ```powershell
 $taskTests = Get-ChildItem ./tests -Filter '*.test.mjs' -File | Where-Object Name -ne 'toolchain.test.mjs'
-.\.agents\skills\swaw-banyan\swban.cmd bun test $taskTests.FullName --timeout 60000
-.\.agents\skills\swaw-banyan\swban.cmd node --test $taskTests.FullName
+.\.agents\skills\swaw-banyan\swban.cmd base/bun test $taskTests.FullName --timeout 60000
+.\.agents\skills\swaw-banyan\swban.cmd base/node --test $taskTests.FullName
 .\tests\toolchain.ps1
 ```
 
@@ -19,16 +19,16 @@ Run `toolchain.ps1` with Windows PowerShell 5.1. It compiles a native fixture
 and runs the installer tests with portable Bun and a system Node.
 Toolchain fixtures do not log in or publish.
 
-Generic delivery format and fingerprint tests ship with the Skill:
+Generic help, CLI pairing, theme resolution, delivery, fingerprint and asset-report tests ship with the Skill:
 
 ```powershell
-$deliveryTests = Get-ChildItem ./.agents/skills/swaw-banyan/tasks/check/delivery/_tests -Filter '*.test.mjs' -File
-.\.agents\skills\swaw-banyan\swban.cmd node --test $deliveryTests.FullName
+$skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_cli/_tests','./.agents/skills/swaw-banyan/tasks/check/delivery/_tests','./.agents/skills/swaw-banyan/tasks/check/banyan/_tests','./.agents/skills/swaw-banyan/tasks/help/_tests','./.agents/skills/swaw-banyan/tasks/report/size/assets/_tests') -Filter '*.test.mjs' -File
+.\.agents\skills\swaw-banyan\swban.cmd base/node --test $skillTests.FullName
 ```
 
 | Suite | Responsibility |
 | --- | --- |
-| `module.test.mjs`, `js-build.test.mjs` | Module pairing, Hugo resolution and JS build inputs |
+| `module.test.mjs`, `js-build.test.mjs` | Module/theme pairing, Hugo resolution and JS build inputs |
 | `install.test.mjs` | Documented starter, isolated Module/Skill packages and site overrides |
 | `cache-policy.test.mjs` | Delivery configuration, platform output, worker matching, versioned caching and controlled-navigation warmup |
 | `tasks.test.mjs`, `checks.test.mjs` | Dispatch, streams, sync faults, help, arguments and static/HTTP checks |
@@ -42,20 +42,22 @@ $deliveryTests = Get-ChildItem ./.agents/skills/swaw-banyan/tasks/check/delivery
 
 Each suite keeps its successful cases and fault fixtures. Domain suites own
 argument semantics; `checks.test.mjs` owns common help/unknown-option checks.
+Browser domain suites call task entries directly. CLI pairing and dispatch
+are tested separately with matching and mismatched source-site fixtures.
 It also owns shared HTML extraction, date-row ordering and static page-control
 faults. Site-specific article samples and copy stay in consumer tests.
 
 Run source-domain scripts separately:
 
 ```text
-swban bun tests/csp/build.mjs              #Inline hashes and minification
-swban bun tests/prefetch/build.mjs         #Rules, config variants and CSP
-swban bun tests/prefetch/policy.mjs        #Prefetch decisions
-swban bun tests/nav/state.mjs              #Navigation, selection and sorting
-swban bun tests/nav/rebuild.mjs            #Incremental ancestor-title rebuilds
-swban bun tests/collections/build.mjs      #Content overlays and list models
-swban bun tests/palette/build.mjs          #Palette overrides and contrast
-swban bun tests/output/budget.mjs <build>  #Repository output budgets
+swban base/bun tests/csp/build.mjs              #Inline hashes and minification
+swban base/bun tests/prefetch/build.mjs         #Rules, config variants and CSP
+swban base/bun tests/prefetch/policy.mjs        #Prefetch decisions
+swban base/bun tests/nav/state.mjs              #Navigation, selection and sorting
+swban base/bun tests/nav/rebuild.mjs            #Incremental ancestor-title rebuilds
+swban base/bun tests/collections/build.mjs      #Content overlays and list models
+swban base/bun tests/palette/build.mjs          #Palette overrides and contrast
+swban base/bun tests/output/budget.mjs <build>  #Repository output budgets
 ```
 
 These scripts also support Node. JS fixtures use Hugo `js.Build` with native

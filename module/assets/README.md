@@ -41,7 +41,7 @@ legibility; they do not measure reading comfort.
 
 Both built-in files implement the same scoped role declarations. When adding a
 role, update both files and any site-owned copies. Run
-`swban node tests/palette/build.mjs` from the consuming site to
+`swban base/node tests/palette/build.mjs` from the consuming site to
 check configuration handling, both palettes, and native asset overrides.
 
 ### Color roles

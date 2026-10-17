@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Browser image checks",
+    "usage": "swban help/en check/browser/img",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "浏览器图片检查",
+    "usage": "swban help/zh check/browser/img",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

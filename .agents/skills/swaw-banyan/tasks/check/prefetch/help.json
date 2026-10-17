@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Prefetch output checks",
+    "usage": "swban help/en check/prefetch",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "预取产物检查",
+    "usage": "swban help/zh check/prefetch",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

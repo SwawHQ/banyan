@@ -1,0 +1,32 @@
+{
+  "en": {
+    "summary": "Settings chains, native tabs and Back; Chromium",
+    "usage": "swban check/browser/settings/history [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> --pages <paths>",
+    "details": [
+      "  dir              Published site directory; default: public",
+      "  --headed         Show the browser window",
+      "  --trace          Save trace.zip; default output: system temporary directory",
+      "  --out <dir>      Save JSON and screenshot in a new subdirectory",
+      "  --timeout <ms>   Browser launch and individual action timeout; default: 15000",
+      "  --from <path>    Source page, including query and fragment",
+      "  --pages <paths>  Settings paths in visit order, separated by commas",
+      "",
+      "swban check/browser/settings/history ./preview --from /article/#from=all&anchor=details --pages /appearance/,/powered-by/,/language/"
+    ]
+  },
+  "zh": {
+    "summary": "设置链、原生新标签页和后退；Chromium",
+    "usage": "swban check/browser/settings/history [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> --pages <paths>",
+    "details": [
+      "  dir              已完成的站点构建目录；默认：public",
+      "  --headed         显示浏览器窗口",
+      "  --trace          保存 trace.zip；默认输出到系统临时目录",
+      "  --out <dir>      在新子目录保存 JSON 和截图",
+      "  --timeout <ms>   浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
+      "  --from <path>    来源页面，含查询参数和片段",
+      "  --pages <paths>  按访问顺序排列的设置页路径，用逗号分隔",
+      "",
+      "swban check/browser/settings/history ./preview --from /article/#from=all&anchor=details --pages /appearance/,/powered-by/,/language/"
+    ]
+  }
+}

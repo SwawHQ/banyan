@@ -7,13 +7,13 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/operations.mjs';
-import {readBindings} from '../.agents/skills/swaw-banyan/scripts.js/_toolchain/bindings.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
+import {readBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/bindings.mjs';
 import {command as rulesCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/rules/options.mjs';
 import {command as overlapCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/overlap/options.mjs';
 import {command as debugCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/debug/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
-import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/suite.mjs';
+import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
 import {runtimeState} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/_shared/page.mjs';
 import {recordRuntime} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/overlap/check.mjs';
 
@@ -23,7 +23,7 @@ let work,full,off,duplicate,prerenderFilter,columns,splitColumns,rawLinks;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(name,directory=full,args=[]) {
   const pageArgs=args.includes('--page')?[]:['--page',name==='debug'?debugPage:probePage];
-  const result=spawnSync(toolExecutable(readBindings().runtime),[path.join(skill,'scripts.js/swban.mjs'),'check/browser/prefetch/'+name,directory,
+  const result=spawnSync(toolExecutable(readBindings().runtime),[path.join(skill,'tasks','check/browser/prefetch/'+name,'entry.mjs'),directory,
     ...pageArgs,'--timeout','2500','--out',path.join(work,'reports'),...args],
   {cwd:work,encoding:'utf8',timeout:20000});
   assert.ifError(result.error);return result;

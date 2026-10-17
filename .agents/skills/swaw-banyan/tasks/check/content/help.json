@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Content declaration checks",
+    "usage": "swban help/en check/content",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "内容声明检查",
+    "usage": "swban help/zh check/content",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

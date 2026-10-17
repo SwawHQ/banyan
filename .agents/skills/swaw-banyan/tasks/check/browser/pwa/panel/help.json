@@ -1,0 +1,36 @@
+{
+  "en": {
+    "summary": "Update panel display, locale and history; Chromium",
+    "usage": "swban check/browser/pwa/panel [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> --from <path> [--widths <pixels>]",
+    "details": [
+      "  dir                Published site directory; default: public",
+      "  --headed           Show the browser window",
+      "  --trace            Save trace.zip; default output: system temporary directory",
+      "  --out <dir>        Save JSON and screenshot in a new subdirectory",
+      "  --timeout <ms>     Browser launch and individual action timeout; default: 15000",
+      "  --page <path>      Page containing the update panel",
+      "  --from <path>      Page linked from the panel, with a root link back",
+      "  --widths <pixels>  Comma-separated viewport widths; default: 390,1024",
+      "",
+      "swban check/browser/pwa/panel ./preview --page /powered-by/ --from /about/",
+      "swban check/browser/pwa/panel ./preview --page /zh/powered-by/ --from /zh/about/ --trace"
+    ]
+  },
+  "zh": {
+    "summary": "更新面板显示、本地化与历史；Chromium",
+    "usage": "swban check/browser/pwa/panel [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> --from <path> [--widths <pixels>]",
+    "details": [
+      "  dir                已完成的站点构建目录；默认：public",
+      "  --headed           显示浏览器窗口",
+      "  --trace            保存 trace.zip；默认输出到系统临时目录",
+      "  --out <dir>        在新子目录保存 JSON 和截图",
+      "  --timeout <ms>     浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
+      "  --page <path>      包含更新面板的页面",
+      "  --from <path>      面板链接的页面，含返回根页面的链接",
+      "  --widths <pixels>  视口宽度，用逗号分隔；默认：390,1024",
+      "",
+      "swban check/browser/pwa/panel ./preview --page /powered-by/ --from /about/",
+      "swban check/browser/pwa/panel ./preview --page /zh/powered-by/ --from /zh/about/ --trace"
+    ]
+  }
+}

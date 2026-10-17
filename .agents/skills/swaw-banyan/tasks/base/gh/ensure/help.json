@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Prepare GitHub CLI when needed",
+    "usage": "swban base/gh/ensure [--force]",
+    "details": [
+      "  --force  Install the pinned portable tool"
+    ]
+  },
+  "zh": {
+    "summary": "准备 GitHub CLI；按需安装",
+    "usage": "swban base/gh/ensure [--force]",
+    "details": [
+      "  --force  安装固定版本的便携工具"
+    ]
+  }
+}

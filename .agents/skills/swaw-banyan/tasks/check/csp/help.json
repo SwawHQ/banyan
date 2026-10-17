@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Inline hashes and CSP",
+    "usage": "swban check/csp [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "内联哈希与生成的 CSP",
+    "usage": "swban check/csp [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

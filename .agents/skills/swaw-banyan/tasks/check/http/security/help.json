@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Security response headers",
+    "usage": "swban check/http/security <url>",
+    "details": []
+  },
+  "zh": {
+    "summary": "实际 HTTP 安全头",
+    "usage": "swban check/http/security <url>",
+    "details": []
+  }
+}

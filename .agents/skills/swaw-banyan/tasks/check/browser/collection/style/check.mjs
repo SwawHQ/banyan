@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import {setTheme} from '../../../../_shared/browser/theme.mjs';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {setTheme} from '../../_shared/theme.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 
 async function visit(page,url) {
   await page.goto('about:blank');

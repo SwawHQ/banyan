@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Site checks",
+    "usage": "swban help/en check",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "站点检查",
+    "usage": "swban help/zh check",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

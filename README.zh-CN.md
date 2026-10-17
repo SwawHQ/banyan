@@ -36,14 +36,13 @@
 下载并解压本仓库，在仓库根目录用 PowerShell 执行（Windows x64）：
 
 ```powershell
-.\.agents\skills\swaw-banyan\swban.cmd git.ensure                                       #准备 Git 和 JS 运行时
-.\.agents\skills\swaw-banyan\swban.cmd go.ensure                                        #准备 Go
-.\.agents\skills\swaw-banyan\swban.cmd hugo.ensure                                      #准备 Hugo
-.\.agents\skills\swaw-banyan\swban.cmd hugo server -D --disableFastRender --port 13241  #启动预览
+.\.agents\skills\swaw-banyan\swban.cmd base/hugo server -D --disableFastRender --port 13241  #启动预览
 ```
 
-准备命令会复用兼容工具，缺少时自动下载。打开 <http://127.0.0.1:13241/> 查看站点；
-后续预览只需执行最后一条命令。
+入口会按需准备 JS 运行时、Git、Go 和 Hugo：优先复用兼容工具，缺少时自动下载。
+JS 运行时可用 Bun 或 Node；两者均不可用时下载便携版 Bun。
+GitHub CLI 在使用 `base/gh` 时准备。
+打开 <http://127.0.0.1:13241/> 查看站点。
 
 安装到自己的站点，见[开始使用](content/docs/guide/getting-started/index.zh.md)；
 构建和检查，见[本地开发](content/docs/development/local-development/index.zh.md)。
@@ -64,6 +63,6 @@
 
 ## 许可证
 
-[MIT 许可证](LICENSE)  
+[MIT 许可证](LICENSE)
 Copyright (c) 2026 WY Swaw LLC  https://swaw.com
 

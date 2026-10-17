@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Image output checks",
+    "usage": "swban help/en check/img",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "图片产物检查",
+    "usage": "swban help/zh check/img",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

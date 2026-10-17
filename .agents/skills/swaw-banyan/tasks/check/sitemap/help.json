@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Sitemap indexing",
+    "usage": "swban check/sitemap [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "sitemap 与索引状态",
+    "usage": "swban check/sitemap [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

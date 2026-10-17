@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "HTTP response checks",
+    "usage": "swban help/en check/http",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "HTTP 响应检查",
+    "usage": "swban help/zh check/http",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

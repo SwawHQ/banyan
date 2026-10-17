@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse,clickVisible,visiblePoint} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse,clickVisible,visiblePoint} from '../../_shared/viewport.mjs';
 import {readCanvas,panCanvas,waitForCanvasX} from '../_shared/state.mjs';
 import {installStartupProbe,observeStartup} from '../_shared/startup.mjs';
 import {checkReservedColumns,checkInitialLayout} from '../first-paint/check.mjs';

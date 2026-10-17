@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Heading counts",
+    "usage": "swban check/html/headings [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "可索引页面的标题数量",
+    "usage": "swban check/html/headings [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

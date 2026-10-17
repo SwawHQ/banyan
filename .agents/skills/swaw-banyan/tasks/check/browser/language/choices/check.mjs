@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint} from '../../_shared/viewport.mjs';
 
 async function readChoices(page) {
   return page.evaluate(()=>{

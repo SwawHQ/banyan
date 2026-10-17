@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Browser prefetch checks",
+    "usage": "swban help/en check/browser/prefetch",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "浏览器预取检查",
+    "usage": "swban help/zh check/browser/prefetch",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

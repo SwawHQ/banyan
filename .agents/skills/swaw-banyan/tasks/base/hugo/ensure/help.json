@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Prepare Hugo Extended",
+    "usage": "swban base/hugo/ensure [--force]",
+    "details": [
+      "  --force  Install the pinned portable tool"
+    ]
+  },
+  "zh": {
+    "summary": "准备 Hugo Extended",
+    "usage": "swban base/hugo/ensure [--force]",
+    "details": [
+      "  --force  安装固定版本的便携工具"
+    ]
+  }
+}

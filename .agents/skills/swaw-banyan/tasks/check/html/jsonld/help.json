@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "JSON-LD syntax",
+    "usage": "swban check/html/jsonld [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "结构化数据格式",
+    "usage": "swban check/html/jsonld [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

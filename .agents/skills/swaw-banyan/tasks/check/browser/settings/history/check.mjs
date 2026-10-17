@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {assertRootLinks} from '../../nav/_shared/links.mjs';
 import {checkEmptyHistory} from './empty.mjs';
 

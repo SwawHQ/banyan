@@ -1,18 +1,6 @@
-// Small task schemas keep accepted arguments and detailed help together.
-export function helpFor(spec) {
-  const usage = [spec.command, spec.positional ? `[${spec.positional.name}]` : '',
-    ...spec.options.map(option => {
-      const flag = `--${option.name}${option.value ? ' <'+option.value+'>' : ''}`;
-      return option.required ? flag : '['+flag+']';
-    })].filter(Boolean).join(' ');
-  const rows = [];
-  if (spec.positional) rows.push([spec.positional.name, `${spec.positional.description}; default: ${spec.positional.default}`]);
-  for (const option of spec.options) rows.push(['--'+option.name+(option.value ? ' <'+option.value+'>' : ''),
-    option.description+(option.required ? '; required' : '')+(option.default !== undefined && option.default !== false ? '; default: '+option.default : '')]);
-  const width = Math.max(0,...rows.map(([name]) => name.length));
-  return [`swban ${usage}`,spec.description,'',...rows.map(([name,description]) => `  ${name.padEnd(width)}  ${description}`),
-    '',...(spec.examples ?? []).map(example => 'swban '+example)].join('\n');
-}
+import {taskHelp} from '../help/run.mjs';
+
+export const helpFor=(spec,language)=>taskHelp(spec.command,language);
 
 export function parseArguments(spec,args) {
   if (args.length === 1 && ['--help','-h'].includes(args[0])) return null;

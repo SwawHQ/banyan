@@ -7,6 +7,7 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {spawn,spawnSync} from 'node:child_process';
 import {createServer} from 'node:http';
+import {fixturePairing,fixtureTools,fixtureEnvironment} from './_shared/hugo.mjs';
 
 const source = fileURLToPath(new URL('../.agents/skills/swaw-banyan/',import.meta.url));
 const temporaryRoot = path.resolve(os.tmpdir());
@@ -23,16 +24,16 @@ function write(root,name,body) {
   fs.writeFileSync(file,body);
 }
 function cli(command,args=[],options={}) {
-  const result = spawnSync(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),command,...args],{
-    cwd:site,encoding:'utf8',timeout:10000,...options
+  const result = spawnSync(process.execPath,[path.join(skill,'tasks/_cli/main.mjs'),command,...args],{
+    cwd:site,env:fixtureEnvironment(work),encoding:'utf8',timeout:15000,...options
   });
   assert.ifError(result.error);
   return result;
 }
 function cliAsync(command,args=[],options={}) {
   return new Promise((resolve,reject) => {
-    const child = spawn(process.execPath,[path.join(skill,'scripts.js/swban.mjs'),command,...args],{
-      cwd:site,stdio:['ignore','pipe','pipe'],...options
+    const child = spawn(process.execPath,[path.join(skill,'tasks/_cli/main.mjs'),command,...args],{
+      cwd:site,env:fixtureEnvironment(work),stdio:['ignore','pipe','pipe'],...options
     });
     let stdout = '',stderr = '';
     const timer = setTimeout(() => child.kill(),10000);
@@ -45,6 +46,7 @@ function cliAsync(command,args=[],options={}) {
 function externalSite(name,text) {
   const root = path.join(site,name);
   write(root,'data/external-resources.yaml',text.replaceAll('ORIGIN',origin));
+  fixturePairing(root);
   return root;
 }
 function output(name) {
@@ -71,10 +73,12 @@ before(async () => {
     }
   }
   const runtime = process.versions.bun ? 'bun' : 'node';
-  const {writeBindings} = await import(pathToFileURL(path.join(skill,'scripts.js/_toolchain/bindings.mjs')).href);
+  const {writeBindings} = await import(pathToFileURL(path.join(skill,'tasks/_shared/toolchain/bindings.mjs')).href);
   writeBindings({schema:'swaw-banyan.bindings/v1',runtime,tools:{
+    ...fixtureTools(),
     [runtime]:{source:'path',path:process.execPath,version:process.versions.bun ?? process.versions.node}
   }},path.join(skill,'.tools'));
+  fixturePairing(site);
   const policy = `default-src 'self'; script-src 'self' 'sha256-${hash(inline)}'`;
   const headers = [['/*',policy],['/*.xml',xmlPolicy]];
   write(site,'public/_headers',headers.map(([route,value]) => `${route}\n  Content-Security-Policy: ${value}`).join('\n\n'));
@@ -316,11 +320,12 @@ test('external targets cannot escape the site or modify generated output and too
     source: ORIGIN/json
     target: ${target}
 `);
+    const files=snapshot(root);
     const before = requests;
     const result = await cliAsync('sync/ext',[],{cwd:root});
     assert.equal(result.status,1,result.stdout + result.stderr);
     assert.equal(requests,before);
-    assert.deepEqual(fs.readdirSync(root),['data']);
+    assert.deepEqual(snapshot(root),files);
   }
   const root = externalSite('target link',`resources:
   - id: item

@@ -1,0 +1,20 @@
+{
+  "en": {
+    "summary": "Run Bun; use --help for details",
+    "usage": "swban base/bun [arguments...]",
+    "details": [
+      "Pass arguments to the selected tool.",
+      "",
+      "swban base/bun --help"
+    ]
+  },
+  "zh": {
+    "summary": "运行 Bun；--help 查看原生帮助",
+    "usage": "swban base/bun [arguments...]",
+    "details": [
+      "将参数传给已选工具。",
+      "",
+      "swban base/bun --help"
+    ]
+  }
+}

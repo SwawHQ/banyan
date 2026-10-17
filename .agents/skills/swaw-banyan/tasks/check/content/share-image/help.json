@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Share-image fields",
+    "usage": "swban check/content/share-image [site]",
+    "details": [
+      "Default: current site."
+    ]
+  },
+  "zh": {
+    "summary": "分享图字段声明",
+    "usage": "swban check/content/share-image [site]",
+    "details": [
+      "默认检查当前站点。"
+    ]
+  }
+}

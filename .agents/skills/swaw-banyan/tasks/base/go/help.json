@@ -1,0 +1,20 @@
+{
+  "en": {
+    "summary": "Run Go; use help for details",
+    "usage": "swban base/go [arguments...]",
+    "details": [
+      "Pass arguments to the selected tool.",
+      "",
+      "swban base/go --help"
+    ]
+  },
+  "zh": {
+    "summary": "运行 Go；help 查看原生帮助",
+    "usage": "swban base/go [arguments...]",
+    "details": [
+      "将参数传给已选工具。",
+      "",
+      "swban base/go --help"
+    ]
+  }
+}

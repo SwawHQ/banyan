@@ -1,0 +1,20 @@
+{
+  "en": {
+    "summary": "Run GitHub CLI; use --help for details",
+    "usage": "swban base/gh [arguments...]",
+    "details": [
+      "Pass arguments to the selected tool.",
+      "",
+      "swban base/gh --help"
+    ]
+  },
+  "zh": {
+    "summary": "运行 GitHub CLI；--help 查看原生帮助",
+    "usage": "swban base/gh [arguments...]",
+    "details": [
+      "将参数传给已选工具。",
+      "",
+      "swban base/gh --help"
+    ]
+  }
+}

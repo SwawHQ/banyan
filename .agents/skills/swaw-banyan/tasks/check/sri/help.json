@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Script integrity hashes",
+    "usage": "swban check/sri [dir]",
+    "details": [
+      "Default directory: public."
+    ]
+  },
+  "zh": {
+    "summary": "外部脚本完整性哈希",
+    "usage": "swban check/sri [dir]",
+    "details": [
+      "默认目录：public。"
+    ]
+  }
+}

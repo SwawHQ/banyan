@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Palette checks",
+    "usage": "swban help/en check/browser/palette",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "配色检查",
+    "usage": "swban help/zh check/browser/palette",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}

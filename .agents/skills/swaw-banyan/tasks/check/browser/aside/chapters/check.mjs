@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {activate,waitForBrowse} from '../../../../_shared/browser/viewport.mjs';
+import {activate,waitForBrowse} from '../../_shared/viewport.mjs';
 import {openArticle,openAside} from '../_shared/page.mjs';
 
 export async function check({page,baseUrl,options}) {

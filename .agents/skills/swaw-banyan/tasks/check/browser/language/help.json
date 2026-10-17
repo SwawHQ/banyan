@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Language navigation checks",
+    "usage": "swban help/en check/browser/language",
+    "details": [
+      "Choose a child command:"
+    ]
+  },
+  "zh": {
+    "summary": "语言导航检查",
+    "usage": "swban help/zh check/browser/language",
+    "details": [
+      "选择子命令："
+    ]
+  }
+}
