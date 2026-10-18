@@ -1,8 +1,8 @@
 import fs from 'node:fs';
-import {parse} from '../_shared/_vendor/toml.mjs';
+import {parseToml as parse} from '../_shared/parsers.mjs';
 
-export const tools=['bun','node','git','go','hugo','gh'];
-const ids=new Set(['tool.runtime',...tools.map(name=>'tool.'+name),'site.banyan']);
+export const tools=['bun','node','git','go','hugo','gh','uv'];
+const ids=new Set(['tool.runtime',...tools.map(name=>'tool.'+name),'tool.python','site.banyan']);
 const languages=['en','zh'];
 const invalid=field=>{throw new Error('Invalid references/doctor.toml: '+field);};
 

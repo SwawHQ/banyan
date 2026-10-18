@@ -7,7 +7,7 @@ import vm from 'node:vm';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {parseHeaders,cloudflareHeaders} from '../.agents/skills/swaw-banyan/tasks/_shared/headers.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 

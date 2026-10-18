@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Prepare Skill parser packages",
+    "usage": "swban base/packages/ensure [--force]",
+    "details": []
+  },
+  "zh": {
+    "summary": "准备技能解析依赖",
+    "usage": "swban base/packages/ensure [--force]",
+    "details": []
+  }
+}

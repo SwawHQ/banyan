@@ -16,8 +16,12 @@ lastmod: 2026-10-18
   普通任务不再检查配对。检查开关和修复提示由 `references/doctor.toml` 维护。
   整仓源码 ZIP 中的 Skill 与 `module/` 按 `module/theme.toml` 版本配对，无需 `.git`。
   修复提示包含项目地址、主题源码 ZIP 和 Module 版本调整命令。
-- 提供 Windows x64 命令行工具，支持 Bun 或 Node、Git、Go、Hugo
-  和可选的 GitHub CLI。便携版下载使用校验和验证；站点不需要安装 npm 依赖。
+- 提供 Windows x64 命令行工具，支持 Node/npm、Git、Go、Hugo
+  和可选的 Bun、GitHub CLI。便携版下载使用校验和验证。
+  uv 和 Python 3.13 在 Skill 内隔离运行脚本和 CLI，支持站点已有 uv 项目，
+  不修改系统 PATH 或 Python 注册表。
+  `sync/ext` 和内容检查用 npm 按需准备 Skill 内的解析依赖，与父工作区隔离；
+  站点构建不需要 npm 依赖。
 - 新增名称列表和产品列表，复用多列导航和排序。产品分类由站点定义。
 - Powered by 页面显示实际主题版本、Hugo 版本、站点构建信息，
   以及 PWA 状态和更新检查控件。
@@ -38,9 +42,12 @@ lastmod: 2026-10-18
 ## 调整
 
 - Skill 基础工具使用 `base/<tool>`、`base/<tool>/check` 和
-  `base/<tool>/ensure`。入口按需准备 JS 运行时和所需工具，移除 `base/ensure`。
+  `base/<tool>/ensure`。入口使用 Node，按需准备 Node/npm 和所需工具；
+  Bun 保留为独立工具。移除 `base/ensure`。
   Hugo 和 Go 按需准备 Git；主题不再启用未使用的 Git 页面信息。
   GitHub CLI 在使用时准备；npm 和 npx 分别使用 `base/node/npm` 和 `base/node/npx`。
+  离线使用前，可用 `base/packages/ensure` 准备解析依赖；加 `--force` 重新安装。
+  `doctor` 只报告依赖缺失，不执行安装。
   浏览器准备改用 `base/browser/ensure` 和 `base/browser/ensure.webkit`。
   `help/en [depth|path [depth]]` 和 `help/zh [depth|path [depth]]` 按层级列出命令和分类，
   支持从指定路径向下计算深度并保留完整路径，分类路径以 `/` 结尾，
@@ -98,6 +105,7 @@ lastmod: 2026-10-18
 
 ## 修复
 
+- 已准备好的 Python 环境支持并发运行命令，不再误报安装锁冲突。
 - 构建版本和浏览器预取检查接受版本 JSON 与合法的空内联规则。
 - 未注册 Service Worker 时，预取诊断页仍能显示配置和运行状态。
 - Cloudflare 缓存和 XML CSP 特例先删除继承的响应头，再设置新值，

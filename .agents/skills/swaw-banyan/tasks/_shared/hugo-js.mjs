@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {toolExecutable} from './toolchain/operations.mjs';
+import {toolExecutable} from './tools/operations.mjs';
 import {hugoEnvironment,prepareHugo} from '../base/hugo/run.mjs';
 
 // Build source-test modules with the same bundler and @params handling as a site.

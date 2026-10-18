@@ -1,6 +1,6 @@
 import path from 'node:path';
-import {toolExecutable,toolBinding} from '../../_shared/toolchain/operations.mjs';
-import {withPath} from '../../_shared/toolchain/process.mjs';
+import {toolExecutable,toolBinding} from '../../_shared/tools/operations.mjs';
+import {withPath} from '../../_shared/tools/process.mjs';
 
 export function goEnvironment(env=process.env) {
   const executable=toolExecutable('go');

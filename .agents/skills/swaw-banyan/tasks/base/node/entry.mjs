@@ -1,4 +1,4 @@
-import {runTool} from '../../_shared/toolchain/operations.mjs';
+import {runTool} from '../../_shared/tools/operations.mjs';
 
 try { process.exitCode=await runTool('node',process.argv.slice(2)); }
 catch (error) { console.error(`[swban] ${error.message}`); process.exitCode=1; }

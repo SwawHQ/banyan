@@ -36,9 +36,9 @@ before(() => {
   const dependencies = 'tasks/_shared/browser/node_modules';
   assert.ok(fs.existsSync(path.join(source,dependencies)), 'Run swban base/browser/ensure and base/browser/ensure.webkit before browser tests.');
   fs.symlinkSync(path.join(source,dependencies),path.join(skill,dependencies),'junction');
-  const runtime = process.versions.bun ? 'bun' : 'node';
+  const runtime = 'node';
   write(skill,'.tools/bindings.json',JSON.stringify({schema:'swaw-banyan.bindings/v1',runtime,tools:{
-    [runtime]:{source:'path',path:process.execPath,version:process.versions.bun ?? process.versions.node}
+    [runtime]:{source:'path',path:process.execPath,version:process.versions.node}
   }}));
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   write(site,'public/index.html','<!doctype html><html><head><title>Fixture</title><script src="/main.js"></script><script src="/js/browse/path-entry.fixture.js"></script></head><body><main class="slot-main">Browser fixture</main></body></html>');

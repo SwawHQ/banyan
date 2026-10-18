@@ -1,7 +1,7 @@
 import path from 'node:path';
-import {toolExecutable} from '../../_shared/toolchain/operations.mjs';
-import {withPath} from '../../_shared/toolchain/process.mjs';
-import {readBindings} from '../../_shared/toolchain/bindings.mjs';
+import {toolExecutable} from '../../_shared/tools/operations.mjs';
+import {withPath} from '../../_shared/tools/process.mjs';
+import {readBindings} from '../../_shared/tools/bindings.mjs';
 
 export function gitEnvironment(env=process.env) {
   if (!readBindings().tools.git) return env;

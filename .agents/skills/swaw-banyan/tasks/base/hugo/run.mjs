@@ -1,9 +1,9 @@
 import path from 'node:path';
-import { toolExecutable } from '../../_shared/toolchain/operations.mjs';
-import { execute, withPath } from '../../_shared/toolchain/process.mjs';
+import { toolExecutable } from '../../_shared/tools/operations.mjs';
+import { execute, withPath } from '../../_shared/tools/process.mjs';
 import { goEnvironment } from '../go/environment.mjs';
 import {gitEnvironment} from '../git/environment.mjs';
-import {prepareTools} from '../../_shared/toolchain/selection.mjs';
+import {prepareTools} from '../../_shared/tools/selection.mjs';
 
 export const prepareHugo = () => prepareTools(['git','go','hugo']);
 

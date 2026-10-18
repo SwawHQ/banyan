@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Run uv in Skill storage",
+    "usage": "swban base/uv <command> [arguments...]",
+    "details": [
+      "swban base/uv tool run tccli --version  #Run TCCLI"
+    ]
+  },
+  "zh": {
+    "summary": "在 Skill 目录运行 uv",
+    "usage": "swban base/uv <command> [参数...]",
+    "details": [
+      "swban base/uv tool run tccli --version  #运行 TCCLI"
+    ]
+  }
+}

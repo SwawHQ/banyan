@@ -1,5 +1,5 @@
 import {helpFor} from '../../../_shared/arguments.mjs';
-import {checkTool} from '../../../_shared/toolchain/operations.mjs';
+import {checkTool} from '../../../_shared/tools/operations.mjs';
 
 const args=process.argv.slice(2);
 const spec={command:'base/hugo/check'};

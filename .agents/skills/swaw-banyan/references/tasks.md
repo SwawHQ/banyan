@@ -24,25 +24,37 @@ and arguments, use `swban help 1` and `swban help <path>`.
   files. Publication tasks should consume completed output.
 
 Base tools use `base/<tool>`, `base/<tool>/check` and `base/<tool>/ensure`.
-Node package managers use `base/node/npm` and `base/node/npx`. The CLI prepares
-its runtime when executing a task. Domain code uses `prepareTools` for missing
-tools; Hugo callers use `prepareHugo`, which prepares Git, Go and Hugo.
-Existing bindings stay selected.
+The CLI runs with Node and prepares Node/npm when executing a task.
+Node package managers use `base/node/npm` and `base/node/npx`.
+Bun remains an independent tool through `base/bun`, `base/bun/check` and
+`base/bun/ensure`; it does not select the CLI runtime.
+Domain code uses `prepareTools` for missing tools; Hugo callers use
+`prepareHugo`, which prepares Git, Go and Hugo.
+Existing bindings stay selected. Python uses `base/python` and a Skill-owned
+environment; Python CLI packages use `base/uv tool run`. See [Python tools](python.md).
 JSON task help, doctor and tool status checks do not prepare tools. Native help runs the tool.
 `help`, `help/en` and `help/zh` are separate tasks. `tasks/_cli/` owns
-dispatch and JS bootstrap. `scripts/bootstrap.ps1` handles Windows cold start.
+dispatch and JS bootstrap. `bootstrap/windows.ps1` handles Windows cold start.
 Reusable tool APIs stay in ordinary modules, not CLI entries.
 
 Doctor checks selected tools and Banyan pairing. Ordinary tasks do not run
 pairing checks. Check switches and translated repair hints live in
 references/doctor.toml; check implementations stay in tasks/doctor/.
-Doctor reports problems without installing or repairing tools.
+Doctor reports problems without installing or repairing tools or packages.
+
+Core YAML and TOML packages use the Skill root's `package.json`,
+`package-lock.json` and ignored `node_modules/`. `sync/ext` and content checks
+prepare them when needed; `base/packages/ensure [--force]` prepares them explicitly.
+Help does not install packages. Doctor reports missing core packages before
+loading its TOML configuration. Each dependency group keeps one
+`package-lock.json`; the shared installer runs npm with Node and disables
+parent workspaces. Keep optional feature packages in their owning group.
 
 ## Preserve the existing contracts
 
 Hugo resolves configuration, modules and content mounts. Do not reproduce its
 inheritance or module resolver. `doctor` reads release metadata from
-`SKILL.md`; tool compatibility and download definitions live in `toolchain.json`.
+`SKILL.md`; tool compatibility and download definitions live in `tools.json`.
 
 Argument declarations stay in `tasks/check/browser/_shared/options.mjs` and
 each leaf's `options.mjs`. Use `browserCommand` and `parseArguments` for
@@ -99,7 +111,7 @@ Static site checks can import `inspectDocumentMetadata` from
 `check/html/scripts/controls.mjs`. Both accept HTML and return issues.
 
 Import `runScenarioSuite` from `tasks/check/browser/_shared/suite.mjs` through a
-site-owned entry, run with `swban base/bun` or `swban base/node`. Supply scenarios,
+site-owned entry, run with `swban base/node`. Supply scenarios,
 the published build and a report directory. Upgrade scenarios also need a
 build pair. Site paths, build selection and business assertions stay in that
 entry or its domain modules.

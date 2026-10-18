@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Skill packages",
+    "usage": "swban help/en base/packages",
+    "details": []
+  },
+  "zh": {
+    "summary": "技能依赖包",
+    "usage": "swban help/zh base/packages",
+    "details": []
+  }
+}

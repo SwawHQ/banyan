@@ -72,11 +72,12 @@ before(async () => {
       fs.cpSync(path.join(source,name),path.join(skill,name),{recursive:true,filter:file => !file.split(path.sep).includes('node_modules')});
     }
   }
-  const runtime = process.versions.bun ? 'bun' : 'node';
-  const {writeBindings} = await import(pathToFileURL(path.join(skill,'tasks/_shared/toolchain/bindings.mjs')).href);
+  fs.cpSync(path.join(source,'node_modules'),path.join(skill,'node_modules'),{recursive:true});
+  const runtime = 'node';
+  const {writeBindings} = await import(pathToFileURL(path.join(skill,'tasks/_shared/tools/bindings.mjs')).href);
   writeBindings({schema:'swaw-banyan.bindings/v1',runtime,tools:{
     ...fixtureTools(),
-    [runtime]:{source:'path',path:process.execPath,version:process.versions.bun ?? process.versions.node}
+    [runtime]:{source:'path',path:process.execPath,version:process.versions.node}
   }},path.join(skill,'.tools'));
   fixturePairing(site);
   const policy = `default-src 'self'; script-src 'self' 'sha256-${hash(inline)}'`;
@@ -242,7 +243,7 @@ test('EdgeOne sync keeps the root config when a build is missing or JSON is inva
   assert.equal(cli('deploy/edgeone/sync',['absent-build']).status,1);
 });
 
-test('external sync uses bundled YAML, selects ids and preserves identical files without site npm',async () => {
+test('external sync uses Skill-local YAML, selects ids and preserves identical files without site npm',async () => {
   const root = externalSite('external success',`resources:
   - id: first
     source: >-

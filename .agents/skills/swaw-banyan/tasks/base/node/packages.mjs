@@ -1,7 +1,7 @@
 import path from 'node:path';
-import {fail} from '../../_shared/toolchain/filesystem.mjs';
-import {runTool,toolBinding} from '../../_shared/toolchain/operations.mjs';
-import {prepareTools} from '../../_shared/toolchain/selection.mjs';
+import {fail} from '../../_shared/tools/filesystem.mjs';
+import {runTool,toolBinding} from '../../_shared/tools/operations.mjs';
+import {prepareTools} from '../../_shared/tools/selection.mjs';
 
 export async function runPackageManager(name,args) {
   await prepareTools(['node']);

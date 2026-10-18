@@ -16,8 +16,8 @@ Banyan 分为两部分：Hugo Module 提供主题，`swaw-banyan` Agent Skill
 验证临时站点，或[预览本仓库](/zh/docs/development/local-development/)。
 
 主题要求 Hugo 0.157.0 或更新版本。Skill 命令行目前支持 Windows x64，
-优先复用兼容的系统工具，也可下载便携工具。它支持 Bun 或 Node，
-不需要在站点根目录添加 `package.json` 或执行 `npm install`。
+优先复用兼容的系统工具，缺少时下载便携工具。Skill 使用 Node 运行，
+JS 依赖由 npm 按需准备，无需在站点根目录添加 `package.json` 或执行 `npm install`。
 
 ## 选择安装入口
 

@@ -1,8 +1,8 @@
-import {toolExecutable} from '../../_shared/toolchain/operations.mjs';
-import {execute} from '../../_shared/toolchain/process.mjs';
+import {toolExecutable} from '../../_shared/tools/operations.mjs';
+import {execute} from '../../_shared/tools/process.mjs';
 import {goEnvironment} from './environment.mjs';
 import {gitEnvironment} from '../git/environment.mjs';
-import {prepareTools} from '../../_shared/toolchain/selection.mjs';
+import {prepareTools} from '../../_shared/tools/selection.mjs';
 
 try {
   await prepareTools(['git','go']);

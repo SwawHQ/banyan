@@ -1,5 +1,5 @@
 import {helpFor} from '../../../_shared/arguments.mjs';
-import {ensureTool} from '../../../_shared/toolchain/operations.mjs';
+import {ensureTool} from '../../../_shared/tools/operations.mjs';
 
 const args=process.argv.slice(2);
 const spec={command:'base/gh/ensure'};

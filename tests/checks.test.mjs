@@ -7,7 +7,7 @@ import {spawn,spawnSync} from 'node:child_process';
 import {createServer} from 'node:http';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {hugoEnvironment} from '../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {inspectDocumentMetadata} from '../.agents/skills/swaw-banyan/tasks/check/html/metadata/document.mjs';
@@ -69,14 +69,15 @@ before(async () => {
   skill = path.join(work,'skill with spaces'); site = path.join(work,'site');
   fs.mkdirSync(skill); fs.mkdirSync(site);
   for (const name of fs.readdirSync(source)) if (!['.tools','node_modules'].includes(name)) fs.cpSync(path.join(source,name),path.join(skill,name),{recursive:true,filter:file => !file.split(path.sep).includes('node_modules')});
-  const runtime = process.versions.bun ? 'bun' : 'node';
-  const {resolveBinding} = await import(pathToFileURL(path.join(source,'tasks/_shared/toolchain/bindings.mjs')));
+  const runtime = 'node';
+  const {resolveBinding} = await import(pathToFileURL(path.join(source,'tasks/_shared/tools/bindings.mjs')));
   const tools = {};
   for (const name of ['hugo','go','git']) tools[name] = {...resolveBinding(name),source:'path'};
-  tools[runtime] = {source:'path',path:process.execPath,version:process.versions.bun ?? process.versions.node};
-  const {writeBindings} = await import(pathToFileURL(path.join(skill,'tasks/_shared/toolchain/bindings.mjs')));
+  tools[runtime] = {source:'path',path:process.execPath,version:process.versions.node};
+  const {writeBindings} = await import(pathToFileURL(path.join(skill,'tasks/_shared/tools/bindings.mjs')));
   writeBindings({schema:'swaw-banyan.bindings/v1',runtime,tools},path.join(skill,'.tools'));
   write(site,'hugo.toml','baseURL = "https://example.test/"\n[params.media.responsive_images]\nmax_width = 600\nsizes = "auto, 600px"\n');
+  fs.cpSync(path.join(source,'node_modules'),path.join(skill,'node_modules'),{recursive:true});
   fixturePairing(site);
   write(site,'content/_index.md','---\ntitle: Home\nshare_image: false\n---\n');
   write(site,'public/index.html','<html lang=en><head><title>Home</title><meta name=description content="Home description"><link rel=canonical href="https://example.test/"></head><body><h1>Home</h1><script src="/js/main.0123456789abcdef.js"></script></body></html>');
@@ -364,7 +365,7 @@ test('HTTP checks validate supplied URLs and separate security, cache and specul
 test('every declared task exposes help before consulting output, content or tools; parent and retired routes stay absent',{timeout:60000},() => {
   const tasksRoot = path.join(skill,'tasks');
   const commands = fs.readdirSync(tasksRoot,{recursive:true}).filter(name => path.basename(name) === 'entry.mjs').map(name => path.dirname(name).split(path.sep).join('/'));
-  for (const command of commands.filter(command=>command!=='help'&&!/^base\/(?:bun|node|git|gh|go|hugo)(?:\/(?:npm|npx))?$/.test(command))) {
+  for (const command of commands.filter(command=>command!=='help'&&!/^base\/(?:bun|node|git|gh|go|hugo|uv|python)(?:\/(?:npm|npx))?$/.test(command))) {
     for (const arg of ['--help','-h']) {
       const result=cli(command,[arg],work);
       assert.equal(result.status,0,command);

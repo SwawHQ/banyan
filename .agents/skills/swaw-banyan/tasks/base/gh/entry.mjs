@@ -1,4 +1,4 @@
-import {runTool} from '../../_shared/toolchain/operations.mjs';
+import {runTool} from '../../_shared/tools/operations.mjs';
 import {gitEnvironment} from '../git/environment.mjs';
 
 try { process.exitCode=await runTool('gh',process.argv.slice(2),{env:gitEnvironment()}); }

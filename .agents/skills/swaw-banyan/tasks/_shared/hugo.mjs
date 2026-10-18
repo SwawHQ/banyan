@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {toolExecutable} from './toolchain/operations.mjs';
+import {toolExecutable} from './tools/operations.mjs';
 import {hugoEnvironment,prepareHugo} from '../base/hugo/run.mjs';
 
 export async function readHugoConfig(site = process.cwd(),language = '') {

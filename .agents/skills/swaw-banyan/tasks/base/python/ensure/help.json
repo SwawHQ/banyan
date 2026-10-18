@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Prepare the Skill Python environment",
+    "usage": "swban base/python/ensure",
+    "details": []
+  },
+  "zh": {
+    "summary": "准备 Skill 的 Python 环境",
+    "usage": "swban base/python/ensure",
+    "details": []
+  }
+}

@@ -2,9 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {parse} from '../_shared/_vendor/yaml.mjs';
-import {parse as parseToml} from '../_shared/_vendor/toml.mjs';
-import {toolExecutable} from '../_shared/toolchain/operations.mjs';
+import {parseYaml as parse,parseToml} from '../_shared/parsers.mjs';
+import {toolExecutable} from '../_shared/tools/operations.mjs';
 import {hugoEnvironment} from '../base/hugo/run.mjs';
 
 const skillRoot = fileURLToPath(new URL('../../',import.meta.url));

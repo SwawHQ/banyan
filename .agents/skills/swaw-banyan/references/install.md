@@ -3,12 +3,17 @@
 Use the `module` path and `version` from `SKILL.md` metadata. In the commands
 below, replace `<module>` with that path and `<version>` with that version
 without a leading `v`. `swban` means this Skill's `swban.cmd`, invoked from the
-target site's root. The entry prepares the JS runtime and required tools on demand.
+target site's root. The entry runs with Node and prepares Node/npm and required
+tools on demand. `sync/ext` and content checks also prepare parser packages in
+the Skill's `node_modules/` with npm when needed. Use `swban base/packages/ensure`
+to prepare them before working offline.
+For isolated Python runtimes and CLI packages, see [Python tools](python.md).
 
 ## Inspect an existing site
 
-After installing or changing the theme or tools, run `swban doctor`. It checks
-selected tools and reads Hugo's dependency graph, including effective
+After installing or changing the theme or tools, run `swban doctor`.
+If it reports missing packages, run `swban base/packages/ensure` and retry.
+Doctor checks selected tools and reads Hugo's dependency graph, including effective
 vendor versions, replacements and theme directories. A theme selected with
 `theme = "banyan"` is checked using its `theme.toml` name and version. Hugo supplies
 the active directory, including custom `themesDir` settings and renamed folders.

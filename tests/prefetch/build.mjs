@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
+import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 import {fixtureEnvironment} from '../_shared/hugo.mjs';
 

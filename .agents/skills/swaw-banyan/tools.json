@@ -1,0 +1,163 @@
+{
+  "schema": "swaw-banyan.tools/v2",
+  "platforms": {
+    "windows-x64": {
+      "tools": [
+        {
+          "name": "bun",
+          "version": "1.4.2",
+          "url": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-windows-x64.zip",
+          "sha256": "ce4c17497b2f29712a99d3d53f028de28cd42e3bacb8589599e7f000e49b6405",
+          "archiveRoot": "bun-windows-x64",
+          "requiredFiles": [
+            "bun.exe",
+            "LICENSE.md"
+          ],
+          "supplements": [
+            {
+              "name": "LICENSE.md",
+              "url": "https://raw.githubusercontent.com/oven-sh/bun/bun-v1.4.2/LICENSE.md",
+              "sha256": "b9caf52728691b4057e371232c221a132883198be2f3d2ddf92c90404c984b1a"
+            }
+          ],
+          "archiveFormat": "zip",
+          "executable": "bun.exe",
+          "compatibility": {
+            "min": "1.4.2",
+            "before": "2.0.0"
+          }
+        },
+        {
+          "name": "node",
+          "version": "24.20.0",
+          "url": "https://nodejs.org/dist/v24.20.0/node-v24.20.0-win-x64.zip",
+          "sha256": "6cac9ffbca8f6a47091e4b5c772e0606049c3871cb67d900c0cedde630e545ba",
+          "archiveRoot": "node-v24.20.0-win-x64",
+          "requiredFiles": [
+            "node.exe",
+            "npm.cmd",
+            "npx.cmd",
+            "node_modules/npm/bin/npm-cli.js",
+            "node_modules/npm/bin/npx-cli.js",
+            "LICENSE"
+          ],
+          "supplements": [],
+          "archiveFormat": "zip",
+          "executable": "node.exe",
+          "npmDirectory": "node_modules/npm/bin",
+          "compatibility": {
+            "min": "24.19.0"
+          }
+        },
+        {
+          "name": "hugo",
+          "version": "0.157.0",
+          "url": "https://github.com/gohugoio/hugo/releases/download/v0.157.0/hugo_extended_0.157.0_windows-amd64.zip",
+          "sha256": "89c569aad0fb9e751db2339f3db90796c970fb745d422d3e6ec9930057275d9e",
+          "archiveRoot": "",
+          "requiredFiles": [
+            "hugo.exe",
+            "LICENSE"
+          ],
+          "supplements": [],
+          "archiveFormat": "zip",
+          "executable": "hugo.exe",
+          "compatibility": {
+            "exact": "0.157.0"
+          }
+        },
+        {
+          "name": "go",
+          "version": "1.27.1",
+          "url": "https://go.dev/dl/go1.27.1.windows-amd64.zip",
+          "sha256": "a3911b5e0e1b1053f25ed0675f4c1c6aad1e2bfcf253df2b9be4caabd2edd95d",
+          "archiveRoot": "go",
+          "requiredFiles": [
+            "bin/go.exe",
+            "bin/gofmt.exe",
+            "pkg/tool/windows_amd64/compile.exe",
+            "pkg/tool/windows_amd64/link.exe",
+            "src/go.mod",
+            "src/runtime/runtime2.go",
+            "LICENSE",
+            "VERSION"
+          ],
+          "supplements": [],
+          "archiveFormat": "zip",
+          "executable": "bin/go.exe",
+          "compatibility": {
+            "min": "1.21.0",
+            "before": "2.0.0"
+          }
+        },
+        {
+          "name": "git",
+          "version": "2.56.0",
+          "reportedVersion": "2.56.0.windows.2",
+          "url": "https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.2/MinGit-2.56.0.2-64-bit.zip",
+          "sha256": "da35e72aa21c005a5a0d298cfbae110bc1609a815730ea0dde84b01a1b3cd3be",
+          "archiveRoot": "",
+          "requiredFiles": [
+            "cmd/git.exe",
+            "ucrt64/bin/git.exe",
+            "LICENSE.txt"
+          ],
+          "supplements": [],
+          "archiveFormat": "zip",
+          "executable": "cmd/git.exe",
+          "compatibility": {
+            "min": "2.31.0",
+            "before": "3.0.0"
+          }
+        },
+        {
+          "name": "gh",
+          "version": "2.98.0",
+          "url": "https://github.com/cli/cli/releases/download/v2.98.0/gh_2.98.0_windows_amd64.zip",
+          "sha256": "c28c7b3b584967a05b74d9eaf7481bff24ddc34930bf2d6e442c148236561eb1",
+          "archiveRoot": "",
+          "requiredFiles": [
+            "bin/gh.exe",
+            "LICENSE"
+          ],
+          "supplements": [],
+          "archiveFormat": "zip",
+          "executable": "bin/gh.exe",
+          "compatibility": {
+            "min": "2.98.0",
+            "before": "3.0.0"
+          }
+        },
+        {
+          "name": "uv",
+          "version": "0.10.2",
+          "url": "https://github.com/astral-sh/uv/releases/download/0.10.2/uv-x86_64-pc-windows-msvc.zip",
+          "sha256": "493ebbe0e06128d6ee4905e1ed5e2a433fb0f7cfc08b0eaca9fab4ca76778ae1",
+          "archiveRoot": "",
+          "requiredFiles": [
+            "uv.exe",
+            "LICENSE-MIT",
+            "LICENSE-APACHE"
+          ],
+          "supplements": [
+            {
+              "name": "LICENSE-MIT",
+              "url": "https://raw.githubusercontent.com/astral-sh/uv/0.10.2/LICENSE-MIT",
+              "sha256": "860e3d7a86b84e6a7012c7a635fc64df475cebc6cce34dfeb73a5982ec58176c"
+            },
+            {
+              "name": "LICENSE-APACHE",
+              "url": "https://raw.githubusercontent.com/astral-sh/uv/0.10.2/LICENSE-APACHE",
+              "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+            }
+          ],
+          "archiveFormat": "zip",
+          "executable": "uv.exe",
+          "compatibility": {
+            "min": "0.10.2"
+          }
+        }
+      ]
+    }
+  }
+}

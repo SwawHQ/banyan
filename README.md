@@ -36,9 +36,11 @@ Download and extract this repository. Run in PowerShell from its root
 .\.agents\skills\swaw-banyan\swban.cmd base/hugo server -D --disableFastRender --port 13241  #Start the preview
 ```
 
-The entry prepares the JS runtime, Git, Go and Hugo as needed. It reuses compatible
-tools or downloads missing tools. It can use Bun or Node; if neither is available,
-it downloads portable Bun. GitHub CLI is prepared when you use `base/gh`.
+The entry prepares Node/npm, Git, Go and Hugo as needed. It reuses compatible
+tools or downloads missing tools. Bun remains an optional tool under `base/bun`.
+GitHub CLI is prepared when you use `base/gh`.
+`base/python` prepares an isolated Python environment; `base/uv tool run` runs
+Python CLI packages. See [Python tools](.agents/skills/swaw-banyan/references/python.md).
 Open <http://127.0.0.1:13241/>.
 
 To install Banyan in your own site, see
@@ -61,5 +63,5 @@ The guides are currently in Chinese.
 
 ## License
 
-[MIT License](LICENSE)
-Copyright (c) 2026 WY Swaw LLC  https://swaw.com
+[MIT License](LICENSE)  
+Copyright (c) 2026 WY Swaw LLC (https://swaw.com, https://github.com/SwawHQ)

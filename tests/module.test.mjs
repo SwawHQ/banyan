@@ -6,10 +6,10 @@ import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {zip} from './fixtures/zip.mjs';
-import {parse as parseToml} from '../.agents/skills/swaw-banyan/tasks/_shared/_vendor/toml.mjs';
+import {parseToml} from '../.agents/skills/swaw-banyan/tasks/_shared/parsers.mjs';
 import {readRelease,moduleFromGraph,assess,inspect} from '../.agents/skills/swaw-banyan/tasks/doctor/banyan.mjs';
-import {readBindings,resolveBinding,writeBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/bindings.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
+import {readBindings,resolveBinding,writeBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/bindings.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {hugoEnvironment} from '../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
 
 const repository = fileURLToPath(new URL('../',import.meta.url));
@@ -66,9 +66,10 @@ before(() => {
   work = fs.mkdtempSync(path.join(parent,'banyan-module-'));
   const installed=path.join(work,'skill');
   fs.cpSync(skill,installed,{recursive:true,filter:file=>!file.split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
-  const runtime=process.versions.bun?'bun':'node',record=readBindings();
+  fs.cpSync(path.join(skill,'node_modules'),path.join(installed,'node_modules'),{recursive:true});
+  const runtime='node',record=readBindings();
   const tools=Object.fromEntries(['git','go','hugo'].map(name=>[name,{...resolveBinding(name,record),source:'path'}]));
-  tools[runtime]={source:'path',path:process.execPath,version:process.versions.bun??process.versions.node};
+  tools[runtime]={source:'path',path:process.execPath,version:process.versions.node};
   writeBindings({schema:record.schema,runtime,tools},path.join(installed,'.tools'));
   entry=path.join(installed,'tasks/doctor/entry.mjs');
   const settings = {HUGO_CACHEDIR:path.join(work,'cache'),HUGO_RESOURCEDIR:path.join(work,'resources'),

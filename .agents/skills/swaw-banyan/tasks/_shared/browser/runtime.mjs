@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
-import {toolsRoot} from '../toolchain/manifest.mjs';
+import {toolsRoot} from '../tools/manifest.mjs';
 
 export const dependencyRoot = fileURLToPath(new URL('.',import.meta.url));
 const browserCache = path.join(toolsRoot,'browser');

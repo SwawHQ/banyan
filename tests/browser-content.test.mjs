@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {verifyCspOutput} from '../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan');
@@ -23,9 +23,9 @@ function cli(newBuild=next){
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-content-'));skill=path.join(work,'skill');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
-  const runtime=process.versions.bun?'bun':'node';
+  const runtime='node';
   write(path.join(skill,'.tools/bindings.json'),JSON.stringify({schema:'swaw-banyan.bindings/v1',runtime,tools:{
-    [runtime]:{source:'path',path:process.execPath,version:process.versions.bun??process.versions.node}
+    [runtime]:{source:'path',path:process.execPath,version:process.versions.node}
   }}));
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');

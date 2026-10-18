@@ -7,8 +7,8 @@ en = "Enable and declare this check in references/doctor.toml, then rerun doctor
 zh = "在 references/doctor.toml 中声明并启用此检查，然后重新运行 doctor。"
 
 [hints.bindings]
-en = "In this Skill's directory, back up and remove .tools/bindings.json and .tools/cli.cmd if present. Then run swban base/bun/ensure or swban base/node/ensure. Run swban base/<tool>/ensure for other tools you use."
-zh = "在本 Skill 目录备份并删除 .tools/bindings.json 和 .tools/cli.cmd（若存在），然后运行 swban base/bun/ensure 或 swban base/node/ensure；其他所需工具分别运行 swban base/<tool>/ensure。"
+en = "In this Skill's directory, back up and remove .tools/bindings.json and .tools/cli.cmd if present. Then run swban base/node/ensure. Run swban base/<tool>/ensure for other tools you use."
+zh = "在本 Skill 目录备份并删除 .tools/bindings.json 和 .tools/cli.cmd（若存在），然后运行 swban base/node/ensure；其他所需工具分别运行 swban base/<tool>/ensure。"
 
 [hints.blocked]
 en = "Resolve the listed tool checks with swban base/<tool>/ensure, then rerun doctor."
@@ -16,13 +16,13 @@ zh = "用 swban base/<tool>/ensure 处理列出的工具检查项，然后重新
 
 [checks."tool.runtime"]
 enabled = true
-hint.en = "Run swban base/bun/ensure or swban base/node/ensure to prepare the runtime."
-hint.zh = "运行 swban base/bun/ensure 或 swban base/node/ensure，准备运行时。"
+hint.en = "Run swban base/node/ensure to prepare the runtime."
+hint.zh = "运行 swban base/node/ensure，准备运行时。"
 
 [checks."tool.bun"]
 enabled = true
-hint.en = "Run swban base/bun/ensure to repair the selected tool. If it reports unknown_runtime_launcher, back up and remove this Skill's .tools/cli.cmd, then retry."
-hint.zh = "运行 swban base/bun/ensure，修复所选工具。若报告 unknown_runtime_launcher，先备份并删除本 Skill 的 .tools/cli.cmd，再重试。"
+hint.en = "Run swban base/bun/ensure to repair the selected tool."
+hint.zh = "运行 swban base/bun/ensure，修复所选工具。"
 
 [checks."tool.node"]
 enabled = true
@@ -48,6 +48,16 @@ hint.zh = "运行 swban base/hugo/ensure，修复所选工具。"
 enabled = true
 hint.en = "Run swban base/gh/ensure to repair the selected tool."
 hint.zh = "运行 swban base/gh/ensure，修复所选工具。"
+
+[checks."tool.uv"]
+enabled = true
+hint.en = "Run swban base/uv/ensure to repair the selected tool."
+hint.zh = "运行 swban base/uv/ensure，修复所选工具。"
+
+[checks."tool.python"]
+enabled = true
+hint.en = "Run swban base/python/ensure. If the environment is damaged or moved, remove only this Skill's .tools/python-env and retry."
+hint.zh = "运行 swban base/python/ensure；若环境损坏或已移动，仅删除本 Skill 的 .tools/python-env 后重试。"
 
 [checks."site.banyan"]
 enabled = true

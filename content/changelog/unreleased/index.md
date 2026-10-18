@@ -18,8 +18,12 @@ lastmod: 2026-10-18
   Skill and Module using `module/theme.toml`, without a `.git` directory.
   Recovery messages include the project URL,
   theme source ZIP and Module version commands.
-- Windows x64 CLI with Bun or Node, Git, Go, Hugo and optional GitHub CLI.
-  Portable downloads are checksum-verified; sites need no npm dependencies.
+- Windows x64 CLI with Node/npm, Git, Go, Hugo and optional Bun and GitHub CLI.
+  uv and Python 3.13 support isolated Python scripts and CLI packages in the Skill,
+  including sites that already use uv. The system PATH and Python registry stay unchanged.
+  Portable downloads are checksum-verified. npm prepares parser packages
+  on demand for `sync/ext` and content checks, isolated from parent workspaces;
+  site builds need no npm dependencies.
 - Name and product list views with shared column navigation and sorting.
   Site-owned taxonomies define product classifications.
 - Powered by page with the effective theme and Hugo versions, site build
@@ -44,10 +48,13 @@ lastmod: 2026-10-18
 ## Changed
 
 - Skill tool commands use `base/<tool>`, `base/<tool>/check` and
-  `base/<tool>/ensure`. The entry prepares its JS runtime and required tools on
-  demand; `base/ensure` is removed. Hugo and Go prepare Git as needed. The theme
-  no longer enables unused Git page information. GitHub CLI is prepared when used.
+  `base/<tool>/ensure`. The entry uses Node and prepares Node/npm and required tools
+  on demand; Bun remains an independent tool. `base/ensure` is removed.
+  Hugo and Go prepare Git as needed. The theme no longer enables unused Git page
+  information. GitHub CLI is prepared when used.
   Run npm and npx with `base/node/npm` and `base/node/npx`.
+  Prepare parser packages with `base/packages/ensure` before working offline;
+  use `--force` to reinstall. Doctor reports missing packages without installing them.
   Prepare browsers with `base/browser/ensure` and `base/browser/ensure.webkit`.
   `help/en [depth|path [depth]]` and `help/zh [depth|path [depth]]` list commands
   and categories or show full help. Depth can start below a selected path;
@@ -125,6 +132,7 @@ lastmod: 2026-10-18
 
 ## Fixed
 
+- Commands can reuse a prepared Python environment concurrently without installation-lock errors.
 - Build-version and browser prefetch checks accept the version JSON and valid empty inline rules.
 - Prefetch diagnostics display configuration and runtime state without a registered Service Worker.
 - Navigation sorting checks accept selectable text truncated by fixed field widths.

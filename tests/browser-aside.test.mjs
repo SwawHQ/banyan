@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {toggleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/aside/toggle/options.mjs';
 import {canvasLayoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/layout/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -27,9 +27,9 @@ function script(directory,text){write(path.join(directory,'probe.js'),text);fs.a
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-aside-'));skill=path.join(work,'skill');output=path.join(work,'public');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
-  const runtime=process.versions.bun?'bun':'node';
+  const runtime='node';
   write(path.join(skill,'.tools/bindings.json'),JSON.stringify({schema:'swaw-banyan.bindings/v1',runtime,tools:{
-    [runtime]:{source:'path',path:process.execPath,version:process.versions.bun??process.versions.node}
+    [runtime]:{source:'path',path:process.execPath,version:process.versions.node}
   }}));
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');

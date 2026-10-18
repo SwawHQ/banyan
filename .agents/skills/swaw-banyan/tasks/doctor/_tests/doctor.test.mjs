@@ -6,8 +6,8 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {parseCatalog} from '../catalog.mjs';
 import {readRelease} from '../banyan.mjs';
-import {readBindings,resolveBinding,writeBindings} from '../../_shared/toolchain/bindings.mjs';
-import {skillRoot} from '../../_shared/toolchain/manifest.mjs';
+import {readBindings,resolveBinding,writeBindings} from '../../_shared/tools/bindings.mjs';
+import {skillRoot} from '../../_shared/tools/manifest.mjs';
 
 const parent=fs.realpathSync(os.tmpdir()),original=readBindings(),release=readRelease();
 const runtime=resolveBinding(original.runtime,original).path;
@@ -35,6 +35,8 @@ function publicCli(command,owner=skill) {
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'swban-doctor-'));skill=path.join(work,'skill');site=path.join(work,'site');
   fs.cpSync(skillRoot,skill,{recursive:true,filter:file=>!file.split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
+  assert.ok(fs.existsSync(path.join(skillRoot,'node_modules')),'Run swban base/packages/ensure before doctor tests.');
+  fs.cpSync(path.join(skillRoot,'node_modules'),path.join(skill,'node_modules'),{recursive:true});
   bindings={schema:original.schema,runtime:original.runtime,tools:Object.fromEntries([...new Set([original.runtime,'git','go','hugo'])].map(name=>[name,{...resolveBinding(name,original),source:'path'}]))};
   writeBindings(bindings,path.join(skill,'.tools'));
   catalog=fs.readFileSync(path.join(skill,'references/doctor.toml'),'utf8');
@@ -69,6 +71,8 @@ test('doctor checks selected tools, skips optional tools and leaves bindings and
   assert.equal(result.status,0,result.stdout+result.stderr);
   assert.match(result.stdout,/site\.banyan: matched/);
   assert.match(result.stdout,/tool\.gh: not_selected/);
+  assert.match(result.stdout,/tool\.uv: not_selected/);
+  assert.match(result.stdout,/tool\.python: not_selected/);
   for(const [file,before] of files)assert.deepEqual(fs.readFileSync(path.join(skill,file)),before);
   assert.deepEqual(fs.readFileSync(path.join(site,'themes/banyan/theme.toml')),theme);
 });
@@ -121,7 +125,7 @@ test('doctor diagnoses malformed bindings instead of failing in the CLI prefligh
     const result=cli('doctor');
     assert.equal(result.status,1);assert.match(result.stdout,/tool\.runtime: error/);
     assert.match(result.stdout,/site\.banyan: blocked/);
-    assert.match(result.stderr,/swban base\/bun\/ensure/);
+    assert.match(result.stderr,/swban base\/node\/ensure/);
   } finally {fs.writeFileSync(file,before);}
 });
 
@@ -180,32 +184,61 @@ test('public doctor skips unreadable managed receipts and still reports malforme
   const fresh=path.join(work,'damaged-runtime');
   fs.cpSync(skill,fresh,{recursive:true,filter:file=>!file.split(path.sep).includes('.tools')});
   write(fresh,'.tools/bindings.json','{broken');
-  write(fresh,'.tools/bun/bun.exe','broken binary');write(fresh,'.tools/bun/install.json','{broken');
+  write(fresh,'.tools/node/node.exe','broken binary');write(fresh,'.tools/node/install.json','{broken');
   const result=publicCli('doctor',fresh);
   assert.equal(result.status,1,result.stdout+result.stderr);
   assert.match(result.stdout,/tool\.runtime: error/);
   assert.match(result.stderr,/\.tools\/bindings\.json/);
-  assert.equal(fs.readFileSync(path.join(fresh,'.tools/bun/install.json'),'utf8'),'{broken');
+  assert.equal(fs.readFileSync(path.join(fresh,'.tools/node/install.json'),'utf8'),'{broken');
   assert.equal(fs.existsSync(path.join(fresh,'.tools/cli.cmd')),false);
 });
 
+test('doctor reports outdated packages without changing their installation',()=>{
+  const lock=path.join(skill,'package-lock.json'),before=fs.readFileSync(lock);
+  const marker=path.join(skill,'node_modules/.swban-packages.json'),prepared=fs.readFileSync(marker);
+  const bindingsBefore=fs.readFileSync(path.join(skill,'.tools/bindings.json'));
+  fs.appendFileSync(lock,'\n');
+  const changed=fs.readFileSync(lock);
+  try {
+    const result=cli('doctor');
+    assert.equal(result.status,1);assert.match(result.stdout,/packages\.core: outdated/);
+    assert.match(result.stderr,/swban base\/packages\/ensure/);
+    assert.deepEqual(fs.readFileSync(lock),changed);
+    assert.deepEqual(fs.readFileSync(marker),prepared);
+    assert.deepEqual(fs.readFileSync(path.join(skill,'.tools/bindings.json')),bindingsBefore);
+  } finally {fs.writeFileSync(lock,before);}
+});
+test('doctor treats packages without an installation marker as outdated and does not repair them',()=>{
+  const marker=path.join(skill,'node_modules/.swban-packages.json'),before=fs.readFileSync(marker);
+  fs.unlinkSync(marker);
+  try {
+    const result=cli('doctor');
+    assert.equal(result.status,1);assert.match(result.stdout,/packages\.core: outdated/);
+    assert.match(result.stderr,/swban base\/packages\/ensure/);
+    assert.equal(fs.existsSync(marker),false);
+  } finally {fs.writeFileSync(marker,before);}
+});
 test('doctor help and an unprepared doctor do not create tools or install dependencies',()=>{
   const fresh=path.join(work,'fresh');
-  fs.cpSync(skill,fresh,{recursive:true,filter:file=>!file.split(path.sep).includes('.tools')});
+  fs.cpSync(skill,fresh,{recursive:true,filter:file=>!file.split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
+  const manifest=fs.readFileSync(path.join(fresh,'package.json')),lock=fs.readFileSync(path.join(fresh,'package-lock.json'));
   assert.equal(cli('doctor',['--help'],site,fresh).status,0);
   const result=cli('doctor',[],site,fresh);
-  assert.equal(result.status,1);assert.match(result.stdout,/tool\.runtime: error/);
+  assert.equal(result.status,1);assert.match(result.stdout,/packages\.core: missing/);
+  assert.match(result.stderr,/swban base\/packages\/ensure/);
   assert.equal(fs.existsSync(path.join(fresh,'.tools')),false);
-  for(const args of [['--unknown'],['one','two']])assert.equal(cli('doctor',args).status,1);
+  assert.equal(fs.existsSync(path.join(fresh,'node_modules')),false);
+  assert.deepEqual(fs.readFileSync(path.join(fresh,'package.json')),manifest);
+  assert.deepEqual(fs.readFileSync(path.join(fresh,'package-lock.json')),lock);
+  for(const args of [['--unknown'],['one','two']])assert.equal(cli('doctor',args,site,fresh).status,1);
   assert.match(cli('check/banyan').stderr,/unknown_command:check\/banyan/);
 });
-
 test('catalog rejects malformed TOML, unknown check IDs, invalid switches and translation templates',()=>{
-  assert.equal(Object.keys(parseCatalog(catalog).checks).length,8);
+  assert.equal(Object.keys(parseCatalog(catalog).checks).length,10);
   for(const text of ['{',catalog.replace('tool.runtime','tool.unknown'),catalog.replace('enabled = true','enabled = "true"'),
     catalog.replace('hint.zh =','hint.fr ='),catalog.replaceAll('{version}','{unknown}'),
     catalog.replace('schema_version = 1','schema_version = 2'),
-    catalog.replace('hint.en = "Run swban base/bun/ensure or swban base/node/ensure to prepare the runtime."','hint.en = "{module}"')]) {
+    catalog.replace('hint.en = "Run swban base/node/ensure to prepare the runtime."','hint.en = "{module}"')]) {
     assert.throws(()=>parseCatalog(text));
   }
 });

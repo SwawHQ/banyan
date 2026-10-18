@@ -5,8 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {assess,readRelease} from '../banyan.mjs';
-import {readBindings,resolveBinding,writeBindings} from '../../_shared/toolchain/bindings.mjs';
-import {skillRoot} from '../../_shared/toolchain/manifest.mjs';
+import {readBindings,resolveBinding,writeBindings} from '../../_shared/tools/bindings.mjs';
+import {skillRoot} from '../../_shared/tools/manifest.mjs';
 
 const release=readRelease(),parent=fs.realpathSync.native(os.tmpdir());
 function write(root,file,value) {
@@ -47,6 +47,8 @@ test('a source archive builds and runs site tasks while doctor diagnoses mixed v
   const bindings=readBindings(),runtime=bindings.runtime;
   const tools=Object.fromEntries([...new Set([runtime,'git','go','hugo'])].map(name=>[name,{...resolveBinding(name,bindings),source:'path'}]));
   fs.cpSync(skillRoot,skill,{recursive:true,filter:file=>!file.split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
+  assert.ok(fs.existsSync(path.join(skillRoot,'node_modules')),'Run swban base/packages/ensure before doctor tests.');
+  fs.cpSync(path.join(skillRoot,'node_modules'),path.join(skill,'node_modules'),{recursive:true});
   writeBindings({schema:bindings.schema,runtime,tools},path.join(skill,'.tools'));
   write(root,'hugo.toml','baseURL="https://example.test/"\ndisableKinds=["taxonomy","term","rss","sitemap"]\n[[module.imports]]\npath='+JSON.stringify(release.module)+'\n');
   const goMod=replacement=>'module example.test/archive\n\ngo 1.18\nrequire '+release.module+' v0.0.0\nreplace '+release.module+' => '+replacement+'\n';

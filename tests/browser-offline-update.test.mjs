@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
 import {visit,update,naturallyActivate,observe,quiet,settled} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
 import {waitForState} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/state.mjs';

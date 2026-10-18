@@ -1,13 +1,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {parse} from '../../_shared/_vendor/yaml.mjs';
+import {parseYaml as parse} from '../../_shared/parsers.mjs';
+import {ensureDependencies} from '../../_shared/dependencies.mjs';
 import {siteFile} from '../../_shared/files.mjs';
 import {prepareValidators} from './validators.mjs';
 
 export const registryFile = 'data/external-resources.yaml';
 
 export async function readResources(siteRoot, requestedIds) {
-  const registry = parse(await fs.readFile(path.join(siteRoot,registryFile),'utf8'));
+  const text = await fs.readFile(path.join(siteRoot,registryFile),'utf8');
+  await ensureDependencies();
+  const registry = parse(text);
   if (!Array.isArray(registry?.resources)) throw new Error(registryFile + ' must contain a resources list');
   const byId = new Map();
   for (const entry of registry.resources) {

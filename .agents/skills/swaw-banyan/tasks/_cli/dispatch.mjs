@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {skillRoot} from '../_shared/toolchain/manifest.mjs';
-import {execute} from '../_shared/toolchain/process.mjs';
+import {skillRoot} from '../_shared/tools/manifest.mjs';
+import {execute} from '../_shared/tools/process.mjs';
 
 export function taskEntry(command) {
   const unknown = () => { throw new Error(`unknown_command:${command}; run swban help`); };

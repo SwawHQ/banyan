@@ -1,30 +1,37 @@
 # Source tests
 
 Run from the Banyan repository root with the installed Skill's `swban.cmd`.
-Prepare Hugo, Go and Git first. Browser suites also need the Skill's Chromium
-and WebKit. Tests use system temporary directories and remove their fixtures;
+Run `swban base/packages/ensure` and prepare Hugo, Go and Git first.
+Browser suites also need the Skill's Chromium and WebKit. Tests use system
+temporary directories and remove their fixtures;
 Hugo caches and resources stay there. They do not change site content or Git state.
 
-Root suites support Bun and Node, except `toolchain.test.mjs`.
-Select the files explicitly in PowerShell:
+Run root suites with Node, except `tools.test.mjs`. Select the files explicitly
+in PowerShell:
 
 ```powershell
-$taskTests = Get-ChildItem ./tests -Filter '*.test.mjs' -File | Where-Object Name -ne 'toolchain.test.mjs'
-.\.agents\skills\swaw-banyan\swban.cmd base/bun test $taskTests.FullName --timeout 60000
+$taskTests = Get-ChildItem ./tests -Filter '*.test.mjs' -File | Where-Object Name -ne 'tools.test.mjs'
 .\.agents\skills\swaw-banyan\swban.cmd base/node --test $taskTests.FullName
-.\tests\toolchain.ps1
+.\tests\tools.ps1
 ```
 
-Run `toolchain.ps1` with Windows PowerShell 5.1. It compiles a native fixture
-and runs the installer tests with portable Bun and a system Node.
-Toolchain fixtures do not log in or publish.
+Run `tools.ps1` with Windows PowerShell 5.1. It compiles a native fixture
+and uses Bun's test runner to test Node-based tool preparation.
+Tool fixtures do not log in or publish.
 
-Generic help, doctor, theme resolution, delivery, fingerprint and asset-report tests ship with the Skill:
+Generic package, archive, help, doctor, theme resolution, delivery, fingerprint
+and asset-report tests ship with the Skill:
 
 ```powershell
-$skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/check/delivery/_tests','./.agents/skills/swaw-banyan/tasks/doctor/_tests','./.agents/skills/swaw-banyan/tasks/help/_tests','./.agents/skills/swaw-banyan/tasks/report/size/assets/_tests') -Filter '*.test.mjs' -File
+$skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_shared/_tests','./.agents/skills/swaw-banyan/tasks/_shared/tools/_tests','./.agents/skills/swaw-banyan/tasks/base/uv/_tests','./.agents/skills/swaw-banyan/tasks/check/delivery/_tests','./.agents/skills/swaw-banyan/tasks/doctor/_tests','./.agents/skills/swaw-banyan/tasks/help/_tests','./.agents/skills/swaw-banyan/tasks/report/size/assets/_tests') -Filter '*.test.mjs' -File
 .\.agents\skills\swaw-banyan\swban.cmd base/node --test $skillTests.FullName
 ```
+
+Python integration checks use prepared local files. Set `BANYAN_TEST_UV` to
+`uv.exe`, `BANYAN_TEST_UV_ARCHIVE` to its pinned ZIP with `LICENSE-MIT` and
+`LICENSE-APACHE` beside it, and `BANYAN_TEST_PYTHON_DIR` to a uv-managed Python
+installation directory. The checks copy them into temporary Skills and use
+local wheel fixtures. Without these inputs, integration cases are skipped.
 
 | Suite | Responsibility |
 | --- | --- |
@@ -50,19 +57,20 @@ faults. Site-specific article samples and copy stay in consumer tests.
 Run source-domain scripts separately:
 
 ```text
-swban base/bun tests/csp/build.mjs              #Inline hashes and minification
-swban base/bun tests/prefetch/build.mjs         #Rules, config variants and CSP
-swban base/bun tests/prefetch/policy.mjs        #Prefetch decisions
-swban base/bun tests/nav/state.mjs              #Navigation, selection and sorting
-swban base/bun tests/nav/rebuild.mjs            #Incremental ancestor-title rebuilds
-swban base/bun tests/collections/build.mjs      #Content overlays and list models
-swban base/bun tests/palette/build.mjs          #Palette overrides and contrast
-swban base/bun tests/output/budget.mjs <build>  #Repository output budgets
+swban base/node tests/csp/build.mjs              #Inline hashes and minification
+swban base/node tests/prefetch/build.mjs         #Rules, config variants and CSP
+swban base/node tests/prefetch/policy.mjs        #Prefetch decisions
+swban base/node tests/nav/state.mjs              #Navigation, selection and sorting
+swban base/node tests/nav/rebuild.mjs            #Incremental ancestor-title rebuilds
+swban base/node tests/collections/build.mjs      #Content overlays and list models
+swban base/node tests/palette/build.mjs          #Palette overrides and contrast
+swban base/node tests/output/budget.mjs <build>  #Repository output budgets
 ```
 
-These scripts also support Node. JS fixtures use Hugo `js.Build` with native
+Use `base/bun` to check these scripts with Bun. JS fixtures use Hugo `js.Build` with native
 asset files and source maps. Collections and palette scripts use the prepared
-Skill browsers. No source suite needs a root npm package or root Playwright.
+Skill browsers. Package dependencies stay inside the Skill; the repository
+root needs no npm package or Playwright installation.
 
 `output/budget.mjs` reads an existing minified build. Its fixed thresholds are
 repository policy; installed Skill checks validate contracts and reports measure

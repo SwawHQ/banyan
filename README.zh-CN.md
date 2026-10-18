@@ -39,9 +39,11 @@
 .\.agents\skills\swaw-banyan\swban.cmd base/hugo server -D --disableFastRender --port 13241  #启动预览
 ```
 
-入口会按需准备 JS 运行时、Git、Go 和 Hugo：优先复用兼容工具，缺少时自动下载。
-JS 运行时可用 Bun 或 Node；两者均不可用时下载便携版 Bun。
+入口会按需准备 Node/npm、Git、Go 和 Hugo：优先复用兼容工具，缺少时自动下载。
+Bun 作为可选工具，通过 `base/bun` 使用。
 GitHub CLI 在使用 `base/gh` 时准备。
+`base/python` 按需准备隔离的 Python 环境；`base/uv tool run` 运行 Python CLI。
+使用方法见 [Python 工具](.agents/skills/swaw-banyan/references/python.md)。
 打开 <http://127.0.0.1:13241/> 查看站点。
 
 安装到自己的站点，见[开始使用](content/docs/guide/getting-started/index.zh.md)；
@@ -63,6 +65,6 @@ GitHub CLI 在使用 `base/gh` 时准备。
 
 ## 许可证
 
-[MIT 许可证](LICENSE)
-Copyright (c) 2026 WY Swaw LLC  https://swaw.com
+[MIT 许可证](LICENSE)  
+Copyright (c) 2026 WY Swaw LLC (https://swaw.com, https://github.com/SwawHQ)
 

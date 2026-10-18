@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
-import {toolExecutable} from '../../../_shared/toolchain/operations.mjs';
+import {toolExecutable} from '../../../_shared/tools/operations.mjs';
 import {hugoEnvironment,prepareHugo} from '../../../base/hugo/run.mjs';
 import {builds} from '../pwa/_shared/update.mjs';
 

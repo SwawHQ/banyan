@@ -1,6 +1,6 @@
 ---
 name: swaw-banyan
-description: 专用于：应用、定制、开发-测试、检查-部署 Swaw Banyan Hugo Theme，自带 Hugo、Go、Git、gh（GitHub CLI）、Bun/Node 准备。
+description: 协助用户应用、定制、开发-测试、检查-部署、乃至日常运维基于 Swaw Banyan Hugo Theme 的站点，自带 Hugo、Go、Git、gh（GitHub CLI）、Node/npm、Bun、uv/Python 准备。
 license: MIT
 metadata:
   version: "0.1.0"
@@ -8,7 +8,7 @@ metadata:
 ---
 
 
-仅安装目录应存在`swban.cmd`命令入口，目前支持 Windows x64。
+技能安装目录应存在`swban.cmd`命令入口，目前支持 Windows x64。
 
 
 ```text
@@ -47,6 +47,7 @@ swban <command> --help    #查看参数和默认值
 | 检查交付产物和指纹发布路径 | [交付检查](references/delivery.md) |
 | 用 `sync/ext` 下载已声明的外部资源 | [外部资源](references/external-resources.md) |
 | 同步生成的 EdgeOne 配置或规划部署 | [EdgeOne](references/edgeone.md) |
+| 使用隔离的 Python 环境和 CLI | [Python 工具](references/python.md) |
 | 添加任务或编排站点测试套件 | [任务维护](references/tasks.md) |
 
 托管构建使用平台自己的工具链；EdgeOne 任务只同步配置。

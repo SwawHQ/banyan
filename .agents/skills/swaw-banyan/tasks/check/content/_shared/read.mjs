@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {parse as parseToml} from '../../../_shared/_vendor/toml.mjs';
-import {parse as parseYaml} from '../../../_shared/_vendor/yaml.mjs';
+import {parseToml,parseYaml} from '../../../_shared/parsers.mjs';
+import {ensureDependencies} from '../../../_shared/dependencies.mjs';
 import {readHugoConfig} from '../../../_shared/hugo.mjs';
 import {filesUnder,relativeName} from '../../../_shared/output.mjs';
 
@@ -45,6 +45,7 @@ export async function readContent(site) {
     const candidates = stat.isDirectory() ? await filesUnder(source) : [source];
     for (const file of candidates) if (/\.(?:md|markdown|html)$/i.test(file)) files.add(file);
   }
+  if (files.size) await ensureDependencies();
   const records = [];
   for (const file of [...files].sort()) {
     const relativePath = relativeName(root,file);

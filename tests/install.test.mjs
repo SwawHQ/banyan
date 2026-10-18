@@ -7,7 +7,7 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {zip} from './fixtures/zip.mjs';
 import {filesUnder,relativeName} from '../.agents/skills/swaw-banyan/tasks/_shared/output.mjs';
-import {readBindings,resolveBinding,writeBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/bindings.mjs';
+import {readBindings,resolveBinding,writeBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/bindings.mjs';
 import {hugoEnvironment} from '../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
 import {readRelease,inspect} from '../.agents/skills/swaw-banyan/tasks/doctor/banyan.mjs';
 
@@ -88,9 +88,10 @@ before(async()=>{
   const help=spawnSync(process.execPath,[path.join(installed,'tasks/_cli/main.mjs'),'help/en'],{encoding:'utf8',timeout:15000});
   assert.ifError(help.error);assert.equal(help.status,0,help.stdout+help.stderr);
   assert.ok(help.stdout.includes('doctor'));assert.equal(fs.existsSync(path.join(installed,'.tools')),false);
+  fs.cpSync(path.join(skill,'node_modules'),path.join(installed,'node_modules'),{recursive:true});
   const tools=Object.fromEntries(['hugo','go','git'].map(name=>[name,{...resolveBinding(name),source:'path'}]));
-  const runtime=process.versions.bun?'bun':'node';
-  tools[runtime]={source:'path',path:process.execPath,version:process.versions.bun??process.versions.node};
+  const runtime='node';
+  tools[runtime]={source:'path',path:process.execPath,version:process.versions.node};
   writeBindings({schema:'swaw-banyan.bindings/v1',runtime,tools},path.join(installed,'.tools'));
 });
 after(()=>{

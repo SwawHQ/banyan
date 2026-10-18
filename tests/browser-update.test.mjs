@@ -9,7 +9,7 @@ import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browse
 import {active} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/state.mjs';
 import {panelState} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
 import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
-import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {command as lifecycleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/lifecycle/options.mjs';
 import {command as languageCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/language/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -37,9 +37,9 @@ function languageCLI(page=language,to='zh',directory=old){
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-update-'));skill=path.join(work,'skill');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
-  const runtime=process.versions.bun?'bun':'node';
+  const runtime='node';
   write(path.join(skill,'.tools/bindings.json'),JSON.stringify({schema:'swaw-banyan.bindings/v1',runtime,tools:{
-    [runtime]:{source:'path',path:process.execPath,version:process.versions.bun??process.versions.node}
+    [runtime]:{source:'path',path:process.execPath,version:process.versions.node}
   }}));
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
