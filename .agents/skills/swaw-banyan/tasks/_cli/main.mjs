@@ -15,7 +15,7 @@ try {
   let executable=process.execPath;
   if (showingHelp&&!native&&!/^help(?:\/(?:en|zh))?$/.test(command)) { console.log(taskHelp(command)); }
   else {
-    if (!/^help(?:\/(?:en|zh))?$/.test(command)&&!/^base\/[^/]+\/check$/.test(command)) {
+    if (command!=='doctor'&&!/^help(?:\/(?:en|zh))?$/.test(command)&&!/^base\/[^/]+\/check$/.test(command)) {
       const record=readBindings();
       if (!record.runtime||preparing) {
         const runtime=await prepareRuntime();
@@ -23,10 +23,6 @@ try {
       } else if (fs.realpathSync(executable)!==fs.realpathSync(resolveBinding(record.runtime,record).path)) {
         throw new Error(`runtime_binding_unusable; run swban base/${record.runtime}/ensure`);
       }
-    }
-    if (!/^(?:help|base)(?:\/|$)/.test(command)&&command!=='check/banyan') {
-      const {requirePairing}=await import('./pairing.mjs');
-      await requirePairing(command,args);
     }
     process.exitCode=await runTask(command,args,executable);
   }

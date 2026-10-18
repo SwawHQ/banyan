@@ -103,7 +103,7 @@ try {
         & $available (Join-Path $skillRoot 'tasks/_cli/main.mjs') @args
         exit $LASTEXITCODE
     }
-    if ($helpCommand -cmatch '^base/[^/]+/check$') { throw 'runtime_not_ready; run swban base/bun/ensure or base/node/ensure' }
+    if ($helpCommand -eq 'doctor' -or $helpCommand -cmatch '^base/[^/]+/check$') { throw 'runtime_not_ready; run swban base/bun/ensure or base/node/ensure' }
     $definitions = @($manifest.platforms.'windows-x64'.tools | Where-Object name -eq 'bun')
     if ($definitions.Count -ne 1) { throw 'missing_or_duplicate_runtime:bun' }
     $definition = $definitions[0]

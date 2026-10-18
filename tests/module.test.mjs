@@ -7,13 +7,14 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {zip} from './fixtures/zip.mjs';
 import {parse as parseToml} from '../.agents/skills/swaw-banyan/tasks/_shared/_vendor/toml.mjs';
-import {readRelease,moduleFromGraph,assess,inspect} from '../.agents/skills/swaw-banyan/tasks/check/banyan/inspect.mjs';
+import {readRelease,moduleFromGraph,assess,inspect} from '../.agents/skills/swaw-banyan/tasks/doctor/banyan.mjs';
+import {readBindings,resolveBinding,writeBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/bindings.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/operations.mjs';
 import {hugoEnvironment} from '../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
 
 const repository = fileURLToPath(new URL('../',import.meta.url));
 const skill = path.join(repository,'.agents/skills/swaw-banyan');
-const entry = path.join(skill,'tasks/check/banyan/entry.mjs');
+let entry;
 const release = readRelease(), expected = 'v'+release.version;
 const different = expected === 'v0.2.0' ? 'v0.3.0' : 'v0.2.0';
 const parent = fs.realpathSync(os.tmpdir());
@@ -51,7 +52,7 @@ function themeSite({version=release.version,name='banyan',themesDir='themes',lin
   return {root,directory};
 }
 function cli(root,args=[]) {
-  const result = spawnSync(process.execPath,[entry,...args],{cwd:root,encoding:'utf8',timeout:30000});
+  const result = spawnSync(process.execPath,[entry,...args],{cwd:root,env:{...process.env,PATH:""},encoding:'utf8',timeout:30000});
   assert.ifError(result.error);
   return result;
 }
@@ -63,6 +64,13 @@ function hugo(root,args) {
 }
 before(() => {
   work = fs.mkdtempSync(path.join(parent,'banyan-module-'));
+  const installed=path.join(work,'skill');
+  fs.cpSync(skill,installed,{recursive:true,filter:file=>!file.split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
+  const runtime=process.versions.bun?'bun':'node',record=readBindings();
+  const tools=Object.fromEntries(['git','go','hugo'].map(name=>[name,{...resolveBinding(name,record),source:'path'}]));
+  tools[runtime]={source:'path',path:process.execPath,version:process.versions.bun??process.versions.node};
+  writeBindings({schema:record.schema,runtime,tools},path.join(installed,'.tools'));
+  entry=path.join(installed,'tasks/doctor/entry.mjs');
   const settings = {HUGO_CACHEDIR:path.join(work,'cache'),HUGO_RESOURCEDIR:path.join(work,'resources'),
     HUGO_MODULE_PROXY:pathToFileURL(path.join(work,'proxy')).href,GOSUMDB:'off',
     GOPRIVATE:'',GONOPROXY:'',GONOSUMDB:'',GIT_OPTIONAL_LOCKS:'0'};
@@ -102,7 +110,7 @@ test('real Hugo resolves a pinned version and CLI reports matching versions',() 
   assert.equal(result.module.version,expected);
   const command = cli(root);
   assert.equal(command.status,0,command.stdout+command.stderr);
-  assert.match(command.stdout,/Pairing: matched/);
+  assert.match(command.stdout,/site\.banyan: matched/);
 });
 
 test('theme configuration resolves both a versioned Module and a local theme directory',()=>{
@@ -122,10 +130,10 @@ test('theme directory versions detect mismatch and missing metadata without chan
   const {root,directory}=themeSite({version:different.slice(1)}),file=path.join(directory,'theme.toml');
   const before=fs.readFileSync(file,'utf8');
   const result=inspect(root);
-  assert.equal(result.state,'mismatch');assert.equal(cli(root).status,1);
-  assert.match(result.issues.join('\n'),/https:\/\/github.com\/SwawHQ\/banyan\/releases/);
-  assert.ok(result.issues[0].includes('/archive/refs/tags/'+expected+'.zip'));
-  assert.ok(result.issues[0].includes('module/ from project tag '+expected));
+  const command=cli(root);
+  assert.equal(result.state,'mismatch');assert.equal(command.status,1);
+  assert.match(command.stderr,/https:\/\/github.com\/SwawHQ\/banyan\/releases/);
+  assert.ok(command.stderr.includes('/archive/refs/tags/'+expected+'.zip'));
   assert.equal(fs.readFileSync(file,'utf8'),before);
   const missing=themeSite({version:null}).root;
   assert.equal(inspect(missing).state,'unverified');assert.equal(cli(missing).status,1);
@@ -174,15 +182,14 @@ test('actual hugo mod vendor remains authoritative after go.mod changes',() => {
   const list = path.join(root,'_vendor/modules.txt');
   write(list,fs.readFileSync(list,'utf8').replace(expected,different));
   assert.equal(inspect(root).state,'mismatch');
-  assert.match(inspect(root).issues.join('\n'),/then swban base\/hugo mod vendor/);
-  assert.equal(cli(root).status,1);
+  const command=cli(root);assert.equal(command.status,1);
+  assert.match(command.stderr,/swban base\/hugo mod vendor/);
 });
 
 test('same checkout is development, including a Skill junction; another local copy is unverified',() => {
   const root = site({replacement:JSON.stringify(path.join(repository,'module').replaceAll('\\','/'))});
   const result = inspect(root);
   assert.equal(result.state,'development');
-  assert.equal(cli(root).status,0);
   const link = path.join(work,'skill link');
   fs.symlinkSync(skill,link,process.platform === 'win32' ? 'junction' : 'dir');
   assert.equal(assess(result.module,release,{root:link,site:root}).state,'development');
@@ -204,14 +211,14 @@ test('help works without a site; bad arguments and resolution errors fail',() =>
   for (const flag of ['--help','-h']) {
     const result = cli(work,[flag]);
     assert.equal(result.status,0,result.stderr);
-    assert.match(result.stdout,/swban check\/banyan/);
+    assert.match(result.stdout,/swban doctor/);
   }
   assert.equal(cli(work,['--unknown']).status,1);
   assert.equal(cli(work,['one','two']).status,1);
   const broken = site({replacement:'./does-not-exist'});
   const failure = cli(broken);
   assert.equal(failure.status,1);
-  assert.doesNotMatch(failure.stdout,/Pairing: matched/);
+  assert.doesNotMatch(failure.stdout,/site\.banyan: matched/);
 });
 
 test('unversioned, pseudo-version and conflicting graph entries cannot masquerade as release pairs',() => {

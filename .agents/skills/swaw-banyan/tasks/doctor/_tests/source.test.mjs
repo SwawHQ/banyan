@@ -4,9 +4,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {assess,readRelease} from '../inspect.mjs';
-import {readBindings,resolveBinding,writeBindings} from '../../../_shared/toolchain/bindings.mjs';
-import {skillRoot} from '../../../_shared/toolchain/manifest.mjs';
+import {assess,readRelease} from '../banyan.mjs';
+import {readBindings,resolveBinding,writeBindings} from '../../_shared/toolchain/bindings.mjs';
+import {skillRoot} from '../../_shared/toolchain/manifest.mjs';
 
 const release=readRelease(),parent=fs.realpathSync.native(os.tmpdir());
 function write(root,file,value) {
@@ -43,7 +43,7 @@ test('archive pairing uses the sibling source version and rejects missing identi
   assert.equal(assess({...source,directory:external},release,{root:skill,site:root}).state,'unverified');
 }));
 
-test('a source archive builds and runs site tasks while mixed versions remain blocked',()=>fixture(({root,skill,module})=>{
+test('a source archive builds and runs site tasks while doctor diagnoses mixed versions',()=>fixture(({root,skill,module})=>{
   const bindings=readBindings(),runtime=bindings.runtime;
   const tools=Object.fromEntries([...new Set([runtime,'git','go','hugo'])].map(name=>[name,{...resolveBinding(name,bindings),source:'path'}]));
   fs.cpSync(skillRoot,skill,{recursive:true,filter:file=>!file.split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
@@ -59,15 +59,17 @@ test('a source archive builds and runs site tasks while mixed versions remain bl
     assert.ifError(result.error);return result;
   };
   const build=cli('base/hugo',['--noBuildLock','--destination',output]);assert.equal(build.status,0,build.stdout+build.stderr);
-  const diagnostic=cli('check/banyan');assert.equal(diagnostic.status,0,diagnostic.stdout+diagnostic.stderr);assert.match(diagnostic.stdout,/Pairing: matched/);
+  const diagnostic=cli('doctor');assert.equal(diagnostic.status,0,diagnostic.stdout+diagnostic.stderr);assert.match(diagnostic.stdout,/site\.banyan: matched/);
   for(const command of ['check/html/headings','report/size/assets']) {
     const result=cli(command,[output]);assert.equal(result.status,0,result.stdout+result.stderr);
   }
   write(module,'theme.toml','name="banyan"\nversion="99.99.99"\n');
-  const mismatch=cli('check/html/headings',[output]);assert.equal(mismatch.status,1);assert.match(mismatch.stderr,/Banyan pairing: mismatch/);
+  const mismatch=cli('doctor');assert.equal(mismatch.status,1);assert.match(mismatch.stdout,/site\.banyan: mismatch/);
+  assert.equal(cli('check/html/headings',[output]).status,0);
   fs.cpSync(module,path.join(root,'external'),{recursive:true});
   write(root,'external/theme.toml','name="banyan"\nversion='+JSON.stringify(release.version)+'\n');
   write(root,'go.mod',goMod('./external'));
-  const external=cli('check/html/headings',[output]);assert.equal(external.status,1);assert.match(external.stderr,/Banyan pairing: unverified/);
+  const external=cli('doctor');assert.equal(external.status,1);assert.match(external.stdout,/site\.banyan: unverified/);
+  assert.equal(cli('check/html/headings',[output]).status,0);
   assert.equal(fs.existsSync(path.join(root,'.git')),false);
 }));

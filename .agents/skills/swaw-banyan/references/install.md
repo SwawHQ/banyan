@@ -7,14 +7,15 @@ target site's root. The entry prepares the JS runtime and required tools on dema
 
 ## Inspect an existing site
 
-Run `swban check/banyan`. It reads Hugo's dependency graph, including effective
+After installing or changing the theme or tools, run `swban doctor`. It checks
+selected tools and reads Hugo's dependency graph, including effective
 vendor versions, replacements and theme directories. A theme selected with
 `theme = "banyan"` is checked using its `theme.toml` name and version. Hugo supplies
 the active directory, including custom `themesDir` settings and renamed folders.
 Resolution may populate Hugo's cache and
 dependency sums; it does not request a version upgrade.
-The swban entry performs the same check before site tasks. Only `matched` and
-`development` continue. Help, `base/` tools and `check/banyan` remain available.
+Ordinary commands do not check theme pairing. Doctor reports `matched` or
+`development` for a usable pair; other states need attention.
 
 | Result | Action |
 | --- | --- |
@@ -38,7 +39,8 @@ root is the `module/` subdirectory. Sites still request `<module>@vX.Y.Z`.
 
 ## Add the Module
 
-Hugo commands and pairing checks prepare Git, Go and Hugo as needed.
+Hugo commands prepare Git, Go and Hugo as needed. For an existing site with a
+fresh Skill, run `swban base/hugo version` before doctor.
 
 If the site has no `go.mod`, initialize its own module identity first:
 
@@ -82,7 +84,7 @@ at `https://github.com/SwawHQ/banyan/archive/refs/tags/vX.Y.Z.zip`.
   `theme.toml`, `layouts/` and `assets/`. Review local theme edits before replacement;
   keep site customizations in the site. Do not change only `theme.toml` version.
 
-Run `swban check/banyan` after aligning the Skill and theme. Use a fixed release
+Run `swban doctor` after aligning the Skill and theme. Use a fixed release
 instead of `@latest` when choosing a known pair.
 
 ## Test an unpublished Module
@@ -101,7 +103,7 @@ replace github.com/SwawHQ/banyan/module => D:/2026.7/banyan/module
 ```
 
 Change the replacement path to your checkout's `module/` directory. Keep the
-Hugo import above. `check/banyan` reports `development` when this Module and
+Hugo import above. `doctor` reports `development` when this Module and
 the called Skill belong to the same Git checkout. An independently copied Skill
 with a local replacement reports `unverified`.
 After release, verify a fixed version in a fresh site without a replacement.
@@ -230,7 +232,7 @@ Do not edit output files as configuration. See [delivery checks](delivery.md).
 ## Verify the result
 
 ```text
-swban check/banyan
+swban doctor
 swban base/hugo --minify --destination ./preview
 swban check/delivery ./preview
 swban check/csp ./preview

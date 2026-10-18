@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import {hugoEnvironment} from '../../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
-import {readRelease} from '../../.agents/skills/swaw-banyan/tasks/check/banyan/inspect.mjs';
+import {readRelease} from '../../.agents/skills/swaw-banyan/tasks/doctor/banyan.mjs';
 import {resolveBinding} from '../../.agents/skills/swaw-banyan/tasks/_shared/toolchain/bindings.mjs';
 
 export const fixtureTools=()=>Object.fromEntries(['git','go','hugo'].map(name=>[name,{...resolveBinding(name),source:'path'}]));

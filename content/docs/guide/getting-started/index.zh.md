@@ -26,10 +26,10 @@ Banyan 分为两部分：Hugo Module 提供主题，`swaw-banyan` Agent Skill
   让 Agent 按 Skill 配置站点并安装匹配的 Module。复制 Skill 本身不会运行命令。
 - **已有 Module：** 在站点中查看 `hugo mod graph`，从对应仓库标签安装 Skill。
   仅安装配套 Skill 不需要升级 Module。
-- **两者均已安装：** 从站点根目录运行 `swban check/banyan`。
+- **两者均已安装：** 从站点根目录运行 `swban doctor`。
   版本不匹配时，使用配套 Skill，或按计划升级 Module。
 
-以 `theme = "banyan"` 加载本地主题目录时，`check/banyan` 也会检查其
+以 `theme = "banyan"` 加载本地主题目录时，`doctor` 也会检查其
 `theme.toml` 版本；缺少版本时报告 `unverified`。
 
 版本以 [SKILL.md metadata](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/SKILL.md)
@@ -42,7 +42,8 @@ Module 标签 `module/v0.1.0` 指向同一提交。`module/` 前缀供 Go 识别
 
 下文中的 `swban` 代表已安装 Skill 的 `.\.agents\skills\swaw-banyan\swban.cmd`。
 从目标站点根目录按路径调用。入口按需准备 JS 运行时、Git、Go 和 Hugo。
-站点任务会先检查 Skill 与主题版本配对；帮助和基础工具仍可用于安装和调整版本。
+首次准备构建工具可运行 `swban base/hugo version`。安装或调整主题、工具后，运行
+`swban doctor`；普通命令不检查版本配对。
 
 按 Skill 的[安装说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/install.md)
 初始化站点 Module、固定主题版本，并创建首页和分类 bundle。
@@ -67,9 +68,9 @@ Module 标签 `module/v0.1.0` 指向同一提交。`module/` 前缀供 Go 识别
   替换前处理主题中的本地改动；站点定制应保留在站点目录。
 
 ```text
-swban base/hugo mod get github.com/SwawHQ/banyan/module@vX.Y.Z     #选择 Module 版本
-swban base/hugo mod vendor                                         #更新 vendor 文件（使用时）
-swban check/banyan                                                 #检查 Skill 与主题配对
+swban base/hugo mod get github.com/SwawHQ/banyan/module@vX.Y.Z  #选择 Module 版本
+swban base/hugo mod vendor                                      #更新 vendor 文件（使用时）
+swban doctor                                                    #检查 Skill 与主题配对
 ```
 
 只修改 `SKILL.md` 或 `theme.toml` 中的版本号，不会更新代码。

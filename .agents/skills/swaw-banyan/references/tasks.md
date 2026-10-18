@@ -28,21 +28,20 @@ Node package managers use `base/node/npm` and `base/node/npx`. The CLI prepares
 its runtime when executing a task. Domain code uses `prepareTools` for missing
 tools; Hugo callers use `prepareHugo`, which prepares Git, Go and Hugo.
 Existing bindings stay selected.
-JSON task help and tool status checks do not prepare tools. Native help runs the tool.
+JSON task help, doctor and tool status checks do not prepare tools. Native help runs the tool.
 `help`, `help/en` and `help/zh` are separate tasks. `tasks/_cli/` owns
 dispatch and JS bootstrap. `scripts/bootstrap.ps1` handles Windows cold start.
 Reusable tool APIs stay in ordinary modules, not CLI entries.
 
-The CLI checks Banyan pairing before each site task, using the same inspector as
-`check/banyan`. Help, `base/` and `check/banyan` remain available on failure.
-Pairing uses the working directory unless a task accepts a source-site directory.
-Keep source-directory selection in `_cli/pairing.mjs` aligned with task arguments.
-Output directories and HTTP URLs do not change the source site being checked.
+Doctor checks selected tools and Banyan pairing. Ordinary tasks do not run
+pairing checks. Check switches and translated repair hints live in
+references/doctor.toml; check implementations stay in tasks/doctor/.
+Doctor reports problems without installing or repairing tools.
 
 ## Preserve the existing contracts
 
 Hugo resolves configuration, modules and content mounts. Do not reproduce its
-inheritance or module resolver. `check/banyan` reads release metadata from
+inheritance or module resolver. `doctor` reads release metadata from
 `SKILL.md`; tool compatibility and download definitions live in `toolchain.json`.
 
 Argument declarations stay in `tasks/check/browser/_shared/options.mjs` and

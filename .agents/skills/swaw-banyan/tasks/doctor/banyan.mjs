@@ -2,12 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {parse} from '../../_shared/_vendor/yaml.mjs';
-import {parse as parseToml} from '../../_shared/_vendor/toml.mjs';
-import {toolExecutable} from '../../_shared/toolchain/operations.mjs';
-import {hugoEnvironment} from '../../base/hugo/run.mjs';
+import {parse} from '../_shared/_vendor/yaml.mjs';
+import {parse as parseToml} from '../_shared/_vendor/toml.mjs';
+import {toolExecutable} from '../_shared/toolchain/operations.mjs';
+import {hugoEnvironment} from '../base/hugo/run.mjs';
 
-const skillRoot = fileURLToPath(new URL('../../../',import.meta.url));
+const skillRoot = fileURLToPath(new URL('../../',import.meta.url));
 const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$/;
 
 export function readRelease(root = skillRoot) {
@@ -74,23 +74,10 @@ function sharedSourceRoot(directory,root,site) {
   } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
 }
 
-function recovery(module,release) {
-  const project='https://github.com/SwawHQ/banyan',tag='v'+release.version;
-  const lines=[`Skill: choose a matching project release at ${project}/releases; replace the Skill source with .agents/skills/swaw-banyan/ from that tag.`];
-  if (!module || module.kind === 'theme') lines.push(
-    `Theme: replace ${module?.directory || 'the active theme directory'} with module/ from project tag ${tag}: ${project}/tree/${tag}/module`,
-    `Source ZIP: ${project}/archive/refs/tags/${tag}.zip; extract module/. Review local theme edits before replacement.`
-  );
-  if (module?.kind !== 'theme') lines.push(
-    `Module: run swban base/hugo mod get ${release.module}@${tag}${module?.vendored ? ', then swban base/hugo mod vendor' : ''}.`
-  );
-  if (module?.directory && module.kind !== 'theme') lines.push('Align the local Module source, or remove its replace directive before selecting a published version.');
-  return lines.join('\n');
-}
 
 export function assess(module,release,{root = skillRoot,site = process.cwd()} = {}) {
   const expected = 'v'+release.version;
-  if (!module) return {state:'missing',issues:[`Banyan is not active in Hugo's dependency graph.\n${recovery(module,release)}`]};
+  if (!module) return {state:'missing',issues:[`Banyan is not active in Hugo's dependency graph.`]};
   if (module.directory) {
     const repository = sharedSourceRoot(module.directory,root,site);
     if (repository && fs.existsSync(path.join(repository,'.git'))) return {state:'development',issues:[]};
@@ -104,13 +91,12 @@ export function assess(module,release,{root = skillRoot,site = process.cwd()} = 
         ? `Banyan theme name and version could not be verified from ${path.join(module.directory,'theme.toml')}.`
         : repository
           ? `Banyan source name and version could not be verified from ${path.join(repository,'module','theme.toml')}.`
-          : `Local Module ${module.directory} is outside this Skill's Banyan checkout; version pairing is unverified.`)+
-      '\n'+recovery(module,release)
+          : `Local Module ${module.directory} is outside this Skill's Banyan checkout; version pairing is unverified.`)
     ]};
   }
   const matched = module.path === release.module && module.version === expected;
   return {state:matched ? 'matched' : 'mismatch',issues:matched ? [] : [
-    `Skill ${release.version} requires Banyan ${expected}; Hugo resolves ${module.path}@${module.version || '(no version)'}.\n${recovery(module,release)}`
+    `Skill ${release.version} requires Banyan ${expected}; Hugo resolves ${module.path}@${module.version || '(no version)'}.`
   ]};
 }
 

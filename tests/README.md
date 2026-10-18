@@ -19,10 +19,10 @@ Run `toolchain.ps1` with Windows PowerShell 5.1. It compiles a native fixture
 and runs the installer tests with portable Bun and a system Node.
 Toolchain fixtures do not log in or publish.
 
-Generic help, CLI pairing, theme resolution, delivery, fingerprint and asset-report tests ship with the Skill:
+Generic help, doctor, theme resolution, delivery, fingerprint and asset-report tests ship with the Skill:
 
 ```powershell
-$skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_cli/_tests','./.agents/skills/swaw-banyan/tasks/check/delivery/_tests','./.agents/skills/swaw-banyan/tasks/check/banyan/_tests','./.agents/skills/swaw-banyan/tasks/help/_tests','./.agents/skills/swaw-banyan/tasks/report/size/assets/_tests') -Filter '*.test.mjs' -File
+$skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/check/delivery/_tests','./.agents/skills/swaw-banyan/tasks/doctor/_tests','./.agents/skills/swaw-banyan/tasks/help/_tests','./.agents/skills/swaw-banyan/tasks/report/size/assets/_tests') -Filter '*.test.mjs' -File
 .\.agents\skills\swaw-banyan\swban.cmd base/node --test $skillTests.FullName
 ```
 
@@ -42,8 +42,8 @@ $skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_cli/_tests','
 
 Each suite keeps its successful cases and fault fixtures. Domain suites own
 argument semantics; `checks.test.mjs` owns common help/unknown-option checks.
-Browser domain suites call task entries directly. CLI pairing and dispatch
-are tested separately with matching and mismatched source-site fixtures.
+Browser domain suites call task entries directly. Doctor and dispatch
+are tested separately with matching, mismatched and missing source-site fixtures.
 It also owns shared HTML extraction, date-row ordering and static page-control
 faults. Site-specific article samples and copy stay in consumer tests.
 

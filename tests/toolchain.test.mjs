@@ -146,8 +146,8 @@ test('help and tool checks never prepare tools, including without a JS runtime',
     expect(result.status).toBe(0); expect(result.stdout).toBe(expected);
   }
   const env={...process.env,PATH:''};
-  for (const command of ['check/csp --help','check/banyan --help','base/browser/ensure --help','base/browser/ensure.webkit --help','base/hugo/ensure --help','base/bun/ensure --help']) expect(cli(fresh,command,{env}).status).toBe(0);
-  for (const command of ['help en','help zh','help xx','help zh extra','base/ensure','check/module','ensure/browser','ensure/browser.webkit','base/bun/check','base/node/check','base/gh/check','base/bun/ensure --invalid','base/gh/ensure --invalid']) expect(cli(fresh,command,{env}).status).not.toBe(0);
+  for (const command of ['check/csp --help','doctor --help','base/browser/ensure --help','base/browser/ensure.webkit --help','base/hugo/ensure --help','base/bun/ensure --help']) expect(cli(fresh,command,{env}).status).toBe(0);
+  for (const command of ['help en','help zh','help xx','help zh extra','base/ensure','check/module','ensure/browser','ensure/browser.webkit','doctor','base/bun/check','base/node/check','base/gh/check','base/bun/ensure --invalid','base/gh/ensure --invalid']) expect(cli(fresh,command,{env}).status).not.toBe(0);
   expect(stat(path.join(fresh,'.tools'))).toBeNull();
 }, 15000);
 let portable = copySkill('便携 skill ! with spaces',true);

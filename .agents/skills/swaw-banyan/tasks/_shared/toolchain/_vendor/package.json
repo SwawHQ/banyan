@@ -1,1 +1,9 @@
-{"private":true,"dependencies":{"yauzl":"3.4.0"}}
+{
+  "private": true,
+  "dependencies": {
+    "yauzl": "3.4.0"
+  },
+  "scripts": {
+    "build:yauzl": "bun build node_modules/yauzl/index.js --target=node --format=esm --outfile=yauzl.mjs"
+  }
+}

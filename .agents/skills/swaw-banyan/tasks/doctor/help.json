@@ -1,0 +1,18 @@
+{
+  "en": {
+    "summary": "Check tools and the site theme",
+    "usage": "swban doctor [directory]",
+    "details": [
+      "Check selected tools and Banyan version pairing.",
+      "Default: current directory."
+    ]
+  },
+  "zh": {
+    "summary": "检查工具和站点主题",
+    "usage": "swban doctor [目录]",
+    "details": [
+      "检查已选工具和 Banyan 版本配对。",
+      "默认检查当前目录。"
+    ]
+  }
+}

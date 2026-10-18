@@ -1,12 +1,10 @@
-.xvenv/
 .env
-node_modules/
+.env*
 
 # Hugo 编译输出和本地缓存
-public/
-temp_workspace/
-/resources/
 .hugo_build.lock
+/public/
+/resources/
+/temp_workspace/
 
 .vscode/
-xvenv.cmd

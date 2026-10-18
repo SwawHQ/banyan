@@ -1,0 +1,51 @@
+# Check IDs select built-in checks. Hints are printed only; no commands are executed.
+# 检查 ID 对应内置检查；修复提示仅显示，不执行命令。
+schema_version = 1
+
+[hints.incomplete]
+en = "Enable and declare this check in references/doctor.toml, then rerun doctor."
+zh = "在 references/doctor.toml 中声明并启用此检查，然后重新运行 doctor。"
+
+[hints.blocked]
+en = "Resolve the listed tool checks with swban base/<tool>/ensure, then rerun doctor."
+zh = "用 swban base/<tool>/ensure 处理列出的工具检查项，然后重新运行 doctor。"
+
+[checks."tool.runtime"]
+enabled = true
+hint.en = "Run swban base/bun/ensure or swban base/node/ensure to prepare the runtime."
+hint.zh = "运行 swban base/bun/ensure 或 swban base/node/ensure，准备运行时。"
+
+[checks."tool.bun"]
+enabled = true
+hint.en = "Run swban base/bun/ensure to repair the selected tool."
+hint.zh = "运行 swban base/bun/ensure，修复所选工具。"
+
+[checks."tool.node"]
+enabled = true
+hint.en = "Run swban base/node/ensure to repair the selected tool."
+hint.zh = "运行 swban base/node/ensure，修复所选工具。"
+
+[checks."tool.git"]
+enabled = true
+hint.en = "Run swban base/git/ensure to repair the selected tool."
+hint.zh = "运行 swban base/git/ensure，修复所选工具。"
+
+[checks."tool.go"]
+enabled = true
+hint.en = "Run swban base/go/ensure to repair the selected tool."
+hint.zh = "运行 swban base/go/ensure，修复所选工具。"
+
+[checks."tool.hugo"]
+enabled = true
+hint.en = "Run swban base/hugo/ensure to repair the selected tool."
+hint.zh = "运行 swban base/hugo/ensure，修复所选工具。"
+
+[checks."tool.gh"]
+enabled = true
+hint.en = "Run swban base/gh/ensure to repair the selected tool."
+hint.zh = "运行 swban base/gh/ensure，修复所选工具。"
+
+[checks."site.banyan"]
+enabled = true
+hint.en = "Use the Skill from the theme's project release: https://github.com/SwawHQ/banyan/releases. Or align the theme with Skill {version}: https://github.com/SwawHQ/banyan/archive/refs/tags/v{version}.zip (module/). Review local theme edits before replacement. Module: swban base/hugo mod get {module}@v{version}. If vendored, then swban base/hugo mod vendor. Align local replacements separately."
+hint.zh = "使用主题对应的 Skill：https://github.com/SwawHQ/banyan/releases。或将主题调整为 Skill {version} 对应的源码：https://github.com/SwawHQ/banyan/archive/refs/tags/v{version}.zip（取 module/）。替换前处理本地主题改动。Module：swban base/hugo mod get {module}@v{version}。使用 vendor 时，再运行 swban base/hugo mod vendor。本地 replace 需调整对应源码。"

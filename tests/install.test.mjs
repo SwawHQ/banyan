@@ -9,7 +9,7 @@ import {zip} from './fixtures/zip.mjs';
 import {filesUnder,relativeName} from '../.agents/skills/swaw-banyan/tasks/_shared/output.mjs';
 import {readBindings,resolveBinding,writeBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/toolchain/bindings.mjs';
 import {hugoEnvironment} from '../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
-import {readRelease} from '../.agents/skills/swaw-banyan/tasks/check/banyan/inspect.mjs';
+import {readRelease,inspect} from '../.agents/skills/swaw-banyan/tasks/doctor/banyan.mjs';
 
 const repository=fileURLToPath(new URL('../',import.meta.url));
 const skill=path.join(repository,'.agents/skills/swaw-banyan'),moduleRoot=path.join(repository,'module');
@@ -87,7 +87,7 @@ before(async()=>{
   assert.ok(fs.existsSync(path.join(installed,'tasks/check/http/cache/entry.mjs')));
   const help=spawnSync(process.execPath,[path.join(installed,'tasks/_cli/main.mjs'),'help/en'],{encoding:'utf8',timeout:15000});
   assert.ifError(help.error);assert.equal(help.status,0,help.stdout+help.stderr);
-  assert.ok(help.stdout.includes('check/banyan'));assert.equal(fs.existsSync(path.join(installed,'.tools')),false);
+  assert.ok(help.stdout.includes('doctor'));assert.equal(fs.existsSync(path.join(installed,'.tools')),false);
   const tools=Object.fromEntries(['hugo','go','git'].map(name=>[name,{...resolveBinding(name),source:'path'}]));
   const runtime=process.versions.bun?'bun':'node';
   tools[runtime]={source:'path',path:process.execPath,version:process.versions.bun??process.versions.node};
@@ -103,7 +103,7 @@ after(()=>{
 
 test('documented starter builds through a local Module without demo files or a Git repository',()=>{
   const root=consumer('local consumer',{replacement:moduleRoot});
-  assert.match(passed(root,skill,['check/banyan']),/Pairing: development/);
+  assert.equal(inspect(root).state,'development');
   const output=build(root,skill);checks(root,skill,output);
   assert.ok(fs.existsSync(path.join(output,'rss/index.html')));
   assert.equal(fs.existsSync(path.join(output,'zh')),false);
@@ -114,7 +114,7 @@ test('documented starter builds through a local Module without demo files or a G
 
 test('packaged Skill and versioned Module build from an isolated proxy',()=>{
   const root=consumer('packaged consumer',{multilingual:true});
-  assert.match(passed(root,installed,['check/banyan']),/Pairing: matched/);
+  assert.match(passed(root,installed,['doctor']),/site\.banyan: matched/);
   const output=build(root,installed);checks(root,installed,output);
   for(const prefix of ['','zh/','zh-tw/']) {
     assert.ok(fs.existsSync(path.join(output,prefix,'index.html')));
@@ -135,7 +135,7 @@ test('the release module directory also installs and builds as a local Hugo them
   fs.unlinkSync(path.join(root,'go.mod'));
   write(root,'hugo.toml','theme="banyan"\n'+toml[1]);
   fs.cpSync(moduleRoot,directory,{recursive:true});
-  assert.match(passed(root,installed,['check/banyan']),/Pairing: matched/);
+  assert.match(passed(root,installed,['doctor']),/site\.banyan: matched/);
   const output=build(root,installed);checks(root,installed,output);
   assert.equal(fs.existsSync(path.join(root,'go.mod')),false);
   assert.equal(fs.existsSync(path.join(root,'.git')),false);
@@ -156,7 +156,7 @@ test('site content, palette and delivery data override defaults in a fresh insta
   assert.equal(JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8')).hugoVersion,'0.156.0');
   const mismatched=fs.readFileSync(path.join(installed,'SKILL.md'),'utf8').replace('version: "'+release.version+'"','version: "9.9.9"');
   fs.writeFileSync(path.join(installed,'SKILL.md'),mismatched);
-  const mod=fs.readFileSync(path.join(root,'go.mod'),'utf8'),failure=command(root,installed,['check/banyan']);
-  assert.equal(failure.status,1);assert.match(failure.stdout,/Pairing: mismatch/);
+  const mod=fs.readFileSync(path.join(root,'go.mod'),'utf8'),failure=command(root,installed,['doctor']);
+  assert.equal(failure.status,1);assert.match(failure.stdout,/site\.banyan: mismatch/);
   assert.equal(fs.readFileSync(path.join(root,'go.mod'),'utf8'),mod);
 });

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {themesFromMounts,assess} from '../inspect.mjs';
+import {themesFromMounts,assess} from '../banyan.mjs';
 
 const parent=fs.realpathSync(os.tmpdir()),release={module:'github.com/SwawHQ/banyan/module',version:'0.1.0'};
 let work;

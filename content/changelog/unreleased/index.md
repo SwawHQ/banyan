@@ -2,17 +2,18 @@
 title: Unreleased
 slug: unreleased
 description: Unreleased changes to the Banyan theme and Skill.
-lastmod: 2026-10-17
+lastmod: 2026-10-18
 ---
 
 ## Added
 
 - Chinese guides and developer documentation at `https://banyan.swaw.com/`.
 - Hugo Module at `github.com/SwawHQ/banyan/module`, with matching
-  `swaw-banyan` Skill versions. `check/banyan [directory]` checks Module and
+  `swaw-banyan` Skill versions. `doctor [directory]` checks Module and
   theme-directory versions, vendored dependencies and local development.
-  Local theme versions come from `theme.toml`. The CLI checks pairing before
-  site tasks and stops on failure. Extracted project ZIPs pair their built-in
+  Local theme versions come from `theme.toml`. Doctor also checks selected tools
+  and runtime launchers; ordinary tasks do not check pairing. Check switches and
+  repair hints are maintained in `references/doctor.toml`. Extracted project ZIPs pair their built-in
   Skill and Module using `module/theme.toml`, without a `.git` directory.
   Recovery messages include the project URL,
   theme source ZIP and Module version commands.

@@ -1,110 +1,52 @@
 ---
 name: swaw-banyan
-description: 构建、预览、检查和同步 Banyan Hugo 站点，统计产物体积，并复用兼容工具或准备经过校验的便携版 Bun、Node、Git、GitHub CLI、Hugo 和 Go。
+description: 专用于：应用、定制、开发-测试、检查-部署 Swaw Banyan Hugo Theme，自带 Hugo、Go、Git、gh（GitHub CLI）、Bun/Node 准备。
 license: MIT
 metadata:
   version: "0.1.0"
   module: "github.com/SwawHQ/banyan/module"
 ---
 
-# Banyan 工具
 
-本技能用于 Banyan 站点的配置、定制和检查。命令行工具目前支持 Windows x64。
-站点内容和业务配置由使用主题的站点维护；可复用的主题改动归入 Banyan Module。
+仅安装目录应存在`swban.cmd`命令入口，目前支持 Windows x64。
 
-## 开始使用
-
-在目标站点目录中，通过绝对路径调用本技能的 `swban.cmd`。
-下文的 `swban` 均代表这个路径。
-
-- 用 `swban help` 按系统语言查看常用命令。
-  用 `swban help/zh 1` 或 `swban help/en 1` 查找分类；数字指定最大层级。
-  用 `swban help/zh check 2` 列出 `check` 下两层命令和分类，保留完整路径。
-  清单中以 `/` 结尾的路径表示分类，其余为可执行命令。
-  用 `swban help/zh check/csp` 查看指定任务的完整帮助；
-  用 `swban <command> --help` 查看参数和默认值。
-- 入口自动准备命令行运行环境，优先复用兼容的 Bun 或 Node，
-  两者都不可用时才下载便携版 Bun。使用本工具不需要在站点根目录添加
-  package.json 或执行 npm install。
-- 直接执行 Hugo 命令即可；需要时自动准备 Git、Go 和 Hugo。
-  GitHub CLI 在执行 `base/gh` 时准备。
-  `help [path]` 和工具状态检查不会安装工具。
-- `base/<tool>/ensure` 可重新选择兼容工具；加 `--force` 则安装固定版本的便携工具。
-  `base/<tool>/check` 检查已选工具。普通命令复用已有选择；损坏时用准备命令修复。
-- 依赖和便携工具放在技能指定的位置，不要向站点根目录添加本技能的工具依赖。
-
-## 版本配对
-
-Skill 的版本由文件顶部的 `metadata.version` 声明，
-对应 `metadata.module` 指定的 Module 的 `v<metadata.version>` 版本。
-以主题目录安装时，主题版本读取自该目录的 `theme.toml`。
-整仓源码 ZIP 解压后，内置 Skill 按项目根目录 `module/theme.toml` 的版本配对。
-
-站点任务由 swban 入口统一检查版本；默认检查当前目录，
-显式指定源站点目录时检查该目录。只有 `matched` 和 `development` 可继续。
-帮助、`base/` 工具和 `check/banyan` 本身不受此拦截。
-
-进行与版本有关的配置、模板修改或迁移前，运行 `swban check/banyan [目录]`。
-检查时使用与目标构建一致的 Hugo 环境。
-
-- 新站点：按[安装说明](references/install.md)安装固定版本的 Module 并配置站点。
-  单纯安装 Skill 不会自动执行任何操作。
-- 已有 Module：优先使用与它匹配的 Skill。版本不匹配时，报告双方版本，
-  明确是升级 Module 还是更换 Skill。用户已授权升级时，不必再次询问。
-- `development` 表示本地主题与 Skill 位于同一个 Banyan Git 工作副本，可继续开发。
-  `missing`（缺少）、`mismatch`（不匹配）或 `unverified`（无法确认）需要先处理，
-  再进行与版本有关的修改。调整后重新检查。
-
-版本不匹配时，可用基础工具调整版本，再运行检查。
-
-## 构建与预览
 
 ```text
-swban base/hugo --minify --gc --cleanDestinationDir         #生产构建
-swban base/hugo server -D --disableFastRender --port 13241  #开发预览
+swban doctor [目录]       #检查工具和站点主题
+swban help                #查看常用命令
+swban help/zh 1           #查看一级分类
+swban help/zh check 2     #查看 check 下两层命令
+swban <command> --help    #查看参数和默认值
 ```
 
-`base/hugo` 直接传递原生参数。用 `--destination <dir>` 指定其他输出目录。
-站点配置须保留 `[minify] disableJS = true`，确保 HTML 压缩不会改变
-计算 CSP 哈希时使用的内联 JS 字节。生产产物应压缩；
-若站点配置在开发环境也启用了压缩，可用 `--minify=false` 关闭。
 
-CSP 和部署响应头由 Hugo 生成。修改其源配置，不要直接修改生成的
-`_headers` 或 `edgeone.json`。模块和站点均使用 `data/delivery.toml`；
-站点声明整体替换同名顶层字段，嵌套表不继承。修改表时完整填写，
-`routes` 整组替换并保留声明顺序。
+
+交付配置修改 `data/delivery.toml`；`_headers` 和 `edgeone.json` 由 Hugo 生成。
+
 
 ## 根据改动选择检查
 
-- 静态检查和体积报告读取已完成的构建，默认目录为 `public`。
-  修改交付配置或资源发布路径后，运行 `check/delivery`；
-  修改脚本或安全响应头后，运行 `check/csp`。
-- 内容检查读取站点源文件，默认检查当前站点。
-  HTTP 检查需要明确指定已部署的 URL。
-- 浏览器检查可从 `check/browser/site <build>` 开始。
-  准备方式、跳过的检查范围、测试页面要求及 SW 更新构建，
-  见[浏览器检查](references/browser-site.md)。
-- 默认使用 Chromium。涉及浏览器内核差异或已知回归问题时，
-  选择已有的 `.webkit` 检查。
-- 站点特有的文案、账号、路由和业务预期留在站点测试中；
-  通用检查不负责验证这些事实。
+- 修改交付配置或资源发布路径后，运行 `check/delivery`。
+- 修改脚本或安全响应头后，运行 `check/csp`。
+- 浏览器检查从 `check/browser/site <build>` 开始，准备方式和测试页面要求见
+  [浏览器检查](references/browser-site.md)。默认使用 Chromium；
+  涉及内核差异时，选择已有的 `.webkit` 检查。
+- 站点特有的文案、账号、路由和业务预期留在站点测试中。
 
-选择参数前先阅读任务的 `--help`。报告失败项和跳过的检查范围；
-按改动选择检查，不必每次执行所有任务。
+按改动选择检查，参数见任务的 `--help`。报告失败项和跳过的检查范围。
 
-## 其他任务
+## 参考文档
 
 只读取当前任务需要的参考文档：
 
 | 任务 | 参考文档 |
 | --- | --- |
-| 安装 Module 或与当前 Skill 配对 | [安装说明](references/install.md) |
-| 查找可用命令 | `swban help/zh 1` 或 `swban help/en 1` |
+| 调整环境诊断检查和修复提示 | [诊断配置](references/doctor.toml) |
+| 安装或升级 Module | [安装说明](references/install.md) |
 | 执行浏览器检查，包括 SW 更新 | [浏览器检查](references/browser-site.md) |
 | 检查交付产物和指纹发布路径 | [交付检查](references/delivery.md) |
 | 用 `sync/ext` 下载已声明的外部资源 | [外部资源](references/external-resources.md) |
 | 同步生成的 EdgeOne 配置或规划部署 | [EdgeOne](references/edgeone.md) |
 | 添加任务或编排站点测试套件 | [任务维护](references/tasks.md) |
 
-Skill 工具在本地运行；托管构建使用平台自己的工具链。
-EdgeOne 配置同步不会上传站点；本技能尚未提供部署上传命令。
+托管构建使用平台自己的工具链；EdgeOne 任务只同步配置。

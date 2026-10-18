@@ -2,16 +2,17 @@
 title: 未发布
 slug: unreleased
 description: Banyan 主题和 Skill 的未发布变更。
-lastmod: 2026-10-17
+lastmod: 2026-10-18
 ---
 
 ## 新增
 
 - 官网提供中文使用指南和开发资料，站点生产地址为 `https://banyan.swaw.com/`。
 - 通过 `github.com/SwawHQ/banyan/module` 发布 Hugo Module，
-  `swaw-banyan` Skill 使用对应版本。`check/banyan [目录]` 检查 Module 和
+  `swaw-banyan` Skill 使用对应版本。`doctor [目录]` 检查 Module 和
   主题目录的版本配对、vendor 依赖及本地开发状态。
-  主题目录的版本读取自 `theme.toml`。站点任务由入口统一检查，配对失败时停止；
+  主题目录的版本读取自 `theme.toml`。`doctor` 同时检查已选工具和运行时启动器；
+  普通任务不再检查配对。检查开关和修复提示由 `references/doctor.toml` 维护。
   整仓源码 ZIP 中的 Skill 与 `module/` 按 `module/theme.toml` 版本配对，无需 `.git`。
   修复提示包含项目地址、主题源码 ZIP 和 Module 版本调整命令。
 - 提供 Windows x64 命令行工具，支持 Bun 或 Node、Git、Go、Hugo
