@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Run the Skill Python environment",
+    "usage": "swban base/uv/python [arguments...]",
+    "details": [
+      "swban base/uv/python --version  #Show the Python version"
+    ]
+  },
+  "zh": {
+    "summary": "运行 Skill 的 Python 环境",
+    "usage": "swban base/uv/python [参数...]",
+    "details": [
+      "swban base/uv/python --version  #显示 Python 版本"
+    ]
+  }
+}

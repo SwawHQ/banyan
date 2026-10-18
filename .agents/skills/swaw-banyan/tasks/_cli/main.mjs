@@ -10,13 +10,13 @@ try {
   taskEntry(command);
   const preparing=/^base\/(?:bun|node|hugo|go|git|gh|uv)\/ensure$/.test(command);
   const showingHelp=args.length===1&&['--help','-h'].includes(args[0]);
-  const native=/^base\/(?:bun|node|hugo|go|git|gh|uv|python)(?:\/(?:npm|npx))?$/.test(command);
+  const native=/^base\/(?:bun|node|hugo|go|git|gh|uv(?:\/python)?)(?:\/(?:npm|npx))?$/.test(command);
   if (preparing&&!showingHelp&&(args.length>1||(args.length===1&&args[0]!=='--force'))) throw new Error('invalid_ensure_arguments');
-  if (command==='base/python/ensure'&&!showingHelp&&args.length) throw new Error('invalid_ensure_arguments');
+  if (command==='base/uv/python/ensure'&&!showingHelp&&args.length) throw new Error('invalid_ensure_arguments');
   let executable=process.execPath;
   if (showingHelp&&!native&&!/^help(?:\/(?:en|zh))?$/.test(command)) { console.log(taskHelp(command)); }
   else {
-    if (command!=='doctor'&&!/^help(?:\/(?:en|zh))?$/.test(command)&&!/^base\/[^/]+\/check$/.test(command)) {
+    if (command!=='doctor'&&!/^help(?:\/(?:en|zh))?$/.test(command)&&!/^base\/(?:[^/]+|uv\/python)\/check$/.test(command)) {
       const record=readBindings();
       if (!record.runtime||preparing) {
         const runtime=await prepareRuntime();

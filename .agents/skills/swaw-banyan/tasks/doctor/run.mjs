@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import {pythonHome} from '../base/uv/environment.mjs';
-import {inspectPython} from '../base/python/runtime.mjs';
+import {inspectPython} from '../base/uv/python/runtime.mjs';
 import {readBindings,resolveBinding} from '../_shared/tools/bindings.mjs';
 import {inspectBinding} from '../_shared/tools/selection.mjs';
 import {inspect,readRelease} from './banyan.mjs';

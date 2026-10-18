@@ -53,6 +53,8 @@ lastmod: 2026-10-18
   Hugo and Go prepare Git as needed. The theme no longer enables unused Git page
   information. GitHub CLI is prepared when used.
   Run npm and npx with `base/node/npm` and `base/node/npx`.
+  Python commands use `base/uv/python`, `base/uv/python/check` and
+  `base/uv/python/ensure`; common help lists uv as the Python tool manager.
   Prepare parser packages with `base/packages/ensure` before working offline;
   use `--force` to reinstall. Doctor reports missing packages without installing them.
   Prepare browsers with `base/browser/ensure` and `base/browser/ensure.webkit`.

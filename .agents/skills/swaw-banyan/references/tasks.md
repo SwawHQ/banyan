@@ -30,7 +30,7 @@ Bun remains an independent tool through `base/bun`, `base/bun/check` and
 `base/bun/ensure`; it does not select the CLI runtime.
 Domain code uses `prepareTools` for missing tools; Hugo callers use
 `prepareHugo`, which prepares Git, Go and Hugo.
-Existing bindings stay selected. Python uses `base/python` and a Skill-owned
+Existing bindings stay selected. Python uses `base/uv/python` and a Skill-owned
 environment; Python CLI packages use `base/uv tool run`. See [Python tools](python.md).
 JSON task help, doctor and tool status checks do not prepare tools. Native help runs the tool.
 `help`, `help/en` and `help/zh` are separate tasks. `tasks/_cli/` owns

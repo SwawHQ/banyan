@@ -1,16 +1,18 @@
 {
   "en": {
-    "summary": "Run uv in Skill storage",
+    "summary": "Run Python tools with uv",
     "usage": "swban base/uv <command> [arguments...]",
     "details": [
-      "swban base/uv tool run tccli --version  #Run TCCLI"
+      "swban base/uv tool run tccli --version  #Run TCCLI; prepare Python and dependencies as needed",
+      "swban base/uv run python script.py      #Run a script; prepare Python as needed"
     ]
   },
   "zh": {
-    "summary": "在 Skill 目录运行 uv",
+    "summary": "用 uv 运行 Python 工具",
     "usage": "swban base/uv <command> [参数...]",
     "details": [
-      "swban base/uv tool run tccli --version  #运行 TCCLI"
+      "swban base/uv tool run tccli --version  #运行 TCCLI，按需准备 Python 和依赖",
+      "swban base/uv run python script.py      #运行脚本，按需准备 Python"
     ]
   }
 }

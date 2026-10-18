@@ -46,6 +46,8 @@ lastmod: 2026-10-18
   Bun 保留为独立工具。移除 `base/ensure`。
   Hugo 和 Go 按需准备 Git；主题不再启用未使用的 Git 页面信息。
   GitHub CLI 在使用时准备；npm 和 npx 分别使用 `base/node/npm` 和 `base/node/npx`。
+  Python 命令使用 `base/uv/python`、`base/uv/python/check` 和
+  `base/uv/python/ensure`；常用帮助将 uv 标为 Python 工具管理器。
   离线使用前，可用 `base/packages/ensure` 准备解析依赖；加 `--force` 重新安装。
   `doctor` 只报告依赖缺失，不执行安装。
   浏览器准备改用 `base/browser/ensure` 和 `base/browser/ensure.webkit`。

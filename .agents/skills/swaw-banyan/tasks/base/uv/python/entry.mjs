@@ -1,6 +1,6 @@
 import {preparePython} from './runtime.mjs';
-import {uvEnvironment} from '../uv/environment.mjs';
-import {execute} from '../../_shared/tools/process.mjs';
+import {uvEnvironment} from '../environment.mjs';
+import {execute} from '../../../_shared/tools/process.mjs';
 
 try {
   const python = await preparePython();

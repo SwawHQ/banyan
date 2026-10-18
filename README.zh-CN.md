@@ -42,7 +42,7 @@
 入口会按需准备 Node/npm、Git、Go 和 Hugo：优先复用兼容工具，缺少时自动下载。
 Bun 作为可选工具，通过 `base/bun` 使用。
 GitHub CLI 在使用 `base/gh` 时准备。
-`base/python` 按需准备隔离的 Python 环境；`base/uv tool run` 运行 Python CLI。
+`base/uv/python` 按需准备隔离的 Python 环境；`base/uv tool run` 运行 Python CLI。
 使用方法见 [Python 工具](.agents/skills/swaw-banyan/references/python.md)。
 打开 <http://127.0.0.1:13241/> 查看站点。
 

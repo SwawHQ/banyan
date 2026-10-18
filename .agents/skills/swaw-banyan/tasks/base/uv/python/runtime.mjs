@@ -1,15 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {toolsRoot} from '../../_shared/tools/manifest.mjs';
-import {plainPath, stat, fail, installLock} from '../../_shared/tools/filesystem.mjs';
-import {probe, execute} from '../../_shared/tools/process.mjs';
-import {prepareTools} from '../../_shared/tools/selection.mjs';
-import {toolExecutable} from '../../_shared/tools/operations.mjs';
-import {pythonHome, pythonExecutable, pythonVersion, uvEnvironment} from '../uv/environment.mjs';
+import {toolsRoot} from '../../../_shared/tools/manifest.mjs';
+import {plainPath, stat, fail, installLock} from '../../../_shared/tools/filesystem.mjs';
+import {probe, execute} from '../../../_shared/tools/process.mjs';
+import {prepareTools} from '../../../_shared/tools/selection.mjs';
+import {toolExecutable} from '../../../_shared/tools/operations.mjs';
+import {pythonHome, pythonExecutable, pythonVersion, uvEnvironment} from '../environment.mjs';
 
 export async function inspectPython({root = toolsRoot, env = process.env} = {}) {
   const executable = plainPath(pythonExecutable(root));
-  const repair = 'python_environment_unusable; run swban base/python/ensure';
+  const repair = 'python_environment_unusable; run swban base/uv/python/ensure';
   if (!stat(executable)?.isFile()) fail(repair);
   const result = await probe(executable, ['-I', '-c',
     'import json,sys; print(json.dumps([sys.version.split()[0],sys.prefix,sys.base_prefix]))'], {env:uvEnvironment(env, root)});

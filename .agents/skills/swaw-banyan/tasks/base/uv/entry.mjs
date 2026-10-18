@@ -2,7 +2,7 @@ import {prepareTools} from '../../_shared/tools/selection.mjs';
 import {toolExecutable} from '../../_shared/tools/operations.mjs';
 import {execute} from '../../_shared/tools/process.mjs';
 import {uvEnvironment} from './environment.mjs';
-import {preparePython} from '../python/runtime.mjs';
+import {preparePython} from './python/runtime.mjs';
 
 try {
   const args = process.argv.slice(2);

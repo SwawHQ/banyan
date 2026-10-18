@@ -56,8 +56,8 @@ hint.zh = "运行 swban base/uv/ensure，修复所选工具。"
 
 [checks."tool.python"]
 enabled = true
-hint.en = "Run swban base/python/ensure. If the environment is damaged or moved, remove only this Skill's .tools/python-env and retry."
-hint.zh = "运行 swban base/python/ensure；若环境损坏或已移动，仅删除本 Skill 的 .tools/python-env 后重试。"
+hint.en = "Run swban base/uv/python/ensure. If the environment is damaged or moved, remove only this Skill's .tools/python-env and retry."
+hint.zh = "运行 swban base/uv/python/ensure；若环境损坏或已移动，仅删除本 Skill 的 .tools/python-env 后重试。"
 
 [checks."site.banyan"]
 enabled = true

@@ -365,7 +365,7 @@ test('HTTP checks validate supplied URLs and separate security, cache and specul
 test('every declared task exposes help before consulting output, content or tools; parent and retired routes stay absent',{timeout:60000},() => {
   const tasksRoot = path.join(skill,'tasks');
   const commands = fs.readdirSync(tasksRoot,{recursive:true}).filter(name => path.basename(name) === 'entry.mjs').map(name => path.dirname(name).split(path.sep).join('/'));
-  for (const command of commands.filter(command=>command!=='help'&&!/^base\/(?:bun|node|git|gh|go|hugo|uv|python)(?:\/(?:npm|npx))?$/.test(command))) {
+  for (const command of commands.filter(command=>command!=='help'&&!/^base\/(?:bun|node|git|gh|go|hugo|uv(?:\/python)?)(?:\/(?:npm|npx))?$/.test(command))) {
     for (const arg of ['--help','-h']) {
       const result=cli(command,[arg],work);
       assert.equal(result.status,0,command);

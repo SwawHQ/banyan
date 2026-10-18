@@ -39,7 +39,7 @@ Download and extract this repository. Run in PowerShell from its root
 The entry prepares Node/npm, Git, Go and Hugo as needed. It reuses compatible
 tools or downloads missing tools. Bun remains an optional tool under `base/bun`.
 GitHub CLI is prepared when you use `base/gh`.
-`base/python` prepares an isolated Python environment; `base/uv tool run` runs
+`base/uv/python` prepares an isolated Python environment; `base/uv tool run` runs
 Python CLI packages. See [Python tools](.agents/skills/swaw-banyan/references/python.md).
 Open <http://127.0.0.1:13241/>.
 

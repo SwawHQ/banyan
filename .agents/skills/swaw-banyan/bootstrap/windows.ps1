@@ -88,7 +88,7 @@ try {
     $entry = Join-Path $directory 'entry.mjs'
     if (-not [IO.File]::Exists($entry)) { throw "unknown_command:$helpCommand; run swban help" }
     Assert-PlainBootstrapPath $entry
-    $native = $helpCommand -cmatch '^base/(bun|node|hugo|go|git|gh|uv|python)(?:/(npm|npx))?$'
+    $native = $helpCommand -cmatch '^base/(bun|node|hugo|go|git|gh|uv(?:/python)?)(?:/(npm|npx))?$'
     if (-not $native -and $args.Count -eq 2 -and $args[1] -in @('--help','-h')) {
         $language = if ([Globalization.CultureInfo]::CurrentUICulture.Name -match '^zh(?:-|$)') { 'zh' } else { 'en' }
         & (Join-Path $skillRoot 'tasks/help/cold.ps1') $language $helpCommand
@@ -96,7 +96,7 @@ try {
     }
     $preparing = $args[0] -match '^base/(bun|node|hugo|go|git|gh|uv)/ensure$'
     if ($preparing -and ($args.Count -gt 2 -or ($args.Count -eq 2 -and $args[1] -ne '--force'))) { throw 'invalid_ensure_arguments' }
-    if ($helpCommand -eq 'base/python/ensure' -and $args.Count -gt 1) { throw 'invalid_ensure_arguments' }
+    if ($helpCommand -eq 'base/uv/python/ensure' -and $args.Count -gt 1) { throw 'invalid_ensure_arguments' }
     $force = $preparing -and $args.Count -eq 2
     $architecture = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
     if ($env:OS -ne 'Windows_NT' -or $architecture -ne 'AMD64') { throw 'supported_bootstrap_platform_is_windows_x64' }
@@ -107,7 +107,7 @@ try {
         & $available (Join-Path $skillRoot 'tasks/_cli/main.mjs') @args
         exit $LASTEXITCODE
     }
-    if ($helpCommand -eq 'doctor' -or $helpCommand -cmatch '^base/[^/]+/check$') { throw 'runtime_not_ready; run swban base/node/ensure' }
+    if ($helpCommand -eq 'doctor' -or $helpCommand -cmatch '^base/(?:[^/]+|uv/python)/check$') { throw 'runtime_not_ready; run swban base/node/ensure' }
     $definitions = @($manifest.platforms.'windows-x64'.tools | Where-Object name -eq 'node')
     if ($definitions.Count -ne 1) { throw 'missing_or_duplicate_runtime:node' }
     $definition = $definitions[0]

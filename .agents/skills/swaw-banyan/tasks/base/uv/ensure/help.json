@@ -1,13 +1,13 @@
 {
   "en": {
-    "summary": "Prepare uv SDK",
+    "summary": "Prepare uv (Python tool manager)",
     "usage": "swban base/uv/ensure [--force]",
     "details": [
       "  --force  Install the pinned portable tool"
     ]
   },
   "zh": {
-    "summary": "准备 uv SDK",
+    "summary": "准备 uv（Python 工具管理器）",
     "usage": "swban base/uv/ensure [--force]",
     "details": [
       "  --force  安装固定版本的便携工具"
