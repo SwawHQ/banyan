@@ -19,8 +19,8 @@ export function parseCatalog(text) {
     const parameters=text=>[...new Set(text.match(/\{(?:module|version)\}/g)??[])].sort().join(',');
     if (parameters(pair.en)!==parameters(pair.zh)) invalid(field+' translations');
   }
-  if (!value.hints||Object.keys(value.hints).some(key=>!['incomplete','blocked'].includes(key))) invalid('hints');
-  for (const key of ['incomplete','blocked']) translated(value.hints[key],'hints.'+key);
+  if (!value.hints||Object.keys(value.hints).some(key=>!['incomplete','blocked','bindings'].includes(key))) invalid('hints');
+  for (const key of ['incomplete','blocked','bindings']) translated(value.hints[key],'hints.'+key);
   if (!value.checks||typeof value.checks!=='object'||Array.isArray(value.checks)) invalid('checks');
   for (const [id,check] of Object.entries(value.checks)) {
     if (!ids.has(id)||!check||typeof check!=='object'||Array.isArray(check)||typeof check.enabled!=='boolean'||Object.keys(check).some(key=>!['enabled','hint'].includes(key))) invalid('checks.'+id);

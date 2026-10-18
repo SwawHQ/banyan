@@ -23,6 +23,15 @@ function cli(command,args=[],cwd=site,owner=skill) {
   });
   assert.ifError(result.error);return result;
 }
+function publicCli(command,owner=skill) {
+  const env={...process.env,PATH:[...new Set(Object.values(bindings.tools).map(tool=>path.dirname(tool.path)))].join(path.delimiter),
+    HUGO_CACHEDIR:path.join(work,'cache'),HUGO_RESOURCEDIR:path.join(work,'resources'),
+    GOMODCACHE:path.join(work,'modules'),GOCACHE:path.join(work,'go-cache'),GIT_OPTIONAL_LOCKS:'0'};
+  const result=spawnSync(process.env.ComSpec,['/d','/v:off','/s','/c',`""${path.join(owner,'swban.cmd')}" ${command}"`],{
+    windowsVerbatimArguments:true,cwd:site,env,encoding:'utf8',timeout:30000,windowsHide:true
+  });
+  assert.ifError(result.error);return result;
+}
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'swban-doctor-'));skill=path.join(work,'skill');site=path.join(work,'site');
   fs.cpSync(skillRoot,skill,{recursive:true,filter:file=>!file.split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
@@ -114,6 +123,70 @@ test('doctor diagnoses malformed bindings instead of failing in the CLI prefligh
     assert.match(result.stdout,/site\.banyan: blocked/);
     assert.match(result.stderr,/swban base\/bun\/ensure/);
   } finally {fs.writeFileSync(file,before);}
+});
+
+test('public doctor bypasses damaged launchers and preserves unknown files until manual removal',()=>{
+  const file=path.join(skill,'.tools/cli.cmd'),before=fs.readFileSync(file);
+  const record=fs.readFileSync(path.join(skill,'.tools/bindings.json'));
+  for(const owned of [true,false]) {
+    const damaged='@echo off\r\n'+(owned?'rem swaw-banyan.cli/v1\r\n':'')+'exit /b 42\r\n';
+    fs.writeFileSync(file,damaged);
+    try {
+      const help=publicCli('doctor --help');assert.equal(help.status,0,help.stdout+help.stderr);
+      const result=publicCli('doctor');
+      assert.equal(result.status,1,result.stdout+result.stderr);
+      assert.match(result.stderr,/runtime_launcher_changed/);
+      assert.match(result.stderr,/\.tools\/cli\.cmd/);
+      assert.match(result.stdout,/site\.banyan: matched/);
+      assert.equal(fs.readFileSync(file,'utf8'),damaged);
+      assert.deepEqual(fs.readFileSync(path.join(skill,'.tools/bindings.json')),record);
+      const command='base/'+bindings.runtime+'/ensure',repair=publicCli(command);
+      if(owned)assert.equal(repair.status,0,repair.stdout+repair.stderr);
+      else {
+        assert.equal(repair.status,1,repair.stdout+repair.stderr);
+        assert.match(repair.stderr,/unknown_runtime_launcher/);
+        assert.equal(fs.readFileSync(file,'utf8'),damaged);
+        const backup=path.join(work,'damaged-launcher.cmd');fs.copyFileSync(file,backup);fs.unlinkSync(file);
+        const retry=publicCli(command);assert.equal(retry.status,0,retry.stdout+retry.stderr);
+        assert.equal(fs.readFileSync(backup,'utf8'),damaged);
+      }
+      const verified=publicCli('doctor');assert.equal(verified.status,0,verified.stdout+verified.stderr);
+    } finally {fs.writeFileSync(file,before);fs.writeFileSync(path.join(skill,'.tools/bindings.json'),record);}
+  }
+});
+
+test('public doctor diagnoses malformed bindings without a launcher and its manual recovery steps work',()=>{
+  const files=['bindings.json','cli.cmd'].map(name=>[path.join(skill,'.tools',name),fs.readFileSync(path.join(skill,'.tools',name))]);
+  fs.writeFileSync(files[0][0],'{broken');fs.unlinkSync(files[1][0]);
+  try {
+    const result=publicCli('doctor');
+    assert.equal(result.status,1,result.stdout+result.stderr);
+    assert.match(result.stdout,/tool\.runtime: error/);
+    assert.match(result.stderr,/\.tools\/bindings\.json/);
+    assert.match(result.stderr,/\.tools\/cli\.cmd/);
+    assert.equal(fs.readFileSync(files[0][0],'utf8'),'{broken');
+    assert.equal(fs.existsSync(files[1][0]),false);
+    fs.copyFileSync(files[0][0],path.join(work,'damaged-bindings.json'));
+    for(const [file] of files)fs.rmSync(file,{force:true});
+    for(const name of [...new Set([bindings.runtime,'git','go','hugo'])]) {
+      const repair=publicCli('base/'+name+'/ensure');assert.equal(repair.status,0,repair.stdout+repair.stderr);
+    }
+    const verified=publicCli('doctor');assert.equal(verified.status,0,verified.stdout+verified.stderr);
+    assert.equal(fs.readFileSync(path.join(work,'damaged-bindings.json'),'utf8'),'{broken');
+  } finally {for(const [file,before] of files)fs.writeFileSync(file,before);}
+});
+
+test('public doctor skips unreadable managed receipts and still reports malformed bindings',()=>{
+  const fresh=path.join(work,'damaged-runtime');
+  fs.cpSync(skill,fresh,{recursive:true,filter:file=>!file.split(path.sep).includes('.tools')});
+  write(fresh,'.tools/bindings.json','{broken');
+  write(fresh,'.tools/bun/bun.exe','broken binary');write(fresh,'.tools/bun/install.json','{broken');
+  const result=publicCli('doctor',fresh);
+  assert.equal(result.status,1,result.stdout+result.stderr);
+  assert.match(result.stdout,/tool\.runtime: error/);
+  assert.match(result.stderr,/\.tools\/bindings\.json/);
+  assert.equal(fs.readFileSync(path.join(fresh,'.tools/bun/install.json'),'utf8'),'{broken');
+  assert.equal(fs.existsSync(path.join(fresh,'.tools/cli.cmd')),false);
 });
 
 test('doctor help and an unprepared doctor do not create tools or install dependencies',()=>{

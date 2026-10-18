@@ -9,16 +9,19 @@ function Assert-PlainBootstrapPath([string]$Path) {
         if ((Test-Path -LiteralPath $current) -and ((Get-Item -LiteralPath $current -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'linked_bootstrap_path' }
     }
 }
-function Find-Engine($Manifest, [string]$SkipManaged) {
-    $bindings = $null
-    $bindingFile = Join-Path $skillRoot '.tools/bindings.json'
-    if ([IO.File]::Exists($bindingFile)) { $bindings = [IO.File]::ReadAllText($bindingFile) | ConvertFrom-Json }
+function Find-Engine($Manifest, [string]$SkipManaged, [bool]$Diagnosing) {
     $candidates = @()
-    if ($bindings.runtime -in @('bun','node')) {
-        $bound = $bindings.tools.($bindings.runtime)
-        $path = if ($bound.source -eq 'managed') { Join-Path $skillRoot ('.tools/' + $bound.path) } else { $bound.path }
-        $candidates += @{name=$bindings.runtime;path=$path}
-    }
+    try {
+        $bindingFile = Join-Path $skillRoot '.tools/bindings.json'
+        if ([IO.File]::Exists($bindingFile)) {
+            $bindings = [IO.File]::ReadAllText($bindingFile) | ConvertFrom-Json
+            if ($bindings.runtime -in @('bun','node')) {
+                $bound = $bindings.tools.($bindings.runtime)
+                $path = if ($bound.source -eq 'managed') { Join-Path $skillRoot ('.tools/' + $bound.path) } else { $bound.path }
+                $candidates += @{name=$bindings.runtime;path=$path}
+            }
+        }
+    } catch { if (-not $Diagnosing) { throw } }
     foreach ($name in @('bun','node')) { $candidates += @{name=$name;path=(Join-Path $skillRoot ".tools/$name/$name.exe")} }
     foreach ($name in @('bun','node')) {
         foreach ($application in @(Get-Command "$name.exe" -CommandType Application -All -ErrorAction SilentlyContinue)) {
@@ -26,19 +29,24 @@ function Find-Engine($Manifest, [string]$SkipManaged) {
         }
     }
     foreach ($candidate in $candidates) {
-        if (-not $candidate.path -or -not [IO.File]::Exists($candidate.path)) { continue }
-        $name = $candidate.name
-        $target = [IO.Path]::GetFullPath((Join-Path $skillRoot ".tools/$name"))
-        $managed = [IO.Path]::GetFullPath($candidate.path).StartsWith($target + '\',[StringComparison]::OrdinalIgnoreCase)
-        if ($managed) {
-            if ($SkipManaged -eq 'all' -or $SkipManaged -eq $name) { continue }
-            Assert-PlainBootstrapPath $candidate.path
-            $receiptFile = Join-Path $target 'install.json'
-            if (-not [IO.File]::Exists($receiptFile)) { continue }
-            $receipt = [IO.File]::ReadAllText($receiptFile) | ConvertFrom-Json
-            $binary = @($receipt.files | Where-Object name -CEQ "$name.exe")
-            if ($receipt.schema -ne 'swaw-banyan.install/v1' -or $receipt.name -ne $name -or $binary.Count -ne 1 -or
-                $binary[0].sha256 -cne (Get-FileHash -LiteralPath $candidate.path -Algorithm SHA256).Hash.ToLowerInvariant()) { continue }
+        try {
+            if (-not $candidate.path -or -not [IO.File]::Exists($candidate.path)) { continue }
+            $name = $candidate.name
+            $target = [IO.Path]::GetFullPath((Join-Path $skillRoot ".tools/$name"))
+            $managed = [IO.Path]::GetFullPath($candidate.path).StartsWith($target + '\',[StringComparison]::OrdinalIgnoreCase)
+            if ($managed) {
+                if ($SkipManaged -eq 'all' -or $SkipManaged -eq $name) { continue }
+                Assert-PlainBootstrapPath $candidate.path
+                $receiptFile = Join-Path $target 'install.json'
+                if (-not [IO.File]::Exists($receiptFile)) { continue }
+                $receipt = [IO.File]::ReadAllText($receiptFile) | ConvertFrom-Json
+                $binary = @($receipt.files | Where-Object name -CEQ "$name.exe")
+                if ($receipt.schema -ne 'swaw-banyan.install/v1' -or $receipt.name -ne $name -or $binary.Count -ne 1 -or
+                    $binary[0].sha256 -cne (Get-FileHash -LiteralPath $candidate.path -Algorithm SHA256).Hash.ToLowerInvariant()) { continue }
+            }
+        } catch {
+            if (-not $Diagnosing) { throw }
+            continue
         }
         $definition = @($Manifest.platforms.'windows-x64'.tools | Where-Object name -CEQ $name)[0]
         $process = New-Object Diagnostics.Process
@@ -98,7 +106,7 @@ try {
     $manifest = [IO.File]::ReadAllText((Join-Path $skillRoot 'toolchain.json')) | ConvertFrom-Json
     if ($manifest.schema -ne 'swaw-banyan.toolchain/v2') { throw 'invalid_toolchain_manifest' }
     $skip = if ($force) { $args[0].Split('/')[1] } else { '' }
-    $available = Find-Engine $manifest $skip
+    $available = Find-Engine $manifest $skip ($helpCommand -ceq 'doctor')
     if ($available) {
         & $available (Join-Path $skillRoot 'tasks/_cli/main.mjs') @args
         exit $LASTEXITCODE

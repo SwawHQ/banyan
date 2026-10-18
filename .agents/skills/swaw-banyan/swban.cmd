@@ -1,5 +1,6 @@
 @echo off
 setlocal DisableDelayedExpansion
+if /i "%~1"=="doctor" goto bootstrap
 if /i "%~1"=="base/bun/ensure" goto bootstrap
 if /i "%~1"=="base/node/ensure" goto bootstrap
 if not exist "%~dp0.tools\cli.cmd" goto bootstrap

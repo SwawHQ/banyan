@@ -12,7 +12,8 @@ lastmod: 2026-10-18
   `swaw-banyan` Skill versions. `doctor [directory]` checks Module and
   theme-directory versions, vendored dependencies and local development.
   Local theme versions come from `theme.toml`. Doctor also checks selected tools
-  and runtime launchers; ordinary tasks do not check pairing. Check switches and
+  and runtime launchers, including a damaged launcher or bindings file, and provides
+  manual recovery steps. Ordinary tasks do not check pairing. Check switches and
   repair hints are maintained in `references/doctor.toml`. Extracted project ZIPs pair their built-in
   Skill and Module using `module/theme.toml`, without a `.git` directory.
   Recovery messages include the project URL,

@@ -12,6 +12,7 @@ lastmod: 2026-10-18
   `swaw-banyan` Skill 使用对应版本。`doctor [目录]` 检查 Module 和
   主题目录的版本配对、vendor 依赖及本地开发状态。
   主题目录的版本读取自 `theme.toml`。`doctor` 同时检查已选工具和运行时启动器；
+  启动器或绑定文件损坏时仍可诊断，并提供手动恢复步骤。
   普通任务不再检查配对。检查开关和修复提示由 `references/doctor.toml` 维护。
   整仓源码 ZIP 中的 Skill 与 `module/` 按 `module/theme.toml` 版本配对，无需 `.git`。
   修复提示包含项目地址、主题源码 ZIP 和 Module 版本调整命令。

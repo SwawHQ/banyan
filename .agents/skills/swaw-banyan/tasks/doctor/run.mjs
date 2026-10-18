@@ -22,7 +22,8 @@ export async function diagnose(site) {
   }
   const blocked=ids=>({state:'blocked',issues:['blocked_by: '+ids.join(', ')],hint:catalog.hints.blocked[language]});
   await check('tool.runtime',()=>{
-    bindings=readBindings();
+    try { bindings=readBindings(); }
+    catch(error) { return {state:'error',issues:[error.message],hint:catalog.hints.bindings[language]}; }
     if (!bindings.runtime) throw new Error('runtime_not_prepared');
     const runtime=resolveBinding(bindings.runtime,bindings);
     return {state:'ok',detail:bindings.runtime+'; '+runtime.path};
