@@ -1,0 +1,22 @@
+{
+  "en": {
+    "summary": "Cloudflare CLI tools and credentials",
+    "usage": "swban help/en deploy/cloudflare",
+    "details": [
+      "swban deploy/cloudflare/cli --help         #Show cf commands",
+      "swban deploy/cloudflare/wrangler --help    #Show Wrangler commands",
+      "swban deploy/cloudflare/auth/setup        #Set up authorization in a local page",
+      "swban deploy/cloudflare/auth/token/check  #Check the saved Token"
+    ]
+  },
+  "zh": {
+    "summary": "Cloudflare 命令行工具与凭据",
+    "usage": "swban help/zh deploy/cloudflare",
+    "details": [
+      "swban deploy/cloudflare/cli --help         #查看 cf 命令",
+      "swban deploy/cloudflare/wrangler --help    #查看 Wrangler 命令",
+      "swban deploy/cloudflare/auth/setup        #打开本机授权设置页",
+      "swban deploy/cloudflare/auth/token/check  #检查已保存的 Token"
+    ]
+  }
+}

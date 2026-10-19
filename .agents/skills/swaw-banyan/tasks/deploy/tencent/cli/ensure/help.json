@@ -1,0 +1,8 @@
+{
+  "en": {"summary":"Prepare tccli (Tencent Cloud CLI)","usage":"swban deploy/tencent/cli/ensure [--force]","details":[
+    "  --force  Reinstall the pinned tccli version"
+  ]},
+  "zh": {"summary":"准备 tccli（腾讯云 CLI）","usage":"swban deploy/tencent/cli/ensure [--force]","details":[
+    "  --force  重新安装固定版本的 tccli"
+  ]}
+}

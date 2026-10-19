@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Open authorization with Tencent Cloud selected",
+    "usage": "swban deploy/tencent/auth/setup [--no-browser]",
+    "details": [
+      "Sign in, save an access key, or inspect environment variables."
+    ]
+  },
+  "zh": {
+    "summary": "打开授权页并选中腾讯云",
+    "usage": "swban deploy/tencent/auth/setup [--no-browser]",
+    "details": [
+      "登录授权、保存访问密钥，或查看环境变量。"
+    ]
+  }
+}

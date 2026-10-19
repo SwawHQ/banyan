@@ -1,0 +1,24 @@
+{
+  "en": {
+    "summary": "Run tccli (Tencent Cloud CLI)",
+    "usage": "swban deploy/tencent/cli [arguments...]",
+    "details": [
+      "swban deploy/tencent/auth/setup      #Set up authorization in a local page",
+      "swban deploy/tencent/cli --version    #Show the tccli version",
+      "swban deploy/tencent/cli auth login   #Authorize tccli in the browser",
+      "swban deploy/tencent/cli auth logout  #Sign out of tccli",
+      "swban deploy/tencent/cli teo help     #Show EdgeOne commands"
+    ]
+  },
+  "zh": {
+    "summary": "运行 tccli（腾讯云 CLI）",
+    "usage": "swban deploy/tencent/cli [参数...]",
+    "details": [
+      "swban deploy/tencent/auth/setup      #打开本机授权设置页",
+      "swban deploy/tencent/cli --version    #查看 tccli 版本",
+      "swban deploy/tencent/cli auth login   #通过浏览器授权 tccli",
+      "swban deploy/tencent/cli auth logout  #退出 tccli 登录",
+      "swban deploy/tencent/cli teo help     #查看 EdgeOne 命令"
+    ]
+  }
+}

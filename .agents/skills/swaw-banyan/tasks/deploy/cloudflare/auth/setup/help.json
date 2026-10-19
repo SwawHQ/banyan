@@ -1,0 +1,10 @@
+{
+  "en": {"summary":"Open authorization with Cloudflare selected","usage":"swban deploy/cloudflare/auth/setup [--no-browser]","details":[
+    "Open the printed local URL yourself with --no-browser.",
+    "Sign in, save an API Token, or inspect environment variables."
+  ]},
+  "zh": {"summary":"打开授权页并选中 Cloudflare","usage":"swban deploy/cloudflare/auth/setup [--no-browser]","details":[
+    "--no-browser 显示本机地址，由用户自行打开。",
+    "登录授权、保存 API Token，或查看环境变量。"
+  ]}
+}

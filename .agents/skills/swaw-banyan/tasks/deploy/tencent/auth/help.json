@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Tencent Cloud authorization",
+    "usage": "swban help/en deploy/tencent/auth",
+    "details": []
+  },
+  "zh": {
+    "summary": "腾讯云授权",
+    "usage": "swban help/zh deploy/tencent/auth",
+    "details": []
+  }
+}

@@ -41,6 +41,11 @@ tools or downloads missing tools. Bun remains an optional tool under `base/bun`.
 GitHub CLI is prepared when you use `base/gh`.
 `base/uv/python` prepares an isolated Python environment; `base/uv tool run` runs
 Python CLI packages. See [Python tools](.agents/skills/swaw-banyan/references/python.md).
+Cloudflare's cf and Wrangler are available under `deploy/cloudflare/`.
+See [Cloudflare tools](.agents/skills/swaw-banyan/references/cloudflare.md).
+Tencent Cloud's tccli is available under `deploy/tencent/cli`, with automatic
+uv/Python preparation. See [Tencent Cloud tools](.agents/skills/swaw-banyan/references/tencent.md).
+`swban deploy/auth/setup` opens the shared Cloudflare and Tencent Cloud authorization page.
 Open <http://127.0.0.1:13241/>.
 
 To install Banyan in your own site, see

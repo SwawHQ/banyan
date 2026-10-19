@@ -1,15 +1,17 @@
 {
   "en": {
-    "summary": "Deployment configuration",
+    "summary": "Deployment tools and configuration",
     "usage": "swban help/en deploy",
     "details": [
+      "swban deploy/auth/setup  #Open the unified authorization page",
       "Choose a child command:"
     ]
   },
   "zh": {
-    "summary": "部署配置",
+    "summary": "部署工具和配置",
     "usage": "swban help/zh deploy",
     "details": [
+      "swban deploy/auth/setup  #打开统一授权页",
       "选择子命令："
     ]
   }

@@ -49,6 +49,13 @@ Help does not install packages. Doctor reports missing core packages before
 loading its TOML configuration. Each dependency group keeps one
 `package-lock.json`; the shared installer runs npm with Node and disables
 parent workspaces. Keep optional feature packages in their owning group.
+Cloudflare CLI packages belong to `deploy/cloudflare/cli/` and
+`deploy/cloudflare/wrangler/`. Their entries prepare locked packages on demand;
+their `check` commands inspect local installation without authentication.
+See [Cloudflare tools](cloudflare.md).
+Tencent Cloud's `deploy/tencent/cli` uses uv's isolated tool environment and
+pins its package in the leaf's `requirements.txt`; its `check` reads local files
+without running package code. See [Tencent Cloud tools](tencent.md).
 
 ## Preserve the existing contracts
 

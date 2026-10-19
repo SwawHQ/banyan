@@ -1,0 +1,4 @@
+{
+  "en": {"summary":"Shared API Token","usage":"swban help/en deploy/cloudflare/auth/token","details":[]},
+  "zh": {"summary":"共用 API Token","usage":"swban help/zh deploy/cloudflare/auth/token","details":[]}
+}

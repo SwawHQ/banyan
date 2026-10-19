@@ -1,0 +1,4 @@
+{
+  "en": {"summary":"Check the local tccli installation","usage":"swban deploy/tencent/cli/check","details":[]},
+  "zh": {"summary":"检查本地 tccli 安装","usage":"swban deploy/tencent/cli/check","details":[]}
+}

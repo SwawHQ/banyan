@@ -1,0 +1,20 @@
+{
+  "en": {
+    "summary": "Run cf (Cloudflare CLI)",
+    "usage": "swban deploy/cloudflare/cli [arguments...]",
+    "details": [
+      "swban deploy/cloudflare/cli auth login   #Sign in to cf",
+      "swban deploy/cloudflare/cli auth whoami  #Show the current authorization",
+      "swban deploy/cloudflare/cli zones list   #List accessible zones"
+    ]
+  },
+  "zh": {
+    "summary": "运行 cf（Cloudflare CLI）",
+    "usage": "swban deploy/cloudflare/cli [参数...]",
+    "details": [
+      "swban deploy/cloudflare/cli auth login   #登录 cf",
+      "swban deploy/cloudflare/cli auth whoami  #查看当前授权",
+      "swban deploy/cloudflare/cli zones list   #列出可访问的域名"
+    ]
+  }
+}

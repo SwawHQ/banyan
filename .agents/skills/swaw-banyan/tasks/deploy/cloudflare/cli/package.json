@@ -1,0 +1,6 @@
+{
+  "name": "swaw-banyan-cloudflare-cli",
+  "private": true,
+  "type": "module",
+  "dependencies": { "cf": "1.0.0-beta.18", "@napi-rs/keyring": "1.3.0" }
+}

@@ -47,6 +47,8 @@ swban <command> --help    #查看参数和默认值
 | 检查交付产物和指纹发布路径 | [交付检查](references/delivery.md) |
 | 用 `sync/ext` 下载已声明的外部资源 | [外部资源](references/external-resources.md) |
 | 同步生成的 EdgeOne 配置或规划部署 | [EdgeOne](references/edgeone.md) |
+| 准备 Cloudflare CLI、登录和管理资源 | [Cloudflare 工具](references/cloudflare.md) |
+| 准备 tccli、调用腾讯云或 EdgeOne API | [腾讯云工具](references/tencent.md) |
 | 使用隔离的 Python 环境和 CLI | [Python 工具](references/python.md) |
 | 添加任务或编排站点测试套件 | [任务维护](references/tasks.md) |
 

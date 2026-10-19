@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Check the saved access key without displaying it",
+    "usage": "swban deploy/tencent/auth/key/check",
+    "details": [
+      "Windows generic credential: swban/tencent/default; user name: SecretId; password: SecretKey."
+    ]
+  },
+  "zh": {
+    "summary": "检查已保存的访问密钥，不显示内容",
+    "usage": "swban deploy/tencent/auth/key/check",
+    "details": [
+      "Windows 普通凭据：swban/tencent/default；用户名填 SecretId；密码填 SecretKey。"
+    ]
+  }
+}

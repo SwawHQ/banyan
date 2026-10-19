@@ -38,6 +38,7 @@ arguments can select other paths or projects.
 Platform tasks must set their CLI credential and configuration locations
 separately. When adding a platform, pin its CLI package version in that task.
 Runtime isolation does not change cloud permissions.
+Use [Tencent Cloud tools](tencent.md) for the pinned tccli entry and local checks.
 
 Python environments contain absolute paths. After moving the Skill, remove
 only its `.tools/python-env` and recreate it with `base/uv/python/ensure`.

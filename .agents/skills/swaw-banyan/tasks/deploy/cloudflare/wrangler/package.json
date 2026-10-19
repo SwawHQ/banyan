@@ -1,0 +1,6 @@
+{
+  "name": "swaw-banyan-cloudflare-wrangler",
+  "private": true,
+  "type": "module",
+  "dependencies": { "wrangler": "4.151.1", "@napi-rs/keyring": "1.3.0" }
+}

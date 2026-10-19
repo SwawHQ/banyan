@@ -1,16 +1,25 @@
 import { spawn } from 'node:child_process';
+import path from 'node:path';
 
-export function execute(executable, args, {env = process.env, cwd = process.cwd()} = {}) {
+export function execute(executable, args, {env = process.env, cwd = process.cwd(), stdio = 'inherit', signal} = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(executable, args, {env, cwd, stdio:'inherit', shell:false});
+    signal?.throwIfAborted();
+    const child = spawn(executable, args, {env, cwd, stdio, shell:false});
     const interrupt = () => child.kill('SIGINT');
-    const terminate = () => child.kill('SIGTERM');
+    const terminate = () => {
+      // Windows signals terminate the wrapper before it can stop its children.
+      if (signal && process.platform === 'win32' && child.pid) {
+        const killer = spawn(path.join(process.env.SystemRoot,'System32/taskkill.exe'),['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});
+        killer.once('error',()=>child.kill());
+      } else child.kill('SIGTERM');
+    };
     const cleanup = () => {
       process.off('SIGINT', interrupt);
       process.off('SIGTERM', terminate);
+      signal?.removeEventListener('abort',terminate);
     };
-    process.on('SIGINT', interrupt);
-    process.on('SIGTERM', terminate);
+    if (!signal) { process.on('SIGINT', interrupt); process.on('SIGTERM', terminate); }
+    signal?.addEventListener('abort',terminate,{once:true});
     child.once('error', error => { cleanup(); reject(error); });
     child.once('exit', (code, signal) => {
       cleanup();

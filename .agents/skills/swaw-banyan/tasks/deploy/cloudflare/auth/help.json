@@ -1,0 +1,4 @@
+{
+  "en": {"summary":"Cloudflare credentials","usage":"swban help/en deploy/cloudflare/auth","details":[]},
+  "zh": {"summary":"Cloudflare 凭据","usage":"swban help/zh deploy/cloudflare/auth","details":[]}
+}

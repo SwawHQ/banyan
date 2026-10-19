@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Prepare cf (Cloudflare CLI)",
+    "usage": "swban deploy/cloudflare/cli/ensure [--force]",
+    "details": [
+      "  --force  Reinstall the locked packages"
+    ]
+  },
+  "zh": {
+    "summary": "准备 cf（Cloudflare CLI）",
+    "usage": "swban deploy/cloudflare/cli/ensure [--force]",
+    "details": [
+      "  --force  重新安装锁定的依赖"
+    ]
+  }
+}

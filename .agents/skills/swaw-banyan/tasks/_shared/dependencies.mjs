@@ -61,7 +61,7 @@ export async function ensureDependencies(root = skillRoot,{force = false} = {}) 
     fs.rmSync(marker,{force:true});
     console.error('[swban] Preparing packages: '+(path.relative(skillRoot,root)||'.'));
     const env = withPath([path.dirname(binding.path)],process.env);
-    if (await execute(binding.path,args,{cwd:root,env}) !== 0) throw new Error('Dependency installation failed: '+root);
+    if (await execute(binding.path,args,{cwd:root,env,stdio:['inherit',2,2]}) !== 0) throw new Error('Dependency installation failed: '+root);
     const issues = installed(root,dependencies);
     if (issues.length) throw new Error('Dependency installation is incomplete: '+issues.join('; '));
     fs.writeFileSync(marker,JSON.stringify({fingerprint})+'\n');

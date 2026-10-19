@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="__LANG__">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-text="title"></title>
+__ICONS__
+<style nonce="__NONCE__">
+  :root {
+    color-scheme:light dark;font:16px/1.6 system-ui,sans-serif;
+    --surface:light-dark(#fff,#181818);--ink:light-dark(#202020,#eee);
+    --muted:light-dark(#606060,#aaa);--line:light-dark(#d5d5d5,#444);
+    --control-line:light-dark(#808080,#8c8c8c);
+    --selected:light-dark(#ececec,#333);--accent:light-dark(#222,#e5e5e5);
+    --on-accent:light-dark(#fff,#181818);color:var(--ink);background:var(--surface)
+  }
+  body {max-width:52rem;margin:3rem auto;padding:0 1rem}
+  main {margin-top:1.5rem}
+  .auth-layout {display:grid;grid-template-columns:10rem minmax(0,1fr)}
+  .platform-content {position:relative;box-sizing:border-box;min-width:0;min-height:20rem;padding:1.25rem 1.5rem}
+  h1, input, button, code, select {font:inherit}
+  header {display:flex;align-items:center;gap:.7rem}
+  header img {flex:none} h1 {flex:1;min-width:0;margin:0;font-weight:600}
+  #language {flex:none;min-height:40px;padding:.35rem .5rem;border:1px solid var(--control-line);border-radius:.35rem;color:inherit;background:var(--surface)}
+  ol {padding-left:1.5rem} li {margin:.5rem 0}
+  label {display:block;margin-top:1rem}
+  .account-label {margin-top:1rem} .account-label label {display:inline;margin:0}
+  input {box-sizing:border-box;width:100%;padding:.5rem;border:1px solid var(--control-line);border-radius:.3rem;color:inherit;background:var(--surface)}
+  button {margin:1rem .5rem 0 0;padding:.6rem 1rem;border:1px solid var(--control-line);border-radius:.35rem;color:inherit;background:var(--surface);cursor:pointer}
+  button:disabled {opacity:.55;cursor:default}
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {outline:2px solid var(--accent);outline-offset:3px}
+  [role="tablist"] {display:flex;flex-wrap:wrap}
+  [role="tab"] {min-height:44px;margin:0;border:0;border-radius:0;color:var(--muted);background:transparent}
+  [role="tab"][aria-selected="true"] {color:var(--accent);font-weight:600}
+  [role="tab"]:hover {color:var(--accent)}
+  #platforms {flex-direction:column;flex-wrap:nowrap;gap:.35rem;padding:1.25rem .75rem;border-right:1px solid var(--line)}
+  #platforms [role="tab"] {flex:none;padding:.5rem .75rem;border-radius:.35rem;text-align:left}
+  #platforms [aria-selected="true"] {background:var(--selected)}
+  [data-methods] {gap:1.25rem;padding-right:5rem;border-bottom:1px solid var(--line)}
+  [data-methods] [role="tab"] {margin-bottom:-1px;padding:.45rem .05rem;border-bottom:3px solid transparent}
+  [data-methods] [aria-selected="true"] {border-bottom-color:var(--accent)}
+  [data-platform] > [role="tabpanel"] {padding-top:.5rem}
+  [data-tool], [data-save] {min-height:46px;border-color:var(--accent);color:var(--on-accent);background:var(--accent);font-weight:600}
+  .login-action {display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem}
+  [data-tool] {width:12rem;max-width:100%;margin:0}
+  .login-action [role="status"] {max-width:100%;overflow-wrap:anywhere}
+  [data-tool]:enabled:hover, [data-save]:enabled:hover {filter:brightness(.92)}
+  [role="status"], footer {color:var(--muted)}
+  [data-text="priority"] {margin:.5rem 0 0;font-size:.875rem;color:var(--muted)}
+  #close {position:absolute;top:1.25rem;right:1.5rem;min-height:40px;margin:0;padding:.35rem .8rem;color:var(--muted)}
+  #close:enabled:hover {color:var(--ink);border-color:var(--muted)}
+  table {width:100%;border-collapse:collapse} th, td {text-align:left;padding:.5rem 0;overflow-wrap:anywhere}
+  th {font-weight:600} td:first-child {padding-right:.5rem}
+  footer {margin-top:1.5rem} footer p {margin:.5rem 0}
+  a {color:var(--ink)} code {overflow-wrap:anywhere}
+  @media (max-width:40rem) {
+    body {margin:2rem auto}
+    .auth-layout {grid-template-columns:minmax(0,1fr)}
+    #platforms {flex-direction:row;flex-wrap:wrap;padding:.65rem .75rem;border-right:0;border-bottom:1px solid var(--line)}
+    .platform-content {padding:1rem}
+    #close {top:1rem;right:1rem}
+  }
+  @media (max-width:28rem) {
+    #close {position:static;display:block;margin:0 0 .75rem auto}
+    [data-methods] {padding-right:0}
+  }
+</style>
+<header>__LOGO__<h1 data-text="title"></h1><select id="language" aria-label="Language / 语言"><option value="zh" lang="zh">中文</option><option value="en" lang="en">English</option></select></header>
+<p data-text="priority"></p>
+<main>
+<div class="auth-layout">
+<div id="platforms" role="tablist" aria-orientation="vertical">
+  <button id="tab-cloudflare" role="tab" aria-controls="platform-cloudflare" aria-selected="true" data-text="cloudflareName"></button>
+  <button id="tab-tencent" role="tab" aria-controls="platform-tencent" aria-selected="false" tabindex="-1" data-text="tencentName"></button>
+</div>
+<div class="platform-content">
+<button id="close" type="button" data-text="close"></button>
+<section id="platform-cloudflare" role="tabpanel" aria-labelledby="tab-cloudflare" data-platform="cloudflare">
+<div role="tablist" data-methods>
+  <button id="cloudflare-tab-login" role="tab" aria-controls="cloudflare-login" aria-selected="true" data-text="tabLogin"></button>
+  <button id="cloudflare-tab-token" role="tab" aria-controls="cloudflare-token" aria-selected="false" tabindex="-1" data-text="tabToken"></button>
+  <button id="cloudflare-tab-environment" role="tab" aria-controls="cloudflare-environment" aria-selected="false" tabindex="-1" data-text="tabEnvironment"></button>
+</div>
+<section id="cloudflare-login" role="tabpanel" aria-labelledby="cloudflare-tab-login">
+  <p class="login-action"><button data-tool="cf" data-text="loginCf"></button> <span id="cf-status" role="status" aria-live="polite" data-text="notChecked"></span></p>
+  <p class="login-action"><button data-tool="wrangler" data-text="loginWrangler"></button> <span id="wrangler-status" role="status" aria-live="polite" data-text="notChecked"></span></p>
+  <footer><ol>
+    <li data-text="loginFlow"></li>
+    <li data-text="loginPermissions"></li>
+    <li data-text="loginStorage"></li>
+  </ol></footer>
+</section>
+<section id="cloudflare-token" role="tabpanel" aria-labelledby="cloudflare-tab-token" hidden>
+<form autocomplete="off">
+  <label for="token" data-text="token"></label>
+  <input id="token" name="token" type="password" required maxlength="1024" autocomplete="off" spellcheck="false">
+  <div class="account-label"><label for="account" data-text="account"></label> <a data-link="findAccount" data-text="findAccount" target="_blank" rel="noopener noreferrer"></a></div>
+  <input id="account" name="accountId" pattern="[a-fA-F0-9]{32}" maxlength="32" autocomplete="off" spellcheck="false">
+  <button type="submit" data-save data-text="save"></button>
+</form>
+<p data-status role="status" aria-live="polite"></p>
+<p data-text="getToken"></p>
+<ol>
+  <li><a data-link="login" data-text="login" target="_blank" rel="noopener noreferrer"></a></li>
+  <li><a data-link="create" data-text="create" target="_blank" rel="noopener noreferrer"></a></li>
+  <li data-text="permissions"></li>
+</ol>
+<footer><ol start="4">
+  <li><span data-text="userBefore"></span><a data-link="user" data-text="user" target="_blank" rel="noopener noreferrer"></a><span data-text="userAfter"></span></li>
+  <li data-text="storage"></li>
+  <li><span data-text="credential"></span><code>__CF_TARGET__</code></li>
+</ol></footer>
+</section>
+<section id="cloudflare-environment" role="tabpanel" aria-labelledby="cloudflare-tab-environment" hidden>
+  <table><thead><tr><th data-text="variable"></th><th data-text="value"></th></tr></thead><tbody>
+<tr><td><code>CLOUDFLARE_API_TOKEN</code></td><td data-env="token"></td></tr>
+<tr><td><code>CLOUDFLARE_ACCOUNT_ID</code></td><td data-env="accountId"></td></tr>
+<tr><td><code>CLOUDFLARE_API_KEY</code></td><td data-env="legacyKey"></td></tr>
+<tr><td><code>CLOUDFLARE_EMAIL</code></td><td data-env="email"></td></tr>
+</tbody></table>
+  <footer>
+    <p data-text="environmentHint"></p>
+    <p data-text="legacyHint"></p>
+  </footer>
+</section>
+</section>
+<section id="platform-tencent" role="tabpanel" aria-labelledby="tab-tencent" data-platform="tencent" hidden>
+<div role="tablist" data-methods>
+  <button id="tencent-tab-login" role="tab" aria-controls="tencent-login" aria-selected="true" data-text="tabLogin"></button>
+  <button id="tencent-tab-token" role="tab" aria-controls="tencent-token" aria-selected="false" tabindex="-1" data-text="tabToken"></button>
+  <button id="tencent-tab-environment" role="tab" aria-controls="tencent-environment" aria-selected="false" tabindex="-1" data-text="tabEnvironment"></button>
+</div>
+<section id="tencent-login" role="tabpanel" aria-labelledby="tencent-tab-login">
+  <p class="login-action"><button data-tool="tccli" data-text="loginTccli"></button> <span id="tccli-status" role="status" aria-live="polite" data-text="notChecked"></span></p>
+  <footer><ol>
+    <li data-text="loginFlow"></li>
+    <li data-text="loginPermissions"></li>
+    <li data-text="loginStorage"></li>
+  </ol></footer>
+</section>
+<section id="tencent-token" role="tabpanel" aria-labelledby="tencent-tab-token" hidden>
+<form autocomplete="off">
+  <label for="secret-id" data-text="secretId"></label>
+  <input id="secret-id" name="secretId" required pattern="[a-zA-Z0-9]{16,128}" maxlength="128" autocomplete="off" spellcheck="false">
+  <label for="secret-key" data-text="secretKey"></label>
+  <input id="secret-key" name="secretKey" type="password" required pattern="[a-zA-Z0-9]{16,128}" maxlength="128" autocomplete="off" spellcheck="false">
+  <button type="submit" data-save data-text="save"></button>
+</form>
+<p data-status role="status" aria-live="polite"></p>
+<p data-text="getToken"></p>
+<ol>
+  <li><a data-link="login" data-text="login" target="_blank" rel="noopener noreferrer"></a></li>
+  <li><a data-link="create" data-text="create" target="_blank" rel="noopener noreferrer"></a></li>
+  <li data-text="permissions"></li>
+</ol>
+<footer><ol start="4">
+  <li data-text="verification"></li>
+  <li data-text="storage"></li>
+  <li><span data-text="credential"></span><code>__TC_TARGET__</code></li>
+</ol></footer>
+</section>
+<section id="tencent-environment" role="tabpanel" aria-labelledby="tencent-tab-environment" hidden>
+  <table><thead><tr><th data-text="variable"></th><th data-text="value"></th></tr></thead><tbody>
+<tr><td><code>TENCENTCLOUD_SECRET_ID</code></td><td data-env="TENCENTCLOUD_SECRET_ID"></td></tr>
+<tr><td><code>TENCENTCLOUD_SECRET_KEY</code></td><td data-env="TENCENTCLOUD_SECRET_KEY"></td></tr>
+<tr><td><code>TENCENTCLOUD_TOKEN</code></td><td data-env="TENCENTCLOUD_TOKEN"></td></tr>
+<tr><td><code>TENCENTCLOUD_REGION</code></td><td data-env="TENCENTCLOUD_REGION"></td></tr>
+<tr><td><code>TCCLI_PROFILE</code></td><td data-env="TCCLI_PROFILE"></td></tr>
+<tr><td><code>TENCENTCLOUD_ROLE_ARN</code></td><td data-env="TENCENTCLOUD_ROLE_ARN"></td></tr>
+<tr><td><code>TENCENTCLOUD_ROLE_SESSION_NAME</code></td><td data-env="TENCENTCLOUD_ROLE_SESSION_NAME"></td></tr>
+<tr><td><code>TKE_REGION</code></td><td data-env="TKE_REGION"></td></tr>
+<tr><td><code>TKE_PROVIDER_ID</code></td><td data-env="TKE_PROVIDER_ID"></td></tr>
+<tr><td><code>TKE_WEB_IDENTITY_TOKEN_FILE</code></td><td data-env="TKE_WEB_IDENTITY_TOKEN_FILE"></td></tr>
+<tr><td><code>TKE_ROLE_ARN</code></td><td data-env="TKE_ROLE_ARN"></td></tr>
+</tbody></table>
+  <footer>
+    <p data-text="environmentHint"></p>
+    <p data-text="nativeHint"></p>
+  </footer>
+</section>
+</section>
+</div>
+</div>
+</main>
+<p id="page-status" role="status" aria-live="polite"></p>
+<script nonce="__NONCE__" type="module">
+  const {platform,language:initialLanguage,text:translations,links,existing,environment}=await (await fetch('/page.json')).json();
+  let text=translations[initialLanguage];
+  const session=location.hash.slice(1),close=document.querySelector('#close'),pageStatus=document.querySelector('#page-status');
+  const language=document.querySelector('#language'),toolLabels={cf:'loginCf',wrangler:'loginWrangler',tccli:'loginTccli'};
+  const actions=[...document.querySelectorAll('[data-save],[data-tool]')];
+  const preparations=new Map(),validSession=/^[a-f0-9]{64}$/.test(session);
+  let busy=false;
+  const setBusy=value=>{busy=value;for(const action of actions)action.disabled=value||preparations.get(action.dataset.tool)==='preparing';if(!value)prepareSelected();};
+  function setText(element,key) {
+    element.dataset.text=key;
+    const copy=text[element.closest('[data-platform]')?.dataset.platform]||{};
+    element.textContent=(key.startsWith('errors.')?text.errors[key.slice(7)]:copy[key]??text[key])??text.failed;
+  }
+  function renderLanguage(value) {
+    text=translations[value];language.value=value;document.documentElement.lang=value;
+    for(const element of document.querySelectorAll('[data-text]'))setText(element,element.dataset.text);
+    language.setAttribute('aria-label',text.language);platforms.setAttribute('aria-label',text.platforms);
+    for(const list of document.querySelectorAll('[data-methods]'))list.setAttribute('aria-label',text.methods);
+  }
+  function select(tab) {
+    for(const item of tab.parentElement.children) {
+      const selected=item===tab;item.setAttribute('aria-selected',selected);item.tabIndex=selected?0:-1;
+      document.getElementById(item.getAttribute('aria-controls')).hidden=!selected;
+    }
+    prepareSelected();
+  }
+  const platforms=document.querySelector('#platforms'),narrow=matchMedia('(max-width:40rem)');
+  const orient=()=>platforms.setAttribute('aria-orientation',narrow.matches?'horizontal':'vertical');
+  orient();narrow.addEventListener('change',orient);
+  for(const list of document.querySelectorAll('[role="tablist"]')) {
+    const tabs=[...list.children];
+    for(const tab of tabs) {
+      tab.addEventListener('click',()=>select(tab));
+      tab.addEventListener('keydown',event=>{
+        const vertical=list.getAttribute('aria-orientation')==='vertical',index=tabs.indexOf(tab);
+        const next={[vertical?'ArrowDown':'ArrowRight']:(index+1)%tabs.length,[vertical?'ArrowUp':'ArrowLeft']:(index+tabs.length-1)%tabs.length,Home:0,End:tabs.length-1}[event.key];
+        if(next!==undefined){event.preventDefault();select(tabs[next]);tabs[next].focus();}
+      });
+    }
+  }
+  async function submit(route,value) {
+    const response=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json','X-Swban-Session':session},body:JSON.stringify(value)});
+    const result=await response.json();if(!response.ok)throw new Error(Object.hasOwn(text.errors,result.error)?'errors.'+result.error:'failed');return result;
+  }
+  async function prepareButton(button) {
+    const tool=button.dataset.tool,result=document.getElementById(tool+'-status');
+    preparations.set(tool,'preparing');button.disabled=true;button.setAttribute('aria-busy','true');setText(result,'preparing');
+    try {
+      await submit('/prepare',{tool});preparations.set(tool,'ready');setText(result,'ready');setText(button,toolLabels[tool]);
+    } catch(error) {
+      preparations.set(tool,'failed');setText(button,'retryPrepare');setText(result,error instanceof TypeError?'closed':error.message);
+    } finally {button.disabled=busy;button.removeAttribute('aria-busy');}
+  }
+  function prepareSelected() {
+    if(!validSession||busy)return;
+    const panel=document.querySelector('[data-platform]:not([hidden]) > [role="tabpanel"]:not([hidden])');
+    for(const button of panel.querySelectorAll('[data-tool]'))if(!preparations.has(button.dataset.tool))void prepareButton(button);
+  }
+  for(const panel of document.querySelectorAll('[data-platform]')) {
+    const name=panel.dataset.platform,env=environment[name];
+    for(const element of panel.querySelectorAll('[data-link]'))element.href=links[name][element.dataset.link];
+    for(const element of panel.querySelectorAll('[data-env]')) {
+      const key=element.dataset.env,value=env[key];
+      if(key==='accountId'&&value)element.textContent=value;
+      else setText(element,key==='accountId'&&env.accountSet?'invalidAccount':value?'set':'unset');
+    }
+    const form=panel.querySelector('form'),save=panel.querySelector('[data-save]'),status=panel.querySelector('[data-status]');
+    if(existing[name]){setText(save,'replace');setText(status,'existing');}
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();if(busy)return;setBusy(true);setText(status,'working');
+      try {
+        await submit('/save',{...Object.fromEntries(new FormData(form)),platform:name});
+        for(const input of form.querySelectorAll('input[type="password"]'))input.value='';
+        setText(save,'replace');setText(status,'saved');
+      } catch(error){setText(status,error instanceof TypeError?'closed':error.message);}
+      finally{setBusy(false);}
+    });
+    for(const button of panel.querySelectorAll('[data-tool]'))button.addEventListener('click',async()=>{
+      if(busy)return;
+      if(preparations.get(button.dataset.tool)!=='ready'){await prepareButton(button);return;}
+      setBusy(true);const result=document.getElementById(button.dataset.tool+'-status');setText(result,'authorizing');
+      try{await submit('/login',{tool:button.dataset.tool});setText(result,'authorized');}
+      catch(error){setText(result,error instanceof TypeError?'closed':error.message);}
+      finally{setBusy(false);}
+    });
+  }
+  renderLanguage(initialLanguage);language.addEventListener('change',()=>renderLanguage(language.value));
+  if(!validSession){document.querySelector('main').hidden=true;close.disabled=true;setText(pageStatus,'invalidSession');}
+  else select(document.getElementById('tab-'+platform));
+  close.addEventListener('click',async()=>{
+    close.disabled=true;setBusy(true);
+    try {
+      await submit('/cancel',{});for(const form of document.forms)form.reset();
+      document.querySelector('main').hidden=true;setText(pageStatus,'cancelled');
+    } catch(error){setText(pageStatus,error instanceof TypeError?'closed':error.message);close.disabled=false;setBusy(false);}
+  });
+</script>
+</html>

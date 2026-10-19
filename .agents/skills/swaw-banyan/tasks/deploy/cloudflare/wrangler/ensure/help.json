@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Prepare Wrangler",
+    "usage": "swban deploy/cloudflare/wrangler/ensure [--force]",
+    "details": [
+      "  --force  Reinstall the locked packages"
+    ]
+  },
+  "zh": {
+    "summary": "准备 Wrangler",
+    "usage": "swban deploy/cloudflare/wrangler/ensure [--force]",
+    "details": [
+      "  --force  重新安装锁定的依赖"
+    ]
+  }
+}

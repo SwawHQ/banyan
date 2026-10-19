@@ -16,7 +16,7 @@
 
 **3.** 文章、工具列表视图
 
-**4.** 配套 Agent Skill
+**4.** 配套 Agent Skill，自动部署腾讯 EdgeOne pages、Cloudflare pages，自动日常运维
 
 **5.** 纯静态部署、资源指纹与 CDN 缓存
 
@@ -40,10 +40,14 @@
 ```
 
 入口会按需准备 Node/npm、Git、Go 和 Hugo：优先复用兼容工具，缺少时自动下载。
-Bun 作为可选工具，通过 `base/bun` 使用。
 GitHub CLI 在使用 `base/gh` 时准备。
 `base/uv/python` 按需准备隔离的 Python 环境；`base/uv tool run` 运行 Python CLI。
 使用方法见 [Python 工具](.agents/skills/swaw-banyan/references/python.md)。
+`deploy/cloudflare/` 提供 cf 和 Wrangler，按需准备固定版本。
+使用方法见 [Cloudflare 工具](.agents/skills/swaw-banyan/references/cloudflare.md)。
+`deploy/tencent/cli` 提供 tccli，自动准备 uv/Python 和独立工具环境。
+使用方法见 [腾讯云工具](.agents/skills/swaw-banyan/references/tencent.md)。
+`swban deploy/auth/setup` 打开 Cloudflare 和腾讯云共用的授权页。
 打开 <http://127.0.0.1:13241/> 查看站点。
 
 安装到自己的站点，见[开始使用](content/docs/guide/getting-started/index.zh.md)；

@@ -2,7 +2,7 @@
 title: Unreleased
 slug: unreleased
 description: Unreleased changes to the Banyan theme and Skill.
-lastmod: 2026-10-18
+lastmod: 2026-10-19
 ---
 
 ## Added
@@ -43,6 +43,36 @@ lastmod: 2026-10-18
   retain their platform syntax.
 - `sync/ext` for declared external resources and `deploy/edgeone/sync`
   for generated deployment configuration.
+- `deploy/cloudflare/cli` and `deploy/cloudflare/wrangler` run pinned Cloudflare
+  CLIs with native arguments. Each has `ensure [--force]` and a local `check`;
+  normal commands prepare packages as needed. Authentication uses each CLI's
+  native per-user credentials or a shared API Token in Windows Credential Manager.
+  Banyan's cf commands require encrypted OAuth storage with the key in Windows
+  Credential Manager; an unavailable keyring stops the command without plaintext fallback.
+  `auth/token/check` also finds manually added credentials.
+  Resource names and explicit boolean flag values no longer change credential selection.
+  `auth whoami` uses the same credential priority as resource commands.
+- `deploy/tencent/cli` runs a pinned tccli with automatic uv/Python preparation
+  in an isolated Skill environment. It provides `ensure [--force]` and a local
+  read-only `check`, preserving native Tencent Cloud and EdgeOne commands.
+  Sign-in and credential refresh require TLS certificate verification.
+  `auth/key/check` returns a nonzero exit code when the local credential is absent.
+- `deploy/auth/setup` opens one local authorization page for Cloudflare and Tencent
+  Cloud. Each platform's `auth/setup` entry selects its tab. The page supports
+  native sign-in, Windows-stored API credentials and read-only environment status,
+  with credential priority, site icons in their original colors and system-language
+  text in English or Chinese. A title-bar language switch preserves inputs and
+  progress; reloading returns to the system language without saving the selection.
+  Platform navigation and method tabs use a monochrome layout with a thin column divider.
+  Credential priority sits below the title; Close is in the upper-right corner.
+  Supplementary notes follow the controls or variable table. Sign-in and API Token
+  notes use numbered lists for setup, permissions and credential storage.
+  Sign-in tabs prepare tools in the background, show readiness and support retry.
+  API Token setup stays available during downloads; Close stops preparation.
+  Cancellation and timeout still close the session after a credential write if the save connection disconnects.
+  Narrow screens stack the columns.
+  Both platforms use the API Token tab label.
+  Tencent access keys use `swban/tencent/default`; `auth/key/check` checks local presence.
 - MIT licenses for the repository, Module and Skill, with third-party notices.
 
 ## Changed

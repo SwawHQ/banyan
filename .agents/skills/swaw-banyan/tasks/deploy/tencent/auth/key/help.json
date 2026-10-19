@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Saved access key",
+    "usage": "swban help/en deploy/tencent/auth/key",
+    "details": []
+  },
+  "zh": {
+    "summary": "保存的访问密钥",
+    "usage": "swban help/zh deploy/tencent/auth/key",
+    "details": []
+  }
+}

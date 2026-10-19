@@ -1,0 +1,16 @@
+{
+  "en": {
+    "summary": "Tencent Cloud tools",
+    "usage": "swban help/en deploy/tencent",
+    "details": [
+      "swban deploy/tencent/auth/setup  #Set up authorization in a local page"
+    ]
+  },
+  "zh": {
+    "summary": "腾讯云工具",
+    "usage": "swban help/zh deploy/tencent",
+    "details": [
+      "swban deploy/tencent/auth/setup  #打开本机授权设置页"
+    ]
+  }
+}
