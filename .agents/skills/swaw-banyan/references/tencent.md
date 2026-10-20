@@ -12,7 +12,12 @@ swban deploy/tencent/cli/ensure --force  #Reinstall the pinned tccli version
 ```
 
 Use `swban help/en deploy/tencent/cli` for Skill help without preparing tools.
-Arguments, streams, exit codes and the caller's working directory are preserved.
+Arguments, streams and exit codes are preserved. The tccli child process starts
+in `%TEMP%/swaw/banyan/tccli/` under the system temporary directory, including
+page sign-in and status checks. This directory is empty on first use; the entry
+keeps it and its caches for later commands. `swban` itself keeps the caller's
+working directory. Relative file and directory paths use the fixed tccli
+directory; use absolute paths unless you intend to use that directory.
 Native help runs tccli and can prepare its dependencies.
 `check` reads local files and version metadata; it does not install, run tccli,
 contact Tencent Cloud or check cloud permissions.
@@ -30,14 +35,25 @@ swban deploy/tencent/auth/setup           #Open the page with Tencent Cloud sele
 swban deploy/tencent/auth/key/check       #Check the saved access key without showing it
 ```
 
-The page provides sign-in, access-key and read-only environment tabs. Opening
-the sign-in tab prepares tccli in the background and shows preparation status.
-Once ready, the sign-in button opens its native browser flow for the default profile.
+The page provides sign-in, API Token and read-only environment tabs. API Token
+(SecretId/SecretKey) is recommended; Windows Credential Manager stores its
+long-term keys. Opening the sign-in tab prepares tccli in the background and
+shows preparation status.
+After preparation, the page checks native credentials with `tccli sts GetCallerIdentity`,
+including after a refresh or reopening. Environment API credentials and Banyan's
+saved Windows access key do not participate. The check confirms that native
+credentials work; it does not distinguish browser sign-in from keys saved by
+tccli, or check product permissions. A failed check leaves authorization unconfirmed.
+Sign-in and checks use `TCCLI_PROFILE`, or `default` when unset. The check does
+not require a separate tccli configuration file after first sign-in.
+Once ready, the sign-in button opens its native browser flow. The CLI selects
+the sign-in profile using its own rules. Compatible existing sign-in can be reused.
 This flow has no separate product-permission selector. Access follows the signed-in
 identity's CAM permissions. For limited access, sign in as a CAM sub-user granted
 only the required permissions.
-tccli saves and refreshes sign-in credentials in its per-user `~/.tccli/`
-directory. These credentials are not stored in Windows Credential Manager.
+tccli saves and refreshes sign-in credentials as plaintext in its native
+`~/.tccli/` directory. These credentials are not stored
+in Windows Credential Manager.
 Banyan requires TLS certificate verification for sign-in and credential refresh.
 
 The access-key form accepts a long-term SecretId and SecretKey. It verifies
@@ -71,9 +87,12 @@ swban deploy/tencent/cli auth login   #Authorize tccli in the browser
 swban deploy/tencent/cli auth logout  #Sign out of tccli
 ```
 
-Configuration uses tccli's native per-user `~/.tccli/` directory. Set the region
-and other native options as needed; tool preparation does not choose a region.
-Runtime isolation does not isolate native cloud credentials.
+The entry preserves the caller's home and native configuration settings.
+Sign-in and sign-out share the same native state with system tccli installations.
+Banyan does not move, parse or encrypt native sign-in credentials. The page's
+sign-in action omits API and role credentials for that process, while keeping
+`TCCLI_PROFILE`. Set the region and other native options as needed; tool
+preparation does not choose a region.
 
 References: [tccli](https://github.com/TencentCloud/tencentcloud-cli),
 [browser authorization](https://cloud.tencent.com/document/product/440/111345).

@@ -2,7 +2,7 @@
 title: 未发布
 slug: unreleased
 description: Banyan 主题和 Skill 的未发布变更。
-lastmod: 2026-10-19
+lastmod: 2026-10-20
 ---
 
 ## 新增
@@ -41,18 +41,29 @@ lastmod: 2026-10-19
   Cloudflare CLI，透传原生参数；各自提供 `ensure [--force]` 和本地 `check`。
   普通命令按需准备依赖，授权可使用各 CLI 的原生用户凭据，
   或 Windows 凭据管理器中的共用 API Token。
-  Banyan 的 cf 命令强制加密保存登录凭据，密钥由 Windows 凭据管理器保管；
-  系统凭据功能不可用时停止，不回退到明文。
+  原生配置、登录凭据及存储方式由 CLI 管理，可沿用系统中同一工具的已有登录。
   `auth/token/check` 也可检查用户手工添加的凭据。
   修复资源名称和显式布尔参数值导致的凭据误选。
   `auth whoami` 与资源命令使用相同的凭据优先级。
+  原生 `CF_*` API 凭据优先于已保存的 API Token；
+  已设置的 `CLOUDFLARE_*` 变量优先于对应别名。
+  cf 和 Wrangler 命令及授权页的登录和状态检查，分别使用固定的
+  `%TEMP%/swaw/banyan/cf/` 和 `%TEMP%/swaw/banyan/wrangler/` 工作目录，
+  保留目录及缓存。本地路径以这些目录为基准；文件参数用绝对路径，
+  Wrangler 项目用原生 `--cwd` 指定绝对路径。
+  cf 资源管理命令使用空配置；开发和构建需要实际项目配置。
 - `deploy/tencent/cli` 在 Skill 独立环境中自动准备 uv/Python 和固定版本的 tccli，
   提供 `ensure [--force]` 与本地只读 `check`，透传腾讯云和 EdgeOne 原生命令。
   登录和凭据刷新强制校验 TLS 证书。
   `auth/key/check` 在本机凭据缺失时返回非零退出码。
+  配置和登录沿用 tccli 原生规则；授权页说明登录凭据明文存储，
+  推荐使用 Windows 保管的 API 密钥。
+  tccli 命令及授权页的登录和状态检查使用固定的
+  `%TEMP%/swaw/banyan/tccli/` 目录并保留缓存；本地路径用绝对路径。
 - `deploy/auth/setup` 打开 Cloudflare 和腾讯云共用的本机授权页；
+  页面标题为“Swaw Banyan · 授权管理”。
   各平台的 `auth/setup` 入口直接选中对应选项卡。页面支持原生登录、
-  Windows 保管的 API 凭据和只读环境变量状态，显示凭据优先级、
+  Windows 保管的 API 凭据和只读环境变量状态，识别 Cloudflare 原生 `CF_*` 别名，显示凭据优先级、
   站点原色图标，并按系统语言显示中英文；标题栏可切换语言，保留输入和进度，
   不保存语言选择，刷新后重新按系统语言显示。
   授权页采用黑白灰配色，移除面板外框，保留两栏细分隔线；
@@ -60,8 +71,14 @@ lastmod: 2026-10-19
   补充说明统一放在操作区或变量表格后；登录和 API Token 说明用编号列表
   列出设置步骤、授权范围和凭据保存方式。
   进入登录授权页后后台准备工具，显示准备状态并支持重试；
-  下载期间仍可设置 API Token，关闭页面会停止准备。
-  保存连接断开时，取消和超时仍会在凭据写入完成后结束会话。
+  准备完成后检查 cf 和 Wrangler 的已有登录，以及 tccli 原生凭据是否可用；
+  刷新或重开页面会重新检查，授权按钮即时显示请求进度。
+  tccli 登录与检查使用同一 profile，通过原生 STS 身份查询确认凭据可用；
+  不区分已保存的登录和密钥，也不检查业务权限。
+  下载和检查期间仍可设置 API Token，关闭页面会停止准备、检查和登录。
+  页面不再自动超时；各 CLI 的授权超时保持原生规则。
+  授权页避免使用浏览器禁用的端口。
+  保存连接断开时，取消仍会在凭据写入完成后结束会话。
   窄屏上下排列，两个平台均使用 API Token 标签。腾讯云访问密钥使用
   `swban/tencent/default`；`auth/key/check` 检查本机凭据是否存在。
 - 仓库、Module 和 Skill 均包含 MIT 许可证，并保留第三方许可声明。

@@ -1,6 +1,6 @@
 {
   "en": {
-    "summary": "Set up cloud authorization in a local page",
+    "summary": "Open the local authorization manager",
     "usage": "swban deploy/auth/setup [--no-browser]",
     "details": [
       "Cloudflare and Tencent Cloud share one page.",
@@ -8,7 +8,7 @@
     ]
   },
   "zh": {
-    "summary": "通过本机网页设置云平台授权",
+    "summary": "打开本机授权管理页",
     "usage": "swban deploy/auth/setup [--no-browser]",
     "details": [
       "Cloudflare 和腾讯云共用一个页面。",

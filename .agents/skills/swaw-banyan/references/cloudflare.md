@@ -20,12 +20,31 @@ and their version; it does not sign in or contact Cloudflare.
 
 Use `swban help/en deploy/cloudflare` for Skill help without preparing tools.
 The CLI entries forward arguments, streams and exit codes. Their `--help` runs
-the native CLI. Relative paths use the caller's working directory.
+the native CLI. `swban` itself keeps the caller's working directory.
+
+CLI child processes start in fixed directories under the system temporary
+directory: `%TEMP%/swaw/banyan/cf/` for cf and
+`%TEMP%/swaw/banyan/wrangler/` for Wrangler. These directories and their caches
+remain available for later commands. On first use, Wrangler gets a
+`package.json` with `{"private":true}` and an empty `.env`. cf gets a
+`package.json` with `{"private":true,"type":"module"}`, a
+`cloudflare.config.ts` with `export default {};`, and an empty `.env`.
+The fixed directories keep the caller's project and `.env` out of default lookup.
+Wrangler's `package.json` fixes its project root for temporary files. Native
+Wrangler configuration lookup can still search ancestors of the fixed directory;
+keep those temporary parent directories free of project configuration.
+
+Native arguments stay unchanged. Relative file and directory paths use the
+CLI's fixed directory, so use absolute paths unless you intend to use that
+directory. For Workers, project configuration or Pages Functions, pass Wrangler's
+native `--cwd <project-path>` with an absolute project path. cf resource-management
+commands use its empty configuration; `cf dev` and `cf build` need an actual
+project configuration.
 
 ## Authorization page on Windows
 
 ```text
-swban deploy/auth/setup                          #Open the shared cloud authorization page
+swban deploy/auth/setup                          #Open the shared authorization manager
 swban deploy/cloudflare/auth/setup               #Open the local authorization page
 swban deploy/cloudflare/auth/setup --no-browser  #Print the URL to open yourself
 swban deploy/cloudflare/auth/token/check         #Check the saved credential without showing it
@@ -34,14 +53,23 @@ swban deploy/cloudflare/auth/token/check         #Check the saved credential wit
 The platform entry opens the shared page with Cloudflare selected. Platform
 tabs select Cloudflare or Tencent Cloud. Method tabs show sign-in, API Token
 and read-only environment status, in that order.
-Opening a platform's sign-in tab prepares its tools in the background and shows
-preparation status. Failed preparation can be retried; API Token setup remains
-available during downloads. Sign-in buttons open native browser authorization;
-cf and Wrangler need separate approvals. Both save OAuth credentials in encrypted
-files with keys in Windows Credential Manager.
+Opening a platform's sign-in tab prepares its tools in the background, then
+checks native cf and Wrangler sign-in or tccli credential usability. tccli uses
+a native STS identity query; it does not distinguish stored sign-in from access
+keys or check product permissions. An unavailable check does not mean signed out.
+Failed preparation can be retried; API Token setup remains available during
+downloads and checks. Sign-in buttons show progress and open native browser authorization;
+cf and Wrangler need separate approvals. Each CLI manages its own configuration,
+credential storage and refresh. Existing native sign-in can be reused when its
+format and selected profile are compatible with the pinned CLI version.
 The environment tab shows only variable presence and a valid account ID, never
 Token, key or email contents. It inspects the current process, not project `.env` files.
-The page stays open until Close or ten minutes; closing stops preparation and login.
+The page stays open until Close or the process stops. Closing stops preparation,
+checks and login. Each CLI controls its own authorization timeout.
+Page sign-in and status checks exclude environment API credentials, Banyan's
+Windows API credentials and project `.env` files;
+native user configuration and credential directories stay unchanged.
+cf and Wrangler sign-in and status checks use their fixed working directories.
 
 Sign in to Cloudflare first, complete any verification, then return to the local
 page and open the recommended Account Token creation link. The footer also links
@@ -73,6 +101,9 @@ only the CLI child's environment as `CLOUDFLARE_API_TOKEN`; an account ID stored
 as the user name supplies `CLOUDFLARE_ACCOUNT_ID` when not already set.
 Ordinary commands prefer explicit environment credentials, then the saved API
 Token, then native sign-in. Switching tabs does not change this order.
+Ordinary commands and the read-only page recognize native `CF_API_TOKEN`,
+`CF_API_KEY`, `CF_EMAIL` and `CF_ACCOUNT_ID` aliases. A present `CLOUDFLARE_*`
+variable takes priority over its alias, including an empty value.
 A credential failure does not retry with another source.
 Explicit environment credentials, `--profile` and native sign-in commands keep
 their own credential selection. Help and local installation checks do not
@@ -86,21 +117,20 @@ cf and Wrangler use separate OAuth credentials. Sign in to each tool you use:
 ```text
 swban deploy/cloudflare/cli auth login                #Authorize cf in the browser
 swban deploy/cloudflare/cli auth whoami               #Show the cf identity
-swban deploy/cloudflare/wrangler login --use-keyring  #Authorize Wrangler with OS credential protection
+swban deploy/cloudflare/wrangler login                #Authorize Wrangler in the browser
 swban deploy/cloudflare/wrangler whoami               #Show the Wrangler identity and credential storage
 ```
 
-Credentials stay in the native per-user locations, outside the Skill package
-directories. Banyan's cf entry requires keyring storage for sign-in and later
-commands; an unavailable keyring stops the command instead of writing plaintext.
-On Windows, cf's default location is
-`%APPDATA%/xdg.config/cloudflare/config/default.enc`, unless XDG settings change
-the configuration root. Without keyring storage, native cf uses `default.json`
-in the same directory and stores tokens in plaintext.
-The authorization page enables Wrangler's `--use-keyring` mode. Both groups pin
-the Windows native binding and use a child-only npm prefix so each tool can find
-it without a global install or terminal prompt. The Skill does not sign in
-automatically or load a custom secrets file.
+The entries preserve `HOME`, `USERPROFILE`, AppData, XDG and native data-directory
+settings. Sign-in, sign-out and storage preferences share each CLI's native
+state with system installations. Banyan does not move or parse OAuth credentials,
+force encryption, or maintain a separate sign-in directory. Use the native CLI
+options to select a profile or enable its keyring storage.
+The page's sign-in actions omit API credentials for that process so the CLI can
+start OAuth; existing storage and profile settings remain available.
+Both groups include the Windows keyring binding and set a child-only npm prefix
+so the CLI can find it when native keyring storage is selected. The Skill does
+not sign in automatically or load a custom secrets file.
 
 To change Wrangler permissions, inspect `login --scopes-list`, then sign in
 with `login --scopes <scopes...>`. For automation, pass a restricted
@@ -116,7 +146,19 @@ swban deploy/cloudflare/wrangler pages project list           #List Pages projec
 ```
 
 These entries also accept native login, configuration and resource-management
-arguments. No Skill Pages publication workflow is provided yet.
+arguments.
+
+## Publish a static build
+
+Build the site, then upload the static output with native Wrangler:
+
+```text
+swban deploy/cloudflare/wrangler pages deploy <build-path> --project-name <name> --branch preview  #Publish a preview
+```
+
+Use an absolute path for `<build-path>`. A branch matching the Pages project's
+production branch updates production; other branches create preview deployments.
+The entry prepares Wrangler as needed and keeps the normal credential priority.
 
 References: [cf installation and authentication](https://developers.cloudflare.com/cf/get-started/),
 [Wrangler login and credential storage](https://developers.cloudflare.com/workers/wrangler/commands/general/),

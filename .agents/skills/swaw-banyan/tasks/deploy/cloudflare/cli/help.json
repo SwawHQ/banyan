@@ -5,7 +5,8 @@
     "details": [
       "swban deploy/cloudflare/cli auth login   #Sign in to cf",
       "swban deploy/cloudflare/cli auth whoami  #Show the current authorization",
-      "swban deploy/cloudflare/cli zones list   #List accessible zones"
+      "swban deploy/cloudflare/cli zones list   #List accessible zones",
+      "cf runs in %TEMP%/swaw/banyan/cf/; use absolute local paths."
     ]
   },
   "zh": {
@@ -14,7 +15,8 @@
     "details": [
       "swban deploy/cloudflare/cli auth login   #登录 cf",
       "swban deploy/cloudflare/cli auth whoami  #查看当前授权",
-      "swban deploy/cloudflare/cli zones list   #列出可访问的域名"
+      "swban deploy/cloudflare/cli zones list   #列出可访问的域名",
+      "cf 在 %TEMP%/swaw/banyan/cf/ 运行；本地路径用绝对路径。"
     ]
   }
 }

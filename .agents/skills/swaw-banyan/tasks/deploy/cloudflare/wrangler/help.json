@@ -3,18 +3,22 @@
     "summary": "Run Wrangler",
     "usage": "swban deploy/cloudflare/wrangler [arguments...]",
     "details": [
-      "swban deploy/cloudflare/wrangler login --use-keyring  #Sign in with OS credential protection",
-      "swban deploy/cloudflare/wrangler whoami               #Show the current authorization",
-      "swban deploy/cloudflare/wrangler logout               #Revoke the current login"
+      "swban deploy/cloudflare/wrangler login                        #Sign in through the native browser flow",
+      "swban deploy/cloudflare/wrangler whoami                       #Show the current authorization",
+      "swban deploy/cloudflare/wrangler logout                       #Revoke the current login",
+      "swban deploy/cloudflare/wrangler --cwd <project-path> --help  #Use an absolute project path",
+      "Wrangler runs in %TEMP%/swaw/banyan/wrangler/; use absolute local paths."
     ]
   },
   "zh": {
     "summary": "运行 Wrangler",
     "usage": "swban deploy/cloudflare/wrangler [参数...]",
     "details": [
-      "swban deploy/cloudflare/wrangler login --use-keyring  #登录并用系统凭据存储保护授权",
-      "swban deploy/cloudflare/wrangler whoami               #查看当前授权",
-      "swban deploy/cloudflare/wrangler logout               #撤销当前登录"
+      "swban deploy/cloudflare/wrangler login                        #通过原生浏览器流程登录",
+      "swban deploy/cloudflare/wrangler whoami                       #查看当前授权",
+      "swban deploy/cloudflare/wrangler logout                       #撤销当前登录",
+      "swban deploy/cloudflare/wrangler --cwd <project-path> --help  #使用绝对项目路径",
+      "Wrangler 在 %TEMP%/swaw/banyan/wrangler/ 运行；本地路径用绝对路径。"
     ]
   }
 }

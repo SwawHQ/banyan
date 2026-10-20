@@ -9,12 +9,11 @@ export async function setup(command,platform = 'cloudflare') {
     const page = await startAuthPage({platform});
     const stop = ()=>page.close();
     process.once('SIGINT',stop);process.once('SIGTERM',stop);
-    console.error('[swban] Open this local URL within 10 minutes: '+page.url);
+    console.error('[swban] Open this local URL: '+page.url);
     try {
       if (!args.length) await openAuthPage(page.url);
       const result = await page.completed;
       console.log(JSON.stringify({action:result}));
-      if (result === 'timeout') process.exitCode = 1;
     } finally {page.close();process.off('SIGINT',stop);process.off('SIGTERM',stop);}
   } catch (error) {console.error('[swban] '+error.message);process.exitCode = 1;}
 }

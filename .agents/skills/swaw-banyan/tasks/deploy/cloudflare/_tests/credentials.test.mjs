@@ -69,6 +69,42 @@ test('Cloudflare identity queries use the same credentials as resource commands'
   }
 });
 
+test('Cloudflare native environment aliases preserve explicit credentials and account targets',async()=>{
+  let reads = 0;
+  const store = async()=>{reads++;return {secret:token,userName:accountId};};
+  for (const tool of ['cf','wrangler']) {
+    for (const environment of [
+      {CF_API_TOKEN:'explicit-token'},
+      {CF_API_KEY:'explicit-key',CF_EMAIL:'explicit@example.test'},
+      {CLOUDFLARE_API_KEY:'explicit-key',CF_EMAIL:'explicit@example.test'},
+      {CF_API_KEY:'explicit-key',CLOUDFLARE_EMAIL:'explicit@example.test'},
+      {CLOUDFLARE_API_TOKEN:'standard-token',CF_API_TOKEN:'alias-token'}
+    ]) {
+      const before = reads,original = {...environment};
+      assert.deepEqual(await cloudflareEnvironment(tool,['pages','project','list'],environment,store),original);
+      assert.equal(reads,before);assert.deepEqual(environment,original);
+    }
+    const explicitAccount = 'b'.repeat(32);
+    assert.deepEqual(await cloudflareEnvironment(tool,['pages','project','list'],{CF_ACCOUNT_ID:explicitAccount},store),
+      {CF_ACCOUNT_ID:explicitAccount,CLOUDFLARE_API_TOKEN:token});
+    const bothAccounts = {CLOUDFLARE_ACCOUNT_ID:explicitAccount,CF_ACCOUNT_ID:accountId};
+    assert.deepEqual(await cloudflareEnvironment(tool,[],bothAccounts,store),{...bothAccounts,CLOUDFLARE_API_TOKEN:token});
+    const emptyStandard = {CLOUDFLARE_API_TOKEN:'',CF_API_TOKEN:'ignored-alias'};
+    assert.deepEqual(await cloudflareEnvironment(tool,[],emptyStandard,store),
+      {...emptyStandard,CLOUDFLARE_API_TOKEN:token,CLOUDFLARE_ACCOUNT_ID:accountId});
+    const emptyAccount = {CLOUDFLARE_ACCOUNT_ID:'',CF_ACCOUNT_ID:explicitAccount};
+    assert.deepEqual(await cloudflareEnvironment(tool,[],emptyAccount,store),
+      {...emptyAccount,CLOUDFLARE_API_TOKEN:token,CLOUDFLARE_ACCOUNT_ID:accountId});
+    if (process.platform === 'win32') {
+      const before = reads;
+      assert.deepEqual(await cloudflareEnvironment(tool,[],{cf_api_token:'lowercase-token'},store),{CF_API_TOKEN:'lowercase-token'});
+      assert.equal(reads,before);
+      assert.deepEqual(await cloudflareEnvironment(tool,[],{cf_account_id:explicitAccount},store),
+        {CF_ACCOUNT_ID:explicitAccount,CLOUDFLARE_API_TOKEN:token});
+    }
+  }
+});
+
 test('resource names and option values do not bypass the saved Cloudflare identity',async()=>{
   let reads = 0;
   const store = async()=>{reads++;return {secret:token,userName:accountId};};
@@ -143,7 +179,7 @@ test('verification handles user and account tokens, expiry, invalid input and re
 
 async function fixture(run,options = {}) {
   const writes = [];
-  const page = await startAuthPage({store:async(platform,action,value)=>{if(action === 'write')writes.push(value);return null;},verify:async()=>{},environment:{},...options});
+  const page = await startAuthPage({store:async(platform,action,value)=>{if(action === 'write')writes.push(value);return null;},verify:async()=>{},prepare:async()=>{},check:async()=>'authorized',environment:{},...options});
   const url = new URL(page.url),origin = url.origin,session = url.hash.slice(1);
   const post = (route,value,headers = {})=>fetch(origin+route,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','X-Swban-Session':session,...headers},body:JSON.stringify(route === '/save' ? {platform:'cloudflare',...value} : value)});
   try { await run({page,origin,post,writes}); } finally { page.close(); await page.completed; }
@@ -190,16 +226,16 @@ test('verification or storage failure preserves the old credential and keeps the
     {store:async(platform,action)=>{if(action === 'write')throw new Error(token);return {userName:'old'};}});
 });
 
-test('timeout during verification never commits a late credential',{timeout:5000},async()=>{
+test('closing setup during verification never commits a late credential',{timeout:5000},async()=>{
   let release,started;
   const verifying = new Promise(resolve=>{started = resolve;});
   const gate = new Promise(resolve=>{release = resolve;});
   await fixture(async({page,origin,post,writes})=>{
     const saving = post('/save',{token}).catch(()=>null);
-    await verifying;
-    assert.equal(await page.completed,'timeout'); release(); await saving;
+    await verifying; page.close();
+    assert.equal(await page.completed,'cancelled'); release(); await saving;
     assert.equal(writes.length,0); await assert.rejects(fetch(origin));
-  },{timeout:100,verify:async()=>{started();await gate;}});
+  },{verify:async()=>{started();await gate;}});
 });
 
 test('an in-flight Windows write completes before reporting session closure',{timeout:5000},async()=>{
@@ -208,13 +244,18 @@ test('an in-flight Windows write completes before reporting session closure',{ti
   const gate = new Promise(resolve=>{release = resolve;});
   await fixture(async({page,post})=>{
     const saving = post('/save',{token});
-    await writing; page.close(); release();
+    await writing;
+    assert.equal((await post('/cancel',{})).status,409);
+    assert.equal((await post('/save',{token})).status,409);
+    assert.equal((await post('/status',{tool:'cf'})).status,409);
+    assert.equal((await post('/prepare',{tool:'cf'})).status,409);
+    page.close(); release();
     assert.deepEqual(await (await saving).json(),{saved:true});
     assert.equal(await page.completed,'cancelled');
   },{store:async(platform,action)=>{if(action === 'write'){started();await gate;}return null;}});
 });
 
-for (const reason of ['cancelled','timeout']) test('a disconnected save finishes its write and closes on '+reason,{timeout:5000},async t=>{
+test('a disconnected save finishes its write before explicit session closure',{timeout:5000},async t=>{
   const started = Promise.withResolvers(),release = Promise.withResolvers(),disconnected = Promise.withResolvers();
   let writes = 0,completed = false,guard;
   const emit = http.ServerResponse.prototype.emit;
@@ -228,18 +269,17 @@ for (const reason of ['cancelled','timeout']) test('a disconnected save finishes
     request.on('error',started.reject);request.end(JSON.stringify({platform:'cloudflare',token}));
     try {
       await started.promise;request.destroy();await disconnected.promise;
-      if (reason === 'cancelled') page.close();
-      else await new Promise(resolve=>setTimeout(resolve,650));
+      page.close();
       assert.equal(completed,false);assert.equal(writes,0);
       release.resolve();
       const result = await new Promise((resolve,reject)=>{
         guard = setTimeout(()=>reject(new Error('session_did_not_close')),1000);
         page.completed.then(resolve,reject);
       });
-      assert.equal(result,reason);assert.equal(writes,1);
+      assert.equal(result,'cancelled');assert.equal(writes,1);
       await assert.rejects(fetch(origin));
     } finally {clearTimeout(guard);release.resolve();request.destroy();page.close();}
-  },{timeout:reason === 'timeout' ? 500 : 10000,store:async(platform,action)=>{
+  },{store:async(platform,action)=>{
     if (action === 'write') {started.resolve();await release.promise;writes++;}return null;
   }});
 });
@@ -267,6 +307,23 @@ test('setup exposes only environment status and validates native login requests 
     assert.equal(data.environment.cloudflare.accountId,null);assert.equal(data.environment.cloudflare.accountSet,true);
     assert.ok(!JSON.stringify(data).includes('invalid-private-value'));
   },{environment:{CLOUDFLARE_ACCOUNT_ID:'invalid-private-value'}});
+});
+
+test('authorization page reports native environment aliases without exposing credential contents',async()=>{
+  const aliases = {cf_api_token:'private-alias-token',cf_api_key:'private-alias-key',
+    cf_email:'private-alias@example.test',cf_account_id:accountId};
+  for (const [environment,expected] of [
+    [aliases,{token:true,accountId,accountSet:true,legacyKey:true,email:true}],
+    [{...aliases,CLOUDFLARE_API_TOKEN:'',CLOUDFLARE_API_KEY:'',CLOUDFLARE_EMAIL:'',CLOUDFLARE_ACCOUNT_ID:''},
+      {token:false,accountId:null,accountSet:false,legacyKey:false,email:false}],
+    [{...aliases,CLOUDFLARE_ACCOUNT_ID:'private-invalid-account'},
+      {token:true,accountId:null,accountSet:true,legacyKey:true,email:true}]
+  ]) await fixture(async({origin})=>{
+    const response = await fetch(origin+'/page.json'),body = await response.text();
+    assert.deepEqual(JSON.parse(body).environment.cloudflare,expected);
+    for (const secret of ['private-alias-token','private-alias-key','private-alias@example.test','private-invalid-account'])
+      assert.ok(!body.includes(secret));
+  },{environment});
 });
 
 test('closing setup aborts an active login and rejects concurrent mutations',{timeout:5000},async()=>{

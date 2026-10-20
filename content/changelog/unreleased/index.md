@@ -2,7 +2,7 @@
 title: Unreleased
 slug: unreleased
 description: Unreleased changes to the Banyan theme and Skill.
-lastmod: 2026-10-19
+lastmod: 2026-10-20
 ---
 
 ## Added
@@ -47,19 +47,34 @@ lastmod: 2026-10-19
   CLIs with native arguments. Each has `ensure [--force]` and a local `check`;
   normal commands prepare packages as needed. Authentication uses each CLI's
   native per-user credentials or a shared API Token in Windows Credential Manager.
-  Banyan's cf commands require encrypted OAuth storage with the key in Windows
-  Credential Manager; an unavailable keyring stops the command without plaintext fallback.
+  Native configuration, sign-in credentials and storage remain CLI-managed;
+  compatible sign-in from system installations can be reused.
   `auth/token/check` also finds manually added credentials.
   Resource names and explicit boolean flag values no longer change credential selection.
   `auth whoami` uses the same credential priority as resource commands.
+  Native `CF_*` API credentials keep priority over the saved API Token;
+  present `CLOUDFLARE_*` variables take priority over their aliases.
+  cf and Wrangler commands, including page sign-in and status checks, use fixed
+  `%TEMP%/swaw/banyan/cf/` and `%TEMP%/swaw/banyan/wrangler/` directories.
+  The directories and caches persist. Local paths use these directories;
+  use absolute local paths. For a project, pass Wrangler's native `--cwd`
+  with an absolute project path.
+  cf resource-management commands use an empty configuration; development and
+  builds need an actual project configuration.
 - `deploy/tencent/cli` runs a pinned tccli with automatic uv/Python preparation
   in an isolated Skill environment. It provides `ensure [--force]` and a local
   read-only `check`, preserving native Tencent Cloud and EdgeOne commands.
   Sign-in and credential refresh require TLS certificate verification.
   `auth/key/check` returns a nonzero exit code when the local credential is absent.
+  Configuration and sign-in follow tccli's native rules. The page explains its
+  plaintext sign-in storage and recommends API keys saved in Windows Credential Manager.
+  tccli commands, including page sign-in and status checks, use the fixed
+  `%TEMP%/swaw/banyan/tccli/` directory and retain its caches. Use absolute local paths.
 - `deploy/auth/setup` opens one local authorization page for Cloudflare and Tencent
-  Cloud. Each platform's `auth/setup` entry selects its tab. The page supports
+  Cloud, titled “Swaw Banyan · Authorization Manager”. Each platform's `auth/setup`
+  entry selects its tab. The page supports
   native sign-in, Windows-stored API credentials and read-only environment status,
+  including Cloudflare's native `CF_*` aliases,
   with credential priority, site icons in their original colors and system-language
   text in English or Chinese. A title-bar language switch preserves inputs and
   progress; reloading returns to the system language without saving the selection.
@@ -67,9 +82,16 @@ lastmod: 2026-10-19
   Credential priority sits below the title; Close is in the upper-right corner.
   Supplementary notes follow the controls or variable table. Sign-in and API Token
   notes use numbered lists for setup, permissions and credential storage.
-  Sign-in tabs prepare tools in the background, show readiness and support retry.
-  API Token setup stays available during downloads; Close stops preparation.
-  Cancellation and timeout still close the session after a credential write if the save connection disconnects.
+  Sign-in tabs prepare tools in the background, show readiness and support retry,
+  then check existing cf and Wrangler sign-in and usable tccli native credentials,
+  including after reload or reopening. tccli uses a native STS identity query
+  with the same profile as sign-in;
+  it does not distinguish stored sign-in from keys or check product permissions.
+  Sign-in buttons show request progress immediately.
+  API Token setup stays available during downloads and checks; Close stops preparation, checks and sign-in.
+  The page no longer expires automatically; each CLI keeps its own authorization timeout.
+  The page avoids browser-blocked ports.
+  Cancellation still closes the session after a credential write if the save connection disconnects.
   Narrow screens stack the columns.
   Both platforms use the API Token tab label.
   Tencent access keys use `swban/tencent/default`; `auth/key/check` checks local presence.

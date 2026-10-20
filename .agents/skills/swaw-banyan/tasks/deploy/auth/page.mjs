@@ -1,6 +1,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
-import {randomBytes} from 'node:crypto';
+import {randomBytes,randomInt} from 'node:crypto';
+import {once} from 'node:events';
 import {spawn} from 'node:child_process';
 import path from 'node:path';
 import {credentialStore as cloudflareStore,credentialTarget as cloudflareTarget} from '../cloudflare/_shared/credentials.mjs';
@@ -8,6 +9,7 @@ import {tokenInput,verifyToken} from '../cloudflare/auth/token/verify.mjs';
 import {credentialStore as tencentStore,credentialTarget as tencentTarget,keyInput} from '../tencent/auth/credentials.mjs';
 import {verifyKey} from '../tencent/auth/verify.mjs';
 import {login as nativeLogin,prepare as prepareNativeTool} from './login.mjs';
+import {check as checkNativeLogin} from './status.mjs';
 import {siteFile} from '../../_shared/files.mjs';
 import {skillRoot} from '../../_shared/tools/manifest.mjs';
 import {systemLanguage} from '../../help/run.mjs';
@@ -34,14 +36,15 @@ async function pageIcons(siteRoot) {
   return new Map();
 }
 
-export async function startAuthPage({platform = 'cloudflare',store = storeCredential,verify = verifyCredential,login = nativeLogin,prepare = prepareNativeTool,environment = process.env,timeout = 600000,siteRoot = process.cwd(),language = systemLanguage()} = {}) {
+export async function startAuthPage({platform = 'cloudflare',store = storeCredential,verify = verifyCredential,login = nativeLogin,prepare = prepareNativeTool,check = checkNativeLogin,environment = process.env,siteRoot = process.cwd(),language = systemLanguage()} = {}) {
   if (!Object.hasOwn(stores,platform)) throw new Error('invalid_auth_platform');
   const existing = Object.fromEntries(await Promise.all(Object.keys(stores).map(async name=>[name,!!await store(name,'check')])));
   const document = JSON.parse(fs.readFileSync(new URL('./page.json',import.meta.url),'utf8'));
   const value = name=>Object.entries(environment).find(([key])=>key.toUpperCase() === name)?.[1];
+  const accountId = value('CLOUDFLARE_ACCOUNT_ID') ?? value('CF_ACCOUNT_ID');
   const pageData = {platform,language,text:{en:document.en,zh:document.zh},links:document.links,existing,
-    environment:{cloudflare:{token:!!value('CLOUDFLARE_API_TOKEN'),accountId:/^[a-f0-9]{32}$/i.test(value('CLOUDFLARE_ACCOUNT_ID')) ? value('CLOUDFLARE_ACCOUNT_ID') : null,
-      accountSet:!!value('CLOUDFLARE_ACCOUNT_ID'),legacyKey:!!value('CLOUDFLARE_API_KEY'),email:!!value('CLOUDFLARE_EMAIL')},
+    environment:{cloudflare:{token:!!(value('CLOUDFLARE_API_TOKEN') ?? value('CF_API_TOKEN')),accountId:/^[a-f0-9]{32}$/i.test(accountId) ? accountId : null,
+      accountSet:!!accountId,legacyKey:!!(value('CLOUDFLARE_API_KEY') ?? value('CF_API_KEY')),email:!!(value('CLOUDFLARE_EMAIL') ?? value('CF_EMAIL'))},
       tencent:Object.fromEntries(['TENCENTCLOUD_SECRET_ID','TENCENTCLOUD_SECRET_KEY','TENCENTCLOUD_TOKEN','TENCENTCLOUD_REGION','TCCLI_PROFILE',
         'TENCENTCLOUD_ROLE_ARN','TENCENTCLOUD_ROLE_SESSION_NAME','TKE_REGION','TKE_PROVIDER_ID','TKE_WEB_IDENTITY_TOKEN_FILE','TKE_ROLE_ARN'].map(name=>[name,!!value(name)]))}};
   const icons = await pageIcons(siteRoot);
@@ -51,9 +54,10 @@ export async function startAuthPage({platform = 'cloudflare',store = storeCreden
     .replaceAll('__NONCE__',nonce).replaceAll('__CF_TARGET__',cloudflareTarget).replaceAll('__TC_TARGET__',tencentTarget).replaceAll('__LANG__',language)
     .replaceAll('__ICONS__',[...icons].map(([url,icon])=>'<link rel="icon" type="'+icon.type+'" href="'+url+'">').join('\n'))
     .replaceAll('__LOGO__',logo ? '<img src="'+logo+'" alt="" width="32" height="32">' : '');
-  let origin, busy = false, committing = false, pendingClose, settled = false, timer, finish;
+  let origin, busy = false, committing = false, pendingClose, settled = false, finish;
   const controller = new AbortController();
   const preparations = new Map();
+  const checks = new Map();
   let preparation = Promise.resolve();
   const prepareTool = tool=>{
     if (!preparations.has(tool)) {
@@ -64,12 +68,19 @@ export async function startAuthPage({platform = 'cloudflare',store = storeCreden
     }
     return preparations.get(tool);
   };
+  const checkTool = async tool=>{
+    try {
+      controller.signal.throwIfAborted();
+      const status = await check(tool,{signal:controller.signal,environment});
+      return ['authorized','notAuthorized','unavailable'].includes(status) ? status : 'unavailable';
+    } catch { return 'unavailable'; }
+  };
   const completed = new Promise(resolve=>{ finish = resolve; });
   const close = result => {
     if (settled) return;
     // Once Windows starts a write, report its outcome before closing the session.
     if (committing) { pendingClose = result; return; }
-    settled = true; controller.abort(); clearTimeout(timer); server.close(); server.closeAllConnections(); finish(result);
+    settled = true; controller.abort(); server.close(); server.closeAllConnections(); finish(result);
   };
   const server = http.createServer(async(request,response)=>{
     const reply = (status,value,type = 'application/json; charset=utf-8') => {
@@ -83,7 +94,7 @@ export async function startAuthPage({platform = 'cloudflare',store = storeCreden
     }
     if (request.method === 'GET' && request.url === '/') return reply(200,html,'text/html; charset=utf-8');
     if (request.method === 'GET' && request.url === '/page.json') return reply(200,pageData);
-    if (request.method !== 'POST' || !['/save','/cancel','/login','/prepare'].includes(request.url)) return reply(404,{error:'not_found'});
+    if (request.method !== 'POST' || !['/save','/cancel','/login','/prepare','/status'].includes(request.url)) return reply(404,{error:'not_found'});
     if (request.headers.origin !== origin || request.headers['x-swban-session'] !== session ||
         request.headers['content-type'] !== 'application/json') return reply(403,{error:'forbidden'});
     if (settled) return reply(409,{error:'busy'});
@@ -92,8 +103,8 @@ export async function startAuthPage({platform = 'cloudflare',store = storeCreden
       response.once('finish',()=>close('cancelled')); return reply(200,{cancelled:true});
     }
     if (busy) return reply(409,{error:'busy'});
-    const preparing = request.url === '/prepare';
-    if (!preparing) busy = true;
+    const preparing = request.url === '/prepare',checking = request.url === '/status';
+    if (!preparing && !checking) busy = true;
     try {
       let body = '', size = 0;
       for await (const chunk of request) {
@@ -103,17 +114,29 @@ export async function startAuthPage({platform = 'cloudflare',store = storeCreden
       }
       let input;
       try { input = JSON.parse(body); } catch { return reply(400,{error:'invalid_input'}); }
-      if (preparing || request.url === '/login') {
+      if (preparing || checking || request.url === '/login') {
         if (!input || !['cf','wrangler','tccli'].includes(input.tool)) return reply(400,{error:'invalid_login_tool'});
         if (preparing) {
           await prepareTool(input.tool);
           if (!settled) reply(200,{prepared:input.tool});
           return;
         }
+        if (checking) {
+          if (!checks.has(input.tool)) {
+            const task = prepareTool(input.tool).then(()=>checkTool(input.tool)).catch(()=>'unavailable');
+            checks.set(input.tool,task);
+            task.finally(()=>checks.delete(input.tool));
+          }
+          const status = await checks.get(input.tool);
+          if (!settled) reply(200,{status});
+          return;
+        }
         await preparations.get(input.tool);
         if (settled) return;
         await login(input.tool,{signal:controller.signal,environment});
-        if (!settled) reply(200,{authorized:input.tool});
+        if (settled) return;
+        const status = await checkTool(input.tool);
+        if (!settled) reply(200,status === 'authorized' ? {authorized:input.tool} : {status});
         return;
       }
       if (!input || !Object.hasOwn(inputs,input.platform)) return reply(400,{error:'invalid_auth_platform'});
@@ -121,7 +144,7 @@ export async function startAuthPage({platform = 'cloudflare',store = storeCreden
       try { value = inputs[input.platform](input); }
       catch (error) { return reply(400,{error:['invalid_cloudflare_token','invalid_cloudflare_account_id','invalid_tencent_key'].includes(error.message) ? error.message : 'invalid_input'}); }
       await verify(input.platform,value);
-      // Cancellation/timeout must not write a credential after the page has closed.
+      // Closing the page must not write a credential after verification finishes.
       if (settled) return;
       committing = true;
       await store(input.platform,'write',input.platform === 'cloudflare' ? {secret:value.token,userName:value.accountId || 'api-token'} : {secret:value.secretKey,userName:value.secretId});
@@ -133,17 +156,28 @@ export async function startAuthPage({platform = 'cloudflare',store = storeCreden
       }
       reply(200,{saved:true});
     } catch (error) {
-      if (!preparing) {
+      if (!preparing && !checking) {
         committing = false;
         if (pendingClose) { close(pendingClose); return; }
       }
-      if (!response.headersSent && !settled) reply(400,{error:preparing ? 'tool_preparation_failed' : request.url === '/login' ? 'login_failed' : ['cloudflare_token_verification_failed','tencent_key_verification_failed'].includes(error.message) ? error.message : 'credential_store_failed'});
-    } finally { if (!preparing) busy = false; }
+      if (!response.headersSent && !settled) {
+        if (checking) reply(200,{status:'unavailable'});
+        else reply(400,{error:preparing ? 'tool_preparation_failed' : request.url === '/login' ? 'login_failed' : ['cloudflare_token_verification_failed','tencent_key_verification_failed'].includes(error.message) ? error.message : 'credential_store_failed'});
+      }
+    } finally { if (!preparing && !checking) busy = false; }
   });
   server.requestTimeout = 30000; server.headersTimeout = 10000;
-  await new Promise((resolve,reject)=>{ server.once('error',reject); server.listen(0,'127.0.0.1',resolve); });
+  // Port 0 can select a port blocked by browsers; stay in the dynamic range.
+  for(let attempt=0;attempt<10;attempt++) {
+    try {
+      const ready=once(server,'listening');
+      server.listen(randomInt(49152,65536),'127.0.0.1');
+      await ready;break;
+    } catch(error) {
+      if(!['EADDRINUSE','EACCES'].includes(error.code)||attempt===9)throw error;
+    }
+  }
   origin = 'http://127.0.0.1:'+server.address().port;
-  timer = setTimeout(()=>close('timeout'),timeout);
   return {url:origin+'/#'+session,completed,close:()=>close('cancelled')};
 }
 

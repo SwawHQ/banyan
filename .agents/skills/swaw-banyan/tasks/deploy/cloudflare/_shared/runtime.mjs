@@ -7,6 +7,7 @@ import {prepareTools} from '../../../_shared/tools/selection.mjs';
 import {toolExecutable} from '../../../_shared/tools/operations.mjs';
 import {execute,withPath} from '../../../_shared/tools/process.mjs';
 import {cloudflareEnvironment} from './credentials.mjs';
+import {workingDirectory} from '../../_shared/working-directory.mjs';
 
 const directories = {cf:'cli',wrangler:'wrangler'};
 function cliRoot(name) {
@@ -29,7 +30,7 @@ export async function prepareCli(name,{force = false} = {}) {
   return inspectCli(name);
 }
 
-export async function runCli(name,args,{environment = process.env,signal,stdio = 'inherit'} = {}) {
+export async function runCli(name,args,{environment = process.env,signal,stdio = 'inherit',cwd} = {}) {
   signal?.throwIfAborted();
   const cli = await prepareCli(name);
   await prepareTools(['node']);
@@ -37,16 +38,11 @@ export async function runCli(name,args,{environment = process.env,signal,stdio =
   const node = toolExecutable('node');
   const env = await cloudflareEnvironment(name,args,withPath([path.dirname(node)],environment));
   // Keep cf on the Skill's pinned version when the caller has another cf package.
-  if (name === 'cf') {
-    env.CF_DELEGATION = '1';
-    // Require encrypted OAuth storage; an unavailable keyring must not write plaintext.
-    for (const key of Object.keys(env)) if (key.toUpperCase() === 'CLOUDFLARE_AUTH_USE_KEYRING') delete env[key];
-    env.CLOUDFLARE_AUTH_USE_KEYRING = 'true';
-  }
+  if (name === 'cf') env.CF_DELEGATION = '1';
   // Both tools find their Windows keyring binding with `npm root -g`.
   if (process.platform === 'win32') {
     for (const key of Object.keys(env)) if (key.toLowerCase() === 'npm_config_prefix') delete env[key];
     env.npm_config_prefix = cliRoot(name);
   }
-  return execute(node,[cli.path,...args],{env,signal,stdio});
+  return execute(node,[cli.path,...args],{env,signal,stdio,cwd:cwd ?? workingDirectory(name)});
 }

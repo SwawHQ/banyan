@@ -12,15 +12,22 @@ export async function prepare(tool,{signal} = {}) {
   if (await execute(process.execPath,[entry],{signal,stdio:['ignore',2,2]}) !== 0) throw new Error('tool_preparation_failed');
 }
 
-export async function login(tool,{signal,environment = process.env} = {}) {
+export function loginEnvironment(tool,environment = process.env) {
   if (!['cf','wrangler','tccli'].includes(tool)) throw new Error('invalid_login_tool');
   // Native login must not inherit an API credential that overrides OAuth.
-  const env = Object.fromEntries(Object.entries(environment).filter(([key])=>
-    !['CLOUDFLARE_API_TOKEN','CLOUDFLARE_API_KEY','CLOUDFLARE_EMAIL','CLOUDFLARE_AUTH_USE_KEYRING'].includes(key.toUpperCase()) &&
-    !(tool === 'tccli' && /^(TENCENTCLOUD_|TKE_|TCCLI_PROFILE$)/i.test(key))));
-  if (tool !== 'tccli') env.CLOUDFLARE_AUTH_USE_KEYRING = 'true';
+  return Object.fromEntries(Object.entries(environment).filter(([key])=>
+    !['CLOUDFLARE_API_TOKEN','CLOUDFLARE_API_KEY','CLOUDFLARE_EMAIL','CF_API_TOKEN','CF_API_KEY','CF_EMAIL'].includes(key.toUpperCase()) &&
+    !(tool === 'tccli' && /^(TENCENTCLOUD_|TKE_)/i.test(key))));
+}
+
+export function tencentProfile(environment) {
+  return Object.entries(environment).find(([key])=>key.toUpperCase() === 'TCCLI_PROFILE')?.[1] || 'default';
+}
+
+export async function login(tool,{signal,environment = process.env} = {}) {
+  const env = loginEnvironment(tool,environment);
   const options = {environment:env,signal,stdio:['inherit',2,2]};
-  const code = tool === 'tccli' ? await tencentCli(['auth','login','--profile','default'],options) :
-    await cloudflareCli(tool,tool === 'cf' ? ['auth','login'] : ['login','--use-keyring'],options);
+  const code = await (tool === 'tccli' ? tencentCli(['auth','login','--profile',tencentProfile(env)],options) :
+    cloudflareCli(tool,tool === 'cf' ? ['auth','login'] : ['login'],options));
   if (code !== 0) throw new Error('login_failed');
 }

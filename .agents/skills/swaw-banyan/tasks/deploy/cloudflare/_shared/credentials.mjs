@@ -47,13 +47,16 @@ function nativeArguments(tool,args) {
 export async function cloudflareEnvironment(tool,args,environment,store = credentialStore) {
   const env = {...environment};
   // Windows environment names ignore case; a copied JS object does not.
-  if (process.platform === 'win32') for (const key of ['CLOUDFLARE_API_TOKEN','CLOUDFLARE_API_KEY','CLOUDFLARE_EMAIL','CLOUDFLARE_ACCOUNT_ID']) {
+  if (process.platform === 'win32') for (const key of ['CLOUDFLARE_API_TOKEN','CLOUDFLARE_API_KEY','CLOUDFLARE_EMAIL','CLOUDFLARE_ACCOUNT_ID',
+    'CF_API_TOKEN','CF_API_KEY','CF_EMAIL','CF_ACCOUNT_ID']) {
     const actual = Object.keys(env).find(name=>name.toUpperCase() === key);
     if (actual && actual !== key) { env[key] = env[actual]; delete env[actual]; }
   }
+  // Native getters select the standard name first, even when its value is empty.
+  const value = name=>env['CLOUDFLARE_'+name] ?? env['CF_'+name];
   const {commands,help,version,profile} = nativeArguments(tool,args);
   // Explicit credentials/profiles and native sign-in flows keep their own selection.
-  if (env.CLOUDFLARE_API_TOKEN || (env.CLOUDFLARE_API_KEY && env.CLOUDFLARE_EMAIL) ||
+  if (value('API_TOKEN') || (value('API_KEY') && value('EMAIL')) ||
       ['login','logout'].includes(commands[0]) || (commands[0] === 'auth' && commands[1] !== 'whoami') ||
       help || version || profile) return env;
   const record = await store('read');
@@ -61,6 +64,6 @@ export async function cloudflareEnvironment(tool,args,environment,store = creden
   if (typeof record.secret !== 'string' || !record.secret || record.secret.length > 1024 || /[\s\x00-\x1f\x7f]/.test(record.secret))
     throw new Error('invalid_cloudflare_credential; run swban deploy/cloudflare/auth/setup');
   env.CLOUDFLARE_API_TOKEN = record.secret;
-  if (!env.CLOUDFLARE_ACCOUNT_ID && /^[a-f0-9]{32}$/i.test(record.userName)) env.CLOUDFLARE_ACCOUNT_ID = record.userName;
+  if (!value('ACCOUNT_ID') && /^[a-f0-9]{32}$/i.test(record.userName)) env.CLOUDFLARE_ACCOUNT_ID = record.userName;
   return env;
 }

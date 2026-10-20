@@ -8,6 +8,7 @@ import {toolExecutable} from '../../../_shared/tools/operations.mjs';
 import {execute} from '../../../_shared/tools/process.mjs';
 import {uvEnvironment,pythonVersion} from '../../../base/uv/environment.mjs';
 import {tencentEnvironment} from '../auth/credentials.mjs';
+import {workingDirectory} from '../../_shared/working-directory.mjs';
 
 const requirement = fs.readFileSync(new URL('./requirements.txt',import.meta.url),'utf8').trim();
 const version = /^tccli==(\d+(?:\.\d+)+)$/.exec(requirement)?.[1];
@@ -60,12 +61,12 @@ export async function prepareCli({force = false} = {}) {
   } finally {unlock();}
 }
 
-export async function runCli(args,{environment = process.env,signal,stdio = 'inherit'} = {}) {
+export async function runCli(args,{environment = process.env,signal,stdio = 'inherit',cwd} = {}) {
   signal?.throwIfAborted();
   const cli = await prepareCli();
   signal?.throwIfAborted();
   const env = uvEnvironment(await tencentEnvironment(args,environment));
   env.VIRTUAL_ENV = path.dirname(path.dirname(cli.path));
   return execute(path.join(path.dirname(cli.path),'python.exe'),
-    ['-I','-B','-X','utf8',fileURLToPath(new URL('./cli.py',import.meta.url)),...args],{env,signal,stdio});
+    ['-I','-B','-X','utf8',fileURLToPath(new URL('./cli.py',import.meta.url)),...args],{env,signal,stdio,cwd:cwd ?? workingDirectory('tccli')});
 }

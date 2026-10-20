@@ -45,7 +45,7 @@ __ICONS__
   .login-action [role="status"] {max-width:100%;overflow-wrap:anywhere}
   [data-tool]:enabled:hover, [data-save]:enabled:hover {filter:brightness(.92)}
   [role="status"], footer {color:var(--muted)}
-  [data-text="priority"] {margin:.5rem 0 0;font-size:.875rem;color:var(--muted)}
+  [data-text="priority"] {margin:.5rem 0 0;color:var(--muted)}
   #close {position:absolute;top:1.25rem;right:1.5rem;min-height:40px;margin:0;padding:.35rem .8rem;color:var(--muted)}
   #close:enabled:hover {color:var(--ink);border-color:var(--muted)}
   table {width:100%;border-collapse:collapse} th, td {text-align:left;padding:.5rem 0;overflow-wrap:anywhere}
@@ -98,7 +98,7 @@ __ICONS__
   <button type="submit" data-save data-text="save"></button>
 </form>
 <p data-status role="status" aria-live="polite"></p>
-<p data-text="getToken"></p>
+<p><strong data-text="getToken"></strong></p>
 <ol>
   <li><a data-link="login" data-text="login" target="_blank" rel="noopener noreferrer"></a></li>
   <li><a data-link="create" data-text="create" target="_blank" rel="noopener noreferrer"></a></li>
@@ -112,10 +112,10 @@ __ICONS__
 </section>
 <section id="cloudflare-environment" role="tabpanel" aria-labelledby="cloudflare-tab-environment" hidden>
   <table><thead><tr><th data-text="variable"></th><th data-text="value"></th></tr></thead><tbody>
-<tr><td><code>CLOUDFLARE_API_TOKEN</code></td><td data-env="token"></td></tr>
-<tr><td><code>CLOUDFLARE_ACCOUNT_ID</code></td><td data-env="accountId"></td></tr>
-<tr><td><code>CLOUDFLARE_API_KEY</code></td><td data-env="legacyKey"></td></tr>
-<tr><td><code>CLOUDFLARE_EMAIL</code></td><td data-env="email"></td></tr>
+<tr><td><code>CLOUDFLARE_API_TOKEN</code><br><code>CF_API_TOKEN</code></td><td data-env="token"></td></tr>
+<tr><td><code>CLOUDFLARE_ACCOUNT_ID</code><br><code>CF_ACCOUNT_ID</code></td><td data-env="accountId"></td></tr>
+<tr><td><code>CLOUDFLARE_API_KEY</code><br><code>CF_API_KEY</code></td><td data-env="legacyKey"></td></tr>
+<tr><td><code>CLOUDFLARE_EMAIL</code><br><code>CF_EMAIL</code></td><td data-env="email"></td></tr>
 </tbody></table>
   <footer>
     <p data-text="environmentHint"></p>
@@ -146,7 +146,7 @@ __ICONS__
   <button type="submit" data-save data-text="save"></button>
 </form>
 <p data-status role="status" aria-live="polite"></p>
-<p data-text="getToken"></p>
+<p><strong data-text="getToken"></strong></p>
 <ol>
   <li><a data-link="login" data-text="login" target="_blank" rel="noopener noreferrer"></a></li>
   <li><a data-link="create" data-text="create" target="_blank" rel="noopener noreferrer"></a></li>
@@ -190,7 +190,8 @@ __ICONS__
   const actions=[...document.querySelectorAll('[data-save],[data-tool]')];
   const preparations=new Map(),validSession=/^[a-f0-9]{64}$/.test(session);
   let busy=false;
-  const setBusy=value=>{busy=value;for(const action of actions)action.disabled=value||preparations.get(action.dataset.tool)==='preparing';if(!value)prepareSelected();};
+  const setBusy=value=>{busy=value;for(const action of actions)action.disabled=value||['preparing','checking'].includes(preparations.get(action.dataset.tool));if(!value)prepareSelected();};
+  const authorizationText=result=>result.status==='authorized'?'authorized':result.status==='notAuthorized'?'notAuthorized':'ready';
   function setText(element,key) {
     element.dataset.text=key;
     const copy=text[element.closest('[data-platform]')?.dataset.platform]||{};
@@ -231,9 +232,12 @@ __ICONS__
     const tool=button.dataset.tool,result=document.getElementById(tool+'-status');
     preparations.set(tool,'preparing');button.disabled=true;button.setAttribute('aria-busy','true');setText(result,'preparing');
     try {
-      await submit('/prepare',{tool});preparations.set(tool,'ready');setText(result,'ready');setText(button,toolLabels[tool]);
+      await submit('/prepare',{tool});preparations.set(tool,'checking');setText(result,'checking');
+      const authorization=await submit('/status',{tool});
+      preparations.set(tool,'ready');setText(result,authorizationText(authorization));setText(button,toolLabels[tool]);
     } catch(error) {
-      preparations.set(tool,'failed');setText(button,'retryPrepare');setText(result,error instanceof TypeError?'closed':error.message);
+      const checking=preparations.get(tool)==='checking';preparations.set(tool,checking?'ready':'failed');
+      setText(button,checking?toolLabels[tool]:'retryPrepare');setText(result,checking?'ready':error instanceof TypeError?'closed':error.message);
     } finally {button.disabled=busy;button.removeAttribute('aria-busy');}
   }
   function prepareSelected() {
@@ -263,10 +267,10 @@ __ICONS__
     for(const button of panel.querySelectorAll('[data-tool]'))button.addEventListener('click',async()=>{
       if(busy)return;
       if(preparations.get(button.dataset.tool)!=='ready'){await prepareButton(button);return;}
-      setBusy(true);const result=document.getElementById(button.dataset.tool+'-status');setText(result,'authorizing');
-      try{await submit('/login',{tool:button.dataset.tool});setText(result,'authorized');}
+      setBusy(true);button.setAttribute('aria-busy','true');const result=document.getElementById(button.dataset.tool+'-status');setText(result,'authorizing');
+      try{const authorization=await submit('/login',{tool:button.dataset.tool});setText(result,authorization.authorized===button.dataset.tool?'authorized':authorizationText(authorization));}
       catch(error){setText(result,error instanceof TypeError?'closed':error.message);}
-      finally{setBusy(false);}
+      finally{button.removeAttribute('aria-busy');setBusy(false);}
     });
   }
   renderLanguage(initialLanguage);language.addEventListener('change',()=>renderLanguage(language.value));

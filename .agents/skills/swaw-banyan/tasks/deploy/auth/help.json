@@ -1,11 +1,11 @@
 {
   "en": {
-    "summary": "Cloud authorization",
+    "summary": "Authorization management",
     "usage": "swban help/en deploy/auth",
     "details": []
   },
   "zh": {
-    "summary": "云平台授权",
+    "summary": "授权管理",
     "usage": "swban help/zh deploy/auth",
     "details": []
   }

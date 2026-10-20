@@ -9,17 +9,19 @@ const document = JSON.parse(fs.readFileSync(new URL('../page.json',import.meta.u
 
 for (const language of ['zh','en']) test('Shared authorization page '+language+' supports two platforms and three methods',{timeout:30000},async()=>{
   const text = document[language],cfText = {...text,...text.cloudflare},tcText = {...text,...text.tencent};
-  const writes = [],errors = [],logins = [],preparations = [];
+  const writes = [],errors = [],logins = [],preparations = [],checks = [];
   const parent = fs.realpathSync.native(os.tmpdir()),siteRoot = fs.mkdtempSync(path.join(parent,'swban-auth-browser-'));
   fs.mkdirSync(path.join(siteRoot,'static'));
   fs.writeFileSync(path.join(siteRoot,'static/favicon.svg'),'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="green"/></svg>');
   let local,browser;
   try {
     const platform = language === 'zh' ? 'cloudflare' : 'tencent';
-    local = await startAuthPage({platform,siteRoot,language,environment:{CLOUDFLARE_API_TOKEN:'private-fixture-token',CLOUDFLARE_ACCOUNT_ID:'b'.repeat(32),
+    const cfEnvironment=Object.fromEntries([['API_TOKEN','private-fixture-token'],['ACCOUNT_ID','b'.repeat(32)],['API_KEY','private-fixture-key'],['EMAIL','private-fixture-email']]
+      .map(([name,value])=>[(language==='zh'?'CLOUDFLARE_':'cf_')+name,value]));
+    local = await startAuthPage({platform,siteRoot,language,environment:{...cfEnvironment,
       TENCENTCLOUD_SECRET_ID:'private-id',TENCENTCLOUD_SECRET_KEY:'private-key',TENCENTCLOUD_TOKEN:'private-sts-token'},login:async tool=>{
       logins.push(tool);if(logins.filter(value=>value===tool).length===1 && tool!=='cf')throw new Error('private-error');
-    },prepare:async tool=>{preparations.push(tool);},store:async(platform,action,value)=>{
+    },prepare:async tool=>{preparations.push(tool);},check:async tool=>{checks.push(tool);return logins.includes(tool)?'authorized':'unavailable';},store:async(platform,action,value)=>{
       if(action==='write')writes.push({platform,...value});return action==='check'&&platform==='cloudflare'?{userName:'api-token'}:null;
     },verify:async(platform,value)=>{if(value.token==='invalid-fixture-token')throw new Error('cloudflare_token_verification_failed');}});
     const chromium = loadChromium();
@@ -29,6 +31,7 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     await page.goto(local.url);await page.getByRole('heading',{level:1,name:text.title,exact:true}).waitFor();
     await page.locator('#'+(platform==='tencent'?'tccli':'cf')+'-status').filter({hasText:text.ready}).waitFor();
     assert.deepEqual(logins,[]);assert.equal(preparations.includes('tccli'),platform==='tencent');
+    assert.equal(text.title,'Swaw Banyan · '+(language==='zh'?'授权管理':'Authorization Manager'));
     assert.equal(await page.title(),text.title);assert.equal(await page.locator('html').getAttribute('lang'),language);
     assert.deepEqual(await page.locator('#platforms').getByRole('tab').allTextContents(),[text.cloudflareName,text.tencentName]);
     assert.equal(await page.locator('#tab-'+platform).getAttribute('aria-selected'),'true');
@@ -79,6 +82,14 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     assert.equal(await cfPriority.isVisible(),true);assert.equal(await cf.locator('#cloudflare-environment input').count(),0);
     assert.equal(await cf.locator('[data-env="token"]').textContent(),text.set);
     assert.equal(await cf.locator('[data-env="accountId"]').textContent(),'b'.repeat(32));
+    assert.equal(await cf.locator('[data-env="legacyKey"]').textContent(),text.set);
+    assert.equal(await cf.locator('[data-env="email"]').textContent(),text.set);
+    assert.deepEqual(await cf.locator('#cloudflare-environment tbody tr').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('code')].map(code=>code.textContent))),
+      ['API_TOKEN','ACCOUNT_ID','API_KEY','EMAIL'].map(name=>['CLOUDFLARE_'+name,'CF_'+name]));
+    assert.equal(await cf.locator('#cloudflare-environment [data-text="environmentHint"]').textContent(),cfText.environmentHint);
+    await page.setViewportSize({width:360,height:800});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await page.setViewportSize({width:480,height:800});
     await cf.getByRole('tab',{name:text.tabEnvironment,exact:true}).press('Home');
     assert.equal(await cf.getByRole('tab',{name:text.tabLogin,exact:true}).getAttribute('aria-selected'),'true');
     await cf.getByRole('tab',{name:text.tabLogin,exact:true}).press('ArrowRight');
@@ -122,12 +133,12 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     assert.deepEqual(writes[1],{platform:'tencent',userName:secretId,secret:secretKey});assert.equal(await tc.getByLabel(tcText.secretKey,{exact:true}).inputValue(),'');
     await tc.getByRole('tab',{name:text.tabEnvironment,exact:true}).click();assert.equal(await priority.isVisible(),true);
     assert.equal(await tc.locator('#tencent-environment input').count(),0);assert.equal(await tc.locator('[data-env="TENCENTCLOUD_SECRET_KEY"]').textContent(),text.set);
-    for(const secret of ['private-fixture-token','private-id','private-key','private-sts-token'])assert.ok(!(await page.locator('body').textContent()).includes(secret));
+    for(const secret of ['private-fixture-token','private-fixture-key','private-fixture-email','private-id','private-key','private-sts-token'])assert.ok(!(await page.locator('body').textContent()).includes(secret));
     await page.locator('#tab-tencent').press('Home');assert.equal(await page.locator('#tab-cloudflare').getAttribute('aria-selected'),'true');
     assert.equal(await cf.getByRole('tab',{name:cfText.tabToken,exact:true}).getAttribute('aria-selected'),'true');
     const other=language==='zh'?'en':'zh',otherText=document[other],switcher=page.locator('#language');
     await token.fill('unsaved-fixture-token');
-    const callsBeforeSwitch=JSON.stringify({logins,preparations,writes}),urlBeforeSwitch=page.url();
+    const callsBeforeSwitch=JSON.stringify({logins,preparations,checks,writes}),urlBeforeSwitch=page.url();
     await switcher.selectOption(other);
     assert.equal(await page.locator('html').getAttribute('lang'),other);assert.equal(await page.title(),otherText.title);
     assert.equal(await switcher.getAttribute('aria-label'),otherText.language);
@@ -140,7 +151,7 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     assert.equal(await page.locator('#cf-status').textContent(),otherText.authorized);
     assert.equal(await cf.locator('[data-env="token"]').textContent(),otherText.set);
     assert.equal(await cf.locator('[data-env="accountId"]').textContent(),'b'.repeat(32));
-    assert.equal(JSON.stringify({logins,preparations,writes}),callsBeforeSwitch);assert.equal(page.url(),urlBeforeSwitch);
+    assert.equal(JSON.stringify({logins,preparations,checks,writes}),callsBeforeSwitch);assert.equal(page.url(),urlBeforeSwitch);
     await switcher.selectOption(language);assert.equal(await page.title(),text.title);assert.equal(await token.inputValue(),'unsaved-fixture-token');
     const missing = await context.newPage(),markup = '<img src=x onerror="window.injected=true">';
     await missing.route('**/page.json',async route=>{const response=await route.fetch(),data=await response.json();await route.fulfill({response,json:{...data,text:{...data.text,[language]:{...data.text[language],title:markup}}}});});
@@ -150,6 +161,7 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     assert.deepEqual(await context.cookies(),[]);
     await switcher.selectOption(other);await page.reload();
     await page.getByRole('heading',{level:1,name:text.title,exact:true}).waitFor();
+    await page.locator('#'+(platform==='tencent'?'tccli':'cf')+'-status').filter({hasText:text.authorized}).waitFor();
     assert.equal(await switcher.inputValue(),language);assert.equal(await page.locator('html').getAttribute('lang'),language);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);
     await page.getByRole('button',{name:text.close,exact:true}).click();await page.locator('#page-status').filter({hasText:text.cancelled}).waitFor();assert.equal(await local.completed,'cancelled');
@@ -160,13 +172,15 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
   }
 });
 
-for (const language of ['zh','en']) test('Sign-in preparation '+language+' starts early, leaves API Token usable and retries without signing in',{timeout:30000},async()=>{
+for (const language of ['zh','en']) test('Sign-in preparation '+language+' and status checks leave API Token usable and show pending authorization',{timeout:30000},async()=>{
   const text=document[language],calls=[],logins=[],errors=[],gate=Promise.withResolvers(),started=Promise.withResolvers();
+  const statusGate=Promise.withResolvers(),checking=Promise.withResolvers(),loginGate=Promise.withResolvers(),loginStarted=Promise.withResolvers();
   let local,browser;
   try {
     local=await startAuthPage({platform:'tencent',language,environment:{},store:async()=>null,verify:async()=>{},
       prepare:async tool=>{calls.push(tool);started.resolve();if(calls.length===1){await gate.promise;throw new Error('private-install-output');}},
-      login:async tool=>{logins.push(tool);}});
+      check:async()=>{checking.resolve();return logins.length?'authorized':statusGate.promise;},
+      login:async tool=>{logins.push(tool);loginStarted.resolve();await loginGate.promise;}});
     const chromium=loadChromium();browser=await chromium.launch({headless:true,executablePath:chromium.executablePath()});
     const page=await browser.newPage({viewport:{width:360,height:800}});page.on('pageerror',error=>errors.push(error.message));
     await page.goto(local.url);await started.promise;
@@ -187,9 +201,80 @@ for (const language of ['zh','en']) test('Sign-in preparation '+language+' start
     assert.equal(await status.textContent(),document[other].errors.tool_preparation_failed);assert.equal(await button.textContent(),document[other].retryPrepare);
     await switcher.selectOption(language);
     assert.ok(!(await page.locator('body').textContent()).includes('private-install-output'));
-    await button.click();await status.filter({hasText:text.ready}).waitFor();
+    await button.click();await checking.promise;await status.filter({hasText:text.checking}).waitFor();
+    assert.equal(await button.isDisabled(),true);assert.equal(await button.getAttribute('aria-busy'),'true');
+    await switcher.selectOption(other);assert.equal(await status.textContent(),document[other].checking);
+    await switcher.selectOption(language);
+    await page.locator('#tencent-tab-token').click();
+    await page.locator('#secret-key').fill('c'.repeat(32));
+    assert.equal(await page.locator('#platform-tencent [data-save]').isEnabled(),true);
+    await page.locator('#platform-tencent [data-save]').click();
+    await page.waitForFunction(()=>document.querySelector('#secret-key').value==='');
+    await page.locator('#platform-tencent [data-status]').filter({hasText:text.saved}).waitFor();
+    assert.equal(await button.isDisabled(),true);assert.equal(await button.getAttribute('aria-busy'),'true');
+    statusGate.resolve('unavailable');await page.locator('#tencent-tab-login').click();
+    await status.filter({hasText:text.ready}).waitFor();
     assert.equal(await button.textContent(),text.tencent.loginTccli);assert.equal(await button.getAttribute('aria-busy'),null);assert.deepEqual(logins,[]);
-    await button.click();await status.filter({hasText:text.authorized}).waitFor();assert.deepEqual(logins,['tccli']);assert.deepEqual(calls,['tccli','tccli']);
+    await button.click();await loginStarted.promise;await status.filter({hasText:text.tencent.authorizing}).waitFor();
+    assert.equal(await button.getAttribute('aria-busy'),'true');assert.equal(await button.isDisabled(),true);
+    await switcher.selectOption(other);assert.equal(await status.textContent(),document[other].tencent.authorizing);
+    await switcher.selectOption(language);loginGate.resolve();
+    await status.filter({hasText:text.authorized}).waitFor();assert.equal(await button.getAttribute('aria-busy'),null);
+    assert.deepEqual(logins,['tccli']);assert.deepEqual(calls,['tccli','tccli']);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);
-  } finally {gate.resolve();local?.close();await browser?.close();}
+  } finally {gate.resolve();statusGate.resolve('unavailable');loginGate.resolve();local?.close();await browser?.close();}
+});
+
+for (const language of ['zh','en']) test('Native authorization '+language+' is checked on reopen and unconfirmed login is not reported as authorized',{timeout:30000},async()=>{
+  const text=document[language],statuses={cf:'authorized',wrangler:'notAuthorized'},checks=[],logins=[],errors=[];
+  let local,browser;
+  try {
+    local=await startAuthPage({language,environment:{},store:async()=>null,verify:async()=>{},prepare:async()=>{},
+      check:async tool=>{checks.push(tool);return statuses[tool]??'unavailable';},
+      login:async tool=>{logins.push(tool);statuses[tool]=logins.length===1?'unavailable':'notAuthorized';}});
+    const chromium=loadChromium();browser=await chromium.launch({headless:true,executablePath:chromium.executablePath()});
+    const page=await browser.newPage();page.on('pageerror',error=>errors.push(error.message));
+    await page.goto(local.url);
+    const cf=page.locator('#cf-status'),wrangler=page.locator('#wrangler-status'),button=page.locator('[data-tool="wrangler"]');
+    await cf.filter({hasText:text.authorized}).waitFor();await wrangler.filter({hasText:text.notAuthorized}).waitFor();
+    assert.deepEqual(logins,[]);assert.equal(checks.filter(tool=>tool==='cf').length,1);
+    const other=language==='zh'?'en':'zh';await page.locator('#language').selectOption(other);
+    assert.equal(await cf.textContent(),document[other].authorized);assert.equal(await wrangler.textContent(),document[other].notAuthorized);
+    await page.locator('#language').selectOption(language);await page.reload();
+    await cf.filter({hasText:text.authorized}).waitFor();await wrangler.filter({hasText:text.notAuthorized}).waitFor();
+    assert.equal(checks.filter(tool=>tool==='cf').length,2);assert.deepEqual(logins,[]);
+    for(const expected of [text.ready,text.notAuthorized]) {
+      await button.click();await wrangler.filter({hasText:expected}).waitFor();
+      assert.notEqual(await wrangler.textContent(),text.authorized);assert.equal(await button.isEnabled(),true);
+    }
+    assert.deepEqual(logins,['wrangler','wrangler']);assert.deepEqual(errors,[]);
+  } finally {local?.close();await browser?.close();}
+});
+
+for (const language of ['zh','en']) test('Tencent native credentials '+language+' remain authorized after reload and restart while failed checks stay unconfirmed',{timeout:30000},async()=>{
+  const text=document[language],checks=[],errors=[];
+  let local,browser,nativeStatus='unavailable',canAuthorize=true,logins=0;
+  const options={platform:'tencent',language,environment:{},store:async()=>null,verify:async()=>{},prepare:async()=>{},
+    check:async tool=>{checks.push(tool);if(nativeStatus==='unavailable')throw new Error('private-sts-error');return nativeStatus;},
+    login:async()=>{logins++;if(canAuthorize)nativeStatus='authorized';}};
+  try {
+    local=await startAuthPage(options);
+    const chromium=loadChromium();browser=await chromium.launch({headless:true,executablePath:chromium.executablePath()});
+    const page=await browser.newPage();page.on('pageerror',error=>errors.push(error.message));
+    await page.goto(local.url);
+    const status=page.locator('#tccli-status'),button=page.locator('[data-tool="tccli"]');
+    await status.filter({hasText:text.ready}).waitFor();
+    await button.click();await status.filter({hasText:text.authorized}).waitFor();assert.equal(logins,1);
+    await page.reload();await status.filter({hasText:text.authorized}).waitFor();assert.equal(logins,1);
+    local.close();assert.equal(await local.completed,'cancelled');local=await startAuthPage(options);
+    await page.goto(local.url);await status.filter({hasText:text.authorized}).waitFor();assert.equal(logins,1);
+    nativeStatus='unavailable';canAuthorize=false;
+    await page.reload();await status.filter({hasText:text.ready}).waitFor();
+    const other=language==='zh'?'en':'zh';await page.locator('#language').selectOption(other);
+    assert.equal(await status.textContent(),document[other].ready);await page.locator('#language').selectOption(language);
+    await button.click();await status.filter({hasText:text.ready}).waitFor();assert.equal(logins,2);
+    assert.notEqual(await status.textContent(),text.authorized);assert.equal(await button.isEnabled(),true);
+    assert.deepEqual(checks,Array(6).fill('tccli'));
+    assert.ok(!(await page.locator('body').textContent()).includes('private-sts-error'));assert.deepEqual(errors,[]);
+  } finally {local?.close();await browser?.close();}
 });
