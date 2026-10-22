@@ -2,7 +2,7 @@
 title: Unreleased
 slug: unreleased
 description: Unreleased changes to the Banyan theme and Skill.
-lastmod: 2026-10-20
+lastmod: 2026-10-21
 ---
 
 ## Added
@@ -71,7 +71,8 @@ lastmod: 2026-10-20
   tccli commands, including page sign-in and status checks, use the fixed
   `%TEMP%/swaw/banyan/tccli/` directory and retain its caches. Use absolute local paths.
 - `deploy/auth/setup` opens one local authorization page for Cloudflare and Tencent
-  Cloud, titled “Swaw Banyan · Authorization Manager”. Each platform's `auth/setup`
+  Cloud, headed “Authorization Manager”, with a linked `Powered by banyan.swaw.com`
+  credit below. The browser tab title is “Authorization Manager · Banyan”. Each platform's `auth/setup`
   entry selects its tab. The page supports
   native sign-in, Windows-stored API credentials and read-only environment status,
   including Cloudflare's native `CF_*` aliases,
@@ -79,7 +80,7 @@ lastmod: 2026-10-20
   text in English or Chinese. A title-bar language switch preserves inputs and
   progress; reloading returns to the system language without saving the selection.
   Platform navigation and method tabs use a monochrome layout with a thin column divider.
-  Credential priority sits below the title; Close is in the upper-right corner.
+  Credential priority sits below the authorization method tabs; Close follows the language selector on the same row.
   Supplementary notes follow the controls or variable table. Sign-in and API Token
   notes use numbered lists for setup, permissions and credential storage.
   Sign-in tabs prepare tools in the background, show readiness and support retry,

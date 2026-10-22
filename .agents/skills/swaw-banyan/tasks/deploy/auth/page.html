@@ -2,7 +2,7 @@
 <html lang="__LANG__">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title data-text="title"></title>
+<title data-text="pageTitle"></title>
 __ICONS__
 <style nonce="__NONCE__">
   :root {
@@ -16,10 +16,13 @@ __ICONS__
   body {max-width:52rem;margin:3rem auto;padding:0 1rem}
   main {margin-top:1.5rem}
   .auth-layout {display:grid;grid-template-columns:10rem minmax(0,1fr)}
-  .platform-content {position:relative;box-sizing:border-box;min-width:0;min-height:20rem;padding:1.25rem 1.5rem}
+  .platform-content {box-sizing:border-box;min-width:0;min-height:20rem;padding:1.25rem 1.5rem}
   h1, input, button, code, select {font:inherit}
   header {display:flex;align-items:center;gap:.7rem}
-  header img {flex:none} h1 {flex:1;min-width:0;margin:0;font-weight:600}
+  header img {flex:none} .heading {flex:1;min-width:0} h1 {margin:0;font-weight:600}
+  .header-actions {display:flex;flex:none;align-items:center;gap:.7rem}
+  .brand {margin:0;font-size:.8125rem;color:var(--muted);overflow-wrap:anywhere}
+  .brand a {color:inherit;text-decoration:none} .brand a:hover {text-decoration:underline}
   #language {flex:none;min-height:40px;padding:.35rem .5rem;border:1px solid var(--control-line);border-radius:.35rem;color:inherit;background:var(--surface)}
   ol {padding-left:1.5rem} li {margin:.5rem 0}
   label {display:block;margin-top:1rem}
@@ -35,7 +38,7 @@ __ICONS__
   #platforms {flex-direction:column;flex-wrap:nowrap;gap:.35rem;padding:1.25rem .75rem;border-right:1px solid var(--line)}
   #platforms [role="tab"] {flex:none;padding:.5rem .75rem;border-radius:.35rem;text-align:left}
   #platforms [aria-selected="true"] {background:var(--selected)}
-  [data-methods] {gap:1.25rem;padding-right:5rem;border-bottom:1px solid var(--line)}
+  [data-methods] {gap:1.25rem;border-bottom:1px solid var(--line)}
   [data-methods] [role="tab"] {margin-bottom:-1px;padding:.45rem .05rem;border-bottom:3px solid transparent}
   [data-methods] [aria-selected="true"] {border-bottom-color:var(--accent)}
   [data-platform] > [role="tabpanel"] {padding-top:.5rem}
@@ -46,7 +49,7 @@ __ICONS__
   [data-tool]:enabled:hover, [data-save]:enabled:hover {filter:brightness(.92)}
   [role="status"], footer {color:var(--muted)}
   [data-text="priority"] {margin:.5rem 0 0;color:var(--muted)}
-  #close {position:absolute;top:1.25rem;right:1.5rem;min-height:40px;margin:0;padding:.35rem .8rem;color:var(--muted)}
+  #close {min-height:40px;margin:0;padding:.35rem .8rem;color:var(--muted)}
   #close:enabled:hover {color:var(--ink);border-color:var(--muted)}
   table {width:100%;border-collapse:collapse} th, td {text-align:left;padding:.5rem 0;overflow-wrap:anywhere}
   th {font-weight:600} td:first-child {padding-right:.5rem}
@@ -57,15 +60,13 @@ __ICONS__
     .auth-layout {grid-template-columns:minmax(0,1fr)}
     #platforms {flex-direction:row;flex-wrap:wrap;padding:.65rem .75rem;border-right:0;border-bottom:1px solid var(--line)}
     .platform-content {padding:1rem}
-    #close {top:1rem;right:1rem}
   }
   @media (max-width:28rem) {
-    #close {position:static;display:block;margin:0 0 .75rem auto}
-    [data-methods] {padding-right:0}
+    header {flex-wrap:wrap}
+    .header-actions {width:100%;justify-content:flex-end}
   }
 </style>
-<header>__LOGO__<h1 data-text="title"></h1><select id="language" aria-label="Language / 语言"><option value="zh" lang="zh">中文</option><option value="en" lang="en">English</option></select></header>
-<p data-text="priority"></p>
+<header>__LOGO__<div class="heading"><h1 data-text="title"></h1><p class="brand">Powered by <a href="https://banyan.swaw.com/" target="_blank" rel="noopener noreferrer">banyan.swaw.com</a></p></div><div class="header-actions"><select id="language" aria-label="Language / 语言"><option value="zh" lang="zh">中文</option><option value="en" lang="en">English</option></select><button id="close" type="button" data-text="close"></button></div></header>
 <main>
 <div class="auth-layout">
 <div id="platforms" role="tablist" aria-orientation="vertical">
@@ -73,13 +74,13 @@ __ICONS__
   <button id="tab-tencent" role="tab" aria-controls="platform-tencent" aria-selected="false" tabindex="-1" data-text="tencentName"></button>
 </div>
 <div class="platform-content">
-<button id="close" type="button" data-text="close"></button>
 <section id="platform-cloudflare" role="tabpanel" aria-labelledby="tab-cloudflare" data-platform="cloudflare">
 <div role="tablist" data-methods>
   <button id="cloudflare-tab-login" role="tab" aria-controls="cloudflare-login" aria-selected="true" data-text="tabLogin"></button>
   <button id="cloudflare-tab-token" role="tab" aria-controls="cloudflare-token" aria-selected="false" tabindex="-1" data-text="tabToken"></button>
   <button id="cloudflare-tab-environment" role="tab" aria-controls="cloudflare-environment" aria-selected="false" tabindex="-1" data-text="tabEnvironment"></button>
 </div>
+<p data-text="priority"></p>
 <section id="cloudflare-login" role="tabpanel" aria-labelledby="cloudflare-tab-login">
   <p class="login-action"><button data-tool="cf" data-text="loginCf"></button> <span id="cf-status" role="status" aria-live="polite" data-text="notChecked"></span></p>
   <p class="login-action"><button data-tool="wrangler" data-text="loginWrangler"></button> <span id="wrangler-status" role="status" aria-live="polite" data-text="notChecked"></span></p>
@@ -129,6 +130,7 @@ __ICONS__
   <button id="tencent-tab-token" role="tab" aria-controls="tencent-token" aria-selected="false" tabindex="-1" data-text="tabToken"></button>
   <button id="tencent-tab-environment" role="tab" aria-controls="tencent-environment" aria-selected="false" tabindex="-1" data-text="tabEnvironment"></button>
 </div>
+<p data-text="priority"></p>
 <section id="tencent-login" role="tabpanel" aria-labelledby="tencent-tab-login">
   <p class="login-action"><button data-tool="tccli" data-text="loginTccli"></button> <span id="tccli-status" role="status" aria-live="polite" data-text="notChecked"></span></p>
   <footer><ol>

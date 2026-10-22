@@ -12,7 +12,8 @@
     }
   },
   "en": {
-    "title": "Swaw Banyan · Authorization Manager",
+    "title": "Authorization Manager",
+    "pageTitle": "Authorization Manager · Banyan",
     "language": "Language",
     "methods": "Authorization methods",
     "tabLogin": "Sign in",
@@ -97,7 +98,8 @@
     "priority": "Priority: sign-in < API Token < environment variables (one method is enough)."
   },
   "zh": {
-    "title": "Swaw Banyan · 授权管理",
+    "title": "授权管理器",
+    "pageTitle": "授权管理器 · Banyan",
     "language": "语言",
     "methods": "授权方式",
     "tabLogin": "登录授权",

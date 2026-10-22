@@ -31,8 +31,15 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     await page.goto(local.url);await page.getByRole('heading',{level:1,name:text.title,exact:true}).waitFor();
     await page.locator('#'+(platform==='tencent'?'tccli':'cf')+'-status').filter({hasText:text.ready}).waitFor();
     assert.deepEqual(logins,[]);assert.equal(preparations.includes('tccli'),platform==='tencent');
-    assert.equal(text.title,'Swaw Banyan · '+(language==='zh'?'授权管理':'Authorization Manager'));
-    assert.equal(await page.title(),text.title);assert.equal(await page.locator('html').getAttribute('lang'),language);
+    assert.equal(text.title,language==='zh'?'授权管理器':'Authorization Manager');
+    assert.equal(await page.title(),text.title+' · Banyan');assert.equal(await page.locator('html').getAttribute('lang'),language);
+    const brand=page.locator('header .brand'),brandLink=brand.getByRole('link',{name:'banyan.swaw.com',exact:true});
+    assert.equal(await brand.textContent(),'Powered by banyan.swaw.com');
+    assert.equal(await brandLink.getAttribute('href'),'https://banyan.swaw.com/');assert.equal(await brandLink.getAttribute('target'),'_blank');
+    assert.equal(await brandLink.getAttribute('rel'),'noopener noreferrer');
+    const titleBox=await page.locator('h1').boundingBox(),brandBox=await brand.boundingBox();
+    assert.ok(brandBox.y>=titleBox.y+titleBox.height,'Brand credit must be below the heading');
+    assert.equal(await brand.evaluate(element=>parseFloat(getComputedStyle(element).fontSize)<parseFloat(getComputedStyle(document.querySelector('h1')).fontSize)),true);
     assert.deepEqual(await page.locator('#platforms').getByRole('tab').allTextContents(),[text.cloudflareName,text.tencentName]);
     assert.equal(await page.locator('#tab-'+platform).getAttribute('aria-selected'),'true');
     assert.equal(await page.locator('#platforms').getAttribute('aria-orientation'),'horizontal');
@@ -45,10 +52,14 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     assert.ok(navigation.x+navigation.width<content.x);
     const platformTab = await page.locator('#tab-cloudflare').boundingBox(),methodTab = await page.locator('#tencent-tab-login').boundingBox();
     assert.ok(Math.abs(platformTab.y-methodTab.y)<1,'Platform and method tabs must align');
-    const heading = await page.locator('header').boundingBox(),priorityNote = await page.locator('[data-text="priority"]').boundingBox(),workspace = await page.locator('main').boundingBox();
-    assert.ok(priorityNote.y>=heading.y+heading.height && priorityNote.y+priorityNote.height<workspace.y,'Priority must be below the title and above the panel');
-    const closeButton = await page.locator('#close').boundingBox(),lastMethod = await page.locator('#tencent-tab-environment').boundingBox();
-    assert.ok(closeButton.x>=lastMethod.x+lastMethod.width && Math.abs(closeButton.y-methodTab.y)<1,'Close must be in the upper-right corner beside the method tabs');
+    const tencentTab=await page.locator('#tab-tencent').boundingBox();
+    assert.ok(tencentTab.y>=platformTab.y+platformTab.height,'Cloud platforms must remain stacked on desktop');
+    const priorityNote=await page.locator('[data-text="priority"]:visible').boundingBox(),methods=await page.locator('#platform-tencent [data-methods]').boundingBox(),action=await page.locator('#platform-tencent .login-action').boundingBox();
+    assert.ok(priorityNote.y>=methods.y+methods.height && priorityNote.y+priorityNote.height<action.y,'Priority must be below the method tabs and above the controls');
+    assert.ok(Math.abs(priorityNote.x-methods.x)<1,'Priority must align with the method tabs');
+    const closeButton=await page.locator('#close').boundingBox(),languageButton=await page.locator('#language').boundingBox();
+    assert.equal(await page.locator('header #language + #close').count(),1);
+    assert.ok(closeButton.x>=languageButton.x+languageButton.width && Math.abs(closeButton.y-languageButton.y)<1,'Close must follow the language selector on the same row');
     await page.locator('#tab-tencent').press('ArrowUp');
     assert.equal(await page.locator('#tab-cloudflare').getAttribute('aria-selected'),'true');
     const before = await page.locator('#cloudflare-tab-token').boundingBox();
@@ -68,9 +79,10 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
       assert.deepEqual(await notes.locator('ol > li').allTextContents(),[copy.loginFlow,copy.loginPermissions,copy.loginStorage]);
       assert.equal(await notes.evaluate(element=>!!(element.parentElement.querySelector('.login-action').compareDocumentPosition(element)&Node.DOCUMENT_POSITION_FOLLOWING)),true);
     }
-    const cfPriority = page.getByText(text.priority,{exact:true});
-    assert.equal(await cfPriority.isVisible(),true);
-    assert.equal(await page.locator('body > [data-text="priority"]').count(),1);
+    const priority = page.locator('[data-text="priority"]:visible');
+    assert.equal(await priority.textContent(),text.priority);
+    assert.equal(await page.locator('[data-platform] > [data-methods] + [data-text="priority"]').count(),2);
+    assert.equal(await priority.count(),1);
     const cfAction = await cf.locator('[data-tool="cf"]').boundingBox(),wranglerAction = await cf.locator('[data-tool="wrangler"]').boundingBox();
     assert.equal(cfAction.width,wranglerAction.width);
     await cf.getByRole('button',{name:cfText.loginCf,exact:true}).click();await page.locator('#cf-status').filter({hasText:text.authorized}).waitFor();
@@ -79,7 +91,7 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
       await page.locator('#wrangler-status').filter({hasText:attempt?text.authorized:text.errors.login_failed}).waitFor();
     }
     await cf.getByRole('tab',{name:text.tabEnvironment,exact:true}).click();
-    assert.equal(await cfPriority.isVisible(),true);assert.equal(await cf.locator('#cloudflare-environment input').count(),0);
+    assert.equal(await priority.isVisible(),true);assert.equal(await cf.locator('#cloudflare-environment input').count(),0);
     assert.equal(await cf.locator('[data-env="token"]').textContent(),text.set);
     assert.equal(await cf.locator('[data-env="accountId"]').textContent(),'b'.repeat(32));
     assert.equal(await cf.locator('[data-env="legacyKey"]').textContent(),text.set);
@@ -87,14 +99,16 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     assert.deepEqual(await cf.locator('#cloudflare-environment tbody tr').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('code')].map(code=>code.textContent))),
       ['API_TOKEN','ACCOUNT_ID','API_KEY','EMAIL'].map(name=>['CLOUDFLARE_'+name,'CF_'+name]));
     assert.equal(await cf.locator('#cloudflare-environment [data-text="environmentHint"]').textContent(),cfText.environmentHint);
-    await page.setViewportSize({width:360,height:800});
+    await page.setViewportSize({width:320,height:800});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    const narrowClose=await page.locator('#close').boundingBox(),narrowLanguage=await page.locator('#language').boundingBox();
+    assert.ok(narrowClose.x>=narrowLanguage.x+narrowLanguage.width && Math.abs(narrowClose.y-narrowLanguage.y)<1,'Language and Close must stay on the same row on narrow screens');
     await page.setViewportSize({width:480,height:800});
     await cf.getByRole('tab',{name:text.tabEnvironment,exact:true}).press('Home');
     assert.equal(await cf.getByRole('tab',{name:text.tabLogin,exact:true}).getAttribute('aria-selected'),'true');
     await cf.getByRole('tab',{name:text.tabLogin,exact:true}).press('ArrowRight');
     assert.equal(await cf.getByRole('tab',{name:cfText.tabToken,exact:true}).getAttribute('aria-selected'),'true');
-    assert.equal(await cfPriority.isVisible(),true);
+    assert.equal(await priority.isVisible(),true);
     for(const key of ['login','create','findAccount','user']){
       const link = cf.getByRole('link',{name:cfText[key],exact:true});
       assert.equal(await link.getAttribute('href'),document.links.cloudflare[key]);assert.equal(await link.getAttribute('target'),'_blank');
@@ -116,7 +130,7 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     await cf.getByRole('button',{name:text.replace,exact:true}).click();await cf.locator('[data-status]').filter({hasText:text.saved}).waitFor();
     assert.deepEqual(writes,[{platform:'cloudflare',secret:'valid-fixture-token',userName:'a'.repeat(32)}]);assert.equal(await token.inputValue(),'');
     await page.locator('#tab-tencent').click();
-    const priority = cfPriority;assert.equal(await priority.isVisible(),true);
+    assert.equal(await priority.isVisible(),true);
     for(let attempt=0;attempt<2;attempt++){
       await tc.getByRole('button',{name:tcText.loginTccli,exact:true}).click();
       await page.locator('#tccli-status').filter({hasText:attempt?text.authorized:text.errors.login_failed}).waitFor();
@@ -140,7 +154,8 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     await token.fill('unsaved-fixture-token');
     const callsBeforeSwitch=JSON.stringify({logins,preparations,checks,writes}),urlBeforeSwitch=page.url();
     await switcher.selectOption(other);
-    assert.equal(await page.locator('html').getAttribute('lang'),other);assert.equal(await page.title(),otherText.title);
+    assert.equal(await page.locator('html').getAttribute('lang'),other);assert.equal(await page.title(),otherText.pageTitle);
+    assert.equal(await page.locator('h1').textContent(),otherText.title);assert.equal(await brand.textContent(),'Powered by banyan.swaw.com');
     assert.equal(await switcher.getAttribute('aria-label'),otherText.language);
     assert.equal(await page.locator('#platforms').getAttribute('aria-label'),otherText.platforms);
     assert.equal(await cf.locator('[data-methods]').getAttribute('aria-label'),otherText.methods);
@@ -152,11 +167,11 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
     assert.equal(await cf.locator('[data-env="token"]').textContent(),otherText.set);
     assert.equal(await cf.locator('[data-env="accountId"]').textContent(),'b'.repeat(32));
     assert.equal(JSON.stringify({logins,preparations,checks,writes}),callsBeforeSwitch);assert.equal(page.url(),urlBeforeSwitch);
-    await switcher.selectOption(language);assert.equal(await page.title(),text.title);assert.equal(await token.inputValue(),'unsaved-fixture-token');
+    await switcher.selectOption(language);assert.equal(await page.title(),text.pageTitle);assert.equal(await token.inputValue(),'unsaved-fixture-token');
     const missing = await context.newPage(),markup = '<img src=x onerror="window.injected=true">';
     await missing.route('**/page.json',async route=>{const response=await route.fetch(),data=await response.json();await route.fulfill({response,json:{...data,text:{...data.text,[language]:{...data.text[language],title:markup}}}});});
     await missing.goto(new URL(local.url).origin);await missing.locator('#page-status').filter({hasText:text.invalidSession}).waitFor();
-    assert.equal(await missing.locator('h1').textContent(),markup);assert.equal(await missing.locator('h1 img').count(),0);assert.equal(await missing.locator('main').isVisible(),false);await missing.close();
+    assert.equal(await missing.locator('h1').textContent(),markup);assert.equal(await missing.locator('h1 img').count(),0);assert.equal(await missing.locator('main').isVisible(),false);assert.equal(await missing.locator('#close').isDisabled(),true);await missing.close();
     assert.deepEqual(await page.evaluate(()=>({local:localStorage.length,session:sessionStorage.length})),{local:0,session:0});
     assert.deepEqual(await context.cookies(),[]);
     await switcher.selectOption(other);await page.reload();
