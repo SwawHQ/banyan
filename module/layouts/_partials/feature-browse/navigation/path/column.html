@@ -3,7 +3,7 @@
 {{- $items := $column.items -}}
 {{- $collectionSource := $column.source | default dict -}}
 {{- $collectionHref := $collectionSource.href | default "" -}}
-{{- $header := partial "feature-browse/navigation/path/column-header.html" (dict "ctx" $ctx "source" $collectionSource) -}}
+{{- $header := partial "./column-header.html" (dict "ctx" $ctx "source" $collectionSource) -}}
 {{- $logicalPath := partial "feature-browse/collection/logical-path.html" (dict "ctx" $ctx "href" $collectionHref) -}}
 {{- $from := partial "feature-browse/routing/lineage-value.html" (dict "logical_path" $logicalPath) -}}
 {{- $listItems := slice -}}

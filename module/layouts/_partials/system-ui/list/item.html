@@ -1,9 +1,9 @@
 {{- $control := .control | default "link" -}}
 <div class="list-item" data-list-item{{ range $name, $value := .rowDataAttrs | default dict }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}>
   {{- if eq $control "link" -}}
-    {{- partial "system-ui/list/item-link.html" . -}}
+    {{- partial "./item-link.html" . -}}
   {{- else if eq $control "button" -}}
-    {{- partial "system-ui/list/item-button.html" . -}}
+    {{- partial "./item-button.html" . -}}
   {{- else -}}
     {{- errorf "List item has unsupported control %q; use link or button." $control -}}
   {{- end -}}

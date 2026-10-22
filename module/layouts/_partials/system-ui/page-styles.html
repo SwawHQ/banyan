@@ -13,29 +13,11 @@
   {{ errorf "Build failed: params.appearance.palette %q must reference a CSS resource, got %q." $palettePath $theme.MediaType.Type }}
   {{ return }}
 {{ end }}
-{{ $base := resources.Get "css/base.css" }}
-{{ $icons := resources.Get "css/icons.css" }}
-{{ $pageShell := resources.Get "css/page-shell.css" }}
-{{ $itemStyles := resources.Get "css/item.css" }}
-{{ $listLayout := resources.Get "css/list-layout.css" }}
-{{ $pathNavigation := resources.Get "css/path-navigation.css" }}
-{{ $documentAside := resources.Get "css/document-aside.css" }}
-{{ $updatesPanel := resources.Get "css/updates-panel.css" }}
-{{ $notFound := resources.Get "css/not-found.css" }}
-{{/* Base and shell → shared item and list components → feature-specific adaptation. */}}
-{{ $parts := slice
-  $theme
-  $base
-  $icons
-  $pageShell
-  $itemStyles
-  $listLayout
-  $pathNavigation
-  $documentAside
-  $updatesPanel
-  $notFound
+{{ $palette := resources.FromString "banyan-palette.css" $theme.Content }}
+{{ $options := dict
+  "targetPath" (printf "css/page.%s%s.css" (md5 $palettePath) (cond hugo.IsServer "" ".min"))
+  "importContext" (slice $palette)
+  "minify" (not hugo.IsServer)
 }}
-{{/* Concat caches by target path; language-specific palettes need distinct keys. */}}
-{{ $bundle := $parts | resources.Concat (printf "css/page.%s.css" (md5 $palettePath)) }}
-{{ $bundle = partial "system-assets/process-css.html" (dict "resource" $bundle) }}
+{{ $bundle := resources.Get "css/page.css" | css.Build $options | fingerprint }}
 <link rel="stylesheet" href="{{ $bundle.RelPermalink }}">

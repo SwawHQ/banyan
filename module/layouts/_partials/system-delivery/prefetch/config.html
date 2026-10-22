@@ -17,10 +17,10 @@
 {{- range $key, $_ := $prerender -}}
   {{- if not (in (slice "default" "icons") $key) -}}{{- errorf "Build failed: delivery.prefetch.prerender has unknown field %q." $key -}}{{- end -}}
 {{- end -}}
-{{- $modes := partial "system-delivery/prefetch/modes.html" (dict "config" $raw "context" "delivery.prefetch") -}}
-{{- $prerenderModes := partial "system-delivery/prefetch/modes.html" (dict "config" $prerender "context" "delivery.prefetch.prerender") -}}
-{{- $targets := partial "system-delivery/prefetch/targets.html" (dict "modes" $modes) -}}
-{{- $prerenderTargets := partial "system-delivery/prefetch/targets.html" (dict "modes" $prerenderModes) -}}
+{{- $modes := partial "./modes.html" (dict "config" $raw "context" "delivery.prefetch") -}}
+{{- $prerenderModes := partial "./modes.html" (dict "config" $prerender "context" "delivery.prefetch.prerender") -}}
+{{- $targets := partial "./targets.html" (dict "modes" $modes) -}}
+{{- $prerenderTargets := partial "./targets.html" (dict "modes" $prerenderModes) -}}
 {{- $allowed := slice -}}
 {{- range $targets -}}{{- if ne (index $modes .id) "off" -}}{{- $allowed = $allowed | append .selector -}}{{- end -}}{{- end -}}
 {{- /* Resolve each profile independently; base off still blocks prerender. */ -}}

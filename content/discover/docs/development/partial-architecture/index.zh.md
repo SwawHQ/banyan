@@ -78,6 +78,9 @@ _partials/
 
 `collection` 保留为成员、配置、来源和排序的领域名称。公共列表与条目使用 `list-*`、`item-*`，页面列使用 `page-column`；DOM 与 CSS 归属见 [UI 命名与职责](/zh/p/ui-naming/)。
 
+Partial 内部调用同目录文件时使用 `./文件名`；入口模板和跨目录调用使用完整 partial 路径。
+校验失败后用 `errorf` 报错，再用 `return` 结束当前模板，减少后续处理的条件嵌套。
+
 ## 依赖方向
 
 ```text

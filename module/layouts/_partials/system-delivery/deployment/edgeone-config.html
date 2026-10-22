@@ -1,5 +1,5 @@
 {{- $edgeone := .edgeone | default dict -}}
-{{- $routes := partial "system-delivery/deployment/cache-header-routes.html" (dict "routes" (.routes | default slice) "platform" "edgeone" "product" "makers") -}}
+{{- $routes := partial "./cache-header-routes.html" (dict "routes" (.routes | default slice) "platform" "edgeone" "product" "makers") -}}
 {{- $redirectRules := .redirects | default slice -}}
 {{- $redirects := slice -}}
 {{- $headers := slice -}}

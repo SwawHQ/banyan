@@ -13,25 +13,17 @@ export async function buildJavaScript({jsRoot, entries, params = {}, work}) {
   const output = path.join(work, 'output');
   await fs.mkdir(path.join(site, 'layouts'), {recursive:true});
   await fs.mkdir(path.join(site, 'data'), {recursive:true});
-  const sources = path.join(site, 'source/js');
-  // Hugo 0.157 drops virtual assets imports from source maps. Native file
-  // imports keep the full graph; all files still stay inside this fixture.
+  const sources = path.join(site, 'assets');
   await fs.cp(jsRoot, sources, {recursive:true});
-  for (const entry of entries) {
-    const wrapper = path.join(site, 'assets', entry);
-    const source = path.resolve(sources, entry).replace(/\\/g, '/');
-    await fs.mkdir(path.dirname(wrapper), {recursive:true});
-    await fs.writeFile(wrapper, 'export * from '+JSON.stringify(source)+';\n');
-  }
   await fs.writeFile(path.join(site, 'hugo.json'), JSON.stringify({
     baseURL:'https://example.test/', disableKinds:['taxonomy','term','rss','sitemap'],
     build:{noJSConfigInAssets:true}
   }));
   await fs.writeFile(path.join(site, 'data/spec.json'), JSON.stringify({entries, params}));
   await fs.writeFile(path.join(site, 'layouts/home.html'), `
-{{ range site.Data.spec.entries }}
+{{ range hugo.Data.spec.entries }}
   {{ $target := replaceRE "\\\\.js$" ".mjs" . }}
-  {{ $options := dict "targetPath" $target "format" "esm" "platform" "browser" "target" "es2022" "sourceMap" "external" "params" site.Data.spec.params }}
+  {{ $options := dict "targetPath" $target "format" "esm" "platform" "browser" "target" "es2022" "sourceMap" "external" "params" hugo.Data.spec.params }}
   {{ $built := resources.Get . | js.Build $options }}
   {{ $built.RelPermalink }}
 {{ end }}

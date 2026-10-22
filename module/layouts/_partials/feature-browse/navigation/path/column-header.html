@@ -19,7 +19,7 @@
   {{- $nextSort := printf "%s-%s" $field $nextOrder -}}
   {{- $fieldLabel := index $fieldLabels $field | default (index $fieldLabels "name") -}}
   {{- $actionLabel := index $actionLabels $nextSort | default (index $actionLabels "name-asc") -}}
-  {{- $toggleHref := partial "feature-browse/navigation/path/column-sort-url.html" (dict "ctx" $ctx "source" $source "current_sort" $currentSort) -}}
+  {{- $toggleHref := partial "./column-sort-url.html" (dict "ctx" $ctx "source" $source "current_sort" $currentSort) -}}
   <span class="path-column-separator" aria-hidden="true">·</span>
   <a class="path-column-sort" href="{{ $toggleHref }}" title="{{ $actionLabel }}" aria-label="{{ $actionLabel }}" data-collection-sort-toggle="true">
     <span class="path-sort-label">{{ $fieldLabel }}</span><span class="list-sort-indicator" data-sort-indicator aria-hidden="true">{{ cond (eq $order "asc") "↑" "↓" }}</span>

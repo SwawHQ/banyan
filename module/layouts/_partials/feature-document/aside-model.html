@@ -6,12 +6,12 @@
   {{- if index $slotFlags "breadcrumb" -}}
     {{- $breadcrumbModel = partial "feature-browse/navigation/path/model.html" (dict "ctx" .) -}}
   {{- end -}}
-  {{- $metaHTML = trim (printf "%s" (partial "feature-document/meta.html" (dict "ctx" . "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel))) " \r\n\t" -}}
+  {{- $metaHTML = trim (printf "%s" (partial "./meta.html" (dict "ctx" . "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel))) " \r\n\t" -}}
 {{- end -}}
 {{- $isArticle := eq .Layout "page-article" -}}
 {{- $tocHTML := "" -}}
 {{- if $isArticle -}}
-  {{- $tocHTML = trim (printf "%s" (partial "feature-document/toc.html" .)) " \r\n\t" -}}
+  {{- $tocHTML = trim (printf "%s" (partial "./toc.html" .)) " \r\n\t" -}}
 {{- end -}}
 {{- $label := "document_aside" -}}
 {{- if $tocHTML -}}

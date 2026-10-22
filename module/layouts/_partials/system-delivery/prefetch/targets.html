@@ -41,7 +41,7 @@
     {{- else if strings.HasPrefix $scope "root+" -}}
       {{- $distance := int (strings.TrimPrefix "root+" $scope) -}}
       {{- $positions = $positions | append (printf "%s:nth-child(%d) a" $path $distance) -}}
-      {{- $count := partial "system-delivery/prefetch/path-count.html" (dict "path" $path "count" (sub $distance 1)) -}}
+      {{- $count := partial "./path-count.html" (dict "path" $path "count" (sub $distance 1)) -}}
       {{- $positions = $positions | append (printf "%s%s [data-slot=\"main\"] a" $collection $count) -}}
     {{- else if strings.HasPrefix $scope "tail-" -}}
       {{- $distance := int (strings.TrimPrefix "tail-" $scope) -}}
@@ -50,7 +50,7 @@
         (printf "%s %s:nth-last-child(%d) a" $document $path (add $distance 1))
       -}}
       {{- range slice (dict "page" $collection "count" (sub $distance 1)) (dict "page" $document "count" $distance) -}}
-        {{- $count := partial "system-delivery/prefetch/path-count.html" (dict "path" $path "count" .count) -}}
+        {{- $count := partial "./path-count.html" (dict "path" $path "count" .count) -}}
         {{- $positions = $positions | append (printf "%s%s %s" .page $count $root) -}}
       {{- end -}}
     {{- end -}}

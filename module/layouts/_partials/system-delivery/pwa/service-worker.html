@@ -6,13 +6,11 @@
 {{- if and (ne $swMode "off") (not $isOfflinePage) -}}
   {{- /* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */ -}}
   {{- if eq $swMode "enable" -}}
-    {{- $policyResource := resources.FromString "sw-policy.json" ($swRoutes | jsonify) -}}
-    {{- $publishPolicy := $policyResource.RelPermalink -}}
+    {{- $publishPolicy := resources.FromString "sw-policy.json" ($swRoutes | jsonify) | resources.Publish -}}
     {{- $swScriptTemplatePath := "js/pwa/worker-enable.js.tmpl" -}}
     {{- $swScriptTemplate := resources.Get $swScriptTemplatePath -}}
     {{- $swUrl := "sw.js" | relURL -}}
-    {{- $versionResource := resources.FromString "sw-version.json" (dict "version" $buildVersion | jsonify) -}}
-    {{- $publishVersion := $versionResource.RelPermalink -}}
+    {{- $publishVersion := resources.FromString "sw-version.json" (dict "version" $buildVersion | jsonify) | resources.Publish -}}
     {{- if not $swScriptTemplate -}}
       {{- errorf "Build failed: missing resource %q." $swScriptTemplatePath -}}
     {{- else -}}
@@ -28,8 +26,7 @@
         "minify" (not hugo.IsServer)
       ) -}}
       {{- $swProgram := $swScript.Content -}}
-      {{- $swScript = resources.FromString "sw.js" (replace $swProgram "__BANYAN_SW_PROGRAM_HASH__" (sha256 $swProgram)) -}}
-      {{- $publishSw := $swScript.RelPermalink -}}
+      {{- $publishSw := resources.FromString "sw.js" (replace $swProgram "__BANYAN_SW_PROGRAM_HASH__" (sha256 $swProgram)) | resources.Publish -}}
     {{- end -}}
     {{- $swManagerEntryPath := "js/pwa/manager-entry.js.tmpl" -}}
     {{- $swManagerEntryTemplate := resources.Get $swManagerEntryPath -}}
@@ -38,15 +35,13 @@
     {{- else -}}
       {{- $swManagerEntryCtx := dict "sw_url" $swUrl -}}
       {{- $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" $swManagerEntryCtx -}}
-      {{- /* Hugo 当前会为这条 bundle 生成错误的 SRI；保留指纹 URL 做缓存失效，避免浏览器因假阳性 integrity 直接拦截。 */ -}}
       {{- $swManagerTargetPath := cond hugo.IsServer "js/sw-manager.enable.bundle.js" "js/sw-manager.enable.bundle.min.js" -}}
       {{- $swManagerBuilt := $swManagerEntry | js.Build (dict
         "targetPath" $swManagerTargetPath
         "minify" (not hugo.IsServer)
       ) -}}
-      {{- $swManagerBundle := resources.FromString $swManagerTargetPath $swManagerBuilt.Content -}}
-      {{- $swManager := $swManagerBundle | fingerprint -}}
-<script src="{{ $swManager.RelPermalink }}" defer></script>
+      {{- $swManager := $swManagerBuilt | fingerprint -}}
+<script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
     {{- end -}}
   {{- else -}}
     {{- $swScriptPath := "js/pwa/worker-disable.js" -}}
@@ -54,11 +49,10 @@
     {{- if not $swScriptSource -}}
       {{- errorf "Build failed: missing resource %q." $swScriptPath -}}
     {{- else -}}
-      {{- $swScript := $swScriptSource | js.Build (dict
+      {{- $publishSw := $swScriptSource | js.Build (dict
         "targetPath" "sw.js"
         "minify" (not hugo.IsServer)
-      ) -}}
-      {{- $publishSw := $swScript.RelPermalink -}}
+      ) | resources.Publish -}}
     {{- end -}}
     {{- $swManagerPath := "js/pwa/manager-disable.js" -}}
     {{- $swManagerSource := resources.Get $swManagerPath -}}

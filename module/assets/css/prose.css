@@ -1,0 +1,7 @@
+@import "./prose-base.css";
+@import "./prose-inline.css";
+@import "./prose-lists.css";
+@import "./prose-quotes.css";
+@import "./prose-images.css";
+@import "./prose-code.css";
+@import "./prose-tables.css";

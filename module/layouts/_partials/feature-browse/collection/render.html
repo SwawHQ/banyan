@@ -3,9 +3,9 @@
 {{- $column := index $registry.columns_by_href $page.RelPermalink | default dict -}}
 {{- /* build.list can omit a rendered collection page from Site.Pages. */ -}}
 {{- if not $column -}}
-  {{- $config := partial "feature-browse/collection/config.html" (dict "page" $page) -}}
-  {{- $rows := partial "feature-browse/collection/rows.html" (dict "page" $page "config" $config) -}}
-  {{- $source := partial "feature-browse/collection/source.html" (dict "page" $page "config" $config) -}}
+  {{- $config := partial "./config.html" (dict "page" $page) -}}
+  {{- $rows := partial "./rows.html" (dict "page" $page "config" $config) -}}
+  {{- $source := partial "./source.html" (dict "page" $page "config" $config) -}}
   {{- $column = dict "config" $config "rows" $rows "source" $source -}}
 {{- end -}}
 {{- $config := $column.config -}}
@@ -25,7 +25,7 @@
   {{- $items = $items | append (dict
     "href" $href "title" $row.title "text" $row.text "icon" $row.icon
     "rowDataAttrs" $attrs
-    "fields" (partial "feature-browse/collection/item-fields.html" (dict "row" $row "view" $config.view))
+    "fields" (partial "./item-fields.html" (dict "row" $row "view" $config.view))
   ) -}}
 {{- end -}}
 {{- partial "system-ui/list/render.html" (dict
@@ -36,4 +36,4 @@
 ) -}}
 {{- $entries := slice -}}
 {{- range $rows -}}{{- $entries = $entries | append (dict "url" .href "name" .title) -}}{{- end -}}
-{{- partial "feature-browse/collection/schema.html" (dict "entries" $entries) -}}
+{{- partial "./schema.html" (dict "entries" $entries) -}}

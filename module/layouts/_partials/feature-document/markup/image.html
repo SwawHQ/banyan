@@ -2,7 +2,7 @@
 {{- $src := index $published "src" -}}
 {{- $resource := index $published "resource" -}}
 {{- if and $resource (partial "system-assets/media/is-processable-raster.html" $resource) -}}
-  {{- partial "feature-document/markup/responsive-image.html" (dict
+  {{- partial "./responsive-image.html" (dict
     "published" $published
     "alt" .PlainText
     "title" .Title

@@ -14,7 +14,7 @@
     {{- end -}}
     {{- $rows = $decorated -}}
   {{- end -}}
-  {{- with partial "feature-browse/navigation/path/items-from-rows.html" (dict "entries" $rows "selected_href" $node.item.href) -}}
+  {{- with partial "./items-from-rows.html" (dict "entries" $rows "selected_href" $node.item.href) -}}
     {{- $items = . -}}
   {{- end -}}
 {{- end -}}

@@ -27,7 +27,7 @@
         {{- $url = absURL $src -}}
       {{- else -}}
         {{- $resolved := partialCached "system-assets/resolve-page.html" (dict "ctx" (dict "Page" $owner) "src" $src) $owner.RelPermalink $src -}}
-        {{- $shareSrc := partialCached "system-metadata/seo/share-image/publish.html" $resolved $owner.RelPermalink $src "share" -}}
+        {{- $shareSrc := partialCached "./publish.html" $resolved $owner.RelPermalink $src "share" -}}
         {{- $url = absURL $shareSrc -}}
       {{- end -}}
     {{- end -}}

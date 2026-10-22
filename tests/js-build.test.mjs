@@ -25,7 +25,10 @@ test('Hugo JS fixtures preserve params, ESM exports and the transitive source gr
 
     await fs.writeFile(path.join(jsRoot, 'nested/forbidden.js'), 'export const forbidden = 7;');
     await fs.appendFile(path.join(jsRoot, 'entry.js'), '\nexport {forbidden} from "./nested/forbidden.js";');
-    const changed = await buildJavaScript({jsRoot, entries:['entry.js'], params:{offset:2}, work:path.join(work, 'changed')});
+    const changed = await buildJavaScript({jsRoot, entries:['entry.js'], params:{offset:3}, work:path.join(work, 'changed')});
+    const changedModule = await import(pathToFileURL(changed.get('entry.js').file).href);
+    assert.equal(changedModule.result, 43);
+    assert.equal(changedModule.forbidden, 7);
     assert.ok(changed.get('entry.js').sources.includes('nested/forbidden.js'),
       'the bundle boundary must detect an added runtime dependency');
   } finally { await fs.rm(work, {recursive:true, force:true}); }

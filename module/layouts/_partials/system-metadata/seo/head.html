@@ -7,9 +7,9 @@
   - RSS 暴露
 */}}
 
-{{- $desc := partial "system-metadata/seo/description.html" . -}}
+{{- $desc := partial "./description.html" . -}}
 {{- with $desc -}}<meta name="description" content="{{ . }}">{{ end }}
-{{- $ogLocale := partial "system-metadata/seo/locale.html" . -}}
+{{- $ogLocale := partial "./locale.html" . -}}
 
 {{- $pageUrl := .Permalink -}}
 {{- $defaultSite := index (sort hugo.Sites "Language.Weight") 0 -}}
@@ -33,7 +33,7 @@
 {{- if not .Params.translation_placeholder -}}
 {{- range .AllTranslations -}}
   {{- if and (ne .Language.Lang $.Language.Lang) (not .Params.translation_placeholder) -}}
-    {{- $altOgLocale := partial "system-metadata/seo/locale.html" . -}}
+    {{- $altOgLocale := partial "./locale.html" . -}}
     {{- if and $altOgLocale (ne $altOgLocale $ogLocale) }}
 <meta property="og:locale:alternate" content="{{ $altOgLocale }}">
     {{- end -}}

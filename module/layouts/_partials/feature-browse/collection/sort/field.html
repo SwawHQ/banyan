@@ -13,7 +13,7 @@
 {{ $indicator := "↨" }}
 {{ if $isActive }}{{ $indicator = cond (eq $currentOrder "asc") "↑" "↓" }}{{ end }}
 {{ $actionLabel := cond (eq $nextOrder "asc") $titleAsc $titleDesc }}
-{{ $href := partial "feature-browse/collection/sort/url.html" (dict "ctx" $ctx "baseHref" .baseHref "sort" (printf "%s-%s" $field $nextOrder) "fragment" .fragment) }}
+{{ $href := partial "./url.html" (dict "ctx" $ctx "baseHref" .baseHref "sort" (printf "%s-%s" $field $nextOrder) "fragment" .fragment) }}
 <span class="item-field {{ $class }}" data-item-field="{{ $field }}">
   <a
     href="{{ $href }}"

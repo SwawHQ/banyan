@@ -2,7 +2,7 @@
 {{- $pages := slice -}}
 {{- range ($site.Store.Get "banyan.sitemap.pages") -}}
   {{- with $site.GetPage .Path -}}
-    {{- if partial "system-metadata/sitemap/eligible.html" . -}}
+    {{- if partial "./eligible.html" . -}}
       {{- $pages = $pages | append . -}}
     {{- end -}}
   {{- end -}}

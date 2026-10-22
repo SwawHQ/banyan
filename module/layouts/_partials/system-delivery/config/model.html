@@ -2,7 +2,7 @@
 {{- if eq (len $policy) 0 -}}
   {{- errorf "Build failed: missing data/delivery.toml." -}}
 {{- end -}}
-{{- partial "system-delivery/config/validate.html" $policy -}}
+{{- partial "./validate.html" $policy -}}
 {{- $routes := index $policy "routes" | default slice -}}
 {{- $swRoutes := slice -}}
 {{- range $route := $routes -}}

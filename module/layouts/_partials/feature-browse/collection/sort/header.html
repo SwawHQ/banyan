@@ -13,7 +13,7 @@
 {{- end -}}
 {{- $default := split $config.default_sort "-" -}}
 {{- range $field := $fields -}}
-  {{- partial "feature-browse/collection/sort/field.html" (dict
+  {{- partial "./field.html" (dict
     "class" (index $classes $field) "ctx" $page "baseHref" $page.RelPermalink
     "field" $field "label" (i18n (printf "%s_col_%s" $prefix $field))
     "defaultOrder" (cond (in (slice "name" "path" "value") $field) "asc" "desc")

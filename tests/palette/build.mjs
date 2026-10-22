@@ -75,9 +75,9 @@ try {
     write(path.join(overlay, 'invalid.txt'), 'This is not CSS.');
     const mounts = `[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n`;
     const overridden = build('site-override', paletteConfig('"css/theme.css"') + mounts);
-    assert(pageCss(overridden).text.includes('--accent:#123456'), 'Hugo must prefer a same-path site asset over the theme asset.');
+    assert.equal(pageCss(overridden).text.match(/--accent:\s*([^;}]+)/)?.[1].trim(), '#123456', 'Hugo must prefer a same-path site asset over the theme asset.');
     const custom = build('custom', paletteConfig('"css/custom.css"') + mounts);
-    assert(pageCss(custom).text.includes('--accent:#234567'), 'A custom path resolves in the site assets filesystem.');
+    assert.equal(pageCss(custom).text.match(/--accent:\s*([^;}]+)/)?.[1].trim(), '#234567', 'A custom path resolves in the site assets filesystem.');
     const multilingual = build('language-override', paletteConfig('"css/theme.css"')
         + '[languages.zh.params.appearance]\npalette = "css/theme-monochrome.css"\n');
     assert.equal(pageCss(multilingual).href, pageCss(monochrome).href);

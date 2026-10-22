@@ -33,8 +33,10 @@ own complete palette, such as `assets/css/theme-custom.css`, by configuring
 A missing file, an empty/non-string setting, or a non-CSS resource fails the
 build with an explicit configuration error.
 
-Exactly one selected palette joins the existing CSS bundle and supplies all
-color roles. Rebuild and deploy after changing
+`css/page.css` and `css/prose.css` declare the shared and prose bundle imports.
+Hugo `css.Build` bundles them in import order. The page builder supplies the
+selected palette through `importContext`; imported site overrides still apply.
+Exactly one selected palette supplies all color roles. Rebuild and deploy after changing
 the setting. The appearance page still selects system/light/dark mode within
 that palette. The monochrome palette covers UI, syntax, and homepage diagram
 colors; it does not recolor article images or image-based brand assets.

@@ -5,11 +5,13 @@ import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
 import {spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {parseHeaders,cloudflareHeaders} from '../.agents/skills/swaw-banyan/tasks/_shared/headers.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/cache-policy-tests');
 let work;
@@ -396,6 +398,20 @@ test('content versions change JSON without changing the worker program, and inte
   for(const value of ['0','-1','1.5','"5"']){
     const result=build('interval-'+value.replace(/\W/g,'x'),undefined,'',serviceWorkerPolicy('enable',value));
     assert.notEqual(result.status,0);assert.match(result.log,/content_check_interval must be a positive integer/);
+  }
+});
+
+test('SW manager integrity matches published bytes in every language',()=>{
+  for(const mode of ['enable','disable']) {
+    const output=passed(build('manager-integrity-'+mode,undefined,'',serviceWorkerPolicy(mode)));
+    for(const prefix of ['','zh/','zh-tw/']) {
+      const html=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
+      const tag=[...html.matchAll(/<script\b[^>]*>/gi)].map(match=>match[0])
+        .find(tag=>extractTagAttribute(tag,'src')?.includes('sw-manager.'+mode+'.'));
+      assert.ok(tag,mode+' manager must be present in '+(prefix||'en'));
+      const src=extractTagAttribute(tag,'src'),bytes=fs.readFileSync(path.join(output,src));
+      assert.equal(extractTagAttribute(tag,'integrity'),'sha256-'+createHash('sha256').update(bytes).digest('base64'));
+    }
   }
 });
 

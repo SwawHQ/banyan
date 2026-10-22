@@ -74,7 +74,7 @@ list: name
 
 ## CSS 源码与发布名
 
-`assets/css/` 保持扁平，现有 19 个源码文件。layouts 的 `entry-*`、`feature-*`、`system-*` 表达模板调用边界；CSS 按视觉职责命名，不复制模板目录层级，也不要求一个模板对应一个样式文件。
+`assets/css/` 保持扁平。layouts 的 `entry-*`、`feature-*`、`system-*` 表达模板调用边界；CSS 按视觉职责命名，不复制模板目录层级，也不要求一个模板对应一个样式文件。
 
 | 模板职责 | CSS 归属 |
 | --- | --- |
@@ -87,7 +87,7 @@ list: name
 | `page-home.html` 与 `entry-page-home/` | `page-home.css`：首页场景 |
 | `feature-updates/panel.html`、`404.html` | `updates-panel.css`、`not-found.css`：各自的小型呈现规则 |
 
-公共装配入口 `system-ui/page-styles.html` 按“基础与画幅 → 共享列表 → 功能适配”排序。共享文件定义组件默认外观，路径列和辅助列的特有规则放在各自文件。公共列表使用 `list-*` 与 `item-*`，供第一列、路径列、主列表、语言、外观和章节目录复用。`collection` 保留为集合模型、配置、来源与排序的领域名称。
+`assets/css/page.css` 按“配色 → 基础与画幅 → 共享列表 → 功能适配”声明 `@import`，`system-ui/page-styles.html` 用 `css.Build` 构建。选中的配色通过 `importContext` 注入；正文入口 `assets/css/prose.css` 同样管理七个 `prose-*` 的导入顺序。共享文件定义组件默认外观，路径列和辅助列的特有规则放在各自文件。公共列表使用 `list-*` 与 `item-*`，供第一列、路径列、主列表、语言、外观和章节目录复用。`collection` 保留为集合模型、配置、来源与排序的领域名称。
 
 源码文件表达维护职责，发布文件表达缓存边界。`baseof.html` 通过上述入口装配公共 `page.css`；`feature-document/styles.html` 将七个 `prose-*` 源码合并成一个 `prose.css`，由确实输出 `.prose` 的页面加载；`updates-panel.css` 与 `not-found.css` 虽保留独立源码归属，也进入 `page.css`。首页另发 `page-home.css` 和三种语言各自的场景样式，因此完整生产构建共有 6 个 CSS 资源。
 

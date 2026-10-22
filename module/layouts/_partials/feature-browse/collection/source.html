@@ -3,7 +3,7 @@
 {{- $result := dict -}}
 {{- if $config.view -}}
   {{- $result = dict "provider" "collection"
-    "logicalPath" (partial "feature-browse/collection/logical-path.html" (dict "ctx" $page "href" $page.RelPermalink))
+    "logicalPath" (partial "./logical-path.html" (dict "ctx" $page "href" $page.RelPermalink))
     "href" $page.RelPermalink "label" ($page.LinkTitle | default $page.Title)
     "sortVariant" $config.sort_variant "defaultSort" $config.default_sort -}}
 {{- end -}}

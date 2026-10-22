@@ -1,7 +1,7 @@
 {{- $contentHTML := printf "%s" .Content -}}
 {{- $content := trim $contentHTML " \r\n\t" -}}
-{{- partial "feature-document/validate-heading.html" . -}}
-{{- $aside := partialCached "feature-document/aside-model.html" . .RelPermalink -}}
+{{- partial "./validate-heading.html" . -}}
+{{- $aside := partialCached "./aside-model.html" . .RelPermalink -}}
 <article class="article">
   <div class="prose">
     <h1 class="column-heading" id="{{ .Title | anchorize }}">{{ .Title }}</h1>
@@ -15,4 +15,4 @@
     {{- end -}}
   </div>
 </article>
-{{- if and .IsPage (eq .Layout "page-article") -}}{{- partial "feature-document/schema.html" . -}}{{- end -}}
+{{- if and .IsPage (eq .Layout "page-article") -}}{{- partial "./schema.html" . -}}{{- end -}}

@@ -1,0 +1,11 @@
+/* The page-style builder supplies this palette through importContext. */
+@import "banyan-palette.css";
+@import "./base.css";
+@import "./icons.css";
+@import "./page-shell.css";
+@import "./item.css";
+@import "./list-layout.css";
+@import "./path-navigation.css";
+@import "./document-aside.css";
+@import "./updates-panel.css";
+@import "./not-found.css";

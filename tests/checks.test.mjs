@@ -491,8 +491,8 @@ test('native Hugo generates EdgeOne config and respects its Hugo version overrid
     const fixture = path.join(work,'edgeone '+(override || 'default'));
     write(fixture,'hugo.toml','baseURL = "https://example.test/"\ndisableKinds = ["RSS","sitemap"]\n[taxonomies]\n');
     write(fixture,'content/_index.md','---\ntitle: Fixture\n---\n');
-    write(fixture,'layouts/home.html','{{ partial "edgeone-config.html" (dict "edgeone" .Site.Data.policy.platform.edgeone.makers) | jsonify }}');
-    write(fixture,'layouts/_partials/edgeone-config.html',fs.readFileSync(path.join(theme,
+    write(fixture,'layouts/home.html','{{ partial "system-delivery/deployment/edgeone-config.html" (dict "edgeone" .Site.Data.policy.platform.edgeone.makers) | jsonify }}');
+    write(fixture,'layouts/_partials/system-delivery/deployment/edgeone-config.html',fs.readFileSync(path.join(theme,
       'layouts/_partials/system-delivery/deployment/edgeone-config.html')));
     write(fixture,'layouts/_partials/system-delivery/deployment/cache-header-routes.html',fs.readFileSync(path.join(theme,
       'layouts/_partials/system-delivery/deployment/cache-header-routes.html')));

@@ -2,7 +2,7 @@
 {{- if not $ctx -}}
   {{- errorf "Build failed: feature-browse/navigation/source/context.html requires ctx." -}}
 {{- end -}}
-{{- $registry := partialCached "feature-browse/navigation/source/models.html" (dict "ctx" $ctx) $ctx.Site.Language.Lang -}}
+{{- $registry := partialCached "./models.html" (dict "ctx" $ctx) $ctx.Site.Language.Lang -}}
 {{- $columnsByHref := $registry.columns_by_href -}}
 {{- $pageColumn := index $columnsByHref $ctx.RelPermalink | default dict -}}
 {{- $pageCollectionSource := $pageColumn.source | default dict -}}
@@ -10,7 +10,7 @@
   {{- $config := partial "feature-browse/collection/config.html" (dict "page" $ctx) -}}
   {{- $pageCollectionSource = partial "feature-browse/collection/source.html" (dict "page" $ctx "config" $config) -}}
 {{- end -}}
-{{- $browserSources := partial "feature-browse/navigation/source/browser-models.html" (dict
+{{- $browserSources := partial "./browser-models.html" (dict
   "page" $ctx
   "source_models" $registry.models
   "page_collection_source" $pageCollectionSource

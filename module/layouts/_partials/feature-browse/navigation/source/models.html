@@ -7,7 +7,7 @@
 {{- range $directory.sections -}}{{- $pages = $pages | append . -}}{{- end -}}
 {{- range $page := sort (uniq $pages) "RelPermalink" -}}
   {{- if and (eq $page.Layout "page-collection") (partial "feature-browse/is-rendered-html.html" $page) -}}
-    {{- $model := partial "feature-browse/navigation/source/page-model.html" (dict "page" $page) -}}
+    {{- $model := partial "./page-model.html" (dict "page" $page) -}}
     {{- $entries = $entries | append $model -}}
     {{- $columnsByHref = merge $columnsByHref (dict $page.RelPermalink $model.currentColumn) -}}
   {{- end -}}

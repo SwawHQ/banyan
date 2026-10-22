@@ -5,6 +5,6 @@
     <div class="list-item list-header{{ with .headerClass }} {{ . }}{{ end }}" data-list-header>{{ .header | safeHTML }}</div>
   {{- end -}}
   {{- range .items -}}
-    {{- partial "system-ui/list/item.html" . -}}
+    {{- partial "./item.html" . -}}
   {{- end -}}
 </div>

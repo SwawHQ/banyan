@@ -1,7 +1,7 @@
 {{- $site := . -}}
 {{- $multilingual := gt (len hugo.Sites) 1 -}}
-{{- $description := partial "system-metadata/agent-access/text.txt" ($site.Params.description | default "") -}}
-# {{ partial "system-metadata/agent-access/text.txt" $site.Title }} - {{ partial "system-metadata/agent-access/text.txt" ($site.Language.Label | default $site.Language.Lang) }}
+{{- $description := partial "./text.txt" ($site.Params.description | default "") -}}
+# {{ partial "./text.txt" $site.Title }} - {{ partial "./text.txt" ($site.Language.Label | default $site.Language.Lang) }}
 {{ with $description }}
 > {{ . }}
 {{ end }}
@@ -13,7 +13,7 @@ Sitemap: {{ if $multilingual }}{{ absURL (printf "%s/sitemap.xml" $site.Language
 {{- $languageSite := . -}}
 {{- if ne .Language.Lang $site.Language.Lang -}}
 {{- with .Home.OutputFormats.Get "LLMS" }}
-- [{{ partial "system-metadata/agent-access/text.txt" ($languageSite.Language.Label | default $languageSite.Language.Lang) }}](<{{ .Permalink }}>)
+- [{{ partial "./text.txt" ($languageSite.Language.Label | default $languageSite.Language.Lang) }}](<{{ .Permalink }}>)
 {{ end -}}
 {{ end -}}
 {{ end -}}
@@ -31,9 +31,9 @@ Sitemap: {{ if $multilingual }}{{ absURL (printf "%s/sitemap.xml" $site.Language
   {{- if not .IsHome -}}{{- $labels = $labels | append .Title -}}{{- end -}}
 {{- end -}}
 {{- $labels = $labels | append .root.Title -}}
-{{ printf "\n\n" }}## {{ partial "system-metadata/agent-access/text.txt" (delimit $labels " / ") }}
+{{ printf "\n\n" }}## {{ partial "./text.txt" (delimit $labels " / ") }}
 {{ range .pages -}}
-{{ $entryDescription := partial "system-metadata/agent-access/text.txt" (.Params.description | default "") -}}
-- [{{ partial "system-metadata/agent-access/text.txt" .Title }}](<{{ .Permalink }}>){{ with $entryDescription }}: {{ . }}{{ end }}
+{{ $entryDescription := partial "./text.txt" (.Params.description | default "") -}}
+- [{{ partial "./text.txt" .Title }}](<{{ .Permalink }}>){{ with $entryDescription }}: {{ . }}{{ end }}
 {{ end -}}
 {{ end -}}

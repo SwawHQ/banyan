@@ -1,6 +1,6 @@
 {{- $ctx := . -}}
-{{- $roots := partialCached "feature-browse/navigation/root/pages.html" $ctx $ctx.Language.Lang -}}
-{{- $selected := partial "feature-browse/navigation/root/selected.html" $ctx -}}
+{{- $roots := partialCached "./pages.html" $ctx $ctx.Language.Lang -}}
+{{- $selected := partial "./selected.html" $ctx -}}
 {{- $iconDefaults := partial "system-ui/list/icon-defaults.html" (dict "page" $ctx.Site.Home) -}}
 {{- $defaultHref := "" -}}
 {{- with $selected -}}{{- $defaultHref = .RelPermalink -}}{{- end -}}

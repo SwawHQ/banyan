@@ -12,5 +12,5 @@
 {{ if $isCurrent }}{{ $linkClass = printf "%s is-current" $linkClass }}{{ end }}
 {{ $ariaCurrent := .ariaCurrent | default (cond $isCurrent "page" "") }}
   <a class="{{ $linkClass }}" data-item-field="name" data-list-entry href="{{ $href }}"{{ with $tooltip }} title="{{ . }}"{{ end }}{{ with $label }} aria-label="{{ . }}"{{ end }}{{ with $ariaCurrent }} aria-current="{{ . }}"{{ end }}{{ with $target }} target="{{ . }}"{{ end }}{{ with $rel }} rel="{{ . }}"{{ end }}{{ with $dataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}>
-    {{ partial "system-ui/list/item-content.html" (dict "text" $text "icon" $icon) }}
+    {{ partial "./item-content.html" (dict "text" $text "icon" $icon) }}
   </a>

@@ -1,5 +1,5 @@
 {{- $class := "item-control item-field item-field--name" -}}
 {{- if eq (.isCurrent | default false) true -}}{{- $class = printf "%s is-current" $class -}}{{- end -}}
 <button type="button" class="{{ $class }}" data-item-field="name" data-list-entry{{ with .ariaPressed }} aria-pressed="{{ . }}"{{ end }}{{ with .title }} title="{{ . }}"{{ end }}{{ with .label }} aria-label="{{ . }}"{{ end }}{{ range $name, $value := .dataAttrs | default dict }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}>
-  {{- partial "system-ui/list/item-content.html" (dict "text" .text "icon" .icon "labelAttr" .labelAttr) -}}
+  {{- partial "./item-content.html" (dict "text" .text "icon" .icon "labelAttr" .labelAttr) -}}
 </button>

@@ -1,5 +1,5 @@
 {{- /* Resolve bundle/global images before inheritance or projection into another list. */ -}}
-{{- $value := partial "system-ui/icon/resolve.html" . -}}
+{{- $value := partial "./resolve.html" . -}}
 {{- if and (reflect.IsMap $value) (isset $value "image") -}}
   {{- $owner := .page -}}
   {{- $published := partialCached "system-assets/publish-local.html" (dict "ctx" (dict "Page" $owner) "src" $value.image) $owner.RelPermalink $value.image -}}

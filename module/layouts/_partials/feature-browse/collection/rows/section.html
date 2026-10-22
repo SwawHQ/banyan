@@ -20,7 +20,7 @@
   {{- $text := $section.LinkTitle | default $section.Title -}}
   {{- $sectionRows = $sectionRows | append (dict
     "node" $section
-    "key" (partial "feature-browse/collection/rows/page-key.html" (dict "ctx" $section))
+    "key" (partial "./page-key.html" (dict "ctx" $section))
     "kind" "section"
     "href" $section.RelPermalink
     "title" $section.Title
@@ -36,7 +36,7 @@
 {{- end -}}
 {{- $pageRows := slice -}}
 {{- range $child := $direct -}}
-  {{- $pageRows = $pageRows | append (partial "feature-browse/collection/rows/page.html" (dict "page" $child)) -}}
+  {{- $pageRows = $pageRows | append (partial "./page.html" (dict "page" $child)) -}}
 {{- end -}}
 {{- $rows := slice -}}
 {{- range sort $pageRows "sort_date" "desc" -}}{{- $rows = $rows | append . -}}{{- end -}}

@@ -1,7 +1,7 @@
 {{- $sections := slice -}}
 {{- range .Sections -}}
   {{- $sections = $sections | append . -}}
-  {{- range partial "feature-browse/directory/sections.html" . -}}
+  {{- range partial "./sections.html" . -}}
     {{- $sections = $sections | append . -}}
   {{- end -}}
 {{- end -}}

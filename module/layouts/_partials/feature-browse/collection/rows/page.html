@@ -3,7 +3,7 @@
 {{- $text := $page.LinkTitle | default $page.Title -}}
 {{- return (dict
   "node" $page
-  "key" (partial "feature-browse/collection/rows/page-key.html" (dict "ctx" $page))
+  "key" (partial "./page-key.html" (dict "ctx" $page))
   "kind" "page" "href" $page.RelPermalink
   "title" $page.Title "text" $text
   "sort_group" "1" "sort_name" $text

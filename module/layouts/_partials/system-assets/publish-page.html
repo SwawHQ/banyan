@@ -1,4 +1,4 @@
-{{- $resolved := partial "system-assets/resolve-page.html" . -}}
+{{- $resolved := partial "./resolve-page.html" . -}}
 {{- $result := $resolved -}}
 {{- if index $resolved "resolved" -}}
   {{- $resource := index $resolved "resource" -}}

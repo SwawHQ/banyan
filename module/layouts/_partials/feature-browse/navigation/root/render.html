@@ -1,4 +1,4 @@
-{{- $model := partial "feature-browse/navigation/root/model.html" . -}}
+{{- $model := partial "./model.html" . -}}
 <nav class="column-panel" data-root-navigation data-default-root-href="{{ $model.default_href }}" aria-label="{{ .Site.Title }}">
   {{- partial "system-ui/list/render.html" (dict "items" $model.items) -}}
 </nav>

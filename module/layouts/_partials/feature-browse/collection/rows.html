@@ -1,9 +1,9 @@
 {{- $page := .page -}}
 {{- $config := .config -}}
-{{- if not $config -}}{{- $config = partial "feature-browse/collection/config.html" (dict "page" $page) -}}{{- end -}}
+{{- if not $config -}}{{- $config = partial "./config.html" (dict "page" $page) -}}{{- end -}}
 {{- $rows := slice -}}
 {{- with $page.Params.aggregate -}}
-  {{- $members := partial "feature-browse/collection/articles.html" $page -}}
+  {{- $members := partial "./articles.html" $page -}}
   {{- range $members -}}{{- $rows = $rows | append (partial "feature-browse/collection/rows/page.html" (dict "page" .)) -}}{{- end -}}
 {{- else -}}
   {{- if eq $page.Kind "section" -}}
@@ -25,7 +25,7 @@
     {{- $pathText := "/" -}}
     {{- $pathHref := $node.Site.Home.RelPermalink -}}
     {{- with $node.Parent -}}
-      {{- $pathText = partial "feature-browse/collection/logical-path.html" (dict "ctx" $node "href" .RelPermalink) -}}
+      {{- $pathText = partial "./logical-path.html" (dict "ctx" $node "href" .RelPermalink) -}}
       {{- $pathHref = .RelPermalink -}}
     {{- end -}}
     {{- $bytes := len $node.RawContent -}}

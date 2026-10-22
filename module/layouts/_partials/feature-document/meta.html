@@ -26,10 +26,10 @@
 {{- $hasPath := gt (len $directoryPaths) 0 -}}
 {{- $hasDates := false -}}
 {{- if $ctx.Date -}}{{- $hasDates = true -}}{{- end -}}
-{{- $externalLinks := partial "feature-document/external-links.html" $ctx -}}
+{{- $externalLinks := partial "./external-links.html" $ctx -}}
 {{- if or $hasPath $hasDates $externalLinks -}}
 <div class="document-meta">
-  {{- if $hasDates -}}{{ partial "feature-document/dates.html" $ctx }}{{- end -}}
+  {{- if $hasDates -}}{{ partial "./dates.html" $ctx }}{{- end -}}
   {{- range $directoryPaths -}}
   <nav class="document-meta__row document-meta__row--path" aria-label="{{ i18n "article_meta_directory" }}"{{ with .reference }} data-directory-reference="{{ . }}"{{ end }}>
     <span class="item-icon">{{ partial "system-ui/icon/render.html" (dict "name" "folder-tree") }}</span>

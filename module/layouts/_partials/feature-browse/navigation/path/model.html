@@ -2,9 +2,9 @@
 {{- /* Read ancestors on each render so incremental builds observe their changes. */ -}}
 {{- $base := dict -}}
 {{- if $ctx.IsHome -}}
-  {{- $base = partial "feature-browse/navigation/path/model-home.html" (dict "ctx" $ctx) -}}
+  {{- $base = partial "./model-home.html" (dict "ctx" $ctx) -}}
 {{- else -}}
-  {{- $base = partial "feature-browse/navigation/path/model-page.html" (dict "ctx" $ctx) -}}
+  {{- $base = partial "./model-page.html" (dict "ctx" $ctx) -}}
 {{- end -}}
 {{- $rootItem := dict -}}
 {{- with partial "feature-browse/navigation/root/selected.html" $ctx -}}

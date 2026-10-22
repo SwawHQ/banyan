@@ -1,12 +1,12 @@
 {{- $site := . -}}
-{{- $sections := partial "feature-browse/directory/sections.html" $site.Home -}}
+{{- $sections := partial "./sections.html" $site.Home -}}
 {{- $known := newScratch -}}
 {{- range $sections -}}{{- $known.Set .Path true -}}{{- end -}}
 {{- range $site.Pages -}}
   {{- range .Ancestors.Reverse -}}
     {{- if and (eq .Kind "section") (not ($known.Get .Path)) -}}
       {{- $found := slice . -}}
-      {{- range partial "feature-browse/directory/sections.html" . -}}{{- $found = $found | append . -}}{{- end -}}
+      {{- range partial "./sections.html" . -}}{{- $found = $found | append . -}}{{- end -}}
       {{- range $found -}}
         {{- if not ($known.Get .Path) -}}{{- $known.Set .Path true -}}{{- $sections = $sections | append . -}}{{- end -}}
       {{- end -}}
@@ -18,7 +18,7 @@
 {{- range $site.Pages -}}{{- $pages = $pages | append . -}}{{- end -}}
 {{- range $sections -}}{{- $pages = $pages | append . -}}{{- end -}}
 {{- range uniq $pages -}}
-  {{- partial "feature-browse/directory/assert-map-resources.html" . -}}
+  {{- partial "./assert-map-resources.html" . -}}
 {{- end -}}
 {{- $index := newScratch -}}
 {{- range slice "direct" "recursive" "incoming" -}}{{- $index.Set . dict -}}{{- end -}}

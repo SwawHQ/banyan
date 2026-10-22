@@ -1,4 +1,4 @@
-{{- $value := partial "system-ui/icon/resolve.html" (dict "value" .name) -}}
+{{- $value := partial "./resolve.html" (dict "value" .name) -}}
 {{- if reflect.IsMap $value -}}
 {{- if isset $value "image" -}}
 <img class="icon icon--image{{ if $value.monochrome }} icon--monochrome{{ end }}{{ with .class }} {{ . }}{{ end }}" src="{{ $value.image }}" alt="{{ .label | default "" }}"{{ if not .label }} aria-hidden="true"{{ end }} width="16" height="16" decoding="async">
