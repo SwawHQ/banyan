@@ -231,13 +231,18 @@ test('prefetch cost reports omit retired URL counts and retain bytes and rule co
   assert.doesNotMatch(configured.stdout,/Unique URLs/);
 });
 
-test('stylesheet checks reject any family outside the current contract',()=>{
+test('stylesheet checks allow CSS attachments and retain stylesheet contracts',()=>{
   const html=fs.readFileSync(path.join(site,'public/index.html'),'utf8');
   const stylesheet='css/page.'+'a'.repeat(32)+'.min.'+'b'.repeat(64)+'.css';
   const link='<link rel=stylesheet href="/'+stylesheet+'">';
   const directory=output('styles',html.replace('</head>',link+'</head>'));
   write(directory,stylesheet,'body{}');
+  write(directory,'downloads/example.css','h1{color:red}');
+  write(directory,'index.html',html.replace('</head>',link+'</head>').replace('</body>','<a href="/downloads/example.css" download>Download CSS example</a></body>'));
   assert.equal(cli('check/html/styles',[directory]).status,0);
+  fs.rmSync(path.join(directory,stylesheet));
+  checked('check/html/styles',directory,/Missing stylesheet asset/);
+  write(directory,stylesheet,'body{}');
   for(const name of ['article-core','unknown']) {
     write(directory,'index.html',html.replace('</head>',link+'<link rel=stylesheet href="/css/'+name+'.css"></head>'));
     write(directory,'css/'+name+'.css','body{}');

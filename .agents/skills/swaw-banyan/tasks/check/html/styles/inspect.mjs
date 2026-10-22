@@ -1,13 +1,11 @@
-import path from 'node:path';
-import {filesUnder,relativeName,localReference} from '../../../_shared/output.mjs';
+import {isFile,insideOutput,localReference} from '../../../_shared/output.mjs';
 import {readPages,pageState,publishedURL} from '../../../_shared/html/read.mjs';
 import {extractStylesheetHrefs,normalizeCssAssetFamilyKey,hasClassToken} from '../../../_shared/html/markup.mjs';
 
-function inspectStylesheetContract(rows, cssAssetsByPath) {
+function inspectStylesheetContract(rows) {
     const issues = [];
     const pageStyleRefs = new Set();
     const proseStyleRefs = new Set();
-    const referencedStylesheetRefs = new Set();
 
     for (const row of rows) {
         for (const missingRef of row.missingStylesheetRefs || []) {
@@ -18,9 +16,6 @@ function inspectStylesheetContract(rows, cssAssetsByPath) {
                 issues.push(`${row.relativePath}: redirect pages must not load stylesheets, got ${row.stylesheetRefs.join(', ')}.`);
             }
             continue;
-        }
-        for (const ref of row.stylesheetRefs) {
-            referencedStylesheetRefs.add(ref);
         }
 
         const entries = row.stylesheetRefs.map((ref, index) => ({
@@ -68,13 +63,6 @@ function inspectStylesheetContract(rows, cssAssetsByPath) {
         }
     }
 
-    const orphanStylesheetAssets = [...cssAssetsByPath]
-        .filter((ref) => !referencedStylesheetRefs.has(ref))
-        .sort();
-    if (orphanStylesheetAssets.length > 0) {
-        issues.push(`CSS assets must be referenced by rendered HTML; found orphan assets: ${orphanStylesheetAssets.join(', ')}.`);
-    }
-
     // Each configured palette has its own Concat target and one content fingerprint.
     const pagePaletteTargets = new Set([...pageStyleRefs].map(ref =>
         ref.replace(/\.(?:min\.)?[0-9a-f]{16,}\.css$/i, '.css')));
@@ -96,18 +84,18 @@ function inspectStylesheetContract(rows, cssAssetsByPath) {
         issues,
         pageStyleRefs: [...pageStyleRefs],
         proseStyleRefs: [...proseStyleRefs],
-        orphanStylesheetAssets,
     };
 }
 
 export async function inspect(directory) {
   const {root,pages} = await readPages(directory), siteURL = await publishedURL(root);
-  const css = new Set((await filesUnder(root,file => path.extname(file) === '.css')).map(file => '/' + relativeName(root,file)));
-  const rows = pages.map(page => {
+  const rows = await Promise.all(pages.map(async page => {
     const refs = extractStylesheetHrefs(page.text).map(ref => localReference(ref,{siteURL,page:page.relativePath})).filter(Boolean).map(ref => '/' + ref);
+    const missing = [];
+    for (const ref of refs) if (!await isFile(insideOutput(root,ref.slice(1)))) missing.push(ref);
     return {...pageState(page),stylesheetRefs:refs,stylesheetFamilyKeys:refs.map(normalizeCssAssetFamilyKey),
       hasProse:hasClassToken(page.text,'prose'),hasPageHome:hasClassToken(page.text,'page-home'),
-      missingStylesheetRefs:refs.filter(ref => !css.has(ref))};
-  });
-  return inspectStylesheetContract(rows,css);
+      missingStylesheetRefs:missing};
+  }));
+  return inspectStylesheetContract(rows);
 }

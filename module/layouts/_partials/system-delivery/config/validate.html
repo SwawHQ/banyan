@@ -66,7 +66,7 @@
       {{- range $headers := slice ($http.headers | default dict) ($http.cloudflare.pages.headers | default dict) ($http.edgeone.makers.headers | default dict) -}}
         {{- $names := slice -}}
         {{- range $key, $value := $headers -}}
-          {{- if or (eq (len (findRE `^[A-Za-z0-9-]+$` $key)) 0) (in $names (lower $key)) (ne (printf "%T" $value) "string") (gt (len (findRE `[\x00-\x1f\x7f]` (printf "%v" $value))) 0) -}}
+          {{- if or (eq (len (findRE `^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$` $key)) 0) (in $names (lower $key)) (ne (printf "%T" $value) "string") (gt (len (findRE `[\x00-\x1f\x7f]` (printf "%v" $value))) 0) -}}
             {{- errorf "Delivery config routes[%d]: invalid or duplicate header %q; values must be strings without control characters." $i $key -}}
           {{- end -}}
           {{- $names = $names | append (lower $key) -}}
@@ -77,7 +77,7 @@
           {{- errorf "Delivery config routes[%d].http.cloudflare.pages.unset must be an array of header names." $i -}}
         {{- else -}}
           {{- range $http.cloudflare.pages.unset -}}
-            {{- if or (ne (printf "%T" .) "string") (eq (len (findRE `^[A-Za-z0-9-]+$` (printf "%v" .))) 0) -}}
+            {{- if or (ne (printf "%T" .) "string") (eq (len (findRE `^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$` (printf "%v" .))) 0) -}}
               {{- errorf "Delivery config routes[%d]: invalid Cloudflare unset header %q." $i . -}}
             {{- end -}}
           {{- end -}}

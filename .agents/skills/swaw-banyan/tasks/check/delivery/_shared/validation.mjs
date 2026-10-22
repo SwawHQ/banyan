@@ -20,8 +20,8 @@ export function checkString(value, label) {
 }
 
 export function checkHeaderName(value, label) {
-  if (typeof value !== 'string' || !/^[A-Za-z0-9-]+$/.test(value)) {
-    throw new Error(label + ' must contain only letters, digits and -.');
+  if (typeof value !== 'string' || !/^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$/.test(value)) {
+    throw new Error(label + ' must be a valid HTTP field name.');
   }
 }
 

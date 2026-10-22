@@ -1,22 +1,21 @@
 import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {waitForState} from '../_shared/state.mjs';
+import {pageResources,missingResources} from '../_shared/resources.mjs';
 
 async function cacheState(page,assets,worker) {
-  return page.evaluate(async({assets,worker})=>{
+  const state=await page.evaluate(async worker=>{
     const keys=await caches.keys(),navigation=keys.filter(key=>key.startsWith('nav-html-'));
     const pages=await Promise.all(navigation.map(async key=>({key,cached:Boolean((await (await caches.open(key)).match(location.href))?.ok)})));
-    const assetCache=keys.includes('asset-fingerprint')?await caches.open('asset-fingerprint'):null;
-    const missing=[];
-    for(const url of assets)if(!(await assetCache?.match(url))?.ok)missing.push(url);
     const cachedWorkers=[],cachedVersions=[],script=new URL(worker);
     for(const key of keys)for(const request of await (await caches.open(key)).keys()) {
       const url=new URL(request.url);
       if(url.origin===script.origin&&url.pathname===script.pathname)cachedWorkers.push(key);
       if(key!=='sw-content-state'&&url.origin===script.origin&&url.pathname==='/sw-version.json')cachedVersions.push(key);
     }
-    return {keys,pages,missing,cachedWorkers,cachedVersions};
-  },{assets,worker});
+    return {keys,pages,cachedWorkers,cachedVersions};
+  },worker);
+  return {...state,missing:await missingResources(page,assets)};
 }
 
 export async function check({page,baseUrl,options}) {
@@ -56,19 +55,19 @@ export async function check({page,baseUrl,options}) {
     assert.equal(versionResponse.headers()['cache-control'],'no-cache, max-age=0, must-revalidate','The content version JSON must revalidate on every request.');
     const {version:contentVersion}=await versionResponse.json();
     assert.ok(typeof contentVersion==='string'&&contentVersion.trim(),'The content version JSON must identify the current content.');
-    for(const url of await page.locator('link[rel="stylesheet"][href],script[src]').evaluateAll(nodes=>nodes.map(node=>node.href||node.src))) {
-      const value=new URL(url);
-      if(value.origin===new URL(baseUrl).origin&&/\.[a-f\d]{32,}\.(?:css|js)$/i.test(value.pathname))assets.add(value.href);
-    }
-    assert.ok(assets.size>0,'The first page must load local fingerprinted CSS or JS.');
+    const resources=await pageResources(page,baseUrl,contentVersion);
+    assert.ok(resources.length>0,'The first page must load local CSS or JS.');
+    assert.deepEqual(resources.filter(resource=>resource.bucket==='off').map(resource=>new URL(resource.url).pathname),[],
+      'Full offline CSS/JS coverage requires SW caching; off resources are unavailable after clearing the HTTP cache.');
+    for(const resource of resources)assets.add(resource.url);
     let before;
     try {
       before=await waitForState(async()=>{
-        const state=await cacheState(page,[...assets],registration.worker);
-        return state.pages.length===1&&state.pages[0].cached&&state.keys.includes('asset-fingerprint')&&!state.missing.length?state:null;
-      },timeout,'The controlled page and its fingerprinted CSS/JS must enter their caches before going offline.');
+        const state=await cacheState(page,resources,registration.worker);
+        return state.pages.length===1&&state.pages[0].cached&&!state.missing.length?state:null;
+      },timeout,'The controlled page and its CSS/JS must enter their configured caches before going offline.');
     }catch(error){
-      error.details=await cacheState(page,[...assets],registration.worker);throw error;
+      error.details=await cacheState(page,resources,registration.worker);throw error;
     }
     assert.equal(before.pages[0].key,'nav-html-'+contentVersion,'The navigation cache must carry the content version.');
     assert.deepEqual(before.cachedWorkers,[],'The worker script must never enter Cache Storage.');
@@ -90,11 +89,11 @@ export async function check({page,baseUrl,options}) {
     assert.ok(await page.locator('main').isVisible(),'The offline page must render its main content.');
     assert.deepEqual(failures,[],'Cached CSS/JS must not fail during offline reload.');
     for(const url of assets)assert.deepEqual(responses.get(url),{ok:true,worker:true},'Offline CSS/JS must come from the worker: '+new URL(url).pathname);
-    const after=await cacheState(page,[...assets],registration.worker);
+    const after=await cacheState(page,resources,registration.worker);
     assert.deepEqual(after.cachedWorkers,[],'Offline reload must not cache the worker script.');
     assert.deepEqual(after.cachedVersions,[],'Offline reload must not cache the content version JSON.');
     assert.deepEqual(errors,[],'The first visit and offline reload must not raise uncaught errors.');
-    return {page:options.page,registration,navigationCache:before.pages[0].key,assets:[...assets].map(url=>new URL(url).pathname),initialDocumentCached,controlledNavigation:true,offlineDocument:true,offlineAssets:responses.size};
+    return {page:options.page,registration,navigationCache:before.pages[0].key,assets:[...assets].map(url=>new URL(url).pathname),assetBuckets:Object.fromEntries(resources.map(resource=>[new URL(resource.url).pathname,resource.bucket])),initialDocumentCached,controlledNavigation:true,offlineDocument:true,offlineAssets:responses.size};
   }finally{
     if(offline)await context.setOffline(false);
     page.off('pageerror',onError);page.off('response',onResponse);page.off('requestfailed',onFailure);

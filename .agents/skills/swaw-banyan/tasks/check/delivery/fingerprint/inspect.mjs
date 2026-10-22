@@ -3,12 +3,10 @@ import {filesUnder,relativeName} from '../../../_shared/output.mjs';
 import {classify} from './policy.mjs';
 
 const fingerprint=/\.[a-f0-9]{64}\.[^.]+$/;
-const textExtensions=new Set(['.html','.xml','.txt']);
-const fixedFiles=new Set(['_headers','_redirects','edgeone.json','sw.js','sw-version.json','sw-policy.json','favicon.ico','favicon.svg']);
 
 export async function inspectFiles(outputs,basePath) {
   const issues=[],warnings=[],counts={files:0,fingerprinted:0,missingFingerprint:0,outsideFingerprint:0,
-    unknownFiles:0,policyDifferences:0,uncertainPaths:0},examples=new Map(),uncertain=new Set();
+    uncertainPaths:0},examples=new Map(),uncertain=new Set();
   function issue(kind,message) {
     counts[kind]++;
     const seen=examples.get(kind)??0;
@@ -32,9 +30,6 @@ export async function inspectFiles(outputs,basePath) {
       const positive=known.some(state=>state.fingerprinted);
       expected ||= positive;
       determined &&= states.length>0&&known.length===states.length;
-      if(known.some(state=>state.fingerprinted)&&known.some(state=>!state.fingerprinted))
-        issue('policyDifferences',pathname+': fingerprint classification differs: '+known.map(state=>
-          state.channel+'='+state.fingerprinted+' ['+state.rules.join(', ')+']').join('; '));
       for(const state of states.filter(state=>state.fingerprinted===null)) {
         counts.uncertainPaths++;
         uncertain.add(state.channel+' overlapping Cache-Control rules: '+state.rules.join(', '));
@@ -45,8 +40,6 @@ export async function inspectFiles(outputs,basePath) {
     if(!channels)continue;
     if(expected&&!hashed)issue('missingFingerprint',relative+': fingerprinted path contains a file without a SHA-256 filename.');
     else if(!expected&&determined&&hashed)issue('outsideFingerprint',relative+': fingerprinted filename is outside fingerprinted paths.');
-    else if(!expected&&determined&&!hashed&&!textExtensions.has(path.extname(relative))&&!fixedFiles.has(relative))
-      issue('unknownFiles',relative+': unknown file outside fingerprinted paths.');
   }
   for(const [kind,count] of examples)if(count>10)issues.push(kind+': '+(count-10)+' additional findings omitted.');
   warnings.push(...uncertain);

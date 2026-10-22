@@ -11,7 +11,7 @@ import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/
 import {parseHeaders,cloudflareHeaders} from '../.agents/skills/swaw-banyan/tasks/_shared/headers.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 
-const root=fileURLToPath(new URL('../',import.meta.url)),parent=fs.realpathSync(os.tmpdir());
+const root=fileURLToPath(new URL('../',import.meta.url)),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/cache-policy-tests');
 let work;
 function write(file,body) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,body);}
 function build(name,policy,config='',workerConfig=serviceWorkerPolicy('enable')) {
@@ -114,6 +114,7 @@ async function navigation(runtime,pathname='/cached/') {
 }
 function versionRequests(runtime){return runtime.requests.filter(request=>new URL(request.url).pathname==='/sw-version.json');}
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-policy-'));
   const source=fs.readFileSync(path.join(root,'module/assets/js/pwa/worker-enable.js.tmpl'),'utf8');
   write(path.join(work,'assets/js/pwa/worker-enable.js.tmpl'),source+
@@ -151,23 +152,58 @@ test('default policy generates explicit Cloudflare overrides and independent Edg
 });
 
 test('platform values override common values only within their own route and platform',()=>{
+  const tokenHeader="X!#$%&'*+.^_`|~-09Az";
   const policy='[platform.cloudflare.pages]\nenabled = true\n[platform.edgeone.makers]\nenabled = true\n'+
     'installCommand = ""\nbuildCommand = "hugo --minify --gc --cleanDestinationDir"\noutputDirectory = "public"\nnodeVersion = "20.18.0"\n'+
     '[[routes]]\npath = "/*"\nhttp.headers.X-Common = "yes"\nhttp.headers.X-Value = "common"\n'+
+    'http.headers.X_Request_ID = "request"\nhttp.headers.'+JSON.stringify(tokenHeader)+' = "token"\n'+
     'http.cloudflare.pages.headers.x-value = "cf"\nhttp.edgeone.makers.headers.X-Value = "eo"\n'+
     '[[routes]]\npath = "/cf-only/*"\nhttp.cloudflare.pages.headers.X-Only = "cf"\n'+
     '[[routes]]\npath = "/eo-only/*"\nhttp.edgeone.makers.headers.X-Only = "eo"\n'+
-    '[[routes]]\npath = "/remove/*"\nhttp.cloudflare.pages.unset = ["X-Value"]\n';
+    '[[routes]]\npath = "/remove/*"\nhttp.cloudflare.pages.unset = '+JSON.stringify(['X-Value','X_Request_ID',tokenHeader])+'\n';
   const output=passed(build('platform',policy)),rules=parseHeaders(fs.readFileSync(path.join(output,'_headers'),'utf8'));
   const edge=JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8'));
   assert.equal(cloudflareHeaders(rules,'/')['x-value'],'cf');
   assert.equal(cloudflareHeaders(rules,'/remove/a')['x-value'],undefined);
   assert.equal(cloudflareHeaders(rules,'/')['x-common'],'yes');
+  for(const [name,value] of [['X_Request_ID','request'],[tokenHeader,'token']]) {
+    assert.equal(cloudflareHeaders(rules,'/')[name.toLowerCase()],value);
+    assert.equal(cloudflareHeaders(rules,'/remove/a')[name.toLowerCase()],undefined);
+    assert.equal(edge.headers[0].headers.find(header=>header.key===name).value,value);
+  }
   assert.equal(edge.headers[0].headers.find(header=>header.key.toLowerCase()==='x-value').value,'eo');
   assert.ok(!edge.headers.some(route=>route.source==='/cf-only/*'||route.source==='/remove/*'));
   assert.ok(!rules.some(route=>route.source==='/eo-only/*'));
   assert.equal(edge.nodeVersion,'20.18.0');assert.equal(edge.buildCommand,'hugo --minify --gc --cleanDestinationDir');
   assert.equal(worker(output).probe.SW_ROUTES.length,0);
+});
+
+test('Cloudflare output rejects header names beginning with a comment marker',()=>{
+  for(const field of ['http.headers','http.cloudflare.pages.headers']) {
+    const result=build('comment-header-'+field,'[platform.cloudflare.pages]\nenabled = true\n'+
+      '[[routes]]\npath = "/probe/*"\n'+field+'."#Trace" = "enabled"\n');
+    assert.notEqual(result.status,0,field+' must reject a comment-prefixed header.');
+    assert.match(result.log,/Cloudflare _headers: header "#Trace" for "\/probe\/\*" must not start with #/);
+    assert.match(result.log,/treated as a comment/);
+  }
+});
+
+test('hash-prefixed headers remain valid outside Cloudflare header declarations',()=>{
+  for(const cloudflare of [false,true]) {
+    const field=cloudflare?'http.edgeone.makers.headers':'http.headers';
+    const policy='[platform.cloudflare.pages]\nenabled = '+cloudflare+'\n[platform.edgeone.makers]\nenabled = true\n'+
+      'installCommand = ""\nbuildCommand = "hugo"\noutputDirectory = "public"\nnodeVersion = "22.11.0"\n'+
+      '[[routes]]\npath = "/probe/*"\n'+field+'."#Trace" = "enabled"\nhttp.cloudflare.pages.unset = ["#Trace"]\n';
+    const output=passed(build('comment-header-edgeone-'+cloudflare,policy));
+    const edge=JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8'));
+    assert.deepEqual(edge.headers.find(route=>route.source==='/probe/*').headers,[{key:'#Trace',value:'enabled'}]);
+    assert.equal(fs.existsSync(path.join(output,'_headers')),cloudflare);
+    if(cloudflare) {
+      const rules=parseHeaders(fs.readFileSync(path.join(output,'_headers'),'utf8'));
+      assert.deepEqual(rules.find(rule=>rule.source==='/probe/*').unset,['#Trace']);
+      assert.equal(cloudflareHeaders(rules,'/probe/a')['#trace'],undefined);
+    }
+  }
 });
 
 test('delivery top-level tables replace nested defaults in every language',()=>{
@@ -762,7 +798,12 @@ test('invalid and retired policy fields fail the build instead of silently chang
     ['missing-bucket','[[routes]]\npath = "/*"\nsw = {}',/sw.bucket must be/],
     ['bucket-type','[[routes]]\npath = "/*"\nsw.bucket = false',/sw.bucket must be/],
     ['unset','[[routes]]\npath = "/*"\nhttp.cloudflare.pages.unset = "Cache-Control"',/array of header names/],
+    ['header-name','[[routes]]\npath = "/*"\nhttp.headers."X Bad" = "yes"',/invalid or duplicate header/],
+    ['header-value','[[routes]]\npath = "/*"\nhttp.headers.X-Test = 1',/values must be strings/],
+    ['header-duplicate','[[routes]]\npath = "/*"\nhttp.headers.X_Test = "one"\nhttp.headers.x_test = "two"',/invalid or duplicate header/],
     ['header','[[routes]]\npath = "/*"\nhttp.headers.X-Test = "bad\\nheader"',/without control/],
+    ['unset-name','[[routes]]\npath = "/*"\nhttp.cloudflare.pages.unset = ["X Bad"]',/invalid Cloudflare unset header/],
+    ['unset-value','[[routes]]\npath = "/*"\nhttp.cloudflare.pages.unset = [1]',/invalid Cloudflare unset header/],
     ['http-field','[[routes]]\npath = "/*"\nhttp.edgeone.makers.unset = ["Cache-Control"]',/unknown field/]
   ];
   for(const [name,policy,message] of bad) {
@@ -770,15 +811,15 @@ test('invalid and retired policy fields fail the build instead of silently chang
   }
 });
 
-test('former Hugo parameter entries and policy files are rejected',()=>{
-  for(const key of ['prefetch','prefetch_runtime','speculation_rules','service_worker']) {
-    const result=build('retired-'+key,undefined,'[params.'+key+']\nmode = "off"\n');
-    assert.notEqual(result.status,0);assert.match(result.log,/is not supported; use data\/delivery.toml/);
-  }
-  const overlay=path.join(work,'retired-file','data');
-  write(path.join(overlay,'cache-policy.toml'),'routes = []\n');
-  const result=build('retired-file');assert.notEqual(result.status,0);
-  assert.match(result.log,/replace data\/cache-policy.toml with data\/delivery.toml/);
+test('site-owned parameter entries and data files do not change delivery',()=>{
+  const name='site-owned-config',overlay=path.join(work,name,'data');
+  for(const file of ['cache-policy','cache-policy-default'])write(path.join(overlay,file+'.toml'),'routes = []\n');
+  const config=['prefetch','prefetch_runtime','speculation_rules','service_worker','link_prefetch']
+    .map(key=>'[params.'+key+']\nmode = "site-owned"\n').join('');
+  const output=passed(build(name,undefined,config));
+  assert.equal(worker(output).probe.getMatchingRoute('/').bucket,'versioned');
+  const rules=parseHeaders(fs.readFileSync(path.join(output,'_headers'),'utf8'));
+  assert.equal(cloudflareHeaders(rules,'/')['cache-control'],'public, max-age=900, must-revalidate');
 });
 
 test('shared Cloudflare parsing and local serving apply append, unset and case-insensitive header names',async()=>{

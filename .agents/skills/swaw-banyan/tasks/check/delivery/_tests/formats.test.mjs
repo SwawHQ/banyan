@@ -44,9 +44,23 @@ test('Cloudflare parser preserves append, unset, order, case and CRLF', () => {
 });
 
 test('Cloudflare parser rejects malformed declarations and controls', () => {
-  for (const text of ['  X-Test: orphan', '/a\n  broken', '/a', '/a?x=1\n  X-Test: yes', '/a\n  Bad_Name: value',
-    '/a\n  X-Test: a\tb', '/a\n  X-Test: a\0b', '/a\n  ! Bad_Name']) {
+  for (const text of ['  X-Test: orphan', '/a\n  broken', '/a', '/a?x=1\n  X-Test: yes', '/a\n  Bad(Name): value',
+    '/a\n  X-Test: a\tb', '/a\n  X-Test: a\0b', '/a\n  ! Bad(Name)']) {
     assert.throws(() => parseCloudflareHeaders(text));
+  }
+});
+
+test('HTTP field names accept tchar tokens in headers and unset declarations', () => {
+  for(const name of ['X_Request_ID', "X!#$%&'*+.^_\x60|~09Az-"]) {
+    const rules=parseCloudflareHeaders('/*\n  '+name+': first\n/assets/*\n  ! '+name+'\n  '+name+': second\n');
+    assert.deepEqual(rules[1].unset,[name]);
+    assert.equal(cloudflareHeaders(rules,'/assets/file')[name.toLowerCase()],'second');
+    assert.deepEqual(readEdge(edgeone({headers:[edgeHeader(name)]})).headers[0].headers,[{key:name,value:'public, max-age=31536000, immutable'}]);
+  }
+  for(const name of ['', 'Bad Name', 'Bad(Name)', 'Bad/Name', 'Bad@Name', 'Bad,Name', 'Bad=Name', 'Bad[Name]', '非ASCII']) {
+    assert.throws(()=>parseCloudflareHeaders('/*\n  '+name+': value'));
+    assert.throws(()=>parseCloudflareHeaders('/*\n  ! '+name));
+    assert.throws(()=>readEdge(edgeone({headers:[edgeHeader(name)]})));
   }
 });
 
@@ -123,7 +137,7 @@ test('EdgeOne accepts host redirects without relaxing Cloudflare or ordinary des
 test('EdgeOne parser validates its generated structure and header fields', () => {
   for (const value of ['null', '[]', '{', '{}']) assert.throws(() => parseEdgeoneConfig(value));
   for (const config of [edgeone({unknown: true}), edgeone({nodeVersion: 22}), edgeone({headers: false}),
-    edgeone({headers: [{source: '/*', headers: []}]}), edgeone({headers: [edgeHeader('bad_name')]}),
+    edgeone({headers: [{source: '/*', headers: []}]}), edgeone({headers: [edgeHeader('bad:name')]}),
     edgeone({headers: [edgeHeader('X-Test', 'bad\nvalue')]}), edgeone({headers: [edgeHeader('X-Test', '')]}),
     edgeone({headers: [edgeHeader('X-Test', '中文')]}), edgeone({headers: [{...edgeHeader(), unset: ['Cache-Control']}]}),
     edgeone({headers: [{source: '/*', headers: [{key: 'X-Test', value: 'first'}, {key: 'x-test', value: 'second'}]}]})]) {

@@ -17,24 +17,28 @@ const headers='/*\n  Cache-Control: public, max-age=900\n/assets/*\n  ! Cache-Co
 const routes=[{path:'/assets/*',bucket:'fingerprinted'},{path:'/*',bucket:'versioned'}];
 
 async function fixture(run) {
-  const parent=await fs.realpath(os.tmpdir()),root=await fs.mkdtemp(path.join(parent,'swban-delivery-'));
+  const directory=path.join(os.tmpdir(),'swaw/banyan/fingerprint-tests');
+  await fs.mkdir(directory,{recursive:true});
+  const parent=await fs.realpath(directory),root=await fs.mkdtemp(path.join(parent,'run-'));
   const write=async(name,body='')=>{const file=path.join(root,name);await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,body);};
   try {await run({root,write});}
   finally {assert.equal(path.dirname(await fs.realpath(root)),parent);await fs.rm(root,{recursive:true,force:true});}
 }
 
-test('delivery checks custom fingerprint paths, byte-independent names and fixed output exceptions',()=>fixture(async({root,write})=>{
+test('delivery checks policy fingerprints while permitting ordinary attachment formats',()=>fixture(async({root,write})=>{
   await write('_headers',headers);await write('_redirects','# no redirects');
   await write('sw-policy.json',JSON.stringify(routes));
   await write('index.html');await write('sw.js');await write('sw-version.json','{}');
   await write('assets/'+image,'These bytes intentionally do not match the filename hash.');
+  for(const file of ['section/_map.toml','download.zip','downloads/manual.pdf','api/feed.json',
+    'photos/raw.png','downloads/README','downloads/data.bin'])await write(file);
   const result=await inspect(root);
   assert.deepEqual(result.issues,[]);assert.equal(result.summary.fingerprinted,1);
   assert.ok(result.warnings.some(value=>value.includes('EdgeOne Makers')));
-  await write('assets/raw.png');await write('elsewhere/'+image);await write('download.zip');
+  await write('assets/raw.png');await write('elsewhere/'+image);
   const failed=await inspect(root);
   assert.equal(failed.summary.missingFingerprint,1);assert.equal(failed.summary.outsideFingerprint,1);
-  assert.equal(failed.summary.unknownFiles,1);
+  assert.equal(failed.issues.length,2);
 }));
 
 test('classification honors SW priority, CF unset, encoded paths and HTML aliases',()=>fixture(async({root,write})=>{
@@ -47,18 +51,38 @@ test('classification honors SW priority, CF unset, encoded paths and HTML aliase
     {path:'/article/',bucket:'fingerprinted'},...routes]));
   await write('assets/live.json');await write('中/'+image);await write('article/index.html');
   const result=await inspect(root);
-  assert.equal(result.summary.policyDifferences,0);
   assert.equal(result.summary.missingFingerprint,1);
   assert.ok(result.issues.some(value=>value.includes('article/index.html')));
-  assert.equal(result.summary.unknownFiles,1,'A fixed custom JSON URL is still outside the known output whitelist.');
+  assert.equal(result.issues.length,1,'The no-cache JSON endpoint must not add an error.');
 }));
+
+for(const cacheControl of ['public, max-age=31536000, immutable','no-cache','public, max-age=900']) {
+  for(const bucket of ['fingerprinted','versioned','off']) {
+    test('fingerprint paths use either policy: HTTP '+cacheControl+', SW '+bucket,()=>fixture(async({root,write})=>{
+      const expected=cacheControl.includes('immutable')||bucket==='fingerprinted';
+      await write('_headers','/assets/*\n  Cache-Control: '+cacheControl+'\n');
+      await write('_redirects','');
+      await write('sw-policy.json',JSON.stringify([{path:'/assets/*',bucket}]));
+      await write('assets/'+image);
+      const hashed=await inspect(root);
+      assert.equal(hashed.summary.missingFingerprint,0);
+      assert.equal(hashed.summary.outsideFingerprint,expected?0:1);
+      assert.equal(hashed.issues.length,expected?0:1);
+      await write('assets/raw.png');
+      const mixed=await inspect(root);
+      assert.equal(mixed.summary.missingFingerprint,expected?1:0);
+      assert.equal(mixed.summary.outsideFingerprint,expected?0:1);
+      assert.equal(mixed.issues.length,1);
+    }));
+  }
+}
 
 test('a later SW off rule does not cancel HTTP immutable classification',()=>fixture(async({root,write})=>{
   await write('_headers',headers);await write('_redirects','');
   await write('sw-policy.json',JSON.stringify([{path:'/assets/*',bucket:'off'},...routes]));
   await write('assets/raw.png');
   const result=await inspect(root);
-  assert.equal(result.summary.missingFingerprint,1);assert.equal(result.summary.policyDifferences,1);
+  assert.equal(result.summary.missingFingerprint,1);assert.equal(result.issues.length,1);
 }));
 
 test('Cloudflare extensionless HTML URLs participate in policy checks',()=>fixture(async({root,write})=>{
@@ -83,7 +107,6 @@ test('a published base path applies to file URLs and HTML aliases across policie
   await write('assets/raw.png');await write('article/index.html');await write('elsewhere/'+image);
   const result=await inspect(root,{basePath:'/base/'});
   assert.equal(result.summary.missingFingerprint,2);assert.equal(result.summary.outsideFingerprint,1);
-  assert.equal(result.summary.policyDifferences,0);
 }));
 
 test('file URL encoding preserves reserved path characters and escapes percent and fragments',()=>fixture(async({root,write})=>{

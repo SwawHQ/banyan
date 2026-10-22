@@ -5,6 +5,7 @@ import os from 'node:os';
 import {setTimeout} from 'node:timers/promises';
 import {waitForState,waiting} from '../_shared/state.mjs';
 import {visit,update,version,observe,quiet} from '../_shared/update.mjs';
+import {pageResources,missingResources} from '../_shared/resources.mjs';
 
 async function contentBuilds(options) {
   const old=await fs.realpath(options.dir),next=await fs.realpath(options.next);
@@ -22,8 +23,8 @@ async function contentBuilds(options) {
   return {old,next,versions};
 }
 
-async function cacheState(page,urls) {
-  return page.evaluate(async urls=>{
+async function cacheState(page,urls,resources=[]) {
+  const state=await page.evaluate(async urls=>{
     const keys=await caches.keys(),navigation=keys.filter(key=>key.startsWith('nav-html-'));
     const fingerprints=keys.includes('asset-fingerprint')
       ?(await (await caches.open('asset-fingerprint')).keys()).map(request=>request.url):[];
@@ -32,6 +33,7 @@ async function cacheState(page,urls) {
     })));
     return {keys,fingerprints,pages};
   },urls);
+  return {...state,missing:await missingResources(page,resources)};
 }
 
 export async function check({page,context=page.context(),server,baseUrl,options}) {
@@ -50,11 +52,12 @@ export async function check({page,context=page.context(),server,baseUrl,options}
       window.__swbanContentDraft='preserved';
       const input=document.createElement('textarea');input.id='swban-content-draft';input.value='An unsaved draft';document.body.append(input);
     });
+    const resources=await pageResources(page,baseUrl,pair.versions[0]);
     const cachesBefore=await waitForState(async()=>{
-      const value=await cacheState(page,[target,from]);
+      const value=await cacheState(page,[target,from],resources);
       return value.pages.some(item=>item.key==='nav-html-'+pair.versions[0]&&item.cached.every(Boolean))
-        &&value.keys.includes('asset-versioned-'+pair.versions[0])&&value.fingerprints.length?value:null;
-    },timeout,'The old content and fingerprinted resources must enter their caches.');
+        &&value.keys.includes('asset-versioned-'+pair.versions[0])&&!value.missing.length?value:null;
+    },timeout,'The old content and resources must enter their configured caches.');
     const burst=await Promise.all([context.newPage(),context.newPage()]);extra.push(...burst);
     const workers=context.serviceWorkers();assert.equal(workers.length,1,'Content checks need one active SW program.');
     programDirectory=await fs.mkdtemp(path.join(os.tmpdir(),'swban-content-program-'));
@@ -77,7 +80,7 @@ export async function check({page,context=page.context(),server,baseUrl,options}
           .every(key=>key==='nav-html-'+current||key==='asset-versioned-'+current)?value:null;
     },timeout+15000,'The content check must switch both cache groups and delete old versions.');
     assert.equal(requests,1,'Concurrent navigations must issue only one content-version request.');
-    assert.ok(cachesAfter.keys.includes('asset-fingerprint'),'Content changes must preserve the fingerprint cache.');
+    if(cachesBefore.fingerprints.length)assert.ok(cachesAfter.keys.includes('asset-fingerprint'),'Content changes must preserve the fingerprint cache.');
     for(const url of cachesBefore.fingerprints)assert.ok(cachesAfter.fingerprints.includes(url),'Content changes must retain cached fingerprinted resources.');
     assert.equal(await reader.evaluate(()=>navigator.serviceWorker.controller===window.__swbanContentController),true,
       'Content changes must retain the active controller.');

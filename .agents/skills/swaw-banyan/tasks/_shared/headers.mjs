@@ -8,7 +8,7 @@ export function parseHeaders(text) {
     if (!raw.trim() || raw.trimStart().startsWith('#')) continue;
     if (!/^\s/.test(raw)) { rule = {source:raw.trim(),headers:[]}; rules.push(rule); }
     else {
-      const unset = raw.trim().match(/^!\s+([A-Za-z0-9-]+)$/);
+      const unset = raw.trim().match(/^!\s+([!#$%&'*+.^_\x60|~0-9A-Za-z-]+)$/);
       if (rule && unset) { (rule.unset ??= []).push(unset[1]); continue; }
       const offset = raw.indexOf(':');
       if (!rule || offset < 1) throw new Error('Invalid _headers declaration: ' + raw);

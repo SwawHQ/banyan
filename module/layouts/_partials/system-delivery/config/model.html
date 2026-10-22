@@ -2,14 +2,6 @@
 {{- if eq (len $policy) 0 -}}
   {{- errorf "Build failed: missing data/delivery.toml." -}}
 {{- end -}}
-{{- range $name := slice "cache-policy" "cache-policy-default" -}}
-  {{- if isset hugo.Data $name -}}{{- errorf "Build failed: replace data/%s.toml with data/delivery.toml." $name -}}{{- end -}}
-{{- end -}}
-{{- range $site := hugo.Sites -}}
-  {{- range $name := slice "prefetch" "prefetch_runtime" "speculation_rules" "service_worker" "link_prefetch" -}}
-    {{- if isset $site.Params $name -}}{{- errorf "Build failed: params.%s is not supported; use data/delivery.toml." $name -}}{{- end -}}
-  {{- end -}}
-{{- end -}}
 {{- partial "system-delivery/config/validate.html" $policy -}}
 {{- $routes := index $policy "routes" | default slice -}}
 {{- $swRoutes := slice -}}

@@ -4,6 +4,7 @@ import path from 'node:path';
 import {insideOutput,localReference} from '../../../../_shared/output.mjs';
 import {waitForState} from '../_shared/state.mjs';
 import {visit,observe,quiet} from '../_shared/update.mjs';
+import {pageResources,missingResources} from '../_shared/resources.mjs';
 import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 
 const managed=key=>['asset-fingerprint','sw-content-state'].includes(key)||['nav-html-','asset-versioned-','sw-program-offline-'].some(prefix=>key.startsWith(prefix));
@@ -54,12 +55,19 @@ export async function check({page,server,baseUrl,options}) {
   const timeout=options.timeout??15000,href=new URL(options.page,baseUrl).href,scope=baseUrl+'/',events=observe(page);
   try {
     await server.setRoot(old.root);await visit(page,href,timeout);
-    await waitForState(()=>page.evaluate(async()=>{
-      const keys=await caches.keys(),nav=keys.filter(key=>key.startsWith('nav-html-'));
-      const assets=keys.includes('asset-fingerprint')?await (await caches.open('asset-fingerprint')).keys():[];
-      const counts=await Promise.all(nav.map(async key=>(await (await caches.open(key)).keys()).length));
-      return assets.length>0&&counts.some(count=>count>0);
-    }),timeout,'The enabled worker must establish real navigation and fingerprinted asset caches.');
+    const controlled=await page.reload({waitUntil:'load'});
+    assert.ok(controlled?.ok()&&controlled.fromServiceWorker(),'The enabled worker must control a navigation before cleanup.');
+    await waitForBrowse(page);await afterPaint(page);
+    const {version:contentVersion}=JSON.parse(await fs.readFile(path.join(old.root,'sw-version.json'),'utf8'));
+    const resources=await pageResources(page,baseUrl,contentVersion);
+    await waitForState(async()=>{
+      const navigation=await page.evaluate(async()=>{
+        const keys=await caches.keys(),nav=keys.filter(key=>key.startsWith('nav-html-'));
+        const counts=await Promise.all(nav.map(async key=>(await (await caches.open(key)).keys()).length));
+        return counts.some(count=>count>0);
+      });
+      return navigation&&!(await missingResources(page,resources)).length;
+    },timeout,'The enabled worker must establish real navigation and configured asset caches.');
     await page.evaluate(async({probes,storageKey})=>{
       for(const key of ['asset-versioned-swban-probe','sw-content-state','sw-program-offline-swban-probe',...probes]) {
         await (await caches.open(key)).put(location.origin+'/swban-cache-probe',new Response(key));

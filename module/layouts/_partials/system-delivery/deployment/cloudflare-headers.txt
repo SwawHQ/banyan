@@ -15,6 +15,10 @@
     {{- end -}}
     {{- $headers := index $route "headers" | default dict -}}
     {{- range $key, $value := $headers -}}
+        {{- if strings.HasPrefix $key "#" -}}
+            {{- errorf "Cloudflare _headers: header %q for %q must not start with #; it would be treated as a comment." $key $path -}}
+            {{- continue -}}
+        {{- end -}}
         {{- $lines = $lines | append (printf "  %s: %s" $key $value) -}}
     {{- end -}}
     {{- $lines = $lines | append "" -}}
