@@ -18,7 +18,8 @@ export async function inspectPython({root = toolsRoot, env = process.env} = {}) 
   try { info = JSON.parse(result.text); } catch { fail(repair); }
   if (!Array.isArray(info) || info.length !== 3 || info.some(value => typeof value !== 'string') ||
       !info[0].startsWith(pythonVersion + '.') || !path.isAbsolute(info[1]) || !path.isAbsolute(info[2])) fail(repair);
-  const base = path.relative(fs.realpathSync.native(path.join(root, 'python')), fs.realpathSync.native(plainPath(info[2])));
+  // uv may use a managed version alias; validate its resolved location.
+  const base = path.relative(fs.realpathSync.native(path.join(root, 'python')), fs.realpathSync.native(info[2]));
   if (fs.realpathSync.native(info[1]) !== fs.realpathSync.native(pythonHome(root)) || !base || base === '..' ||
       base.startsWith('..' + path.sep) || path.isAbsolute(base)) fail(repair);
   return {tool:'python', version:info[0], path:executable};

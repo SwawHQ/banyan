@@ -13,6 +13,7 @@ import {zip} from '../../../_shared/tools/_tests/fixtures/zip.mjs';
 import {sha256} from '../../../_shared/tools/filesystem.mjs';
 import {inspectPython} from '../python/runtime.mjs';
 import {uvEnvironment, pythonHome, pythonExecutable} from '../environment.mjs';
+import {pythonCommandIndex} from '../arguments.mjs';
 
 test('uv environment owns storage and removes inherited Python and uv selection', () => {
   const root = path.join(os.tmpdir(), 'skill tools');
@@ -99,11 +100,11 @@ test('ready Python environments support concurrent reuse and still reject damage
     }}, root);
     const bindings = fs.readFileSync(path.join(root, 'bindings.json'));
     const spawn = childProcess.spawn;
-    let probes = 0;
+    let probes = 0, activeBase = base;
     mocked = t.mock.method(childProcess, 'spawn', (file, args, options) => {
       if (file !== executable) return spawn(file, args, options);
       probes++;
-      return spawn(process.execPath, ['-e', 'process.stdout.write(process.argv[1])', JSON.stringify(['3.13.1', home, base])], options);
+      return spawn(process.execPath, ['-e', 'process.stdout.write(process.argv[1])', JSON.stringify(['3.13.1', home, activeBase])], options);
     });
     syncBuiltinESMExports();
     const {preparePython} = await import(pathToFileURL(path.join(skill, 'tasks/base/uv/python/runtime.mjs')));
@@ -111,6 +112,16 @@ test('ready Python environments support concurrent reuse and still reject damage
     assert.deepEqual(results.map(result => result.status), ['fulfilled','fulfilled']);
     assert.deepEqual(results.map(result => result.value.action), ['reused','reused']);
     assert.equal(probes, 2);
+    const internalAlias = path.join(root, 'python/current');
+    fs.symlinkSync(base, internalAlias, process.platform === 'win32' ? 'junction' : 'dir');
+    activeBase = internalAlias;
+    assert.equal((await preparePython()).action, 'reused', 'A managed version alias may resolve within the managed Python root.');
+    const externalBase = path.join(work, 'external-python'), externalAlias = path.join(root, 'python/external');
+    fs.mkdirSync(externalBase);
+    fs.symlinkSync(externalBase, externalAlias, process.platform === 'win32' ? 'junction' : 'dir');
+    activeBase = externalAlias;
+    await assert.rejects(preparePython(), /python_environment_unusable/, 'A managed alias must not resolve outside the managed Python root.');
+    activeBase = base;
     assert.equal(fs.existsSync(path.join(root, '.cache')), false);
     fs.unlinkSync(executable);
     await assert.rejects(preparePython(), /python_environment_unusable/);
@@ -126,8 +137,49 @@ test('ready Python environments support concurrent reuse and still reject damage
   }
 });
 
+test('uv command discovery stops before tool and script arguments', async t => {
+  const spawn = childProcess.spawn, calls = [];
+  const mocked = t.mock.method(childProcess, 'spawn', (file, args, options) => {
+    calls.push(args);
+    assert.deepEqual(args,['tool','run','--help'],'Only the outer command may be probed.');
+    return spawn(process.execPath,['-e','console.log("Usage: uv.exe tool run [OPTIONS] [COMMAND]")'],options);
+  });
+  syncBuiltinESMExports();
+  try {
+    for (const argument of ['run','pip']) {
+      assert.equal(await pythonCommandIndex('fake-uv',['tool','run','python',argument],{}),-1);
+    }
+    assert.equal(calls.length,2);
+  } finally {mocked.mock.restore();syncBuiltinESMExports();}
+});
+
+test('failed native command discovery cannot skip Python isolation', async t => {
+  const spawn = childProcess.spawn;
+  const mocked = t.mock.method(childProcess,'spawn',(file,args,options)=>spawn(process.execPath,['-e','process.exit(2)'],options));
+  syncBuiltinESMExports();
+  try {await assert.rejects(pythonCommandIndex('fake-uv',['--offline','run','python'],{}),/uv_argument_probe_failed/);}
+  finally {mocked.mock.restore();syncBuiltinESMExports();}
+});
+
 const uv = process.env.BANYAN_TEST_UV, python = process.env.BANYAN_TEST_PYTHON_DIR;
 const archive = process.env.BANYAN_TEST_UV_ARCHIVE;
+test('native uv locates Python commands after global options without a flag table', {skip:!uv}, async () => {
+  for (const [args,index] of [
+    [['run','python'],0],
+    [['--offline','run','--','python'],1],
+    [['-q','--offline','pip','list'],2],
+    [['-vv','--cache-dir=pip','run','python'],2],
+    [['--offline','--color=never','--directory','run','pip','list'],4],
+    [['--directory=run','--cache-dir','pip','--color','always','run','python'],5],
+    [['--directory','pip','--cache-dir','run','pip','list'],4],
+    [['--offline','--version'],-1],
+    [['--version','run'],-1],
+    [['help','run'],-1],
+    [['tool','run','python','run'],-1],
+    [['tool','run','python','pip'],-1]
+  ]) assert.equal(await pythonCommandIndex(uv,args,uvEnvironment()),index,JSON.stringify(args));
+});
+
 test('portable uv is verified and reused without changing the external uv', {skip:!uv || !archive}, async () => {
   const work = fs.mkdtempSync(path.join(fs.realpathSync.native(os.tmpdir()), 'swban-uv-install-'));
   try {
@@ -185,14 +237,16 @@ test('real uv and Python isolate an existing uv repository, pip and tool depende
       return result;
     }
     assert.match(cli('base/uv',['--version']).stdout,/^uv /);
-    cli('base/uv',['--offline','run','python'],1);
+    assert.match(cli('base/uv',['--offline','--version']).stdout,/^uv /);
     const found = cli('base/uv', ['python','find','3.13']).stdout.trim();
     const foundRelative = path.relative(path.join(root,'python'), found);
     assert.ok(foundRelative && foundRelative !== '..' && !foundRelative.startsWith('..'+path.sep) && !path.isAbsolute(foundRelative));
     cli('base/uv/python/check', [], 1);
     assert.equal(fs.existsSync(pythonHome(root)),false);
+    const automatic = cli('base/uv',['--offline','--color=never','--directory',repo,'run','--','python','-c','import sys; print(sys.prefix)']).stdout.trim();
+    assert.equal(fs.realpathSync.native(automatic),fs.realpathSync.native(pythonHome(root)));
     const installed = JSON.parse(cli('base/uv/python/ensure').stdout);
-    assert.equal(installed.action,'installed');
+    assert.equal(installed.action,'reused');
     assert.equal(JSON.parse(cli('base/uv/python/ensure').stdout).action,'reused');
     assert.match(cli('base/uv/python',['--help']).stdout,/usage: .*python\.exe \[option\]/i);
     const coldHelp = spawnSync(path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe'),
@@ -202,7 +256,7 @@ test('real uv and Python isolate an existing uv repository, pip and tool depende
     assert.match(coldHelp.stdout,/usage: .*python\.exe \[option\]/i);
     assert.equal(cli('base/uv/python',['-c','print("树")']).stdout.trim(),'树');
     const script = 'import json,os,sys,importlib.util; print(json.dumps(dict(prefix=sys.prefix,base=sys.base_prefix,cwd=os.getcwd(),repo=importlib.util.find_spec("repo_only") is not None,args=sys.argv[1:])))';
-    for (const [command,args] of [['base/uv/python',['-c',script,'树','']],['base/uv',['run','--','python','-c',script,'树','']]]) {
+    for (const [command,args] of [['base/uv/python',['-c',script,'树','']],['base/uv',['run','--','python','-c',script,'树','']],['base/uv',['-vv','--offline','--color=never','--directory',repo,'run','--','python','-c',script,'树','']],['base/uv',['-q','--offline','--directory='+repo,'run','--','python','-c',script,'树','']]]) {
       const info = JSON.parse(cli(command,args).stdout);
       assert.equal(fs.realpathSync.native(info.prefix),fs.realpathSync.native(pythonHome(root)));
       assert.ok(path.relative(path.join(root,'python'),info.base) && !path.relative(path.join(root,'python'),info.base).startsWith('..'));
@@ -219,7 +273,11 @@ test('real uv and Python isolate an existing uv repository, pip and tool depende
       return target;
     }
     const dependency = wheel('swban_env_only','VALUE="skill"\n');
-    cli('base/uv',['pip','install','--no-index',dependency]);
+    write('run/keep','directory value, not a command');
+    const moved = JSON.parse(cli('base/uv',['--offline','--directory','run','run','--','python','-c',script,'树','']).stdout);
+    assert.equal(fs.realpathSync.native(moved.prefix),fs.realpathSync.native(pythonHome(root)));
+    assert.equal(moved.cwd,fs.realpathSync.native(path.join(repo,'run')));
+    cli('base/uv',['--offline','--color=never','--directory=run','pip','install','--no-index',dependency]);
     assert.equal(cli('base/uv/python',['-c','import swban_env_only; print(swban_env_only.VALUE)']).stdout.trim(),'skill');
     const tool = wheel('swban_probe_cli','import json,sys,os,importlib.util\ndef main():\n print(json.dumps(dict(prefix=sys.prefix,cwd=os.getcwd(),repo=importlib.util.find_spec("repo_only") is not None,shared=importlib.util.find_spec("swban_env_only") is not None,args=sys.argv[1:])))\n',
       '[console_scripts]\nswban-probe = swban_probe_cli:main\n');

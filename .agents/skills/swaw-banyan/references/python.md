@@ -32,7 +32,8 @@ environment in advance, use `base/uv/python/ensure`.
 The wrapper removes inherited uv/Python settings and disables uv configuration,
 project and dotenv discovery. A repository's `pyproject.toml`, `uv.toml`,
 `uv.lock`, `.python-version` and `.venv` can coexist with this environment.
-Relative arguments still use the caller's working directory. Explicit native
+Global uv options may precede the command. Relative arguments still use the caller's
+working directory. Explicit native
 arguments can select other paths or projects.
 
 Platform tasks must set their CLI credential and configuration locations
