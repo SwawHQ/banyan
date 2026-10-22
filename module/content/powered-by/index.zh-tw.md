@@ -18,14 +18,10 @@ powered_by:
   changes: "變更記錄"
   website: "官網"
   releases: "發佈記錄"
-  revision: "主題提交"
   theme_version: "主題版本"
   local_version: "本機開發版"
-  dirty: "有未提交修改"
-  version: "建置版本"
+  version: "版本"
   build: "本站建置"
-  time: "建置時間"
-  commit: "網站提交"
   pwa: "支援離線存取；Service Worker 程式更新由瀏覽器管理。"
 site_update:
   labels:

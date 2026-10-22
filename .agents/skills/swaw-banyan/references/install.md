@@ -147,18 +147,15 @@ description = "Describe this site."
 [languages.en]
 languageName = "English"
 weight = 1
-
-[languages.en.params]
-locale = "en_US"
 ```
 
 `disableJS` preserves the inline bytes used for CSP hashes. Keep existing
-permalinks unless the user requests URL changes. Review language settings and
-set each language's social locale under `languages.<code>.params.locale`.
+permalinks unless the user requests URL changes. The Module supplies social locales
+for English, Simplified Chinese and Traditional Chinese; override
+`languages.<code>.params.locale` only when a different locale is needed.
 This starter enables English. To enable Chinese, remove it from
-`disableLanguages`, declare its root `languages` settings and locale, and add
-its translated home and taxonomy bundles. The Module supplies translated
-information and settings pages.
+`disableLanguages`, declare its root `languages` settings and add its translated
+home. The Module supplies translated taxonomy roots, information and settings pages.
 
 Create `content/_index.md` for the site's home:
 
@@ -171,31 +168,17 @@ layout: page-home
 ---
 ```
 
-The declared `tags` taxonomy needs `content/tags/_index.md`:
+The declared `tags` taxonomy uses the Module's Discover - Categories page.
+The Module also supplies a root for `tools` when the site registers that taxonomy.
+No site taxonomy root files are required for these defaults.
+To customize a root, copy its complete `content/tags/_index.<lang>.md` or
+`content/tools/_index.<lang>.md` from the Module into the same site path.
+Hugo replaces the whole content file, so keep its taxonomy and layout declarations.
 
-```markdown
----
-root_nav: true
-title: Topics
-description: Browse articles by topic.
-layout: page-collection
-list: directory
-cascade:
-  - target:
-      kind: term
-    layout: page-collection
-banyan_taxonomy:
-  mode: tree
-  article_weight: 30
-  article_mode: leaf_paths
-  normalize: lower
-  term_rel: tag
----
-```
-
-Before assigning an article to a term, create that term's bundle, such as
+Before assigning an article to a `tags` term, create that term's bundle, such as
 `content/tags/sample/_index.md`, with a title. Add a translated bundle for each
-enabled language that uses the term.
+enabled language that uses the term. `tools` terms can be generated without
+bundles; add a bundle to supply a translated title, description or other content.
 
 Site content, assets and data at the same paths override Module defaults.
 Keep accounts, branding and legal content in the site. `params.theme_changelog`

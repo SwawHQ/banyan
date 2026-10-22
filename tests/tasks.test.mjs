@@ -90,8 +90,8 @@ before(async () => {
   write(site,'public/css/page.0123456789abcdef.css','body{color:black}');
   write(site,'public/sitemap.xml','<urlset><url><loc>https://example.test/</loc></url></urlset>');
   write(site,'public/robots.txt','User-agent: *\nSitemap: https://example.test/sitemap.xml');
-  write(site,'public/llms.txt','# Fixture\nCanonical site: https://example.test/\n## Agent Notes\n- Canonical human-facing pages are HTML.\n## Key Content Pages\n- [Home](https://example.test/)\nSitemap: https://example.test/sitemap.xml');
-  write(site,'public/index.html',`<!doctype html><html lang=en><head><title>Fixture</title><meta name=description content="Fixture home"><link rel=canonical href="https://example.test/"><link rel=stylesheet href="/css/page.0123456789abcdef.css"></head><body><h1>Fixture</h1><time data-site-update-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>2026-10-08 12:00</time><script>${inline}</script><script src="/js/main.0123456789abcdef.js" integrity="sha256-${hash(external)}"></script></body></html>`);
+  write(site,'public/llms.txt','# Fixture\nCanonical site: https://example.test/\nSitemap: https://example.test/sitemap.xml\n## Pages\n- [Home](<https://example.test/>)');
+  write(site,'public/index.html',`<!doctype html><html lang=en><head><title>Fixture</title><meta name=description content="Fixture home"><link rel=canonical href="https://example.test/"><link rel=stylesheet href="/css/page.0123456789abcdef.css"></head><body><h1>Fixture</h1><time data-site-update-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>v20261008120000</time><script>${inline}</script><script src="/js/main.0123456789abcdef.js" integrity="sha256-${hash(external)}"></script></body></html>`);
   write(site,'data/external-resources.yaml','resources: []');
   server = createServer((request,response) => {
     requests++;

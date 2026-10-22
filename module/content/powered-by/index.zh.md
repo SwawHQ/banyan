@@ -18,14 +18,10 @@ powered_by:
   changes: "变更记录"
   website: "官网"
   releases: "发布记录"
-  revision: "主题提交"
   theme_version: "主题版本"
   local_version: "本地开发版"
-  dirty: "有未提交修改"
-  version: "构建版本"
+  version: "版本"
   build: "本站构建"
-  time: "构建时间"
-  commit: "站点提交"
   pwa: "支持离线访问；Service Worker 程序更新由浏览器管理。"
 site_update:
   labels:

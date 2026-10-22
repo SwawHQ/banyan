@@ -21,28 +21,28 @@ description: 配置目录、分类、条目图标和产品列表。
 | 文件（每种语言分别配置） | 当前声明 | 列出的对象 |
 | --- | --- | --- |
 | 主题 `content/d/_index.zh.md` | `list: directory` | 目录的直接子目录、文章 |
-| 项目 `content/d/wsl/_index.zh.md` | 未声明，继承 `/d/` | WSL 目录的直接子项 |
-| 项目 `content/tags/_index.zh.md` | `list: directory` | 现有标签树的子项 |
-| 项目 `content/tools/_index.zh.md` | `list: directory` | Hugo 的工具分类词项，包含显式空分类 |
-| 上述文件的 `cascade`，目标 `kind: term` | `list: products` | 每个分类的 `.Pages`，无需逐类写来源 |
-| 项目 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | `/d/` 下全部内容 |
-| 项目 `content/all-tools/_index.zh.md` | `list: products`、`aggregate: /tools` | 工具分类成员的去重并集 |
+| 假设的站点目录 `content/d/example-tools/_index.zh.md` | 未声明，继承 `/d/` | 该目录的直接子项 |
+| 主题 `content/tags/_index.zh.md` | `list: directory` | 现有标签树的子项 |
+| 主题 `content/tools/_index.zh.md` | `list: directory` | Hugo 的工具分类词项，包含显式空分类 |
+| 工具分类根的 `cascade`，目标 `kind: term` | `list: products` | 每个分类的 `.Pages`，无需逐类写来源 |
+| 主题 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | `/d/` 下全部内容 |
+| 主题 `content/all-tools/_index.zh.md` | `list: products`、`aggregate: /tools` | 工具分类成员的去重并集 |
 | 主题 `content/language/index.zh.md` | `list: choice` | `hugo.toml` 已启用的语言 |
 | 主题 `content/appearance/index.zh.md` | `list: choice` | 跟随系统、浅色、深色 |
 
-比如要让 WSL 目录使用产品表，在项目 `content/d/wsl/_index.zh.md` 原有 front matter 内加一行：
+例如，站点有 `content/d/example-tools/_index.zh.md` 工具目录，要使用产品表时，在该文件的 front matter 中加一行：
 
 ```yaml
 list: products
 ```
 
-原有 WSL 文章仍全部保留，只把列换成名称、价格、价值说明；没有 `offer` 的文章显示价格 `—`。改成 `list: all` 就使用名称、更新时间、大小、路径列；改成 `list: directory` 就使用名称、更新时间、数量／大小列；改成 `list: name` 就只显示带图标的名称列。没有声明时，继承最近内容祖先的 `list`。普通文章仍使用 `page-article`，不会因祖先的列表声明变成列表。
+列表仍包含原有子项，列改为名称、价格、价值说明；没有 `offer` 的文章显示价格 `—`。改成 `list: all` 就使用名称、更新时间、大小、路径列；改成 `list: directory` 就使用名称、更新时间、数量／大小列；改成 `list: name` 就只显示带图标的名称列。没有声明时，继承最近内容祖先的 `list`。普通文章仍使用 `page-article`，不会因祖先的列表声明变成列表。
 
 新增普通列表目录时使用 `layout: page-collection`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，列表自动在介绍后出现。
 
 `aggregate` 只用于汇总入口，指向一个 section 或 taxonomy 根。它不从父目录继承。普通目录和分类页无需写 `aggregate`，也不写 `list_source` 或 `product_filter`。主题默认页面的站点专用修改可通过项目同路径文件覆盖；三种语言各自保留完整 front matter。
 
-Powered by 由主题 `content/powered-by/index*.md` 提供，使用 `page-powered-by` 展示技术总览，声明 `root_nav: true`、`weight: 96` 与 SVG `icon: code`。`powered-by` shortcode 展示 Banyan、Hugo 实际构建版本、站点构建信息和内嵌 PWA 状态面板。`params.theme_changelog` 指定 Banyan 变更记录地址；默认链接仓库的 `content/changelog/`。演示站点将它设为 `/changelog/`，复用 `page-collection` 与 `list: directory` 展示版本列表。记录只在根站点维护：开发期间写入 `content/changelog/unreleased/index.md`，发布时归档为 `content/changelog/v版本号/index.md`。主题版本来自 `hugo.Deps`；站点可通过 `params.build.theme` 提供提交和未提交修改状态。
+Powered by 由主题 `content/powered-by/index*.md` 提供，使用 `page-powered-by` 展示技术总览，声明 `root_nav: true`、`weight: 96` 与 SVG `icon: code`。`powered-by` shortcode 展示 Banyan、Hugo 实际构建版本、本站内容版本和内嵌 PWA 状态面板。`params.theme_changelog` 指定 Banyan 变更记录地址；默认链接仓库的 `content/changelog/`。演示站点将它设为 `/changelog/`，复用 `page-collection` 与 `list: directory` 展示版本列表。记录只在根站点维护：开发期间写入 `content/changelog/unreleased/index.md`，发布时归档为 `content/changelog/v版本号/index.md`。主题版本来自 `hugo.Deps`。本站构建区域只显示内容版本；启用 SW 时，`sw-version.json` 使用同一内容版本。这里显示当前页面构建时的值，不实时查询浏览器的缓存状态。
 
 PWA 状态面板直接位于总览页的 PWA 段落，`site_update.labels` 与技术说明同存于 `content/powered-by/index*.md`，不依赖其他内容页面。面板自行读取 registration，显示是否受 Service Worker 控制及检查/安装/等待状态；构建信息只在上方显示一次。检查按钮始终只检查，不激活或刷新。程序更新和激活由浏览器管理；普通链接、刷新、历史和锚点保持原生行为。
 
@@ -52,7 +52,7 @@ PWA 状态面板直接位于总览页的 PWA 段落，`site_update.labels` 与�
 
 `list: name` 是完整的集合列表，默认按名称升序，点击名称列头切换升／降序，不按目录和文章分组。它使用与其他集合列表相同的成员、图标继承、`from`、路径列及历史恢复；页面内嵌 source payload 只携带名称列表需要的字段，不输出更新时间、计数或价格。普通目录列出直接子项，分类页列出分类成员，汇总页仍显式声明 `aggregate`，不因为换成单列而改变收录范围。
 
-例如将已有 WSL 目录改成名称列表，只需在 `content/d/wsl/_index.zh.md` 增加 `list: name`。新建独立目录时可声明：
+例如将上述工具目录改成名称列表，只需在 `content/d/example-tools/_index.zh.md` 增加 `list: name`。新建独立目录时可声明：
 
 ```yaml
 layout: page-collection
@@ -87,11 +87,11 @@ GitHub 和备案页的目标链接使用 `{{</* new-tab href="https://example.co
 
 目录、分类、内容全部视图和路径列的时间统一读取 Hugo `.Lastmod`，列名为“更新时间”。文件显示自身更新时间；非空目录／分类汇总其包含内容的最新更新时间，目录递归到后代内容，树形分类也包含下级分类。空目录使用自身 `.Lastmod`，空分类及其他没有有效时间的条目显示 `—`，排序值为空。
 
-主题与项目 `hugo.toml` 配置 `[frontmatter] lastmod = ["lastmod", "date"]`：显式 `lastmod` 优先，未填写时使用手写 `date`，两者都没有则无有效更新时间。Git 提交和文件修改时间不参与文章更新时间。
+站点根 `hugo.toml` 配置 `[frontmatter] lastmod = ["lastmod", "date"]`：显式 `lastmod` 优先，未填写时使用手写 `date`，两者都没有则无有效更新时间。Git 提交和文件修改时间不参与文章更新时间。
 
 文章 front matter 显式填写 `date` 和 `lastmod`：`date` 记录发布日期，初始 `lastmod` 与 `date` 相同，后续有实质内容更新时再手动调整 `lastmod`。整理分类、格式或目录时无需改动这两个字段。`blog` 与 `banyan` 新建文章模板会生成相同的初始日期；为已有文章补字段时复制其 `date`，保留原本已经填写的 `lastmod`。
 
-显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。既有 `sort=date-asc/desc` URL 键保持不变，含义统一为更新时间，产品表仍只有名称、价格、价值说明三列。正文中的发布日期继续使用 `.Date`，不改变其含义；检查更新页中的版本时间仍是构建时间。
+显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。既有 `sort=date-asc/desc` URL 键保持不变，含义统一为更新时间，产品表仍只有名称、价格、价值说明三列。正文中的发布日期继续使用 `.Date`，不改变其含义；本站内容版本使用构建标识，不参与文章日期排序。
 
 ## 怎样声明条目图标
 
@@ -140,13 +140,14 @@ locale = "en_US"
 icon = { text = "EN" }
 ```
 
-站点可选择 `EN`、`简`、`繁` 等文字图标。未设置 `icon` 时使用主题的语言 SVG。
+Module 为英语、简体中文和繁体中文提供 `EN`、`简`、`繁` 文字图标；
+站点可用 `icon` 覆盖。其他语言未设置 `icon` 时使用主题的语言 SVG。
 
 语言页的选择仍留在设置页；返回原内容时优先打开刚选语言的真实译文。此行为由语言脚本处理，不属于 `choice` 渲染协议，具体规则见 [系统页面与返回](/zh/docs/development/navigation-state/#系统页面与返回)。
 
 ## 怎样收录工具
 
-在站点 `hugo.toml` 注册 `tool = "tools"`，再为工具文章添加分类和展示信息，例如 `content/d/example-tool/index.zh.md`：
+在站点 `hugo.toml` 注册 `tool = "tools"`，再为工具文章添加分类和展示信息，例如演示站点的 `content/d/example-tool.zh.md`：
 
 ```yaml
 tools: [free, first-party]

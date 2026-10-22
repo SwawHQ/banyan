@@ -74,7 +74,7 @@
       "swban help check/browser 3  #列出 check/browser 下三层命令和分类",
       "",
       "站点开发与构建：",
-      "swban base/hugo server -D --disableFastRender -b localhost -p 5678 #启动开发服",
+      "swban base/hugo server -D --disableFastRender  -p 5678 #启动开发服",
       "swban base/hugo --minify --gc --cleanDestinationDir  #生产构建",
       "swban base/hugo --minify --destination ./preview     #构建到指定目录",
       "",

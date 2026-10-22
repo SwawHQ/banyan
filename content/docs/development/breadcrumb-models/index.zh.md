@@ -16,10 +16,10 @@ description: 说明根导航、来源列和文章进入路径的构建及呈现�
 ## 选中规则
 
 `feature-browse/navigation/root/selected.html` 从当前页面及真实内容祖先中找根入口，提供静态 HTML 的默认选中项。
-公开 URL 可以与内容路径不同，因此不能根据 URL 前缀猜所属入口。例如 `content/d/products/xvenv/` 发布在 `/p/xvenv/`，仍属于真实目录；目录隐藏时第一列不选中。`content/powered-by/` 是独立根页面，选中自己的入口，无子页路径列。
+公开 URL 可以与内容路径不同，因此不能根据 URL 前缀猜所属入口。例如 `content/d/example-tool.md` 发布在 `/p/example-tool/`，仍属于真实目录；目录隐藏时第一列不选中。`content/powered-by/` 是独立根页面，选中自己的入口，无子页路径列。
 
 有效的 `from` 指向当前页面已发布的来源集合。运行时根据浏览器来源的 `rootItem` 调整第一列选中项，完整入口列表始终保留。
-从“标签”进入同一篇文章就选中“标签”，从“产品－全部”进入就选中“产品－全部”。不存在或不属于当前文章的来源不参与选中，继续使用内容祖先。
+从“发现 - 分类”进入同一篇文章就选中“发现 - 分类”，从“工具 - 全部”进入就选中“工具 - 全部”。不存在或不属于当前文章的来源不参与选中，继续使用内容祖先。
 系统页面选中自己的根入口，使用普通页面网址；返回按钮使用浏览器历史记录，不另存原阅读地址。语言选择后的返回行为见 [导航状态协议](/zh/docs/development/navigation-state/#系统页面与返回)。首页作为显式根入口时选中自己；没有根入口祖先的内部页不强制选中一项。
 
 ## 路径模型
@@ -30,7 +30,7 @@ description: 说明根导航、来源列和文章进入路径的构建及呈现�
 - `schema_items`：结构化数据中的页面路径。
 - `nodes`：根页面之后的结构节点，每项为 `{item, owner}`。
 
-`nodes[].item` 是纯路径项，`owner` 是提供兄弟条目的 Hugo Page；没有所属页面时为空。两者的地址含义不同。例如“WSL”项目指向 `/d/wsl/`，其兄弟列表来自 owner `/d/`。Hugo Page 不进入浏览器投影。
+`nodes[].item` 是纯路径项，`owner` 是提供兄弟条目的 Hugo Page；没有所属页面时为空。两者的地址含义不同。例如工具示例指向 `/p/example-tool/`，其兄弟列表来自 owner `/d/`。Hugo Page 不进入浏览器投影。
 
 `feature-browse/navigation/path/columns.html` 将结构节点转换为 SSR 呈现列 `columns: [{source, items}]`。集合 owner 从 `columns_by_href` 取得 rows 和 source，再由 `items-from-rows.html` 生成名称行及 `current` 状态。该地址表复用集合的 config、rows、source 和 compact payload，主列表与路径列使用同一份集合事实。
 

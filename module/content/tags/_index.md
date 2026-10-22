@@ -1,10 +1,8 @@
 ---
 root_nav: true
-title: 内容 - 分类
-linkTitle: 内容 - 分类
+title: Discover - Categories
 weight: 20
-browser_title: Banyan 示例站内容主题
-description: 按主题浏览示例内容。
+description: Browse content by topic.
 layout: page-collection
 list: directory
 slots:

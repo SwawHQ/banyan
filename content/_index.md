@@ -10,7 +10,11 @@ layout: page-home
 brand_line: Clear structure for exploratory publishing.
 home_signals:
   - Hugo
-  - Banyan
+  - name: Documentation
+    url: /docs/
+    primary: true
+  - name: GitHub
+    url: https://github.com/SwawHQ/banyan
   - Taxonomy
   - Breadcrumbs
   - PWA

@@ -44,7 +44,7 @@ local wheel fixtures. Without these inputs, integration cases are skipped.
 | `browser-{language,settings,ui}.test.mjs` | Translation, history, preferences and palette |
 | `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
 | `output.test.mjs` | Repository budgets and retired-output faults |
-| `sitemap.test.mjs` | Rendered HTML discovery, native exclusions, translations and rebuilds |
+| `sitemap.test.mjs` | Sitemap/LLMS parity, native exclusions, language routing and rebuilds |
 | `documentation.test.mjs` | Official documentation routes, links, language indexes and discovery URLs |
 
 Each suite keeps its successful cases and fault fixtures. Domain suites own

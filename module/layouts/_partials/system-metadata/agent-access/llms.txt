@@ -1,101 +1,34 @@
-{{- $page := .page -}}
-{{- $languageOnly := .languageOnly | default false -}}
-{{- $currentSite := $page.Site -}}
-{{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
-{{- $isPrimaryLanguage := eq $currentSite.Language.Lang $primarySite.Language.Lang -}}
-{{- $isMultilingual := gt (len hugo.Sites) 1 -}}
-{{- $isRootLanguageHome := eq $currentSite.Home.Permalink $primarySite.BaseURL -}}
-{{- $isGlobal := and (not $languageOnly) $isMultilingual $isPrimaryLanguage $isRootLanguageHome -}}
-{{- $siteDescription := trim (printf "%v" ($currentSite.Params.description | default "")) " \r\n\t" -}}
-# {{ $primarySite.Title }}{{ if not $isGlobal }} - {{ $currentSite.Language.LanguageName | default $currentSite.Language.Lang }}{{ end }}
-{{- with $siteDescription }}
-
+{{- $site := . -}}
+{{- $multilingual := gt (len hugo.Sites) 1 -}}
+{{- $description := partial "system-metadata/agent-access/text.txt" ($site.Params.description | default "") -}}
+# {{ partial "system-metadata/agent-access/text.txt" $site.Title }} - {{ partial "system-metadata/agent-access/text.txt" ($site.Language.LanguageName | default $site.Language.Lang) }}
+{{ with $description }}
 > {{ . }}
-{{- end }}
-
-Canonical site: {{ $primarySite.BaseURL }}
-{{- if not $isGlobal }}
-Canonical language home: {{ $currentSite.Home.Permalink }}
-{{- if $isMultilingual }}
-{{- with $primarySite.Home.OutputFormats.Get "LLMS" }}
-Global agent index: {{ .Permalink }}
-{{- end }}
-{{- end }}
-{{- end }}
-{{- if $isGlobal }}
-Sitemap: {{ absURL "sitemap.xml" }}
-{{- else if $isMultilingual }}
-Sitemap: {{ absURL (printf "%s/sitemap.xml" $currentSite.Language.Lang) }}
-{{- else }}
-Sitemap: {{ absURL "sitemap.xml" }}
-{{- end }}
-
-## Agent Notes
-
-- Canonical human-facing pages are HTML.
-{{- if $isGlobal }}
-- This global file is a compact directory of language-specific agent indexes.
-- Language-specific indexes link directly to canonical HTML pages.
-{{- else }}
-- This language file lists {{ $currentSite.Language.LanguageName | default $currentSite.Language.Lang }} canonical HTML entry points and key content.
-{{- end }}
-
-{{ if $isGlobal }}
+{{ end }}
+Canonical site: {{ $site.BaseURL }}
+Sitemap: {{ if $multilingual }}{{ absURL (printf "%s/sitemap.xml" $site.Language.Lang) }}{{ else }}{{ absURL "sitemap.xml" }}{{ end }}
+{{ if $multilingual }}
 ## Languages
-{{ range $site := sort hugo.Sites "Language.Weight" }}
-{{- $llmsURL := "" -}}
-{{- if and (eq $site.Language.Lang $primarySite.Language.Lang) (eq $site.Home.Permalink $primarySite.BaseURL) -}}
-  {{- $llmsURL = absURL (printf "%s/llms.txt" $site.Language.Lang) -}}
-{{- else -}}
-  {{- with $site.Home.OutputFormats.Get "LLMS" -}}{{- $llmsURL = .Permalink -}}{{- end -}}
-{{- end }}
-- {{ $site.Language.LanguageName | default $site.Language.Lang }}: [Home]({{ $site.Home.Permalink }}){{ with $llmsURL }}, [Agent index]({{ . }}){{ end }}
-{{- end }}
-{{- else }}
-## Language
-
-- {{ $currentSite.Language.LanguageName | default $currentSite.Language.Lang }}: [Home]({{ $currentSite.Home.Permalink }})
-{{- end }}
-
-{{- if not $isGlobal }}
-
-## Site Entry Points
-{{ $homeLabel := printf "%s Home" ($currentSite.Language.LanguageName | default $currentSite.Language.Lang) }}
-- [{{ $homeLabel }}]({{ $currentSite.Home.Permalink }}){{ with $siteDescription }}: {{ . }}{{ end }}
-{{ with $currentSite.GetPage "/about" }}
-{{ if .IsPage }}
-{{- $aboutDescription := trim (printf "%v" (.Params.description | default "")) " \r\n\t" -}}
-- [{{ .Title }}]({{ .Permalink }}){{ with $aboutDescription }}: {{ . }}{{ end }}
-{{ end }}
-{{ end }}
-
-{{- $contentPages := slice -}}
-{{- $seenContentPages := dict -}}
-{{- range $seedSite := sort hugo.Sites "Language.Weight" -}}
-{{- range where $seedSite.Pages "Kind" "page" -}}
-  {{- $entryPage := . -}}
-  {{- range .AllTranslations -}}
-    {{- if eq .Language.Lang $currentSite.Language.Lang -}}
-      {{- $entryPage = . -}}
-    {{- end -}}
-  {{- end -}}
-  {{- if and (eq $entryPage.Language.Lang $currentSite.Language.Lang) (eq $entryPage.Section "d") (not $entryPage.Params.translation_placeholder) -}}
-    {{- $entryKey := $entryPage.Permalink -}}
-    {{- if not (index $seenContentPages $entryKey) -}}
-      {{- $contentPages = $contentPages | append $entryPage -}}
-      {{- $seenContentPages = merge $seenContentPages (dict $entryKey true) -}}
-    {{- end -}}
-  {{- end -}}
+{{ range sort hugo.Sites "Language.Weight" -}}
+{{- $languageSite := . -}}
+{{- if ne .Language.Lang $site.Language.Lang -}}
+{{- with .Home.OutputFormats.Get "LLMS" }}
+- [{{ partial "system-metadata/agent-access/text.txt" ($languageSite.Language.LanguageName | default $languageSite.Language.Lang) }}](<{{ .Permalink }}>)
+{{ end -}}
+{{ end -}}
+{{ end -}}
+{{ end -}}
+{{- $groups := newScratch -}}
+{{- range (partial "system-metadata/sitemap/pages.html" $site) -}}
+  {{- $root := .FirstSection | default $site.Home -}}
+  {{- $group := $groups.Get $root.Path | default (dict "root" $root "pages" slice) -}}
+  {{- $groups.Set $root.Path (dict "root" $root "pages" ($group.pages | append .)) -}}
 {{- end -}}
-{{- end -}}
-{{- if gt (len $contentPages) 0 }}
+{{- range $groups.Values }}
 
-## Key Content Pages
-{{ range sort $contentPages "Lastmod" "desc" }}
-{{- $description := trim (printf "%v" (.Params.description | default "")) " \r\n\t" -}}
-{{- $updated := .Lastmod -}}
-{{- if le $updated.Unix 0 -}}{{- $updated = .Date -}}{{- end }}
-- [{{ .Title }}]({{ .Permalink }}){{ with $description }}: {{ . }}{{ end }}{{ if gt $updated.Unix 0 }} Updated: {{ $updated.Format "2006-01-02" }}{{ end }}
-{{- end }}
-{{- end }}
-{{- end }}
+## {{ partial "system-metadata/agent-access/text.txt" .root.Title }}
+{{ range .pages -}}
+{{ $entryDescription := partial "system-metadata/agent-access/text.txt" (.Params.description | default "") -}}
+- [{{ partial "system-metadata/agent-access/text.txt" .Title }}](<{{ .Permalink }}>){{ with $entryDescription }}: {{ . }}{{ end }}
+{{ end -}}
+{{ end -}}

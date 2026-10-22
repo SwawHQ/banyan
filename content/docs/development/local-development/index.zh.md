@@ -70,7 +70,7 @@ swban report/size/assets <build>                              #报告资源体�
 
 ```text
 swban sync/ext                        #同步全部外部资源
-swban sync/ext wsl-distribution-info  #按声明 id 同步外部资源
+swban sync/ext <resource-id>          #按声明 id 同步外部资源
 swban deploy/edgeone/sync <build>     #复制生成配置到站点根目录
 ```
 

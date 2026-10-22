@@ -1,10 +1,8 @@
 ---
 root_nav: true
-title: 內容 - 分類
-linkTitle: 內容 - 分類
+title: 發現 - 分類
 weight: 20
-browser_title: Banyan 範例站內容主題
-description: 按主題瀏覽範例內容。
+description: 按主題瀏覽內容。
 layout: page-collection
 list: directory
 slots:

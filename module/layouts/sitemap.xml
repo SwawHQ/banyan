@@ -3,17 +3,10 @@
 {{- $data := dict "site" .Site -}}
 {{- with (templates.Defer (dict "data" $data)) -}}
 {{ printf "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" | safeHTML }}
-{{- $pages := slice -}}
-{{- range (.site.Store.Get "banyan.sitemap.pages") -}}
-  {{- with $.site.GetPage .Path -}}
-    {{- if partial "system-metadata/sitemap/eligible.html" . -}}
-      {{- $pages = $pages | append . -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
+{{- $pages := partial "system-metadata/sitemap/pages.html" .site -}}
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  {{ range sort $pages "Permalink" }}
+  {{ range $pages }}
   <url>
     <loc>{{ .Permalink }}</loc>{{ if not .Lastmod.IsZero }}
     <lastmod>{{ safeHTML ( .Lastmod.Format "2006-01-02T15:04:05-07:00" ) }}</lastmod>{{ end }}{{ with .Sitemap.ChangeFreq }}

@@ -80,6 +80,11 @@ offline_notice_path = "offline/"
 `content_check_interval` 单位为分钟。`mode = "disable"` 生成清理 worker，
 由客户端注销本站 SW 并清除受管缓存；`off` 不加载管理逻辑，不会自动注销已有 SW。
 
+仅 `mode = "enable"` 会生成 `sw.js` 和 `sw-version.json`。后者的 `version`
+是内容版本，Powered by 的本站构建区域显示同一次构建的值。
+SW 在成功导航后延迟 15 秒检查版本，并受 `content_check_interval` 的最小间隔限制；
+发现新版本后切换内容缓存。此内容版本与 SW 程序本身的哈希不同。
+
 | `sw.bucket` | 行为 |
 | --- | --- |
 | `versioned` | 当前构建缓存，版本切换后删除旧缓存 |

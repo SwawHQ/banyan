@@ -100,6 +100,15 @@ lastmod: 2026-10-21
 
 ## Changed
 
+- Always link the Web App Manifest through a standard head link; remove
+  `params.web_app_manifest` and manual theme commit markers. Powered by shows
+  only the site content version; enabled Service Workers read the same
+  version from `sw-version.json` to switch content caches.
+- The Module supplies Discover - Categories pages in all three languages,
+  and the all-content pages use Discover - All. Sites still register their taxonomies.
+  Language choices default to EN, 简 and 繁. The demo enables `tools` with a free tool
+  example and links its articles to their source files in the Banyan repository.
+  Multilingual site descriptions identify the official documentation and release notes.
 - Skill tool commands use `base/<tool>`, `base/<tool>/check` and
   `base/<tool>/ensure`. The entry uses Node and prepares Node/npm and required tools
   on demand; Bun remains an independent tool. `base/ensure` is removed.
@@ -154,6 +163,11 @@ lastmod: 2026-10-21
   Use native `sitemap.disable` in content front matter to exclude a page;
   remove `params.sitemap.include_pages`. Noindex pages and excluded translations
   stay outside sitemap entries and alternate-language links.
+  Language `llms.txt` indexes use the same page set, grouped by content section
+  and taxonomy with existing titles and descriptions. `check/llms` reports
+  missing, unexpected or duplicate entries and broken index links.
+  Each index follows its language home path and links other language indexes;
+  the root index covers the default language, without a duplicate language-path copy.
 - Distribute the theme from `module/`; keep the demo at the repository root
   and site-specific content and configuration outside the Module.
 - Use native Hugo for builds and previews, and native Git and GitHub CLI

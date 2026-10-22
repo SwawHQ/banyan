@@ -9,8 +9,10 @@ import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/
 import {fixtureEnvironment} from './_shared/hugo.mjs';
 import {verifyCspOutput} from '../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 import {inspect as inspectSitemap} from '../.agents/skills/swaw-banyan/tasks/check/sitemap/inspect.mjs';
+import {inspect as inspectBuildVersion} from '../.agents/skills/swaw-banyan/tasks/check/build-version/inspect.mjs';
+import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/llms/inspect.mjs';
 import {extractStartTags,extractTagAttribute,extractCanonicalHref} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
-import {stripRawText} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
+import {extractBlocks,stripRawText} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {readAnchor} from '../module/assets/js/browse/navigation-state.contract.js';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),origin='https://banyan.swaw.com';
@@ -18,13 +20,14 @@ const groups={guide:['getting-started','site-configuration','collection-lists','
   development:['local-development','releasing','breadcrumb-models','navigation-state','partial-architecture','ui-naming','browser-regression','service-worker-regression-checklist']};
 let work,output;
 before(()=>{
-  work=fs.mkdtempSync(path.join(os.tmpdir(),'banyan-documentation-'));
+  const parent=path.join(os.tmpdir(),'swaw/banyan/llms-documentation-tests');
+  fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));
   output=path.join(work,'build');
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',output],
     {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
 });
-after(()=>{if(work){assert.ok(path.basename(work).startsWith('banyan-documentation-'));fs.rmSync(work,{recursive:true,force:true});}});
+after(()=>{if(work){assert.equal(path.basename(path.dirname(fs.realpathSync(work))),'llms-documentation-tests');fs.rmSync(work,{recursive:true,force:true});}});
 
 test('official documentation has one source, Chinese pages and honest English indexes',async()=>{
   assert.equal(fs.existsSync(path.join(root,'docs')),false,'Documentation must have one content source.');
@@ -56,9 +59,15 @@ test('official documentation has one source, Chinese pages and honest English in
     }
   }
   const sitemap=fs.readFileSync(path.join(output,'zh/sitemap.xml'),'utf8');
-  for(const [group,names] of Object.entries(groups))for(const name of names)
+  const llms=fs.readFileSync(path.join(output,'zh/llms.txt'),'utf8');
+  for(const [group,names] of Object.entries(groups))for(const name of names) {
     assert.ok(sitemap.includes(origin+'/zh/docs/'+group+'/'+name+'/'),'Documentation must be discoverable.');
+    assert.ok(llms.includes('(<'+origin+'/zh/docs/'+group+'/'+name+'/>)'),'LLMS must cover the same core documentation.');
+  }
+  assert.match(llms,/^## 文档$/m);
+  assert.match(llms,/^- \[使用指南\]\(<https:\/\/banyan\.swaw\.com\/zh\/docs\/guide\/>\): 安装主题，配置站点、内容结构、交付和站点发现。$/m);
   assert.deepEqual((await inspectSitemap(output)).issues,[]);
+  assert.deepEqual((await inspectLlms(output)).issues,[]);
   verifyCspOutput(output);
 });
 
@@ -68,4 +77,23 @@ test('production discovery uses the official origin in sitemap, RSS and robots',
     assert.ok(text.includes(origin),file+' must use the official origin');
     assert.doesNotMatch(text,/https?:\/\/localhost:1313/,file+' must not publish preview URLs');
   }
+});
+
+test('Powered by build section shows only the matching content version',async()=>{
+  for(const prefix of ['','zh/','zh-tw/']) {
+    const html=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
+    const times=extractStartTags(html,'time').filter(tag=>tag.includes('data-site-update-version'));
+    assert.equal(times.length,1);
+    const version=extractTagAttribute(times[0],'title');
+    assert.match(version,/^v\d{14}$/);
+    assert.match(extractTagAttribute(times[0],'datetime'),/^\d{4}-\d{2}-\d{2}T/);
+    const source=stripRawText(html),visible=source.replace(/<[^>]*>/g,'');
+    assert.deepEqual(visible.match(/v\d{14}/g),[version]);
+    const headings=extractBlocks(source,'h2');
+    const heading=headings.find(block=>extractTagAttribute(block.open,'id')==='build');
+    const next=headings.find(block=>block.index>heading.index);
+    const section=source.slice(heading.index+heading.html.length,next.index);
+    assert.equal(section.replace(/<[^>]*>/g,'').trim(),version);
+  }
+  assert.deepEqual((await inspectBuildVersion(output)).issues,[]);
 });

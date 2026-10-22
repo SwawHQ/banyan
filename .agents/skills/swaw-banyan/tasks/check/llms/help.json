@@ -1,13 +1,13 @@
 {
   "en": {
-    "summary": "llms.txt and links",
+    "summary": "llms.txt links and sitemap coverage",
     "usage": "swban check/llms [dir]",
     "details": [
       "Default directory: public."
     ]
   },
   "zh": {
-    "summary": "llms.txt 与入口链接",
+    "summary": "llms.txt 链接与 sitemap 收录一致性",
     "usage": "swban check/llms [dir]",
     "details": [
       "默认目录：public。"

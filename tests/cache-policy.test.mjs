@@ -710,7 +710,7 @@ test('unchanged-version checks do not wait on an older uncancellable warmup',{ti
   }
 });
 
-test('empty route overrides and disabled optional assets do not restore defaults',()=>{
+test('empty route overrides and inline prefetch rules do not restore cache defaults',()=>{
   const empty=passed(build('empty','routes = []\n'));
   assert.equal(worker(empty).probe.SW_ROUTES.length,0);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(empty,'sw-policy.json'),'utf8')),[]);
@@ -718,9 +718,10 @@ test('empty route overrides and disabled optional assets do not restore defaults
   assert.equal(headers.length,1);assert.ok(cloudflareHeaders(headers,'/')['content-security-policy']);
   assert.equal(cloudflareHeaders(headers,'/')['cache-control'],undefined);
   const optional=passed(build('optional','[prefetch]\nenabled = true\n'+
-    '[prefetch.icons.folder]\nroot = "moderate"\n','[params.web_app_manifest]\nmode = "off"\n'));
+    '[prefetch.icons.folder]\nroot = "moderate"\n'));
   const rules=parseHeaders(fs.readFileSync(path.join(optional,'_headers'),'utf8'));
-  assert.ok(!rules.some(rule=>rule.source==='/site/pwa/*.webmanifest'));
+  assert.ok(rules.some(rule=>rule.source==='/site/pwa/*.webmanifest'));
+  assert.match(fs.readFileSync(path.join(optional,'index.html'),'utf8'),/<link\b[^>]*\brel=["']?manifest\b/);
   assert.equal(cloudflareHeaders(rules,'/site/generated.hash.json')['cache-control'],'public, max-age=31536000, immutable');
   assert.equal(cloudflareHeaders(rules,'/site/generated.hash.json')['content-type'],undefined);
   assert.equal(worker(optional).probe.getMatchingRoute('/site/generated.hash.json').bucket,'fingerprinted');

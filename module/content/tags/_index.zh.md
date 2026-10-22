@@ -1,10 +1,8 @@
 ---
 root_nav: true
-title: Content - Categories
-linkTitle: Content - Categories
+title: 发现 - 分类
 weight: 20
-browser_title: Content Topics in the Banyan Example Site
-description: Browse example content by topic.
+description: 按主题浏览内容。
 layout: page-collection
 list: directory
 slots:

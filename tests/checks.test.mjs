@@ -122,6 +122,99 @@ test('individual HTML checks and reports ignore defects outside their own respon
   assert.equal(cli('check/html/metadata',[pathEntry]).status,0);
 });
 
+function llmsText(siteURL,sitemapURL,urls) {
+  return '# Fixture\nCanonical site: '+siteURL+'\nSitemap: '+sitemapURL+'\n\n## Pages\n'+urls.map(url=>'- [Guide \\[one\\]](<'+url+'>): A \\[literal\\]\\(description\\).').join('\n');
+}
+function sitemapText(urls,index=false) {
+  const root=index?'sitemapindex':'urlset',entry=index?'sitemap':'url';
+  return '<'+root+'>'+urls.map(url=>'<'+entry+'><loc>'+url.replaceAll('&','&amp;')+'</loc></'+entry+'>').join('')+'</'+root+'>';
+}
+
+test('LLMS compares sitemap coverage with escaped Markdown and a site subpath',()=>{
+  const directory=output('llms subpath'),siteURL='https://example.test/base/';
+  const urls=[siteURL,siteURL+'guide(one)/'];
+  write(directory,'guide(one)/index.html','<h1>Guide</h1>');
+  write(directory,'sitemap.xml',sitemapText(urls));
+  write(directory,'llms.txt',llmsText(siteURL,siteURL+'sitemap.xml',urls));
+  const result=cli('check/llms',[directory]);
+  assert.equal(result.status,0,result.stdout+result.stderr);
+  write(directory,'llms.txt',llmsText(siteURL,siteURL+'sitemap.xml',[...urls,urls[1]]));
+  checked('check/llms',directory,/duplicate link/);
+  write(directory,'llms.txt',llmsText(siteURL,siteURL+'sitemap.xml',[urls[0]]));
+  checked('check/llms',directory,/missing a sitemap link.*guide\(one\)/);
+  write(directory,'extra/index.html','<h1>Extra</h1>');
+  write(directory,'llms.txt',llmsText(siteURL,siteURL+'sitemap.xml',[...urls,siteURL+'extra/']));
+  checked('check/llms',directory,/extra link absent from its sitemap/);
+  write(directory,'llms.txt',llmsText(siteURL,siteURL+'sitemap.xml',[...urls,siteURL+'missing/']));
+  checked('check/llms',directory,/missing local file.*missing/);
+  write(directory,'llms.txt',llmsText(siteURL,siteURL+'sitemap.xml',[...urls,'https://elsewhere.test/']));
+  checked('check/llms',directory,/outside Canonical site/);
+});
+
+test('LLMS verifies every sitemap language index without requiring a root LLMS file',()=>{
+  const directory=output('llms languages'),siteURL='https://example.test/base/';
+  const languages=['en','zh'];
+  write(directory,'sitemap.xml',sitemapText(languages.map(language=>siteURL+language+'/sitemap.xml'),true));
+  for(const language of languages) {
+    const home=siteURL+language+'/';
+    write(directory,language+'/index.html','<h1>Language home</h1>');
+    write(directory,language+'/sitemap.xml',sitemapText([home]));
+    write(directory,language+'/llms.txt',llmsText(siteURL,home+'sitemap.xml',[home]));
+  }
+  const directoryText=llmsText(siteURL,siteURL+'sitemap.xml',languages.map(language=>siteURL+language+'/llms.txt'));
+  write(directory,'llms.txt',directoryText);
+  let result=cli('check/llms',[directory]);
+  assert.equal(result.status,0,result.stdout+result.stderr);
+  fs.unlinkSync(path.join(directory,'llms.txt'));
+  result=cli('check/llms',[directory]);
+  assert.equal(result.status,0,result.stdout+result.stderr);
+  write(directory,'llms.txt',directoryText.replace(siteURL+'zh/llms.txt',siteURL+'en/llms.txt'));
+  checked('check/llms',directory,/duplicate link/);
+  checked('check/llms',directory,/missing a sitemap link.*zh\/llms\.txt/);
+  write(directory,'llms.txt',directoryText);
+  fs.unlinkSync(path.join(directory,'zh/llms.txt'));
+  checked('check/llms',directory,/missing its language llms\.txt.*zh\/sitemap\.xml/);
+  write(directory,'zh/llms.txt',llmsText(siteURL,siteURL+'en/sitemap.xml',[siteURL+'en/']));
+  checked('check/llms',directory,/multiple llms\.txt files for one language sitemap/);
+  checked('check/llms',directory,/missing its language llms\.txt.*zh\/sitemap\.xml/);
+  write(directory,'zh/llms.txt',llmsText(siteURL,siteURL+'zh/sitemap.xml',[siteURL+'zh/']));
+  fs.unlinkSync(path.join(directory,'en/llms.txt'));
+  const rootCatalog=llmsText(siteURL,siteURL+'en/sitemap.xml',[siteURL+'en/',siteURL+'zh/llms.txt']);
+  write(directory,'llms.txt',rootCatalog);
+  result=cli('check/llms',[directory]);
+  assert.equal(result.status,0,result.stdout+result.stderr);
+  write(directory,'llms.txt',rootCatalog+'\n- [中文](<'+siteURL+'zh/llms.txt>)');
+  checked('check/llms',directory,/duplicate link.*zh\/llms\.txt/);
+});
+
+test('LLMS rejects invalid metadata, malformed XML and Markdown links',()=>{
+  const directory=output('llms invalid'),siteURL='https://example.test/';
+  const valid=llmsText(siteURL,siteURL+'sitemap.xml',[siteURL]);
+  for(const [text,pattern] of [
+    [valid.replace('Canonical site: '+siteURL,'Canonical site: invalid'),/Canonical site is not a valid absolute/],
+    [valid.replace('Canonical site: '+siteURL+'\n',''),/missing a Canonical site/],
+    [valid.replace('Sitemap: '+siteURL+'sitemap.xml','Sitemap: /sitemap.xml'),/Sitemap is not a valid absolute/],
+    [valid.replace('Sitemap: '+siteURL+'sitemap.xml\n',''),/missing a Sitemap line/],
+    [valid.replace('<'+siteURL+'>','<http://[invalid>'),/link is not a valid absolute/],
+    [valid.replace('>):',':'),/malformed Markdown link/],
+    [valid.replace('<'+siteURL+'>','<'+siteURL+'%2e%2e%2fescape/>'),/invalid output reference/]
+  ]) {
+    write(directory,'llms.txt',text);
+    checked('check/llms',directory,pattern);
+  }
+  write(directory,'llms.txt',valid);
+  write(directory,'sitemap.xml','<urlset><url><loc>'+siteURL+'</loc></url>');
+  checked('check/llms',directory,/Invalid sitemap XML/);
+  write(directory,'sitemap.xml','<urlset><url><loc>invalid</loc></url></urlset>');
+  checked('check/llms',directory,/loc is not a valid absolute/);
+  write(directory,'sitemap.xml','<urlset><url></url></urlset>');
+  checked('check/llms',directory,/entry without one loc/);
+  fs.unlinkSync(path.join(directory,'sitemap.xml'));
+  checked('check/llms',directory,/Missing sitemap file/);
+  fs.unlinkSync(path.join(directory,'llms.txt'));
+  checked('check/llms',directory,/Missing llms\.txt/);
+});
+
 test('prefetch cost reports omit retired URL counts and retain bytes and rule counts',()=>{
   const html=fs.readFileSync(path.join(site,'public/index.html'),'utf8');
   const empty=cli('report/payload/prefetch',[output('empty-prefetch-report',html)]);
@@ -287,7 +380,7 @@ test('shared inline rules checks cover disabled, accepted, invalid JSON and miss
 });
 test('build version checks compare the rendered version with the content-version JSON',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
-  const directory = output('version',html.replace('</body>','<time data-site-update-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>2026-10-08 12:00</time></body>'));
+  const directory = output('version',html.replace('</body>','<time data-site-update-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>v20261008120000</time></body>'));
   write(directory,'sw.js','const versionURL = "/sw-version.json";');
   write(directory,'sw-version.json',JSON.stringify({version:'v20261008120000'}));
   assert.equal(cli('check/build-version',[directory]).status,0);
@@ -304,6 +397,8 @@ test('build version checks compare the rendered version with the content-version
   checked('check/build-version',directory,/sw-version\.json must be published/);
   write(directory,'sw-version.json',JSON.stringify({version:'v20261008120000'}));
   assert.equal(cli('check/build-version',[directory]).status,0);
+  fs.writeFileSync(index,fs.readFileSync(index,'utf8').replace('>v20261008120000</time>','>v-wrong</time>'));
+  checked('check/build-version',directory,/displayed version.*does not match/);
 });
 test('image checks split responsive, share and icon failures and read resolved Hugo config',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');

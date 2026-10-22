@@ -2,7 +2,7 @@
 
 [English](README.md) · 简体中文
 
-一个网站模板（Hugo 主题），用于对资源、文章做分类浏览，提供米勒列（Miller columns）导航。
+一个网站模板（Hugo 主题），用于对资源、文章做分类，提供米勒列（Miller columns）导航。
 
 
 [演示](https://banyan.swaw.com/) ·

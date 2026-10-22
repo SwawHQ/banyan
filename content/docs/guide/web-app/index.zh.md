@@ -1,26 +1,16 @@
 ---
 title: Web App Manifest 与图标
 slug: web-app
-description: 选择 manifest 发现时机，并覆盖站点 favicon 和 PWA 图标。
+description: 了解应用清单，并覆盖站点 favicon 和 PWA 图标。
 ---
 
 ## Manifest
 
-Banyan 默认生成带指纹的 web app manifest，并在渲染关键资源之后输出链接。
-在站点根 `hugo.toml` 中选择模式：
+Banyan 生成带指纹的 web app manifest，并在 `<head>` 中输出标准的
+`<link rel="manifest">`。清单包含站点名称、启动地址和安装图标地址，
+不预取站点内容；浏览器按需读取清单和图标。
 
-```toml
-[params.web_app_manifest]
-mode = "defer"
-```
-
-| 模式 | 行为 |
-| --- | --- |
-| `link` | 在 head 中较早输出链接，尽早发现 manifest |
-| `defer` | 在 head 末尾输出链接，优先发现渲染关键资源 |
-| `off` | 不生成或链接 manifest |
-
-Manifest 与 SW 缓存独立配置。SW 设置见[交付与缓存](/zh/docs/guide/delivery/)。
+Manifest 与 SW 缓存独立。SW 设置见[交付与缓存](/zh/docs/guide/delivery/)。
 
 ## 图标
 

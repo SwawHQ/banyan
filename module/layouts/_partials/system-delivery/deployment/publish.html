@@ -1,17 +1,7 @@
 {{- $routes := .routes | default slice -}}
 {{- $redirects := .redirects | default slice -}}
 {{- $platform := .delivery.platform | default dict -}}
-{{- $webAppManifestMode := lower (printf "%v" (.web_app_manifest_mode | default "link")) -}}
 {{- $headerRoutes := $routes -}}
-{{- if eq $webAppManifestMode "off" -}}
-  {{- $filtered := slice -}}
-  {{- range $route := $headerRoutes -}}
-    {{- if ne (printf "%v" (index $route "path" | default "")) "/site/pwa/*.webmanifest" -}}
-      {{- $filtered = $filtered | append $route -}}
-    {{- end -}}
-  {{- end -}}
-  {{- $headerRoutes = $filtered -}}
-{{- end -}}
 {{- /* RelPermalink evaluation publishes each enabled platform's files. */ -}}
 {{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" .delivery) "prefetch" -}}
 {{- $nativeBody := partial "system-delivery/prefetch/native.html" (dict "config" $prefetch) -}}

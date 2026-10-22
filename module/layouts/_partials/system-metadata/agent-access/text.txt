@@ -1,0 +1,2 @@
+{{- $text := trim (replaceRE `\s+` " " (htmlUnescape (plainify (printf "%v" .)))) " " -}}
+{{- return (replaceRE "([\\\\`*_{}\\[\\]()#<>~])" "\\$1" $text) -}}

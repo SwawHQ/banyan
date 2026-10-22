@@ -42,7 +42,6 @@ function consumer(name,{replacement='',multilingual=false}={}) {
     (replacement?`\nreplace ${release.module} => ${JSON.stringify(replacement.replaceAll('\\','/'))}\n`:''));
   for(const suffix of multilingual?['','.zh','.zh-tw']:['']) {
     write(root,'content/_index'+suffix+'.md',markdown[0]);
-    write(root,'content/tags/_index'+suffix+'.md',markdown[1]);
     write(root,'content/tags/sample/_index'+suffix+'.md','---\ntitle: Sample'+suffix+'\ndescription: Sample topic'+suffix+'.\n---\n');
     for(const [slug,title,date] of [['alpha','Alpha','2026-01-01'],['beta','Beta','2026-01-02']])
       write(root,'content/d/'+slug+'/index'+suffix+'.md',`---\ntitle: ${title}${suffix}\nslug: ${slug}\nlayout: page-article\ndescription: Independent ${title}${suffix} article.\ndate: ${date}\nshare_image: false\ntags: [sample]\n---\n\nIndependent article content.\n`);
@@ -57,6 +56,16 @@ function build(root,owner) {
 function checks(root,owner,output) {
   for(const task of ['html/metadata','html/headings','html/scripts','html/styles','sitemap','robots','llms','csp','sri'])
     passed(root,owner,['check/'+task,output]);
+}
+function taxonomyDefaults(output,{prefix='',suffix='',title='Discover - Categories',allTitle='Discover - All'}={}) {
+  const taxonomy=fs.readFileSync(path.join(output,prefix,'tags/index.html'),'utf8');
+  assert.ok(taxonomy.includes('<title>'+title));
+  assert.match(taxonomy,/data-sort-variant="?tree\b/);
+  assert.ok(taxonomy.includes('Sample'+suffix));
+  const term=fs.readFileSync(path.join(output,prefix,'tags/sample/index.html'),'utf8');
+  assert.match(term,/data-sort-variant="?tree\b/);
+  for(const slug of ['alpha','beta'])assert.match(term,new RegExp('href=["\']?/'+prefix+'d/'+slug+'/'));
+  assert.ok(fs.readFileSync(path.join(output,prefix,'all/index.html'),'utf8').includes('<title>'+allTitle));
 }
 before(async()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-install-'));
@@ -91,7 +100,7 @@ before(async()=>{
   fs.cpSync(path.join(skill,'node_modules'),path.join(installed,'node_modules'),{recursive:true});
   const tools=Object.fromEntries(['hugo','go','git'].map(name=>[name,{...resolveBinding(name),source:'path'}]));
   const runtime='node';
-  tools[runtime]={source:'path',path:process.execPath,version:process.versions.node};
+  tools[runtime]={...resolveBinding(runtime),source:'path',path:process.execPath,version:process.versions.node};
   writeBindings({schema:'swaw-banyan.bindings/v1',runtime,tools},path.join(installed,'.tools'));
 });
 after(()=>{
@@ -106,6 +115,7 @@ test('documented starter builds through a local Module without demo files or a G
   const root=consumer('local consumer',{replacement:moduleRoot});
   assert.equal(inspect(root).state,'development');
   const output=build(root,skill);checks(root,skill,output);
+  taxonomyDefaults(output);
   assert.ok(fs.existsSync(path.join(output,'rss/index.html')));
   assert.equal(fs.existsSync(path.join(output,'zh')),false);
   assert.equal(fs.existsSync(path.join(output,'icp')),false);
@@ -117,7 +127,12 @@ test('packaged Skill and versioned Module build from an isolated proxy',()=>{
   const root=consumer('packaged consumer',{multilingual:true});
   assert.match(passed(root,installed,['doctor']),/site\.banyan: matched/);
   const output=build(root,installed);checks(root,installed,output);
-  for(const prefix of ['','zh/','zh-tw/']) {
+  for(const [prefix,suffix,title,allTitle] of [
+    ['','','Discover - Categories','Discover - All'],
+    ['zh/','.zh','发现 - 分类','发现 - 全部'],
+    ['zh-tw/','.zh-tw','發現 - 分類','發現 - 全部']
+  ]) {
+    taxonomyDefaults(output,{prefix,suffix,title,allTitle});
     assert.ok(fs.existsSync(path.join(output,prefix,'index.html')));
     assert.ok(fs.existsSync(path.join(output,prefix,'rss/index.html')));
     const panel=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
@@ -138,6 +153,7 @@ test('the release module directory also installs and builds as a local Hugo them
   fs.cpSync(moduleRoot,directory,{recursive:true});
   assert.match(passed(root,installed,['doctor']),/site\.banyan: matched/);
   const output=build(root,installed);checks(root,installed,output);
+  taxonomyDefaults(output);
   assert.equal(fs.existsSync(path.join(root,'go.mod')),false);
   assert.equal(fs.existsSync(path.join(root,'.git')),false);
 });
@@ -145,11 +161,13 @@ test('the release module directory also installs and builds as a local Hugo them
 test('site content, palette and delivery data override defaults in a fresh install',()=>{
   const root=consumer('overridden consumer',{multilingual:true});
   write(root,'content/rss/index.zh.md','---\nroot_nav: true\ntitle: 本站订阅\nslug: rss\ndescription: 本站订阅地址。\nlayout: page-article\noutputs: [HTML]\nbuild: {list: local}\n---\n\n{{< rss-link >}}\n');
+  write(root,'content/tags/_index.zh.md',fs.readFileSync(path.join(moduleRoot,'content/tags/_index.zh.md'),'utf8').replace('title: 发现 - 分类','title: 本站分类'));
   write(root,'assets/css/theme.css',fs.readFileSync(path.join(moduleRoot,'assets/css/theme.css'),'utf8')+'\n:root{--consumer-palette-marker:1}\n');
   write(root,'data/delivery.toml','[platform.cloudflare.pages]\nenabled = true\n'+
     '[platform.edgeone.makers]\nenabled = true\ninstallCommand = ""\nbuildCommand = "hugo --minify --gc --cleanDestinationDir"\n'+
     'outputDirectory = "public"\nnodeVersion = "22.11.0"\nhugoVersion = "0.156.0"\n');
   const output=build(root,installed);checks(root,installed,output);
+  taxonomyDefaults(output,{prefix:'zh/',suffix:'.zh',title:'本站分类',allTitle:'发现 - 全部'});
   const rss=fs.readFileSync(path.join(output,'zh/rss/index.html'),'utf8');
   assert.ok(rss.includes('本站订阅'));assert.ok(rss.includes('/zh/index.xml'));
   const css=fs.readdirSync(path.join(output,'css')).filter(name=>name.endsWith('.css')).map(name=>fs.readFileSync(path.join(output,'css',name),'utf8')).join('');

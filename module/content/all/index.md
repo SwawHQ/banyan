@@ -1,6 +1,6 @@
 ---
 root_nav: true
-title: Content - All
+title: Discover - All
 weight: 10
 description: "Browse all published content, including articles, practical guides, and product pages."
 slug: "all"

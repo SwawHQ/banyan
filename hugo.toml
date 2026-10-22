@@ -1,13 +1,11 @@
 # Banyan documentation and demo site.
 #
-# This file intentionally includes Hugo structural settings that are not
-# inherited from theme configuration. Copy the relevant parts into a real site's
-# root hugo.toml when adopting Banyan.
+# The site selects its identity, languages, outputs, taxonomies and URL rules.
+# Module defaults follow Hugo's default configuration merge strategy.
 
 baseURL = "https://banyan.swaw.com/"
 languageCode = "en-us"
 title = "Banyan"
-preserveTaxonomyNames = true
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
 enableRobotsTXT = true
@@ -15,6 +13,7 @@ timeZone = "Asia/Shanghai"
 panicOnWarning = true
 
 [build]
+# 禁止 Hugo js.Build 自动写入 assets/jsconfig.json；该文件只服务编辑器跳转，不参与站点构建。
 noJSConfigInAssets = true
 
 [minify]
@@ -26,9 +25,14 @@ disableJS = true
 publishResources = false
 
 [params]
+description = "Official documentation and release notes for the Banyan Hugo theme."
 theme_changelog = "/changelog/"
 
+[params.content_source]
+repository = "https://github.com/SwawHQ/banyan"
+
 [frontmatter]
+# Editorial update time: never derive it from repository maintenance.
 lastmod = ["lastmod", "date"]
 
 [pagination]
@@ -36,16 +40,12 @@ pagerSize = 30
 
 [taxonomies]
 tag = "tags"
+tool = "tools"
 
-[markup]
 [markup.highlight]
 noClasses = false
-style = "vs"
-[markup.goldmark]
 [markup.goldmark.renderer]
 unsafe = false
-[markup.minify]
-disableXML = true
 
 [outputs]
 page     = ["HTML"]
@@ -58,21 +58,19 @@ term     = ["HTML","RSS"]
 [languages.en]
 languageName = "English"
 weight = 1
-[languages.en.params]
-locale = "en_US"
 
 [languages.zh]
 languageName = "中文"
 weight = 2
 [languages.zh.params]
-locale = "zh_CN"
+description = "Banyan Hugo 主题的官方文档与发布说明。"
 theme_changelog = "/zh/changelog/"
 
 [languages.zh-tw]
 languageName = "繁體"
 weight = 3
 [languages.zh-tw.params]
-locale = "zh_TW"
+description = "Banyan Hugo 主題的官方文件與發佈說明。"
 
 [permalinks]
 d = "/p/:slug/"

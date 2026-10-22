@@ -6,7 +6,7 @@ A website template (Hugo theme) for browsing resources and articles by category,
 with Miller column navigation.
 
 [Demo](https://banyan.swaw.com/) ·
-[Documentation](https://banyan.swaw.com/zh/docs) ·
+[Documentation](https://banyan.swaw.com/docs) ·
 [Changelog](content/changelog/_index.md)
 
 **1.** Miller column navigation

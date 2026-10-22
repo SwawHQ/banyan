@@ -1,25 +1,6 @@
 # Banyan Hugo Module defaults.
-# -------------------------------------------------------------------
-# Theme Default Configuration
-# -------------------------------------------------------------------
-# This file provides the baseline properties for the Banyan theme.
-# Note: Structural configurations like [outputs], [taxonomies], and
-# [permalinks] are intentionally omitted here. Sites must define them in their
-# root hugo.toml. Output format definitions are inherited from theme config, but
-# sites still need root [outputs] entries to enable those formats.
-
-baseURL = "http://localhost:1313/"
-languageCode = "en-us"
-title = "Banyan Theme"
-
-
-preserveTaxonomyNames = true
-defaultContentLanguage = "en"
-defaultContentLanguageInSubdir = true
-enableRobotsTXT = true
-timeZone = "Asia/Shanghai"
-
-panicOnWarning = true
+# Shared parameters, language fallbacks and output format definitions.
+# Sites select their identity and build behavior in the root configuration.
 
 [languages]
 [languages.en]
@@ -27,18 +8,21 @@ languageName = "English"
 weight = 1
 [languages.en.params]
 locale = "en_US"
+icon = { text = "EN" }
 
 [languages.zh]
 languageName = "中文"
 weight = 2
 [languages.zh.params]
 locale = "zh_CN"
+icon = { text = "简" }
 
 [languages.zh-tw]
 languageName = "繁體"
 weight = 3
 [languages.zh-tw.params]
 locale = "zh_TW"
+icon = { text = "繁" }
 
 [outputFormats]
 [outputFormats.LLMS]
@@ -63,20 +47,10 @@ content_root = "content"
 palette = "css/theme.css"
 
 [params.agent_access]
-# Banyan defaults to open discovery and model access. Publishers who need a
-# different consent policy should override these values in their site config.
-# The wildcard policy already covers current and future crawlers; keep the
-# explicit lists empty so a site can add exceptions without conflicting groups.
+# robots.txt rules; sites can override the default or list specific crawlers.
 default_policy = "allow"
 allow_user_agents = []
 disallow_user_agents = []
-
-[params.web_app_manifest]
-# link  = emit <link rel="manifest"> in <head> for the most predictable PWA path
-# defer = emit the manifest late in <head>, after render-critical styles/scripts
-#         have already been discovered
-# off   = do not generate or link the web app manifest
-mode = "defer"
 
 [params.media.responsive_images]
 # Keep this fallback aligned with the readable content width in
@@ -93,16 +67,8 @@ max_width = 1600
 version_prefix = "v"
 timestamp_layout = "20060102150405"
 
-[params.build.theme]
-revision = ""
-dirty = false
-
 [params.build.audit]
 permalink_collision = "warn"
-
-[frontmatter]
-# Editorial update time: never derive it from repository maintenance.
-lastmod = ["lastmod", "date"]
 
 [module.hugoVersion]
 min = "0.157.0"

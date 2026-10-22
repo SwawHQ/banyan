@@ -10,7 +10,11 @@ layout: page-home
 brand_line: 為探索型發布提供清晰結構。
 home_signals:
   - Hugo
-  - Banyan
+  - name: 使用文件
+    url: /zh/docs/
+    primary: true
+  - name: GitHub
+    url: https://github.com/SwawHQ/banyan
   - Taxonomy
   - Breadcrumbs
   - PWA

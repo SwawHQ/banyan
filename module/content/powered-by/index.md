@@ -18,14 +18,10 @@ powered_by:
   changes: "Change log"
   website: "Website"
   releases: "Releases"
-  revision: "Theme commit"
   theme_version: "Theme version"
   local_version: "Local development"
-  dirty: "Uncommitted changes"
-  version: "Build version"
+  version: "Version"
   build: "Site build"
-  time: "Build time"
-  commit: "Site commit"
   pwa: "Offline access. The browser manages Service Worker program updates."
 site_update:
   labels:

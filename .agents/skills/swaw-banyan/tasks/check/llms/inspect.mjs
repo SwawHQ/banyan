@@ -1,262 +1,134 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {filesUnder,insideOutput,isFile,readOptional,relativeName} from '../../_shared/output.mjs';
+import {filesUnder,insideOutput,isFile,localReference,relativeName} from '../../_shared/output.mjs';
 import {decodeHtmlAttribute} from '../../_shared/html/markup.mjs';
 
-function normalizePublicRelativePath(relativePath) {
-    let normalized = `${relativePath ?? ''}`.trim().replace(/\\/g, '/').replace(/^\/+/, '');
-    if (normalized === '') {
-        return 'index.html';
-    }
-    if (normalized.endsWith('/')) {
-        normalized += 'index.html';
-    }
-    return normalized;
+function absoluteURL(value) {
+  const url = new URL(decodeHtmlAttribute(value));
+  if (!['http:','https:'].includes(url.protocol)) throw new Error('Expected an absolute HTTP(S) URL.');
+  return url.href;
 }
 
-function isIgnoredHref(href) {
-    return href === ''
-        || href.startsWith('#')
-        || /^(?:data|javascript|mailto|tel):/i.test(href);
+function markdownLinks(text) {
+  return [...text.matchAll(/(?<![\\!])\[(?:\\.|[^\]\\\r\n])*\]\(\s*(<[^>\r\n]+>|[^\s<>)\r\n]+)\s*\)/g)]
+    .map(match => match[1].startsWith('<') ? match[1].slice(1,-1) : match[1].trim());
 }
-
-function stripMarkdownTitle(rawTarget) {
-    let target = `${rawTarget ?? ''}`.trim();
-    if (target.startsWith('<')) {
-        const closeIndex = target.indexOf('>');
-        if (closeIndex >= 0) {
-            return target.slice(1, closeIndex).trim();
-        }
-    }
-    return target.replace(/\s+["'][\s\S]*$/, '').trim();
-}
-
-function extractMarkdownLinks(text) {
-    const links = [];
-    const pattern = /(!?)\[[^\]\r\n]*\]\(([^)\r\n]+)\)/g;
-
-    for (const match of text.matchAll(pattern)) {
-        const target = stripMarkdownTitle(match[2] ?? '');
-        if (target) {
-            links.push({
-                isImage: match[1] === '!',
-                target
-            });
-        }
-    }
-
-    return links;
-}
-
-function isMarkdownTarget(target) {
-    try {
-        return new URL(target, 'https://agent-audit.local/').pathname.toLowerCase().endsWith('.md');
-    } catch {
-        return `${target ?? ''}`.split(/[?#]/, 1)[0].toLowerCase().endsWith('.md');
-    }
-}
-
-function extractCanonicalOrigin(llmsText) {
-    const match = llmsText.match(/^Canonical site:\s*(\S+)/mi);
-    if (!match) {
-        return '';
-    }
-
-    try {
-        return new URL(match[1]).origin;
-    } catch {
-        return '';
-    }
-}
-
-function hasPerPageMirrorList(llmsText) {
-    return /^\s*Mirrors:/m.test(llmsText);
-}
-
-function resolvePublicPathFromHref(href, { canonicalOrigin, currentRelativePath = '' }) {
-    const trimmed = decodeHtmlAttribute(`${href ?? ''}`.trim());
-    if (isIgnoredHref(trimmed)) {
-        return { kind: 'ignored', relativePath: '' };
-    }
-
-    try {
-        const basePath = currentRelativePath || 'index.html';
-        const url = new URL(trimmed, `https://agent-audit.local/${basePath}`);
-
-        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-            return { kind: 'external', relativePath: '' };
-        }
-        if (url.origin !== 'https://agent-audit.local' && canonicalOrigin && url.origin !== canonicalOrigin) {
-            return { kind: 'external', relativePath: '' };
-        }
-        if (url.origin !== 'https://agent-audit.local' && !canonicalOrigin) {
-            return { kind: 'external', relativePath: '' };
-        }
-
-        return {
-            kind: 'local',
-            relativePath: normalizePublicRelativePath(decodeURIComponent(url.pathname))
-        };
-    } catch (error) {
-        return {
-            kind: 'invalid',
-            relativePath: '',
-            message: error instanceof Error ? error.message : String(error)
-        };
-    }
-}
-
-async function inspectLlmsFile({
-    publicRoot,
-    relativePath,
-    canonicalOrigin,
-    rootText,
-    languageFile,
-    issues
-}) {
-    const absolutePath = path.join(publicRoot, relativePath);
-    const text = await fs.readFile(absolutePath, 'utf8');
-    const localLinks = new Set();
-    const markdownLinks = new Set();
-    const fileCanonicalOrigin = extractCanonicalOrigin(text);
-
-    if (!fileCanonicalOrigin) {
-        issues.push(`${relativePath} is missing a parseable Canonical site URL.`);
-    } else if (canonicalOrigin && fileCanonicalOrigin !== canonicalOrigin) {
-        issues.push(`${relativePath} Canonical site origin differs from root llms.txt: ${fileCanonicalOrigin}`);
-    }
-    if (languageFile && rootText && text.trim() === rootText) {
-        issues.push(`Language llms.txt duplicates the root llms.txt exactly: ${relativePath}`);
-    }
-    if (!/^## Agent Notes\b/m.test(text)) {
-        issues.push(`${relativePath} is missing the Agent Notes section.`);
-    }
-    if (!/^- Canonical human-facing pages are HTML\.\s*$/m.test(text)) {
-        issues.push(`${relativePath} does not declare canonical human-facing pages as HTML.`);
-    }
-    if (hasPerPageMirrorList(text)) {
-        issues.push(`${relativePath} still contains a retired per-page Mirrors list.`);
-    }
-    if (languageFile) {
-        if (!/^## Site Entry Points\b/m.test(text)) {
-            issues.push(`${relativePath} is missing the Site Entry Points section.`);
-        }
-        if (!/^## Key Content Pages\b/m.test(text)) {
-            issues.push(`${relativePath} is missing the Key Content Pages section.`);
-        }
-    } else if (!/^## Languages?\b/m.test(text) && !/^## Key Content Pages\b/m.test(text)) {
-        issues.push(`${relativePath} is missing a Languages or Key Content Pages section.`);
-    }
-
-    for (const link of extractMarkdownLinks(text)) {
-        if (isMarkdownTarget(link.target)) {
-            markdownLinks.add(link.target);
-            issues.push(`${relativePath} links to retired Markdown content: ${link.target}`);
-        }
-
-        const resolved = resolvePublicPathFromHref(link.target, {
-            canonicalOrigin: canonicalOrigin || fileCanonicalOrigin,
-            currentRelativePath: relativePath
-        });
-        if (resolved.kind === 'ignored' || resolved.kind === 'external') {
-            continue;
-        }
-        if (resolved.kind === 'invalid') {
-            issues.push(`${relativePath} contains an invalid link target: ${link.target}`);
-            continue;
-        }
-
-        localLinks.add(resolved.relativePath);
-        if (!await isFile(insideOutput(publicRoot, resolved.relativePath))) {
-            issues.push(`${relativePath} points to a missing local file: ${link.target} -> ${resolved.relativePath}`);
-        }
-    }
-
-    const sitemapMatch = text.match(/^Sitemap:\s*(\S+)/mi);
-    if (!sitemapMatch) {
-        issues.push(`${relativePath} is missing a Sitemap line.`);
-    } else {
-        const resolved = resolvePublicPathFromHref(sitemapMatch[1], {
-            canonicalOrigin: canonicalOrigin || fileCanonicalOrigin,
-            currentRelativePath: relativePath
-        });
-        if (resolved.kind === 'local' && !await isFile(insideOutput(publicRoot, resolved.relativePath))) {
-            issues.push(`${relativePath} Sitemap points to a missing local file: ${resolved.relativePath}`);
-        }
-    }
-
-    return {
-        localLinks,
-        markdownLinks,
-        text
-    };
-}
-
-async function inspectLlms(publicRoot, issues) {
-    const rootPath = path.join(publicRoot, 'llms.txt');
-    const rootText = await readOptional(rootPath);
-    if (!rootText) {
-        issues.push('Missing root llms.txt.');
-        return {
-            hasLlms: false,
-            canonicalOrigin: '',
-            fileCount: 0,
-            languageFiles: [],
-            localLinkCount: 0,
-            markdownLinkCount: 0
-        };
-    }
-
-    const canonicalOrigin = extractCanonicalOrigin(rootText);
-    const rootResult = await inspectLlmsFile({
-        publicRoot,
-        relativePath: 'llms.txt',
-        canonicalOrigin,
-        rootText: '',
-        languageFile: false,
-        issues
-    });
-    const llmsPaths = await filesUnder(publicRoot,file => path.basename(file).toLowerCase() === 'llms.txt');
-    const languageFiles = [];
-    const localLinks = new Set(rootResult.localLinks);
-    const markdownLinks = new Set(rootResult.markdownLinks);
-
-    for (const llmsPath of llmsPaths) {
-        const relativePath = relativeName(publicRoot, llmsPath);
-        if (relativePath === 'llms.txt') {
-            continue;
-        }
-
-        languageFiles.push(relativePath);
-        const result = await inspectLlmsFile({
-            publicRoot,
-            relativePath,
-            canonicalOrigin,
-            rootText: rootText.trim(),
-            languageFile: true,
-            issues
-        });
-        for (const link of result.localLinks) {
-            localLinks.add(link);
-        }
-        for (const link of result.markdownLinks) {
-            markdownLinks.add(link);
-        }
-    }
-
-    return {
-        hasLlms: true,
-        canonicalOrigin,
-        fileCount: llmsPaths.length,
-        languageFiles: languageFiles.sort(),
-        localLinkCount: localLinks.size,
-        markdownLinkCount: markdownLinks.size
-    };
-}
-
 
 export async function inspect(directory) {
-  const issues = [];
-  await inspectLlms(path.resolve(directory),issues);
+  const root = path.resolve(directory), issues = [];
+  const files = await filesUnder(root), documents = new Map(), sitemaps = new Map();
+  const llmsFiles = files.filter(file => path.basename(file).toLowerCase() === 'llms.txt');
+  if (!llmsFiles.length) return {issues:['Missing llms.txt.']};
+
+  function parseURL(value,label) {
+    try { return absoluteURL(value); }
+    catch { issues.push(`${label} is not a valid absolute HTTP(S) URL: ${value}`); return ''; }
+  }
+  function outputPath(url,siteURL,label) {
+    try {
+      const target = new URL(url), site = new URL(siteURL);
+      if (target.origin !== site.origin || !target.pathname.startsWith(site.pathname)) {
+        issues.push(`${label} is outside Canonical site: ${url}`);
+        return '';
+      }
+      const relative = localReference(url,{siteURL});
+      insideOutput(root,relative);
+      return relative;
+    } catch { issues.push(`${label} contains an invalid output reference: ${url}`); return ''; }
+  }
+  async function requireFile(relative,label) {
+    if (relative && !await isFile(insideOutput(root,relative))) issues.push(`${label} points to a missing local file: ${relative}`);
+  }
+  async function readSitemap(relative,siteURL) {
+    if (sitemaps.has(relative)) return sitemaps.get(relative);
+    if (!await isFile(insideOutput(root,relative))) {
+      issues.push(`Missing sitemap file: ${relative}`);
+      return null;
+    }
+    const text = (await fs.readFile(insideOutput(root,relative),'utf8')).replace(/<\?xml[\s\S]*?\?>/g,'').replace(/<!--[\s\S]*?-->/g,'').trim();
+    const kind = text.match(/^<(urlset|sitemapindex)(?:\s|>)/)?.[1];
+    if (!kind || !text.endsWith(`</${kind}>`)) {
+      issues.push(`Invalid sitemap XML: ${relative}`);
+      return null;
+    }
+    const entry = kind === 'urlset' ? 'url' : 'sitemap';
+    const entries = [...text.matchAll(new RegExp(`<${entry}\\b[^>]*>([\\s\\S]*?)<\\/${entry}>`,'g'))];
+    const locs = [];
+    if (entries.length !== (text.match(new RegExp(`<${entry}(?:\\s|>)`,'g')) || []).length) issues.push(`Invalid sitemap entries: ${relative}`);
+    for (const item of entries) {
+      const matches = [...item[1].matchAll(/<loc>\s*([^<]*?)\s*<\/loc>/g)];
+      if (matches.length !== 1) { issues.push(`${relative} contains an entry without one loc.`); continue; }
+      const url = parseURL(matches[0][1],`${relative} loc`);
+      if (url) locs.push(url);
+    }
+    const result = {kind,locs,siteURL};
+    sitemaps.set(relative,result);
+    return result;
+  }
+  function compare(actual,expected,label) {
+    const found = new Set();
+    for (const url of actual) {
+      found.add(url);
+      if (!expected.has(url)) issues.push(`${label} contains an extra link absent from its sitemap: ${url}`);
+    }
+    for (const url of expected) if (!found.has(url)) issues.push(`${label} is missing a sitemap link: ${url}`);
+  }
+
+  let siteURL = '';
+  for (const file of llmsFiles) {
+    const relative = relativeName(root,file), text = await fs.readFile(file,'utf8');
+    const canonicalMatch = text.match(/^Canonical site:\s*(\S+)/m);
+    const canonical = canonicalMatch ? parseURL(canonicalMatch[1],`${relative} Canonical site`) : '';
+    if (!canonicalMatch) issues.push(`${relative} is missing a Canonical site URL.`);
+    if (canonical && siteURL && canonical !== siteURL) issues.push(`${relative} Canonical site differs from other llms.txt files: ${canonical}`);
+    siteURL ||= canonical;
+    const sitemapMatch = text.match(/^Sitemap:\s*(\S+)/m);
+    const sitemapURL = sitemapMatch ? parseURL(sitemapMatch[1],`${relative} Sitemap`) : '';
+    if (!sitemapMatch) issues.push(`${relative} is missing a Sitemap line.`);
+    const links = [], seen = new Set();
+    for (const line of text.split(/\r?\n/)) {
+      if (/^\s*-\s*\[/.test(line) && !markdownLinks(line).length) issues.push(`${relative} contains a malformed Markdown link: ${line.trim()}`);
+    }
+    for (const target of markdownLinks(text)) {
+      const url = parseURL(target,`${relative} link`);
+      if (!url) continue;
+      if (seen.has(url)) issues.push(`${relative} contains a duplicate link: ${url}`);
+      seen.add(url);
+      links.push(url);
+      if (canonical) await requireFile(outputPath(url,canonical,`${relative} link`),relative);
+    }
+    documents.set(relative,{siteURL:canonical,sitemapURL,links});
+  }
+
+  const documentURL = (relative,document) => document.siteURL ? new URL(relative,document.siteURL).href : '';
+  const indexURLs = new Set([...documents].map(([relative,document]) => documentURL(relative,document)).filter(Boolean));
+  const catalogs = sitemapURL => [...documents].filter(([,document]) => document.sitemapURL === sitemapURL);
+  for (const [relative,document] of documents) {
+    if (!document.siteURL || !document.sitemapURL) continue;
+    const sitemapPath = outputPath(document.sitemapURL,document.siteURL,`${relative} Sitemap`);
+    if (!sitemapPath) continue;
+    const sitemap = await readSitemap(sitemapPath,document.siteURL);
+    if (!sitemap) continue;
+    if (sitemap.kind === 'urlset') {
+      compare(document.links.filter(url => !indexURLs.has(url)),new Set(sitemap.locs),relative);
+    } else {
+      const expected = sitemap.locs.flatMap(url => catalogs(url).map(([relative,document]) => documentURL(relative,document)));
+      compare(document.links,new Set(expected),relative);
+    }
+  }
+  // A language catalog can live at the root or in its language directory.
+  if (siteURL) for (const file of files.filter(file => path.basename(file).toLowerCase() === 'sitemap.xml')) {
+    const relative = relativeName(root,file), sitemap = await readSitemap(relative,siteURL);
+    if (sitemap?.kind !== 'sitemapindex') continue;
+    for (const url of sitemap.locs) {
+      const childPath = outputPath(url,siteURL,`${relative} loc`);
+      if (!childPath) continue;
+      const child = await readSitemap(childPath,siteURL);
+      if (child && child.kind !== 'urlset') issues.push(`${relative} must reference a sitemap urlset: ${url}`);
+      const matches = catalogs(url);
+      if (!matches.length) issues.push(`${relative} is missing its language llms.txt for sitemap: ${url}`);
+      else if (matches.length > 1) issues.push(`${relative} has multiple llms.txt files for one language sitemap: ${url} (${matches.map(([name]) => name).join(', ')})`);
+    }
+  }
   return {issues};
 }

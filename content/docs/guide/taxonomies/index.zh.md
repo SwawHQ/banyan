@@ -19,7 +19,11 @@ tag = "tags"
 tool = "tools"
 ```
 
-`tools` 使用平面分类，根配置位于 `content/tools/_index*.md`，文章声明 `tools: [free, first-party]`。`content/all-tools/` 以 `aggregate: /tools` 汇总成员；`list: products` 只控制价格／用途列，与分类法名称无关。具体约定见 [列表与产品声明](/zh/docs/guide/collection-lists/#怎样收录工具)。
+Banyan 提供三语言的 `tags` 和 `tools` 分类根页面。`tags` 使用树形分类；
+`tools` 使用平面分类，文章声明 `tools: [free, first-party]`。
+Module 的 `content/all-tools/` 以 `aggregate: /tools` 汇总成员；
+`list: products` 只控制价格／用途列，与分类法名称无关。
+具体约定见 [列表与产品声明](/zh/docs/guide/collection-lists/#怎样收录工具)。
 
 一篇文章可以属于多条独立路径：
 
@@ -33,12 +37,19 @@ Hugo 原生把每个 taxonomy term 当成独立字符串。Banyan 约定用 `/` 
 
 ## 就地定义
 
-Banyan 不提供 taxonomy 名称或渲染配置的通用兜底。每个 taxonomy 由站点自己的 branch bundle 定义：
+每个 taxonomy 的名称和渲染参数由对应的 branch bundle 定义；
+bundle 可以来自 Module 内容，站点的同路径文件覆盖 Module 文件：
 
 - `content/<plural>/_index.<lang>.md`：定义 taxonomy 根页及 Banyan 渲染参数
 - `content/<plural>/<term>/_index.<lang>.md`：定义 term 页的标题、正文和页面资源
 
-taxonomy 必须先在站点根 `hugo.toml` 的 `[taxonomies]` 中声明。仅创建同名内容目录只会得到普通 section。
+默认 `tags` 和 `tools` 根 bundle 位于 `module/content/`，站点无需重复创建。
+需要改名或调整渲染参数时，将对应语言的完整文件复制到站点同路径后修改。
+内容文件按整个文件覆盖，不合并 front matter；只写 `title` 会丢失分类声明。
+具体标签词项由站点维护。
+
+在默认合并策略下，站点在根 `hugo.toml` 的 `[taxonomies]` 中声明 taxonomy。
+仅创建同名内容目录只会得到普通 section。
 
 根 bundle 契约：
 
@@ -154,6 +165,6 @@ banyan_taxonomy:
 新增 taxonomy 的顺序是：
 
 1. 在站点根 `[taxonomies]` 中声明单数键和复数值。
-2. 创建 `content/<plural>/_index.<lang>.md` 并填写完整根 bundle 契约。
+2. 使用 Module 提供的根 bundle，或创建 `content/<plural>/_index.<lang>.md` 并填写完整根 bundle 契约。
 3. 为内容使用的 term 创建对应语言的 bundle；树形 taxonomy 还要创建每层祖先。
 4. 需要说明文字、图标或局部资源时，再放入对应 term bundle。

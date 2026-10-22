@@ -61,17 +61,17 @@ description: 说明来源、排序、章节与浏览器历史之间的边界。
 例子：
 
 ```txt
-#from=d/products
+#from=tools/free
 ```
 
 含义：
 
-- 当前页是 `xvenv`
-- 它是从 `/d/products/` 这一层点进去的
+- 当前页是 `example-tool`
+- 它是从 `/tools/free/` 分类点进去的
 
 `from` 只表达来源 collection lineage，不表达当前 entry，也不表达排序。
-当前 entry 由页面路径表达，例如 `/p/xvenv/`。因此
-`from=d/products/xvenv` 不是有效的新协议状态。
+当前 entry 由页面路径表达，例如 `/p/example-tool/`。因此
+`from=d/example-tool` 不是有效的来源集合。
 
 只有当前页面发布的来源集合才是有效 `from`。不能根据一个任意字符串的
 前缀推断来源；不存在或不属于当前页面的来源使用内容祖先的默认选中项。

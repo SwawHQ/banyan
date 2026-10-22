@@ -10,9 +10,10 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {fixtureEnvironment} from './_shared/hugo.mjs';
 import {inspect} from '../.agents/skills/swaw-banyan/tasks/check/sitemap/inspect.mjs';
+import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/llms/inspect.mjs';
 import {decodeHtmlAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
-const root=fileURLToPath(new URL('../',import.meta.url)), parent=fs.realpathSync(os.tmpdir());
+const root=fileURLToPath(new URL('../',import.meta.url)), parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/llms-sitemap-tests');
 const languages=[['',''],['.zh','/zh'],['.zh-tw','/zh-tw']];
 const cases={local:'build: {list: local}\naliases: [/sitemap-alias/]',
   'never-list':'build: {list: never}',disabled:'sitemap: {disable: true}',
@@ -23,11 +24,20 @@ let work,content,config;
 function write(file,text) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function page(name,fields='') {return `---\ntitle: Sitemap ${name}\nslug: sitemap-${name}\nlayout: page-article\n${fields}\n---\nSitemap fixture.\n`;}
 function urls(xml) {return [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(match=>decodeHtmlAttribute(match[1]));}
+function llmsUrls(text) {
+  return [...text.matchAll(/\]\(<([^>\r\n]+)>\)/g)].map(match=>decodeHtmlAttribute(match[1]))
+    .filter(url=>!new URL(url).pathname.match(/\.(?:txt|xml)$/));
+}
+function assertLlmsMatchesSitemap(text,locs) {
+  const links=llmsUrls(text);
+  assert.equal(new Set(links).size,links.length,'Duplicate LLMS HTML link');
+  assert.deepEqual(links.toSorted(),locs.toSorted(),'LLMS and sitemap must list the same HTML pages');
+}
 function relative(file) {return path.relative(root,file).replaceAll('\\','/');}
 function args(destination) {return ['--noBuildLock','--config',`hugo.toml,${relative(config)}`,
   '--enableGitInfo=false','--destination',destination];}
 before(()=>{
-  work=fs.mkdtempSync(path.join(parent,'banyan-sitemap-'));
+  fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));
   content=path.join(work,'content');config=path.join(work,'overlay.toml');
   for(const [suffix] of languages) {
     for(const [name,fields] of Object.entries(cases)) write(path.join(content,`sitemap-${name}/index${suffix}.md`),page(name,fields));
@@ -37,6 +47,13 @@ before(()=>{
     write(path.join(content,`sitemap-cascade/child${suffix}.md`),page('child'));
     write(path.join(content,`sitemap-tree/_index${suffix}.md`),page('tree'));
     write(path.join(content,`sitemap-tree/leaf${suffix}.md`),page('leaf'));
+    write(path.join(content,`sitemap-parent/_index${suffix}.md`),page('parent','sitemap: {disable: true}'));
+    write(path.join(content,`sitemap-parent/child${suffix}.md`),page('parent-child'));
+    write(path.join(content,`d/_index${suffix}.md`),'---\ntitle: LLMS Group\nlayout: page-collection\nlist: directory\ncascade: [{target: {kind: page}, layout: page-article}]\n---\n');
+    write(path.join(content,`d/llms-special/index${suffix}.md`),'---\n'+
+      'title: "LLMS [brackets] *stars* `code`"\nslug: llms-special\nlayout: page-article\n'+
+      'description: "First [detail]\\nSecond _value_"\n---\nLLMS fixture.\n');
+    write(path.join(content,`d/llms-undescribed/index${suffix}.md`),'---\ntitle: LLMS undescribed\nslug: llms-undescribed\nlayout: page-article\n---\n');
   }
   write(path.join(work,'layouts/page-article.text.txt'),'{{ .Content }}');
   write(config,`[[module.mounts]]\nsource = "${relative(content)}"\ntarget = "content"\n`+
@@ -46,7 +63,7 @@ before(()=>{
 });
 after(()=>{if(work){assert.equal(path.dirname(fs.realpathSync(work)),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
-test('sitemaps contain rendered indexable HTML regardless of list settings and honor native exclusions',async()=>{
+test('sitemap and grouped LLMS share rendered HTML pages, exclusions and metadata',async()=>{
   const output=path.join(work,'public');
   const result=spawnSync(toolExecutable('hugo'),[...args(output),'--minify','--baseURL','https://example.test/'],
     {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:30000,windowsHide:true});
@@ -60,6 +77,17 @@ test('sitemaps contain rendered indexable HTML regardless of list settings and h
     }
     assert.doesNotMatch(xml,/href="https:\/\/example\.test\/(?:zh|zh-tw)\/sitemap-mixed\/"/);
     assert.equal(locs.includes(`https://example.test${prefix}/sitemap-mixed/`),prefix==='');
+    assert.ok(!locs.includes(`https://example.test${prefix}/sitemap-parent/`));
+    assert.ok(locs.includes(`https://example.test${prefix}/sitemap-parent/sitemap-parent-child/`),'A disabled parent must not hide an eligible child');
+    const llms=fs.readFileSync(path.join(output,prefix,'llms.txt'),'utf8');
+    assertLlmsMatchesSitemap(llms,locs);
+    const special=llms.split('\n').find(line=>line.includes('/p/llms-special/'));
+    assert.ok(special,'The article permalink must follow the d section rule');
+    assert.ok(special.includes('[LLMS \\[brackets\\] \\*stars\\* \\`code\\`]'),special);
+    assert.ok(special.endsWith(': First \\[detail\\] Second \\_value\\_'),special);
+    assert.equal([...llms.slice(0,llms.indexOf(special)).matchAll(/^## (.+)$/gm)].at(-1)[1],'LLMS Group','Group by Hugo hierarchy, not /p/ URL');
+    const undescribed=llms.split('\n').find(line=>line.includes('/p/llms-undescribed/'));
+    assert.match(undescribed,/^\- \[LLMS undescribed\]\(<https:\/\/example\.test(?:\/zh|\/zh-tw)?\/p\/llms-undescribed\/>\)$/);
     assert.match(fs.readFileSync(path.join(output,prefix,'sitemap-disabled/index.html'),'utf8'),/data-sitemap-disabled=(?:"true"|true)/);
     assert.ok(fs.existsSync(path.join(output,prefix,'sitemap-never-list/index.html')));
     for(const name of ['unrendered','link','text','draft']) assert.ok(!fs.existsSync(path.join(output,prefix,`sitemap-${name}/index.html`)),name);
@@ -68,7 +96,9 @@ test('sitemaps contain rendered indexable HTML regardless of list settings and h
       assert.ok(fs.existsSync(path.join(output,pathname,'index.html')),`No HTML for ${loc}`);
     }
   }
+  assert.equal(fs.existsSync(path.join(output,'en/llms.txt')),false,'Default language must use its native root LLMS output');
   assert.deepEqual((await inspect(output)).issues,[]);
+  assert.deepEqual((await inspectLlms(output)).issues,[]);
 });
 
 test('full preview rebuilds remove disabled, unrendered, renamed and deleted pages without losing unchanged pages',async()=>{
@@ -80,20 +110,23 @@ test('full preview rebuilds remove disabled, unrendered, renamed and deleted pag
     '--bind','127.0.0.1','--port',String(port),'--baseURL',base,'--disableLiveReload','--disableFastRender'],
     {cwd:root,env:fixtureEnvironment(work),windowsHide:true,stdio:['ignore','pipe','pipe']});
   let logs='';server.stdout.on('data',chunk=>{logs+=chunk;});server.stderr.on('data',chunk=>{logs+=chunk;});
-  async function waitFor(present,absent) {
-    const deadline=Date.now()+15000;
+  async function waitFor(present,absent,language='en') {
+    const deadline=Date.now()+15000;let state='No response';
     while(Date.now()<deadline) {
       assert.equal(server.exitCode,null,logs);
       try {
-        const response=await fetch(base+'/en/sitemap.xml',{signal:AbortSignal.timeout(1000),headers:{Connection:'close'}});
-        if(response.ok) {
+        const [response,llms]=await Promise.all([`/${language}/sitemap.xml`,`/${language==='en'?'':language+'/'}llms.txt`].map(file=>fetch(base+file,{signal:AbortSignal.timeout(1000),headers:{Connection:'close'}})));
+        if(response.ok&&llms.ok) {
           const locs=urls(await response.text()).map(url=>new URL(url).pathname);
-          if(present.every(url=>locs.includes(url)) && absent.every(url=>!locs.includes(url))) return;
-        }
-      } catch {}
+          const links=llmsUrls(await llms.text()).map(url=>new URL(url).pathname);
+          state=JSON.stringify({present,absent,sitemap:locs,llms:links});
+          if(present.every(url=>locs.includes(url)) && absent.every(url=>!locs.includes(url)) &&
+            new Set(links).size===links.length && JSON.stringify(links.toSorted())===JSON.stringify(locs.toSorted())) return;
+        } else state=`HTTP sitemap=${response.status}, llms=${llms.status}`;
+      } catch(error) {state=String(error.cause||error);}
       await delay(100);
     }
-    assert.fail('Sitemap rebuild timed out.\n'+logs);
+    assert.fail('Sitemap and LLMS rebuild timed out or their pages differ.\n'+state+'\n'+logs);
   }
   try {
     await waitFor(['/sitemap-local/','/sitemap-never-list/'],[]);
@@ -112,10 +145,42 @@ test('full preview rebuilds remove disabled, unrendered, renamed and deleted pag
     await waitFor(['/sitemap-never-list/'],[leaf]);
     write(branch,page('tree'));
     await waitFor([leaf],[]);
+    const chinese=path.join(content,'sitemap-local/index.zh.md');
+    await waitFor(['/zh/sitemap-local/'],[],'zh');
+    write(chinese,page('local','sitemap: {disable: true}'));
+    await waitFor(['/zh/sitemap-never-list/'],['/zh/sitemap-local/'],'zh');
+    write(chinese,page('local','build: {list: local}'));
+    await waitFor(['/zh/sitemap-local/','/zh/sitemap-never-list/'],[],'zh');
   } finally {
     if(server.exitCode===null) {
       const exited=new Promise(resolve=>server.once('exit',resolve));
       server.kill();await exited;
     }
+  }
+});
+
+test('LLMS supports site subpaths, language routing, independent weights and disabled output',async()=>{
+  const variants=[
+    {name:'monolingual-subpath',config:'disableLanguages = ["zh", "zh-tw"]\n',base:'https://example.test/manual/',files:['llms.txt']},
+    {name:'language-subdir',config:'defaultContentLanguageInSubdir = true\n',files:['en/llms.txt','zh/llms.txt','zh-tw/llms.txt']},
+    {name:'language-weight',config:'[languages.en]\nweight = 9\n[languages.zh]\nweight = 1\n',files:['llms.txt','zh/llms.txt','zh-tw/llms.txt']},
+    {name:'disabled',config:'[outputs]\nhome = ["HTML", "RSS"]\n',files:[]}
+  ];
+  for(const variant of variants) {
+    const overlay=path.join(work,variant.name+'.toml'),destination=path.join(work,variant.name);
+    write(overlay,variant.config);
+    const result=spawnSync(toolExecutable('hugo'),['--noBuildLock','--config',`hugo.toml,${relative(config)},${relative(overlay)}`,
+      '--enableGitInfo=false','--destination',destination,'--baseURL',variant.base||'https://example.test/'],
+      {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:30000,windowsHide:true});
+    assert.ifError(result.error);assert.equal(result.status,0,variant.name+'\n'+result.stdout+result.stderr);
+    for(const file of variant.files) {
+      const text=fs.readFileSync(path.join(destination,file),'utf8');
+      const sitemap=path.join(destination,file==='llms.txt'&&variant.name!=='monolingual-subpath'?'en':path.dirname(file),'sitemap.xml');
+      assertLlmsMatchesSitemap(text,urls(fs.readFileSync(sitemap,'utf8')));
+    }
+    if(variant.name!=='language-subdir')assert.equal(fs.existsSync(path.join(destination,'en/llms.txt')),false,'Do not copy the default language LLMS');
+    if(!variant.files.length)for(const prefix of ['','en','zh','zh-tw'])
+      assert.equal(fs.existsSync(path.join(destination,prefix,'llms.txt')),false,'LLMS must remain optional');
+    if(variant.files.length)assert.deepEqual((await inspectLlms(destination)).issues,[],variant.name);
   }
 });

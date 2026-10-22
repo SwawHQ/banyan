@@ -2,7 +2,6 @@
 {{- $pwaConfig := partial "system-delivery/pwa/config.html" (dict "ctx" . "delivery" $delivery) -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}
 {{- $contentCheckIntervalMs := index $pwaConfig "content_check_interval_ms" -}}
-{{- $webAppManifestMode := index $pwaConfig "manifest_mode" -}}
 {{- $offlineFallbacks := index $pwaConfig "offline_fallbacks" -}}
 {{- $isOfflinePage := index $pwaConfig "is_offline_page" -}}
 {{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" $delivery) "prefetch" -}}
@@ -34,7 +33,6 @@
       "routes" $delivery.routes
       "redirects" $siteRedirectRules
       "delivery" $delivery
-      "web_app_manifest_mode" $webAppManifestMode
       "inline_scripts" $inlineScripts
     ) -}}
 {{- end -}}
@@ -53,15 +51,12 @@
     {{- else -}}
         {{- $appleTouchIcon = $appleTouchIcon | fingerprint -}}
     {{- end -}}
-    {{- $defaultSite := $primarySite -}}
     {{- $manifest := "" -}}
-    {{- if and $defaultSite (ne $webAppManifestMode "off") -}}
-        {{- $manifestTmpl := resources.Get "site/pwa/manifest.webmanifest.tmpl" -}}
-        {{- if $manifestTmpl -}}
-            {{- $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/pwa/site.webmanifest" $defaultSite.Home | fingerprint -}}
-        {{- else -}}
+    {{- $manifestTmpl := resources.Get "site/pwa/manifest.webmanifest.tmpl" -}}
+    {{- if $manifestTmpl -}}
+        {{- $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/pwa/site.webmanifest" $primarySite.Home | fingerprint -}}
+    {{- else -}}
 {{- errorf "Build failed: missing resource %q." "site/pwa/manifest.webmanifest.tmpl" -}}
-        {{- end -}}
     {{- end -}}
     <meta charset="utf-8">
     {{- with $faviconSvg }}
@@ -70,8 +65,8 @@
     {{- with $appleTouchIcon }}
     <link rel="apple-touch-icon" href="{{ .RelPermalink }}" fetchpriority="low">
     {{- end }}
-    {{- if and $manifest (eq $webAppManifestMode "link") }}
-    <link rel="manifest" href="{{ $manifest.RelPermalink }}" fetchpriority="low">
+    {{- with $manifest }}
+    <link rel="manifest" href="{{ .RelPermalink }}">
     {{- end }}
     <title>{{ partial "system-metadata/seo/browser-title.html" . }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -113,9 +108,6 @@
       "sw_routes" $swRoutes
       "is_offline_page" $isOfflinePage
     ) -}}
-    {{- if and $manifest (eq $webAppManifestMode "defer") }}
-    <link rel="manifest" href="{{ $manifest.RelPermalink }}" fetchpriority="low">
-    {{- end }}
 </head>
 <body data-language-return-missing="{{ i18n "language_return_missing" }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}"{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
     {{- if and .IsPage (not .Params.slug) -}}

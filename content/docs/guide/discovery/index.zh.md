@@ -20,17 +20,44 @@ sitemap:
 也不会进入其他页面的替代语言链接。
 
 预览时使用 `hugo server --disableFastRender` 检查 sitemap 变化，
-快速预览可能保留旧 XML。自定义 HTML 布局须继承 Banyan 的 `baseof.html`，
+快速预览可能保留旧输出。自定义 HTML 布局须继承 Banyan 的 `baseof.html`，
 由它登记已渲染页面。
 
 ## Agent 索引
 
-多语言站点的默认语言位于根路径时，`/llms.txt` 为全局索引。
-Banyan 同时发布 `/<default-language>/llms.txt`，路径形式与多语言 sitemap 一致。
+`llms.txt` 位于对应语言首页的路径下，并链接其他语言的索引。
+默认语言首页位于根路径时，根 `/llms.txt` 就是该语言的内容目录；
+不再额外生成 `/<default-language>/llms.txt` 副本。
 
-各语言索引直接链接规范 HTML 页面，收录语言首页、`/about/`
-和 `d` 内容 section 的普通文章。工具页和分类索引不进入精选索引，
-无需为每页设置输出开关。站点说明配置见[站点配置](/zh/docs/guide/site-configuration/)。
+各语言索引与对应 sitemap 共用收录规则，按栏目和分类根标题分组，
+直接链接规范 HTML 页面。首页、独立页面、栏目和分类入口也保留为链接，
+每个地址只列一次。页面条目使用已有标题和 `description`；没有描述时只列链接。
+新增、删除或调整收录设置后，构建自动更新索引，无需另写页面清单。
+站点说明配置见[站点配置](/zh/docs/guide/site-configuration/)。
+
+`swban check/llms <build>` 比较各语言索引与 sitemap，检查漏项、多项、
+重复地址和失效链接。检查发布结果使用完整构建；预览重建使用 `--disableFastRender`。
+
+`llms.txt` 提供可选的内容目录，不定义抓取权限。是否生成由站点根配置的
+`outputs.home` 决定；从该数组移除 `LLMS` 即可停用，不影响 `robots.txt`。
+`params.agent_access` 是 Banyan 参数，用于生成 `robots.txt` 的默认规则和爬虫例外。
+
+## 分享图片
+
+在页面 front matter 中设置 `share_image`：
+
+```yaml
+share_image: cover.jpg
+```
+
+相对路径读取声明页面 bundle 中的文件。可处理的位图会缩放到
+`1200 × 630` 范围内，转为 JPEG，并以带哈希的地址发布；其他文件直接发布为带哈希的资源。
+也可使用站点根路径（如 `/images/share.jpg`）或绝对 `https://` URL，直接用于分享卡片。
+
+未声明时，按当前页、最近祖先到最远祖先、当前语言首页的顺序查找。
+首页的声明可提供全站默认图片；继承图片时仍从声明页的 bundle 读取。
+`share_image: false` 关闭该页的分享图片，并停止继续查找祖先默认值。
+此字段同时用于 Open Graph 和 Twitter 卡片。
 
 ## GitHub 来源
 
@@ -43,8 +70,10 @@ branch = "main"
 content_root = "content"
 ```
 
-当前页面有 Hugo 源文件时，文章元信息显示 `GitHub` 链接。
-主题默认不设置仓库。链接使用配置的分支，使新页面在首次公开提交前也有稳定地址。
+此配置用于站点自有内容。页面有 Hugo 源文件且开启 `slots.meta: true` 时，
+文章元信息显示 `GitHub` 链接。Module 默认不设置仓库；
+`branch` 默认是 `main`，`content_root` 默认是 `content`，站点可只填写 `repository`。
+链接使用配置的分支，使新页面在首次公开提交前也有稳定地址。
 准确的部署版本在 Powered by 中查看。
 
 ## 外部发布链接

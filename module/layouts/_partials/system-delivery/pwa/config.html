@@ -14,13 +14,6 @@
   {{- errorf "Build failed: delivery.service_worker.content_check_interval must be a positive integer in minutes; got %v." $contentCheckInterval -}}
 {{- end -}}
 
-{{- $manifestConfig := $ctx.Site.Params.web_app_manifest | default dict -}}
-{{- $manifestModeRaw := index $manifestConfig "mode" | default "link" -}}
-{{- $manifestMode := lower (printf "%v" $manifestModeRaw) -}}
-{{- if not (in (slice "link" "defer" "off") $manifestMode) -}}
-  {{- errorf "Build failed: params.web_app_manifest.mode only supports link/defer/off; got %q." $manifestModeRaw -}}
-{{- end -}}
-
 {{- $offlinePathRaw := index $swConfig "offline_notice_path" -}}
 {{- if ne (printf "%T" $offlinePathRaw) "string" -}}{{- errorf "Build failed: delivery.service_worker.offline_notice_path must be a string." -}}{{- end -}}
 {{- $offlinePath := trim $offlinePathRaw "/" -}}
@@ -42,7 +35,6 @@
 {{- return (dict
   "sw_mode" $swMode
   "content_check_interval_ms" (mul $contentCheckInterval 60000)
-  "manifest_mode" $manifestMode
   "offline_fallbacks" $offlineFallbacks
   "is_offline_page" (in $offlineRelPermalinks (lower $ctx.RelPermalink))
 ) -}}

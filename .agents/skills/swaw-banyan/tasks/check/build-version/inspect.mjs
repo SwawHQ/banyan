@@ -20,7 +20,7 @@ function extractUpdateVersionElements(text) {
         elements.push({
             buildVersion: extractTagAttribute(tag, 'title').trim(),
             buildTimeISO: extractTagAttribute(tag, 'datetime').trim(),
-            buildTime: decodeHtmlAttribute(match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
+            displayVersion: decodeHtmlAttribute(match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
         });
     }
     return elements;
@@ -48,8 +48,8 @@ async function inspectBuildVersionContract(rootDir, rows) {
             if (!entry.buildVersion) {
                 issues.push(`${entry.relativePath} update version is missing its build version title.`);
             }
-            if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(entry.buildTime)) {
-                issues.push(`${entry.relativePath} has invalid update build time ${JSON.stringify(entry.buildTime)}.`);
+            if (entry.displayVersion !== entry.buildVersion) {
+                issues.push(`${entry.relativePath} displayed version ${JSON.stringify(entry.displayVersion)} does not match build version ${JSON.stringify(entry.buildVersion)}.`);
             }
             if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(entry.buildTimeISO)) {
                 issues.push(`${entry.relativePath} has invalid update build datetime ${JSON.stringify(entry.buildTimeISO)}.`);
@@ -57,15 +57,11 @@ async function inspectBuildVersionContract(rootDir, rows) {
         }
 
         const versions = [...new Set(updateVersions.map((entry) => entry.buildVersion).filter(Boolean))];
-        const displayTimes = [...new Set(updateVersions.map((entry) => entry.buildTime).filter(Boolean))];
         const isoTimes = [...new Set(updateVersions.map((entry) => entry.buildTimeISO).filter(Boolean))];
         if (versions.length !== 1) {
             issues.push(`Update pages must expose one build version, found: ${versions.join(', ') || '<none>'}.`);
         } else {
             [buildVersion] = versions;
-        }
-        if (displayTimes.length !== 1) {
-            issues.push(`Update pages must expose one build display time, found: ${displayTimes.join(', ') || '<none>'}.`);
         }
         if (isoTimes.length !== 1) {
             issues.push(`Update pages must expose one build ISO time, found: ${isoTimes.join(', ') || '<none>'}.`);
