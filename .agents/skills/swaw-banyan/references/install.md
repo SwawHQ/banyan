@@ -155,19 +155,20 @@ description = "Describe this site."
 palette = "css/theme.css"
 
 [module.hugoVersion]
-min = "0.157.0"
+min = "0.168.0"
 
 [languages.en]
-languageName = "English"
+label = "English"
+locale = "en-US"
 weight = 1
 [languages.en.params]
-locale = "en_US"
 icon = { text = "EN" }
 ```
 
 `disableJS` preserves the inline bytes used for CSP hashes. Preserve each page's
 published address in its front matter `url` field. Each enabled language declares
-its `locale` and `icon` in `languages.<code>.params`. This starter enables English.
+its native `label` and `locale`; `languages.<code>.params.icon` sets its icon.
+This starter enables English.
 To enable Chinese, remove it from `disableLanguages`, then add its language
 settings, locale, icon and translated home.
 The [demo configuration](https://github.com/SwawHQ/banyan/blob/main/hugo.toml)

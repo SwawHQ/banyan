@@ -59,7 +59,7 @@ before(()=>{
   }
   write(path.join(content,'d/language-fixture/untranslated.en.md'),
     '---\ntitle: Independent untranslated page\nurl: /d/language-fixture/untranslated/\ndate: 2026-01-01\n---\n\n## Details\n\nUntranslated fixture content.');
-  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n[languages.en.params.icon]\ntext = "AX"\n[languages.zh]\nlanguageName = "Independent target language"\n[languages.zh-tw.params.icon]\ntext = "繁"\n');
+  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n[languages.en.params.icon]\ntext = "AX"\n[languages.zh]\nlabel = "Independent target language"\n[languages.zh-tw.params.icon]\ntext = "繁"\n');
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
 });

@@ -10,6 +10,7 @@ import {filesUnder,relativeName} from '../.agents/skills/swaw-banyan/tasks/_shar
 import {readBindings,resolveBinding,writeBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/bindings.mjs';
 import {hugoEnvironment} from '../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
 import {readRelease,inspect} from '../.agents/skills/swaw-banyan/tasks/doctor/banyan.mjs';
+import {extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 const repository=fileURLToPath(new URL('../',import.meta.url));
 const skill=path.join(repository,'.agents/skills/swaw-banyan'),moduleRoot=path.join(repository,'module');
@@ -35,8 +36,8 @@ function consumer(name,{replacement='',multilingual=false}={}) {
   const root=path.join(work,name);
   let config=toml[1]+'\n'+toml[0];
   if(multilingual)config=config.replace('disableLanguages = ["zh", "zh-tw"]','disableLanguages = []')+
-    '\n[languages.zh]\nlanguageName = "中文"\nweight = 2\n[languages.zh.params]\nlocale = "zh_CN"\nicon = { text = "简" }\n'+
-    '\n[languages.zh-tw]\nlanguageName = "繁體"\nweight = 3\n[languages.zh-tw.params]\nlocale = "zh_TW"\nicon = { text = "繁" }\n';
+    '\n[languages.zh]\nlabel = "中文"\nlocale = "zh-CN"\nweight = 2\n[languages.zh.params]\nicon = { text = "简" }\n'+
+    '\n[languages.zh-tw]\nlabel = "繁體"\nlocale = "zh-TW"\nweight = 3\n[languages.zh-tw.params]\nicon = { text = "繁" }\n';
   write(root,'hugo.toml',config);
   write(root,'go.mod',`module example.test/consumer\n\ngo 1.18\n\nrequire ${release.module} ${version}\n`+
     (replacement?`\nreplace ${release.module} => ${JSON.stringify(replacement.replaceAll('\\','/'))}\n`:''));
@@ -133,13 +134,17 @@ test('packaged Skill and versioned Module build from an isolated proxy',()=>{
   const root=consumer('packaged consumer',{multilingual:true});
   assert.match(passed(root,installed,['doctor']),/site\.banyan: matched/);
   const output=build(root,installed);checks(root,installed,output);
-  for(const [prefix,suffix,title,allTitle] of [
-    ['','','Discover - Categories','Discover - All'],
-    ['zh/','.zh','发现 - 分类','发现 - 全部'],
-    ['zh-tw/','.zh-tw','發現 - 分類','發現 - 全部']
+  for(const [prefix,suffix,title,allTitle,locale,label] of [
+    ['','','Discover - Categories','Discover - All','en-US','English'],
+    ['zh/','.zh','发现 - 分类','发现 - 全部','zh-CN','中文'],
+    ['zh-tw/','.zh-tw','發現 - 分類','發現 - 全部','zh-TW','繁體']
   ]) {
     directoryDefaults(output,{prefix,suffix,title,allTitle});
-    assert.ok(fs.existsSync(path.join(output,prefix,'index.html')));
+    const home=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
+    const localeTag=[...home.matchAll(/<meta\b[^>]*>/g)].find(([tag])=>extractTagAttribute(tag,'property')==='og:locale')?.[0];
+    assert.equal(extractTagAttribute(localeTag||'','content'),locale.replaceAll('-','_'));
+    assert.ok(fs.readFileSync(path.join(output,prefix,'index.xml'),'utf8').includes('<language>'+locale+'</language>'));
+    assert.ok(fs.readFileSync(path.join(output,prefix,'llms.txt'),'utf8').startsWith('# My site - '+label));
     assert.ok(fs.existsSync(path.join(output,prefix,'rss/index.html')));
     const panel=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
     assert.ok(panel.includes('<code>'+version+'</code>'),'Powered by shows the installed Module version.');

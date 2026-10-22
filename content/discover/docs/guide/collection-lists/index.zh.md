@@ -140,12 +140,11 @@ list_icon_file: product
 
 ```toml
 [languages.en.params]
-locale = "en_US"
 icon = { text = "EN" }
 ```
 
-Module 为英语、简体中文和繁体中文提供 `EN`、`简`、`繁` 文字图标；
-站点可用 `icon` 覆盖。其他语言未设置 `icon` 时使用主题的语言 SVG。
+演示站为英语、简体中文和繁体中文配置 `EN`、`简`、`繁` 文字图标。
+未设置 `icon` 时使用主题的语言 SVG。
 
 语言页的选择仍留在设置页；返回原内容时优先打开刚选语言的真实译文。此行为由语言脚本处理，不属于 `choice` 渲染协议，具体规则见 [系统页面与返回](/zh/p/navigation-state/#系统页面与返回)。
 

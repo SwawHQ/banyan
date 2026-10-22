@@ -43,7 +43,7 @@ before(()=>{
   fs.mkdirSync(path.join(source,'themes'),{recursive:true});
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
   write(path.join(source,'hugo.toml'),'theme="banyan"\nbaseURL="https://example.test/"\ntitle="Reference fixture"\ndefaultContentLanguage="en"\nenableRobotsTXT=true\nprintPathWarnings=true\npanicOnWarning=true\n'+
-    '[minify]\ndisableJS=true\n[params]\ndescription="Reference fixture."\n[params.appearance]\npalette="css/theme.css"\n[languages.en]\nlanguageName="English"\nweight=1\n[languages.zh]\nlanguageName="中文"\nweight=2\n[languages.zh-tw]\nlanguageName="繁體"\nweight=3\n'+
+    '[minify]\ndisableJS=true\n[params]\ndescription="Reference fixture."\n[params.appearance]\npalette="css/theme.css"\n[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n[languages.zh-tw]\nlabel="繁體"\nweight=3\n'+
     '[taxonomies]\n[cascade.build]\npublishResources=false\n[outputs]\nhome=["HTML","RSS","LLMS","DIRECTORY"]\nsection=["HTML","RSS"]\npage=["HTML"]\n'+
     '[outputFormats.LLMS]\nmediaType="text/plain"\nbaseName="llms"\nisPlainText=true\nnotAlternative=true\n'+
     '[outputFormats.DIRECTORY]\nmediaType="application/json"\nbaseName="directory"\nisPlainText=true\nnotAlternative=true\n');

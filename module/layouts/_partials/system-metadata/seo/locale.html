@@ -1,7 +1,1 @@
-{{- $ctx := . -}}
-{{- $locale := "" -}}
-{{- with $ctx.Site.Params.locale -}}
-  {{- $locale = printf "%v" . -}}
-{{- end -}}
-{{- $locale = replace $locale "-" "_" -}}
-{{- return $locale -}}
+{{- return (replace .Site.Language.Locale "-" "_") -}}

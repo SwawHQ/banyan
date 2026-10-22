@@ -69,7 +69,7 @@ before(() => {
   fs.cpSync(path.join(skill,'node_modules'),path.join(installed,'node_modules'),{recursive:true});
   const runtime='node',record=readBindings();
   const tools=Object.fromEntries(['git','go','hugo'].map(name=>[name,{...resolveBinding(name,record),source:'path'}]));
-  tools[runtime]={source:'path',path:process.execPath,version:process.versions.node};
+  tools[runtime]={...resolveBinding(runtime,record),source:'path',path:process.execPath,version:process.versions.node};
   writeBindings({schema:record.schema,runtime,tools},path.join(installed,'.tools'));
   entry=path.join(installed,'tasks/doctor/entry.mjs');
   const settings = {HUGO_CACHEDIR:path.join(work,'cache'),HUGO_RESOURCEDIR:path.join(work,'resources'),

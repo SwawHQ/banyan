@@ -87,6 +87,8 @@ lastmod: 2026-10-22
 
 ## 调整
 
+- 最低 Hugo 版本升级为 0.168.0。语言配置使用原生 `label` 和 `locale`，
+  移除 `params.locale`；语言图标继续使用 `params.icon`。
 - 应用清单固定使用标准 head 链接，移除 `params.web_app_manifest` 和手工主题提交标记。
   Powered by 的本站构建区域只显示内容版本；启用的 SW 从 `sw-version.json`
   读取同一版本，用于切换内容缓存。

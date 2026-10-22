@@ -41,7 +41,7 @@ public static class BanyanFixtureRuntime {
         }
         if (args.Length == 1 && args[0] == "version") {
             bool plain = File.Exists(Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), "plain-version"));
-            Console.WriteLine(File.Exists(versionFile) ? File.ReadAllText(versionFile) : name == "go" ? "go version go1.27.1 windows/amd64" : plain ? "hugo v0.157.0 windows/amd64" : "hugo v0.157.0+extended windows/amd64"); return 0;
+            Console.WriteLine(File.Exists(versionFile) ? File.ReadAllText(versionFile) : name == "go" ? "go version go1.27.1 windows/amd64" : plain ? "hugo v0.168.0 windows/amd64" : "hugo v0.168.0+extended windows/amd64"); return 0;
         }
         if (name == "go" && args.Length == 2 && args[0] == "env" && args[1] == "GOROOT") {
             Console.WriteLine(Path.GetDirectoryName(directory)); return 0;

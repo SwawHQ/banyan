@@ -4,7 +4,7 @@ url: p/partial-architecture/
 description: 说明页面入口、功能模板与系统机制的所有权和依赖方向。
 ---
 
-Banyan 使用 Hugo 0.146 之后的模板目录结构。主题要求 Hugo 0.157.0 或更高版本：页面入口直接放在 `layouts/`，可复用模板放在 `layouts/_partials/`，短代码放在 `layouts/_shortcodes/`，Markdown render hooks 放在 `layouts/_markup/`。不再保留 `_default/`、`partials/`、`shortcodes/` 的旧兼容目录。
+Banyan 使用 Hugo 0.146 之后的模板目录结构。主题要求 Hugo 0.168.0 或更高版本：页面入口直接放在 `layouts/`，可复用模板放在 `layouts/_partials/`，短代码放在 `layouts/_shortcodes/`，Markdown render hooks 放在 `layouts/_markup/`。不再保留 `_default/`、`partials/`、`shortcodes/` 的旧兼容目录。
 
 ## 页面入口
 

@@ -102,6 +102,8 @@ lastmod: 2026-10-22
 
 ## Changed
 
+- Require Hugo 0.168.0. Language configuration uses native `label` and `locale`;
+  remove `params.locale` and keep language icons in `params.icon`.
 - Always link the Web App Manifest through a standard head link; remove
   `params.web_app_manifest` and manual theme commit markers. Powered by shows
   only the site content version; enabled Service Workers read the same

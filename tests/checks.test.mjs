@@ -418,6 +418,15 @@ test('image checks split responsive, share and icon failures and read resolved H
   const shares = output('shares',html.replace('</head>','<meta property=og:image content="' + image + '"></head>'));
   write(shares,image.slice(1),'invalid JPEG');
   checked('check/img/share',shares,/not a readable JPEG/);
+  const config=fs.readFileSync(path.join(site,'hugo.toml'),'utf8');
+  try {
+    write(site,'hugo.toml',config+'\n[languages.en]\nlocale = "en-US"\n[languages.fr]\nlocale = "fr-FR"\n[languages.fr.params.media.responsive_images]\nmax_width = 420\nsizes = "auto, 420px"\n');
+    const localized=output('responsive-locale',html.replace('lang=en','lang=fr-FR').replace('</body>',markup.replace('600w','420w').replace('auto, 600px','auto, 420px')+'</body>'));
+    write(localized,image.slice(1),'original');write(localized,candidate.slice(1),'candidate');
+    assert.equal(cli('check/img/responsive',[localized]).status,0);
+    write(localized,'index.html',fs.readFileSync(path.join(localized,'index.html'),'utf8').replace('lang=fr-FR','lang=en-US'));
+    checked('check/img/responsive',localized,/expected 600w|sizes must match resolved/);
+  } finally {write(site,'hugo.toml',config);}
 });
 test('content checks parse YAML, TOML and JSON and validate only declared fields',() => {
   for (const [name,text] of [

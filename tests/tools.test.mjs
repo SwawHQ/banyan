@@ -292,7 +292,7 @@ test('a system Node initializes for native execution without installing other to
 test('qualification rejects old versions, plain Hugo and incomplete SDK; bare Node remains a CLI engine', async () => {
   expect(compatible('24.19.0',definition('node').compatibility)).toBe(true);
   expect(compatible('24.18.0',definition('node').compatibility)).toBe(false);
-  for (const [name,version] of [['bun','1.3.9'],['node','v22.0.0'],['git','git version 2.30.0'],['gh','gh version 2.97.0 (2026-08-01)'],['hugo','hugo v0.157.0 windows/amd64'],['go','go version go1.20.0 windows/amd64']]) {
+  for (const [name,version] of [['bun','1.3.9'],['node','v22.0.0'],['git','git version 2.30.0'],['gh','gh version 2.97.0 (2026-08-01)'],['hugo','hugo v0.168.0 windows/amd64'],['go','go version go1.20.0 windows/amd64']]) {
     const dir = mkdir('old-' + name), exe = path.join(dir,name + '.exe');
     fs.writeFileSync(exe,binary);fs.writeFileSync(path.join(dir,'version-output'),version);
     expect(await inspect(name,exe)).toBeNull();

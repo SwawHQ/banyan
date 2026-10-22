@@ -1,7 +1,7 @@
 {{- $site := . -}}
 {{- $multilingual := gt (len hugo.Sites) 1 -}}
 {{- $description := partial "system-metadata/agent-access/text.txt" ($site.Params.description | default "") -}}
-# {{ partial "system-metadata/agent-access/text.txt" $site.Title }} - {{ partial "system-metadata/agent-access/text.txt" ($site.Language.LanguageName | default $site.Language.Lang) }}
+# {{ partial "system-metadata/agent-access/text.txt" $site.Title }} - {{ partial "system-metadata/agent-access/text.txt" ($site.Language.Label | default $site.Language.Lang) }}
 {{ with $description }}
 > {{ . }}
 {{ end }}
@@ -13,7 +13,7 @@ Sitemap: {{ if $multilingual }}{{ absURL (printf "%s/sitemap.xml" $site.Language
 {{- $languageSite := . -}}
 {{- if ne .Language.Lang $site.Language.Lang -}}
 {{- with .Home.OutputFormats.Get "LLMS" }}
-- [{{ partial "system-metadata/agent-access/text.txt" ($languageSite.Language.LanguageName | default $languageSite.Language.Lang) }}](<{{ .Permalink }}>)
+- [{{ partial "system-metadata/agent-access/text.txt" ($languageSite.Language.Label | default $languageSite.Language.Lang) }}](<{{ .Permalink }}>)
 {{ end -}}
 {{ end -}}
 {{ end -}}

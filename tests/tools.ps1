@@ -15,7 +15,7 @@ process.argv = process.argv.slice(2);
 await import(pathToFileURL(process.argv[1]).href);
 '@)
     $env:BANYAN_TEST_WORKSPACE = $work
-    $env:BANYAN_SYSTEM_NODE = (Get-Command node.exe -CommandType Application -ErrorAction Stop).Source
+    $env:BANYAN_SYSTEM_NODE = (Get-Command node.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
     & (Join-Path $repositoryRoot '.agents/skills/swaw-banyan/.tools/bun/bun.exe') test (Join-Path $PSScriptRoot 'tools.test.mjs') --timeout 15000 @args
     $result = $LASTEXITCODE
 } finally {

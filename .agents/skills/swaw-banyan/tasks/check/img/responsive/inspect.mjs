@@ -23,7 +23,7 @@ export async function inspect(directory) {
       if (!configs.has(configKey)) {
         baseConfig ??= await readHugoConfig();
         const matchingKey = Object.keys(baseConfig.languages ?? {}).find(key =>
-          key.toLowerCase() === configKey.toLowerCase() || baseConfig.languages[key].languagecode?.toLowerCase() === configKey.toLowerCase());
+          key.toLowerCase() === configKey.toLowerCase() || baseConfig.languages[key].locale?.toLowerCase() === configKey.toLowerCase());
         const cfg = (matchingKey ? await readHugoConfig(process.cwd(),matchingKey) : baseConfig).params?.media?.responsive_images;
         if (!cfg || !Number.isInteger(cfg.max_width) || cfg.max_width <= 0 || typeof cfg.sizes !== 'string' || !cfg.sizes.trim()) {
           throw new Error('Resolved Hugo params.media.responsive_images must define max_width and sizes.');

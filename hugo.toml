@@ -81,31 +81,31 @@ notAlternative = true
 
 [languages]
 [languages.en]
-languageName = "English"
+label = "English"
+locale = "en-US"
 weight = 1
 [languages.en.params]
-locale = "en_US"
 icon = { text = "EN" }
 
 [languages.zh]
-languageName = "中文"
+label = "中文"
+locale = "zh-CN"
 weight = 2
 [languages.zh.params]
 description = "Banyan Hugo 主题的官方文档与发布说明。"
 theme_changelog = "/zh/changelog/"
-locale = "zh_CN"
 icon = { text = "简" }
 
 [languages.zh-tw]
-languageName = "繁體"
+label = "繁體"
+locale = "zh-TW"
 weight = 3
 [languages.zh-tw.params]
 description = "Banyan Hugo 主題的官方文件與發佈說明。"
-locale = "zh_TW"
 icon = { text = "繁" }
 
 [module.hugoVersion]
-min = "0.157.0"
+min = "0.168.0"
 
 [[module.imports]]
 path = "github.com/SwawHQ/banyan/module"

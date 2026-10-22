@@ -63,13 +63,17 @@ disableJS = true
 [params]
 description = "Your site description."
 
+[languages.en]
+label = "English"
+locale = "en-US"
 [languages.en.params]
-locale = "en_US"
 icon = { text = "EN" }
 
+[languages.zh]
+label = "中文"
+locale = "zh-CN"
 [languages.zh.params]
 description = "站点中文说明。"
-locale = "zh_CN"
 icon = { text = "简" }
 ```
 
@@ -78,8 +82,9 @@ icon = { text = "简" }
 优先于站点说明，用于 SEO 和社交卡片。`llms.txt` 的介绍使用站点说明，
 页面条目只使用页面自己的 `description`，缺少时不补充说明。
 
-`locale` 用于 Open Graph，`icon` 设置语言选择列表的标记，均由站点声明。
-演示站使用 `en_US`、`zh_CN`、`zh_TW`，对应 `EN`、`简`、`繁`。
+`label` 设置语言名称，原生 `locale` 用于本地化、RSS 和 Open Graph。
+演示站使用 `en-US`、`zh-CN`、`zh-TW`；Open Graph 输出下划线格式。
+`languages.<lang>.params.icon` 设置语言选择列表的标记，如 `EN`、`简`、`繁`。
 未设置 `icon` 时使用语言图标。
 为每种启用的语言声明根配置，并创建对应的首页。
 Module 提供三语言的 `discover` 和 `tools` 目录根；站点按需创建下级目录。

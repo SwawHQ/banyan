@@ -51,9 +51,9 @@
         },
         {
           "name": "hugo",
-          "version": "0.157.0",
-          "url": "https://github.com/gohugoio/hugo/releases/download/v0.157.0/hugo_extended_0.157.0_windows-amd64.zip",
-          "sha256": "89c569aad0fb9e751db2339f3db90796c970fb745d422d3e6ec9930057275d9e",
+          "version": "0.168.0",
+          "url": "https://github.com/gohugoio/hugo/releases/download/v0.168.0/hugo_extended_0.168.0_windows-amd64.zip",
+          "sha256": "c4a2e38043b3273ae5eb16c81159cffc346d2ddf3de7819c99826d26775d7da0",
           "archiveRoot": "",
           "requiredFiles": [
             "hugo.exe",
@@ -63,7 +63,7 @@
           "archiveFormat": "zip",
           "executable": "hugo.exe",
           "compatibility": {
-            "exact": "0.157.0"
+            "exact": "0.168.0"
           }
         },
         {
