@@ -1,0 +1,22 @@
+{{- $page := . -}}
+{{- if ne $page.Kind "section" -}}
+  {{- errorf "Directory members require an ordinary section, got %q (%s)." $page.Path $page.Kind -}}
+{{- end -}}
+{{- partial "feature-browse/directory/assert-map-resources.html" $page -}}
+{{- $index := partialCached "feature-browse/directory/index.html" $page.Site $page.Language.Lang -}}
+{{- $direct := slice -}}
+{{- $recursive := slice -}}
+{{- if isset $index.direct $page.Path -}}
+  {{- $direct = index $index.direct $page.Path -}}
+  {{- $recursive = index $index.recursive $page.Path -}}
+{{- else if $page.Resources.GetMatch "_map.toml" -}}
+  {{- errorf "Build failed: _map.toml on %s is outside the discoverable directory tree. Check build.list and build.render on this directory and its ancestors." $page.Path -}}
+{{- else -}}
+  {{- range $page.RegularPages -}}
+    {{- if partial "feature-browse/is-rendered-html.html" . -}}{{- $direct = $direct | append . -}}{{- end -}}
+  {{- end -}}
+  {{- range $page.RegularPagesRecursive -}}
+    {{- if partial "feature-browse/is-rendered-html.html" . -}}{{- $recursive = $recursive | append . -}}{{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return (dict "direct" $direct "recursive" (uniq $recursive)) -}}

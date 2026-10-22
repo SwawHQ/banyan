@@ -6,7 +6,7 @@ title: "{{ replace .File.ContentBaseName "-" " " | title }}"
 date: {{ .Date }}
 lastmod: {{ .Date }}
 draft: true
-slug: "{{ .File.ContentBaseName }}"
+url: "p/{{ .File.ContentBaseName | urlize }}/"
 description: ""
 
 # Optional links to copies published on other platforms. GitHub is automatic.
@@ -14,5 +14,5 @@ description: ""
 # - label: WeChat
 #   url: https://example.com/article
 
-#tags: []
+# Other directories can reference this content path in their _map.toml.
 ---

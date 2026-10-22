@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {openCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/open/options.mjs';
 import {firstPaintCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/first-paint/options.mjs';
@@ -38,17 +38,27 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
+  fixtureContentDirectory(content);
   let body='Leading article text to exercise native scrolling.\n\n';
   for(let i=0;i<24;i++)body+='## Chapter '+i+'\n\n'+('A paragraph with enough words to exercise independent columns and history restoration.\n\n'.repeat(8));
   for(const name of ['canvas-first','canvas-next'])write(path.join(content,'d',name+'.md'),
-    '---\ntitle: '+name+'\nslug: '+name+'\nurl: /d/'+name+'/\ndate: "2026-01-01T00:00:00+08:00"\nlastmod: "2026-01-02T00:00:00+08:00"\ntags:\n  - tooling/devtools\ntools: [fixture-alpha, fixture-beta]\noffer:\n  amount: '+(name==='canvas-first'?20:10)+'\n  currency: "$"\n  value: Fixture product\n---\n\n'+body);
+    '---\ntitle: '+name+'\nurl: /d/'+name+'/\ndate: "2026-01-01T00:00:00+08:00"\nlastmod: "2026-01-02T00:00:00+08:00"\noffer:\n  amount: '+(name==='canvas-first'?20:10)+'\n  currency: "$"\n  value: Fixture product\n---\n\n'+body);
   for(const suffix of ['','.zh']) {
     write(path.join(content,'d/opening','_index'+suffix+'.md'),'---\ntitle: Hidden Opening Fixture\n---\n');
     for(const name of ['one','two'])write(path.join(content,'d/opening',name+suffix+'.md'),
-      '---\ntitle: '+name+'\nslug: '+name+'\nurl: '+(suffix?'/zh':'')+'/d/opening/'+name+'/\ndate: 2026-01-01\n---\n\n'+body);
+      '---\ntitle: '+name+'\nurl: '+(suffix?'/zh':'')+'/d/opening/'+name+'/\ndate: 2026-01-01\n---\n\n'+body);
   }
-  for(const name of ['fixture-alpha','fixture-beta'])write(path.join(content,'tools',name,'_index.md'),'---\ntitle: '+name+'\n---\n');
-  write(config,`[taxonomies]\ntool = "tools"\n[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
+  for(const name of ['fixture-alpha','fixture-beta']) {
+    write(path.join(content,'tools',name,'_index.md'),'---\ntitle: '+name+'\nlayout: page-collection\nlist: products\nslots: {breadcrumb: true}\n---\n');
+    write(path.join(content,'tools',name,'_map.toml'),"refs = [\"/d/canvas-first\",\"/d/canvas-next\"]\n");
+  }
+  for(const suffix of ['','.zh','.zh-tw']) {
+    write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
+    write(path.join(content,'discover/tooling/devtools','_index'+suffix+'.md'),directoryPage('Devtools'));
+  }
+  write(path.join(content,'discover/tooling/_map.toml'),"refs = [\"/discover/example-note\"]\n");
+  write(path.join(content,'discover/tooling/devtools/_map.toml'),"refs = [\"/d/canvas-first\",\"/d/canvas-next\"]\n");
+  write(config,`[taxonomies]\n[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
   const built=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(built.error);assert.equal(built.status,0,built.stdout+built.stderr);
 },{timeout:60000});
@@ -167,8 +177,8 @@ test(name+' opens sorted collections and observes initial layout with held scrip
   assert.equal(fs.existsSync(path.join(work,'node_modules')),false);
 });
 
-test(name+' opens a nested taxonomy and uses native taps',{timeout:20000},()=>{
-  const result=cli('open'+suffix,['--from','/tags/tooling/devtools/','--page','/d/canvas-first/','--widths','390','--touch']);
+test(name+' opens a referenced directory and uses native taps',{timeout:20000},()=>{
+  const result=cli('open'+suffix,['--from','/discover/tooling/devtools/','--page','/d/canvas-first/','--widths','390','--touch']);
   assert.equal(result.status,0,result.stdout+result.stderr);
 });
 
@@ -190,13 +200,13 @@ test(name+' opens hidden directories and product categories with retained lineag
 });
 
 test(name+' opening rejects wrong roots, sibling order, ancestor selection and sort',{timeout:45000},()=>{
-  const args=['--from','/tags/tooling/devtools/#sort=name-desc','--page','/d/canvas-first/','--widths','1440'];
+  const args=['--from','/discover/tooling/devtools/#sort=name-desc','--page','/d/canvas-first/','--widths','1440'];
   for(const [id,code,message] of [
     ['root',"document.querySelectorAll('[data-root-href]').forEach(link=>{const current=link.dataset.rootHref==='/all/';link.classList.toggle('is-current',current);if(current)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});",/Root selection must match/],
     ['siblings',"const list=document.querySelector('.path-column .item-list');list.append(list.querySelector('[data-list-item]'));",/retain every source column/],
     ['ancestor',"const link=document.querySelector('.path-column [data-list-entry].is-current');link.classList.remove('is-current');link.removeAttribute('aria-current');",/Each source column must select/],
     ['sort',"const indicator=[...document.querySelectorAll('.path-column [data-sort-indicator]')].at(-1);indicator.textContent=indicator.textContent==='↑'?'↓':'↑';",/retain the collection sort/],
-    ['declared-root',"const sources=JSON.parse(document.body.dataset.entryBreadcrumbSources);sources.find(source=>source.logicalPath==='/tags/tooling/devtools/').rootItem.href='/all/';document.body.dataset.entryBreadcrumbSources=JSON.stringify(sources);",/retain its declared source root/]
+    ['declared-root',"const sources=JSON.parse(document.body.dataset.entryBreadcrumbSources);sources.find(source=>source.logicalPath==='/discover/tooling/devtools/').rootItem.href='/all/';document.body.dataset.entryBreadcrumbSources=JSON.stringify(sources);",/retain its declared source root/]
   ]) {
     const broken=fixture('opening-'+id+'-'+name);script(broken,code);
     const result=cli('open'+suffix,args,broken);assert.equal(result.status,1,id+'\n'+result.stdout+result.stderr);assert.match(result.stderr,message);
@@ -224,7 +234,9 @@ test(name+' retains original directory metadata and rejects runtime rewrites',{t
   const good=cli('first-paint'+suffix,['--page',route,'--widths','390','--out',path.join(work,'metadata-reports')]);
   assert.equal(good.status,0,good.stdout+good.stderr);
   const folder=good.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
-  const state=report.details.cases[0];assert.equal(state.first.directoryMetadata.length,1,'The fixture must have a real directory row.');
+  const state=report.details.cases[0];assert.equal(state.first.directoryMetadata.length,4,'The fixture must retain its physical directory and three reference directories.');
+  assert.ok(state.first.directoryMetadata.some(row=>row.html.includes('/d/')));
+  assert.ok(state.first.directoryMetadata.some(row=>row.html.includes('/discover/tooling/devtools/')));
   assert.deepEqual(state.final.directoryMetadata,state.first.directoryMetadata);
   for(const [id,code] of [
     ['label',"document.querySelector('.document-meta__row--path').setAttribute('aria-label','Source path');"],
@@ -271,7 +283,7 @@ test(name+' rejects missing article links, invisible pans and pages without sour
   assert.equal(outside.status,1);assert.match(outside.stderr,/within the source canvas/);
   const direct=cli('first-paint'+suffix,['--page','/about/','--widths','390']);
   assert.equal(direct.status,0,direct.stdout+direct.stderr);
-  const translated=cli('first-paint'+suffix,['--page','/zh/p/example-note/#from=tags/tooling','--widths','390']);
+  const translated=cli('first-paint'+suffix,['--page','/zh/p/example-note/#from=discover/tooling','--widths','390']);
   assert.equal(translated.status,0,translated.stdout+translated.stderr);
 });
 
@@ -280,9 +292,9 @@ test(name+' checks root selection before scripts on direct, valid, invalid and s
     ['/d/canvas-first/','none'],
     ['/d/canvas-first/#from=all','/all/'],
     ['/d/canvas-first/#from=%2Fall%2F','/all/'],
-    ['/d/canvas-first/#from=tags/tooling/devtools','/tags/'],
-    ['/d/canvas-first/#from=tags','none'],
-    ['/d/canvas-first/#from=tags/not-a-source','none'],
+    ['/d/canvas-first/#from=discover/tooling/devtools','/discover/'],
+    ['/d/canvas-first/#from=discover','none'],
+    ['/d/canvas-first/#from=discover/not-a-source','none'],
     ['/appearance/?return=%2Fd%2Fcanvas-first%2F%3Ffrom%3Dall','/appearance/'],
     ['/zh/language/?return=%2Fd%2Fcanvas-first%2F%3Ffrom%3Dall','/zh/language/']
   ]) {
@@ -336,12 +348,12 @@ test(name+' root selection survives reload and native Back/Forward',{timeout:150
     const roots=(await readRootState(page)).roots;
     await checkRootSelection(page,'/all/',roots);
     await page.reload();await waitForBrowse(page);await checkRootSelection(page,'/all/',roots);
-    const tags='/d/canvas-first/#from=tags/tooling/devtools';
-    await page.goto(base+tags);await waitForBrowse(page);await checkRootSelection(page,'/tags/',roots);
+    const referenced='/d/canvas-first/#from=discover/tooling/devtools';
+    await page.goto(base+referenced);await waitForBrowse(page);await checkRootSelection(page,'/discover/',roots);
     await page.goBack();assert.equal(page.url(),base+route);
     await waitForBrowse(page);await checkRootSelection(page,'/all/',roots);
-    await page.goForward();assert.equal(page.url(),base+tags);
-    await waitForBrowse(page);await checkRootSelection(page,'/tags/',roots);
+    await page.goForward();assert.equal(page.url(),base+referenced);
+    await waitForBrowse(page);await checkRootSelection(page,'/discover/',roots);
     // The same assertion used by consumer journeys must reject broken traversal state.
     await page.evaluate(()=>{
       const link=document.querySelector('[data-root-navigation] [aria-current=page]');
@@ -351,7 +363,7 @@ test(name+' root selection survives reload and native Back/Forward',{timeout:150
       }).observe(link,{attributes:true,attributeFilter:['aria-current']});
       link.removeAttribute('aria-current');
     });
-    await assert.rejects(()=>checkRootSelection(page,'/tags/',roots),/selection and aria-current must agree/);
+    await assert.rejects(()=>checkRootSelection(page,'/discover/',roots),/selection and aria-current must agree/);
   } finally {try {await browser?.close();}finally{await server.stop();}}
 });
 }

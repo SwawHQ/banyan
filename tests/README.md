@@ -45,6 +45,7 @@ local wheel fixtures. Without these inputs, integration cases are skipped.
 | `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
 | `output.test.mjs` | Repository budgets and retired-output faults |
 | `sitemap.test.mjs` | Sitemap/LLMS parity, native exclusions, language routing and rebuilds |
+| `directory-references.test.mjs` | TOML references, native taxonomy configuration, multilingual membership, feeds, canonical outputs and rebuilds |
 | `documentation.test.mjs` | Official documentation routes, links, language indexes and discovery URLs |
 
 Each suite keeps its successful cases and fault fixtures. Domain suites own

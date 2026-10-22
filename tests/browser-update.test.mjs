@@ -47,12 +47,12 @@ before(()=>{
   for(const lang of ['en','zh','zh-tw']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
     for(const [name,url] of [['powered-by',panel],['language',language]]) {
-      let text=fs.readFileSync(path.join(root,'module/content/'+name+'/index'+suffix+'.md'),'utf8').replace(/^---\r?\n/,'---\nurl: '+prefix+url+'\n');
+      let text=fs.readFileSync(path.join(root,'module/content/'+name+'/index'+suffix+'.md'),'utf8').replace(/^url:.*$/m,'url: '+prefix+url+'\n');
       if(name==='powered-by')for(const [key,value] of Object.entries({yes:lang+' worker yes',no:lang+' worker no'}))
         text=text.replace(new RegExp('^    '+key+':.*$','m'),'    '+key+': '+JSON.stringify(value));
       write(path.join(content,name+'/index'+suffix+'.md'),text);
     }
-    write(path.join(content,'reader-start/index'+suffix+'.md'),'---\ntitle: Independent update source\nslug: reader-start\nurl: '+prefix+from+'\nlayout: page-article\nroot_nav: true\nicon: code\nweight: 87\nbuild:\n  list: local\n---\n\nIndependent update source.');
+    write(path.join(content,'reader-start/index'+suffix+'.md'),'---\ntitle: Independent update source\nurl: '+prefix+from+'\nlayout: page-article\nroot_nav: true\nicon: code\nweight: 87\nbuild:\n  list: local\n---\n\nIndependent update source.');
   }
   const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n';
   const build=(name,version=versions[0],asset,code,mode='enable')=>{

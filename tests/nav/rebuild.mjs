@@ -7,7 +7,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 
-import {fixtureEnvironment} from '../_shared/hugo.mjs';
+import {fixtureEnvironment,directoryPage} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
 const work = await fs.mkdtemp(path.join(os.tmpdir(), 'banyan-path-rebuild-'));
@@ -19,11 +19,11 @@ try {
     const locales = [['', ''], ['.zh', '/zh'], ['.zh-tw', '/zh-tw']];
     const originals = new Map();
     for (const [suffix] of locales) {
-        const source = await fs.readFile(path.join(root, `module/content/d/_index${suffix}.md`), 'utf8');
+        const source = directoryPage('Content');
         originals.set(suffix, source);
         await fs.writeFile(path.join(overlay, `d/_index${suffix}.md`), source.replace(/^title:.*$/m, 'title: Before rename'));
         await fs.writeFile(path.join(overlay, `d/path-rebuild-probe${suffix}.md`),
-            '---\ntitle: Path rebuild probe\nslug: banyan-path-rebuild-probe\ndate: 2026-01-01\n---\nSynthetic article for the ancestor title contract.\n');
+            '---\ntitle: Path rebuild probe\nurl: d/banyan-path-rebuild-probe/\ndate: 2026-01-01\n---\nSynthetic article for the ancestor title contract.\n');
     }
     const config = path.join(work, 'overlay.toml');
     await fs.writeFile(config, `[[module.mounts]]\nsource = "${relative(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
@@ -70,14 +70,14 @@ try {
     try {
         await until(async () => (await html('/zh/d/')).includes('Before rename'));
         for (const [, prefix] of locales) {
-            assert.equal(directoryLabel(await html(`${prefix}/p/banyan-path-rebuild-probe/`)), 'Before rename');
+            assert.equal(directoryLabel(await html(`${prefix}/d/banyan-path-rebuild-probe/`)), 'Before rename');
         }
         for (const [suffix] of locales) {
             await fs.writeFile(path.join(overlay, `d/_index${suffix}.md`), originals.get(suffix).replace(/^title:.*$/m, 'title: After rename'));
         }
         for (const [, prefix] of locales) {
             await until(async () => (await html(`${prefix}/d/`)).includes('data-current-page-title="After rename"'));
-            await until(async () => directoryLabel(await html(`${prefix}/p/banyan-path-rebuild-probe/`)) === 'After rename');
+            await until(async () => directoryLabel(await html(`${prefix}/d/banyan-path-rebuild-probe/`)) === 'After rename');
         }
         console.log('PASS ancestor title changes reach document metadata during incremental rebuilds in all three languages.');
     } finally {

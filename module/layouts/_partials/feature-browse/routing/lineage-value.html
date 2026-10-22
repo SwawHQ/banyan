@@ -7,4 +7,5 @@
     {{- $cleanSegments = $cleanSegments | append $value -}}
   {{- end -}}
 {{- end -}}
-{{- return (delimit $cleanSegments "/") -}}
+{{- /* Match URLSearchParams while keeping path separators readable. */ -}}
+{{- return (replace (urlquery (delimit $cleanSegments "/")) "%2F" "/") -}}

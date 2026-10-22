@@ -15,7 +15,7 @@ import {waitForBrowse} from '../../.agents/skills/swaw-banyan/tasks/check/browse
 import {extractBlocks} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
-import {fixtureEnvironment} from '../_shared/hugo.mjs';
+import {fixtureEnvironment,directoryPage,fixtureContentDirectory} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
 const themeRoot = fileURLToPath(new URL('../../module/', import.meta.url));
@@ -25,6 +25,7 @@ try {
     const rel = p => path.relative(root, p).replaceAll('\\', '/');
     const write = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, s); };
     const overlay = path.join(work, 'content');
+    fixtureContentDirectory(overlay);
     const langs = ['', '.zh', '.zh-tw'];
     const prefixes = ['', '/zh', '/zh-tw'];
     // A self-contained 1px WebP keeps image contracts independent of site/legal assets.
@@ -37,27 +38,27 @@ try {
     const assetImage = {image: `/site/pwa/favicon.${logoHash}.svg`};
     const monochromeAsset = {...assetImage, monochrome: true};
     const cases = [
-        ['priced', 'icon: appearance-dark\nlastmod: 2026-08-01\ntags: [contract-dates]\ntools: [free, paid, "Special Tools", "$5~$50", contract-dates, contract-name]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
-        ['missing', 'lastmod: 2026-08-02\ntags: [contract-dates/child]\ntools: [free, paid, "Special Tools", contract-dates, contract-name]\noffer: {value: "Value without a price"}'],
-        ['zero', 'icon: {text: "<b>EN</b>"}\ntools: [free]\noffer: {amount: 0, currency: "$"}'],
-        ['no-offer', 'icon: {image: "badge.webp"}\ntools: [free]'],
+        ['priced', 'icon: appearance-dark\nlastmod: 2026-08-01\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
+        ['missing', 'lastmod: 2026-08-02\noffer: {value: "Value without a price"}'],
+        ['zero', 'icon: {text: "<b>EN</b>"}\noffer: {amount: 0, currency: "$"}'],
+        ['no-offer', 'icon: {image: "badge.webp"}'],
         ['unclassified', 'icon: {image: "site/pwa/favicon.svg", monochrome: true}\noffer: {amount: 99, currency: "$", value: "Not a product"}'],
-        ['tag-branches', 'tags: [contract-tree, contract-tree/shallow, contract-tree/deep/leaf]'],
-        ['empty', 'tools: []'],
-        ['blank', 'tools: [""]']
+        ['ref-branches', ''],
+        ['empty', ''],
+        ['blank', '']
     ];
     for (const lang of langs) {
         write(path.join(overlay, `d/contract-inherit/_index${lang}.md`), '---\ntitle: Inherited list fixture\n---\n');
-        write(path.join(overlay, `d/contract-inherit/note${lang}.md`), '---\ntitle: Inherited list article\nslug: contract-inherited-list\n---\nSynthetic article.\n');
+        write(path.join(overlay, `d/contract-inherit/note${lang}.md`), '---\ntitle: Inherited list article\nurl: p/contract-inherited-list/\n---\nSynthetic article.\n');
         for (const [name, field] of [['enabled', 'root_nav: true'], ['disabled', 'root_nav: false'], ['omitted', ''], ['string', 'root_nav: "true"']]) {
-            write(path.join(overlay, `contract-nav-${name}/index${lang}.md`), `---\ntitle: Navigation ${name}\nslug: contract-nav-${name}\nlayout: page-article\nbuild: {list: local}\n${field}\n---\nDirectly accessible information page.\n`);
+            write(path.join(overlay, `contract-nav-${name}/index${lang}.md`), `---\ntitle: Navigation ${name}\nurl: contract-nav-${name}/\nlayout: page-article\nbuild: {list: local}\n${field}\n---\nDirectly accessible information page.\n`);
         }
         write(path.join(overlay, `tools/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\nicon: rss\n---\n');
         write(path.join(overlay, `tools/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlist: directory\n---\n');
         write(path.join(overlay, `tools/contract-name/_index${lang}.md`), '---\ntitle: Names only\nlist: name\n---\n');
-        write(path.join(overlay, `contract-name-all/index${lang}.md`), '---\ntitle: All names\nslug: contract-name-all\nroot_nav: true\nlayout: page-collection\nlist: name\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
+        write(path.join(overlay, `contract-name-all/index${lang}.md`), '---\ntitle: All names\nurl: contract-name-all/\nroot_nav: true\nlayout: page-collection\nlist: name\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
         for (const list of ['local', 'never']) {
-            write(path.join(overlay, `contract-name-${list}/index${lang}.md`), `---\ntitle: ${list} names\nslug: contract-name-${list}\nlayout: page-collection\nlist: name\naggregate: /d\nbuild: {list: ${list}}\n---\n`);
+            write(path.join(overlay, `contract-name-${list}/index${lang}.md`), `---\ntitle: ${list} names\nurl: contract-name-${list}/\nlayout: page-collection\nlist: name\naggregate: /d\nbuild: {list: ${list}}\n---\n`);
         }
         for (const term of [
             'contract-dates',
@@ -67,34 +68,51 @@ try {
             'contract-tree/deep',
             'contract-tree/deep/leaf'
         ]) {
-            write(path.join(overlay, `tags/${term}/_index${lang}.md`), `---\ntitle: ${term}\n---\n`);
+            write(path.join(overlay, `topics/${term}/_index${lang}.md`), `---\ntitle: ${term}\n---\n`);
         }
-        write(path.join(overlay, `tags/untagged/_index${lang}.md`), '---\ntitle: Untagged\n---\n');
+        write(path.join(overlay, `topics/unfiled/_index${lang}.md`), '---\ntitle: Unfiled\n---\n');
         write(path.join(overlay, `tools/paid/_index${lang}.md`), '---\ntitle: Paid fixture\nlist_icon_file: appearance-light\n---\n');
         for (const [name, fields] of cases) write(path.join(overlay, `d/contract-${name}/index${lang}.md`),
-            `---\ntitle: "Contract ${name}"\nslug: contract-${name}\ndate: 2026-01-01\n${fields}\n---\nArticle body stays an article.\n`);
+            `---\ntitle: "Contract ${name}"\nurl: p/contract-${name}/\ndate: 2026-01-01\n${fields}\n---\nArticle body stays an article.\n`);
         write(path.join(overlay, `d/contract-override/_index${lang}.md`), '---\ntitle: Override\nroot_nav: true\nicon: info\nlist: all\nlist_icon_folder: rss\nlist_icon_file: appearance-auto\n---\n');
         write(path.join(overlay, `d/contract-override/child/_index${lang}.md`), '---\ntitle: Child inherits override\nlist_icon_file: theme\n---\n');
-        write(path.join(overlay, `d/contract-override/child/item${lang}.md`), '---\ntitle: Child item\nslug: contract-child\n---\nChild.\n');
-        write(path.join(overlay, `d/contract-override/direct${lang}.md`), '---\ntitle: Direct item\nslug: contract-direct\nlastmod: 2026-08-03\n---\nDirect.\n');
+        write(path.join(overlay, `d/contract-override/child/item${lang}.md`), '---\ntitle: Child item\nurl: p/contract-child/\n---\nChild.\n');
+        write(path.join(overlay, `d/contract-override/direct${lang}.md`), '---\ntitle: Direct item\nurl: p/contract-direct/\nlastmod: 2026-08-03\n---\nDirect.\n');
         write(path.join(overlay, `d/contract-override/child/nested/_index${lang}.md`), '---\ntitle: Nested\nlist_icon_file: ""\n---\n');
-        write(path.join(overlay, `d/contract-override/child/nested/item${lang}.md`), '---\ntitle: Nested item\nslug: contract-nested\n---\nNested.\n');
+        write(path.join(overlay, `d/contract-override/child/nested/item${lang}.md`), '---\ntitle: Nested item\nurl: p/contract-nested/\n---\nNested.\n');
         write(path.join(overlay, `d/contract-text/_index${lang}.md`), '---\ntitle: Text icons\nicon: {text: "©"}\nlist_icon_folder: {text: "Dir"}\nlist_icon_file: {text: "EN"}\n---\n');
         write(path.join(overlay, `d/contract-text/child/_index${lang}.md`), '---\ntitle: Child text icons\nlist_icon_file: product\n---\n');
-        write(path.join(overlay, `d/contract-text/item${lang}.md`), '---\ntitle: Text item\nslug: contract-text\n---\nText.\n');
-        write(path.join(overlay, `d/contract-text/child/item${lang}.md`), '---\ntitle: Text child\nslug: contract-text-child\n---\nText child.\n');
+        write(path.join(overlay, `d/contract-text/item${lang}.md`), '---\ntitle: Text item\nurl: p/contract-text/\n---\nText.\n');
+        write(path.join(overlay, `d/contract-text/child/item${lang}.md`), '---\ntitle: Text child\nurl: p/contract-text-child/\n---\nText child.\n');
         write(path.join(overlay, `d/contract-image/_index${lang}.md`), '---\ntitle: Image icons\nlist_icon_file: {image: "badge.webp", monochrome: true}\nlist_icon_folder: {image: "site/pwa/favicon.svg", monochrome: false}\n---\n');
         write(path.join(overlay, `d/contract-image/child/_index${lang}.md`), '---\ntitle: Inherited image\n---\n');
-        write(path.join(overlay, `d/contract-image/child/item${lang}.md`), '---\ntitle: Inherited image article\nslug: contract-image-child\n---\nImage.\n');
+        write(path.join(overlay, `d/contract-image/child/item${lang}.md`), '---\ntitle: Inherited image article\nurl: p/contract-image-child/\n---\nImage.\n');
     }
     write(path.join(overlay, 'd/contract-no-offer/badge.webp'), imageBytes);
     write(path.join(overlay, 'd/contract-image/badge.webp'), imageBytes);
     const config = path.join(work, 'overlay.toml');
-    write(config, `[taxonomies]\ntag = "tags"\ntool = "tools"\n[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
+    write(config, `[taxonomies]\n[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
+    for(const lang of langs) {
+        write(path.join(overlay, `topics/_index${lang}.md`),directoryPage('Topics','root_nav: true'));
+        write(path.join(overlay, `tools/_index${lang}.md`),directoryPage('Tools','root_nav: true\nlist_icon_file: product')
+            .replace('target: {kind: section}\n    layout: page-collection','target: {kind: section}\n    layout: page-collection\n    list: products'));
+        write(path.join(overlay, `tools/special-tools/_index${lang}.md`),'---\ntitle: Special Tools\n---\n');
+        write(path.join(overlay, `tools/price-band/_index${lang}.md`),'---\ntitle: "$5~$50"\n---\n');
+    }
+    const memberships={
+        'topics/contract-dates':['priced'], 'topics/contract-dates/child':['missing'],
+        'topics/contract-tree':['ref-branches'], 'topics/contract-tree/shallow':['ref-branches'],
+        'topics/contract-tree/deep/leaf':['ref-branches'], 'topics/unfiled':['unclassified'],
+        'tools/free':['priced','missing','zero','no-offer'], 'tools/paid':['priced','missing'],
+        'tools/special-tools':['priced','missing'], 'tools/price-band':['priced'],
+        'tools/contract-dates':['priced','missing'], 'tools/contract-name':['priced','missing']
+    };
+    for(const [directory,articles] of Object.entries(memberships))
+        write(path.join(overlay,directory,'_map.toml'),'refs = '+JSON.stringify(articles.map(name=>'/d/contract-'+name))+'\n');
     const hugo = toolExecutable('hugo');
     function build(view) {
         for (const lang of langs) {
-            const source = fs.readFileSync(path.join(themeRoot, `content/d/_index${lang}.md`), 'utf8');
+            const source = directoryPage('Content');
             write(path.join(overlay, `d/_index${lang}.md`), source.replace('list: directory', `list: ${view}\nroot_nav: true\nicon: info`));
         }
         const output = path.join(work, view);
@@ -192,41 +210,23 @@ try {
             if (!['products', 'name'].includes(view)) assertUpdated('d', '/d/contract-override/', '2026-08-03', '20260803000000');
             assertUpdated('tools', '/tools/contract-dates/', '2026-08-02', '20260802000000');
             assertUpdated('tools', '/tools/contract-empty/', '—', '');
-            assertUpdated('tags', '/tags/contract-dates/', '2026-08-02', '20260802000000');
-            assertUpdated('tags/contract-dates', '/tags/contract-dates/child/', '2026-08-02', '20260802000000');
-            assertUpdated('tags/contract-dates', '/p/contract-priced/', '2026-08-01', '20260801000000');
-            assertUpdated('tags/contract-dates/child', '/p/contract-missing/', '2026-08-02', '20260802000000');
-            const tagBranchHref = `${prefixes[index]}/p/contract-tag-branches/`;
-            assert(payload(output, lang, 'tags/contract-tree/shallow').rows.some(row => row.href === tagBranchHref),
-                'a shallower sibling path keeps its directly assigned article');
-            assert(payload(output, lang, 'tags/contract-tree/deep/leaf').rows.some(row => row.href === tagBranchHref),
-                'a deeper sibling path keeps the same article');
-            assert(!payload(output, lang, 'tags/contract-tree').rows.some(row => row.href === tagBranchHref),
-                'an explicitly assigned ancestor omits the article when a descendant path covers it');
-            const tagBranchHtml = fs.readFileSync(path.join(output, prefixes[index].slice(1), 'p/contract-tag-branches/index.html'), 'utf8');
-            const tagMetaRows = tagBranchHtml.match(/<nav\b[^>]*document-meta__row--tags[\s\S]*?<\/nav>/g) ?? [];
-            assert.equal(tagMetaRows.length, 2, 'each taxonomy leaf path has its own metadata row');
-            const shallowMeta = tagMetaRows.find(row => /data-taxonomy-path="?contract-tree\/shallow"?/.test(row)) ?? '';
-            const deepMeta = tagMetaRows.find(row => /data-taxonomy-path="?contract-tree\/deep\/leaf"?/.test(row)) ?? '';
-            assert(shallowMeta, 'article metadata keeps a shallower sibling leaf row');
-            assert(deepMeta, 'article metadata keeps a deeper sibling leaf row');
-            assert(tagMetaRows.every(row => new RegExp(`href=${prefixes[index]}/tags/`).test(row)),
-                'each taxonomy path row links its taxonomy root label');
-            assert.match(shallowMeta, new RegExp(`href=${prefixes[index]}/tags/contract-tree/`),
-                'shallower leaf row links its root path segment');
-            assert.match(shallowMeta, new RegExp(`href=${prefixes[index]}/tags/contract-tree/shallow/`),
-                'shallower leaf row links its endpoint');
-            assert.match(deepMeta, new RegExp(`href=${prefixes[index]}/tags/contract-tree/`),
-                'deeper leaf row links its root path segment');
-            assert.match(deepMeta, new RegExp(`href=${prefixes[index]}/tags/contract-tree/deep/`),
-                'deeper leaf row links its intermediate path segment');
-            assert.match(deepMeta, new RegExp(`href=${prefixes[index]}/tags/contract-tree/deep/leaf/`),
-                'deeper leaf row links its endpoint');
-            assert(!tagMetaRows.some(row => /data-taxonomy-path="?contract-tree"?(?:\s|>)/.test(row)),
-                'an ancestor covered by a descendant does not get its own metadata row');
-            const unassignedRow = payload(output, lang, 'tags/untagged').rows.find(row => row.href === `${prefixes[index]}/p/contract-unclassified/`);
-            assert(unassignedRow, 'unassigned taxonomy term contains pages without taxonomy values');
-            assert.equal(unassignedRow.key, 'contract-unclassified', 'unassigned taxonomy pages use the same stable collection key');
+            assertUpdated('topics', '/topics/contract-dates/', '2026-08-02', '20260802000000');
+            assertUpdated('topics/contract-dates', '/topics/contract-dates/child/', '2026-08-02', '20260802000000');
+            assertUpdated('topics/contract-dates', '/p/contract-priced/', '2026-08-01', '20260801000000');
+            assertUpdated('topics/contract-dates/child', '/p/contract-missing/', '2026-08-02', '20260802000000');
+            const branchHref=`${prefixes[index]}/p/contract-ref-branches/`;
+            for(const directory of ['topics/contract-tree','topics/contract-tree/shallow','topics/contract-tree/deep/leaf'])
+                assert(payload(output,lang,directory).rows.some(row=>row.href===branchHref),'Each explicit directory reference is visible.');
+            const branchHtml=fs.readFileSync(path.join(output,prefixes[index].slice(1),'p/contract-ref-branches/index.html'),'utf8');
+            const referenceRows=(branchHtml.match(/<nav\b[^>]*data-directory-reference=[\s\S]*?<\/nav>/g)||[]);
+            assert.equal(referenceRows.length,3,'Every explicit reference has its own metadata row.');
+            for(const directory of ['contract-tree','contract-tree/shallow','contract-tree/deep/leaf'])
+                assert(referenceRows.some(row=>row.includes(`${prefixes[index]}/topics/${directory}/`)),'Metadata retains each reference path.');
+            const ancestor=payload(output,lang,'topics').rows.find(row=>row.href===`${prefixes[index]}/topics/contract-tree/`);
+            assert.equal(ancestor.count_text,'1','An ancestor counts one canonical article across overlapping references.');
+            const unfiled=payload(output,lang,'topics/unfiled').rows.find(row=>row.href===`${prefixes[index]}/p/contract-unclassified/`);
+            assert(unfiled,'An explicit directory reference lists an otherwise unfiled article.');
+            assert.equal(unfiled.key,unfiled.href,'Referenced articles use their published URL as the stable collection key.');
             const iconFor = (list, href) => payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`)?.icon;
             for (const list of ['d', 'all', 'tools/free', 'all-tools']) {
                 assert.deepEqual(iconFor(list, '/p/contract-no-offer/'), ownImage, 'own image resolves against its article bundle in every list');
@@ -254,16 +254,16 @@ try {
             assert.equal(iconFor('d/contract-override/child', '/d/contract-override/child/nested/'), 'rss', 'folder default still inherits after a file-only override');
             assert.equal(iconFor('d/contract-override/child', '/p/contract-child/'), 'theme');
             assert.equal(iconFor('d/contract-override/child/nested', '/p/contract-nested/'), 'theme', 'blank declarations inherit');
-            assert.equal(iconFor('tools', '/tools/contract-empty/'), 'rss', 'term own icon wins over the folder default');
-            assert.equal(iconFor('tools/free', '/p/contract-missing/'), 'product', 'term inherits taxonomy file default');
-            assert.equal(iconFor('tools/paid', '/p/contract-missing/'), 'appearance-light', 'a term can override its file default');
+            assert.equal(iconFor('tools', '/tools/contract-empty/'), 'rss', 'Directory own icon wins over the folder default');
+            assert.equal(iconFor('tools/free', '/p/contract-missing/'), 'product', 'Directory inherits its parent file default');
+            assert.equal(iconFor('tools/paid', '/p/contract-missing/'), 'appearance-light', 'A directory can override its file default');
             assert.equal(iconFor('all-tools', '/p/contract-missing/'), 'product', 'aggregate uses its own default');
             assert.equal(iconFor('all', '/p/contract-direct/'), 'file', 'aggregate does not inherit its target defaults');
             for (const list of ['d', 'all', 'tools/free', 'tools/paid', 'all-tools']) {
                 assert.equal(iconFor(list, '/p/contract-priced/'), 'appearance-dark', `own article icon wins in ${list}`);
             }
             const all = payload(output, lang, 'all-tools');
-            assert.equal(all.rows.filter(row => /\/p\/contract-/.test(row.href)).length, 4, 'native union includes four fixture tools, once each');
+            assert.equal(all.rows.filter(row => /\/p\/contract-/.test(row.href)).length, 4, 'Directory union includes four fixture tools, once each');
             assert.equal(new Set(all.rows.map(row => row.href)).size, all.rows.length);
             assert(!all.rows.some(row => /\/p\/contract-(unclassified|empty|blank)\//.test(row.href)));
             const free = payload(output, lang, 'tools/free');
@@ -273,11 +273,11 @@ try {
             assert.equal(free.rows.find(row => row.href.includes('contract-missing')).price_text, '—');
             assert.equal(free.rows.find(row => row.href.includes('contract-zero')).sort_price, '0');
             const categories = payload(output, lang, 'tools');
-            assert.equal(categories.sv, 'tree');
+            assert.equal(categories.sv, 'section');
             assert(categories.rows.some(row => row.href === `${prefixes[index]}/tools/contract-empty/` && row.count_text === '0'));
             for (const label of ['Special Tools', '$5~$50']) {
                 const term = categories.rows.find(row => row.text === label);
-                assert(term, `autogenerated term ${label}`);
+                assert(term, `Explicit directory ${label}`);
                 const logical = term.href.replace(new RegExp(`^${prefixes[index]}/`), '').replace(/\/$/, '');
                 assert(payload(output, lang, decodeURI(logical)).rows.length > 0);
             }
@@ -351,17 +351,17 @@ try {
             await waitForBrowse(page);
             const selected = await page.locator('[data-root-href].is-current').getAttribute('data-root-href');
             assert.equal(selected, '/tools/');
-            const items = await page.locator('[data-slot=breadcrumb] .item-control[href*="/p/"]').evaluateAll(links => links.map(a => new URL(a.href).pathname));
+            const items = await page.locator('[data-breadcrumb-collection-href="/tools/free/"] [data-list-entry]').evaluateAll(links => links.map(a => new URL(a.href).pathname));
             assert.deepEqual(items, ordered.map(row => row.href), 'path column order matches product table');
         }
-        // Arbitrary auto terms must support article entry, not just compile a page.
+        // Explicit directories must support article entry, not just compile a page.
         await gotoAndWait(page, `${baseUrl}/tools/`);
         await page.locator('.slot-main a').filter({ hasText: '$5~$50' }).click();
         await page.locator('.slot-main a[href*="/p/contract-priced/#"]').click();
         await waitForBrowse(page);
         assert.equal(await page.locator('[data-root-href].is-current').getAttribute('data-root-href'), '/tools/');
         await context.close();
-        console.log('PASS missing-price order, shared path rows, arbitrary term article entry');
+        console.log('PASS missing-price order, shared path rows, Directory reference article entry');
 
         // The paid-source icon is absent from the canonical rows, but its symbol
         // must already be available when first-paint/runtime rebuild those rows.
@@ -519,7 +519,7 @@ try {
         await gotoAndWait(namesPage, `${baseUrl}/zh/p/contract-missing/#from=tools/contract-name&sort=name-desc`);
         await namesPage.screenshot({path: path.join(work, 'name-list-path-zh.png')});
         await namesContext.close();
-        console.log('PASS name-only SSR, section inheritance, taxonomy/aggregate sources, ascending/descending sort, path columns and history in three languages');
+        console.log('PASS name-only SSR, section inheritance, Directory/aggregate sources, ascending/descending sort, path columns and history in three languages');
     } finally {
         await browser.close();
         await server.stop();

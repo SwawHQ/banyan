@@ -1,7 +1,6 @@
 ---
 root_nav: true
 title: Banyan
-linkTitle: Banyan
 icon: { text: "B" }
 weight: 110
 browser_title: Banyan — 極簡 Hugo 發布主題
@@ -11,12 +10,11 @@ brand_line: 為探索型發布提供清晰結構。
 home_signals:
   - Hugo
   - name: 使用文件
-    url: /zh/docs/
+    url: /zh/discover/docs/
     primary: true
   - name: GitHub
     url: https://github.com/SwawHQ/banyan
-  - Taxonomy
+  - Directories
   - Breadcrumbs
   - PWA
-home_signal_guide_chance: 0
 ---

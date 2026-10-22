@@ -3,29 +3,13 @@
 {{- if not $config -}}{{- $config = partial "feature-browse/collection/config.html" (dict "page" $page) -}}{{- end -}}
 {{- $rows := slice -}}
 {{- with $page.Params.aggregate -}}
-  {{- $target := $page.Site.GetPage . -}}
-  {{- if not $target -}}{{- errorf "List page %s cannot resolve aggregate: %s." $page.RelPermalink . -}}{{- end -}}
-  {{- $members := slice -}}
-  {{- if eq $target.Kind "section" -}}
-    {{- $members = $target.RegularPagesRecursive -}}
-  {{- else if eq $target.Kind "taxonomy" -}}
-    {{- range $target.Pages -}}
-      {{- if ne (trim (printf "%v" .Data.Term) " \r\n\t") "" -}}
-        {{- range .Pages -}}{{- $members = $members | append . -}}{{- end -}}
-      {{- end -}}
-    {{- end -}}
-    {{- $members = uniq $members -}}
-  {{- else -}}
-    {{- errorf "aggregate on %s must reference a section or taxonomy root." $page.RelPermalink -}}
-  {{- end -}}
+  {{- $members := partial "feature-browse/collection/articles.html" $page -}}
   {{- range $members -}}{{- $rows = $rows | append (partial "feature-browse/collection/rows/page.html" (dict "page" .)) -}}{{- end -}}
 {{- else -}}
-  {{- if in (slice "taxonomy" "term") $page.Kind -}}
-    {{- $rows = partial "feature-browse/collection/rows/taxonomy.html" (dict "page" $page) -}}
-  {{- else if eq $page.Kind "section" -}}
+  {{- if eq $page.Kind "section" -}}
     {{- $rows = partial "feature-browse/collection/rows/section.html" (dict "page" $page) -}}
   {{- else -}}
-    {{- errorf "List page %s has no native children; declare aggregate with its section or taxonomy root." $page.RelPermalink -}}
+    {{- errorf "List page %s has no native children; declare aggregate with an ordinary section." $page.RelPermalink -}}
   {{- end -}}
 {{- end -}}
 {{- $decorated := slice -}}

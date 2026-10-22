@@ -6,12 +6,12 @@ A website template (Hugo theme) for browsing resources and articles by category,
 with Miller column navigation.
 
 [Demo](https://banyan.swaw.com/) ·
-[Documentation](https://banyan.swaw.com/docs) ·
+[Documentation](https://banyan.swaw.com/discover/docs/) ·
 [Changelog](content/changelog/_index.md)
 
 **1.** Miller column navigation
 
-**2.** Multi-level, multi-dimensional classification
+**2.** Content directories with shared cross-directory references
 
 **3.** Article and tool list views
 
@@ -49,22 +49,22 @@ uv/Python preparation. See [Tencent Cloud tools](.agents/skills/swaw-banyan/refe
 Open <http://127.0.0.1:13241/>.
 
 To install Banyan in your own site, see
-[Getting started](content/docs/guide/getting-started/index.zh.md).
+[Getting started](content/discover/docs/guide/getting-started/index.zh.md).
 For builds and checks, see
-[Local development](content/docs/development/local-development/index.zh.md).
+[Local development](content/discover/docs/development/local-development/index.zh.md).
 
 ## Documentation
 
 The guides are currently in Chinese.
 
-- [Site configuration](content/docs/guide/site-configuration/index.zh.md)
-- [Lists and taxonomies](content/docs/guide/collection-lists/index.zh.md)
-- [Layout slots](content/docs/guide/layout-slots/index.zh.md)
-- [Delivery and caching](content/docs/guide/delivery/index.zh.md)
-- [Security and CSP](content/docs/guide/security-csp/index.zh.md)
-- [Discovery and source links](content/docs/guide/discovery/index.zh.md)
-- [Web app manifest and icons](content/docs/guide/web-app/index.zh.md)
-- [Development and release guides](content/docs/development/_index.zh.md)
+- [Site configuration](content/discover/docs/guide/site-configuration/index.zh.md)
+- [Lists and products](content/discover/docs/guide/collection-lists/index.zh.md)
+- [Layout slots](content/discover/docs/guide/layout-slots/index.zh.md)
+- [Delivery and caching](content/discover/docs/guide/delivery/index.zh.md)
+- [Security and CSP](content/discover/docs/guide/security-csp/index.zh.md)
+- [Discovery and source links](content/discover/docs/guide/discovery/index.zh.md)
+- [Web app manifest and icons](content/discover/docs/guide/web-app/index.zh.md)
+- [Development and release guides](content/discover/docs/development/_index.zh.md)
 
 ## License
 

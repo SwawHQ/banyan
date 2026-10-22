@@ -3,7 +3,7 @@ root_nav: true
 title: GitHub
 description: 查看 Banyan 主题的源代码。
 date: 2026-09-08
-slug: github
+url: github/
 layout: page-article
 icon: github
 weight: 102

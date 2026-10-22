@@ -14,7 +14,7 @@ import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_share
 
 const root = fileURLToPath(new URL('../',import.meta.url));
 const source = path.join(root,'.agents/skills/swaw-banyan');
-const parent = fs.realpathSync(os.tmpdir());
+const parent = path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-ui');
 const sharedCommands = ['check/browser/palette/contrast','check/browser/appearance'];
 const engines = [
   {name:'chromium',suffix:'',commands:[...sharedCommands,'check/browser/palette/roles']},
@@ -42,6 +42,7 @@ function appendAsset(directory,route,name,text,tag) {
   fs.appendFileSync(path.join(directory,route,'index.html'),tag);
 }
 before(async () => {
+  fs.mkdirSync(parent,{recursive:true});
   work = fs.mkdtempSync(path.join(parent,'banyan-browser-ui-'));
   skill = path.join(work,'skill'); output = path.join(work,'public');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
@@ -100,6 +101,11 @@ test(name+' runs its published checks and records contrast measurements',{timeou
       assert.equal(report.details.modes.length,2);
       assert.equal(report.details.modes[0].measurements.length,17);
       assert.ok(report.details.modes.every(mode=>mode.measurements.every(sample=>sample.ratio>=4.5)));
+    }
+    if (command.endsWith('/appearance')) {
+      assert.deepEqual(report.details.startup.map(({preference,colorScheme})=>[preference,colorScheme]),
+        [[null,'light'],['unexpected','light'],[null,'dark'],['unexpected','dark']]);
+      assert.ok(report.details.startup.every(sample=>sample.first===sample.colorScheme&&sample.final===sample.colorScheme));
     }
   }
   assert.equal(fs.existsSync(path.join(work,'node_modules')),false);

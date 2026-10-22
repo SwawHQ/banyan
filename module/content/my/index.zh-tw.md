@@ -1,8 +1,7 @@
 ---
 root_nav: true
-draft: false
 title: 我的
-slug: my
+url: my/
 layout: page-my
 icon: my
 robots: noindex, follow

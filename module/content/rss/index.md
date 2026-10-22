@@ -3,7 +3,7 @@ root_nav: true
 title: RSS Subscription
 description: Subscribe to new articles with an RSS reader.
 date: 2026-09-08
-slug: rss
+url: rss/
 layout: page-article
 icon: rss
 weight: 100

@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {choicesCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/choices/options.mjs';
 import {returnCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/return/options.mjs';
@@ -51,13 +51,14 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
+  fixtureContentDirectory(content);
   for(const lang of ['en','zh','zh-tw'])for(const name of ['first','second']){
     const prefix=lang==='en'?'':'/'+lang;
     write(path.join(content,'d/language-fixture',name+'.'+lang+'.md'),
-      '---\ntitle: Independent '+lang+' '+name+'\nslug: language-'+name+'\nurl: '+prefix+'/d/language-fixture/'+name+'/\ndate: 2026-01-01\n---\n\n## Details\n\n'+('Independent language content.\n\n'.repeat(10)));
+      '---\ntitle: Independent '+lang+' '+name+'\nurl: '+prefix+'/d/language-fixture/'+name+'/\ndate: 2026-01-01\n---\n\n## Details\n\n'+('Independent language content.\n\n'.repeat(10)));
   }
   write(path.join(content,'d/language-fixture/untranslated.en.md'),
-    '---\ntitle: Independent untranslated page\nslug: language-untranslated\nurl: /d/language-fixture/untranslated/\ndate: 2026-01-01\n---\n\n## Details\n\nUntranslated fixture content.');
+    '---\ntitle: Independent untranslated page\nurl: /d/language-fixture/untranslated/\ndate: 2026-01-01\n---\n\n## Details\n\nUntranslated fixture content.');
   write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n[languages.en.params.icon]\ntext = "AX"\n[languages.zh]\nlanguageName = "Independent target language"\n[languages.zh-tw.params.icon]\ntext = "繁"\n');
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);

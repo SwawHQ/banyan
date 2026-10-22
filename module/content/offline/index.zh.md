@@ -1,8 +1,7 @@
 ---
 date: "2026-03-17T00:00:00+08:00"
-draft: false
 title: "离线浏览"
-slug: "offline"
+url: offline/
 layout: "page-offline"
 robots: "noindex, follow"
 sitemap:

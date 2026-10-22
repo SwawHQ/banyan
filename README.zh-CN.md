@@ -2,11 +2,11 @@
 
 [English](README.md) · 简体中文
 
-一个网站模板（Hugo 主题），用于对资源、文章做分类，提供米勒列（Miller columns）导航。
+一个网站模板（Hugo 主题），用于对资源、文章做分类、提供米勒列导航。
 
 
 [演示](https://banyan.swaw.com/) ·
-[文档](https://banyan.swaw.com/zh/docs) ·
+[文档](https://banyan.swaw.com/zh/discover/docs/) ·
 [变更记录](content/changelog/_index.md)
 
 
@@ -50,22 +50,22 @@ GitHub CLI 在使用 `base/gh` 时准备。
 `swban deploy/auth/setup` 打开 Cloudflare 和腾讯云共用的授权页。
 打开 <http://127.0.0.1:13241/> 查看站点。
 
-安装到自己的站点，见[开始使用](content/docs/guide/getting-started/index.zh.md)；
-构建和检查，见[本地开发](content/docs/development/local-development/index.zh.md)。
+安装到自己的站点，见[开始使用](content/discover/docs/guide/getting-started/index.zh.md)；
+构建和检查，见[本地开发](content/discover/docs/development/local-development/index.zh.md)。
 
 
 ## 文档
 
 指南目前以中文提供。
 
-- [站点配置](content/docs/guide/site-configuration/index.zh.md)
-- [列表与分类](content/docs/guide/collection-lists/index.zh.md)
-- [页面区域](content/docs/guide/layout-slots/index.zh.md)
-- [交付与缓存](content/docs/guide/delivery/index.zh.md)
-- [安全策略与 CSP](content/docs/guide/security-csp/index.zh.md)
-- [站点发现与来源链接](content/docs/guide/discovery/index.zh.md)
-- [Web App Manifest 与图标](content/docs/guide/web-app/index.zh.md)
-- [开发与发布指南](content/docs/development/_index.zh.md)
+- [站点配置](content/discover/docs/guide/site-configuration/index.zh.md)
+- [列表与产品](content/discover/docs/guide/collection-lists/index.zh.md)
+- [页面区域](content/discover/docs/guide/layout-slots/index.zh.md)
+- [交付与缓存](content/discover/docs/guide/delivery/index.zh.md)
+- [安全策略与 CSP](content/discover/docs/guide/security-csp/index.zh.md)
+- [站点发现与来源链接](content/discover/docs/guide/discovery/index.zh.md)
+- [Web App Manifest 与图标](content/discover/docs/guide/web-app/index.zh.md)
+- [开发与发布指南](content/discover/docs/development/_index.zh.md)
 
 ## 许可证
 

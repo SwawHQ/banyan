@@ -6,7 +6,7 @@ title: "{{ replace .File.ContentBaseName "-" " " | title }}"
 date: {{ .Date }}
 lastmod: {{ .Date }}
 draft: true
-slug: "{{ .File.ContentBaseName }}"
+url: "p/{{ .File.ContentBaseName | urlize }}/"
 description: ""
 
 # 其他平台发布的文章链接；GitHub 源文件链接由主题自动生成。
@@ -14,18 +14,9 @@ description: ""
 # - label: 公众号
 #   url: https://example.com/article
 
-# 别名，用于向后兼容，例如更换 slug 时保留旧链接不会 404
+# 别名，用于向后兼容，例如更换 url 时保留旧链接不会 404
 # aliases:
 # - /old-url-path/
 
-# 先在站点根 hugo.toml 的 [taxonomies] 里声明 plural key，
-# 再按对应 plural front matter 字段填写。
-#
-# 标签：主题分类（支持层级结构和多条路径，例如: 父标签/子标签）
-# tags:
-# - ai
-# - tooling/devtools/windows
-#
-# 其他 taxonomy 只要在站点根 [taxonomies] 中声明后，
-# 就可以继续按对应 plural 字段填写。
+# 正文按实际目录归属；其他栏目在其 _map.toml 中引用本文内容路径。
 ---

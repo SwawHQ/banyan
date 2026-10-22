@@ -1,4 +1,45 @@
 import assert from 'node:assert/strict';
+import {afterPaint} from '../_shared/viewport.mjs';
+
+async function checkStartupTheme(page,target) {
+  const cases=[];
+  for(const colorScheme of ['light','dark']) {
+    await page.emulateMedia({colorScheme});
+    for(const preference of [null,'unexpected']) {
+      const expected=colorScheme;
+      await page.evaluate(value=>{
+        if(value===null)localStorage.removeItem('theme-preference');
+        else localStorage.setItem('theme-preference',value);
+      },preference);
+      let release;
+      const gate=new Promise(resolve=>{release=resolve;}),held=[];
+      const handler=route=>{
+        if(route.request().resourceType()!=='script')return route.continue();
+        const continued=gate.then(()=>route.continue());held.push(continued);return continued;
+      };
+      await page.route('**/*',handler);
+      let first;
+      try {
+        const response=await page.goto(target,{waitUntil:'commit'});
+        assert.ok(response?.ok(),'Appearance page must return a successful response.');
+        await page.waitForFunction(()=>document.getElementById('main')
+          &&[...document.querySelectorAll('link[rel="stylesheet"]')].every(link=>link.disabled||link.sheet));
+        await afterPaint(page);
+        assert.ok(held.length>0,'Theme startup must be sampled before external scripts run.');
+        first=await page.evaluate(()=>document.documentElement.dataset.theme);
+        assert.equal(first,expected,'First-frame theme must match the stored choice or system preference: '+JSON.stringify({preference,colorScheme}));
+      } finally {
+        release();
+        try {await Promise.all(held);}finally{await page.unroute('**/*',handler);}
+      }
+      await page.waitForLoadState('load');
+      const final=await page.evaluate(()=>document.documentElement.dataset.theme);
+      assert.equal(final,expected,'Deferred theme must retain the first-frame choice.');
+      cases.push({preference,colorScheme,first,final});
+    }
+  }
+  return cases;
+}
 
 export async function check({page,baseUrl,options}) {
   const target = baseUrl+options.page, origin = baseUrl+options.from;
@@ -50,5 +91,6 @@ export async function check({page,baseUrl,options}) {
   } finally { await other.close(); }
   await page.goForward({waitUntil:'load'}); await page.waitForURL(target);
   await theme('dark'); await assertSelected('dark');
-  return {page:options.page,from:options.from,checks:['choices','persistence','reload','manual-over-system','system-preference','history-return','cross-tab','history-forward']};
+  const startup=await checkStartupTheme(page,target);
+  return {page:options.page,from:options.from,startup,checks:['choices','persistence','reload','manual-over-system','system-preference','history-return','cross-tab','history-forward','first-frame-theme']};
 }

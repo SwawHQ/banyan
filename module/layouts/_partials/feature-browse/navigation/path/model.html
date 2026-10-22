@@ -3,8 +3,6 @@
 {{- $base := dict -}}
 {{- if $ctx.IsHome -}}
   {{- $base = partial "feature-browse/navigation/path/model-home.html" (dict "ctx" $ctx) -}}
-{{- else if or (eq $ctx.Kind "taxonomy") (eq $ctx.Kind "term") -}}
-  {{- $base = partial "feature-browse/navigation/path/model-taxonomy.html" (dict "ctx" $ctx) -}}
 {{- else -}}
   {{- $base = partial "feature-browse/navigation/path/model-page.html" (dict "ctx" $ctx) -}}
 {{- end -}}

@@ -15,7 +15,9 @@ import {check as checkRoles} from '../../.agents/skills/swaw-banyan/tasks/check/
 import {fixtureEnvironment} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
-const work = fs.mkdtempSync(path.join(os.tmpdir(), 'banyan-palette-contract-'));
+const workRoot = path.join(os.tmpdir(), 'swaw/banyan/module-organization-fixes/palette');
+fs.mkdirSync(workRoot, {recursive:true});
+const work = fs.mkdtempSync(path.join(workRoot, 'contract-'));
 
 try {
     const rel = file => path.relative(root, file).replaceAll('\\', '/');
@@ -66,8 +68,10 @@ try {
     assert.equal((pageCss(monochrome).text.match(/--accent:/g) || []).length, 2, 'Only one palette supplies the light/dark defaults.');
 
     const overlay = path.join(work, 'assets');
-    write(path.join(overlay, 'css/theme.css'), defaultCss.replace(/--accent:\s*[^;]+;/, '--accent: #123456;'));
-    write(path.join(overlay, 'css/custom.css'), monochromeCss.replace(/--accent:\s*[^;]+;/, '--accent: #234567;'));
+    write(path.join(overlay, 'css/theme.css'), defaultCss.replace(/--accent:\s*[^;]+;/, '--accent: #123456;')
+        .replace(/--prose-heading-border:\s*[^;]+;/, '--prose-heading-border: #31547a;'));
+    write(path.join(overlay, 'css/custom.css'), monochromeCss.replace(/--accent:\s*[^;]+;/, '--accent: #234567;')
+        .replace(/--list-header-border:\s*[^;]+;/, '--list-header-border: #9c334f;'));
     write(path.join(overlay, 'invalid.txt'), 'This is not CSS.');
     const mounts = `[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n`;
     const overridden = build('site-override', paletteConfig('"css/theme.css"') + mounts);
@@ -96,7 +100,7 @@ try {
     for (const engine of [loadChromium(), loadWebkit()]) {
         const browser = await engine.launch({executablePath:engine.executablePath()});
         try {
-            for (const [name, output] of [['default', normal], ['monochrome', monochrome]]) {
+            for (const [name, output] of [['default', normal], ['monochrome', monochrome], ['site-override', overridden], ['custom', custom]]) {
                 const server = await createStaticSiteServer(output);
                 await server.start();
                 let page;
@@ -116,6 +120,22 @@ try {
                     await page.goto(server.getBaseUrl()+'/zh/about/',{waitUntil:'load'});
                     for (const mode of ['light', 'dark']) {
                         await page.evaluate(mode => document.documentElement.dataset.theme = mode, mode);
+                        const borders = await page.evaluate(() => {
+                            const fixture = document.createElement('div');
+                            fixture.innerHTML = '<div class="prose"><h1>Heading</h1></div>'
+                                + '<div class="item-list"><div class="list-item list-header">List header</div></div>'
+                                + '<span></span>';
+                            fixture.lastElementChild.style.borderBottom = '1px solid color-mix(in srgb,var(--fg) 20%,transparent)';
+                            document.body.append(fixture);
+                            const border = selector => getComputedStyle(fixture.querySelector(selector)).borderBottomColor;
+                            const colors = {heading:border('h1'),list:border('.list-header'),previous:border('span')};
+                            fixture.remove();
+                            return colors;
+                        });
+                        assert.equal(borders.heading, name === 'site-override' ? 'rgb(49, 84, 122)' : borders.previous,
+                            `${engine.name()} ${name} ${mode}: the heading uses its own palette role.`);
+                        assert.equal(borders.list, name === 'custom' ? 'rgb(156, 51, 79)' : borders.previous,
+                            `${engine.name()} ${name} ${mode}: the list header uses its own palette role.`);
                         if (name === 'monochrome') {
                             const colors = await page.evaluate(scopes => {
                                 const canvas = document.createElement('canvas');

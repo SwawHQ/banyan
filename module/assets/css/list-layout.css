@@ -88,7 +88,7 @@
 }
 
 .list-item.list-header {
-    border-bottom: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+    border-bottom: 1px solid var(--list-header-border);
 }
 
 .list-header a {

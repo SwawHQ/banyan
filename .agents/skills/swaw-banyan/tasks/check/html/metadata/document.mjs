@@ -18,9 +18,6 @@ export function inspectDocumentMetadata(html) {
         const icons=extractStartTags(row.inner,'use').map(tag=>extractTagAttribute(tag,'href'));
         assert.deepEqual(icons,['#icon-clock'],'Date rows use the clock icon.');
       }
-      const taxonomy=extractBlocks(meta.inner,'nav',tag=>hasClassToken(tag,'document-meta__row--taxonomy-path'));
-      const directories=extractBlocks(meta.inner,'nav',tag=>hasClassToken(tag,'document-meta__row--path'));
-      assert.ok(taxonomy.every(row=>directories.every(directory=>row.index<directory.index)),'Taxonomy paths precede the directory.');
     }
     return [];
   } catch(error) {return [error.message];}

@@ -20,13 +20,18 @@ Sitemap: {{ if $multilingual }}{{ absURL (printf "%s/sitemap.xml" $site.Language
 {{ end -}}
 {{- $groups := newScratch -}}
 {{- range (partial "system-metadata/sitemap/pages.html" $site) -}}
-  {{- $root := .FirstSection | default $site.Home -}}
+  {{- $root := .CurrentSection | default $site.Home -}}
   {{- $group := $groups.Get $root.Path | default (dict "root" $root "pages" slice) -}}
   {{- $groups.Set $root.Path (dict "root" $root "pages" ($group.pages | append .)) -}}
 {{- end -}}
 {{- range $groups.Values }}
 
-## {{ partial "system-metadata/agent-access/text.txt" .root.Title }}
+{{- $labels := slice -}}
+{{- range .root.Ancestors.Reverse -}}
+  {{- if not .IsHome -}}{{- $labels = $labels | append .Title -}}{{- end -}}
+{{- end -}}
+{{- $labels = $labels | append .root.Title -}}
+{{ printf "\n\n" }}## {{ partial "system-metadata/agent-access/text.txt" (delimit $labels " / ") }}
 {{ range .pages -}}
 {{ $entryDescription := partial "system-metadata/agent-access/text.txt" (.Params.description | default "") -}}
 - [{{ partial "system-metadata/agent-access/text.txt" .Title }}](<{{ .Permalink }}>){{ with $entryDescription }}: {{ . }}{{ end }}

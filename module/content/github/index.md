@@ -3,7 +3,7 @@ root_nav: true
 title: GitHub
 description: Browse the Banyan theme source code.
 date: 2026-09-08
-slug: github
+url: github/
 layout: page-article
 icon: github
 weight: 102

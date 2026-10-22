@@ -115,9 +115,9 @@ After release, verify a fixed version in a fresh site without a replacement.
 
 ## Configure the site root
 
-Banyan supplies custom output format definitions, but the site must select
-its outputs, taxonomies and permalinks. This is a starting point; merge it into
-an existing configuration instead of replacing the whole file:
+Each site defines its languages, theme parameters and output formats in its own
+`hugo.toml`. The Module has no Hugo configuration file. Use this starting point
+when adapting a site:
 
 ```toml
 baseURL = "https://example.com/"
@@ -127,35 +127,52 @@ defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
 disableLanguages = ["zh", "zh-tw"]
 panicOnWarning = true
+printPathWarnings = true
 
 [minify]
 disableJS = true
+
+[cascade.build]
+publishResources = false
 
 [outputs]
 home = ["HTML", "RSS", "LLMS"]
 page = ["HTML"]
 section = ["HTML", "RSS"]
-taxonomy = ["HTML", "RSS"]
-term = ["HTML", "RSS"]
+
+[outputFormats.LLMS]
+mediaType = "text/plain"
+baseName = "llms"
+isPlainText = true
+notAlternative = true
 
 [taxonomies]
-tag = "tags"
 
 [params]
 description = "Describe this site."
 
+[params.appearance]
+palette = "css/theme.css"
+
+[module.hugoVersion]
+min = "0.157.0"
+
 [languages.en]
 languageName = "English"
 weight = 1
+[languages.en.params]
+locale = "en_US"
+icon = { text = "EN" }
 ```
 
-`disableJS` preserves the inline bytes used for CSP hashes. Keep existing
-permalinks unless the user requests URL changes. The Module supplies social locales
-for English, Simplified Chinese and Traditional Chinese; override
-`languages.<code>.params.locale` only when a different locale is needed.
-This starter enables English. To enable Chinese, remove it from
-`disableLanguages`, declare its root `languages` settings and add its translated
-home. The Module supplies translated taxonomy roots, information and settings pages.
+`disableJS` preserves the inline bytes used for CSP hashes. Preserve each page's
+published address in its front matter `url` field. Each enabled language declares
+its `locale` and `icon` in `languages.<code>.params`. This starter enables English.
+To enable Chinese, remove it from `disableLanguages`, then add its language
+settings, locale, icon and translated home.
+The [demo configuration](https://github.com/SwawHQ/banyan/blob/main/hugo.toml)
+shows all three languages. The Module supplies translated directory roots,
+information and settings pages.
 
 Create `content/_index.md` for the site's home:
 
@@ -168,17 +185,37 @@ layout: page-home
 ---
 ```
 
-The declared `tags` taxonomy uses the Module's Discover - Categories page.
-The Module also supplies a root for `tools` when the site registers that taxonomy.
-No site taxonomy root files are required for these defaults.
-To customize a root, copy its complete `content/tags/_index.<lang>.md` or
-`content/tools/_index.<lang>.md` from the Module into the same site path.
-Hugo replaces the whole content file, so keep its taxonomy and layout declarations.
+The Module supplies `content/discover/` as the ordinary Discover - Categories
+directory. Keep `[taxonomies]` empty to disable Hugo's default tags and categories.
+Articles use normal content paths such as `content/discover/sample/alpha.md`.
+Set `url: p/alpha/` in article front matter, and keep it when moving the source.
+Use a language-relative path without a leading slash; Hugo adds the current
+language prefix. Information and settings pages use their own paths, such as
+`url: language/`. Directory pages keep their content paths. No per-section
+permalink rule is needed.
 
-Before assigning an article to a `tags` term, create that term's bundle, such as
-`content/tags/sample/_index.md`, with a title. Add a translated bundle for each
-enabled language that uses the term. `tools` terms can be generated without
-bundles; add a bundle to supply a translated title, description or other content.
+Create `content/discover/sample/_index.md` with a title for each nested directory;
+add translated `_index` files for its enabled languages. The directory inherits
+its list and article layouts from the Module root.
+
+To list an article in another directory, put one shared `_map.toml` there:
+
+```toml
+refs = ["/discover/sample/alpha"]
+```
+
+Targets are logical content paths. Each language uses its own target translation.
+The reference takes its title and metadata from the article and adds no second
+page. A reference directory and its ancestors use `build.list: always` or `local`.
+Resource publishing follows Hugo's `build.publishResources` setting, including
+`_map.toml`.
+
+Tools use the same directory and reference model. Add article paths to a tool
+directory’s `_map.toml`; article `offer` fields supply product display values.
+The Module supplies `content/tools/` and its `all-tools` aggregate.
+
+To customize a Module directory, copy its complete translated
+`_index` file into the same site path. Hugo replaces the whole content file.
 
 Site content, assets and data at the same paths override Module defaults.
 Keep accounts, branding and legal content in the site. `params.theme_changelog`

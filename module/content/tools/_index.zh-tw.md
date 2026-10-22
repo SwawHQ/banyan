@@ -8,19 +8,18 @@ list: directory
 list_icon_file: product
 outputs:
   - HTML
+  - RSS
 slots:
   breadcrumb: true
 cascade:
   - target:
-      kind: term
+      kind: page
+    layout: page-article
+    slots: {breadcrumb: true, meta: true}
+  - target:
+      kind: section
     layout: page-collection
     list: products
-    slots:
-      breadcrumb: true
-banyan_taxonomy:
-  mode: flat
-  article_weight: 40
-  normalize: identity
-  article_mode: all
-  require_term_bundles: false
+    outputs: [HTML, RSS]
+    slots: {breadcrumb: true}
 ---

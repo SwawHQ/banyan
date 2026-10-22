@@ -15,4 +15,4 @@
     {{- end -}}
   </div>
 </article>
-{{- if and .IsPage (eq .Section "d") -}}{{- partial "feature-document/schema.html" . -}}{{- end -}}
+{{- if and .IsPage (eq .Layout "page-article") -}}{{- partial "feature-document/schema.html" . -}}{{- end -}}

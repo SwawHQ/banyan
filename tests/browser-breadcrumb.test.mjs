@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {sortCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/sort/options.mjs';
 import {isolationCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/isolation/options.mjs';
@@ -32,11 +32,19 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
+  fixtureContentDirectory(content);
+  write(path.join(content,'d/root-sibling.md'),'---\ntitle: Root sibling\nurl: d/root-sibling/\ndate: 2026-01-01\n---\nIndependent sortable root row.\n');
   write(path.join(content,'d/breadcrumb-fixture/_index.md'),'---\ntitle: Breadcrumb Fixture\n---\n');
   write(path.join(content,'d/breadcrumb-fixture/child/_index.md'),'---\ntitle: Child\n---\n');
-  write(path.join(content,'d/breadcrumb-fixture/child/nested.md'),'---\ntitle: Nested\nslug: nested\ndate: 2026-01-01\n---\nNested content.');
+  write(path.join(content,'d/breadcrumb-fixture/child/nested.md'),'---\ntitle: Nested\nurl: d/breadcrumb-fixture/child/nested/\ndate: 2026-01-01\n---\nNested content.');
   for(const [index,name] of ['one','two','three','four','five','six'].entries())write(path.join(content,'d/breadcrumb-fixture',name+'.md'),
-    `---\ntitle: ${name}\nslug: ${name}\nurl: ${collection+name}/\ndate: "2026-01-0${index+1}T00:00:00+08:00"\ntags:\n  - ${index%2?'tooling/devtools':'tooling'}\n---\n\n## Chapter\n\n`+'Text for the source-column fixture.\n\n'.repeat(20));
+    `---\ntitle: ${name}\nurl: ${collection+name}/\ndate: "2026-01-0${index+1}T00:00:00+08:00"\n---\n\n## Chapter\n\n`+'Text for the source-column fixture.\n\n'.repeat(20));
+  for(const suffix of ['','.zh','.zh-tw']) {
+    write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
+    write(path.join(content,'discover/tooling/devtools','_index'+suffix+'.md'),directoryPage('Devtools'));
+  }
+  write(path.join(content,'discover/tooling/_map.toml'),"refs = [\"/d/breadcrumb-fixture/one\",\"/d/breadcrumb-fixture/three\",\"/d/breadcrumb-fixture/five\"]\n");
+  write(path.join(content,'discover/tooling/devtools/_map.toml'),"refs = [\"/d/breadcrumb-fixture/two\",\"/d/breadcrumb-fixture/four\",\"/d/breadcrumb-fixture/six\"]\n");
   write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
@@ -74,8 +82,8 @@ test('isolation covers ancestors and main collections, including sort previews w
 });
 
 test('source works without JavaScript and retains runtime sorting through click and reload',{timeout:45000},()=>{
-  for(const query of ['','#from=tags/tooling','#sorts=date-desc,date-asc']) {
-    const result=cli('source',['--page','/tags/tooling/devtools/'+query,'--column','/tags/tooling/','--article',article]);
+  for(const query of ['','#from=discover/tooling','#sorts=date-desc,date-asc']) {
+    const result=cli('source',['--page','/discover/tooling/devtools/'+query,'--column','/discover/tooling/','--article',article]);
     assert.equal(result.status,0,query+'\n'+result.stdout+result.stderr);
   }
 });
@@ -115,11 +123,11 @@ test('isolation rejects changed siblings and stale main-entry sort slots',{timeo
 });
 
 test('source rejects wrong static and runtime lineage, missing links and malformed pages',{timeout:45000},()=>{
-  const runtime=fixture('runtime-source');script(runtime,'tags/tooling/devtools',`document.querySelectorAll('[data-slot=breadcrumb] [data-list-entry]').forEach(link=>{const url=new URL(link.href);if(url.pathname===${JSON.stringify(article)}){const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','wrong');url.hash=fields.toString();link.href=url.href;}});`);
-  const args=['--page','/tags/tooling/devtools/','--column','/tags/tooling/','--article',article];
+  const runtime=fixture('runtime-source');script(runtime,'discover/tooling/devtools',`document.querySelectorAll('[data-slot=breadcrumb] [data-list-entry]').forEach(link=>{const url=new URL(link.href);if(url.pathname===${JSON.stringify(article)}){const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','wrong');url.hash=fields.toString();link.href=url.href;}});`);
+  const args=['--page','/discover/tooling/devtools/','--column','/discover/tooling/','--article',article];
   const result=cli('source',args,runtime);assert.equal(result.status,1);assert.match(result.stderr,/declared column source/);
-  const raw=fixture('static-source'),file=path.join(raw,'tags/tooling/devtools/index.html');
-  const text=fs.readFileSync(file,'utf8'),changed=text.replaceAll(article+'#from=tags/tooling',article+'#from=wrong');
+  const raw=fixture('static-source'),file=path.join(raw,'discover/tooling/devtools/index.html');
+  const text=fs.readFileSync(file,'utf8'),changed=text.replaceAll(article+'#from=discover/tooling',article+'#from=wrong');
   assert.notEqual(changed,text);fs.writeFileSync(file,changed);
   const staticResult=cli('source',args,raw);assert.equal(staticResult.status,1);assert.match(staticResult.stderr,/declared column source/);
   const missing=cli('source',[...args.slice(0,-1),'/missing/']);assert.equal(missing.status,1);assert.match(missing.stderr,/requested article exactly once/);

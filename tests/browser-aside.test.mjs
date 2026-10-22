@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {toggleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/aside/toggle/options.mjs';
 import {canvasLayoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/layout/options.mjs';
@@ -34,7 +34,8 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
-  const front='---\ntitle: Portable Aside\nslug: aside-fixture\nurl: /d/aside-fixture/\ndate: "2026-01-01T00:00:00+08:00"\nlastmod: "2026-01-02T00:00:00+08:00"\n---\n\n';
+  fixtureContentDirectory(content);
+  const front='---\ntitle: Portable Aside\nurl: /d/aside-fixture/\ndate: "2026-01-01T00:00:00+08:00"\nlastmod: "2026-01-02T00:00:00+08:00"\n---\n\n';
   let body=('Leading article text to exercise independent reading progress.\n\n'.repeat(12));
   for(let i=0;i<20;i++)body+=(i%2?'###':'##')+' Chapter '+i+' 测试 '+('long heading words '.repeat(i===10?8:1))+'\n\n'+('A paragraph with enough words to exercise the reading column and native chapter links.\n\n'.repeat(6));
   write(path.join(content,'d/aside-fixture.md'),front+body);

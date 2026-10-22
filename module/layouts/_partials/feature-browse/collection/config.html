@@ -7,8 +7,5 @@
     {{- errorf "List page %s needs list: name, directory, all or products (own declaration or nearest ancestor)." $page.RelPermalink -}}
   {{- end -}}
 {{- end -}}
-{{- $variant := $view -}}
-{{- if eq $view "directory" -}}
-  {{- $variant = cond (in (slice "taxonomy" "term") $page.Kind) "tree" "section" -}}
-{{- end -}}
+{{- $variant := cond (eq $view "directory") "section" $view -}}
 {{- return (dict "view" $view "sort_variant" $variant "default_sort" (cond (in (slice "name" "products") $view) "name-asc" "date-desc")) -}}

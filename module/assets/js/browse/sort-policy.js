@@ -32,16 +32,6 @@ export const SORT_VARIANTS = Object.freeze({
             path: { dataKey: 'sortPath', type: 'string', defaultOrder: 'asc' }
         }
     },
-    tree: {
-        defaultToken: 'date-desc',
-        grouped: true,
-        tieBreakField: 'name',
-        fields: {
-            name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
-            date: { dataKey: 'sortDate', type: 'number', defaultOrder: 'desc' },
-            count: { dataKey: 'sortCount', type: 'number', defaultOrder: 'desc' }
-        }
-    },
     products: {
         defaultToken: 'name-asc',
         grouped: false,

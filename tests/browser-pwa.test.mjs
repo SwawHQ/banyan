@@ -48,13 +48,13 @@ before(()=>{
   for(const lang of ['en','zh','zh-tw']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
     let text=fs.readFileSync(path.join(root,'module/content/powered-by/index'+suffix+'.md'),'utf8')
-      .replace(/^---\r?\n/,'---\nurl: '+prefix+panel+'\n');
+      .replace(/^url:.*$/m,'url: '+prefix+panel+'\n');
     for(const [key,value] of Object.entries({yes:lang+' · worker yes',no:lang+' · worker no',status:lang+' · status',unavailable:lang+' · unavailable',check:lang+' · check',check_failed:lang+' · failed'})) {
       text=text.replace(new RegExp('^    '+key+':.*$','m'),'    '+key+': '+JSON.stringify(value));
     }
     write(path.join(content,'powered-by/index'+suffix+'.md'),text);
     write(path.join(content,'fixture-start/index'+suffix+'.md'),
-      '---\ntitle: Independent panel source\nslug: fixture-start\nlayout: page-article\nurl: '+prefix+from+'\nroot_nav: true\nicon: code\nweight: 84\nbuild:\n  list: local\n---\n\nIndependent panel navigation source.');
+      '---\ntitle: Independent panel source\nlayout: page-article\nurl: '+prefix+from+'\nroot_nav: true\nicon: code\nweight: 84\nbuild:\n  list: local\n---\n\nIndependent panel navigation source.');
   }
   const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n';
   const build=(configuration,destination,mode='enable')=>{

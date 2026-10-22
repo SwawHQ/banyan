@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {readBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/bindings.mjs';
 import {command as rulesCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/rules/options.mjs';
@@ -73,6 +73,7 @@ function noNative() {
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-prefetch-'));
   const content=path.join(work,'content'),layouts=path.join(work,'layouts'),config=path.join(work,'fixture.toml');
+  fixtureContentDirectory(content);
   const icon=(name,href)=>'<a data-list-entry data-probe="'+name+'" href="'+href+'"><span class="item-icon"><svg class="icon icon-'+name+'"><use href="#icon-'+name+'"></use></svg></span><span class="item-title">'+name+'</span></a>';
   const anchors='<a data-probe="plain" href="/probe-dynamic/">Plain link</a>\n'+['folder','tag','product','file'].map(name=>(name==='product'?'<div aria-hidden="true">'+
     '<p>Viewport spacer</p>'.repeat(60)+'</div>':'')+icon(name,'/probe-'+name+'/')).join('\n');
@@ -81,17 +82,17 @@ before(()=>{
     .replace('{{ partial "entry-page-prefetch-debug/render.html" . }}','{{ partial "entry-page-prefetch-debug/render.html" . }}'+anchors));
   for(const language of ['en','zh','zh-tw']) {
     const prefix=language==='en'?'':'/'+language,suffix=language==='en'?'':'.'+language;
-    write(path.join(content,'prefetch-probe/index'+suffix+'.md'),'---\ntitle: Prefetch probe\nslug: prefetch-probe\nurl: '+prefix+probePage+'\nlayout: page-prefetch-probe\n---\n');
-    write(path.join(content,'diagnostics/index'+suffix+'.md'),'---\ntitle: Prefetch diagnostics\nslug: prefetch-diagnostics\nurl: '+prefix+debugPage+'\nlayout: page-prefetch-debug\nprefetch_debug:\n  loading_label: 正在读取预取状态\n---\n');
+    write(path.join(content,'prefetch-probe/index'+suffix+'.md'),'---\ntitle: Prefetch probe\nurl: '+prefix+probePage+'\nlayout: page-prefetch-probe\n---\n');
+    write(path.join(content,'diagnostics/index'+suffix+'.md'),'---\ntitle: Prefetch diagnostics\nurl: '+prefix+debugPage+'\nlayout: page-prefetch-debug\nprefetch_debug:\n  loading_label: 正在读取预取状态\n---\n');
   }
   for(const name of ['folder','tag','product','file','dynamic'])write(path.join(content,'probe-'+name+'/index.md'),
-    '---\ntitle: Target '+name+'\nslug: probe-'+name+'\nurl: /probe-'+name+'/\nlayout: page-article\n---\n');
+    '---\ntitle: Target '+name+'\nurl: /probe-'+name+'/\nlayout: page-article\n---\n');
   for(const render of ['link','never'])write(path.join(content,'unpublished-'+render+'/index.md'),
-    '---\ntitle: Unpublished '+render+'\nslug: unpublished-'+render+'\nurl: /000-unpublished-'+render+'/\nlayout: page-article\nbuild:\n  render: '+render+'\n---\n');
+    '---\ntitle: Unpublished '+render+'\nurl: /000-unpublished-'+render+'/\nlayout: page-article\nbuild:\n  render: '+render+'\n---\n');
   for(const route of ['d/prefetch-scopes','d/prefetch-scopes/child','d/prefetch-scopes/sibling'])
     write(path.join(content,route,'_index.md'),'---\ntitle: Scope collection\nurl: /'+route+'/\n---\n');
   for(const [index,name] of ['one','two'].entries())write(path.join(content,'d/prefetch-scopes/child',name+'.md'),
-    '---\ntitle: '+name+'\nslug: '+name+'\nurl: /d/prefetch-scopes/child/'+name+'/\nlayout: page-article\ndate: 2026-01-0'+(index+1)+'\n---\nScope article.');
+    '---\ntitle: '+name+'\nurl: /d/prefetch-scopes/child/'+name+'/\nlayout: page-article\ndate: 2026-01-0'+(index+1)+'\n---\nScope article.');
   const mount=(directory,target)=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n';
   const mounts=mount(content,'content')+mount('content','content')+mount(layouts,'layouts')+mount('layouts','layouts');
   function build(name,enabled=true,runtimeSource,prerenderOnly=false,columnPolicy='') {

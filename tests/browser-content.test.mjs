@@ -34,8 +34,8 @@ before(()=>{
   for(const lang of ['en','zh','zh-tw']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
     write(path.join(content,'powered-by/index'+suffix+'.md'),fs.readFileSync(path.join(root,'module/content/powered-by/index'+suffix+'.md'),'utf8')
-      .replace(/^---\r?\n/,'---\nurl: '+prefix+panel+'\n'));
-    write(path.join(content,'content-start/index'+suffix+'.md'),'---\ntitle: Independent content source\nslug: content-start\nurl: '+prefix+from+
+      .replace(/^url:.*$/m,'url: '+prefix+panel+'\n'));
+    write(path.join(content,'content-start/index'+suffix+'.md'),'---\ntitle: Independent content source\nurl: '+prefix+from+
       '\nlayout: page-article\nroot_nav: true\nicon: code\nweight: 87\nbuild:\n  list: local\n---\n\nIndependent content source.');
   }
   const mounts=[['content',content],['content','content'],['data',data],['data','data']]

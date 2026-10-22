@@ -25,3 +25,18 @@ export function serviceWorkerPolicy(mode,contentCheckInterval=5,offlineNoticePat
   return '[service_worker]\nmode = '+JSON.stringify(mode)+'\ncontent_check_interval = '+contentCheckInterval+
     '\noffline_notice_path = '+JSON.stringify(offlineNoticePath)+'\n';
 }
+
+export function directoryPage(title,fields='') {
+  return '---\ntitle: '+title+'\nlayout: page-collection\nlist: directory\nslots: {breadcrumb: true}\n'+fields+
+    '\ncascade:\n  - target: {kind: page}\n    layout: page-article\n    slots: {breadcrumb: true, meta: true}\n  - target: {kind: section}\n    layout: page-collection\n    slots: {breadcrumb: true}\n---\n';
+}
+
+export function fixtureContentDirectory(content) {
+  for(const suffix of ['','.zh','.zh-tw']) {
+    fs.mkdirSync(path.join(content,'d'),{recursive:true});
+    fs.writeFileSync(path.join(content,'d','_index'+suffix+'.md'),directoryPage('Content','root_nav: false'));
+    const all=path.join(content,'all','index'+suffix+'.md');
+    fs.mkdirSync(path.dirname(all),{recursive:true});
+    fs.writeFileSync(all,'---\ntitle: Discover - All\nurl: all/\nroot_nav: true\nlayout: page-collection\nlist: all\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
+  }
+}

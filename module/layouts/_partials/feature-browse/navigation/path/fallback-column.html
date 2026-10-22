@@ -13,8 +13,6 @@
       {{- $decorated = $decorated | append (merge $row (dict "icon" $icon)) -}}
     {{- end -}}
     {{- $rows = $decorated -}}
-  {{- else if in (slice "taxonomy" "term") .Kind -}}
-    {{- $rows = partial "feature-browse/collection/rows.html" (dict "page" .) -}}
   {{- end -}}
   {{- with partial "feature-browse/navigation/path/items-from-rows.html" (dict "entries" $rows "selected_href" $node.item.href) -}}
     {{- $items = . -}}

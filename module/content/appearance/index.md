@@ -1,7 +1,7 @@
 ---
 root_nav: true
 title: Appearance
-slug: appearance
+url: appearance/
 layout: page-appearance
 list: choice
 labels:

@@ -1,7 +1,6 @@
 ---
 root_nav: true
 title: Banyan
-linkTitle: Banyan
 icon: { text: "B" }
 weight: 110
 browser_title: Banyan — A Minimal Hugo Publishing Theme
@@ -11,12 +10,11 @@ brand_line: Clear structure for exploratory publishing.
 home_signals:
   - Hugo
   - name: Documentation
-    url: /docs/
+    url: /discover/docs/
     primary: true
   - name: GitHub
     url: https://github.com/SwawHQ/banyan
-  - Taxonomy
+  - Directories
   - Breadcrumbs
   - PWA
-home_signal_guide_chance: 0
 ---

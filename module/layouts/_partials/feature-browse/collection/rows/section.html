@@ -5,11 +5,16 @@
 {{- if ne $page.Kind "section" -}}
   {{- errorf "Build failed: feature-browse/collection/rows/section.html only supports kind=section; current page %q has kind=%q." $page.RelPermalink $page.Kind -}}
 {{- end -}}
+{{- $directory := partial "feature-browse/directory/members.html" $page -}}
+{{- $direct := $directory.direct -}}
 {{- $sectionRows := slice -}}
 {{- range $section := $page.Sections -}}
-  {{- $count := len $section.RegularPagesRecursive -}}
+  {{- if not (partial "feature-browse/is-rendered-html.html" .) -}}{{- continue -}}{{- end -}}
+  {{- $membership := partial "feature-browse/directory/members.html" $section -}}
+  {{- $members := $membership.recursive -}}
+  {{- $count := len $members -}}
   {{- $dateValue := $section.Lastmod -}}
-  {{- with first 1 ($section.RegularPagesRecursive.ByLastmod.Reverse) -}}
+  {{- with first 1 (sort $members "Lastmod" "desc") -}}
     {{- $dateValue = (index . 0).Lastmod -}}
   {{- end -}}
   {{- $text := $section.LinkTitle | default $section.Title -}}
@@ -30,7 +35,7 @@
   ) -}}
 {{- end -}}
 {{- $pageRows := slice -}}
-{{- range $child := $page.RegularPages -}}
+{{- range $child := $direct -}}
   {{- $pageRows = $pageRows | append (partial "feature-browse/collection/rows/page.html" (dict "page" $child)) -}}
 {{- end -}}
 {{- $rows := slice -}}

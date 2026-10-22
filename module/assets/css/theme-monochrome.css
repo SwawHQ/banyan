@@ -69,6 +69,10 @@
     --item-current-ring: var(--item-current-text);
 }
 
+.list-header {
+    --list-header-border: color-mix(in srgb, var(--fg) 20%, transparent);
+}
+
 .prose {
     /* Neutral surfaces move from bg toward fg; the outer mix adds emphasis.
        Keep one-use neutral mixes inline, and share only the input for inline
@@ -76,7 +80,7 @@
     --prose-border-neutral: color-mix(in srgb, var(--fg) 12%, var(--bg));
 
     --prose-heading-color: var(--accent);
-    --prose-heading-border: color-mix(in srgb, var(--prose-heading-color) 10%, transparent);
+    --prose-heading-border: color-mix(in srgb, var(--fg) 20%, transparent);
     --prose-rule-border: color-mix(in srgb, var(--fg) 24%, var(--bg));
     --prose-deleted-color: var(--muted);
     --prose-deleted-decoration: var(--accent);

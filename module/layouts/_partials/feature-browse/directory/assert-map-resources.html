@@ -1,0 +1,16 @@
+{{- $owner := . -}}
+{{- /* A recursive wildcard alone excludes resources in the current directory. */ -}}
+{{- range .Resources.Match "{_map.*,**/_map.*}" -}}
+  {{- $source := printf "%s/%s" (strings.TrimSuffix "/" $owner.Path) .Name -}}
+  {{- if ne (path.Base .Name) "_map.toml" -}}
+    {{- errorf "Build failed: %s is not supported; only _map.toml with refs = [...] is allowed." $source -}}
+  {{- else if or (ne $owner.Kind "section") (not $owner.File) (ne .Name "_map.toml") -}}
+    {{- errorf "Build failed: %s requires an ordinary section _index.md in the same directory; _map.toml cannot be nested under another bundle or placed in an article bundle." $source -}}
+  {{- else -}}
+    {{- range $branch := (slice $owner | append $owner.Ancestors) -}}
+      {{- if eq (index ($branch.Params.build | default dict) "list") "never" -}}
+        {{- errorf "Build failed: %s requires discoverable directories; %s has build.list: never. Set build.list: local or always on that directory." $source $branch.Path -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

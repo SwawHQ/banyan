@@ -1,8 +1,12 @@
 {{- $ctx := .ctx | default . -}}
 {{- $entries := slice -}}
 {{- $columnsByHref := dict -}}
-{{- range $page := sort $ctx.Site.Pages "RelPermalink" -}}
-  {{- if eq $page.Layout "page-collection" -}}
+{{- $pages := slice -}}
+{{- range $ctx.Site.Pages -}}{{- $pages = $pages | append . -}}{{- end -}}
+{{- $directory := partialCached "feature-browse/directory/index.html" $ctx.Site $ctx.Language.Lang -}}
+{{- range $directory.sections -}}{{- $pages = $pages | append . -}}{{- end -}}
+{{- range $page := sort (uniq $pages) "RelPermalink" -}}
+  {{- if and (eq $page.Layout "page-collection") (partial "feature-browse/is-rendered-html.html" $page) -}}
     {{- $model := partial "feature-browse/navigation/source/page-model.html" (dict "page" $page) -}}
     {{- $entries = $entries | append $model -}}
     {{- $columnsByHref = merge $columnsByHref (dict $page.RelPermalink $model.currentColumn) -}}

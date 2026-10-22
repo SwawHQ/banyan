@@ -12,7 +12,7 @@
       "  --root <path|none>  Expected selected root; none means no selection",
       "  --widths <list>     Comma-separated viewport widths; test height: 900 pixels; default: 390,1440",
       "",
-      "swban check/browser/canvas/first-paint.webkit ./preview --page /tags/topic/child/",
+      "swban check/browser/canvas/first-paint.webkit ./preview --page /discover/topic/child/",
       "swban check/browser/canvas/first-paint.webkit ./preview --page /article/#from=all --trace --out ./browser-report"
     ]
   },
@@ -29,7 +29,7 @@
       "  --root <path|none>  预期选中的根条目；none 表示不选中",
       "  --widths <list>     视口宽度，用逗号分隔；检查高度为 900 像素；默认：390,1440",
       "",
-      "swban check/browser/canvas/first-paint.webkit ./preview --page /tags/topic/child/",
+      "swban check/browser/canvas/first-paint.webkit ./preview --page /discover/topic/child/",
       "swban check/browser/canvas/first-paint.webkit ./preview --page /article/#from=all --trace --out ./browser-report"
     ]
   }

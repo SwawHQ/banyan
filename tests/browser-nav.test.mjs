@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {anchorsCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/anchors/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -41,9 +41,10 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content');
-  const front=(title,url)=>`---\ntitle: "${title}"\nslug: "${url.split('/').filter(Boolean).at(-1)}"\nurl: "${url}"\ndate: "2026-01-01T00:00:00+08:00"\ndraft: false\n---\n\n`;
+  fixtureContentDirectory(content);
+  const front=(title,url)=>`---\ntitle: "${title}"\nurl: "${url}"\ndate: "2026-01-01T00:00:00+08:00"\ndraft: false\n---\n\n`;
   write(path.join(content,'d/swban-nav-long.md'),front('Z Navigation Fixture',routes['nav/anchors'])+'## First Chapter\n\n'+('An article paragraph with enough text to exercise the real reading column.\n\n'.repeat(40))+'## Last Chapter\n\nEnd.');
-  for (const name of ['one','two']) write(path.join(content,'d/swban-nav-'+name+'.md'),front('A Duplicate Name','/d/swban-nav-'+name+'/')+'A second article with a stable, distinct URL.');
+  for (const name of ['one','two','three']) write(path.join(content,'d/swban-nav-'+name+'.md'),front('A Duplicate Name','/d/swban-nav-'+name+'/')+'An article with a stable, distinct URL.');
   for(const [name,title,time] of [
     ['earlier','Z earlier second','2026-01-01T12:00:01+08:00'],
     ['later','A later second','2026-01-01T12:00:02+08:00'],

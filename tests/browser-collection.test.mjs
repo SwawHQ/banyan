@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {layoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/collection/layout/options.mjs';
 import {styleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/collection/style/options.mjs';
@@ -31,11 +31,18 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
+  fixtureContentDirectory(content);
   write(path.join(content,'d/collection-fixture/_index.md'),'---\ntitle: Independent Collection\n---\n');
   for(const [index,name] of ['one','two','three','four'].entries())write(path.join(content,'d/collection-fixture',name+'.md'),
-    `---\ntitle: ${name==='three'?'Long name 测试 '+('collection title '.repeat(12)):name}\nslug: collection-${name}\nurl: /d/collection-fixture/${name}/\ndate: "2026-01-0${index+1}T00:00:00+08:00"\ntags:\n  - ${index%2?'tooling/devtools':'tooling'}\n---\n\n## Chapter\n\n`+'Independent collection text.\n\n'.repeat(20));
+    `---\ntitle: ${name==='three'?'Long name 测试 '+('collection title '.repeat(12)):name}\nurl: /d/collection-fixture/${name}/\ndate: "2026-01-0${index+1}T00:00:00+08:00"\n---\n\n## Chapter\n\n`+'Independent collection text.\n\n'.repeat(20));
   for(const name of ['translated-one','translated-two'])write(path.join(content,'d',name+'.zh.md'),
-    `---\ntitle: ${name}\nslug: ${name}\ndate: 2026-01-01\n---\n\n独立翻译内容。`);
+    `---\ntitle: ${name}\nurl: d/${name}/\ndate: 2026-01-01\n---\n\n独立翻译内容。`);
+  for(const suffix of ['','.zh','.zh-tw']) {
+    write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
+    write(path.join(content,'discover/tooling/devtools','_index'+suffix+'.md'),directoryPage('Devtools'));
+  }
+  write(path.join(content,'discover/tooling/_map.toml'),"refs = [\"/d/collection-fixture/one\",\"/d/collection-fixture/three\"]\n");
+  write(path.join(content,'discover/tooling/devtools/_map.toml'),"refs = [\"/d/collection-fixture/two\",\"/d/collection-fixture/four\"]\n");
   write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
@@ -52,8 +59,8 @@ test('collection options declare pages, comparisons, settings and widths',()=>{
   assert.match(helpFor(style,'en'),/--choices <path>/);assert.match(helpFor(style,'en'),/default: \/appearance\//);
 });
 
-test('layout checks directory, flat and taxonomy lists at narrow and wide widths',{timeout:20000},()=>{
-  for(const route of ['/all/','/d/collection-fixture/','/tags/tooling/','/tags/tooling/devtools/']) {
+test('layout checks directory, flat and reference lists at narrow and wide widths',{timeout:20000},()=>{
+  for(const route of ['/all/','/d/collection-fixture/','/discover/tooling/','/discover/tooling/devtools/']) {
     const result=cli('layout',['--page',route,'--widths','390,1440']);assert.equal(result.status,0,result.stdout+result.stderr);
   }
   const state=report(cli('layout',['--page','/all/','--article',article,'--widths','390,1440','--out',path.join(work,'reports')]));
@@ -66,7 +73,7 @@ test('style checks actual links and choice buttons in both themes and widths',{t
   const state=report(cli('style',['--page',article,'--collection','/all/','--widths','390,1440','--trace','--out',path.join(work,'reports')]));
   assert.equal(state.browser,'chromium');assert.equal(state.details.cases.length,4);
   for(const result of state.details.cases){assert.equal(result.choiceFocus.tag,'BUTTON');assert.equal(result.pathFocus.tag,'A');assert.equal(result.mainFocus.visible,true);}
-  const translated=cli('style',['--page','/zh/p/translated-one/#from=all','--collection','/zh/all/','--choices','/zh/appearance/']);
+  const translated=cli('style',['--page','/zh/d/translated-one/#from=all','--collection','/zh/all/','--choices','/zh/appearance/']);
   assert.equal(translated.status,0,translated.stdout+translated.stderr);
 });
 
@@ -112,6 +119,6 @@ test('style rejects changed color scheme and element backgrounds',{timeout:15000
 
 test('checks reject unsuitable pages and mismatched source collections',{timeout:15000},()=>{
   const missing=cli('layout',['--page','/about/']);assert.equal(missing.status,1);assert.match(missing.stderr,/requested collection list/);
-  const source=cli('layout',['--page','/tags/tooling/','--article',article,'--widths','390']);assert.equal(source.status,1);assert.match(source.stderr,/requested collection list/);
+  const source=cli('layout',['--page','/discover/tooling/','--article',article,'--widths','390']);assert.equal(source.status,1);assert.match(source.stderr,/requested collection list/);
   const choices=cli('style',['--page',article,'--collection','/all/','--choices','/about/']);assert.equal(choices.status,1);assert.match(choices.stderr,/appearance page with light and dark/);
 });

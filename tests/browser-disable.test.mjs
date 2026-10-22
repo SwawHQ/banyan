@@ -55,7 +55,7 @@ before(()=>{
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
   for(const language of ['en','zh','zh-tw']) {
     const prefix=language==='en'?'':'/'+language,suffix=language==='en'?'':'.'+language;
-    write(path.join(content,'cleanup-start/index'+suffix+'.md'),'---\ntitle: Independent cleanup source\nslug: cleanup-start\nurl: '+prefix+page+'\nlayout: page-article\n---\n\nIndependent worker cleanup page.');
+    write(path.join(content,'cleanup-start/index'+suffix+'.md'),'---\ntitle: Independent cleanup source\nurl: '+prefix+page+'\nlayout: page-article\n---\n\nIndependent worker cleanup page.');
   }
   const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n';
   const build=(name,mode,asset,code)=>{

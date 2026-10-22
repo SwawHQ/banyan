@@ -41,7 +41,7 @@ before(()=>{
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
   for(const name of ['links','images'])write(path.join(content,'fixture-'+name,'index.md'),
-    '---\ntitle: Independent '+name+'\nslug: fixture-'+name+'\nurl: /fixtures/'+name+'/\nlayout: page-article\nroot_nav: true\nicon: code\nweight: 85\nbuild:\n  list: local\n---\n\nFixture insertion point.');
+    '---\ntitle: Independent '+name+'\nurl: /fixtures/'+name+'/\nlayout: page-article\nroot_nav: true\nicon: code\nweight: 85\nbuild:\n  list: local\n---\n\nFixture insertion point.');
   write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n');
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);

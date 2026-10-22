@@ -30,10 +30,10 @@ before(()=>{
   write(source,'data/delivery.toml',serviceWorkerPolicy('enable'));
   write(source,'go.mod','module fixture.invalid/site\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\nreplace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(root,'module').replaceAll('\\','/'))+'\n');
   let panel=fs.readFileSync(path.join(root,'module/content/powered-by/index.md'),'utf8');
-  panel=panel.replace(/^---\r?\n/,'---\nurl: /prefs/update/\n');
+  panel=panel.replace(/^url:.*$/m,'url: /prefs/update/\n');
   write(source,'content/powered-by/index.md',panel);
   fs.cpSync(path.join(root,'content'),path.join(source,'content'),{recursive:true});
-  write(source,'content/d/second.md','---\ntitle: Second Article\nslug: second-article\nlayout: page-article\nweight: 2\ndate: 2026-01-02\n---\n\nSecond article for collection sorting.');
+  write(source,'content/discover/second.md','---\ntitle: Second Article\nurl: p/second-article/\nlayout: page-article\nweight: 2\ndate: 2026-01-02\n---\n\nSecond article for collection sorting.');
   build=path.join(work,'published');
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',build],
     {cwd:source,env:fixtureEnvironment(path.join(work,'first-build')),encoding:'utf8',timeout:60000,windowsHide:true});

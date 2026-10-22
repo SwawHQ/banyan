@@ -22,7 +22,7 @@ const cases={local:'build: {list: local}\naliases: [/sitemap-alias/]',
   text:'outputs: [TEXT]',draft:'draft: true'};
 let work,content,config;
 function write(file,text) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
-function page(name,fields='') {return `---\ntitle: Sitemap ${name}\nslug: sitemap-${name}\nlayout: page-article\n${fields}\n---\nSitemap fixture.\n`;}
+function page(name,fields='',url='sitemap-'+name+'/') {return `---\ntitle: Sitemap ${name}\nurl: ${url}\nlayout: page-article\n${fields}\n---\nSitemap fixture.\n`;}
 function urls(xml) {return [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(match=>decodeHtmlAttribute(match[1]));}
 function llmsUrls(text) {
   return [...text.matchAll(/\]\(<([^>\r\n]+)>\)/g)].map(match=>decodeHtmlAttribute(match[1]))
@@ -44,16 +44,16 @@ before(()=>{
     const mixed=suffix==='.zh'?'sitemap: {disable: true}':suffix==='.zh-tw'?'robots: noindex':'';
     write(path.join(content,`sitemap-mixed/index${suffix}.md`),page('mixed',mixed));
     write(path.join(content,`sitemap-cascade/_index${suffix}.md`),page('cascade','cascade: {sitemap: {disable: true}}'));
-    write(path.join(content,`sitemap-cascade/child${suffix}.md`),page('child'));
+    write(path.join(content,`sitemap-cascade/child${suffix}.md`),page('child','','sitemap-cascade/sitemap-child/'));
     write(path.join(content,`sitemap-tree/_index${suffix}.md`),page('tree'));
-    write(path.join(content,`sitemap-tree/leaf${suffix}.md`),page('leaf'));
+    write(path.join(content,`sitemap-tree/leaf${suffix}.md`),page('leaf','','sitemap-tree/sitemap-leaf/'));
     write(path.join(content,`sitemap-parent/_index${suffix}.md`),page('parent','sitemap: {disable: true}'));
-    write(path.join(content,`sitemap-parent/child${suffix}.md`),page('parent-child'));
+    write(path.join(content,`sitemap-parent/child${suffix}.md`),page('parent-child','','sitemap-parent/sitemap-parent-child/'));
     write(path.join(content,`d/_index${suffix}.md`),'---\ntitle: LLMS Group\nlayout: page-collection\nlist: directory\ncascade: [{target: {kind: page}, layout: page-article}]\n---\n');
     write(path.join(content,`d/llms-special/index${suffix}.md`),'---\n'+
-      'title: "LLMS [brackets] *stars* `code`"\nslug: llms-special\nlayout: page-article\n'+
+      'title: "LLMS [brackets] *stars* `code`"\nurl: d/llms-special/\nlayout: page-article\n'+
       'description: "First [detail]\\nSecond _value_"\n---\nLLMS fixture.\n');
-    write(path.join(content,`d/llms-undescribed/index${suffix}.md`),'---\ntitle: LLMS undescribed\nslug: llms-undescribed\nlayout: page-article\n---\n');
+    write(path.join(content,`d/llms-undescribed/index${suffix}.md`),'---\ntitle: LLMS undescribed\nurl: d/llms-undescribed/\nlayout: page-article\n---\n');
   }
   write(path.join(work,'layouts/page-article.text.txt'),'{{ .Content }}');
   write(config,`[[module.mounts]]\nsource = "${relative(content)}"\ntarget = "content"\n`+
@@ -81,13 +81,13 @@ test('sitemap and grouped LLMS share rendered HTML pages, exclusions and metadat
     assert.ok(locs.includes(`https://example.test${prefix}/sitemap-parent/sitemap-parent-child/`),'A disabled parent must not hide an eligible child');
     const llms=fs.readFileSync(path.join(output,prefix,'llms.txt'),'utf8');
     assertLlmsMatchesSitemap(llms,locs);
-    const special=llms.split('\n').find(line=>line.includes('/p/llms-special/'));
-    assert.ok(special,'The article permalink must follow the d section rule');
+    const special=llms.split('\n').find(line=>line.includes('/d/llms-special/'));
+    assert.ok(special,'The article permalink must follow its physical directory');
     assert.ok(special.includes('[LLMS \\[brackets\\] \\*stars\\* \\`code\\`]'),special);
     assert.ok(special.endsWith(': First \\[detail\\] Second \\_value\\_'),special);
-    assert.equal([...llms.slice(0,llms.indexOf(special)).matchAll(/^## (.+)$/gm)].at(-1)[1],'LLMS Group','Group by Hugo hierarchy, not /p/ URL');
-    const undescribed=llms.split('\n').find(line=>line.includes('/p/llms-undescribed/'));
-    assert.match(undescribed,/^\- \[LLMS undescribed\]\(<https:\/\/example\.test(?:\/zh|\/zh-tw)?\/p\/llms-undescribed\/>\)$/);
+    assert.equal([...llms.slice(0,llms.indexOf(special)).matchAll(/^## (.+)$/gm)].at(-1)[1],'LLMS Group','Group by Hugo hierarchy');
+    const undescribed=llms.split('\n').find(line=>line.includes('/d/llms-undescribed/'));
+    assert.match(undescribed,/^\- \[LLMS undescribed\]\(<https:\/\/example\.test(?:\/zh|\/zh-tw)?\/d\/llms-undescribed\/>\)$/);
     assert.match(fs.readFileSync(path.join(output,prefix,'sitemap-disabled/index.html'),'utf8'),/data-sitemap-disabled=(?:"true"|true)/);
     assert.ok(fs.existsSync(path.join(output,prefix,'sitemap-never-list/index.html')));
     for(const name of ['unrendered','link','text','draft']) assert.ok(!fs.existsSync(path.join(output,prefix,`sitemap-${name}/index.html`)),name);

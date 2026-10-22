@@ -12,7 +12,7 @@
       "  --column <path>  Collection pathname; default: first sortable column",
       "  --widths <list>  Comma-separated viewport widths; test height: 900 pixels; default: 390,1440",
       "",
-      "swban check/browser/breadcrumb/header ./preview --page /tags/topic/child/",
+      "swban check/browser/breadcrumb/header ./preview --page /discover/topic/child/",
       "swban check/browser/breadcrumb/header ./preview --page /article/#from=all --column /all/ --trace"
     ]
   },
@@ -29,7 +29,7 @@
       "  --column <path>  集合路径；默认：首个可排序列",
       "  --widths <list>  视口宽度，用逗号分隔；检查高度为 900 像素；默认：390,1440",
       "",
-      "swban check/browser/breadcrumb/header ./preview --page /tags/topic/child/",
+      "swban check/browser/breadcrumb/header ./preview --page /discover/topic/child/",
       "swban check/browser/breadcrumb/header ./preview --page /article/#from=all --column /all/ --trace"
     ]
   }

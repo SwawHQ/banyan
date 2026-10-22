@@ -1,8 +1,8 @@
 ---
 title: 未发布
-slug: unreleased
+url: p/unreleased/
 description: Banyan 主题和 Skill 的未发布变更。
-lastmod: 2026-10-21
+lastmod: 2026-10-22
 ---
 
 ## 新增
@@ -33,7 +33,8 @@ lastmod: 2026-10-21
 - 静态检查和 HTTP 检查覆盖内容声明、HTML、站点地图、robots、LLMS、
   图片、CSP、SRI、缓存响应头和预取。提供资源体积和页面数据体积报告。
   HTML 检查也验证文章日期行、路径顺序、侧栏控制脚本和静态更新控件。
-  `check/delivery` 检查生成的平台格式、指纹策略一致性和发布文件名，不读取资源正文。
+  `check/delivery` 检查生成的平台格式、指纹路径和发布文件名，不读取资源正文。
+  HTTP `immutable` 或 SW `fingerprinted` 任一项即可标记指纹路径，两层独立配置。
   子目录部署使用 `--base-path` 指定 URL 前缀；路径字符和 EdgeOne 域名重定向按平台语法处理。
 - `sync/ext` 同步声明的外部资源；`deploy/edgeone/sync`
   同步构建生成的部署配置。
@@ -89,10 +90,18 @@ lastmod: 2026-10-21
 - 应用清单固定使用标准 head 链接，移除 `params.web_app_manifest` 和手工主题提交标记。
   Powered by 的本站构建区域只显示内容版本；启用的 SW 从 `sw-version.json`
   读取同一版本，用于切换内容缓存。
-- Module 提供三语言的“发现 - 分类”默认页面，全部内容页统一使用“发现 - 全部”。
-  站点仍需注册分类法。语言选项默认使用 `EN`、`简`、`繁`。
-  演示站启用 `tools` 分类法，提供免费工具示例，并链接到 Banyan 仓库中的文章源文件。
-  三语言站点说明明确为官方文档与发布说明。
+- “发现 - 分类”使用 `content/discover/` 普通目录。共享的 `_map.toml`
+  将同一篇文章列入其他栏目，列表、数量、元信息和栏目 RSS 使用同一归属。
+  移除特殊 `d` 根；文档迁到 `content/discover/docs/`，
+  删除 AI、tooling 示例分类。普通页面直接填写 `url`，正文使用 `p/名称/`，语言保留各自前缀；移动栏目时保留 `url` 即可保持发布网址。
+  移除 `slug` 必填要求及逐栏目永久链接配置；缺少 `url` 时提示构建错误。
+  根配置启用 Hugo 原生重复输出检查，替代手写网址审计及其配置开关，覆盖未列出的页面。
+  发现根使用 `discover`，避开 Hugo 默认分类名。
+  工具目录同样使用引用，移除原生 taxonomy 配置和分类字段；产品列表保留 `offer`。
+  演示站保留空的 `[taxonomies]`，关闭默认分类。主题不拦截原生分类配置，暂未提供分类列表布局；分类 RSS 使用 Hugo 原生成员集合。
+  修复汇总列表与 RSS 成员不一致、隐藏栏目列出非 HTML 页面、带点引用路径被误拒及来源网址特殊字符丢失。
+  引用文件遵循 Hugo 的资源发布设置；含引用的栏目仍检查不可列出的祖先。
+  演示文章链接到仓库中的源文件。
 - Skill 基础工具使用 `base/<tool>`、`base/<tool>/check` 和
   `base/<tool>/ensure`。入口使用 Node，按需准备 Node/npm 和所需工具；
   Bun 保留为独立工具。移除 `base/ensure`。
@@ -100,6 +109,7 @@ lastmod: 2026-10-21
   GitHub CLI 在使用时准备；npm 和 npx 分别使用 `base/node/npm` 和 `base/node/npx`。
   Python 命令使用 `base/uv/python`、`base/uv/python/check` 和
   `base/uv/python/ensure`；常用帮助将 uv 标为 Python 工具管理器。
+  uv 支持前置全局参数，`run` 和 `pip` 仍使用独立的 Python 环境。
   离线使用前，可用 `base/packages/ensure` 准备解析依赖；加 `--force` 重新安装。
   `doctor` 只报告依赖缺失，不执行安装。
   浏览器准备改用 `base/browser/ensure` 和 `base/browser/ensure.webkit`。
@@ -124,6 +134,9 @@ lastmod: 2026-10-21
 - 模块和站点的交付配置均使用 `data/delivery.toml`。
   预取和 SW 配置应用到所有语言。站点声明按顶层字段整体替换，嵌套表和路由数组
   不按字段合并；修改表时须完整填写。空路由数组移除全部默认路由。
+  主题只读取这份交付配置，不再禁止站点自有模板使用同名 `params` 或其他数据文件。
+  HTTP 头名接受标准 token 字符，仍检查控制字符、类型和重名。
+  交付检查不按文件格式限制普通附件；样式检查只检查 HTML 实际加载的 CSS。
   部署参数使用 `platform.edgeone.makers`；路径特例使用
   `http.edgeone.makers` 和 `http.cloudflare.pages`，`http` 与 `sw` 独立配置。
   SW 只使用 `sw.bucket`（`versioned`、`fingerprinted`、`off`），支持路径任意位置的
@@ -143,7 +156,9 @@ lastmod: 2026-10-21
   索引位于各语言首页路径下，并链接其他语言索引；根索引提供默认语言目录，
   不再额外生成默认语言路径下的副本。
 - 主题从 `module/` 发布，演示站点保留在仓库根目录。
-  站点专用内容和配置放在 Module 之外。
+  各站点自行维护完整 `hugo.toml`，移除 Module 默认配置。
+  仓库根配置提供示例，包含 LLMS 输出定义、语言 locale 与 icon、显式配色及最低 Hugo 版本。
+  演示站声明 `EN`、`简`、`繁` 作为语言标记。
 - 构建和预览使用原生 Hugo 命令。发布使用原生 Git 和 GitHub CLI 命令。
 - 由 Hugo 构建并压缩 JavaScript，在构建阶段生成 CSP 和部署响应头。
   站点必须设置 `minify.disableJS = true`，以保持内联脚本与 CSP 哈希一致。
@@ -163,7 +178,12 @@ lastmod: 2026-10-21
 
 ## 修复
 
-- 已准备好的 Python 环境支持并发运行命令，不再误报安装锁冲突。
+- 生成 Cloudflare `_headers` 时拒绝以 `#` 开头的响应头名称，避免被静默当作注释忽略。
+- 关闭可见元信息时，文章结构信息仍正常输出。
+- 自定义配色可独立设置文章标题与列表表头的边框颜色，内置配色保持现有外观。
+  站点自有配色文件需在 `.list-header` 中定义 `--list-header-border`。
+- 已保存的外观偏好无效时，从首帧开始跟随系统主题。
+- 已准备好的 Python 环境支持并发运行命令，不再误报安装锁冲突，并接受管理目录内的 uv Python 别名。
 - 构建版本和浏览器预取检查接受版本 JSON 与合法的空内联规则。
 - 未注册 Service Worker 时，预取诊断页仍能显示配置和运行状态。
 - Cloudflare 缓存和 XML CSP 特例先删除继承的响应头，再设置新值，

@@ -1,0 +1,14 @@
+{{- $page := . -}}
+{{- $target := $page -}}
+{{- $articles := slice -}}
+{{- with $page.Params.aggregate -}}
+  {{- $target = $page.Site.GetPage . -}}
+  {{- if not $target -}}{{- errorf "List page %s cannot resolve aggregate: %s." $page.RelPermalink . -}}{{- end -}}
+{{- end -}}
+{{- if or (not $target) (ne $target.Kind "section") -}}
+  {{- errorf "Article collection %s must reference an ordinary section." $page.RelPermalink -}}
+{{- else -}}
+  {{- $members := partial "feature-browse/directory/members.html" $target -}}
+  {{- $articles = $members.recursive -}}
+{{- end -}}
+{{- return $articles -}}

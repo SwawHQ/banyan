@@ -36,7 +36,7 @@
 .prose h1 {
     font-weight: normal;
     margin: 0 0 52px 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+    border-bottom: 1px solid var(--prose-heading-border);
 }
 
 .prose h2 {

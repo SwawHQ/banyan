@@ -1,8 +1,8 @@
 ---
 title: Unreleased
-slug: unreleased
+url: p/unreleased/
 description: Unreleased changes to the Banyan theme and Skill.
-lastmod: 2026-10-21
+lastmod: 2026-10-22
 ---
 
 ## Added
@@ -25,7 +25,7 @@ lastmod: 2026-10-21
   on demand for `sync/ext` and content checks, isolated from parent workspaces;
   site builds need no npm dependencies.
 - Name and product list views with shared column navigation and sorting.
-  Site-owned taxonomies define product classifications.
+  Site-owned directories and references organize products.
 - Powered by page with the effective theme and Hugo versions, site build
   details, and PWA status and update checks.
 - Versioned release notes in the demo site's `content/changelog/`.
@@ -37,8 +37,10 @@ lastmod: 2026-10-21
   CSP, SRI, cache headers and prefetch, plus asset-size and payload reports.
   HTML checks also validate article date rows, path order, aside controllers
   and static update controls.
-  `check/delivery` checks generated platform formats, fingerprint policy agreement
-  and published file names without reading resource bodies. Use `--base-path`
+  `check/delivery` checks generated platform formats, fingerprint paths
+  and published file names without reading resource bodies. HTTP `immutable` or
+  SW `fingerprinted` can mark a fingerprint path independently.
+  Use `--base-path`
   for subdirectory deployments; URL path characters and EdgeOne host redirects
   retain their platform syntax.
 - `sync/ext` for declared external resources and `deploy/edgeone/sync`
@@ -104,11 +106,27 @@ lastmod: 2026-10-21
   `params.web_app_manifest` and manual theme commit markers. Powered by shows
   only the site content version; enabled Service Workers read the same
   version from `sw-version.json` to switch content caches.
-- The Module supplies Discover - Categories pages in all three languages,
-  and the all-content pages use Discover - All. Sites still register their taxonomies.
-  Language choices default to EN, 简 and 繁. The demo enables `tools` with a free tool
-  example and links its articles to their source files in the Banyan repository.
-  Multilingual site descriptions identify the official documentation and release notes.
+- Discover - Categories is an ordinary content directory at `content/discover/`.
+  A shared `_map.toml` adds article references to other directories without
+  copying content. Lists, counts, metadata and section RSS use the same membership.
+  Remove the special `d` root and its permalink; move documentation to
+  `content/discover/docs/` and remove the demo AI and tooling terms. Articles use
+  explicit `url` fields such as `p/article-name/`, with their language prefix;
+  retaining `url` preserves the published address when moving directories.
+  Replace the required `slug` field and per-section permalink configuration with
+  required page URLs; missing URLs fail the build. Enable Hugo's native duplicate
+  output check in site configuration, replacing the manual URL audit and its mode
+  setting while covering unlisted pages.
+  The `discover` root avoids Hugo's default
+  taxonomy names. Tools also use directories and references; remove native
+  taxonomy configuration and article classification fields while retaining `offer`.
+  The demo keeps an empty `[taxonomies]` table to disable default classifications.
+  The theme allows native taxonomy configuration but does not provide taxonomy list layouts;
+  taxonomy RSS uses Hugo's native page collections.
+  Align aggregate RSS with list membership, omit non-HTML pages from hidden-directory lists,
+  accept dotted content paths, and preserve special characters in navigation sources.
+  Relation files follow Hugo's resource publishing settings; reference directories still validate unlisted ancestors.
+  The demo links article source files.
 - Skill tool commands use `base/<tool>`, `base/<tool>/check` and
   `base/<tool>/ensure`. The entry uses Node and prepares Node/npm and required tools
   on demand; Bun remains an independent tool. `base/ensure` is removed.
@@ -117,6 +135,7 @@ lastmod: 2026-10-21
   Run npm and npx with `base/node/npm` and `base/node/npx`.
   Python commands use `base/uv/python`, `base/uv/python/check` and
   `base/uv/python/ensure`; common help lists uv as the Python tool manager.
+  uv accepts global options before commands; `run` and `pip` retain the isolated Python environment.
   Prepare parser packages with `base/packages/ensure` before working offline;
   use `--force` to reinstall. Doctor reports missing packages without installing them.
   Prepare browsers with `base/browser/ensure` and `base/browser/ensure.webkit`.
@@ -147,6 +166,10 @@ lastmod: 2026-10-21
   Prefetch and Service Worker settings apply to all languages. Site declarations
   replace complete top-level fields, including nested tables and route arrays;
   copy the complete table to change it. Empty route arrays remove all default routes.
+  Read delivery settings only from this file without reserving unrelated site
+  parameters or data names. Accept standard HTTP token characters in field names
+  while retaining control-character, type and duplicate checks. Delivery checks
+  allow ordinary attachment formats; style checks inspect only CSS loaded by HTML.
   Deployment fields use `platform.edgeone.makers`; route overrides use
   `http.edgeone.makers` and `http.cloudflare.pages`, with independent `http`
   and `sw` fields. SW uses only `sw.bucket` (`versioned`, `fingerprinted`,
@@ -164,12 +187,15 @@ lastmod: 2026-10-21
   remove `params.sitemap.include_pages`. Noindex pages and excluded translations
   stay outside sitemap entries and alternate-language links.
   Language `llms.txt` indexes use the same page set, grouped by content section
-  and taxonomy with existing titles and descriptions. `check/llms` reports
+  with existing titles and descriptions. `check/llms` reports
   missing, unexpected or duplicate entries and broken index links.
   Each index follows its language home path and links other language indexes;
   the root index covers the default language, without a duplicate language-path copy.
-- Distribute the theme from `module/`; keep the demo at the repository root
-  and site-specific content and configuration outside the Module.
+- Distribute the theme from `module/`; keep the demo at the repository root.
+  Each site owns its complete `hugo.toml`; remove the Module's default configuration.
+  The repository root provides an example, including the LLMS output definition,
+  language locale and icon settings, an explicit palette, and the minimum Hugo version.
+  The demo declares EN, 简 and 繁 as its language markers.
 - Use native Hugo for builds and previews, and native Git and GitHub CLI
   for releases.
 - Build and minify JavaScript with Hugo, and generate CSP and deployment
@@ -201,7 +227,15 @@ lastmod: 2026-10-21
 
 ## Fixed
 
-- Commands can reuse a prepared Python environment concurrently without installation-lock errors.
+- Cloudflare `_headers` generation rejects header names starting with `#`,
+  preventing them from being silently treated as comments.
+- Article structured data remains available when visible metadata is disabled.
+- Custom palettes control article-title and list-header borders independently,
+  while built-in palettes retain their current appearance.
+  Site-owned palettes must define `--list-header-border` in `.list-header`.
+- Invalid saved theme preferences follow the system theme from the first paint.
+- Commands can reuse a prepared Python environment concurrently without installation-lock errors
+  and accept uv's Python aliases within the managed installation directory.
 - Build-version and browser prefetch checks accept the version JSON and valid empty inline rules.
 - Prefetch diagnostics display configuration and runtime state without a registered Service Worker.
 - Navigation sorting checks accept selectable text truncated by fixed field widths.

@@ -16,7 +16,7 @@ import {extractBlocks,stripRawText} from '../.agents/skills/swaw-banyan/tasks/_s
 import {readAnchor} from '../module/assets/js/browse/navigation-state.contract.js';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),origin='https://banyan.swaw.com';
-const groups={guide:['getting-started','site-configuration','collection-lists','taxonomies','layout-slots','prefetch-stacks','security-csp','delivery','discovery','web-app'],
+const groups={guide:['getting-started','site-configuration','collection-lists','directories','layout-slots','prefetch-stacks','security-csp','delivery','discovery','web-app'],
   development:['local-development','releasing','breadcrumb-models','navigation-state','partial-architecture','ui-naming','browser-regression','service-worker-regression-checklist']};
 let work,output;
 before(()=>{
@@ -32,24 +32,24 @@ after(()=>{if(work){assert.equal(path.basename(path.dirname(fs.realpathSync(work
 test('official documentation has one source, Chinese pages and honest English indexes',async()=>{
   assert.equal(fs.existsSync(path.join(root,'docs')),false,'Documentation must have one content source.');
   for(const prefix of ['','zh/'])for(const group of ['',...Object.keys(groups)]) {
-    const pathname='/'+prefix+'docs/'+(group?group+'/':'');
+    const pathname='/'+prefix+'discover/docs/'+(group?group+'/':'');
     const html=fs.readFileSync(path.join(output,pathname,'index.html'),'utf8');
     assert.equal(extractCanonicalHref(html),origin+pathname);
-    if(!prefix)assert.ok(extractStartTags(html,'a').some(tag=>extractTagAttribute(tag,'href').startsWith('/zh/docs/')));
+    if(!prefix)assert.ok(extractStartTags(html,'a').some(tag=>extractTagAttribute(tag,'href').startsWith('/zh/discover/docs/')));
   }
   for(const [group,names] of Object.entries(groups))for(const name of names) {
-    const pathname='/zh/docs/'+group+'/'+name+'/',html=fs.readFileSync(path.join(output,pathname,'index.html'),'utf8');
+    const pathname='/zh/p/'+name+'/',html=fs.readFileSync(path.join(output,pathname,'index.html'),'utf8');
     assert.equal(extractCanonicalHref(html),origin+pathname);
     assert.equal(extractStartTags(html,'h1').length,1,'One page title: '+pathname);
     assert.match(html,/<html[^>]+lang=(?:"zh"|zh)/);
-    assert.ok(fs.existsSync(path.join(root,'content/docs',group,name,'index.zh.md')));
-    assert.equal(fs.existsSync(path.join(output,'docs',group,name,'index.html')),false,'Do not publish Chinese as an English translation.');
+    assert.ok(fs.existsSync(path.join(root,'content/discover/docs',group,name,'index.zh.md')));
+    assert.equal(fs.existsSync(path.join(output,'p',name,'index.html')),false,'Do not publish Chinese as an English translation.');
     for(const tag of extractStartTags(stripRawText(html),'a')) {
       const href=extractTagAttribute(tag,'href');
       if(!href)continue;
       const target=new URL(href,origin+pathname);
       assert.ok(!target.pathname.endsWith('.md')||target.origin!==origin,'A published link must not point to local Markdown: '+href);
-      if(target.origin!==origin||!target.pathname.startsWith('/zh/docs/'))continue;
+      if(target.origin!==origin||!target.pathname.startsWith('/zh/'))continue;
       const targetFile=path.join(output,decodeURIComponent(target.pathname),'index.html');
       assert.ok(fs.existsSync(targetFile),'Missing documentation target: '+href);
       const anchor=readAnchor(target);
@@ -61,11 +61,11 @@ test('official documentation has one source, Chinese pages and honest English in
   const sitemap=fs.readFileSync(path.join(output,'zh/sitemap.xml'),'utf8');
   const llms=fs.readFileSync(path.join(output,'zh/llms.txt'),'utf8');
   for(const [group,names] of Object.entries(groups))for(const name of names) {
-    assert.ok(sitemap.includes(origin+'/zh/docs/'+group+'/'+name+'/'),'Documentation must be discoverable.');
-    assert.ok(llms.includes('(<'+origin+'/zh/docs/'+group+'/'+name+'/>)'),'LLMS must cover the same core documentation.');
+    assert.ok(sitemap.includes(origin+'/zh/p/'+name+'/'),'Documentation must be discoverable.');
+    assert.ok(llms.includes('(<'+origin+'/zh/p/'+name+'/>)'),'LLMS must cover the same core documentation.');
   }
-  assert.match(llms,/^## 文档$/m);
-  assert.match(llms,/^- \[使用指南\]\(<https:\/\/banyan\.swaw\.com\/zh\/docs\/guide\/>\): 安装主题，配置站点、内容结构、交付和站点发现。$/m);
+  assert.match(llms,/^## 发现 - 分类 \/ 文档 \/ 使用指南$/m);
+  assert.match(llms,/^- \[使用指南\]\(<https:\/\/banyan\.swaw\.com\/zh\/discover\/docs\/guide\/>\): 安装主题，配置站点、内容结构、交付和站点发现。$/m);
   assert.deepEqual((await inspectSitemap(output)).issues,[]);
   assert.deepEqual((await inspectLlms(output)).issues,[]);
   verifyCspOutput(output);

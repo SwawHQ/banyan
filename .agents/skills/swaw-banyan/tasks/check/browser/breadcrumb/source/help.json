@@ -12,7 +12,7 @@
       "  --column <path>   Collection pathname of the source column",
       "  --article <path>  Another article linked by that column",
       "",
-      "swban check/browser/breadcrumb/source ./preview --page /tags/topic/child/ --column /tags/topic/ --article /article/"
+      "swban check/browser/breadcrumb/source ./preview --page /discover/topic/child/ --column /discover/topic/ --article /article/"
     ]
   },
   "zh": {
@@ -28,7 +28,7 @@
       "  --column <path>   来源列的集合路径",
       "  --article <path>  该列链接的另一篇文章",
       "",
-      "swban check/browser/breadcrumb/source ./preview --page /tags/topic/child/ --column /tags/topic/ --article /article/"
+      "swban check/browser/breadcrumb/source ./preview --page /discover/topic/child/ --column /discover/topic/ --article /article/"
     ]
   }
 }

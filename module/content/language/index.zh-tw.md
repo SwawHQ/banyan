@@ -1,7 +1,7 @@
 ---
 root_nav: true
 title: 語言
-slug: language
+url: language/
 layout: page-language
 list: choice
 labels:

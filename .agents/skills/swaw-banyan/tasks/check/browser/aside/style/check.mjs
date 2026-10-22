@@ -34,10 +34,10 @@ export async function check({page,baseUrl,options}) {
         return boxes.slice(1).map((box,index)=>box.top-boxes[index].bottom);
       });
       if(metadata.length)assert.ok(Math.max(...metadata)-Math.min(...metadata)<=1,'Metadata rows must have uniform spacing.');
-      const taxonomy=page.locator('.document-meta__row--taxonomy-path').first();
-      if(await taxonomy.count()) {
-        await taxonomy.hover();
-        assert.equal(await taxonomy.evaluate(node=>getComputedStyle(node).backgroundColor),'rgba(0, 0, 0, 0)','A multi-link metadata row must have no hover background.');
+      const directory=page.locator('.document-meta__row--path').first();
+      if(await directory.count()) {
+        await directory.hover();
+        assert.equal(await directory.evaluate(node=>getComputedStyle(node).backgroundColor),'rgba(0, 0, 0, 0)','A multi-link metadata row must have no hover background.');
       }
       const selected=page.locator('[data-root-navigation] .item-control.is-current');
       assert.equal(await selected.count(),1,'The page must have one selected root entry.');

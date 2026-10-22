@@ -1,0 +1,116 @@
+{{- $site := . -}}
+{{- $sections := partial "feature-browse/directory/sections.html" $site.Home -}}
+{{- $known := newScratch -}}
+{{- range $sections -}}{{- $known.Set .Path true -}}{{- end -}}
+{{- range $site.Pages -}}
+  {{- range .Ancestors.Reverse -}}
+    {{- if and (eq .Kind "section") (not ($known.Get .Path)) -}}
+      {{- $found := slice . -}}
+      {{- range partial "feature-browse/directory/sections.html" . -}}{{- $found = $found | append . -}}{{- end -}}
+      {{- range $found -}}
+        {{- if not ($known.Get .Path) -}}{{- $known.Set .Path true -}}{{- $sections = $sections | append . -}}{{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $sections = sort $sections "Path" -}}
+{{- $pages := slice -}}
+{{- range $site.Pages -}}{{- $pages = $pages | append . -}}{{- end -}}
+{{- range $sections -}}{{- $pages = $pages | append . -}}{{- end -}}
+{{- range uniq $pages -}}
+  {{- partial "feature-browse/directory/assert-map-resources.html" . -}}
+{{- end -}}
+{{- $index := newScratch -}}
+{{- range slice "direct" "recursive" "incoming" -}}{{- $index.Set . dict -}}{{- end -}}
+{{- range $section := $sections -}}
+  {{- $members := slice -}}
+  {{- range $section.RegularPages -}}
+    {{- if partial "feature-browse/is-rendered-html.html" . -}}
+      {{- $members = $members | append . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- with $section.Resources.GetMatch "_map.toml" -}}
+    {{- $source := printf "%s/_map.toml" $section.Path -}}
+    {{- $parsed := try (transform.Unmarshal (dict "format" "toml") .Content) -}}
+    {{- if $parsed.Err -}}
+      {{- errorf "Build failed: %s must contain valid TOML: %s." $source $parsed.Err -}}
+      {{- continue -}}
+    {{- end -}}
+    {{- $mapping := $parsed.Value -}}
+    {{- if not (reflect.IsMap $mapping) -}}
+      {{- errorf "Build failed: %s must be an object containing only refs." $source -}}
+      {{- continue -}}
+    {{- end -}}
+    {{- if or (ne (len $mapping) 1) (not (isset $mapping "refs")) -}}
+      {{- errorf "Build failed: %s must contain only refs." $source -}}
+      {{- continue -}}
+    {{- end -}}
+    {{- if not (reflect.IsSlice $mapping.refs) -}}
+      {{- errorf "Build failed: %s refs must be a list of absolute content paths." $source -}}
+      {{- continue -}}
+    {{- end -}}
+    {{- $seen := newScratch -}}
+    {{- range $ref := $mapping.refs -}}
+      {{- if ne (printf "%T" $ref) "string" -}}
+        {{- errorf "Build failed: %s refs must contain only absolute content path strings." $source -}}
+        {{- continue -}}
+      {{- end -}}
+      {{- $path := strings.TrimSuffix "/" $ref -}}
+      {{- if or (not (hasPrefix $path "/")) (eq $path "") (ne (path.Clean $path) $path) (findRE `[\\?#:\s]` $path) -}}
+        {{- errorf "Build failed: %s ref %q must be an absolute content path without a query, fragment or parent segments." $source $ref -}}
+        {{- continue -}}
+      {{- end -}}
+      {{- if $seen.Get $path -}}
+        {{- errorf "Build failed: %s has duplicate ref %q." $source $ref -}}
+        {{- continue -}}
+      {{- end -}}
+      {{- $seen.Set $path true -}}
+      {{- $usable := false -}}
+      {{- $invalid := false -}}
+      {{- range hugo.Sites -}}
+        {{- with .GetPage $path -}}
+          {{- if ne .Path $path -}}
+            {{- errorf "Build failed: %s ref %q must use the logical content path %q, without a language suffix or file extension." $source $ref .Path -}}
+            {{- $invalid = true -}}
+          {{- end -}}
+          {{- if ne .Kind "page" -}}
+            {{- errorf "Build failed: %s ref %q must target a regular article, not %s." $source $ref .Kind -}}
+            {{- $invalid = true -}}
+          {{- else -}}
+            {{- if partial "feature-browse/is-rendered-html.html" . -}}
+              {{- $usable = true -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if $invalid -}}{{- continue -}}{{- end -}}
+      {{- if not $usable -}}
+        {{- errorf "Build failed: %s cannot resolve ref %q to a rendered article in any language." $source $ref -}}
+        {{- continue -}}
+      {{- end -}}
+      {{- with $site.GetPage $path -}}
+        {{- $target := . -}}
+        {{- if not (partial "feature-browse/is-rendered-html.html" .) -}}{{- continue -}}{{- end -}}
+        {{- if eq .Parent $section -}}
+          {{- errorf "Build failed: %s ref %q duplicates a physical child article." $source $ref -}}
+          {{- continue -}}
+        {{- end -}}
+        {{- $members = $members | append $target -}}
+        {{- $incoming := index ($index.Get "incoming") $target.Path | default slice -}}
+        {{- $index.SetInMap "incoming" $target.Path ($incoming | append $section) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $index.SetInMap "direct" $section.Path $members -}}
+  {{- $ancestors := slice $section -}}
+  {{- range $section.Ancestors -}}{{- if eq .Kind "section" -}}{{- $ancestors = $ancestors | append . -}}{{- end -}}{{- end -}}
+  {{- range $ancestors -}}
+    {{- $recursive := index ($index.Get "recursive") .Path | default slice -}}
+    {{- range $members -}}{{- $recursive = $recursive | append . -}}{{- end -}}
+    {{- $index.SetInMap "recursive" .Path $recursive -}}
+  {{- end -}}
+{{- end -}}
+{{- range $path, $members := $index.Get "recursive" -}}
+  {{- $index.SetInMap "recursive" $path (uniq $members) -}}
+{{- end -}}
+{{- return (dict "sections" $sections "direct" ($index.Get "direct") "recursive" ($index.Get "recursive") "incoming" ($index.Get "incoming")) -}}

@@ -11,7 +11,7 @@
       "  --page <path>   Page with enabled prefetch candidates",
       "",
       "swban check/browser/prefetch/overlap ./preview --page /all/",
-      "swban check/browser/prefetch/overlap ./preview --page /tags/topic/ --trace --out ./browser-report"
+      "swban check/browser/prefetch/overlap ./preview --page /discover/topic/ --trace --out ./browser-report"
     ]
   },
   "zh": {
@@ -26,7 +26,7 @@
       "  --page <path>   含已启用预取候选项的页面",
       "",
       "swban check/browser/prefetch/overlap ./preview --page /all/",
-      "swban check/browser/prefetch/overlap ./preview --page /tags/topic/ --trace --out ./browser-report"
+      "swban check/browser/prefetch/overlap ./preview --page /discover/topic/ --trace --out ./browser-report"
     ]
   }
 }

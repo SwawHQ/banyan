@@ -164,7 +164,7 @@ try {
     const breadcrumbPath = await importBrowserModule(breadcrumbEntry);
     const collectionItems = await importBrowserModule(collectionItemsEntry);
     assert.deepEqual(breadcrumbSource.parseEntryBreadcrumbSources(JSON.stringify([{
-        logical_path: '/tags/windows/', root_item: {text: 'Tags', href: '/tags/'}
+        logical_path: '/discover/windows/', root_item: {text: 'Discover', href: '/discover/'}
     }])), [], 'browser payloads must use the current field names');
 
     const compositeRows = [
@@ -401,8 +401,8 @@ try {
         'returning a breadcrumb column to its default should remove sorts without changing sort'
     );
 
-    window.location.href = 'https://example.test/zh/tags/tooling/devtools/windows/wsl/';
-    window.location.pathname = '/zh/tags/tooling/devtools/windows/wsl/';
+    window.location.href = 'https://example.test/zh/discover/tooling/devtools/windows/wsl/';
+    window.location.pathname = '/zh/discover/tooling/devtools/windows/wsl/';
     window.location.hash = '';
     assert.equal(
         breadcrumbItems.buildCollectionSortToggleHref(
@@ -410,26 +410,26 @@ try {
             window.location.href,
             '/d/wsl/'
         ),
-        '/zh/tags/tooling/devtools/windows/wsl/#from=d/wsl&sorts=date-asc,_',
+        '/zh/discover/tooling/devtools/windows/wsl/#from=d/wsl&sorts=date-asc,_',
         'a visible-lineage override should preserve every column slot when no from state exists yet'
     );
 
-    window.location.href = 'https://example.test/zh/p/example/#from=tags/windows';
-    window.location.hash = '#from=tags/windows';
+    window.location.href = 'https://example.test/zh/p/example/#from=discover/windows';
+    window.location.hash = '#from=discover/windows';
 
     assert.deepEqual(
         breadcrumbPath.buildCurrentPathColumn(
             {},
             'Beta',
             'Beta detailed article title',
-            '/zh/p/contract-beta/#from=tags/windows'
+            '/zh/p/contract-beta/#from=discover/windows'
         ),
         {
             source: null,
             items: [{
                 text: 'Beta',
                 title: 'Beta detailed article title',
-                href: '/zh/p/contract-beta/#from=tags/windows',
+                href: '/zh/p/contract-beta/#from=discover/windows',
                 current: true,
             }],
         },
@@ -439,26 +439,26 @@ try {
     const previewColumn = breadcrumbPath.buildCurrentPathColumn(
         {
             currentColumn: {source: {
-                logicalPath: '/tags/windows/',
+                logicalPath: '/discover/windows/',
                 provider: 'collection',
-                sortVariant: 'tree',
+                sortVariant: 'section',
                 defaultSort: 'date-desc',
             },
             payload: collectionItems.decodeItemsPayload({
                 ds: 'date-desc',
                 f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
-                lp: '/tags/windows/',
-                p: 'taxonomy',
+                lp: '/discover/windows/',
+                p: 'collection',
                 rv: [
                     'contract-beta', 'page', '/zh/p/contract-beta/', 'Beta', '1', 'Beta', '20260624', '1341',
                 ],
-                sv: 'tree',
+                sv: 'section',
                 v: 1,
             })},
         },
         'Beta',
         'Beta detailed article title',
-        '/zh/p/contract-beta/#from=tags/windows'
+        '/zh/p/contract-beta/#from=discover/windows'
     );
 
     assert.equal(
@@ -468,53 +468,53 @@ try {
     );
 
     const sourcePayload = JSON.stringify([{
-        logicalPath: '/tags/windows/',
+        logicalPath: '/discover/windows/',
         rootItem: {
-            href: '/zh/tags/',
-            text: 'Tags',
+            href: '/zh/discover/',
+            text: 'Discover',
             title: 'Article topics'
         },
         currentColumn: {source: {
-            logicalPath: '/tags/windows/',
+            logicalPath: '/discover/windows/',
             provider: 'collection',
-            sortVariant: 'tree',
+            sortVariant: 'section',
             defaultSort: 'date-desc',
             label: 'Windows',
-            href: '/zh/tags/windows/'
+            href: '/zh/discover/windows/'
         },
         payload: {
             ds: 'date-desc',
             f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
-            lp: '/tags/windows/',
-            p: 'taxonomy',
+            lp: '/discover/windows/',
+            p: 'collection',
             rv: [
                 'contract-alpha', 'page', '/zh/p/contract-alpha/', 'Alpha', '1', 'Alpha', '20260626', '6402',
                 'contract-beta', 'page', '/zh/p/contract-beta/', 'Beta', '1', 'Beta', '20260624', '1341',
             ],
-            sv: 'tree',
+            sv: 'section',
             v: 1
         }},
         columns: [{
             selected: {
-                href: '/zh/tags/windows/',
+                href: '/zh/discover/windows/',
                 text: 'Windows',
                 title: 'Windows development'
             },
             source: {
-                logicalPath: '/tags/',
+                logicalPath: '/discover/',
                 provider: 'collection',
-                sortVariant: 'tree',
+                sortVariant: 'section',
                 defaultSort: 'date-desc',
-                label: 'Tags',
-                href: '/zh/tags/'
+                label: 'Discover',
+                href: '/zh/discover/'
             },
             payload: {
                 ds: 'date-desc',
                 f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
-                lp: '/tags/',
-                p: 'taxonomy',
-                rv: ['windows', 'collection', '/zh/tags/windows/', 'Windows', '0', 'Windows', '20260626', '2'],
-                sv: 'tree',
+                lp: '/discover/',
+                p: 'collection',
+                rv: ['windows', 'section', '/zh/discover/windows/', 'Windows', '0', 'Windows', '20260626', '2'],
+                sv: 'section',
                 v: 1,
             },
         }]
@@ -541,13 +541,13 @@ try {
             assert.equal(read(), cached[index], 'unchanged source data must reuse its parsed array');
         }
         const changedSources = JSON.parse(sourcePayload);
-        changedSources[0].rootItem.text = 'Updated tags';
+        changedSources[0].rootItem.text = 'Updated directories';
         document.body.dataset.entryBreadcrumbSources = JSON.stringify(changedSources);
         for (const [index, read] of readers.entries()) {
             const changed = read();
             assert.notEqual(changed, cached[index], 'changed source data must refresh its parsed array');
-            assert.equal(changed[0].rootItem.text, 'Updated tags');
-            assert.equal(cached[index][0].rootItem.text, 'Tags', 'refresh must not change the previous parsed data');
+            assert.equal(changed[0].rootItem.text, 'Updated directories');
+            assert.equal(cached[index][0].rootItem.text, 'Discover', 'refresh must not change the previous parsed data');
         }
     } finally {
         if (previousDocument === undefined) delete globalThis.document;
@@ -558,11 +558,11 @@ try {
     invalidPayloadSources[0].currentColumn.payload = {v: 1};
     invalidPayloadSources[0].columns[0].payload = {v: 1};
     const metadataSources = entrySource.parseEntrySources(JSON.stringify(invalidPayloadSources));
-    assert.equal(entrySource.parseEntrySelection(metadataSources, '/tags/windows/')?.source?.rootItem?.href,
-        '/zh/tags/', 'root selection must use source metadata even when collection payloads are invalid');
-    assert.equal(entrySource.pickSourceByLogicalPath(metadataSources, '/tags/windows/'), metadataSources[0],
+    assert.equal(entrySource.parseEntrySelection(metadataSources, '/discover/windows/')?.source?.rootItem?.href,
+        '/zh/discover/', 'root selection must use source metadata even when collection payloads are invalid');
+    assert.equal(entrySource.pickSourceByLogicalPath(metadataSources, '/discover/windows/'), metadataSources[0],
         'source metadata lookup must use the exact logical path');
-    assert.equal(entrySource.parseEntrySelection(metadataSources, '/tags/unknown/'), null,
+    assert.equal(entrySource.parseEntrySelection(metadataSources, '/discover/unknown/'), null,
         'invalid collection payloads must not allow unregistered source paths');
     assert.deepEqual(entrySource.parseEntrySources('{'), [], 'malformed source JSON must not throw');
 
@@ -570,20 +570,20 @@ try {
         {
             rootText: sources[0]?.rootItem?.text,
             rootTitle: sources[0]?.rootItem?.title,
-            termText: sources[0]?.columns?.[0]?.selected?.text,
-            termTitle: sources[0]?.columns?.[0]?.selected?.title,
+            branchText: sources[0]?.columns?.[0]?.selected?.text,
+            branchTitle: sources[0]?.columns?.[0]?.selected?.title,
         },
         {
-            rootText: 'Tags',
+            rootText: 'Discover',
             rootTitle: 'Article topics',
-            termText: 'Windows',
-            termTitle: 'Windows development',
+            branchText: 'Windows',
+            branchTitle: 'Windows development',
         },
-        'taxonomy root and term navigation should preserve compact text separately from full semantic titles'
+        'directory root and branch navigation should preserve compact text separately from full semantic titles'
     );
 
     assert.deepEqual(
-        entrySource.parseEntrySelection(sources, '/tags/windows/'),
+        entrySource.parseEntrySelection(sources, '/discover/windows/'),
         {
             source: sources[0],
         },
@@ -591,12 +591,12 @@ try {
     );
 
     assert.equal(
-        entrySource.parseEntrySelection(sources, '/tags/windows/contract-beta/'),
+        entrySource.parseEntrySelection(sources, '/discover/windows/contract-beta/'),
         null,
         'from values with an entry key tail should not be treated as valid navigation state'
     );
 
-    for (const invalidFrom of ['/tags/', '/tags/unknown/', '/tools/windows/', '']) {
+    for (const invalidFrom of ['/discover/', '/discover/unknown/', '/tools/windows/', '']) {
         assert.equal(
             entrySource.parseEntrySelection(sources, invalidFrom),
             null,
@@ -608,30 +608,30 @@ try {
     assert.deepEqual(
         breadcrumbSource.pickCollectionSourceByHref(
             collectionSourceIndex,
-            'https://example.test/zh/tags/#sort=date-asc&anchor=menu'
+            'https://example.test/zh/discover/#sort=date-asc&anchor=menu'
         ),
         {
-            logicalPath: '/tags/',
+            logicalPath: '/discover/',
             provider: 'collection',
-            sortVariant: 'tree',
+            sortVariant: 'section',
             defaultSort: 'date-desc',
-            label: 'Tags',
-            href: '/zh/tags/',
+            label: 'Discover',
+            href: '/zh/discover/',
         },
         'collection href lookup should resolve ancestor metadata from the current page source registry'
     );
     assert.deepEqual(
         breadcrumbSource.pickCollectionSourceByHref(
             collectionSourceIndex,
-            '/zh/tags/windows'
+            '/zh/discover/windows'
         ),
         {
-            logicalPath: '/tags/windows/',
+            logicalPath: '/discover/windows/',
             provider: 'collection',
-            sortVariant: 'tree',
+            sortVariant: 'section',
             defaultSort: 'date-desc',
             label: 'Windows',
-            href: '/zh/tags/windows/',
+            href: '/zh/discover/windows/',
         },
         'collection href lookup should normalize trailing slashes and resolve the current collection'
     );
@@ -650,7 +650,7 @@ try {
                 text: '紧凑标题',
             },
             {
-                logicalPath: '/tags/windows/',
+                logicalPath: '/discover/windows/',
                 provider: 'collection',
             },
             {
@@ -660,7 +660,7 @@ try {
                 defaultSortsTokens: ['date-desc', 'date-desc'],
             }
         ),
-        '/zh/p/contract-beta/#from=tags/windows',
+        '/zh/p/contract-beta/#from=discover/windows',
         'entry hrefs should write collection-only from values'
     );
 
@@ -692,7 +692,7 @@ try {
         'Beta detailed article title',
         'settled entry state should attach the full title to the visible current column item'
     );
-    assert.equal(selectedColumn?.source?.logicalPath, '/tags/windows/',
+    assert.equal(selectedColumn?.source?.logicalPath, '/discover/windows/',
         'column source metadata must stay separate from its link items');
     assert.equal(selectedColumn.items.filter((item) => item.current === true).length, 1,
         'a selected column must mark one current row');

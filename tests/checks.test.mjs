@@ -280,18 +280,13 @@ test('shared HTML extraction keeps nested elements and excludes raw text',()=>{
 
 test('shared metadata accepts optional dates and rejects merged or reordered rows',()=>{
   const dates=[dateRow('2026-10-11'),dateRow('2026-10-10')];
-  const taxonomy='<nav class="document-meta__row document-meta__row--taxonomy-path"><a href=/topics/test/>Test</a></nav>';
   const directory='<nav class="document-meta__row document-meta__row--path"><a href=/>Home</a></nav>';
-  for(const count of [0,1,2])assert.deepEqual(inspectDocumentMetadata(metadata(dates.slice(0,count).join('')+taxonomy+directory)),[]);
+  for(const count of [0,1,2])assert.deepEqual(inspectDocumentMetadata(metadata(dates.slice(0,count).join('')+directory)),[]);
   const merged=dates.join('').replace('</time></div><div class=document-meta__row><span><svg><use href=#icon-clock></use></svg></span>','</time>');
   assert.match(inspectDocumentMetadata(metadata(merged))[0],/separate metadata rows/);
-  assert.match(inspectDocumentMetadata(metadata(taxonomy+dates.join('')))[0],/first, adjacent/);
+  assert.match(inspectDocumentMetadata(metadata(directory+dates.join('')))[0],/first, adjacent/);
   assert.match(inspectDocumentMetadata(metadata(dates[0]+directory+dates[1]))[0],/first, adjacent/);
   assert.match(inspectDocumentMetadata(metadata(dates[0].replace('#icon-clock','#icon-calendar')))[0],/clock icon/);
-  assert.match(inspectDocumentMetadata(metadata(directory+taxonomy))[0],/Taxonomy paths precede/);
-  const html=fs.readFileSync(path.join(site,'public/index.html'),'utf8');
-  const directoryOutput=output('metadata order',html.replace('</body>',metadata(directory+taxonomy)+'</body>'));
-  checked('check/html/metadata',directoryOutput,/Taxonomy paths precede.*index.html/s);
 });
 
 test('shared controls distinguish metadata-only and chapter-only asides',()=>{
@@ -485,7 +480,7 @@ test('native Hugo generates EdgeOne config and respects its Hugo version overrid
   const defaults = fs.readFileSync(path.join(theme,'data/delivery.toml'),'utf8');
   for (const override of ['', '0.156.0']) {
     const fixture = path.join(work,'edgeone '+(override || 'default'));
-    write(fixture,'hugo.toml','baseURL = "https://example.test/"\ndisableKinds = ["taxonomy","term","RSS","sitemap"]\n');
+    write(fixture,'hugo.toml','baseURL = "https://example.test/"\ndisableKinds = ["RSS","sitemap"]\n[taxonomies]\n');
     write(fixture,'content/_index.md','---\ntitle: Fixture\n---\n');
     write(fixture,'layouts/home.html','{{ partial "edgeone-config.html" (dict "edgeone" .Site.Data.policy.platform.edgeone.makers) | jsonify }}');
     write(fixture,'layouts/_partials/edgeone-config.html',fs.readFileSync(path.join(theme,

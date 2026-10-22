@@ -1,3 +1,4 @@
+{{- partial "feature-browse/directory/assert-map-resources.html" . -}}
 {{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
 {{- $pwaConfig := partial "system-delivery/pwa/config.html" (dict "ctx" . "delivery" $delivery) -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}
@@ -6,7 +7,6 @@
 {{- $isOfflinePage := index $pwaConfig "is_offline_page" -}}
 {{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" $delivery) "prefetch" -}}
 {{- $isPrefetchDebug := eq .Layout "page-prefetch-debug" -}}
-{{- partialCached "system-build/audit/permalink-collision.html" (dict "ctx" .) "audit-permalink-collision" -}}
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
 {{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $buildVersion := partial "system-build/version.html" $primarySite.Home -}}
@@ -79,7 +79,7 @@
     {{- with $robotsDirective }}
     <meta name="robots" content="{{ . }}">
     {{- end }}
-    {{/* 首屏阻塞性状态初始化：同步主题以防闪烁，并恢复 MPA 跨页导航进度条。 */}}
+    {{/* 首屏同步主题，避免浅色与深色切换时闪烁。 */}}
     <script>{{ $themeBootInline | safeJS }}</script>
     {{/* URL 片段带 from= 时先隐藏默认 breadcrumb，待运行时恢复来源路径；
          article meta 始终保留 Hugo 的静态输出。 */}}
@@ -110,8 +110,8 @@
     ) -}}
 </head>
 <body data-language-return-missing="{{ i18n "language_return_missing" }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}"{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
-    {{- if and .IsPage (not .Params.slug) -}}
-{{- errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title -}}
+    {{- if and .IsPage (eq (trim (printf "%v" (.Params.url | default "")) " \r\n\t") "") -}}
+{{- errorf "Build failed: page %q (title: %q) requires a non-empty url field, for example url: p/article-name/." .File.Path .Title -}}
     {{- end -}}
     <div class="page">
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>

@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {headerCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/header/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -38,12 +38,20 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
+  fixtureContentDirectory(content);
+  write(path.join(content,'d/root-sibling.md'),'---\ntitle: Root sibling\nurl: d/root-sibling/\ndate: 2026-01-01\n---\nIndependent sortable root row.\n');
   const sections=['d/presentation','d/presentation/child','d/presentation/child/two','d/presentation/child/two/three','d/presentation/child/two/three/four'];
   for(const [index,section] of sections.entries()) {
     write(path.join(content,section,'_index.md'),'---\ntitle: '+(index===0?'Very long collection label 测试 '+('portable headings '.repeat(8)):'Level '+index)+'\n---\n');
     for(const [offset,name] of ['article','other'].entries())write(path.join(content,section,name+'.md'),
-      `---\ntitle: ${name}\nslug: presentation-${index}-${name}\nurl: /${section}/${name}-${index}/\ndate: "2026-01-0${offset+1}T00:00:00+08:00"\ntags:\n  - tooling/devtools\n---\n\n## Chapter\n\n`+'Portable fixture content.\n\n'.repeat(20));
+      `---\ntitle: ${name}\nurl: /${section}/${name}-${index}/\ndate: "2026-01-0${offset+1}T00:00:00+08:00"\n---\n\n## Chapter\n\n`+'Portable fixture content.\n\n'.repeat(20));
   }
+  for(const suffix of ['','.zh','.zh-tw']) {
+    write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
+    write(path.join(content,'discover/tooling/devtools','_index'+suffix+'.md'),directoryPage('Devtools'));
+  }
+  write(path.join(content,'discover/tooling/_map.toml'),"refs = [\"/d/presentation/article\"]\n");
+  write(path.join(content,'discover/tooling/devtools/_map.toml'),"refs = [\"/d/presentation/child/article\"]\n");
   write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
@@ -65,7 +73,7 @@ test('Chromium keeps a long header visible before and after a native sort click'
     assert.ok(result.initial.labelContentWidth>result.initial.labelWidth,'Fixture must exercise an ellipsized long label.');
     assert.equal(result.initial.title,result.sorted.title);assert.notEqual(result.initial.indicator,result.sorted.indicator);
   }
-  const translated=cli('breadcrumb/header',['--page','/zh/tags/tooling/devtools/','--widths','390']);
+  const translated=cli('breadcrumb/header',['--page','/zh/discover/tooling/devtools/','--widths','390']);
   assert.equal(translated.status,0,translated.stdout+translated.stderr);
 });
 
@@ -80,7 +88,7 @@ test('Chromium rejects clipped controls, missing titles and spacing changed by s
 
 for(const {name,suffix} of engines){
 test(name+' checks collection startup, sort previews and deep canvas geometry',{timeout:30000},()=>{
-  for(const route of [collection,'/tags/tooling/devtools/',collection+'#sorts=date-asc,date-asc']) {
+  for(const route of [collection,'/discover/tooling/devtools/',collection+'#sorts=date-asc,date-asc']) {
     const state=report(cli('canvas/first-paint'+suffix,['--page',route,'--widths','390,1440']));
     assert.equal(state.browser,name);
     for(const result of state.details.cases)assert.equal(result.first.collection,true);

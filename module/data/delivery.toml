@@ -3,7 +3,7 @@
 # 通用路由写在前面，例外写在后面。HTTP 缓存和 SW 缓存独立配置。
 
 # 预取规则说明
-# https://banyan.swaw.com/zh/docs/guide/prefetch-stacks/
+# https://banyan.swaw.com/zh/p/prefetch-stacks/
 [prefetch]
 # 总开关。开启后依次检查原生 Speculation Rules、活动的本站 SW、浏览器 link prefetch。
 enabled = false

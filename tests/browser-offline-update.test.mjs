@@ -30,7 +30,7 @@ before(()=>{
     for(const lang of ['en','zh','zh-tw']){
       const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
       const text=fs.readFileSync(path.join(root,'module/content/offline/index'+suffix+'.md'),'utf8')
-        .replace(/^---\r?\n/,'---\nurl: '+prefix+'/'+offline+'/\n')
+        .replace(/^url:.*$/m,'url: '+prefix+'/'+offline+'/\n')
         .replace(/^title:.*$/m,'title: "Offline fixture '+name+'"');
       write(path.join(content,'offline/index'+suffix+'.md'),text);
       if(name==='latest')write(path.join(content,'offline-current/index'+suffix+'.md'),

@@ -12,7 +12,7 @@
       "  --column <path>  Collection pathname of the column; default: first sortable column",
       "",
       "swban check/browser/breadcrumb/sort ./preview --page /article/#from=all",
-      "swban check/browser/breadcrumb/sort ./preview --page /tags/topic/child/ --column /tags/topic/"
+      "swban check/browser/breadcrumb/sort ./preview --page /discover/topic/child/ --column /discover/topic/"
     ]
   },
   "zh": {
@@ -28,7 +28,7 @@
       "  --column <path>  目标列的集合路径；默认：首个可排序列",
       "",
       "swban check/browser/breadcrumb/sort ./preview --page /article/#from=all",
-      "swban check/browser/breadcrumb/sort ./preview --page /tags/topic/child/ --column /tags/topic/"
+      "swban check/browser/breadcrumb/sort ./preview --page /discover/topic/child/ --column /discover/topic/"
     ]
   }
 }

@@ -12,8 +12,15 @@ layout, animation, opacity, and interaction selectors stay with their components
 
 ### Select a palette
 
-The theme defaults to `css/theme.css`. To use the built-in black/white/grayscale
-palette, add this to the consuming site's `hugo.toml`:
+Each site must select a palette in its own `hugo.toml`. The Module does not
+provide a default Hugo configuration. For the built-in palette, use:
+
+```toml
+[params.appearance]
+palette = "css/theme.css"
+```
+
+For the built-in black/white/grayscale palette, use:
 
 ```toml
 [params.appearance]
@@ -26,8 +33,8 @@ own complete palette, such as `assets/css/theme-custom.css`, by configuring
 A missing file, an empty/non-string setting, or a non-CSS resource fails the
 build with an explicit configuration error.
 
-Exactly one palette joins the existing CSS bundle; it replaces the default
-palette rather than adding an override layer. Rebuild and deploy after changing
+Exactly one selected palette joins the existing CSS bundle and supplies all
+color roles. Rebuild and deploy after changing
 the setting. The appearance page still selects system/light/dark mode within
 that palette. The monochrome palette covers UI, syntax, and homepage diagram
 colors; it does not recolor article images or image-based brand assets.
@@ -51,6 +58,7 @@ check configuration handling, both palettes, and native asset overrides.
 | `:root` | Page background, foreground, muted text, border, accent, accent text, link states, focus ring |
 | `.icon` | Accent and shaded parts of colored icons; line icons still use `currentColor` |
 | `.item-control` | Normal, visited, hover/focus, and current text; hover/current backgrounds and current ring |
+| `.list-header` | List header border (`--list-header-border`) |
 | `.prose` | Heading and rule borders, deleted text and decoration; inline code, quotes, images, tables, code blocks, syntax tokens, and code scrollbars |
 | `.page-home` | Anchor, horizon, signals and their selected color, windsock body/stripes/pole |
 
@@ -82,6 +90,7 @@ The inputs and dependencies are deliberately small:
 | Table surfaces | Header and stripe backgrounds have their own neutral and accent strengths |
 | Code surfaces | Block background, border, and line highlight each derive from the page palette; scrollbar track follows the block background, thumb follows its border plus accent |
 | Prose separator | `--prose-rule-border` derives from `--bg`/`--fg` without accent |
+| Heading and list header borders | `--prose-heading-border` and `--list-header-border` independently mix `--fg` at 20% with transparent |
 | Deleted prose text | `--prose-deleted-color` follows `--muted`; its separate decoration role keeps the deletion visible |
 | Other derived roles | Heading, quote, inline-code and image backgrounds, item states, and colored icons retain their existing dependencies |
 | Independent choices | Root muted text and border, syntax colors, and homepage signal color keep independent palette values |

@@ -3,7 +3,7 @@ root_nav: true
 title: Powered by
 icon: code
 description: "The technology behind this site, build information and PWA status."
-slug: powered-by
+url: powered-by/
 layout: page-powered-by
 weight: 96
 outputs: [HTML]

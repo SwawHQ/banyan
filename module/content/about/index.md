@@ -1,10 +1,8 @@
 ---
 root_nav: true
 date: "2025-10-11T20:10:44+08:00"
-draft: false
 title: "About"
-description: "Learn how Banyan structures content and taxonomy navigation for Hugo sites."
-slug: "about"
+description: "Learn how Banyan organizes content directories and navigation for Hugo sites."
 url: about/
 weight: 95
 layout: "page-article"
@@ -15,7 +13,7 @@ build:
 ---
 
 
-Banyan is a minimalist, Explorer-like Hugo theme designed for clear structure and explorer-style taxonomy navigation (recommended default: hierarchical `tags`).
+Banyan is a minimalist Hugo theme with an Explorer-like layout. Ordinary directories organize articles, and shared `_map.toml` files add cross-directory references.
 
 As defined in our `theme.toml`:
 - **Name**: banyan

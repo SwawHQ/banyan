@@ -1,0 +1,2 @@
+{{- $render := index (.Params.build | default dict) "render" | default "always" -}}
+{{- return (and (.OutputFormats.Get "HTML") .RelPermalink (not (in (slice "never" "link") $render)) (not .Params.translation_placeholder)) -}}
