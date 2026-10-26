@@ -40,7 +40,7 @@ local wheel fixtures. Without these inputs, integration cases are skipped.
 | `cache-policy.test.mjs` | Delivery configuration, platform output, worker matching, versioned caching and controlled-navigation warmup |
 | `tasks.test.mjs`, `checks.test.mjs` | Dispatch, streams, sync faults, help, arguments and static/HTTP checks |
 | `browser.test.mjs`, `browser-site.test.mjs` | Engines, CSP, discovery, reports, isolation and cleanup |
-| `browser-{aside,breadcrumb,canvas,collection,nav,opening,presentation}.test.mjs` | Navigation, geometry, native input and first paint |
+| `browser-{aside,breadcrumb,canvas,collection,nav,opening,presentation,wheel}.test.mjs` | Navigation, geometry, native input and first paint |
 | `browser-{language,settings,ui}.test.mjs` | Translation, history, preferences and palette |
 | `responsive-images.test.mjs` | Image processing, browser selection, original links and build-cache reuse |
 | `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |

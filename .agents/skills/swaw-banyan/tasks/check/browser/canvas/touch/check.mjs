@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse,visiblePoint} from '../../_shared/viewport.mjs';
+import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {readCanvas,waitForCanvasX} from '../_shared/state.mjs';
 import {touchDrag,touchPosition} from '../_shared/touch.mjs';
 import {openAside} from '../../aside/_shared/page.mjs';
@@ -24,13 +24,18 @@ export async function check({page,context,baseUrl,options}) {
   page.on('request',record);
   try {
     const swipe=async(x,dx,dy=0,y=180)=>{
-      const drag=await touchDrag(page,cdp,{x,dx,dy,y});drags.push(drag);
+      const drag=await touchDrag(page,cdp,{x,dx,dy,y});
+      drags.push(drag);
       if(!dy)assert.equal(drag.after.y,drag.before.y,'Horizontal touch input must preserve the vertical reading position.');
       assert.equal(page.url(),url,'Dragging a navigation link must not activate it.');
       assert.deepEqual(documents,[],'Dragging must not request a new document.');
       return drag;
     };
-    const root=await visiblePoint(page.locator('[data-root-navigation] [data-root-href]').first());
+    const root=await page.locator('[data-root-navigation] [data-root-href]').first().evaluate(node=>{
+      const box=node.getBoundingClientRect(),view=window.visualViewport;
+      return {x:Math.min(view?.width||innerWidth,box.right-(view?.offsetLeft||0))-12,
+        y:(box.top+box.bottom)/2-(view?.offsetTop||0)};
+    });
     await swipe(root.x,-Math.min(180,root.x-15),0,root.y);
     assert.ok((await touchPosition(page)).x>0,'A leftward drag on a root link must move the canvas.');
     const limit=Math.ceil(initial.maxX/(width-90))+4;

@@ -85,6 +85,7 @@ actual site; default example routes may not exist in a customized site.
 | `canvas/history`, `canvas/touch` | Two scrollable articles; history needs sorting on the second, touch needs an aside on the source. |
 | `canvas/open` | A collection and a long article linked from it. Chromium `--drag` requires touch mode and a distance that reveals the article link. |
 | `canvas/first-paint` | Article, collection or settings pages; include source/sort URLs when testing reserved columns. |
+| `canvas/wheel` | A long article with metadata and overflowing code/table samples; `--short` needs a short article with a local prose link. |
 | `prefetch/rules`, `prefetch/overlap`, `prefetch/debug` | Match inline rules to each page; overlap requires automatic native selection and candidates. Debug checks its five backend choices and published state. |
 | `pwa/panel` | Two pages with reciprocal root links. This tests panel UI with workers blocked, not real updates. |
 | `pwa/offline` | An SW-enabled build. The first visit only registers; a later controlled navigation supplies the HTML and resources for offline reload. |

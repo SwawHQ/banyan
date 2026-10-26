@@ -2,12 +2,14 @@ import { initRootNavigation } from './browse/root-navigation.js';
 import { initLanguageReturn } from './preferences/language-return.js';
 import { initThemePreference } from './preferences/theme.js';
 import { initAutoScrollbar } from './browse/auto-scrollbar.js';
+import { initCanvasWheel } from './browse/canvas-wheel.js';
 import { initDocumentAnchors } from './document/anchors.js';
 
 initRootNavigation();
 
 document.addEventListener('DOMContentLoaded', () => {
     initDocumentAnchors();
+    initCanvasWheel();
     initThemePreference();
     initLanguageReturn();
     document.querySelectorAll('.page-column')
