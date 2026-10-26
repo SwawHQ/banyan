@@ -19,11 +19,11 @@ Run `tools.ps1` with Windows PowerShell 5.1. It compiles a native fixture
 and uses Bun's test runner to test Node-based tool preparation.
 Tool fixtures do not log in or publish.
 
-Generic package, archive, help, doctor, theme resolution, delivery, fingerprint
+Generic package, archive, help, doctor, theme resolution, robots, delivery, fingerprint
 and asset-report tests ship with the Skill:
 
 ```powershell
-$skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_shared/_tests','./.agents/skills/swaw-banyan/tasks/_shared/tools/_tests','./.agents/skills/swaw-banyan/tasks/base/uv/_tests','./.agents/skills/swaw-banyan/tasks/check/delivery/_tests','./.agents/skills/swaw-banyan/tasks/doctor/_tests','./.agents/skills/swaw-banyan/tasks/help/_tests','./.agents/skills/swaw-banyan/tasks/report/size/assets/_tests') -Filter '*.test.mjs' -File
+$skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_shared/_tests','./.agents/skills/swaw-banyan/tasks/_shared/tools/_tests','./.agents/skills/swaw-banyan/tasks/base/uv/_tests','./.agents/skills/swaw-banyan/tasks/check/delivery/_tests','./.agents/skills/swaw-banyan/tasks/check/robots/_tests','./.agents/skills/swaw-banyan/tasks/doctor/_tests','./.agents/skills/swaw-banyan/tasks/help/_tests','./.agents/skills/swaw-banyan/tasks/report/size/assets/_tests') -Filter '*.test.mjs' -File
 .\.agents\skills\swaw-banyan\swban.cmd base/node --test $skillTests.FullName
 ```
 
@@ -42,11 +42,12 @@ local wheel fixtures. Without these inputs, integration cases are skipped.
 | `browser.test.mjs`, `browser-site.test.mjs` | Engines, CSP, discovery, reports, isolation and cleanup |
 | `browser-{aside,breadcrumb,canvas,collection,nav,opening,presentation}.test.mjs` | Navigation, geometry, native input and first paint |
 | `browser-{language,settings,ui}.test.mjs` | Translation, history, preferences and palette |
+| `responsive-images.test.mjs` | Image processing, browser selection, original links and build-cache reuse |
 | `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
 | `output.test.mjs` | Repository budgets and retired-output faults |
 | `sitemap.test.mjs` | Sitemap/LLMS parity, native exclusions, language routing and rebuilds |
 | `directory-references.test.mjs` | TOML references, native taxonomy configuration, multilingual membership, feeds, canonical outputs and rebuilds |
-| `documentation.test.mjs` | Official documentation routes, links, language indexes and discovery URLs |
+| `reference-site.test.mjs` | Minimal reference-site ownership, production discovery and build metadata |
 
 Each suite keeps its successful cases and fault fixtures. Domain suites own
 argument semantics; `checks.test.mjs` owns common help/unknown-option checks.

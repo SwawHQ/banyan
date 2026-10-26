@@ -11,8 +11,8 @@ for (const language of ['zh','en']) test('Shared authorization page '+language+'
   const text = document[language],cfText = {...text,...text.cloudflare},tcText = {...text,...text.tencent};
   const writes = [],errors = [],logins = [],preparations = [],checks = [];
   const parent = fs.realpathSync.native(os.tmpdir()),siteRoot = fs.mkdtempSync(path.join(parent,'swban-auth-browser-'));
-  fs.mkdirSync(path.join(siteRoot,'static'));
-  fs.writeFileSync(path.join(siteRoot,'static/favicon.svg'),'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="green"/></svg>');
+  fs.mkdirSync(path.join(siteRoot,'assets/site'),{recursive:true});
+  fs.writeFileSync(path.join(siteRoot,'assets/site/favicon.link.svg'),'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="green"/></svg>');
   let local,browser;
   try {
     const platform = language === 'zh' ? 'cloudflare' : 'tencent';

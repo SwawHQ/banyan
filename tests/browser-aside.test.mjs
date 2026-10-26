@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureContentDirectory} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {toggleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/aside/toggle/options.mjs';
 import {canvasLayoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/layout/options.mjs';
@@ -39,7 +39,7 @@ before(()=>{
   let body=('Leading article text to exercise independent reading progress.\n\n'.repeat(12));
   for(let i=0;i<20;i++)body+=(i%2?'###':'##')+' Chapter '+i+' 测试 '+('long heading words '.repeat(i===10?8:1))+'\n\n'+('A paragraph with enough words to exercise the reading column and native chapter links.\n\n'.repeat(6));
   write(path.join(content,'d/aside-fixture.md'),front+body);
-  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
+  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
   const built=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(built.error);assert.equal(built.status,0,built.stdout+built.stderr);
 },{timeout:60000});
@@ -53,9 +53,10 @@ test('aside paths, viewport widths and touch options have one argument contract'
   assert.match(helpFor(spec,'en'),/--touch/);assert.match(helpFor(spec,'en'),/default: 390,768,1800/);
   for(const widths of ['','319','3841','390,390','390,','390px','390, 768','-320'])assert.throws(()=>parseArguments(spec,['--page',route,'--widths',widths]));
   const layout=canvasLayoutCommand('check/browser/canvas/layout');
-  assert.equal(parseArguments(layout,[]).height,900);
-  assert.equal(parseArguments(layout,['--height','844']).height,844);
-  for(const height of ['0','239','3841','844px','1.5'])assert.throws(()=>parseArguments(layout,['--height',height]));
+  assert.throws(()=>parseArguments(layout,[]),/--page is required/);
+  assert.equal(parseArguments(layout,['--page',route]).height,900);
+  assert.equal(parseArguments(layout,['--page',route,'--height','844']).height,844);
+  for(const height of ['0','239','3841','844px','1.5'])assert.throws(()=>parseArguments(layout,['--page',route,'--height',height]));
   assert.match(helpFor(layout,'en'),/--height/);
 });
 

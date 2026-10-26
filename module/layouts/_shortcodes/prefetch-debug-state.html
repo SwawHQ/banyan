@@ -1,0 +1,8 @@
+{{- $key := .Get 0 -}}
+{{- if not (in (slice "support" "env" "actions" "runtime" "payload") $key) -}}
+  {{- errorf "Build failed: %s prefetch-debug-state requires support, env, actions, runtime or payload." .Page.File.Path -}}
+{{- end -}}
+{{- if not (.Page.HasShortcode "prefetch-debug-controls") -}}
+  {{- errorf "Build failed: %s requires prefetch-debug-controls." .Page.File.Path -}}
+{{- end -}}
+<pre id="prefetch-debug-{{ $key }}">{{ .Page.Params.prefetch_debug.labels.loading }}</pre>

@@ -1,6 +1,6 @@
 {{- $page := .ctx -}}
 {{- $labels := $page.Params.site_update.labels | default dict -}}
-{{- range slice "check" "checking" "check_failed" "unavailable" "status" "status_current" "status_ready" "status_offline" "installing" "controlled" "yes" "no" "status_click_retry" -}}
+{{- range slice "check" "checking" "check_failed" "unavailable" "status" "status_current" "status_ready" "status_offline" "installing" "status_click_retry" -}}
   {{- if not (index $labels .) -}}{{- errorf "Build failed: %s requires site_update.labels.%s." $page.File.Path . -}}{{- end -}}
 {{- end -}}
 {{- return $labels -}}

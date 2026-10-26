@@ -1,0 +1,16 @@
+{{- $fixedIcon := resources.Get "site/favicon.ico" -}}
+{{- with $fixedIcon -}}
+  {{- $publish := . | resources.Copy "favicon.ico" | resources.Publish -}}
+{{- end -}}
+{{- $linkedIcon := resources.Get "site/favicon.link.svg" -}}
+{{- if not $linkedIcon -}}
+  {{- $linkedIcon = resources.Get "site/favicon.link.ico" -}}
+{{- end -}}
+{{- $published := "" -}}
+{{- if not (or $fixedIcon $linkedIcon) -}}
+  {{- errorf "Build failed: missing favicon resource; provide assets/site/favicon.ico, favicon.link.svg or favicon.link.ico." -}}
+{{- end -}}
+{{- with $linkedIcon -}}
+  {{- $published = . | fingerprint -}}
+{{- end -}}
+{{- return $published -}}

@@ -1,9 +1,7 @@
 {{- $ctx := . -}}
 {{- $translated := dict -}}
 {{- range $ctx.AllTranslations -}}
-  {{- if not .Params.translation_placeholder -}}
-    {{- $translated = merge $translated (dict .Language.Lang .RelPermalink) -}}
-  {{- end -}}
+  {{- $translated = merge $translated (dict .Language.Lang .RelPermalink) -}}
 {{- end -}}
 {{- $options := slice -}}
 {{- range sort hugo.Sites "Language.Weight" -}}

@@ -6,7 +6,7 @@
 {{- $columnsByHref := $registry.columns_by_href -}}
 {{- $pageColumn := index $columnsByHref $ctx.RelPermalink | default dict -}}
 {{- $pageCollectionSource := $pageColumn.source | default dict -}}
-{{- if and (not $pageColumn) (eq $ctx.Layout "page-collection") -}}
+{{- if not $pageColumn -}}
   {{- $config := partial "feature-browse/collection/config.html" (dict "page" $ctx) -}}
   {{- $pageCollectionSource = partial "feature-browse/collection/source.html" (dict "page" $ctx "config" $config) -}}
 {{- end -}}

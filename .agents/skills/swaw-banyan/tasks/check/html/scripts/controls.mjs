@@ -30,7 +30,6 @@ export function inspectDocumentControls(html) {
     const panels=extractBlocks(source,'div',tag=>has(tag,'site-update-panel'));
     assert.ok(panels.length<=1,'Update panel must occur at most once.');
     for(const panel of panels) {
-      assert.equal(extractStartTags(panel.inner,'span').filter(tag=>has(tag,'pwa-controlled')).length,1,'Update panel has one controlled-status value.');
       const status=extractStartTags(panel.inner,'p').filter(tag=>has(tag,'site-update-status'));
       assert.equal(status.length,1,'Update panel has one live status.');
       assert.equal(attr(status[0],'role'),'status','Update status exposes its role.');

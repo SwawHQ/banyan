@@ -1,8 +1,11 @@
 {{- range $key, $value := . -}}
-  {{- if not (in (slice "platform" "routes" "prefetch" "service_worker") $key) -}}
+  {{- if not (in (slice "platform" "routes" "redirects" "prefetch" "sw") $key) -}}
     {{- errorf "Delivery config: unknown field %q." $key -}}
   {{- end -}}
-  {{- if and (ne $key "routes") (not (reflect.IsMap $value)) -}}{{- errorf "Delivery config: %s must be a table." $key -}}{{- end -}}
+  {{- if and (not (in (slice "routes" "redirects") $key)) (not (reflect.IsMap $value)) -}}{{- errorf "Delivery config: %s must be a table." $key -}}{{- end -}}
+{{- end -}}
+{{- if and (isset . "redirects") (not (reflect.IsSlice .redirects)) -}}
+  {{- errorf "Delivery config: redirects must be an array." -}}
 {{- end -}}
 {{- with .platform -}}
   {{- range $name, $config := . -}}

@@ -5,13 +5,13 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {layoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/collection/layout/options.mjs';
 import {styleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/collection/style/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
-const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
+const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-collection');
 const article='/d/collection-fixture/one/#from=all';let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){
@@ -22,6 +22,7 @@ function fixture(name){const directory=path.join(work,name);fs.cpSync(output,dir
 function css(directory,route,text){write(path.join(directory,'probe.css'),text);fs.appendFileSync(path.join(directory,route,'index.html'),'<link rel="stylesheet" href="/probe.css">');}
 function report(result){assert.equal(result.status,0,result.stdout+result.stderr);return JSON.parse(fs.readFileSync(path.join(result.stdout.match(/Artifacts: (.+)/)[1].trim(),'result.json'),'utf8'));}
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-collection-'));skill=path.join(work,'skill');output=path.join(work,'public');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const runtime='node';
@@ -38,12 +39,13 @@ before(()=>{
   for(const name of ['translated-one','translated-two'])write(path.join(content,'d',name+'.zh.md'),
     `---\ntitle: ${name}\nurl: d/${name}/\ndate: 2026-01-01\n---\n\n独立翻译内容。`);
   for(const suffix of ['','.zh','.zh-tw']) {
+    write(path.join(content,'discover','_index'+suffix+'.md'),directoryPage('Sources'));
     write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
     write(path.join(content,'discover/tooling/devtools','_index'+suffix+'.md'),directoryPage('Devtools'));
   }
   write(path.join(content,'discover/tooling/_map.toml'),"refs = [\"/d/collection-fixture/one\",\"/d/collection-fixture/three\"]\n");
   write(path.join(content,'discover/tooling/devtools/_map.toml'),"refs = [\"/d/collection-fixture/two\",\"/d/collection-fixture/four\"]\n");
-  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
+  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
 });

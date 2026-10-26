@@ -7,7 +7,7 @@
 {{- end -}}
 {{- else -}}
 {{- $name := $value -}}
-{{- $iconData := index hugo.Data.icons $name -}}
+{{- $iconData := index (partialCached "system-ui/icon/library.html" site "site-icons") $name -}}
 {{- if not $iconData -}}
   {{- errorf "Build failed: undefined icon %q." $name -}}
 {{- end -}}

@@ -3,7 +3,7 @@
 {{- $rightHref := .Get "right_href" -}}
 {{- $rightLabel := .Get "right_label" -}}
 {{- if and $leftHref $leftLabel -}}
-<p>
+<p data-page-actions>
   <a href="{{ $leftHref }}"{{ with .Get "left_action" }} data-page-action="{{ . }}"{{ end }}>{{ $leftLabel }}</a>
   {{- if and $rightHref $rightLabel -}}
     / <a href="{{ $rightHref }}">{{ $rightLabel }}</a>

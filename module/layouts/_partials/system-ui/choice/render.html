@@ -1,8 +1,4 @@
 {{- $page := .page -}}
-{{- $view := partial "system-ui/list/resolve-view.html" (dict "page" $page) -}}
-{{- if ne $view "choice" -}}
-  {{- errorf "Choice page %s needs list: choice (own declaration or nearest ancestor)." $page.RelPermalink -}}
-{{- end -}}
 {{- $items := slice -}}
 {{- range .items -}}
   {{- $control := printf "%v" (.control | default "") -}}
@@ -17,4 +13,4 @@
   {{- end -}}
   {{- $items = $items | append $item -}}
 {{- end -}}
-{{- partial "system-ui/list/render.html" (dict "title" .title "dataAttrs" (dict "list-view" $view) "items" $items) -}}
+{{- partial "system-ui/list/render.html" (dict "title" .title "dataAttrs" (dict "list-view" "choice") "items" $items) -}}

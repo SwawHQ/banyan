@@ -24,10 +24,10 @@ const productionGuardrails = [
         maxBreadcrumbPayloadBytes: 16,
         maxBreadcrumbSourceCount: 0
     },
-    {
-        label: 'all',
-        rootCollectionSlug: 'all',
-        relativePathLabel: '*/all/index.html',
+    ...['notes-all','products-all'].map(name=>({
+        label: name,
+        rootCollectionSlug: name,
+        relativePathLabel: `*/${name}/index.html`,
         // The critical root/path boot modules are bundled inline before first paint.
         // Keep the shell and each published row bounded independently so normal
         // content growth does not require recalibrating a fixed total.
@@ -38,11 +38,11 @@ const productionGuardrails = [
         breadcrumbPayloadBaseBytes: 1_000,
         breadcrumbPayloadPerItemBytes: 220,
         maxBreadcrumbSourceCount: 1
-    },
-    {
-        label: 'tools',
-        rootCollectionSlug: 'tools',
-        relativePathLabel: '*/tools/index.html',
+    })),
+    ...['notes','products'].map(name=>({
+        label: name,
+        rootCollectionSlug: name,
+        relativePathLabel: `*/${name}/index.html`,
         rawBaseBytes: 28_000,
         rawPerItemBytes: 1_500,
         gzipBaseBytes: 8_000,
@@ -50,7 +50,7 @@ const productionGuardrails = [
         breadcrumbPayloadBaseBytes: 1_300,
         breadcrumbPayloadPerItemBytes: 220,
         maxBreadcrumbSourceCount: 1
-    }
+    }))
 ];
 
 function getGuardrailRows(rowsByPath, guardrail) {

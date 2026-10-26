@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {panelCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/panel/options.mjs';
 import {offlineCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/offline/options.mjs';
@@ -47,21 +47,22 @@ before(()=>{
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
   for(const lang of ['en','zh','zh-tw']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
-    let text=fs.readFileSync(path.join(root,'module/content/powered-by/index'+suffix+'.md'),'utf8')
+    let text=fs.readFileSync(path.join(root,'content/powered-by/index'+suffix+'.md'),'utf8')
       .replace(/^url:.*$/m,'url: '+prefix+panel+'\n');
-    for(const [key,value] of Object.entries({yes:lang+' · worker yes',no:lang+' · worker no',status:lang+' · status',unavailable:lang+' · unavailable',check:lang+' · check',check_failed:lang+' · failed'})) {
+    for(const [key,value] of Object.entries({status:lang+' · status',unavailable:lang+' · unavailable',check:lang+' · check',check_failed:lang+' · failed'})) {
       text=text.replace(new RegExp('^    '+key+':.*$','m'),'    '+key+': '+JSON.stringify(value));
     }
     write(path.join(content,'powered-by/index'+suffix+'.md'),text);
     write(path.join(content,'fixture-start/index'+suffix+'.md'),
-      '---\ntitle: Independent panel source\nlayout: page-article\nurl: '+prefix+from+'\nroot_nav: true\nicon: code\nweight: 84\nbuild:\n  list: local\n---\n\nIndependent panel navigation source.');
+      `---\ntitle: Independent panel source\nlayout: page-article-norss\nurl: ${prefix}${from}\nweight: 84\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nIndependent panel navigation source.`);
   }
-  const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n';
+  const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+
+    '[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+fixtureI18nMount;
   const build=(configuration,destination,mode='enable')=>{
-    const data=path.join(work,'delivery-data');
-    write(path.join(data,'delivery.toml'),serviceWorkerPolicy(mode));
-    write(config,configuration+'\n[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+
-      '\ntarget = "data"\n[[module.mounts]]\nsource = "data"\ntarget = "data"\n');
+    const assets=path.join(work,'delivery-assets');
+    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(mode)));
+    write(config,configuration+'\n[[module.mounts]]\nsource = '+
+      JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n');
     const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
     assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
   };
@@ -79,7 +80,7 @@ before(()=>{
     assert.ok(worker.includes(search),'The worker fault must change an existing behavior: '+name);
     write(path.join(assets,'js/pwa/worker-enable.js.tmpl'),worker.replaceAll(search,replacement));
     variants[name]=path.join(work,name);
-    build(mounts+'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n',variants[name]);
+    build(mounts+'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n',variants[name]);
   }
   // These page-specific assets are absent from install-time offline fallbacks.
   // Their cache entries therefore belong to the controlled page.
@@ -115,14 +116,14 @@ test('unavailable panels render localized copy across visits, reloads and native
     const state=report(cli(['--page',prefix+panel,'--from',prefix+from,'--out',path.join(work,'reports')]));
     assert.equal(state.details.cases.length,8);
     assert.deepEqual(state.details.cases.map(value=>value.phase),['visit','reload','back','entry','visit','reload','back','entry']);
-    assert.ok(state.details.cases.every(value=>value.state==='unavailable'&&value.controlled===lang+' · worker no'&&!value.action));
+    assert.ok(state.details.cases.every(value=>value.state==='unavailable'&&!value.action));
     assert.deepEqual([...new Set(state.details.cases.map(value=>value.width))],[390,1024]);
   }
 });
 
 test('enabled panels render a blocked-worker failure without claiming registration or upgrades',{timeout:15000},()=>{
   const state=report(cli(['--page',panel,'--from',from,'--trace','--out',path.join(work,'reports')],enabled));
-  assert.ok(state.details.cases.every(value=>value.state==='failed'&&value.action&&value.controlled==='en · worker no'));
+  assert.ok(state.details.cases.every(value=>value.state==='failed'&&value.action));
 });
 
 test('panel checks detect missing controllers and incorrect localized state',{timeout:20000},()=>{
@@ -130,11 +131,11 @@ test('panel checks detect missing controllers and incorrect localized state',{ti
   const html=fs.readFileSync(file,'utf8'),changed=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,script=>script.includes('/js/updates/page.')?'':script);
   assert.ok(changed!==html,'The missing-controller fixture must remove the page asset.');write(file,changed);
   const absent=cli(['--page',panel,'--from',from,'--widths','1024','--timeout','1500'],missing);
-  assert.equal(absent.status,1,absent.stdout+absent.stderr);assert.match(absent.stderr,/Timeout/);
+  assert.equal(absent.status,1,absent.stdout+absent.stderr);assert.match(absent.stderr,/update panel must be visible/);
   for(const [name,code,message] of [
-    ['wrong-controlled','document.querySelector("[data-pwa-controlled]").textContent="wrong locale";',/current runtime and locale/],
+    ['wrong-locale','document.querySelector("[data-site-update-status]").textContent="wrong locale";',/localized label/],
     ['wrong-state','document.querySelector("[data-site-update-panel]").dataset.siteUpdateState="ready";',/show unavailable/],
-    ['missing-status','document.querySelector("[data-site-update-status]").textContent="";',/localized label/]
+    ['missing-status','document.querySelector("[data-site-update-status]").textContent="";',/update panel must be visible/]
   ]) {
     const broken=fixture(name);probe(broken,name,'document.addEventListener("DOMContentLoaded",()=>{'+code+'});');
     const result=cli(['--page',panel,'--from',from,'--widths','1024'],broken);
@@ -161,7 +162,7 @@ test('panel checks detect inaccessible announcements and incorrect check control
 
 test('panel checks detect history-only failures and hidden narrow panels',{timeout:15000},()=>{
   for(const [name,code,width,message] of [
-    ['broken-back','if(performance.getEntriesByType("navigation")[0]?.type==="back_forward")document.querySelector("[data-pwa-controlled]").textContent="broken back";','1024',/current runtime and locale/],
+    ['broken-back','if(performance.getEntriesByType("navigation")[0]?.type==="back_forward")document.querySelector("[data-site-update-status]").textContent="broken back";','1024',/localized label/],
     ['hidden-mobile','if(innerWidth<500)document.querySelector("[data-site-update-panel]").hidden=true;','390',/must be visible/]
   ]) {
     const broken=fixture(name);probe(broken,name,'document.addEventListener("DOMContentLoaded",()=>{'+code+'});');

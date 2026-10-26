@@ -23,14 +23,13 @@ function getStatusValue(copy, status, latencyMs) {
     return `${copy.status_current}${latency}`;
 }
 
-function render(copy, status, latencyMs, controlled) {
+function render(copy, status, latencyMs) {
     panel.dataset.siteUpdateState = status;
     const action = panel.querySelector('[data-site-update-action]');
     const label = action?.querySelector('[data-site-update-action-label]');
     if (action) action.disabled = ['checking', 'installing', 'unavailable'].includes(status);
     if (label) label.textContent = status === 'checking' ? copy.checking : copy.check;
 
-    panel.querySelector('[data-pwa-controlled]').textContent = controlled ? copy.yes : copy.no;
     const statusNode = panel.querySelector('[data-site-update-status]');
     const value = getStatusValue(copy, status, latencyMs);
     if (statusNode) statusNode.textContent = value ? `${copy.status}: ${value}` : '';
@@ -43,7 +42,7 @@ let checking = false;
 let latencyMs = null;
 
 function showStatus(status) {
-    render(copy, status, latencyMs, Boolean(navigator.serviceWorker?.controller));
+    render(copy, status, latencyMs);
 }
 
 function syncRegistrationStatus() {

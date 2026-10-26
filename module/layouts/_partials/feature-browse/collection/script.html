@@ -1,0 +1,6 @@
+{{- $config := partial "./config.html" (dict "page" .) -}}
+{{- if $config.sortable -}}
+  {{- partial "./sort/script.html" . -}}
+{{- else if $config.script -}}
+  {{- partial "system-assets/script.html" (dict "path" $config.script) -}}
+{{- end -}}

@@ -10,7 +10,7 @@
       "  --timeout <ms>  Browser launch and individual action timeout; default: 15000",
       "  --next <dir>    Next SW-enabled build; sw.js must differ",
       "  --page <path>   Update panel path; default: /powered-by/",
-      "  --from <path>   Linked source page; default: /about/",
+      "  --from <path>   Linked source page; default: /",
       "",
       "swban check/browser/pwa/lifecycle ./old --next ./new",
       "swban check/browser/pwa/lifecycle ./old --next ./new --trace --out ./browser-report"
@@ -27,7 +27,7 @@
       "  --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
       "  --next <dir>    下一份启用 SW 的构建，使用不同的 sw.js",
       "  --page <path>   更新面板路径；默认：/powered-by/",
-      "  --from <path>   链接到设置页的来源页面；默认：/about/",
+      "  --from <path>   链接到设置页的来源页面；默认：/",
       "",
       "swban check/browser/pwa/lifecycle ./old --next ./new",
       "swban check/browser/pwa/lifecycle ./old --next ./new --trace --out ./browser-report"

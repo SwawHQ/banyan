@@ -8,9 +8,10 @@
   {{- errorf "Build failed: %s.icons must be a table." $context -}}
   {{- $icons = dict -}}
 {{- end -}}
+{{- $library := partialCached "system-ui/icon/library.html" site "site-icons" -}}
 {{- range $icon, $scopes := $icons -}}
-  {{- if or (eq (len (findRE "^[a-z][a-z0-9_-]*$" $icon)) 0) (not (index hugo.Data.icons $icon)) -}}
-    {{- errorf "Build failed: %s.icons.%s must name an SVG defined in data/icons.toml." $context $icon -}}
+  {{- if or (eq (len (findRE "^[a-z][a-z0-9_-]*$" $icon)) 0) (not (index $library $icon)) -}}
+    {{- errorf "Build failed: %s.icons.%s must name an SVG defined in assets/site/icons.toml." $context $icon -}}
   {{- end -}}
   {{- if not (reflect.IsMap $scopes) -}}
     {{- errorf "Build failed: %s.icons.%s must be a scope table." $context $icon -}}

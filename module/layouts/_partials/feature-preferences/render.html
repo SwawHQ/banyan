@@ -1,0 +1,25 @@
+{{- $page := .page -}}
+<div class="column-panel"{{ if eq .provider "languages" }} data-language-settings data-language-missing="{{ $page.Params.labels.missing_translation }}"{{ end }}>
+  {{- $items := slice -}}
+  {{- if eq .provider "languages" -}}
+    {{- range partial "./language-choice-options.html" $page -}}
+      {{- $items = $items | append (dict
+        "control" "link" "href" .href "title" .name "text" .name
+        "icon" .icon "isCurrent" (eq .code $page.Language.Lang)
+        "dataAttrs" (dict "language-choice" .code "language-name" .name "has-trans" (printf "%v" .translated))
+      ) -}}
+    {{- end -}}
+  {{- else if eq .provider "appearance" -}}
+    {{- range slice "auto" "light" "dark" -}}
+      {{- $items = $items | append (dict
+        "control" "button" "text" (index $page.Params.labels .) "icon" (printf "appearance-%s" .)
+        "dataAttrs" (dict "theme-choice" .)
+      ) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $items = $items | append (dict
+    "control" "link" "href" $page.Site.Home.RelPermalink "text" $page.Params.labels.back
+    "icon" (dict "text" "↩") "dataAttrs" (dict "page-action" "back")
+  ) -}}
+  {{ partial "system-ui/choice/render.html" (dict "page" $page "title" $page.Title "items" $items) }}
+</div>

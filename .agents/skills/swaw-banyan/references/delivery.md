@@ -13,31 +13,38 @@ set `--base-path` to that prefix, as in the example above.
 
 ## Configuration
 
-Module defaults live in `module/data/delivery.toml`. A site's
-`data/delivery.toml` replaces declared top-level fields through Hugo's data loader.
-Nested fields do not merge. Copy the complete table to change it. A declared
-`routes` array replaces all default routes; `routes = []` removes them.
+Each site owns a complete `assets/site/delivery.toml`. Start from the Banyan root
+reference file, retain the site's own values and update this file directly.
+The Module and traditional theme directory do not supply configuration defaults.
+The `routes` array contains the site's ordered rules; `routes = []` declares none.
+Top-level `[[redirects]]` entries in the same file declare URL redirects with
+`source`, `destination` and `status`. Omit this array when there are no redirects.
+The Banyan reference file provides a fully commented example. Rules retain their
+declaration order in the enabled platforms' output.
 
 Keep general routes first and exceptions last. HTTP output retains declaration
 order. SW uses only routes with `sw`, reverses them and takes the first match.
 
-Both platforms are enabled by default. A site declaring `platform` replaces that
-whole table. An omitted platform is disabled; each declared platform needs its
-`enabled` switch. For example:
+The Banyan reference file enables both platform products. Disable outputs the
+site does not use. An omitted product is disabled; each declared product needs
+its `enabled` switch. Set `pages.enabled` and `makers.enabled` in the complete site file:
 
 ```toml
-[platform.cloudflare.pages]
-enabled = true
+[platform.cloudflare]
+pages.enabled = true
 
-[platform.edgeone.makers]
-enabled = false
+[platform.edgeone]
+makers.enabled = false
 ```
 
 Cloudflare Pages generates `_headers` and `_redirects` when enabled. EdgeOne Makers
-generates `edgeone.json` when enabled; copy its default build fields when enabling
-it in a site-owned table. SW `enable` also generates `sw-policy.json`, an exact copy
+generates `edgeone.json` when enabled; include its required build fields in the
+site-owned table. SW `enable` also generates `sw-policy.json`, an exact copy
 of its path/bucket array in matching order. SW `off` and `disable` omit that copy;
 `disable` still generates the cleanup worker.
+SW `enable` requires a published HTML page at `sw.offline_notice_path`
+for each enabled language. The reference site's `content/_res/offline/` supplies
+these pages. SW `off` and `disable` allow them to be absent.
 
 ## Checked output
 

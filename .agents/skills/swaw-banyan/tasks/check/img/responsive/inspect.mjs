@@ -25,8 +25,8 @@ export async function inspect(directory) {
         const matchingKey = Object.keys(baseConfig.languages ?? {}).find(key =>
           key.toLowerCase() === configKey.toLowerCase() || baseConfig.languages[key].locale?.toLowerCase() === configKey.toLowerCase());
         const cfg = (matchingKey ? await readHugoConfig(process.cwd(),matchingKey) : baseConfig).params?.media?.responsive_images;
-        if (!cfg || !Number.isInteger(cfg.max_width) || cfg.max_width <= 0 || typeof cfg.sizes !== 'string' || !cfg.sizes.trim()) {
-          throw new Error('Resolved Hugo params.media.responsive_images must define max_width and sizes.');
+        if (!cfg || !Array.isArray(cfg.widths) || !cfg.widths.length || cfg.widths.some(width => !Number.isInteger(width) || width <= 0)) {
+          throw new Error('Resolved Hugo params.media.responsive_images must define positive integer widths.');
         }
         configs.set(configKey,cfg);
       }
@@ -43,11 +43,13 @@ export async function inspect(directory) {
         else {
           const max = Math.max(...candidates.map(value => Number(value[2])));
           const width = Number(extractTagAttribute(tag,'width'));
-          if (width > 0 && max !== Math.min(width,config.max_width)) issues.push(`${page.relativePath}: max webp candidate is ${max}w; expected ${Math.min(width,config.max_width)}w`);
+          const expected = Math.min(width,Math.max(...config.widths));
+          if (width > 0 && max !== expected) issues.push(`${page.relativePath}: max webp candidate is ${max}w; expected ${expected}w`);
           for (const candidate of candidates) if (!await imageBytes(root,candidate[1],siteURL)) issues.push('Missing responsive image candidate: ' + candidate[1]);
         }
       }
-      if (!source || extractTagAttribute(source,'sizes') !== config.sizes) issues.push(page.relativePath + ': webp sizes must match resolved Hugo configuration: ' + src);
+      if (!source || !/^auto(?:,\s*\S.*)?$/i.test(extractTagAttribute(source,'sizes').trim())) issues.push(page.relativePath + ': webp sizes must start with auto: ' + src);
+      if (extractTagAttribute(tag,'sizes') !== 'auto') issues.push(page.relativePath + ': img sizes must be auto: ' + src);
       if (!extractTagAttribute(tag,'width') || !extractTagAttribute(tag,'height')) issues.push(page.relativePath + ': content image should reserve its dimensions: ' + src);
       if (extractTagAttribute(tag,'loading') !== 'lazy' || extractTagAttribute(tag,'decoding') !== 'async') issues.push(page.relativePath + ': content image should keep lazy async loading: ' + src);
       if (!await imageBytes(root,src,siteURL)) issues.push('Missing generated content image: ' + src);

@@ -1,11 +1,41 @@
-{{- /* Presentation inherits; membership declarations belong only to their host. */ -}}
 {{- $page := .page -}}
-{{- $view := "" -}}
-{{- if eq $page.Layout "page-collection" -}}
-  {{- $view = partial "system-ui/list/resolve-view.html" (dict "page" $page) -}}
-  {{- if not (in (slice "name" "directory" "all" "products") $view) -}}
-    {{- errorf "List page %s needs list: name, directory, all or products (own declaration or nearest ancestor)." $page.RelPermalink -}}
+{{- $views := dict
+  "page-collection" "name"
+  "page-collection-directory" "directory"
+  "page-collection-directory-all" "all"
+  "page-collection-products" "products"
+  "page-collection-products-all" "products"
+  "page-collection-language" "choice"
+  "page-collection-appearance" "choice"
+-}}
+{{- $view := index $views $page.Layout | default "" -}}
+{{- $provider := "" -}}
+{{- $script := "" -}}
+{{- if $view -}}
+  {{- $provider = "section" -}}
+  {{- if eq $page.Layout "page-collection-language" -}}
+    {{- $provider = "languages" -}}
+    {{- $script = "js/preferences/language-page.js" -}}
+  {{- else if eq $page.Layout "page-collection-appearance" -}}
+    {{- $provider = "appearance" -}}
+    {{- $script = "js/preferences/back-links.js" -}}
+  {{- else if hasSuffix $page.Layout "-all" -}}
+    {{- $provider = "aggregate" -}}
+  {{- end -}}
+  {{- if isset $page.Params "list" -}}
+    {{- errorf "Collection page %s uses layout to select its list; remove params.list." $page.RelPermalink -}}
+  {{- end -}}
+  {{- if eq $provider "aggregate" -}}
+    {{- $path := $page.Params.aggregate -}}
+    {{- if or (ne (printf "%T" $path) "string") (not (hasPrefix (printf "%v" $path) "/")) (eq $path "/") -}}
+      {{- errorf "Collection page %s needs aggregate with an absolute section path." $page.RelPermalink -}}
+    {{- end -}}
+  {{- else if isset $page.Params "aggregate" -}}
+    {{- errorf "Collection page %s does not accept aggregate; use a collection layout ending in -all." $page.RelPermalink -}}
+  {{- end -}}
+  {{- if and (eq $view "choice") ($page.OutputFormats.Get "rss") -}}
+    {{- errorf "Choice page %s needs outputs: [HTML]." $page.RelPermalink -}}
   {{- end -}}
 {{- end -}}
 {{- $variant := cond (eq $view "directory") "section" $view -}}
-{{- return (dict "view" $view "sort_variant" $variant "default_sort" (cond (in (slice "name" "products") $view) "name-asc" "date-desc")) -}}
+{{- return (dict "view" $view "provider" $provider "script" $script "sortable" (and (ne $view "") (ne $view "choice")) "sort_variant" $variant "default_sort" (cond (in (slice "name" "products") $view) "name-asc" "date-desc")) -}}

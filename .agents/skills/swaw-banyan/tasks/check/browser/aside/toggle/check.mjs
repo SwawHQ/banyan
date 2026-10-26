@@ -33,7 +33,7 @@ export async function check({page,baseUrl,options}) {
       await page.goto('about:blank');
       await page.setViewportSize({width,height:844});
       await openArticle(page,baseUrl+options.page);
-      await page.locator('.page-shell').evaluate(node=>node.scrollIntoView({inline:'end',block:'nearest',behavior:'instant'}));
+      await page.locator('.page-content').evaluate(node=>node.scrollIntoView({inline:'start',block:'nearest',behavior:'instant'}));
       await afterPaint(page);
       const collapsed=await readingState(page),toggle=page.locator('#document-aside-toggle'),close=page.locator('#document-aside-close');
       assert.ok(collapsed.left>=-1&&collapsed.right<=collapsed.viewport+1,'Reading column must fit in the viewport. '+JSON.stringify(collapsed));
@@ -85,11 +85,12 @@ export async function check({page,baseUrl,options}) {
         await afterPaint(page);
         const beyond=await readingState(page);
         assert.ok(beyond.x>boundary+90,'Exercise a position beyond the closed canvas edge.');
-        await activate(page,close,options.touch);
+        await close.evaluate(node=>node.focus({preventScroll:true}));
+        await page.keyboard.press('Enter');await afterPaint(page);
         const closed=await readingState(page);
         assert.equal(closed.x,boundary,'Closing must let the browser clamp to the new canvas edge.');
         assert.equal(closed.y,beyond.y);assert.equal(closed.canvasWidth,partial.canvasWidth);
-      } else {await activate(page,close,options.touch);}
+      } else {await activate(page,close);}
       await toggle.evaluate(node=>node.focus({preventScroll:true}));
       const beforeKeyboard=await readingState(page);
       for(const [key,expanded] of [['Enter','true'],['Escape','false'],['Space','true'],['Space','false'],['Enter','true']]) {

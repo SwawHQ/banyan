@@ -45,7 +45,7 @@ function cliAsync(command,args=[],options={}) {
 }
 function externalSite(name,text) {
   const root = path.join(site,name);
-  write(root,'data/external-resources.yaml',text.replaceAll('ORIGIN',origin));
+  write(root,'assets/site/external-resources.yaml',text.replaceAll('ORIGIN',origin));
   fixturePairing(root);
   return root;
 }
@@ -92,7 +92,7 @@ before(async () => {
   write(site,'public/robots.txt','User-agent: *\nSitemap: https://example.test/sitemap.xml');
   write(site,'public/llms.txt','# Fixture\nCanonical site: https://example.test/\nSitemap: https://example.test/sitemap.xml\n## Pages\n- [Home](<https://example.test/>)');
   write(site,'public/index.html',`<!doctype html><html lang=en><head><title>Fixture</title><meta name=description content="Fixture home"><link rel=canonical href="https://example.test/"><link rel=stylesheet href="/css/page.0123456789abcdef.css"></head><body><h1>Fixture</h1><time data-site-update-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>v20261008120000</time><script>${inline}</script><script src="/js/main.0123456789abcdef.js" integrity="sha256-${hash(external)}"></script></body></html>`);
-  write(site,'data/external-resources.yaml','resources: []');
+  write(site,'assets/site/external-resources.yaml','resources: []');
   server = createServer((request,response) => {
     requests++;
     response.setHeader('Content-Type','application/json');

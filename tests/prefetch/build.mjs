@@ -7,10 +7,12 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
-import {fixtureEnvironment} from '../_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery} from '../_shared/hugo.mjs';
+import {extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
-const siteRoot = process.cwd(), temporaryRoot = fs.realpathSync(os.tmpdir());
-const work = fs.mkdtempSync(path.join(temporaryRoot, 'banyan-prefetch-build-'));
+const siteRoot = process.cwd(), temporaryRoot = path.join(fs.realpathSync(os.tmpdir()), 'swaw/banyan/prefetch-build-tests');
+fs.mkdirSync(temporaryRoot, {recursive:true});
+const work = fs.mkdtempSync(path.join(temporaryRoot, 'run-'));
 
 try {
     const hugo = toolExecutable('hugo'), env = fixtureEnvironment(work);
@@ -25,11 +27,11 @@ try {
     ].join('\n');
 
     function build(name, policy, output = path.join(work, name), expectedError = '', config = '') {
-        const configFile = path.join(work, name + '.toml'), data = path.join(work, name + '-data');
-        fs.mkdirSync(data,{recursive:true});
-        fs.writeFileSync(path.join(data,'delivery.toml'),policy);
-        fs.writeFileSync(configFile,config+'\n[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+
-            '\ntarget = "data"\n[[module.mounts]]\nsource = "data"\ntarget = "data"\n');
+        const configFile = path.join(work, name + '.toml'), assets = path.join(work, name + '-assets');
+        fs.mkdirSync(path.join(assets,'site'),{recursive:true});
+        fs.writeFileSync(path.join(assets,'site/delivery.toml'),fixtureDelivery(policy));
+        fs.writeFileSync(configFile,config+'\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n[[module.mounts]]\nsource = '+
+            JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n'+fixtureI18nMount);
         const result = spawnSync(hugo, ['--noBuildLock',
             '--config', 'hugo.toml,' + rel(configFile), '--minify',
             '--cleanDestinationDir', '--destination', rel(output)
@@ -65,6 +67,7 @@ try {
         for(const id of ['site-prefetch-data','site-prefetch-rules','site-speculation-rules','site-prefetch-runtime-meta'])
             assert.equal(script(html,id),undefined,'Disabled standard pages must not publish '+id);
         assert.ok(!html.includes('/js/prefetch.runtime.bundle.'),'Disabled standard pages must not load the engine');
+        assert.ok(!html.includes('/js/prefetch/debug-page.'),'Standard pages must not load diagnostic controls');
     }
     function verifyNative(output, expectedEnabled) {
         verifyNoExternalRules(output);
@@ -72,11 +75,12 @@ try {
         const csp=routes(output).find(route=>route.source==='/*').headers.find(header=>header.key==='Content-Security-Policy').value;
         assert.ok(!csp.includes("'unsafe-inline'"));
         for(const prefix of ['','zh','zh-tw']) {
-            const regular=page(output,prefix),debug=prefix?null:page(output,prefix,'prefetchdebug');
+            const regular=page(output,prefix),debug=page(output,prefix,'powered-by');
             assert.doesNotMatch(regular,/\bdata-prefetch-debug(?:\s|=|>)/);
-            if(debug)assert.match(debug,/\bdata-prefetch-debug(?:\s|=|>)/);
+            assert.match(debug,/\bdata-prefetch-debug(?:\s|=|>)/);
+            assert.ok(debug.includes('/js/prefetch/debug-page.'),'The diagnostic shortcode loads its script');
             if(!expectedEnabled)verifyNoEngine(regular);
-            for(const html of [...(expectedEnabled?[regular]:[]),...(debug?[debug]:[])]) {
+            for(const html of [...(expectedEnabled?[regular]:[]),debug]) {
                 const body=script(html,'site-speculation-rules'),payload=JSON.parse(script(html,'site-prefetch-data'));
                 assert.equal(typeof body,'string');
                 assert.match(html,/<script\b[^>]*type=["']?speculationrules["']?[^>]*>/);
@@ -104,13 +108,19 @@ try {
                     }
                 }
             }
-            verifyNoEngine(page(output,prefix,'offline'));
+            verifyNoEngine(page(output,prefix,'_res/offline'));
         }
         verifyCspOutput(output);
         return sharedBody;
     }
 
     verifyNative(build('off','[prefetch]\nenabled = false\n'),false);
+    const referenceConfig=read(path.join(siteRoot,'assets/site/delivery.toml'));
+    const referenceBody=verifyNative(build('reference',referenceConfig),false);
+    assert.equal(verifyNative(build('reference-enabled',referenceConfig.replace(/^enabled = false$/m,'enabled = true')),true),referenceBody,
+        'The reference configuration enables its published diagnostic rules by changing only the switch');
+    const referenceRules=JSON.parse(referenceBody);
+    assert.ok(referenceRules.prefetch.length>0&&referenceRules.prerender.length>0,'The disabled reference retains usable rules for both profiles');
     const enabled=build('enabled',enabledConfig),body=verifyNative(enabled,true),rules=JSON.parse(body);
     assert.equal(rules.prefetch.length,2);
     const selectors=JSON.parse(script(page(enabled),'site-prefetch-rules'));
@@ -145,6 +155,42 @@ try {
 
     const subpath=build('subpath',enabledConfig,undefined,'','baseURL = "https://example.test/base/"\n');
     assert.deepEqual(JSON.parse(script(page(subpath),'site-prefetch-data')).sw,{enabled:false,url:'/base/sw.js',scope:'/base/'});
+    for(const prefix of ['','zh','zh-tw']) {
+        const html=page(subpath,prefix,'powered-by');
+        assert.match(html,/\bdata-prefetch-debug(?:\s|=|>)/);
+        assert.deepEqual(JSON.parse(script(html,'site-prefetch-data')).sw,{enabled:false,url:'/base/sw.js',scope:'/base/'});
+        for(const tag of extractStartTags(html,'a').filter(tag=>extractTagAttribute(tag,'data-prefetch-test-link')))
+            assert.ok(extractTagAttribute(tag,'href').startsWith('/base/'+(prefix?prefix+'/':'')),'Diagnostic links retain the base path and language');
+    }
+
+    const chinese=build('default-zh',enabledConfig,undefined,'',
+        'baseURL = "https://example.test/base/"\ndefaultContentLanguage = "zh"\ndisableLanguages = ["en"]\n');
+    for(const prefix of ['','zh-tw']) {
+        const html=page(chinese,prefix,'powered-by');
+        assert.equal(extractTagAttribute(extractStartTags(html,'html')[0],'lang'),prefix||'zh');
+        assert.match(html,/\bdata-prefetch-debug(?:\s|=|>)/);
+        assert.doesNotMatch(html,/Prefetch transport|Browser support|Selected backend|Loading\.\.\./);
+        for(const tag of extractStartTags(html,'a').filter(tag=>extractTagAttribute(tag,'data-prefetch-test-link')))
+            assert.ok(extractTagAttribute(tag,'href').startsWith('/base/'+(prefix?prefix+'/':'')),'Diagnostics retain the current language with a non-English default');
+    }
+
+    const diagnosticSource=read(path.join(siteRoot,'content/powered-by/index.md'));
+    const invalidState=diagnosticSource.replace('{{< prefetch-debug-state "support" >}}','{{< prefetch-debug-state "unknown" >}}');
+    assert.notEqual(invalidState,diagnosticSource,'The diagnostic fixture must contain the support panel');
+    for(const [name,source,error] of [
+        ['unknown-panel',invalidState,'prefetch-debug-state requires support, env, actions, runtime or payload'],
+        ['orphan-panel','---\ntitle: Orphan diagnostic\nlayout: page-article-norss\n---\n{{< prefetch-debug-state "support" >}}','requires prefetch-debug-controls.'],
+        ['missing-labels','---\ntitle: Missing labels\nlayout: page-article-norss\n---\n{{< prefetch-debug-controls >}}','requires prefetch_debug.labels.backend.'],
+        ['duplicate-controls',diagnosticSource+'\n{{< prefetch-debug-controls >}}\n','repeats prefetch-debug-controls.'],
+        ['duplicate-support',diagnosticSource+'\n{{< prefetch-debug-state "support" >}}\n','repeats prefetch-debug-support.']
+    ]) {
+        const content=path.join(work,name+'-content');
+        fs.mkdirSync(path.join(content,'powered-by'),{recursive:true});
+        fs.writeFileSync(path.join(content,'powered-by/index.md'),source);
+        build(name,enabledConfig,undefined,error,
+            '[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n'+
+            '[[module.mounts]]\nsource = "content"\ntarget = "content"\n');
+    }
 
     const invalid=[
         ['legacy-runtime','[prefetch_runtime]\nmode = "off"','unknown field "prefetch_runtime"'],
@@ -172,8 +218,9 @@ try {
     ];
     for(const [name,policy,error] of invalid)build('invalid-'+name,policy,undefined,error);
     for(const parameter of ['prefetch','speculation_rules'])
-        build('language-'+parameter,enabledConfig,undefined,'params.'+parameter+' is not supported',
-            '\n[languages.zh.params.'+parameter+']\nenabled = false\n');
+        assert.equal(verifyNative(build('language-'+parameter,enabledConfig,undefined,'',
+            '\n[languages.zh.params.'+parameter+']\nenabled = false\n'),true),body,
+            'Language params do not change data-owned delivery rules');
     console.log('Unified prefetch build contracts passed: inline rules, exact CSP hashes, scopes, strict disabled validation and diagnostic/offline boundaries.');
 } finally {
     assert.equal(path.dirname(fs.realpathSync(work)),temporaryRoot);

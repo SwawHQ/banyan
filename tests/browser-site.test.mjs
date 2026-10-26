@@ -7,11 +7,11 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {discoverSite} from '../.agents/skills/swaw-banyan/tasks/check/browser/site/discover.mjs';
-import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory,fixtureSiteFiles,fixtureSitePages,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),skill=path.join(root,'.agents/skills/swaw-banyan');
-const parent=fs.realpathSync(os.tmpdir());
+const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-site');
 let work,source,build;
 function write(directory,file,text){const target=path.join(directory,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,text);}
 function cli(directory,args=[],cwd=work) {
@@ -23,17 +23,24 @@ function report(result){return JSON.parse(fs.readFileSync(result.stdout.match(/J
 function snapshot(directory){return fs.readdirSync(directory,{recursive:true}).sort().filter(file=>fs.statSync(path.join(directory,file)).isFile())
   .map(file=>[file,createHash('sha256').update(fs.readFileSync(path.join(directory,file))).digest('hex')]);}
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-site-'));
   source=path.join(work,'source with spaces 树');
+  fixtureSiteFiles(source);
+  fixtureSitePages(source,['appearance','language','my','_res','rss','powered-by']);
   const config=fs.readFileSync(path.join(root,'hugo.toml'),'utf8');
   write(source,'hugo.toml',config);
-  write(source,'data/delivery.toml',serviceWorkerPolicy('enable'));
+  write(source,'assets/site/delivery.toml',fixtureDelivery(serviceWorkerPolicy('enable')));
   write(source,'go.mod','module fixture.invalid/site\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\nreplace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(root,'module').replaceAll('\\','/'))+'\n');
-  let panel=fs.readFileSync(path.join(root,'module/content/powered-by/index.md'),'utf8');
+  let panel=fs.readFileSync(path.join(root,'content/powered-by/index.md'),'utf8');
   panel=panel.replace(/^url:.*$/m,'url: /prefs/update/\n');
   write(source,'content/powered-by/index.md',panel);
-  fs.cpSync(path.join(root,'content'),path.join(source,'content'),{recursive:true});
-  write(source,'content/discover/second.md','---\ntitle: Second Article\nurl: p/second-article/\nlayout: page-article\nweight: 2\ndate: 2026-01-02\n---\n\nSecond article for collection sorting.');
+  fixtureContentDirectory(path.join(source,'content'));
+  for(const suffix of ['','.zh','.zh-tw']) {
+    write(source,'content/_index'+suffix+'.md','---\ntitle: Independent site\ndescription: A browser discovery fixture.\nlayout: page-home\n---\n');
+    for(const [name,title,date] of [['first','First Article','2026-01-01'],['second','Second Article','2026-01-02']])
+      write(source,'content/d/'+name+suffix+'.md','---\ntitle: '+title+'\nurl: p/'+name+'-article/\nweight: 2\ndate: '+date+'\n---\n\nArticle for collection sorting.');
+  }
   build=path.join(work,'published');
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',build],
     {cwd:source,env:fixtureEnvironment(path.join(work,'first-build')),encoding:'utf8',timeout:60000,windowsHide:true});
@@ -43,7 +50,7 @@ after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recu
 
 test('site discovery uses actual translated paths, source links and sort data',async()=>{
   const found=await discoverSite(build);
-  assert.equal(found.panel,'/prefs/update/');assert.equal(found.collection,'/all/');
+  assert.equal(found.panel,'/prefs/update/');assert.equal(found.collection,'/d/');
   assert.equal(found.offline,'/');assert.ok(found.prose);assert.equal(found.from,'/');
   const tiny=path.join(work,'tiny');
   write(tiny,'index.html','<html lang=en><body><main class=slot-main>Home</main></body></html>');
@@ -122,8 +129,8 @@ test('site --updates builds a temporary program revision, runs real SW checks an
 
 test('site discovers enabled automatic prefetch and runs browser rule and diagnostic checks',{timeout:60000},async()=>{
   const directory=path.join(work,'prefetch-build');
-  write(source,'data/delivery.toml',serviceWorkerPolicy('enable')+
-    '[prefetch]\nenabled = true\ndefault = "conservative"\n[prefetch.prerender]\ndefault = "off"\n');
+  write(source,'assets/site/delivery.toml',fixtureDelivery(serviceWorkerPolicy('enable')+
+    '[prefetch]\nenabled = true\ndefault = "conservative"\n[prefetch.prerender]\ndefault = "off"\n'));
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',directory],
     {cwd:source,env:fixtureEnvironment(path.join(work,'prefetch-work')),
     encoding:'utf8',timeout:30000,windowsHide:true});

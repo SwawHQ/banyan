@@ -1,0 +1,141 @@
+# 站点交付配置；按需修改本文件，不依赖主题内的数据默认值。
+
+
+[sw]
+# sw.js（Service Worker）应用配置；各路由的缓存策略见 sw.bucket。
+# enable：注册并启用；disable：访问页面时注销本站 SW，并清除受管缓存。
+# off：不加载 SW 管理逻辑；已安装的 SW 不会自动注销。
+mode = "off"
+# 内容版本检查的最小间隔，单位：分钟。
+content_check_interval = 5
+# 离线提示页的站内路径；启用 SW 时，每种语言均需提供对应页面。
+offline_notice_path = "_res/offline/"
+
+[prefetch]
+# 总开关；开启后依次选择原生 Speculation Rules、本站活动 SW、浏览器 link prefetch。
+# 关闭时保留下面的推荐配置；改为 true 即可启用。诊断页可强制选择后端测试。
+enabled = false
+# 未匹配图标规则的链接使用此档位，包括文字、图片和正文链接。
+# off：关闭；conservative：按下链接或键盘聚焦；moderate：悬停；eager：短暂悬停或触屏进入可见区。
+# immediate：页面就绪后批量预取；原生规则的具体触发时机由浏览器决定。
+default = "conservative"
+
+# 按条目当前显示的 SVG 名称匹配 icons.toml；此处 folder 可换为其他已定义的名称。
+# 正文中的装饰图标不参与匹配；file 等未单独配置的图标使用 default。
+# all：该图标的所有条目；root：根导航（第 0 列）；tail：最后的条目列。正文、章节和元信息不编号。
+# "root+N"：从根导航向右 N 列；"tail-N"：从尾列向左 N 列；越界不匹配。
+# 重叠优先级：root > tail > tail-N > root+N > all > default；同类偏移较小者优先，off 也参与。
+icons.folder.all = "conservative"
+icons.folder.root = "moderate"
+icons.folder.tail = "eager"
+icons.folder."tail-1" = "moderate"
+
+# 原生 Speculation Rules 的预渲染增强：提前加载资源并渲染页面；下面仅开启尾列 folder 条目。
+# 基础预取规则为 off 时不生效；SW 和 link 后端仍使用基础预取档位。
+prerender.default = "off"
+prerender.icons.folder.tail = "moderate"
+
+
+
+# 仅开启所用平台产品；关闭后保留其设置，供以后启用。
+[platform]
+# 生成 _headers 和 _redirects。
+cloudflare.pages.enabled = true
+
+# 生成 腾讯云 edgeone.json；响应头由下面的路由生成。
+edgeone.makers.enabled = true
+# 当前站点无额外依赖安装步骤；此值原样写入 edgeone.json。
+edgeone.makers.installCommand = ""
+edgeone.makers.buildCommand = "hugo --minify --gc --cleanDestinationDir"
+edgeone.makers.outputDirectory = "public"
+edgeone.makers.nodeVersion = "22.11.0"
+# 留空时，生成 edgeone.json 使用本次构建的 Hugo 版本。
+edgeone.makers.hugoVersion = ""
+
+# 路由使用 URL 路径，不含域名、查询参数或片段；* 可匹配任意路径字符。
+# 通用路由在前，例外在后；文件顶层的 routes = [] 表示不声明自定义路由。
+# http.headers：两平台共用响应头；http.<平台>.<产品>.headers：当前路由的平台覆盖值。
+# http.cloudflare.pages.unset：在 _headers 中生成 ! <头名称>，移除此前匹配规则中的同名响应头。
+# HTTP 路由按声明顺序输出，最终匹配和合并由部署平台处理。
+# 只有声明 sw 的路由参与 SW 匹配；并且同时命中多个时，针对 SW 会按最后声明的 SW 规则优先。
+# sw.bucket 取值：
+# versioned：按内容版本缓存；内容版本切换时删除旧版本缓存。
+# fingerprinted：跨构建版本复用；用于 URL 含内容指纹、内容变化会换 URL 的资源。
+# off：不进入 SW 缓存，交给浏览器请求；HTTP 缓存仍可生效。
+# 两种缓存均先读 SW 缓存，命中后不按 HTTP max-age 自动过期。
+# versioned 未命中时校验 HTTP 缓存；只配置 http 不会改变已有的 SW 匹配结果。
+[[routes]]
+path = "/*"
+# CSP 根据实际内联脚本和原生规则正文生成；保留 minify.disableJS = true。
+http.headers.Referrer-Policy = "strict-origin-when-cross-origin"
+http.headers.X-Content-Type-Options = "nosniff"
+http.headers.X-Frame-Options = "SAMEORIGIN"
+http.headers.Permissions-Policy = "accelerometer=(), bluetooth=(), browsing-topics=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=()"
+http.headers.Strict-Transport-Security = "max-age=300"
+http.headers.Cache-Control = "public, max-age=900, must-revalidate"
+# 默认缓存同源 GET 请求，包括 HTML、JSON 和 XML。
+sw.bucket = "versioned"
+
+[[routes]]
+path = "/css/*"
+# 指纹资源长期使用 HTTP 缓存，并跨版本复用 SW 缓存。
+http.headers.Cache-Control = "public, max-age=31536000, immutable"
+http.cloudflare.pages.unset = ["Cache-Control"]
+sw.bucket = "fingerprinted"
+
+[[routes]]
+path = "/js/*"
+http.headers.Cache-Control = "public, max-age=31536000, immutable"
+http.cloudflare.pages.unset = ["Cache-Control"]
+sw.bucket = "fingerprinted"
+
+[[routes]]
+path = "/site/*"
+http.headers.Cache-Control = "public, max-age=31536000, immutable"
+http.cloudflare.pages.unset = ["Cache-Control"]
+sw.bucket = "fingerprinted"
+
+[[routes]]
+path = "/site/*.webmanifest"
+# 此项只补充 Content-Type；SW 继续使用此前 /site/* 的分类。
+http.headers.Content-Type = "application/manifest+json; charset=utf-8"
+
+[[routes]]
+path = "/media/content/*"
+http.headers.Cache-Control = "public, max-age=31536000, immutable"
+http.cloudflare.pages.unset = ["Cache-Control"]
+sw.bucket = "fingerprinted"
+
+[[routes]]
+path = "/favicon.ico"
+# 固定 URL 的图标交给 HTTP 缓存管理，不进入 SW 缓存。
+http.headers.Cache-Control = "public, max-age=86400, must-revalidate"
+http.cloudflare.pages.unset = ["Cache-Control"]
+sw.bucket = "off"
+
+[[routes]]
+path = "/sw.js"
+# SW 脚本每次检查时校验更新，不进入 SW 自己的缓存。
+http.headers.Cache-Control = "no-cache, max-age=0, must-revalidate"
+http.cloudflare.pages.unset = ["Cache-Control"]
+sw.bucket = "off"
+
+[[routes]]
+path = "/sw-version.json"
+# 内容版本每次检查时校验更新，不进入 SW 缓存。
+http.headers.Cache-Control = "no-cache, max-age=0, must-revalidate"
+http.cloudflare.pages.unset = ["Cache-Control"]
+sw.bucket = "off"
+
+[[routes]]
+path = "/*.xml"
+# 原生 XML 查看器需要内联样式；Cloudflare 先移除通用 HTML CSP，再设置此策略。
+http.headers.Content-Security-Policy = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'"
+http.cloudflare.pages.unset = ["Content-Security-Policy"]
+
+
+# [[redirects]]
+# #按需取消下例注释以声明重定向；支持 301 或 302，按声明顺序发布。
+# source = "/old/"
+# destination = "/new/"
+# status = 301

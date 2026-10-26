@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {tabsCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/tabs/options.mjs';
 import {rootsCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/roots/options.mjs';
@@ -41,8 +41,8 @@ before(()=>{
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
   for(const name of ['links','images'])write(path.join(content,'fixture-'+name,'index.md'),
-    '---\ntitle: Independent '+name+'\nurl: /fixtures/'+name+'/\nlayout: page-article\nroot_nav: true\nicon: code\nweight: 85\nbuild:\n  list: local\n---\n\nFixture insertion point.');
-  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n');
+    `---\ntitle: Independent ${name}\nurl: /fixtures/${name}/\nlayout: page-article-norss\nweight: 85\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nFixture insertion point.`);
+  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureI18nMount);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
   edit(output,'fixtures/links',html=>{

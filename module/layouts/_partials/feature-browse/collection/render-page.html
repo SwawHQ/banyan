@@ -1,5 +1,10 @@
 {{- $content := trim (printf "%s" .Content) " \r\n\t" -}}
+{{- $config := partial "./config.html" (dict "page" .) -}}
 <article class="article">
   {{- with $content -}}<div class="prose">{{ . | safeHTML }}</div>{{- end -}}
-  {{- partial "./render.html" (dict "page" .) -}}
+  {{- if eq $config.view "choice" -}}
+    {{- partial "feature-preferences/render.html" (dict "page" . "provider" $config.provider) -}}
+  {{- else -}}
+    {{- partial "./render.html" (dict "page" .) -}}
+  {{- end -}}
 </article>

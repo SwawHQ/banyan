@@ -13,14 +13,15 @@ swban check/robots
 Hugo builds minified production output in `public`. Checks inspect that output
 independently. Skill tool selection and portable tools belong to local use.
 Enable EdgeOne output with `platform.edgeone.makers.enabled = true` in
-`data/delivery.toml`. A site-owned `platform` table replaces the complete Module
-table; include every platform and build setting the site needs.
+the complete `assets/site/delivery.toml`. Use the Banyan root file as a reference;
+the Module supplies no configuration defaults. Include every platform and build setting
+the site needs.
 
 ## Git hosting
 
 EdgeOne provides Hugo Extended and reads `hugoVersion` from root `edgeone.json`.
 Banyan generates that field from the Hugo version used for the build; a site's
-`data/delivery.toml` may override `[platform.edgeone.makers].hugoVersion`.
+`assets/site/delivery.toml` may override `makers.hugoVersion` under `[platform.edgeone]`.
 Include the other required platform fields when making this override.
 For Git hosting, copy the generated config to the site root before committing:
 
@@ -31,8 +32,8 @@ swban deploy/edgeone/sync [dir]
 Sync defaults to `public`; it only copies config bytes and does not build or
 upload. Hosted builds use the theme's native Hugo command and the platform's
 tools. They do not install or invoke the Skill. Hugo Modules require host Go
-and Git. Site installation settings belong in `[platform.edgeone.makers]` in
-`data/delivery.toml`; initialize submodules only when the site uses them.
+and Git. Site installation settings use `makers.*` under `[platform.edgeone]` in
+`assets/site/delivery.toml`; initialize submodules only when the site uses them.
 Keep `outputDirectory` consistent with the build destination.
 
 ## Built-asset upload

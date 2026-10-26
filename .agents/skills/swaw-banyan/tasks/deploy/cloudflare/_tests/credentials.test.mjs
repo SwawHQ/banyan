@@ -342,23 +342,24 @@ test('closing setup aborts an active login and rejects concurrent mutations',{ti
   })});
 });
 
-test('Token page prefers site icons over Module icons and serves only the selected favicon files',async()=>{
+test('Token page uses only site icons and serves only the selected favicon files',async()=>{
   const parent = fs.realpathSync.native(os.tmpdir());
   const root = fs.mkdtempSync(path.join(parent,'swban-token-icons-'));
   const moduleIcon = '<svg xmlns="http://www.w3.org/2000/svg"><text>Module</text></svg>';
   const siteIcon = Buffer.from('fixture-site-icon');
   try {
-    fs.mkdirSync(path.join(root,'module/static'),{recursive:true});
-    fs.writeFileSync(path.join(root,'module/static/favicon.svg'),moduleIcon);
+    fs.mkdirSync(path.join(root,'module/assets/site'),{recursive:true});
+    fs.writeFileSync(path.join(root,'module/assets/site/favicon.link.svg'),moduleIcon);
     await fixture(async({origin})=>{
-      const svg = await fetch(origin+'/favicon.svg');
-      assert.equal(svg.headers.get('content-type'),'image/svg+xml');
-      assert.equal(await svg.text(),moduleIcon);
-      assert.equal((await fetch(origin+'/module/static/favicon.svg')).status,404);
+      const html = await (await fetch(origin)).text();
+      assert.doesNotMatch(html,/<img src="\/favicon/);
+      assert.equal((await fetch(origin+'/favicon.svg')).status,404);
+      assert.equal((await fetch(origin+'/favicon.ico')).status,404);
+      assert.equal((await fetch(origin+'/module/assets/site/favicon.link.svg')).status,404);
     },{siteRoot:root});
-    fs.mkdirSync(path.join(root,'static'));
-    fs.writeFileSync(path.join(root,'static/favicon.ico'),siteIcon);
-    fs.writeFileSync(path.join(root,'static/private.txt'),'must-not-be-served');
+    fs.mkdirSync(path.join(root,'assets/site'),{recursive:true});
+    fs.writeFileSync(path.join(root,'assets/site/favicon.ico'),siteIcon);
+    fs.writeFileSync(path.join(root,'assets/site/private.txt'),'must-not-be-served');
     await fixture(async({origin})=>{
       const html = await (await fetch(origin)).text();
       assert.match(html,/<img src="\/favicon.ico"/);
@@ -366,7 +367,23 @@ test('Token page prefers site icons over Module icons and serves only the select
       assert.equal(ico.headers.get('content-type'),'image/x-icon');
       assert.deepEqual(Buffer.from(await ico.arrayBuffer()),siteIcon);
       assert.equal((await fetch(origin+'/favicon.svg')).status,404);
-      assert.equal((await fetch(origin+'/static/private.txt')).status,404);
+      assert.equal((await fetch(origin+'/assets/site/private.txt')).status,404);
+    },{siteRoot:root});
+    for(const name of ['favicon.link.ico','favicon.link.svg'])fs.copyFileSync(path.join(root,'assets/site/favicon.ico'),path.join(root,'assets/site',name));
+    await fixture(async({origin})=>{
+      const html=await (await fetch(origin)).text();
+      assert.match(html,/<img src="\/favicon\.link\.svg"/);
+      assert.equal([...html.matchAll(/<link rel="icon"/g)].length,1);
+      assert.match(html,/<link rel="icon"[^>]+href="\/favicon\.link\.svg"/);
+      assert.deepEqual(Buffer.from(await (await fetch(origin+'/favicon.link.svg')).arrayBuffer()),siteIcon);
+    },{siteRoot:root});
+    fs.unlinkSync(path.join(root,'assets/site/favicon.link.svg'));
+    await fixture(async({origin})=>{
+      const html=await (await fetch(origin)).text();
+      assert.match(html,/<img src="\/favicon\.link\.ico"/);
+      assert.equal([...html.matchAll(/<link rel="icon"/g)].length,1);
+      assert.match(html,/<link rel="icon"[^>]+href="\/favicon\.link\.ico"/);
+      assert.deepEqual(Buffer.from(await (await fetch(origin+'/favicon.link.ico')).arrayBuffer()),siteIcon);
     },{siteRoot:root});
   } finally {
     assert.equal(path.dirname(fs.realpathSync.native(root)),parent);

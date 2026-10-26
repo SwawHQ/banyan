@@ -5,7 +5,8 @@
 {{- $defaultHref := "" -}}
 {{- with $selected -}}{{- $defaultHref = .RelPermalink -}}{{- end -}}
 {{- $items := slice -}}
-{{- range where $roots "Params.root_nav" true -}}
+{{- range $roots -}}
+  {{- if not (partial "feature-browse/is-rendered-html.html" .) -}}{{- continue -}}{{- end -}}
   {{- $items = $items | append (dict
     "href" .RelPermalink "text" (.LinkTitle | default .Title)
     "icon" (partial "system-ui/list/item-icon.html" (dict "page" . "defaults" $iconDefaults "kind" "folder"))

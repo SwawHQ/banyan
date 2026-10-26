@@ -30,7 +30,12 @@ function frontMatter(text) {
     value = delimiter === '---' ? parseYaml(body) ?? {} : parseToml(body);
   } else if (normalized.startsWith('{')) value = JSON.parse(jsonPrefix(normalized));
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Front matter must be an object.');
-  return Object.fromEntries(Object.entries(value).map(([key,value]) => [key.toLowerCase(),value]));
+  const fields = Object.fromEntries(Object.entries(value).map(([key,value]) => [key.toLowerCase(),value]));
+  if (Object.hasOwn(fields,'params')) {
+    if (Object.prototype.toString.call(fields.params) !== '[object Object]') throw new Error('params must be an object.');
+    fields.params = Object.fromEntries(Object.entries(fields.params).map(([key,value]) => [key.toLowerCase(),value]));
+  }
+  return fields;
 }
 export async function readContent(site) {
   const root = path.resolve(site), config = await readHugoConfig(root), sources = new Set();

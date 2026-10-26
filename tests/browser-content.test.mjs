@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {verifyCspOutput} from '../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 
@@ -30,18 +30,17 @@ before(()=>{
   }}));
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
-  const content=path.join(work,'content'),data=path.join(work,'data'),config=path.join(work,'fixture.toml');
+  const content=path.join(work,'content'),assets=path.join(work,'assets'),config=path.join(work,'fixture.toml');
   for(const lang of ['en','zh','zh-tw']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
-    write(path.join(content,'powered-by/index'+suffix+'.md'),fs.readFileSync(path.join(root,'module/content/powered-by/index'+suffix+'.md'),'utf8')
+    write(path.join(content,'powered-by/index'+suffix+'.md'),fs.readFileSync(path.join(root,'content/powered-by/index'+suffix+'.md'),'utf8')
       .replace(/^url:.*$/m,'url: '+prefix+panel+'\n'));
-    write(path.join(content,'content-start/index'+suffix+'.md'),'---\ntitle: Independent content source\nurl: '+prefix+from+
-      '\nlayout: page-article\nroot_nav: true\nicon: code\nweight: 87\nbuild:\n  list: local\n---\n\nIndependent content source.');
+    write(path.join(content,'content-start/index'+suffix+'.md'),`---\ntitle: Independent content source\nurl: ${prefix}${from}\nlayout: page-article-norss\nweight: 87\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nIndependent content source.`);
   }
-  const mounts=[['content',content],['content','content'],['data',data],['data','data']]
-    .map(([target,directory])=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('');
+  const mounts=[['content',content],['content','content'],['assets','assets'],['assets',assets]]
+    .map(([target,directory])=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+fixtureI18nMount;
   const build=(name,version,policy=serviceWorkerPolicy('enable'))=>{
-    write(path.join(data,'delivery.toml'),policy);
+    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(policy));
     write(config,mounts+'[params.build]\nversion = "'+version+'"\n');
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],
       {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
@@ -49,7 +48,7 @@ before(()=>{
     verifyCspOutput(destination);return destination;
   };
   old=build('old',versions[0]);next=build('next',versions[1]);
-  const policy=fs.readFileSync(path.join(root,'module/data/delivery.toml'),'utf8')
+  const policy=fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8')
     .replace('mode = "off"','mode = "enable"').replaceAll('sw.bucket = "fingerprinted"','sw.bucket = "versioned"');
   versionedOld=build('versioned-old',versions[0],policy);versionedNext=build('versioned-next',versions[1],policy);
   versionedDisabled=build('versioned-disabled',versions[1],policy.replace('mode = "enable"','mode = "disable"'));

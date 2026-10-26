@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {command} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/disable/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -55,16 +55,14 @@ before(()=>{
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
   for(const language of ['en','zh','zh-tw']) {
     const prefix=language==='en'?'':'/'+language,suffix=language==='en'?'':'.'+language;
-    write(path.join(content,'cleanup-start/index'+suffix+'.md'),'---\ntitle: Independent cleanup source\nurl: '+prefix+page+'\nlayout: page-article\n---\n\nIndependent worker cleanup page.');
+    write(path.join(content,'cleanup-start/index'+suffix+'.md'),'---\ntitle: Independent cleanup source\nurl: '+prefix+page+'\nlayout: page-article-norss\n---\n\nIndependent worker cleanup page.');
   }
-  const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n';
+  const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureI18nMount;
   const build=(name,mode,asset,code)=>{
     const assets=path.join(work,name+'-assets');if(asset)write(path.join(assets,'js/pwa/'+asset),code);
-    const data=path.join(work,name+'-data');
-    write(path.join(data,'delivery.toml'),serviceWorkerPolicy(mode));
-    write(config,mounts+(asset?'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n':'')+
-      '[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+'\ntarget = "data"\n'+
-      '[[module.mounts]]\nsource = "data"\ntarget = "data"\n[params.build]\nversion = "v20261010001001"\n');
+    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(mode)));
+    write(config,mounts+'[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+
+      '[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[params.build]\nversion = "v20261010001001"\n');
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],
       {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
     assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);return destination;

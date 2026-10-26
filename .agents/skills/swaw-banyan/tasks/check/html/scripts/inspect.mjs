@@ -3,7 +3,7 @@ import {extractExternalScriptSrcs} from '../../../_shared/html/markup.mjs';
 import {localReference,insideOutput,isFile,readOptional} from '../../../_shared/output.mjs';
 import {inspectDocumentControls} from './controls.mjs';
 
-const controllers=['preferences/language-page','preferences/back-links','updates/page'];
+const controllers=['preferences/language-page','preferences/back-links','updates/page','pages/offline'];
 const belongsTo=(reference,family)=>new RegExp('(?:^|/)js/'+family.replaceAll('.','\\.')+'(?:\\.min)?\\.[^/]+\\.js$').test(reference);
 function hasMarker(text,name) {
   return (text.match(/<[a-z][^>]*>/gi)||[]).some(tag=>new RegExp('\\sdata-'+name+'(?:\\s|=|/?>)','i').test(tag));
@@ -28,11 +28,13 @@ export async function inspect(directory) {
     if(page.relativePath==='index.html'&&assets.some(ref=>belongsTo(ref,'browse/path-entry'))) {
       issues.push('Home page must not load the path entry bundle: ' + page.relativePath);
     }
-    const expected=hasMarker(page.text,'language-settings')?['preferences/language-page']:
-      hasMarker(page.text,'site-update-panel')?['updates/page']:
-      /\sdata-page-action=(?:"back"|'back'|back(?:\s|>))/.test(page.text)?['preferences/back-links']:[];
+    const expected=[];
+    if(hasMarker(page.text,'language-settings'))expected.push('preferences/language-page');
+    if(hasMarker(page.text,'site-update-panel'))expected.push('updates/page');
+    if(hasMarker(page.text,'page-actions'))expected.push('pages/offline');
+    if(!hasMarker(page.text,'language-settings')&&/\sdata-page-action=(?:"back"|'back'|back(?:\s|>))/.test(page.text))expected.push('preferences/back-links');
     for(const family of controllers) {
-      const count=assets.filter(ref=>belongsTo(ref,family)).length;
+      const count=references.filter(ref=>belongsTo(ref,family)).length;
       if(count!==(expected.includes(family)?1:0))issues.push(`Controller loading boundary ${family}: expected ${expected.includes(family)?1:0}, found ${count} on ${page.relativePath}`);
     }
     for(const asset of assets)if(belongsTo(asset,'main')||belongsTo(asset,'sw-manager.enable'))common.add(asset);

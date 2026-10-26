@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {fixtureEnvironment,fixtureContentDirectory,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {readBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/bindings.mjs';
 import {command as rulesCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/rules/options.mjs';
@@ -77,32 +77,37 @@ before(()=>{
   const icon=(name,href)=>'<a data-list-entry data-probe="'+name+'" href="'+href+'"><span class="item-icon"><svg class="icon icon-'+name+'"><use href="#icon-'+name+'"></use></svg></span><span class="item-title">'+name+'</span></a>';
   const anchors='<a data-probe="plain" href="/probe-dynamic/">Plain link</a>\n'+['folder','tag','product','file'].map(name=>(name==='product'?'<div aria-hidden="true">'+
     '<p>Viewport spacer</p>'.repeat(60)+'</div>':'')+icon(name,'/probe-'+name+'/')).join('\n');
-  write(path.join(layouts,'page-prefetch-probe.html'),'{{ define "main" }}<article class="article"><div class="prose"><h1>{{ .Title }}</h1>'+anchors+'</div></article>{{ end }}');
-  write(path.join(layouts,'page-prefetch-debug.html'),fs.readFileSync(path.join(root,'module/layouts/page-prefetch-debug.html'),'utf8')
-    .replace('{{ partial "entry-page-prefetch-debug/render.html" . }}','{{ partial "entry-page-prefetch-debug/render.html" . }}'+anchors));
+  write(path.join(layouts,'page-prefetch-probe.html'),'{{ define "main" }}<article class="article"><div class="prose"><h1>{{ .Title }}</h1>{{ .Content }}'+anchors+'</div></article>{{ end }}');
   for(const language of ['en','zh','zh-tw']) {
     const prefix=language==='en'?'':'/'+language,suffix=language==='en'?'':'.'+language;
     write(path.join(content,'prefetch-probe/index'+suffix+'.md'),'---\ntitle: Prefetch probe\nurl: '+prefix+probePage+'\nlayout: page-prefetch-probe\n---\n');
-    write(path.join(content,'diagnostics/index'+suffix+'.md'),'---\ntitle: Prefetch diagnostics\nurl: '+prefix+debugPage+'\nlayout: page-prefetch-debug\nprefetch_debug:\n  loading_label: 正在读取预取状态\n---\n');
   }
+  const labels=Object.entries({backend:'Prefetch transport',auto:'Auto',native:'Native',sw:'SW',link:'Link',off:'Off',apply:'Apply and reload',loading:'Loading...',unavailable:'Unavailable',collection:'Collection',article:'Article'})
+    .map(([key,value])=>'      '+key+': '+JSON.stringify(value)).join('\n');
+  for(const [name,route,panels] of [
+    ['diagnostics',debugPage,['support','env','actions','runtime','payload']],
+    ['diagnostics-partial','/diagnostics/partial/',['support','env']]
+  ])write(path.join(content,name,'index.md'),'---\ntitle: Prefetch diagnostics\nurl: '+route+'\nlayout: page-prefetch-probe\nparams:\n  prefetch_debug:\n    labels:\n'+
+    labels+'\n---\n\n{{< prefetch-debug-controls >}}\n\n{{< prefetch-debug-links >}}\n\n'+
+    panels.map(key=>'## '+key+'\n\n{{< prefetch-debug-state "'+key+'" >}}').join('\n\n')+'\n');
   for(const name of ['folder','tag','product','file','dynamic'])write(path.join(content,'probe-'+name+'/index.md'),
-    '---\ntitle: Target '+name+'\nurl: /probe-'+name+'/\nlayout: page-article\n---\n');
+    '---\ntitle: Target '+name+'\nurl: /probe-'+name+'/\nlayout: page-article-norss\n---\n');
   for(const render of ['link','never'])write(path.join(content,'unpublished-'+render+'/index.md'),
-    '---\ntitle: Unpublished '+render+'\nurl: /000-unpublished-'+render+'/\nlayout: page-article\nbuild:\n  render: '+render+'\n---\n');
+    '---\ntitle: Unpublished '+render+'\nurl: /000-unpublished-'+render+'/\nlayout: page-article-norss\nbuild:\n  render: '+render+'\n---\n');
   for(const route of ['d/prefetch-scopes','d/prefetch-scopes/child','d/prefetch-scopes/sibling'])
     write(path.join(content,route,'_index.md'),'---\ntitle: Scope collection\nurl: /'+route+'/\n---\n');
   for(const [index,name] of ['one','two'].entries())write(path.join(content,'d/prefetch-scopes/child',name+'.md'),
-    '---\ntitle: '+name+'\nurl: /d/prefetch-scopes/child/'+name+'/\nlayout: page-article\ndate: 2026-01-0'+(index+1)+'\n---\nScope article.');
+    '---\ntitle: '+name+'\nurl: /d/prefetch-scopes/child/'+name+'/\nlayout: page-article-norss\ndate: 2026-01-0'+(index+1)+'\n---\nScope article.');
   const mount=(directory,target)=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n';
-  const mounts=mount(content,'content')+mount('content','content')+mount(layouts,'layouts')+mount('layouts','layouts');
+  const mounts=mount(content,'content')+mount('content','content')+mount(layouts,'layouts')+mount('layouts','layouts')+fixtureI18nMount;
   function build(name,enabled=true,runtimeSource,prerenderOnly=false,columnPolicy='') {
-    const data=path.join(work,name+'-data'),assets=path.join(work,name+'-assets');
-    write(path.join(data,'delivery.toml'),serviceWorkerPolicy(!columnPolicy&&enabled?'enable':'off')+(columnPolicy||'[prefetch]\nenabled='+enabled+
+    const assets=path.join(work,name+'-assets');
+    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(!columnPolicy&&enabled?'enable':'off')+(columnPolicy||'[prefetch]\nenabled='+enabled+
       '\ndefault="off"\n[prefetch.icons.folder]\nall="conservative"\n[prefetch.icons.tag]\nall="moderate"\n[prefetch.icons.product]\nall="eager"\n[prefetch.icons.file]\nall="'+(prerenderOnly?'off':'immediate')+'"\n'+
       '[prefetch.prerender.icons.folder]\ntail="off"\n'+
-      (prerenderOnly?'[prefetch.prerender.icons.file]\nall="moderate"\n':'')));
+      (prerenderOnly?'[prefetch.prerender.icons.file]\nall="moderate"\n':''))));
     if(runtimeSource)write(path.join(assets,'js/prefetch/runtime-entry.js'),runtimeSource);
-    write(config,mounts+mount(data,'data')+mount('data','data')+(runtimeSource?mount(assets,'assets')+mount('assets','assets'):'')+
+    write(config,mounts+mount('assets','assets')+mount(assets,'assets')+
       '[params.build]\nversion="v20261014000101"\n');
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],
       {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
@@ -223,12 +228,83 @@ test('one backend is selected once; overrides apply only on diagnostic pages',{t
     assert.equal((await runtimeState(page)).nativeReady,true);assert.deepEqual(await trace(page),{links:[],messages:[]});
     const values=await page.locator('#prefetch-debug-backend option').evaluateAll(nodes=>nodes.map(node=>node.value));
     assert.deepEqual(values,['auto','native','sw','link','off']);assert.equal(await page.locator('#prefetch-debug-controls').count(),1);
+    assert.deepEqual(await page.locator('#prefetch-debug-controls').evaluate(form=>({
+      language:document.documentElement.lang,
+      label:form.querySelector('label').textContent.trim(),
+      copy:JSON.parse(form.dataset.prefetchDebugCopy),
+      status:document.getElementById('prefetch-debug-status').textContent
+    })),{language:'en',label:'Prefetch transport',status:'Auto → Native',copy:{
+      backend:'Prefetch transport',auto:'Auto',native:'Native',sw:'SW',link:'Link',off:'Off',apply:'Apply and reload',
+      loading:'Loading...',unavailable:'Unavailable',collection:'Collection',article:'Article'
+    }});
     for(const [requested,backend] of [['native','native'],['sw','off'],['link','link'],['off','off'],['bad-value','native']]) {
       state=await visit(page,baseUrl,requested);assert.equal(state.backend,backend,requested);
       assert.equal(state.requested,requested==='bad-value'?'auto':requested);
       assert.equal((await runtimeState(page)).nativeReady,backend==='native');
     }
     state=await visit(page,baseUrl,'off',probePage);assert.equal(state.requested,'auto');assert.equal(state.backend,'native');
+    return state;
+  }},{id:'translated-powered-by-reloads',run:async({page,baseUrl})=>{
+    for(const language of ['en','zh','zh-tw']) {
+      const prefix=language==='en'?'':'/'+language,pathname=prefix+'/powered-by/';
+      await visit(page,baseUrl,'auto',pathname+'?keep=yes#diagnostics');
+      assert.equal(await page.locator('html').getAttribute('lang'),language);
+      assert.equal(await page.locator('[data-site-update-panel]').count(),1);
+      assert.equal(await page.locator('#prefetch-debug-controls').count(),1);
+      const disclosure=page.locator('details:has(#prefetch-debug-controls)'),summary=disclosure.locator('summary');
+      assert.equal(await disclosure.count(),1);assert.equal(await summary.isVisible(),true);
+      assert.equal(await disclosure.evaluate(node=>node.open),false,'Diagnostics start collapsed.');
+      assert.equal(await page.locator('#prefetch-debug-controls').isVisible(),false);
+      if(language!=='en')assert.match(await summary.textContent(),/[\u3400-\u9fff]/);
+      await summary.focus();await summary.press('Enter');
+      assert.equal(await disclosure.evaluate(node=>node.open),true,'Enter opens the diagnostic disclosure.');
+      assert.equal(await page.locator('#prefetch-debug-controls').isVisible(),true);
+      await summary.press('Space');
+      assert.equal(await disclosure.evaluate(node=>node.open),false,'Space closes the diagnostic disclosure.');
+      assert.equal(await page.locator('#prefetch-debug-controls').isVisible(),false);
+      if(language!=='en')assert.match(await page.locator('label[for=prefetch-debug-backend]').textContent(),/[\u3400-\u9fff]/);
+      const links=await page.locator('[data-prefetch-test-link]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname));
+      assert.ok(links.length>0,'Translated diagnostics retain published test links.');
+      assert.ok(links.every(href=>prefix?href.startsWith(prefix+'/'):!/^\/zh(?:-tw)?\//.test(href)),'Test links use the current language.');
+      for(const backend of ['off','auto']) {
+        await summary.click();
+        await page.locator('#prefetch-debug-backend').selectOption(backend);
+        await Promise.all([page.waitForEvent('load'),page.locator('#prefetch-debug-controls button[type=submit]').click()]);
+        await page.waitForFunction(()=>window.banyanPrefetchState?.reason&&window.banyanPrefetchState.reason!=='selecting');
+        const url=new URL(page.url());
+        assert.equal(url.pathname,pathname);assert.equal(url.searchParams.get('keep'),'yes');assert.equal(url.hash,'#diagnostics');
+        assert.equal(url.searchParams.get('prefetch-backend'),backend==='auto'?null:backend);
+        assert.equal(await page.locator('html').getAttribute('lang'),language);
+        assert.equal(await disclosure.evaluate(node=>node.open),false,'Reload starts with diagnostics collapsed.');
+        assert.equal(await page.locator('#prefetch-debug-controls').isVisible(),false);
+        assert.equal(await page.locator('#prefetch-debug-backend').inputValue(),backend);
+        const env=JSON.parse(await page.locator('#prefetch-debug-env').textContent());
+        assert.deepEqual(Object.keys(env).sort(),['backend','reason','requested']);assert.equal(env.requested,backend);
+        if(backend==='off')assert.deepEqual(env,{requested:'off',backend:'off',reason:'requested-off'});
+      }
+    }
+  }},{id:'diagnostic-disclosure-without-javascript',run:async({browser,baseUrl})=>{
+    const context=await browser.newContext({javaScriptEnabled:false,serviceWorkers:'block'});
+    try {
+      const page=await context.newPage();
+      await page.goto(new URL('/zh/powered-by/',baseUrl).href,{waitUntil:'load'});
+      const disclosure=page.locator('details:has(#prefetch-debug-controls)'),summary=disclosure.locator('summary');
+      assert.equal(await disclosure.evaluate(node=>node.open),false);
+      assert.equal(await page.locator('#prefetch-debug-controls').isVisible(),false);
+      await summary.focus();await summary.press('Enter');
+      assert.equal(await page.locator('#prefetch-debug-controls').isVisible(),true,'Native disclosure opens without JavaScript.');
+      await summary.click();
+      assert.equal(await disclosure.evaluate(node=>node.open),false);
+    } finally {await context.close();}
+  }},{id:'partial-diagnostic-panels',run:async({page,baseUrl})=>{
+    const errors=[];page.on('pageerror',error=>errors.push(error.message));
+    const state=await visit(page,baseUrl,'off','/diagnostics/partial/');
+    assert.deepEqual(state,{requested:'off',backend:'off',reason:'requested-off',dispatched:0,failures:0});
+    await page.waitForFunction(()=>JSON.parse(document.getElementById('prefetch-debug-support').textContent).serviceWorker.status!=='pending');
+    assert.equal(await page.locator('#prefetch-debug-backend').inputValue(),'off');
+    assert.deepEqual(JSON.parse(await page.locator('#prefetch-debug-env').textContent()),{requested:'off',backend:'off',reason:'requested-off'});
+    assert.equal(await page.locator('#prefetch-debug-actions, #prefetch-debug-runtime, #prefetch-debug-payload').count(),0);
+    assert.deepEqual(errors,[]);
     return state;
   }},{id:'forced-native-unavailable',run:async({page,baseUrl})=>{
     await page.addInitScript(noNative);await page.addInitScript(recordRuntime);

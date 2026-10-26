@@ -1,10 +1,9 @@
 {{ $labels := partial "./labels.html" (dict "ctx" .) }}
 {{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
 <div class="updates-panel" data-site-update-panel data-site-sw-url="{{ "sw.js" | relURL }}" data-site-update-copy='{{ $labels | jsonify }}'>
-  <p>{{ $labels.controlled }}: <span data-pwa-controlled>—</span></p>
   <p class="updates-status" data-site-update-status role="status" aria-live="polite"></p>
   {{- $items := slice -}}
-  {{- if eq (lower $delivery.service_worker.mode) "enable" -}}
+  {{- if eq (lower $delivery.sw.mode) "enable" -}}
     {{- $items = slice (dict "control" "button" "icon" (dict "text" "↻") "text" $labels.check
       "labelAttr" "site-update-action-label" "dataAttrs" (dict "site-update-action" "check")) -}}
   {{- end -}}

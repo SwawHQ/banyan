@@ -10,7 +10,7 @@ import {inspectHtmlBudget,inspectShareImageBudget,maxShareImageBytes} from './ou
 import {verifyRetiredOutput} from './output/retired.mjs';
 import {inspect as inspectShareImage} from '../.agents/skills/swaw-banyan/tasks/check/img/share/inspect.mjs';
 
-const parent=fs.realpathSync(os.tmpdir()),budget=fileURLToPath(new URL('./output/budget.mjs',import.meta.url));
+const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/output-tests'),budget=fileURLToPath(new URL('./output/budget.mjs',import.meta.url));
 let work,count=0;
 function write(root,name,text) {
   const file=path.join(root,name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);
@@ -22,7 +22,7 @@ function fixture(body='') {
   write(directory,'edgeone.json','{"headers":[]}');
   return directory;
 }
-before(()=>{work=fs.mkdtempSync(path.join(parent,'banyan-output-'));});
+before(()=>{fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));});
 after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
 test('repository HTML budgets keep raw and gzip failures outside published checks',async()=>{
@@ -42,8 +42,10 @@ test('repository HTML budgets keep raw and gzip failures outside published check
 test('breadcrumb payload and collection source budgets remain repository contracts',async()=>{
   const directory=fixture();
   const sources=JSON.stringify([{f:['href'],rv:['/one/']},{f:['href'],rv:['/two/']}]).replaceAll('"','&quot;');
-  write(directory,'all/index.html','<html lang=en><body data-entry-breadcrumb-sources="'+sources+'"></body></html>');
-  assert.match((await inspectHtmlBudget(directory)).issues.join('\n'),/all breadcrumb source count exceeded budget/);
+  for(const name of ['notes-all','notes','products-all','products']) {
+    write(directory,name+'/index.html','<html lang=en><body data-entry-breadcrumb-sources="'+sources+'"></body></html>');
+    assert.ok((await inspectHtmlBudget(directory)).issues.some(issue=>issue.startsWith(name+' breadcrumb source count exceeded budget')));
+  }
   const large=JSON.stringify([{value:'x'.repeat(65536)}]).replaceAll('"','&quot;');
   write(directory,'article/index.html','<html lang=en><body data-entry-breadcrumb-sources="'+large+'"></body></html>');
   assert.match((await inspectHtmlBudget(directory)).issues.join('\n'),/site-wide limit/);

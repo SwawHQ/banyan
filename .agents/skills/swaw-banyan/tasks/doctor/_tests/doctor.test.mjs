@@ -43,7 +43,7 @@ before(()=>{
   write(site,'hugo.toml','baseURL="https://example.test/"\ntheme="banyan"\n');
   write(site,'themes/banyan/theme.toml','name="banyan"\nversion='+JSON.stringify(release.version)+'\n');
   write(site,'public/index.html','<h1>Fixture</h1>');
-  write(site,'data/external-resources.yaml','resources: []\n');
+  write(site,'assets/site/external-resources.yaml','resources: []\n');
 });
 after(()=>{
   assert.equal(path.dirname(fs.realpathSync(work)),parent);assert.ok(path.basename(work).startsWith('swban-doctor-'));

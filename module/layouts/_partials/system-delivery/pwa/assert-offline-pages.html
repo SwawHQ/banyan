@@ -1,0 +1,17 @@
+{{- $path := trim .path "/" -}}
+{{- range hugo.Sites -}}
+  {{- $site := . -}}
+  {{- $url := printf "%s%s/" .Home.RelPermalink $path -}}
+  {{- $found := false -}}
+  {{- range (.Store.Get "banyan.sitemap.pages") -}}
+    {{- with $site.GetPage .Path -}}
+      {{- if and (eq .RelPermalink $url) (partial "feature-browse/is-rendered-html.html" .) -}}
+        {{- $found = true -}}
+        {{- break -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if not $found -}}
+    {{- errorf "Service Worker requires a published HTML offline page for language %q at %q." .Language.Lang $url -}}
+  {{- end -}}
+{{- end -}}

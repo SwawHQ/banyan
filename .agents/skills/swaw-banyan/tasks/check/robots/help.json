@@ -1,13 +1,13 @@
 {
   "en": {
-    "summary": "robots.txt declarations",
+    "summary": "robots.txt Sitemap URLs",
     "usage": "swban check/robots [dir]",
     "details": [
       "Default directory: public."
     ]
   },
   "zh": {
-    "summary": "robots.txt 声明",
+    "summary": "robots.txt Sitemap 地址",
     "usage": "swban check/robots [dir]",
     "details": [
       "默认目录：public。"

@@ -81,9 +81,9 @@ permissions. Saving clears the input and keeps the page available for other setu
 
 Pages publication needs Account > Cloudflare Pages > Edit in a custom Token.
 Add DNS or other permissions only for the operations you need.
-The page uses the site's `static/favicon.svg` or `static/favicon.ico` as its logo
-and browser icon, then falls back to local `module/static/` and the paired
-repository's Module icons.
+The page reads icons only from the current site's `assets/site/`. It prefers
+`favicon.link.svg`, then `favicon.link.ico`, then `favicon.ico` for its logo and
+browser icon. Without these files, it shows no logo.
 Page text and links are in `tasks/deploy/auth/page.json` beside `page.html`. The page
 starts with the same system-language rule as help: Chinese for `zh-*`, English
 otherwise. The title bar switches between Chinese and English without clearing

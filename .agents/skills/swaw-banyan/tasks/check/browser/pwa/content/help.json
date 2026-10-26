@@ -10,7 +10,7 @@
       "  --timeout <ms>  Browser launch and individual action timeout; default: 15000",
       "  --next <dir>    Next build; same SW and different content version",
       "  --page <path>   Build version panel; default: /powered-by/",
-      "  --from <path>   Second cached page; default: /about/",
+      "  --from <path>   Second cached page; default: /",
       "",
       "swban check/browser/pwa/content ./old --next ./new",
       "swban check/browser/pwa/content ./old --next ./new --trace --out ./browser-report"
@@ -27,7 +27,7 @@
       "  --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
       "  --next <dir>    下一份构建，SW 相同而内容版本不同",
       "  --page <path>   构建版本面板；默认：/powered-by/",
-      "  --from <path>   第二个缓存页面；默认：/about/",
+      "  --from <path>   第二个缓存页面；默认：/",
       "",
       "swban check/browser/pwa/content ./old --next ./new",
       "swban check/browser/pwa/content ./old --next ./new --trace --out ./browser-report"

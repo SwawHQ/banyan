@@ -1,5 +1,4 @@
 .prose {
-    /* Keep aligned with params.media.responsive_images.sizes fallback. */
     --prose-max-inline: 88ch;
     max-inline-size: min(100%, var(--prose-max-inline));
     overflow-wrap: break-word;

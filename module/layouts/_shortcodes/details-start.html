@@ -1,0 +1,4 @@
+{{- $summary := .Get "summary" -}}
+{{- if not $summary -}}{{- errorf "Build failed: %s details-start requires summary." .Page.File.Path -}}{{- end -}}
+{{- /* Keep nested shortcodes in the page render pass. */ -}}
+<details><summary>{{ $summary }}</summary>

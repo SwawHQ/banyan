@@ -28,12 +28,12 @@ function sortedGroups(groups) {
 
 export async function check({page,baseUrl,options}) {
   await visit(page,new URL(options.page,baseUrl).href);
-  assert.equal(await page.locator('body[data-prefetch-debug]').count(),1,'The diagnostic layout must scope its controls to this page.');
+  assert.equal(await page.locator('body[data-prefetch-debug]').count(),1,'The diagnostic shortcodes must scope their controls to this page.');
   for(const key of panelKeys)assert.equal(await page.locator('#prefetch-debug-'+key).count(),1,'Missing prefetch debug panel: '+key);
   await page.waitForFunction(keys=>keys.every(key=>{
     try {
       const value=JSON.parse(document.getElementById('prefetch-debug-'+key).textContent);
-      return value&&typeof value==='object'&&(key!=='support'||value.serviceWorker.status!=='pending');
+      return value&&typeof value==='object'&&(key!=='support'||(value.serviceWorker.status!=='pending'&&value.serviceWorker.controlled===Boolean(navigator.serviceWorker?.controller)));
     }catch{return false;}
   }),panelKeys);
   const state=await runtimeState(page);
@@ -47,6 +47,7 @@ export async function check({page,baseUrl,options}) {
     nativeRules:document.getElementById('site-speculation-rules')?.textContent,
     linkSupported:document.createElement('link').relList.supports('prefetch'),
     workerSupported:'serviceWorker' in navigator,
+    controlled:Boolean(navigator.serviceWorker?.controller),
     secureContext:window.isSecureContext,
     links:[...document.querySelectorAll('a[data-prefetch-test-link]')].map(anchor=>({
       href:anchor.href,kind:anchor.dataset.prefetchTestLink,listEntry:anchor.hasAttribute('data-list-entry'),
@@ -71,6 +72,7 @@ export async function check({page,baseUrl,options}) {
   assert.equal(panels.support.linkPrefetch,observed.linkSupported,'Diagnostics must report actual link support.');
   assert.equal(panels.support.serviceWorkerApi,observed.workerSupported,'Diagnostics must report actual worker API support.');
   assert.equal(panels.support.secureContext,observed.secureContext,'Diagnostics must report the actual secure context.');
+  assert.equal(panels.support.serviceWorker.controlled,observed.controlled,'Diagnostics must report control of this page.');
   assert.equal(panels.runtime.dispatched,runtime.dispatched,'Diagnostics must report actual custom dispatches.');
   assert.equal(panels.runtime.failures,runtime.failures,'Diagnostics must report known dispatch failures.');
   assert.equal(panels.runtime.prefetchReady,state.ready,'Diagnostics must report the shared readiness gate.');

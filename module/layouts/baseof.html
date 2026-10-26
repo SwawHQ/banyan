@@ -6,14 +6,10 @@
 {{- $offlineFallbacks := index $pwaConfig "offline_fallbacks" -}}
 {{- $isOfflinePage := index $pwaConfig "is_offline_page" -}}
 {{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" $delivery) "prefetch" -}}
-{{- $isPrefetchDebug := eq .Layout "page-prefetch-debug" -}}
+{{- $isPrefetchDebug := .HasShortcode "prefetch-debug-controls" -}}
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
 {{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $buildVersion := partial "system-build/version.html" $primarySite.Home -}}
-{{- $siteRedirects := index hugo.Data "redirects" | default dict -}}
-{{- $siteRedirectRules := partial "system-delivery/deployment/redirect-rules.html" (dict
-  "rules" (index $siteRedirects "rules" | default slice)
-) -}}
 {{- $swRoutes := $delivery.sw_routes -}}
 {{- $inlineScripts := partialCached "entry-baseof/inline-scripts.html" site (printf "runtime-inline-scripts:%t" hugo.IsServer) -}}
 {{- $themeBootInline := index $inlineScripts "theme_boot" | default "" -}}
@@ -21,7 +17,8 @@
 {{- $breadcrumbSkeletonInline := index $inlineScripts "breadcrumb_skeleton" | default "" -}}
 {{- $slotFlags := partial "system-ui/page-slots.html" (dict "ctx" .) -}}
 {{- $hasBreadcrumbCapability := eq (index $slotFlags "breadcrumb") true -}}
-{{- $hasSortableCollection := eq .Layout "page-collection" -}}
+{{- $collectionConfig := partial "feature-browse/collection/config.html" (dict "page" .) -}}
+{{- $hasSortableCollection := $collectionConfig.sortable -}}
 {{- /* Root selection consumes the same valid sources even when path columns are hidden. */ -}}
 {{- $navigationSources := partial "feature-browse/navigation/source/context.html" (dict "ctx" .) -}}
 {{- $pageCollectionSource := index $navigationSources "page_collection_source" -}}
@@ -31,7 +28,7 @@
 {{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
     {{- partial "system-delivery/deployment/publish.html" (dict
       "routes" $delivery.routes
-      "redirects" $siteRedirectRules
+      "redirects" $delivery.redirects
       "delivery" $delivery
       "inline_scripts" $inlineScripts
     ) -}}
@@ -44,23 +41,23 @@
     {{- end }}>
 
 <head>
-    {{- $faviconSvg := partialCached "system-delivery/pwa/favicon-svg.html" . "pwa:favicon-svg" -}}
-    {{- $appleTouchIcon := resources.Get "site/pwa/icon-180.png" -}}
+    {{- $favicon := partialCached "system-delivery/pwa/favicon.html" . "pwa:favicon" -}}
+    {{- $appleTouchIcon := resources.Get "site/icon-180.png" -}}
     {{- if not $appleTouchIcon -}}
-{{- errorf "Build failed: missing resource %q." "site/pwa/icon-180.png" -}}
+{{- errorf "Build failed: missing resource %q." "site/icon-180.png" -}}
     {{- else -}}
         {{- $appleTouchIcon = $appleTouchIcon | fingerprint -}}
     {{- end -}}
     {{- $manifest := "" -}}
-    {{- $manifestTmpl := resources.Get "site/pwa/manifest.webmanifest.tmpl" -}}
+    {{- $manifestTmpl := resources.Get "site/manifest.webmanifest.tmpl" -}}
     {{- if $manifestTmpl -}}
-        {{- $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/pwa/site.webmanifest" $primarySite.Home | fingerprint -}}
+        {{- $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/site.webmanifest" $primarySite.Home | fingerprint -}}
     {{- else -}}
-{{- errorf "Build failed: missing resource %q." "site/pwa/manifest.webmanifest.tmpl" -}}
+{{- errorf "Build failed: missing resource %q." "site/manifest.webmanifest.tmpl" -}}
     {{- end -}}
     <meta charset="utf-8">
-    {{- with $faviconSvg }}
-    <link rel="icon" href="{{ .RelPermalink }}" type="image/svg+xml" fetchpriority="low">
+    {{- with $favicon }}
+    <link rel="icon" href="{{ .RelPermalink }}" type="{{ .MediaType.Type }}"{{ if eq .MediaType.Type "image/svg+xml" }} sizes="any"{{ end }} fetchpriority="low">
     {{- end }}
     {{- with $appleTouchIcon }}
     <link rel="apple-touch-icon" href="{{ .RelPermalink }}" fetchpriority="low">
@@ -72,11 +69,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">
     <link rel="canonical" href="{{ .Permalink }}">
-    {{- $robotsDirective := .Params.robots | default "" -}}
-    {{- if .Params.translation_placeholder -}}
-      {{- $robotsDirective = "noindex, follow" -}}
-    {{- end -}}
-    {{- with $robotsDirective }}
+    {{- with .Params.robots }}
     <meta name="robots" content="{{ . }}">
     {{- end }}
     {{/* 首屏同步主题，避免浅色与深色切换时闪烁。 */}}
@@ -147,6 +140,20 @@
         </div>
     </div>
     {{- block "body-extra" . -}}{{- end -}}
+    {{- if .HasShortcode "site-update" -}}
+      {{- partial "system-assets/script.html" (dict "path" "js/updates/page.js") -}}
+    {{- end -}}
+    {{- if .HasShortcode "page-actions" -}}
+      {{- partial "system-assets/script.html" (dict "path" "js/pages/offline.js") -}}
+    {{- end -}}
+    {{- if $isPrefetchDebug -}}
+      {{- range slice "controls" "support" "env" "actions" "runtime" "payload" -}}
+        {{- if gt (len (findRE (printf `\bid="prefetch-debug-%s"` .) $.Content 2)) 1 -}}
+          {{- errorf "Build failed: %s repeats prefetch-debug-%s." $.File.Path . -}}
+        {{- end -}}
+      {{- end -}}
+      {{- partial "system-assets/script.html" (dict "path" "js/prefetch/debug-page.js") -}}
+    {{- end -}}
     {{- if and (not $isOfflinePage) (or $prefetch.enabled $isPrefetchDebug) -}}
       {{- partial "system-delivery/prefetch/runtime/embed.html" (dict
         "config" $prefetch
@@ -158,3 +165,11 @@
 
 </html>
 {{- .Site.Store.SetInMap "banyan.sitemap.pages" .Path . -}}
+{{- if eq $swMode "enable" -}}
+  {{- /* Check hidden pages after rendering; the site dependency invalidates server rebuilds. */ -}}
+  {{- /* shortcut: fast previews may skip this check; use --disableFastRender for validation. */ -}}
+  {{- $offlineData := dict "site" .Site "path" $delivery.sw.offline_notice_path -}}
+  {{- with (templates.Defer (dict "key" "banyan.offline-pages" "data" $offlineData)) -}}
+    {{- partial "system-delivery/pwa/assert-offline-pages.html" . -}}
+  {{- end -}}
+{{- end -}}

@@ -12,13 +12,12 @@ async function rendered(page,expected) {
   const value=await panel.evaluate(node=>{
     const copy=JSON.parse(node.dataset.siteUpdateCopy);
     const status=node.querySelector('[data-site-update-status]'),action=node.querySelector('[data-site-update-action="check"]');
-    return {state:node.dataset.siteUpdateState,copy,controlled:node.querySelector('[data-pwa-controlled]')?.textContent,
-      hasController:Boolean(navigator.serviceWorker?.controller),status:status?.textContent,role:status?.getAttribute('role'),live:status?.getAttribute('aria-live'),
+    return {state:node.dataset.siteUpdateState,copy,status:status?.textContent,
+      role:status?.getAttribute('role'),live:status?.getAttribute('aria-live'),
       action:action?{tag:action.tagName,type:action.getAttribute('type'),pressed:action.getAttribute('aria-pressed'),disabled:action.disabled,label:action.querySelector('[data-site-update-action-label]')?.textContent}:null};
   });
   const {state,copy,action}=value;
-  for(const name of ['yes','no','status','unavailable'])assert.ok(typeof copy[name]==='string'&&copy[name].trim(),'Panel labels must contain '+name+'.');
-  assert.equal(value.controlled,copy[value.hasController?'yes':'no'],'Panel control status must use the current runtime and locale.');
+  for(const name of ['status','unavailable'])assert.ok(typeof copy[name]==='string'&&copy[name].trim(),'Panel labels must contain '+name+'.');
   if(!action)assert.equal(state,'unavailable','A panel without a check button must show unavailable.');
   assert.equal(value.role,'status','Panel status must have an accessible status role.');
   assert.equal(value.live,'polite','Panel status must announce changes politely.');
@@ -39,7 +38,7 @@ async function rendered(page,expected) {
     assert.equal(action.label,label,'The check button must use the current localized label.');
     assert.equal(await panel.getByRole('button',{name:label,exact:true}).count(),1,'The check button must expose its localized accessible name.');
   }
-  return {state,controlled:value.controlled,action:Boolean(action)};
+  return {state,action:Boolean(action)};
 }
 
 export async function check({page,baseUrl,options}) {

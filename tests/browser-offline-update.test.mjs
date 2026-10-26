@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
 import {visit,update,naturallyActivate,observe,quiet,settled} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
@@ -22,25 +22,25 @@ async function contentVersion(page){return page.evaluate(async()=>{
 });}
 before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-offline-update-'));
-  const delivery=fs.readFileSync(path.join(root,'module/data/delivery.toml'),'utf8');
+  const delivery=fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8');
   const routes=delivery.slice(delivery.indexOf('[[routes]]'));
   const build=(name,version,mode='enable')=>{
-    const content=path.join(work,name+'-content'),data=path.join(work,name+'-data'),config=path.join(work,name+'.toml');
+    const content=path.join(work,name+'-content'),assets=path.join(work,name+'-assets'),config=path.join(work,name+'.toml');
     const offline=name==='old'?'offline':name==='third'?'offline-third':'offline-next';
     for(const lang of ['en','zh','zh-tw']){
       const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
-      const text=fs.readFileSync(path.join(root,'module/content/offline/index'+suffix+'.md'),'utf8')
+      const text=fs.readFileSync(path.join(root,'content/_res/offline/index'+suffix+'.md'),'utf8')
         .replace(/^url:.*$/m,'url: '+prefix+'/'+offline+'/\n')
         .replace(/^title:.*$/m,'title: "Offline fixture '+name+'"');
-      write(path.join(content,'offline/index'+suffix+'.md'),text);
+      write(path.join(content,'_res/offline/index'+suffix+'.md'),text);
       if(name==='latest')write(path.join(content,'offline-current/index'+suffix+'.md'),
         text.replace('url: '+prefix+'/offline-next/','url: '+prefix+'/offline/'));
     }
-    write(path.join(data,'delivery.toml'),'[service_worker]\nmode = "'+mode+'"\ncontent_check_interval = 5\noffline_notice_path = "'+offline+'/"\n'+routes+
-      (['next','latest'].includes(name)?'\n[[routes]]\npath = "/*offline-next/"\nhttp.headers.Vary = "Accept"\n':''));
-    write(config,[['content',content],['content','content'],['data',data],['data','data']]
+    write(path.join(assets,'site/delivery.toml'),fixtureDelivery('[sw]\nmode = "'+mode+'"\ncontent_check_interval = 5\noffline_notice_path = "'+offline+'/"\n'+routes+
+      (['next','latest'].includes(name)?'\n[[routes]]\npath = "/*offline-next/"\nhttp.headers.Vary = "Accept"\n':'')));
+    write(config,[['content',content],['content','content'],['assets','assets'],['assets',assets]]
       .map(([target,directory])=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+
-      '[params.build]\nversion = "'+version+'"\n');
+      '[params.build]\nversion = "'+version+'"\n'+fixtureI18nMount);
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),
       ['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],
       {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
@@ -70,6 +70,9 @@ test('program updates preserve offline pages across lifecycle and content change
       await context.setOffline(true);
       const initial=await page.goto(baseUrl+'/uncached-before-update/',{waitUntil:'load'});
       assert.ok(initial?.ok()&&initial.fromServiceWorker());
+      assert.match(await page.title(),/^Offline fixture old(?: - |$)/);
+      await Promise.all([page.waitForEvent('load'),page.locator('[data-page-action="reload"]').click()]);
+      assert.equal(page.url(),baseUrl+'/uncached-before-update/','Offline retry must retain the original requested URL.');
       assert.match(await page.title(),/^Offline fixture old(?: - |$)/);
       await context.setOffline(false);
       await server.setRoot(next);

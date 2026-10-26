@@ -1,7 +1,7 @@
 {{- $page := .page -}}
 {{- $config := .config -}}
 {{- $result := dict -}}
-{{- if $config.view -}}
+{{- if $config.sortable -}}
   {{- $result = dict "provider" "collection"
     "logicalPath" (partial "./logical-path.html" (dict "ctx" $page "href" $page.RelPermalink))
     "href" $page.RelPermalink "label" ($page.LinkTitle | default $page.Title)

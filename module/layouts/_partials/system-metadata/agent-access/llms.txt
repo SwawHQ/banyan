@@ -1,6 +1,6 @@
 {{- $site := . -}}
 {{- $multilingual := gt (len hugo.Sites) 1 -}}
-{{- $description := partial "./text.txt" ($site.Params.description | default "") -}}
+{{- $description := partial "./text.txt" $site.Home.Description -}}
 # {{ partial "./text.txt" $site.Title }} - {{ partial "./text.txt" ($site.Language.Label | default $site.Language.Lang) }}
 {{ with $description }}
 > {{ . }}
@@ -19,10 +19,17 @@ Sitemap: {{ if $multilingual }}{{ absURL (printf "%s/sitemap.xml" $site.Language
 {{ end -}}
 {{ end -}}
 {{- $groups := newScratch -}}
+{{- $directory := partialCached "feature-browse/directory/index.html" $site $site.Language.Lang -}}
 {{- range (partial "system-metadata/sitemap/pages.html" $site) -}}
-  {{- $root := .CurrentSection | default $site.Home -}}
-  {{- $group := $groups.Get $root.Path | default (dict "root" $root "pages" slice) -}}
-  {{- $groups.Set $root.Path (dict "root" $root "pages" ($group.pages | append .)) -}}
+  {{- $page := . -}}
+  {{- $roots := slice (.CurrentSection | default $site.Home) -}}
+  {{- range index $directory.incoming .Path | default slice -}}
+    {{- if partial "system-metadata/sitemap/eligible.html" . -}}{{- $roots = $roots | append . -}}{{- end -}}
+  {{- end -}}
+  {{- range $root := $roots -}}
+    {{- $group := $groups.Get $root.Path | default (dict "root" $root "pages" slice) -}}
+    {{- $groups.Set $root.Path (dict "root" $root "pages" ($group.pages | append $page)) -}}
+  {{- end -}}
 {{- end -}}
 {{- range $groups.Values }}
 
@@ -32,8 +39,8 @@ Sitemap: {{ if $multilingual }}{{ absURL (printf "%s/sitemap.xml" $site.Language
 {{- end -}}
 {{- $labels = $labels | append .root.Title -}}
 {{ printf "\n\n" }}## {{ partial "./text.txt" (delimit $labels " / ") }}
-{{ range .pages -}}
-{{ $entryDescription := partial "./text.txt" (.Params.description | default "") -}}
+{{ range uniq .pages -}}
+{{ $entryDescription := partial "./text.txt" .Description -}}
 - [{{ partial "./text.txt" .Title }}](<{{ .Permalink }}>){{ with $entryDescription }}: {{ . }}{{ end }}
 {{ end -}}
 {{ end -}}

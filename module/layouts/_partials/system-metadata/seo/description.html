@@ -1,14 +1,6 @@
 {{- $ctx := . -}}
-{{- $desc := "" -}}
-{{- with $ctx.Params.description -}}
-  {{- $desc = printf "%v" . -}}
-{{- end -}}
+{{- $desc := $ctx.Description | default $ctx.Site.Home.Description -}}
 {{- if eq $desc "" -}}
-  {{- with $ctx.Site.Params.description -}}
-    {{- $desc = printf "%v" . -}}
-  {{- end -}}
-{{- end -}}
-{{- if eq $desc "" -}}
-  {{- errorf "Build failed: page %q has no Params.description and Site.Params.description is empty for language %q." ($ctx.File.Path | default $ctx.RelPermalink) $ctx.Site.Language.Lang -}}
+  {{- errorf "Build failed: page %q has no description and the homepage description is empty for language %q." ($ctx.File.Path | default $ctx.RelPermalink) $ctx.Site.Language.Lang -}}
 {{- end -}}
 {{- return $desc -}}

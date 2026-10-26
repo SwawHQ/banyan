@@ -7,11 +7,12 @@ import net from 'node:net';
 import {fileURLToPath} from 'node:url';
 import {spawn,spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
-import {fixtureEnvironment,directoryPage} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,directoryPage,fixtureSiteFiles,fixtureSitePages} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {inspect as inspectSitemap} from '../.agents/skills/swaw-banyan/tasks/check/sitemap/inspect.mjs';
 import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/llms/inspect.mjs';
-import {extractTagAttribute,decodeHtmlAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {extractTagAttribute,extractMetaContent,decodeHtmlAttribute,extractExternalScriptSrcs} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {inspect as inspectScripts} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/inspect.mjs';
 import {extractBlocks,stripRawText} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
@@ -40,13 +41,16 @@ function sources(html) {
 before(()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));
   source=path.join(work,'site');output=path.join(work,'public');
+  fixtureSiteFiles(source);
+  fixtureSitePages(source,['appearance','language','my','_res','rss','powered-by']);
   fs.mkdirSync(path.join(source,'themes'),{recursive:true});
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
+  fs.cpSync(path.join(repository,'archetypes'),path.join(source,'archetypes'),{recursive:true});
   write(path.join(source,'hugo.toml'),'theme="banyan"\nbaseURL="https://example.test/"\ntitle="Reference fixture"\ndefaultContentLanguage="en"\nenableRobotsTXT=true\nprintPathWarnings=true\npanicOnWarning=true\n'+
-    '[minify]\ndisableJS=true\n[params]\ndescription="Reference fixture."\n[params.appearance]\npalette="css/theme.css"\n[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n[languages.zh-tw]\nlabel="繁體"\nweight=3\n'+
-    '[taxonomies]\n[cascade.build]\npublishResources=false\n[outputs]\nhome=["HTML","RSS","LLMS","DIRECTORY"]\nsection=["HTML","RSS"]\npage=["HTML"]\n'+
+    '[minify]\ndisableJS=true\n[params.appearance]\npalette="css/theme.css"\n[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n[languages.zh-tw]\nlabel="繁體"\nweight=3\n'+
+    '[taxonomies]\n[[cascade]]\n[cascade.build]\npublishResources=false\n[outputs]\nhome=["HTML","RSS","LLMS","DIRECTORY"]\nsection=["HTML","RSS"]\npage=["HTML"]\n'+
     '[outputFormats.LLMS]\nmediaType="text/plain"\nbaseName="llms"\nisPlainText=true\nnotAlternative=true\n'+
-    '[outputFormats.DIRECTORY]\nmediaType="application/json"\nbaseName="directory"\nisPlainText=true\nnotAlternative=true\n');
+    '[outputFormats.DIRECTORY]\nmediaType="application/json"\nbaseName="directory"\nisPlainText=true\nnotAlternative=true\n'+fixtureI18nMount);
   write(path.join(source,'layouts/home.directory.json'),
     '{{- $index := partialCached "feature-browse/directory/index.html" .Site .Site.Language.Lang -}}'+
     '{{- $out := dict -}}{{- range $kind := slice "direct" "recursive" "incoming" -}}{{- $groups := dict -}}'+
@@ -54,13 +58,13 @@ before(()=>{
     '{{- $items = $items | append (dict "path" .Path "url" .RelPermalink) -}}{{- end -}}'+
     '{{- $groups = merge $groups (dict $key $items) -}}{{- end -}}{{- $out = merge $out (dict $kind $groups) -}}{{- end -}}{{ $out | jsonify }}');
   for(const [suffix] of locales) {
-    write(path.join(source,'content/_index'+suffix+'.md'),article('Home','layout: page-article'));
-    write(path.join(source,'content/library/_index'+suffix+'.md'),directoryPage('Library','root_nav: true'));
+    write(path.join(source,'content/_index'+suffix+'.md'),article('Home','layout: page-article-norss'));
+    write(path.join(source,'content/library/_index'+suffix+'.md'),directoryPage('Library'));
     for(const section of ['original','references','references/nested','second'])
       write(path.join(source,'content/library',section,'_index'+suffix+'.md'),directoryPage(section));
     write(path.join(source,'content/library/original/item/index'+suffix+'.md'),article('Shared '+suffix,'url: p/'+(suffix==='.zh'?'translated-item':'item')+'/'));
     write(path.join(source,'content/library/original/second/index'+suffix+'.md'),article('Second '+suffix));
-    write(path.join(source,'content/all/index'+suffix+'.md'),article('All','layout: page-collection\nlist: all\naggregate: /library\nroot_nav: true\nslots: {breadcrumb: true}'));
+    write(path.join(source,'content/all/index'+suffix+'.md'),article('All','layout: page-collection-directory-all\nparams:\n  aggregate: /library\n  slots: [breadcrumb]'));
   }
   write(path.join(source,'content/library/references/_map.toml'),refs(['/library/original/item/']));
   write(path.join(source,'content/library/references/nested/_map.toml'),refs(['/library/original/item','/library/original/second']));
@@ -68,7 +72,7 @@ before(()=>{
 });
 after(()=>{if(work){assert.equal(path.dirname(fs.realpathSync(work)),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
-test('regular pages require an explicit URL and article archetypes supply one',()=>{
+test('regular pages require an explicit URL and the site article archetype supplies one',()=>{
   const file=path.join(source,'content/library/url-contract.md');
   try {
     for(const fields of ['', 'slug: legacy-only', 'url: ""', 'url: "   "']) {
@@ -78,37 +82,227 @@ test('regular pages require an explicit URL and article archetypes supply one',(
       assert.match(result.stdout+result.stderr,/requires a non-empty url field/);
     }
   } finally {fs.rmSync(file,{force:true});}
-  for(const kind of ['banyan','blog']) {
-    const name='URL Contract '+kind,file=path.join(source,'content/library',name+'.md');
-    try {
-      const result=spawnSync(toolExecutable('hugo'),['new','content','library/'+name+'.md','--kind',kind],
-        {cwd:source,env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true,timeout:30000});
-      passed(result);
-      const text=fs.readFileSync(file,'utf8');
-      assert.ok(text.includes('url: "p/url-contract-'+kind+'/"'));assert.doesNotMatch(text,/^slug:/m);
-    } finally {fs.rmSync(file,{force:true});}
+  const generatedDirectory=path.join(source,'content/library/URL Contract'),generated=path.join(generatedDirectory,'index.md');
+  try {
+    const result=spawnSync(toolExecutable('hugo'),['new','content','library/URL Contract/index.md','--kind','banyan'],
+      {cwd:source,env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true,timeout:30000});
+    passed(result);
+    const text=fs.readFileSync(generated,'utf8');
+    assert.ok(text.includes('url: "p/url-contract/"'));assert.doesNotMatch(text,/^slug:/m);
+  } finally {
+    fs.rmSync(generated,{force:true});
+    if(fs.existsSync(generatedDirectory))fs.rmdirSync(generatedDirectory);
   }
 });
 
-test('article schema follows the layout independently of visible metadata',()=>{
-  const file=path.join(source,'content/library/original/item/index.md'),original=fs.readFileSync(file,'utf8');
-  const schemas=html=>[...html.matchAll(/(<script\b[^>]*>)([\s\S]*?)<\/script>/g)]
-    .filter(match=>extractTagAttribute(match[1],'type')==='application/ld+json')
-    .map(match=>JSON.parse(match[2])).filter(schema=>schema['@type']==='BlogPosting');
-  let expected;
+test('collection layouts bind their sources and reject conflicting front matter',()=>{
+  const directory=path.join(source,'content/library/layout-contract');
   try {
-    for(const meta of [true,false]) {
-      write(file,original.replace('\n---\n','\nslots: {breadcrumb: true, meta: '+meta+'}\n---\n'));
-      const destination=path.join(work,'article-schema-'+meta);passed(build(source,destination));
+    for(const [layout,params,message,outputs='outputs: [HTML]\n'] of [
+      ['page-collection-directory-all','',/needs aggregate with an absolute section path/],
+      ['page-collection-directory-all','',/needs aggregate with an absolute section path/,'outputs: [RSS]\nbuild: {list: never}\n'],
+      ['page-collection-products-all','',/needs aggregate with an absolute section path/],
+      ['page-collection-directory-all','aggregate: library',/needs aggregate with an absolute section path/],
+      ['page-collection-products-all','aggregate: ["/library"]',/needs aggregate with an absolute section path/],
+      ['page-collection-directory-all','aggregate: /missing',/cannot resolve aggregate/],
+      ['page-collection-products-all','aggregate: /library/original/item',/must reference an ordinary section/],
+      ...['page-collection','page-collection-directory','page-collection-products','page-collection-language','page-collection-appearance']
+        .map(layout=>[layout,'aggregate: /library',/does not accept aggregate/]),
+      ['page-collection-directory','list: directory',/remove params\.list/],
+      ['page-collection-language','',/needs outputs: \[HTML\]/,''],
+      ['page-collection-appearance','',/needs outputs: \[HTML\]/,'']
+    ]) {
+      write(path.join(directory,'_index.md'),'---\ntitle: Layout contract\nlayout: '+layout+'\n'+outputs+'params:\n  '+params+'\n---\n');
+      const result=build(source,path.join(work,'invalid-layout'));
+      assert.ifError(result.error);assert.notEqual(result.status,0,layout+' '+params+' must fail.');
+      assert.match(result.stdout+result.stderr,message);
+    }
+  } finally {fs.rmSync(directory,{recursive:true,force:true});}
+});
+
+test('page descriptions override localized home defaults and missing defaults fail the build',()=>{
+  const homes=locales.map(([suffix,prefix])=>{
+    const file=path.join(source,'content/_index'+suffix+'.md');
+    return {file,prefix,original:fs.readFileSync(file,'utf8'),description:'Home default '+(prefix||'/en')};
+  });
+  const destination=path.join(work,'home-descriptions');
+  try {
+    for(const home of homes)write(home.file,home.original.replace(/^description:.*$/m,'description: '+home.description));
+    passed(build(source,destination));
+    for(const home of homes) {
+      for(const route of ['','library','_res/offline'])
+        assert.equal(extractMetaContent(read(home.prefix+'/'+route,'index.html',destination),'description'),home.description);
+      const articlePath=home.prefix==='/zh'?'p/translated-item':'p/item';
+      assert.equal(extractMetaContent(read(home.prefix+'/'+articlePath,'index.html',destination),'description'),
+        'Description for Shared '+(home.prefix?'.'+home.prefix.slice(1):'')+'.');
+      assert.ok(read(home.prefix,'llms.txt',destination).includes('\n> '+home.description+'\n'));
+    }
+    write(homes[0].file,homes[0].original.replace(/^description:.*\r?\n/m,''));
+    const result=build(source,path.join(work,'missing-home-description'));
+    assert.notEqual(result.status,0);
+    assert.match(result.stdout+result.stderr,/homepage description is empty for language "en"/);
+  } finally {for(const home of homes)write(home.file,home.original);}
+});
+
+test('meta controls article metadata, chapters and schema independently of path navigation',()=>{
+  const file=path.join(source,'content/library/original/item/index.md'),original=fs.readFileSync(file,'utf8');
+  const schemas=(html,type='BlogPosting')=>[...html.matchAll(/(<script\b[^>]*>)([\s\S]*?)<\/script>/g)]
+    .filter(match=>extractTagAttribute(match[1],'type')==='application/ld+json')
+    .map(match=>JSON.parse(match[2])).filter(schema=>schema['@type']===type);
+  let expected,expectedMetadata,expectedNavigation;
+  try {
+    for(const slots of [undefined,['breadcrumb','meta'],['meta','breadcrumb'],['meta'],['breadcrumb'],[]]) {
+      const enabled=slots??['breadcrumb','meta'],breadcrumb=enabled.includes('breadcrumb'),meta=enabled.includes('meta');
+      write(file,(slots===undefined?original:original.replace('\n---\n','\nparams:\n  slots: '+JSON.stringify(slots)+'\n---\n'))
+        .replace('Article body.','Article body.\n\n## Details\n\nDetails body.'));
+      const name=slots===undefined?'inherited':slots.join('-')||'none';
+      const destination=path.join(work,'article-slots-'+name);passed(build(source,destination));
       const html=read('p/item','index.html',destination),articleSchemas=schemas(html);
-      assert.equal(articleSchemas.length,1,'The article layout must emit one BlogPosting.');
-      if(meta)expected=articleSchemas;else assert.deepEqual(articleSchemas,expected,'Hiding metadata must preserve article schema.');
+      assert.equal(articleSchemas.length,meta?1:0,'The meta slot must control BlogPosting.');
+      if(meta) {
+        expected??=articleSchemas;
+        assert.deepEqual(articleSchemas,expected,'Path navigation must not change article schema.');
+      }
       const metadata=extractBlocks(html,'div',tag=>(extractTagAttribute(tag,'class')||'').split(/\s+/).includes('document-meta'));
       assert.equal(metadata.length,meta?1:0,'The meta slot must control the visible metadata.');
-      for(const route of ['language','appearance','powered-by','offline'])
+      const chapters=extractBlocks(html,'nav',tag=>(extractTagAttribute(tag,'class')||'').split(/\s+/).includes('document-toc'));
+      assert.equal(chapters.length,meta?1:0,'The meta slot must control chapters.');
+      assert.equal(/id=["']?document-aside-toggle/.test(html),meta,'The meta slot must control the article aside.');
+      const paths=extractBlocks(html,'nav',tag=>(extractTagAttribute(tag,'class')||'').split(/\s+/).includes('document-meta__row--path'));
+      assert.equal(paths.length,meta?4:0,'Metadata must retain the physical directory and all three reference paths.');
+      if(meta) {
+        expectedMetadata??=metadata[0].html;
+        assert.equal(metadata[0].html,expectedMetadata,'Path navigation must not change article metadata.');
+      }
+      const navigation=extractBlocks(html,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb');
+      assert.equal(navigation.length,breadcrumb?1:0,'The breadcrumb slot must control path columns.');
+      if(breadcrumb) {
+        expectedNavigation??=navigation[0].html;
+        assert.equal(navigation[0].html,expectedNavigation,'Slot order and metadata visibility must not change path columns.');
+      }
+      assert.equal(schemas(html,'BreadcrumbList').length,breadcrumb?1:0,'The breadcrumb slot must control breadcrumb schema.');
+      for(const route of ['language','appearance','powered-by','_res/offline'])
         assert.deepEqual(schemas(read(route,'index.html',destination)),[],route+' must not emit BlogPosting.');
     }
   } finally {write(file,original);}
+});
+
+test('shortcodes load their scripts once on a plain article and each retry reloads its current URL',async()=>{
+  const directory=path.join(source,'content/shortcodes'),destination=path.join(work,'shortcodes');
+  let server,browser;
+  try {
+    const panel=fs.readFileSync(path.join(repository,'content/powered-by/index.md'),'utf8')
+      .replace(/^url:.*$/m,'url: p/shortcodes/');
+    const retry='\n{{< page-actions left_href="/wrong-retry-target/" left_label="Retry" left_action="reload" >}}\n';
+    write(path.join(directory,'index.md'),panel+retry+retry);
+    passed(build(source,destination));
+    assert.deepEqual((await inspectScripts(destination)).issues,[]);
+    const scripts=extractExternalScriptSrcs(read('p/shortcodes','index.html',destination));
+    for(const family of ['updates/page','pages/offline','prefetch/debug-page'])
+      assert.equal(scripts.filter(src=>src.includes('/js/'+family+'.')).length,1,family+' loads once per page.');
+    const plain=extractExternalScriptSrcs(read('p/item','index.html',destination));
+    assert.ok(!plain.some(src=>src.includes('/js/updates/page.')||src.includes('/js/pages/offline.')),'Pages without these shortcodes do not load their scripts.');
+    server=await createStaticSiteServer(destination);await server.start();
+    const chromium=loadChromium();browser=await chromium.launch({headless:true,executablePath:chromium.executablePath()});
+    const page=await browser.newPage({serviceWorkers:'block'}),url=server.getBaseUrl()+'/p/shortcodes/?retry=1';
+    await gotoAndWait(page,url);
+    await page.waitForFunction(()=>document.querySelector('[data-site-update-panel]')?.dataset.siteUpdateState==='unavailable');
+    for(const index of [0,1]) {
+      await Promise.all([page.waitForEvent('load'),page.locator('[data-page-action="reload"]').nth(index).click()]);
+      assert.equal(page.url(),url,'Retry must reload the current URL, including its query.');
+      assert.equal(await page.evaluate(()=>performance.getEntriesByType('navigation')[0].type),'reload');
+    }
+  } finally {
+    await browser?.close();await server?.stop();fs.rmSync(directory,{recursive:true,force:true});
+  }
+});
+
+test('slots reject dictionaries, scalar values and unsupported names',()=>{
+  const file=path.join(source,'content/library/original/item/index.md'),original=fs.readFileSync(file,'utf8');
+  try {
+    for(const [slots,message] of [
+      ['{breadcrumb: true}',/must define slots as a list/],
+      ['{}',/must define slots as a list/],
+      ['breadcrumb',/must define slots as a list/],
+      ['false',/must define slots as a list/],
+      ['[true]',/only supports string slot names/],
+      ['[unknown]',/does not support slot "unknown"/]
+    ]) {
+      write(file,original.replace('\n---\n','\nparams:\n  slots: '+slots+'\n---\n'));
+      const result=build(source,path.join(work,'invalid-slots'));
+      assert.ifError(result.error);assert.notEqual(result.status,0,slots+' must fail.');
+      assert.match(result.stdout+result.stderr,message);
+    }
+  } finally {write(file,original);}
+});
+
+test('params retain cascade defaults, local overrides and the declaring share-image bundle',()=>{
+  const directory=path.join(source,'content/library/params');
+  const parent=directoryPage('Params parent','','share_image: shared.svg')
+    .replace('      slots: [breadcrumb, meta]','      slots: [breadcrumb, meta]\n      browser_title: Inherited browser title');
+  try {
+    write(path.join(directory,'_index.md'),parent);
+    write(path.join(directory,'shared.svg'),fs.readFileSync(path.join(repository,'assets/site/favicon.link.svg')));
+    write(path.join(directory,'inherited/index.md'),article('Inherited params'));
+    write(path.join(directory,'inherited/shared.svg'),'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1H0z"/></svg>');
+    write(path.join(directory,'overridden/index.md'),article('Overridden params','params:\n  slots: []\n  share_image: false\n  icon: {text: Own}'));
+    const destination=path.join(work,'params-contract');passed(build(source,destination));
+    const inherited=read('p/inherited','index.html',destination),overridden=read('p/overridden','index.html',destination);
+    for(const html of [inherited,overridden])assert.ok(html.includes('<title>Inherited browser title - Reference fixture</title>'),'A local params map must retain unrelated cascade fields.');
+    assert.match(inherited,/<meta property=["']?og:image["']? content=["']?https:\/\/example\.test\/media\/content\/library\/params\/shared\.[a-f0-9]{64}\.svg/,'Relative images must resolve from the ancestor that declares them.');
+    assert.doesNotMatch(overridden,/<meta property=["']?og:image/,'An explicit false value must stop share-image fallback.');
+    assert.equal(extractBlocks(inherited,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb').length,1);
+    assert.equal(extractBlocks(overridden,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb').length,0,'An empty slots list must clear cascade defaults.');
+    assert.ok(read('library/params','index.html',destination).includes('>Own</span>'),'Local params.icon must remain available to list rows.');
+  } finally {fs.rmSync(directory,{recursive:true,force:true});}
+});
+
+test('all RSS channels accept only opted-in articles while plain articles retain their features',()=>{
+  const articles=locales.map(([suffix])=>path.join(source,'content/library/original/item/index'+suffix+'.md'));
+  const aggregates=locales.map(([suffix])=>path.join(source,'content/library/rss-aggregate/_index'+suffix+'.md'));
+  const htmlOnly=locales.map(([suffix])=>path.join(source,'content/library/html-only/_index'+suffix+'.md'));
+  const settings=locales.map(([suffix])=>path.join(source,'content/library/original/rss-settings'+suffix+'.md'));
+  const originals=articles.map(file=>fs.readFileSync(file,'utf8'));
+  const rendered=new Map();
+  try {
+    for(const file of aggregates)write(file,directoryPage('RSS aggregate','','aggregate: /library').replace('layout: page-collection-directory\n','layout: page-collection-directory-all\n'));
+    for(const file of htmlOnly)write(file,directoryPage('HTML only','outputs: [HTML]','aggregate: /library').replace('layout: page-collection-directory\n','layout: page-collection-directory-all\n'));
+    for(const file of settings)write(file,article('RSS settings','url: p/rss-settings/\nlayout: page-my'));
+    for(const layout of ['page-article-rss','page-article-norss']) {
+      for(const [index,file] of articles.entries())write(file,originals[index]
+        .replace('\n---\n','\nlayout: '+layout+'\n---\n').replace('Article body.','Article body.\n\n## Details\n\nDetails body.'));
+      const destination=path.join(work,'rss-'+layout);passed(build(source,destination));
+      for(const [suffix,prefix] of locales) {
+        const url=prefix+'/p/'+(suffix==='.zh'?'translated-item':'item')+'/';
+        for(const route of [prefix,prefix+'/library/',prefix+'/library/original/',prefix+'/library/references/',
+          prefix+'/library/references/nested/',prefix+'/library/second/',prefix+'/library/rss-aggregate/']) {
+          const feed=read(route,'index.xml',destination);
+          assert.equal(feed.includes('<guid>https://example.test'+url+'</guid>'),layout==='page-article-rss',route+' must follow article RSS eligibility.');
+          assert.ok(!feed.includes('<guid>https://example.test'+prefix+'/p/rss-settings/</guid>'),route+' must omit functional pages.');
+          assert.ok(!feed.includes('<guid>https://example.test'+prefix+'/p/all/</guid>'),route+' must omit collection pages.');
+          const guids=[...feed.matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]);
+          assert.equal(guids.length,new Set(guids).size,route+' must not duplicate referenced articles.');
+        }
+        const html=read(url,'index.html',destination),body=extractBlocks(html,'article')[0].html;
+        if(layout==='page-article-rss')rendered.set(prefix,body);else assert.equal(body,rendered.get(prefix),'Plain articles must preserve the article renderer and controls.');
+        assert.match(html,/\/css\/prose(?:\.min)?\.[^"' >]+\.css/,'Both article layouts load the prose stylesheet.');
+        assert.match(html,/"@type"\s*:\s*"BlogPosting"/,'Both article layouts retain article schema.');
+        assert.match(html,/class=["']?document-toc/,'Both article layouts retain the chapter list.');
+        assert.match(html,/id=["']?document-aside-toggle/,'Both article layouts retain the collapsible aside.');
+        for(const route of [prefix+'/library/original/',prefix+'/library/references/',prefix+'/p/all/'])
+          assert.ok(read(route,'index.html',destination).includes(url),'Plain articles must remain in directory and aggregate lists.');
+        assert.ok(read(prefix||'/en','sitemap.xml',destination).includes('https://example.test'+url),'Plain articles must remain in sitemap.');
+        assert.ok(read(prefix,'llms.txt',destination).includes('https://example.test'+url),'Plain articles must remain in llms.txt.');
+        assert.ok(read(prefix+'/library/html-only/','index.html',destination).includes(url),'A collection without RSS still lists its articles.');
+        assert.equal(fs.existsSync(path.join(destination,prefix,'library/html-only/index.xml')),false,'Collection output does not control its articles in other feeds.');
+      }
+    }
+  } finally {
+    for(const [index,file] of articles.entries())write(file,originals[index]);
+    for(const file of aggregates)fs.rmSync(file,{force:true});
+    for(const file of htmlOnly)fs.rmSync(file,{force:true});
+    for(const file of settings)fs.rmSync(file,{force:true});
+  }
 });
 
 test('ordinary directories share translated references, counts, metadata, source context and canonical outputs',async()=>{
@@ -128,7 +322,7 @@ test('ordinary directories share translated references, counts, metadata, source
     assert.equal([...rss.matchAll(new RegExp('<guid>https://example\\.test'+url+'</guid>','g'))].length,1,'RSS must list the canonical article once.');
     const sitemap=read(prefix||'/en','sitemap.xml'),llms=read(prefix,'llms.txt');
     assert.equal([...sitemap.matchAll(new RegExp('<loc>https://example\\.test'+url+'</loc>','g'))].length,1);
-    assert.equal([...llms.matchAll(new RegExp('https://example\\.test'+url.replaceAll('/','\\/')+'>','g'))].length,1);
+    assert.equal([...llms.matchAll(new RegExp('https://example\\.test'+url.replaceAll('/','\\/')+'>','g'))].length,4,'LLMS retains the physical group and each reference group.');
     assert.doesNotMatch(sitemap+llms,/_map|\.toml/);
     assert.equal(fs.existsSync(path.join(output,prefix,'library/references/_map.toml')),false);
     assert.equal(fs.existsSync(path.join(output,prefix,'library/references/item/index.html')),false,'References never create duplicate article pages.');
@@ -173,7 +367,7 @@ test('reference validation rejects malformed, ambiguous, redundant and missing t
   }
 });
 
-test('native taxonomy configuration keeps Hugo RSS members when the site supplies its list layouts',()=>{
+test('native taxonomy lists stay navigable while term RSS contains only articles',()=>{
   const file=path.join(source,'hugo.toml'),original=fs.readFileSync(file,'utf8');
   const articles=locales.map(([suffix])=>path.join(source,'content/library/original/item/index'+suffix+'.md'));
   const originals=articles.map(file=>fs.readFileSync(file,'utf8'));
@@ -192,7 +386,7 @@ test('native taxonomy configuration keeps Hugo RSS members when the site supplie
       const name=prefix==='/zh'?'translated-item':'item';
       assert.ok(read(prefix+'/authors/alex/','index.html',destination).includes(prefix+'/p/'+name+'/'));
       assert.deepEqual([...read(prefix+'/authors/','index.xml',destination).matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]),
-        ['https://example.test'+prefix+'/authors/alex/']);
+        [],'Taxonomy terms are list pages, not RSS article items.');
       assert.deepEqual([...read(prefix+'/authors/alex/','index.xml',destination).matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]),
         ['https://example.test'+prefix+'/p/'+name+'/']);
     }
@@ -268,11 +462,11 @@ test('local sections retain refs and map resources require a visible ordinary di
   } finally {fs.rmSync(local,{recursive:true,force:true});}
 });
 
-test('non-rendered and placeholder articles do not enter directory counts or feeds',()=>{
+test('non-rendered articles do not enter directory counts or feeds',()=>{
   const directory=path.join(source,'content/library/filter');
-  const hidden={never:'build: {render: never}',link:'build: {render: link}',json:'outputs: [JSON]',placeholder:'translation_placeholder: true'};
+  const hidden={never:'build: {render: never}',link:'build: {render: link}',json:'outputs: [JSON]'};
   try {
-    write(path.join(source,'layouts/page-article.json.json'),'{}');
+    write(path.join(source,'layouts/page-article-rss.json.json'),'{}');
     for(const [suffix] of locales) {
       write(path.join(directory,'_index'+suffix+'.md'),directoryPage('Filter'));
       for(const [name,fields] of Object.entries({visible:'',...hidden}))
@@ -290,14 +484,14 @@ test('non-rendered and placeholder articles do not enter directory counts or fee
     }
   } finally {
     fs.rmSync(directory,{recursive:true,force:true});
-    fs.rmSync(path.join(source,'layouts/page-article.json.json'),{force:true});
+    fs.rmSync(path.join(source,'layouts/page-article-rss.json.json'),{force:true});
   }
 });
 
 test('non-rendered reference directories do not become article metadata or navigation sources',()=>{
-  const owners={hidden:'build: {render: never}',linked:'build: {render: link}',json:'outputs: [JSON]',placeholder:'translation_placeholder: true'};
+  const owners={hidden:'build: {render: never}',linked:'build: {render: link}',json:'outputs: [JSON]'};
   try {
-    write(path.join(source,'layouts/page-collection.json.json'),'{}');
+    write(path.join(source,'layouts/page-collection-directory.json.json'),'{}');
     for(const [name,fields] of Object.entries(owners)) {
       const directory=path.join(source,'content/library/owner-'+name);
       const safeFields=fields.replace('render: never','render: never, publishResources: false').replace('render: link','render: link, publishResources: false');
@@ -315,7 +509,7 @@ test('non-rendered reference directories do not become article metadata or navig
     }
   } finally {
     for(const name of Object.keys(owners))fs.rmSync(path.join(source,'content/library/owner-'+name),{recursive:true,force:true});
-    fs.rmSync(path.join(source,'layouts/page-collection.json.json'),{force:true});
+    fs.rmSync(path.join(source,'layouts/page-collection-directory.json.json'),{force:true});
   }
 });
 
@@ -357,16 +551,16 @@ test('native output checks catch unlisted pages and retain Hugo alias precedence
   const directory=path.join(source,'content/native-url-probe'),file=path.join(directory,'index.md');
   try {
     for(const list of ['local','never']) {
-      write(file,article('Native collision','url: p/item/\nlayout: page-article\nbuild: {list: '+list+'}'));
+      write(file,article('Native collision','url: p/item/\nlayout: page-article-norss\nbuild: {list: '+list+'}'));
       const result=build(source,path.join(work,'native-collision-'+list));
       assert.notEqual(result.status,0);
       assert.match(result.stdout+result.stderr,/Duplicate target paths/i);
     }
     for(const render of ['never','link']) {
-      write(file,article('Unrendered URL','url: p/item/\nlayout: page-article\nbuild: {list: local, render: '+render+'}'));
+      write(file,article('Unrendered URL','url: p/item/\nlayout: page-article-norss\nbuild: {list: local, render: '+render+'}'));
       passed(build(source,path.join(work,'native-unrendered-'+render)));
     }
-    write(file,article('Native alias','url: p/native-alias/\nlayout: page-article\naliases: ["/p/item/"]\nbuild: {list: local}'));
+    write(file,article('Native alias','url: p/native-alias/\nlayout: page-article-norss\naliases: ["/p/item/"]\nbuild: {list: local}'));
     const destination=path.join(work,'native-alias');passed(build(source,destination));
     assert.ok(read('p/item','index.html',destination).includes('Shared'),'The real page keeps precedence over an alias.');
     assert.doesNotMatch(read('p/item','index.html',destination),/http-equiv=.?refresh/i);
@@ -376,12 +570,12 @@ test('native output checks catch unlisted pages and retain Hugo alias precedence
 test('aggregate feeds share unique articles and hidden-directory fallbacks omit non-HTML pages',()=>{
   const aggregate=path.join(source,'content/library/feed-aggregate'),hidden=path.join(source,'content/library/not-listed');
   try {
-    write(path.join(aggregate,'_index.md'),directoryPage('Aggregate','aggregate: /library/references'));
+    write(path.join(aggregate,'_index.md'),directoryPage('Aggregate','','aggregate: /library/references').replace('layout: page-collection-directory\n','layout: page-collection-directory-all\n'));
     write(path.join(hidden,'_index.md'),directoryPage('Not listed','build: {list: never, publishResources: false}'));
     write(path.join(hidden,'visible/index.md'),article('Fallback visible','build: {list: local}'));
     write(path.join(hidden,'linked/index.md'),article('Fallback linked','url: p/linked/\nbuild: {list: local, render: link}'));
     write(path.join(hidden,'json/index.md'),article('Fallback JSON','url: p/json/\nbuild: {list: local}\noutputs: [JSON]'));
-    write(path.join(source,'layouts/page-article.json.json'),'{}');
+    write(path.join(source,'layouts/page-article-rss.json.json'),'{}');
     const destination=path.join(work,'feed-members');passed(build(source,destination));
     const feed=read('/library/feed-aggregate/','index.xml',destination);
     const guids=[...feed.matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]);
@@ -397,7 +591,7 @@ test('aggregate feeds share unique articles and hidden-directory fallbacks omit 
     assert.ok(hiddenFeed.includes('/p/fallback/'));
   } finally {
     for(const directory of [aggregate,hidden])fs.rmSync(directory,{recursive:true,force:true});
-    fs.rmSync(path.join(source,'layouts/page-article.json.json'),{force:true});
+    fs.rmSync(path.join(source,'layouts/page-article-rss.json.json'),{force:true});
   }
 });
 
@@ -496,22 +690,53 @@ test('preview rebuilds invalidate refs and target URLs; renamed section trees su
   }
   async function state() {const response=await fetch(base+'/directory.json',{signal:AbortSignal.timeout(1000),headers:{Connection:'close'}});assert.equal(response.status,200);return response.json();}
   async function text(route) {const response=await fetch(base+route,{signal:AbortSignal.timeout(1000),headers:{Connection:'close'}});assert.equal(response.status,200,route);return response.text();}
+  function referenceGroup(content) {
+    return content.split(/^## /m).find(group=>group.includes('](<'+base+'/library/second/>)'))||'';
+  }
+  let llms;
   try {
     await until(async()=>((await state()).direct['/library/second']||[]).some(item=>item.path==='/library/original/item'));
     write(file,refs(['/library/original/second']));
-    await until(async()=>{const items=(await state()).direct['/library/second']||[];return items.length===1&&items[0].path==='/library/original/second';});
+    // The directory model can finish before deferred discovery output.
+    await until(async()=>{
+      const items=(await state()).direct['/library/second']||[];
+      llms=await text('/llms.txt');const group=referenceGroup(llms);
+      return items.length===1&&items[0].path==='/library/original/second'&&llms.startsWith('# ')
+        &&group.includes('](<'+base+'/p/second/>)')&&!group.includes('](<'+base+'/p/item/>)');
+    });
     const main=extractBlocks(stripRawText(await text('/library/second/')),'main')[0].inner;
     assert.ok(main.includes('/p/second/#from=library/second'));
     assert.ok(!main.includes('/p/item/'));
     const feed=await text('/library/second/index.xml');
     assert.ok(feed.includes('/p/second/'));assert.ok(!feed.includes('/p/item/'));
+    assert.ok(referenceGroup(llms).includes('](<'+base+'/p/second/>)'));
+    assert.ok(!referenceGroup(llms).includes('](<'+base+'/p/item/>)'));
     assert.doesNotMatch(await text('/p/item/'),/data-directory-reference=(?:"\/library\/second"|\/library\/second(?:\s|>))/);
-    fs.unlinkSync(file);await until(async()=>((await state()).direct['/library/second']||[]).length===0);
-    write(file,original);await until(async()=>((await state()).direct['/library/second']||[]).some(item=>item.path==='/library/original/item'));
+    fs.unlinkSync(file);await until(async()=>{
+      const items=(await state()).direct['/library/second']||[];
+      llms=await text('/llms.txt');
+      return items.length===0&&llms.startsWith('# ')&&llms.includes('](<'+base+'/p/second/>)')
+        &&!referenceGroup(llms).includes('](<'+base+'/p/second/>)');
+    });
+    assert.ok(!referenceGroup(llms).includes('](<'+base+'/p/second/>)'),'Removing a map removes only that group occurrence.');
+    assert.ok(llms.includes('](<'+base+'/p/second/>)'),'The physical group retains the page.');
+    write(file,original);await until(async()=>{
+      const items=(await state()).direct['/library/second']||[];
+      llms=await text('/llms.txt');
+      return items.some(item=>item.path==='/library/original/item')&&llms.startsWith('# ')
+        &&referenceGroup(llms).includes('](<'+base+'/p/item/>)');
+    });
+    assert.ok(referenceGroup(llms).includes('](<'+base+'/p/item/>)'),'Restoring a map restores its group occurrence.');
     write(target,originalTarget.replace('url: p/item/','url: p/renamed-item/'));
-    await until(async()=>((await state()).direct['/library/second']||[]).some(item=>item.url==='/p/renamed-item/'));
-    for(const route of ['/en/sitemap.xml','/llms.txt']) {
-      const content=await text(route);assert.ok(content.includes(base+'/p/renamed-item/'));
+    let discovery;
+    await until(async()=>{
+      const items=(await state()).direct['/library/second']||[];
+      discovery=await Promise.all(['/en/sitemap.xml','/llms.txt'].map(text));
+      return items.some(item=>item.url==='/p/renamed-item/')&&discovery.every(content=>
+        content.includes(base+'/p/renamed-item/')&&!content.includes(base+'/p/item/'));
+    });
+    for(const content of discovery) {
+      assert.ok(content.includes(base+'/p/renamed-item/'));
       assert.ok(!content.includes(base+'/p/item/'),'Discovery outputs must remove the old canonical URL.');
     }
     // Hugo 0.157 on Windows needs a restart to discover a renamed section tree.

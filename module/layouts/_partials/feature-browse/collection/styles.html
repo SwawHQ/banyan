@@ -1,0 +1,3 @@
+{{- with trim (printf "%s" .Content) " \r\n\t" -}}
+  {{- partial "feature-document/styles.html" $ -}}
+{{- end -}}

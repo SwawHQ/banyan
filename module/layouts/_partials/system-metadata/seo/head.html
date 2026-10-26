@@ -1,6 +1,6 @@
 {{/*
   SEO head partial
-  - description 优先级：.Params.description > .Site.Params.description
+  - description 优先级：.Description > .Site.Home.Description
   - OpenGraph / Twitter 卡片
   - og:locale：将当前语言的原生 locale 转为下划线格式
   - hreflang：当前语言 + .AllTranslations + x-default（指向默认语言版本）
@@ -17,7 +17,7 @@
 {{- $xDefault := $pageUrl -}}
 {{- if ne .Language.Lang $defaultLang -}}
   {{- range .AllTranslations -}}
-    {{- if and (eq .Language.Lang $defaultLang) (not .Params.translation_placeholder) -}}
+    {{- if eq .Language.Lang $defaultLang -}}
       {{- $xDefault = .Permalink -}}
     {{- end -}}
   {{- end -}}
@@ -30,15 +30,13 @@
 {{- with $ogLocale }}
 <meta property="og:locale" content="{{ . }}">
 {{- end }}
-{{- if not .Params.translation_placeholder -}}
 {{- range .AllTranslations -}}
-  {{- if and (ne .Language.Lang $.Language.Lang) (not .Params.translation_placeholder) -}}
+  {{- if ne .Language.Lang $.Language.Lang -}}
     {{- $altOgLocale := partial "./locale.html" . -}}
     {{- if and $altOgLocale (ne $altOgLocale $ogLocale) }}
 <meta property="og:locale:alternate" content="{{ $altOgLocale }}">
     {{- end -}}
   {{- end -}}
-{{- end -}}
 {{- end -}}
 {{- $img := partial "system-metadata/seo/share-image/resolve.html" . -}}
 {{- with $img -}}<meta property="og:image" content="{{ . }}">{{ end }}
@@ -47,15 +45,13 @@
 <meta name="twitter:description" content="{{ $desc }}">
 {{ with $img }}<meta name="twitter:image" content="{{ . }}">{{ end }}
 
-{{- if not .Params.translation_placeholder -}}
 <link rel="alternate" hreflang="{{ .Language.Lang }}" href="{{ $pageUrl }}">
 {{- range .AllTranslations -}}
-  {{- if and (ne .Language.Lang $.Language.Lang) (not .Params.translation_placeholder) -}}
+  {{- if ne .Language.Lang $.Language.Lang -}}
   <link rel="alternate" hreflang="{{ .Language.Lang }}" href="{{ .Permalink }}">
   {{- end -}}
 {{- end -}}
 <link rel="alternate" hreflang="x-default" href="{{ $xDefault }}">
-{{- end -}}
 
 {{ with .OutputFormats.Get "RSS" }}
 <link rel="alternate" type="application/rss+xml" title="{{ site.Title }}" href="{{ .RelPermalink }}">

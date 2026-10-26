@@ -7,7 +7,7 @@ import vm from 'node:vm';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {parseHeaders,cloudflareHeaders} from '../.agents/skills/swaw-banyan/tasks/_shared/headers.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
@@ -17,10 +17,10 @@ const root=fileURLToPath(new URL('../',import.meta.url)),parent=path.join(fs.rea
 let work;
 function write(file,body) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,body);}
 function build(name,policy,config='',workerConfig=serviceWorkerPolicy('enable')) {
-  const directory=path.join(work,name),overlay=path.join(directory,'data'),assets=path.join(work,'assets');
-  write(path.join(overlay,'delivery.toml'),(policy??'')+'\n'+workerConfig);
-  const mounts=[['assets',assets],['assets','assets'],['data',overlay],['data','data']]
-    .map(([target,source])=>'[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('');
+  const directory=path.join(work,name),overlay=path.join(directory,'assets'),assets=path.join(work,'assets');
+  write(path.join(overlay,'site/delivery.toml'),fixtureDelivery(policy,workerConfig));
+  const mounts=[['assets','assets'],['assets',assets],['assets',overlay]]
+    .map(([target,source])=>'[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+fixtureI18nMount;
   const configFile=path.join(directory,'fixture.toml'),output=path.join(directory,'public');
   write(configFile,mounts+config);
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--cleanDestinationDir','--config','hugo.toml,'+configFile,'--destination',output],
@@ -135,17 +135,17 @@ test('default policy generates explicit Cloudflare overrides and independent Edg
   assert.ok(!JSON.stringify(edge).includes('unset'));
   for(const [url,expected] of [['/','public, max-age=900, must-revalidate'],
     ['/js/main.hash.js','public, max-age=31536000, immutable'],
-    ['/site/pwa/app.hash.webmanifest','public, max-age=31536000, immutable'],
+    ['/site/app.hash.webmanifest','public, max-age=31536000, immutable'],
     ['/favicon.ico','public, max-age=86400, must-revalidate'],
     ['/sw.js','no-cache, max-age=0, must-revalidate'],['/sw-version.json','no-cache, max-age=0, must-revalidate']])
     assert.equal(cloudflareHeaders(rules,url)['cache-control'],expected,url);
-  assert.equal(cloudflareHeaders(rules,'/site/pwa/app.hash.webmanifest')['content-type'],'application/manifest+json; charset=utf-8');
+  assert.equal(cloudflareHeaders(rules,'/site/app.hash.webmanifest')['content-type'],'application/manifest+json; charset=utf-8');
   const xml=cloudflareHeaders(rules,'/zh/index.xml')['content-security-policy'];
   assert.match(xml,/^default-src 'none';/);assert.ok(!xml.includes('script-src'));
-  assert.equal(edge.headers.find(rule=>rule.source==='/site/pwa/*.webmanifest').headers.length,1);
+  assert.equal(edge.headers.find(rule=>rule.source==='/site/*.webmanifest').headers.length,1);
   const {probe}=worker(output);
   assert.equal(probe.getMatchingRoute('/icp/').bucket,'versioned');
-  assert.equal(probe.getMatchingRoute('/site/pwa/app.hash.webmanifest').bucket,'fingerprinted');
+  assert.equal(probe.getMatchingRoute('/site/app.hash.webmanifest').bucket,'fingerprinted');
   assert.equal(probe.getMatchingRoute('/sw.js').bucket,'off');
   assert.equal(probe.getMatchingRoute('/sw-version.json').bucket,'off');
   assert.equal(probe.getMatchingRoute('/unconfigured.txt').bucket,'versioned');
@@ -208,7 +208,7 @@ test('hash-prefixed headers remain valid outside Cloudflare header declarations'
   }
 });
 
-test('delivery top-level tables replace nested defaults in every language',()=>{
+test('explicit delivery fixture tables replace complete top-level values in every language',()=>{
   const output=passed(build('nested-defaults','[prefetch]\nenabled = true\ndefault = "off"\n'+
     '[prefetch.icons.folder]\nroot = "conservative"\n'));
   let targets,nativeBody;
@@ -260,9 +260,9 @@ test('compiled worker matches one wildcard, preserves URL case and uses the last
   for(const [pattern,url,expected] of [
     ['/*','/',true],['/a/*','/a/',true],['/a/*','/a/b/c',true],['/a/*','/a',false],
     ['/*.xml','/zh/index.xml',true],['/*.xml','/index.xmlx',false],
-    ['/site/pwa/*.webmanifest','/site/pwa/.webmanifest',true],
-    ['/site/pwa/*.webmanifest','/site/pwa/a/b.webmanifest',true],
-    ['/site/pwa/*.webmanifest','/site/other/a.webmanifest',false],
+    ['/site/*.webmanifest','/site/.webmanifest',true],
+    ['/site/*.webmanifest','/site/a/b.webmanifest',true],
+    ['/site/*.webmanifest','/other/a.webmanifest',false],
     ['/ab*bc','/abc',false],['/ab*bc','/abbc',true],
     ['/File.json','/File.json',true],['/File.json','/file.json',false],
     ['/x/a+b.json','/x/a+b.json',true],['/x/a+b.json','/x/ab.json',false]
@@ -278,6 +278,38 @@ test('compiled worker matches one wildcard, preserves URL case and uses the last
   for(const request of [new Request('https://example.test/no-rule.txt'),new Request('https://example.test/private/a.json'),
     new Request('https://other.test/a.json'),new Request('https://example.test/a.json',{method:'POST'})]) {
     listeners.fetch({request,respondWith:()=>assert.fail('Request must not enter the SW cache: '+request.url)});
+  }
+});
+
+test('delivery redirects share platform output and reject invalid declarations',()=>{
+  const permanent='[[redirects]]\nsource = "/previous/"\ndestination = "/current/"\nstatus = 301\n';
+  const temporary='[[redirects]]\nsource = "/temporary/"\ndestination = "/current/"\nstatus = 302\n';
+  const rules=[
+    {source:'/previous/',destination:'/current/',status:301},
+    {source:'/temporary/',destination:'/current/',status:302}
+  ];
+  for(const [name,policy,expected,error] of [
+    ['omitted',undefined,[]],
+    ['empty','redirects = []\n',[]],
+    ['valid',permanent+temporary,rules],
+    ['table','redirects = {}\n',null,/redirects must be an array/],
+    ['member','redirects = [false]\n',null,/redirects.*table/],
+    ...['source','destination','status'].map(field=>['missing-'+field,
+      permanent.replace(new RegExp('^'+field+' = .*\\n','m'),''),null,/require non-empty source, destination, and status/]),
+    ['status',permanent.replace('status = 301','status = 307'),null,/only supports status 301 or 302/]
+  ]) {
+    const result=build('redirects-'+name,policy);
+    if(error) {
+      assert.notEqual(result.status,0,name+' must fail');
+      assert.match(result.log,error);
+      continue;
+    }
+    const output=passed(result);
+    const lines=fs.readFileSync(path.join(output,'_redirects'),'utf8').split(/\r?\n/)
+      .filter(line=>line.trim()&&!line.startsWith('#'));
+    assert.deepEqual(lines,expected.map(rule=>rule.source+' '+rule.destination+' '+rule.status));
+    const edge=JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8'));
+    assert.deepEqual(edge.redirects,expected.map(({source,destination,status})=>({source,destination,statusCode:status})));
   }
 });
 
@@ -313,7 +345,7 @@ test('disabled and off workers do not publish a policy copy, and worker tables m
   for(const field of ['mode','content_check_interval','offline_notice_path']) {
     const policy=serviceWorkerPolicy('enable').replace(new RegExp('^'+field+' = .*\\n','m'),'');
     const result=build('worker-missing-'+field,undefined,'',policy);
-    assert.notEqual(result.status,0);assert.match(result.log,new RegExp('service_worker requires '+field));
+    assert.notEqual(result.status,0);assert.match(result.log,new RegExp('delivery.sw requires '+field));
   }
 });
 
@@ -335,7 +367,7 @@ test('bucket caching preserves query keys, validates versioned responses and war
     return Response.json({query:url.search});
   });
   const {probe,listeners,requests,stores}=runtime;
-  for(const pathname of ['/sw.js','/favicon.ico','/favicon.svg'])
+  for(const pathname of ['/sw.js','/favicon.ico'])
     assert.equal(dispatch(listeners,requestFor(pathname,true)),undefined,'off also applies to document navigation.');
   const first=await dispatch(listeners,requestFor('/data.json?rev=1'));
   assert.deepEqual(await first.json(),{query:'?rev=1'});
@@ -524,7 +556,7 @@ test('program installation stages offline pages without touching an active commi
   assert.equal(runtime.probe.currentGeneration,null,'Installing must not load or clean content generations.');
   assert.equal(versionRequests(runtime).length,0);
   assert.ok(runtime.stores.has('nav-html-v-two'),'An active candidate must survive program installation.');
-  assert.ok(runtime.stores.get(runtime.probe.PROGRAM_OFFLINE_CACHE).has('https://example.test/offline/'));
+  assert.ok(runtime.stores.get(runtime.probe.PROGRAM_OFFLINE_CACHE).has('https://example.test/_res/offline/'));
   runtime.stores.get('sw-content-state').set(url,Response.json({version:'v-two',lastAttemptAt:runtime.clock.Date.now()}));
   runtime.stores.delete('nav-html-v-one');
   const restarted=contentRuntime({stores:runtime.stores,clock:runtime.clock});restarted.control.fail=true;
@@ -542,12 +574,12 @@ test('program activation preserves newer content and fills missing offline pages
     const runtime=contentRuntime(bootstrap?{stores:new Map([['sw-content-state',new Map()]])}:{});
     let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
     const active=contentRuntime({stores:runtime.stores,clock:runtime.clock});
-    active.probe.SW_ROUTES.unshift({path:'/zh/offline/',bucket:'off'});
+    active.probe.SW_ROUTES.unshift({path:'/zh/_res/offline/',bucket:'off'});
     active.registration.waiting={};active.control.version='v-three';
     const job=await navigation(active);await active.clock.tick(15000);await job.done;
     const state=await active.probe.readContentState();
     assert.equal(state.version,'v-three');
-    assert.equal(active.stores.get('nav-html-v-three').has('https://example.test/zh/offline/'),false);
+    assert.equal(active.stores.get('nav-html-v-three').has('https://example.test/zh/_res/offline/'),false);
     const restarted=contentRuntime({stores:runtime.stores,clock:runtime.clock});restarted.control.fail=true;
     let activated;restarted.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
     assert.equal(restarted.requests.length,0,'Activation must use prepared data without network requests.');
@@ -612,10 +644,10 @@ test('bootstrap staging does not overwrite a concurrent active content commit',a
 
 test('reinstalling the same program replaces its stale stage without touching another program',async()=>{
   const runtime=contentRuntime(),stage=runtime.probe.PROGRAM_OFFLINE_CACHE;
-  runtime.stores.set('nav-html-v-one',new Map([['https://example.test/offline/',
+  runtime.stores.set('nav-html-v-one',new Map([['https://example.test/_res/offline/',
     new Response('Previous program offline page',{headers:{'Content-Type':'text/html'}})]]));
   runtime.stores.set(stage,new Map(['','zh/','zh-tw/'].map(prefix=>[
-    'https://example.test/'+prefix+'offline/',new Response('Old offline page',{headers:{'Content-Type':'text/html'}})
+    'https://example.test/'+prefix+'_res/offline/',new Response('Old offline page',{headers:{'Content-Type':'text/html'}})
   ])));
   runtime.stores.get(stage).set('https://example.test/sw-version.json',Response.json({version:'v-stale'}));
   const another=new Map([['https://example.test/keep/',new Response('Keep')]]);
@@ -635,7 +667,7 @@ test('first installation publishes content before activation and removes a stage
   const runtime=contentRuntime(),stage=runtime.probe.PROGRAM_OFFLINE_CACHE;
   runtime.registration.active=null;
   runtime.stores.set(stage,new Map(['','zh/','zh-tw/'].map(prefix=>[
-    'https://example.test/'+prefix+'offline/',new Response('Old offline page',{headers:{'Content-Type':'text/html'}})
+    'https://example.test/'+prefix+'_res/offline/',new Response('Old offline page',{headers:{'Content-Type':'text/html'}})
   ])));
   runtime.stores.set('sw-program-offline-another-install',new Map());
   let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
@@ -714,7 +746,7 @@ test('program preparation and activation preserve fingerprinted offline routes',
   const runtime=contentRuntime();
   runtime.probe.SW_ROUTES.unshift({path:'/*offline/',bucket:'fingerprinted'});
   let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
-  assert.ok(runtime.stores.get('asset-fingerprint').has('https://example.test/offline/'));
+  assert.ok(runtime.stores.get('asset-fingerprint').has('https://example.test/_res/offline/'));
   runtime.control.fail=true;
   let activated;runtime.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
   assert.equal(runtime.stores.has(runtime.probe.PROGRAM_OFFLINE_CACHE),false);
@@ -746,7 +778,7 @@ test('unchanged-version checks do not wait on an older uncancellable warmup',{ti
     return new Promise((resolve,reject)=>request.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true}));
   }});
   runtime.control.version='v-one';
-  const oldWarmup=runtime.probe.warmNavigationUrl('https://example.test/offline/');
+  const oldWarmup=runtime.probe.warmNavigationUrl('https://example.test/_res/offline/');
   await oldStarted;
   const deadline=new Promise((resolve,reject)=>{
     deadlineTimer=setTimeout(()=>reject(new Error('The version check must finish without releasing the older warmup.')),2000);
@@ -772,7 +804,7 @@ test('empty route overrides and inline prefetch rules do not restore cache defau
   const optional=passed(build('optional','[prefetch]\nenabled = true\n'+
     '[prefetch.icons.folder]\nroot = "moderate"\n'));
   const rules=parseHeaders(fs.readFileSync(path.join(optional,'_headers'),'utf8'));
-  assert.ok(rules.some(rule=>rule.source==='/site/pwa/*.webmanifest'));
+  assert.ok(rules.some(rule=>rule.source==='/site/*.webmanifest'));
   assert.match(fs.readFileSync(path.join(optional,'index.html'),'utf8'),/<link\b[^>]*\brel=["']?manifest\b/);
   assert.equal(cloudflareHeaders(rules,'/site/generated.hash.json')['cache-control'],'public, max-age=31536000, immutable');
   assert.equal(cloudflareHeaders(rules,'/site/generated.hash.json')['content-type'],undefined);
@@ -790,6 +822,7 @@ test('empty route overrides and inline prefetch rules do not restore cache defau
 
 test('invalid and retired policy fields fail the build instead of silently changing caching',()=>{
   const bad=[
+    ['old-worker','[service_worker]\nmode = "off"',/unknown field "service_worker"/],
     ['old-platform','[edgeone]\nhugoVersion = "0.156.0"',/unknown field/],
     ['old-route','[[routes]]\npath = "/*"\nscope = "asset"',/unknown field/],
     ['old-headers','[[routes]]\npath = "/*"\nheaders.Cache-Control = "no-cache"',/unknown field/],
@@ -830,8 +863,9 @@ test('invalid and retired policy fields fail the build instead of silently chang
 test('site-owned parameter entries and data files do not change delivery',()=>{
   const name='site-owned-config',overlay=path.join(work,name,'data');
   for(const file of ['cache-policy','cache-policy-default'])write(path.join(overlay,file+'.toml'),'routes = []\n');
-  const config=['prefetch','prefetch_runtime','speculation_rules','service_worker','link_prefetch']
-    .map(key=>'[params.'+key+']\nmode = "site-owned"\n').join('');
+  const config=['prefetch','prefetch_runtime','speculation_rules','sw','link_prefetch']
+    .map(key=>'[params.'+key+']\nmode = "site-owned"\n').join('')+
+    '[[module.mounts]]\nsource = '+JSON.stringify(overlay.replaceAll('\\','/'))+'\ntarget = "data"\n';
   const output=passed(build(name,undefined,config));
   assert.equal(worker(output).probe.getMatchingRoute('/').bucket,'versioned');
   const rules=parseHeaders(fs.readFileSync(path.join(output,'_headers'),'utf8'));

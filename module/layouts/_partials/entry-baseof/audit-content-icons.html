@@ -1,6 +1,7 @@
 {{- range hugo.Sites -}}
   {{- range $page := .Pages -}}
-    {{- $isList := or (ne $page.Kind "page") (in (slice "page-collection" "page-language" "page-appearance") $page.Layout) -}}
+    {{- $collection := partial "feature-browse/collection/config.html" (dict "page" $page) -}}
+    {{- $isList := or (ne $page.Kind "page") (ne $collection.view "") -}}
     {{- range $field := slice "icon" "list_icon_folder" "list_icon_file" -}}
       {{- if and (ne $field "icon") (isset $page.Params $field) (not $isList) -}}
         {{- errorf "Build failed: %s declares %s, which is only supported on list pages; articles may declare icon." $page.RelPermalink $field -}}

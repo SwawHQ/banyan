@@ -3,8 +3,9 @@
 {{- $context := .context | default "icon" -}}
 {{- if eq (printf "%T" $value) "string" -}}
   {{- $resolved := lower (trim $value " \r\n\t") -}}
-  {{- if and $resolved (not (index hugo.Data.icons $resolved)) -}}
-    {{- errorf "Build failed: %s declares undefined icon %q; define it in data/icons.toml." $context $resolved -}}
+  {{- $library := partialCached "system-ui/icon/library.html" site "site-icons" -}}
+  {{- if and $resolved (not (index $library $resolved)) -}}
+    {{- errorf "Build failed: %s declares undefined icon %q; define it in assets/site/icons.toml." $context $resolved -}}
   {{- end -}}
   {{- return $resolved -}}
 {{- end -}}

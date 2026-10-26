@@ -1,6 +1,6 @@
 import {isFile,insideOutput,localReference} from '../../../_shared/output.mjs';
 import {readPages,pageState,publishedURL} from '../../../_shared/html/read.mjs';
-import {extractStylesheetHrefs,normalizeCssAssetFamilyKey,hasClassToken} from '../../../_shared/html/markup.mjs';
+import {extractStylesheetHrefs,normalizeCssAssetFamilyKey,hasClassToken,extractStartTags} from '../../../_shared/html/markup.mjs';
 
 function inspectStylesheetContract(rows) {
     const issues = [];
@@ -73,7 +73,7 @@ function inspectStylesheetContract(rows) {
         issues.push(`All prose pages must share one prose.css URL; found ${[...proseStyleRefs].join(', ') || '<none>'}.`);
     }
 
-    const prefetchDebugRows = rows.filter((row) => /(^|\/)prefetchdebug\/index\.html$/i.test(row.relativePath));
+    const prefetchDebugRows = rows.filter(row => row.isPrefetchDebug);
     for (const row of prefetchDebugRows) {
         if (!row.hasProse || !row.stylesheetFamilyKeys.includes('/css/prose.css')) {
             issues.push(`${row.relativePath}: template-rendered <pre> blocks must load prose.css.`);
@@ -95,6 +95,7 @@ export async function inspect(directory) {
     for (const ref of refs) if (!await isFile(insideOutput(root,ref.slice(1)))) missing.push(ref);
     return {...pageState(page),stylesheetRefs:refs,stylesheetFamilyKeys:refs.map(normalizeCssAssetFamilyKey),
       hasProse:hasClassToken(page.text,'prose'),hasPageHome:hasClassToken(page.text,'page-home'),
+      isPrefetchDebug:extractStartTags(page.text,'body').some(tag => /(?:^|\s)data-prefetch-debug(?:\s|=|>)/i.test(tag)),
       missingStylesheetRefs:missing};
   }));
   return inspectStylesheetContract(rows);

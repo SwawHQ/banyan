@@ -1,0 +1,88 @@
+[list_col_name]
+other = "名称"
+[list_col_date]
+other = "更新时间"
+[list_col_count]
+other = "计数"
+[list_col_size]
+other = "大小"
+[list_col_path]
+other = "路径"
+[list_sort_name_asc]
+other = "按名称升序排序"
+[list_sort_name_desc]
+other = "按名称降序排序"
+[list_sort_date_asc]
+other = "按更新时间升序排序"
+[list_sort_date_desc]
+other = "按更新时间降序排序"
+[list_sort_count_asc]
+other = "按计数升序排序"
+[list_sort_count_desc]
+other = "按计数降序排序"
+[list_sort_size_asc]
+other = "按大小升序排序"
+[list_sort_size_desc]
+other = "按大小降序排序"
+[list_sort_path_asc]
+other = "按路径升序排序"
+[list_sort_path_desc]
+other = "按路径降序排序"
+
+[products_col_name]
+other = "名称"
+[products_col_price]
+other = "价格"
+[products_col_value]
+other = "价值点"
+
+[products_free]
+other = "免费"
+[products_sort_name_asc]
+other = "按名称升序排序"
+[products_sort_name_desc]
+other = "按名称降序排序"
+[products_sort_price_asc]
+other = "按价格升序排序"
+[products_sort_price_desc]
+other = "按价格降序排序"
+[products_sort_value_asc]
+other = "按价值点升序排序"
+[products_sort_value_desc]
+other = "按价值点降序排序"
+
+[label_published]
+other = "发布于"
+[label_updated]
+other = "更新于"
+
+[article_meta_resources]
+other = "链接"
+[article_meta_dates]
+other = "时间"
+[article_meta_directory]
+other = "目录"
+
+[language_return_missing]
+other = "本页尚无{lang}版本，继续显示原内容。"
+
+[notFoundTitle]
+other = "页面不存在"
+
+[notFoundDesc]
+other = "当前语言可能没有该页面的翻译。您可以："
+
+[goHome]
+other = "返回本语言首页"
+
+[tryOtherLangs]
+other = "尝试其他语言版本："
+
+[document_aside]
+other = '内容信息'
+[document_chapters]
+other = '章节'
+[document_aside_toggle]
+other = '目录与信息'
+[document_aside_close]
+other = '收起'

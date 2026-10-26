@@ -5,7 +5,7 @@ import {ensureDependencies} from '../../_shared/dependencies.mjs';
 import {siteFile} from '../../_shared/files.mjs';
 import {prepareValidators} from './validators.mjs';
 
-export const registryFile = 'data/external-resources.yaml';
+export const registryFile = 'assets/site/external-resources.yaml';
 
 export async function readResources(siteRoot, requestedIds) {
   const text = await fs.readFile(path.join(siteRoot,registryFile),'utf8');

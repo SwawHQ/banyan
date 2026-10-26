@@ -1,0 +1,5 @@
+{{- $labels := .Params.prefetch_debug.labels | default dict -}}
+{{- range slice "backend" "auto" "native" "sw" "link" "off" "apply" "loading" "unavailable" "collection" "article" -}}
+  {{- if not (index $labels .) -}}{{- errorf "Build failed: %s requires prefetch_debug.labels.%s." $.File.Path . -}}{{- end -}}
+{{- end -}}
+{{- return $labels -}}

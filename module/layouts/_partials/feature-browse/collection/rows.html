@@ -2,14 +2,14 @@
 {{- $config := .config -}}
 {{- if not $config -}}{{- $config = partial "./config.html" (dict "page" $page) -}}{{- end -}}
 {{- $rows := slice -}}
-{{- with $page.Params.aggregate -}}
+{{- if eq $config.provider "aggregate" -}}
   {{- $members := partial "./articles.html" $page -}}
   {{- range $members -}}{{- $rows = $rows | append (partial "feature-browse/collection/rows/page.html" (dict "page" .)) -}}{{- end -}}
 {{- else -}}
   {{- if eq $page.Kind "section" -}}
     {{- $rows = partial "feature-browse/collection/rows/section.html" (dict "page" $page) -}}
   {{- else -}}
-    {{- errorf "List page %s has no native children; declare aggregate with an ordinary section." $page.RelPermalink -}}
+    {{- errorf "Collection page %s needs an ordinary section for its direct children." $page.RelPermalink -}}
   {{- end -}}
 {{- end -}}
 {{- $decorated := slice -}}

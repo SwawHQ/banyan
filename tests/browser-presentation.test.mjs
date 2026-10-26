@@ -5,12 +5,12 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {headerCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/header/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
-const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
+const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-presentation');
 const collection='/d/presentation/child/',deep='/d/presentation/child/two/three/four/article-4/#from=d/presentation/child/two/three/four';
 const engines=[{name:'chromium',suffix:''},{name:'webkit',suffix:'.webkit'}];
 let work,skill,output;
@@ -29,6 +29,7 @@ function report(result){
   return JSON.parse(fs.readFileSync(path.join(result.stdout.match(/Artifacts: (.+)/)[1].trim(),'result.json'),'utf8'));
 }
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-presentation-'));skill=path.join(work,'skill');output=path.join(work,'public');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const runtime='node';
@@ -47,12 +48,13 @@ before(()=>{
       `---\ntitle: ${name}\nurl: /${section}/${name}-${index}/\ndate: "2026-01-0${offset+1}T00:00:00+08:00"\n---\n\n## Chapter\n\n`+'Portable fixture content.\n\n'.repeat(20));
   }
   for(const suffix of ['','.zh','.zh-tw']) {
+    write(path.join(content,'discover','_index'+suffix+'.md'),directoryPage('Sources'));
     write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
     write(path.join(content,'discover/tooling/devtools','_index'+suffix+'.md'),directoryPage('Devtools'));
   }
   write(path.join(content,'discover/tooling/_map.toml'),"refs = [\"/d/presentation/article\"]\n");
   write(path.join(content,'discover/tooling/devtools/_map.toml'),"refs = [\"/d/presentation/child/article\"]\n");
-  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
+  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
 });

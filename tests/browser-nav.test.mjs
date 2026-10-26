@@ -5,15 +5,17 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureContentDirectory} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {anchorsCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/anchors/options.mjs';
+import {sortCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/sort/options.mjs';
+import {layoutCommand as proseLayoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/prose/layout/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 import {loadChromium,loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-const source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
+const source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-nav');
 const sharedCommands=['nav/anchors','nav/keyboard','prose/layout'];
 const engines=[
   {name:'chromium',suffix:'',commands:['nav/sort',...sharedCommands]},
@@ -32,6 +34,7 @@ function script(directory,route,code) {
   fs.appendFileSync(path.join(directory,route,'index.html'),'<script src="/probe.js"></script>');
 }
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-nav-'));skill=path.join(work,'skill');output=path.join(work,'public');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const runtime='node';
@@ -52,7 +55,7 @@ before(()=>{
     ['tie-z','Z date tie','2026-01-01T12:00:03+08:00']
   ])write(path.join(content,'d/swban-sort-'+name+'.md'),front(title,'/d/swban-sort-'+name+'/').replace('2026-01-01T00:00:00+08:00',time)+'Date precision and name tie fixture.');
   const config=path.join(work,'fixture.toml');
-  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
+  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{
     cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000
   });
@@ -60,14 +63,15 @@ before(()=>{
 });
 after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
-test('anchor pages are required and help exposes the same argument contract',()=>{
-  const spec=anchorsCommand('check/browser/nav/anchors');
-  assert.throws(()=>parseArguments(spec,[]),/--page is required/);
-  assert.equal(parseArguments(spec,['--page','/article/#from=all']).page,'/article/#from=all');
-  assert.match(helpFor(spec,'en').split('\n')[0],/ --page <path>/);
-  assert.doesNotMatch(helpFor(spec,'en').split('\n')[0],/\[--page/);
-  assert.equal(parseArguments(spec,['--page','/article/#chapter']).page,'/article/#chapter');
-  for(const args of [['--page','//elsewhere'],['--page','/a/','--page','/b/']]) assert.throws(()=>parseArguments(spec,args));
+test('navigation pages are required and help exposes the same argument contract',()=>{
+  for(const spec of [anchorsCommand('check/browser/nav/anchors'),sortCommand('check/browser/nav/sort'),proseLayoutCommand('check/browser/prose/layout')]) {
+    assert.throws(()=>parseArguments(spec,[]),/--page is required/);
+    assert.equal(parseArguments(spec,['--page','/article/#from=all']).page,'/article/#from=all');
+    assert.match(helpFor(spec,'en').split('\n')[0],/ --page <path>/);
+    assert.doesNotMatch(helpFor(spec,'en').split('\n')[0],/\[--page/);
+    assert.equal(parseArguments(spec,['--page','/article/#chapter']).page,'/article/#chapter');
+    for(const args of [['--page','//elsewhere'],['--page','/a/','--page','/b/']]) assert.throws(()=>parseArguments(spec,args));
+  }
 });
 
 for(const {name,suffix,commands} of engines){
@@ -96,7 +100,7 @@ test('chromium catches replacement of the sort grid and loss of source links',{t
     const control=event.target.closest('[data-sort-field="name"]'),grid=control?.closest('[data-sortable]');
     if(grid&&!grid.className) queueMicrotask(()=>grid.replaceWith(grid.cloneNode(true)));
   });`);
-  const result=cli('nav/sort',[],replaced);assert.equal(result.status,1);assert.match(result.stderr,/reuse its grid/);
+  const result=cli('nav/sort',['--page',routes['nav/sort']],replaced);assert.equal(result.status,1);assert.match(result.stderr,/reuse its grid/);
   const lost=fixture('lost');
   script(lost,'all',`document.addEventListener('click',event=>{
     const control=event.target.closest('[data-sort-field="name"]'),grid=control?.closest('[data-sortable]');
@@ -104,27 +108,27 @@ test('chromium catches replacement of the sort grid and loss of source links',{t
       const url=new URL(link.href);const fields=new URLSearchParams(url.hash.slice(1));fields.delete('from');url.hash=fields.toString();link.href=url.href;
     }));
   });`);
-  const links=cli('nav/sort',[],lost);assert.equal(links.status,1);assert.match(links.stderr,/article link with its declared source/);
+  const links=cli('nav/sort',['--page',routes['nav/sort']],lost);assert.equal(links.status,1);assert.match(links.stderr,/article link with its declared source/);
 });
 
 test('chromium catches blocked value cells and detached values',{timeout:15000},()=>{
   const pointer=fixture('pointer');
   write(path.join(pointer,'broken.css'),'[data-list-item] > [data-item-field="date"]{pointer-events:none!important}');
   fs.appendFileSync(path.join(pointer,'all/index.html'),'<link rel="stylesheet" href="/broken.css">');
-  const blocked=cli('nav/sort',[],pointer);assert.equal(blocked.status,1);assert.match(blocked.stderr,/remain pointer targets/);
+  const blocked=cli('nav/sort',['--page',routes['nav/sort']],pointer);assert.equal(blocked.status,1);assert.match(blocked.stderr,/remain pointer targets/);
   const cells=fixture('cells');
   script(cells,'all',`document.addEventListener('click',event=>{
     const control=event.target.closest('[data-sort-field="name"]'),grid=control?.closest('[data-sortable]');
     if(grid&&!grid.className) queueMicrotask(()=>grid.querySelector('[data-list-item] > [data-item-field="date"]').textContent='Detached value');
   });`);
-  const result=cli('nav/sort',[],cells);assert.equal(result.status,1);assert.match(result.stderr,/all of its cell values/);
+  const result=cli('nav/sort',['--page',routes['nav/sort']],cells);assert.equal(result.status,1);assert.match(result.stderr,/all of its cell values/);
 });
 
 test('chromium accepts selectable text clipped by fixed field widths',{timeout:10000},()=>{
   const clipped=fixture('clipped-value');
   write(path.join(clipped,'clipped.css'),':root{--item-date-inline:1.5rem}');
   fs.appendFileSync(path.join(clipped,'all/index.html'),'<link rel="stylesheet" href="/clipped.css">');
-  const result=cli('nav/sort',['--timeout','5000'],clipped);
+  const result=cli('nav/sort',['--page',routes['nav/sort'],'--timeout','5000'],clipped);
   assert.equal(result.status,0,result.stdout+result.stderr);
 });
 
@@ -132,7 +136,7 @@ test('chromium rejects unselectable values and replaced row containers',{timeout
   const selection=fixture('selection');
   write(path.join(selection,'broken.css'),'[data-list-item] > [data-item-field="date"]{user-select:none!important}');
   fs.appendFileSync(path.join(selection,'all/index.html'),'<link rel="stylesheet" href="/broken.css">');
-  const blocked=cli('nav/sort',[],selection);assert.equal(blocked.status,1);assert.match(blocked.stderr,/remain selectable with the mouse/);
+  const blocked=cli('nav/sort',['--page',routes['nav/sort']],selection);assert.equal(blocked.status,1);assert.match(blocked.stderr,/remain selectable with the mouse/);
   const replaced=fixture('replaced-row');
   script(replaced,'all',`document.addEventListener('click',event=>{
     const control=event.target.closest('[data-sort-field="name"]'),grid=control?.closest('[data-sortable]');
@@ -141,7 +145,7 @@ test('chromium rejects unselectable values and replaced row containers',{timeout
       replacement.append(...row.childNodes);row.replaceWith(replacement);
     });
   });`);
-  const result=cli('nav/sort',[],replaced);assert.equal(result.status,1);assert.match(result.stderr,/reuse its grid, headers, complete rows and cells/);
+  const result=cli('nav/sort',['--page',routes['nav/sort']],replaced);assert.equal(result.status,1);assert.match(result.stderr,/reuse its grid, headers, complete rows and cells/);
 });
 
 test('chromium rejects pending navigation records created by in-place sorting',{timeout:15000},()=>{
@@ -149,14 +153,14 @@ test('chromium rejects pending navigation records created by in-place sorting',{
   script(pending,'all',`document.addEventListener('click',event=>{
     if(event.target.closest('[data-sort-field]'))sessionStorage.setItem('banyan:canvas-navigation','unexpected');
   },true);`);
-  const result=cli('nav/sort',[],pending);
+  const result=cli('nav/sort',['--page',routes['nav/sort']],pending);
   assert.equal(result.status,1);assert.match(result.stderr,/sorting must not create a pending canvas navigation/);
 });
 
 test('chromium rejects shortened date keys and a descending sort with ascending name ties',{timeout:15000},()=>{
   const precision=fixture('date-precision');
   script(precision,'all',`document.querySelectorAll('.slot-main [data-sort-date]').forEach(head=>{if(head.dataset.sortDate)head.dataset.sortDate=head.dataset.sortDate.slice(0,8);});`);
-  const short=cli('nav/sort',[],precision);assert.equal(short.status,1);assert.match(short.stderr,/second-level precision/);
+  const short=cli('nav/sort',['--page',routes['nav/sort']],precision);assert.equal(short.status,1);assert.match(short.stderr,/second-level precision/);
   const tie=fixture('date-tie');
   // Mutate after all click listeners; a microtask can run between native listeners.
   script(tie,'all',`document.addEventListener('click',event=>{
@@ -171,7 +175,7 @@ test('chromium rejects shortened date keys and a descending sort with ascending 
       rows.forEach(row=>grid.append(row));
     });
   });`);
-  const wrong=cli('nav/sort',[],tie);assert.equal(wrong.status,1);assert.match(wrong.stderr,/complete group\/date\/name\/href tuple: desc/);
+  const wrong=cli('nav/sort',['--page',routes['nav/sort']],tie);assert.equal(wrong.status,1);assert.match(wrong.stderr,/complete group\/date\/name\/href tuple: desc/);
 });
 
 for(const {name,suffix} of engines){
@@ -189,7 +193,7 @@ test(name+' catches keyboard traps and overflowing prose URLs',{timeout:15000},(
   const prose=fixture('prose-'+name);
   write(path.join(prose,'broken.css'),'#test-long a{white-space:nowrap!important;overflow-wrap:normal!important}');
   fs.appendFileSync(path.join(prose,'about/index.html'),'<link rel="stylesheet" href="/broken.css">');
-  const layout=cli('prose/layout'+suffix,[],prose);assert.equal(layout.status,1);assert.match(layout.stderr,/Long URLs must fit/);
+  const layout=cli('prose/layout'+suffix,['--page',routes['prose/layout']],prose);assert.equal(layout.status,1);assert.match(layout.stderr,/Long URLs must fit/);
 });
 
 test(name+' detects ordinary table style loss and Chroma style leakage',{timeout:15000},()=>{
@@ -199,7 +203,7 @@ test(name+' detects ordinary table style loss and Chroma style leakage',{timeout
   ]) {
     const broken=fixture(fixtureName+'-'+name);write(path.join(broken,'broken.css'),cssText);
     fs.appendFileSync(path.join(broken,'about/index.html'),'<link rel="stylesheet" href="/broken.css">');
-    const result=cli('prose/layout'+suffix,[],broken);assert.equal(result.status,1);assert.ok(result.stderr.includes(message),result.stderr);
+    const result=cli('prose/layout'+suffix,['--page',routes['prose/layout']],broken);assert.equal(result.status,1);assert.ok(result.stderr.includes(message),result.stderr);
   }
 });
 

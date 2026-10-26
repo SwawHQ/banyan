@@ -11,7 +11,6 @@ import {verifyKey} from '../tencent/auth/verify.mjs';
 import {login as nativeLogin,prepare as prepareNativeTool} from './login.mjs';
 import {check as checkNativeLogin} from './status.mjs';
 import {siteFile} from '../../_shared/files.mjs';
-import {skillRoot} from '../../_shared/tools/manifest.mjs';
 import {systemLanguage} from '../../help/run.mjs';
 
 const stores = {cloudflare:cloudflareStore,tencent:tencentStore};
@@ -21,19 +20,15 @@ const storeCredential = (platform,action,value)=>stores[platform](action,value);
 const verifyCredential = (platform,value)=>verifiers[platform](value);
 
 async function pageIcons(siteRoot) {
-  const sources = [[siteRoot,'static'],[siteRoot,'module/static'],[path.resolve(skillRoot,'../../..'),'module/static']];
-  for (const [root,directory] of sources) {
-    const icons = new Map();
-    for (const [name,type] of [['favicon.ico','image/x-icon'],['favicon.svg','image/svg+xml']]) {
-      try {
-        const file = await siteFile(root,directory+'/'+name);
-        const info = fs.statSync(file);
-        if (info.isFile() && info.size <= 1024 * 1024) icons.set('/'+name,{type,bytes:fs.readFileSync(file)});
-      } catch { /* Optional branding must not prevent credential setup. */ }
-    }
-    if (icons.size) return icons;
+  const icons = new Map();
+  for (const [name,type] of [['favicon.ico','image/x-icon'],['favicon.link.svg','image/svg+xml'],['favicon.link.ico','image/x-icon']]) {
+    try {
+      const file = await siteFile(siteRoot,'assets/site/'+name);
+      const info = fs.statSync(file);
+      if (info.isFile() && info.size <= 1024 * 1024) icons.set('/'+name,{type,bytes:fs.readFileSync(file)});
+    } catch { /* Optional branding must not prevent credential setup. */ }
   }
-  return new Map();
+  return icons;
 }
 
 export async function startAuthPage({platform = 'cloudflare',store = storeCredential,verify = verifyCredential,login = nativeLogin,prepare = prepareNativeTool,check = checkNativeLogin,environment = process.env,siteRoot = process.cwd(),language = systemLanguage()} = {}) {
@@ -48,11 +43,11 @@ export async function startAuthPage({platform = 'cloudflare',store = storeCreden
       tencent:Object.fromEntries(['TENCENTCLOUD_SECRET_ID','TENCENTCLOUD_SECRET_KEY','TENCENTCLOUD_TOKEN','TENCENTCLOUD_REGION','TCCLI_PROFILE',
         'TENCENTCLOUD_ROLE_ARN','TENCENTCLOUD_ROLE_SESSION_NAME','TKE_REGION','TKE_PROVIDER_ID','TKE_WEB_IDENTITY_TOKEN_FILE','TKE_ROLE_ARN'].map(name=>[name,!!value(name)]))}};
   const icons = await pageIcons(siteRoot);
-  const logo = icons.has('/favicon.svg') ? '/favicon.svg' : icons.has('/favicon.ico') ? '/favicon.ico' : null;
+  const logo = ['/favicon.link.svg','/favicon.link.ico','/favicon.ico'].find(url=>icons.has(url)) ?? null;
   const session = randomBytes(32).toString('hex'), nonce = randomBytes(24).toString('base64');
   const html = fs.readFileSync(new URL('./page.html',import.meta.url),'utf8')
     .replaceAll('__NONCE__',nonce).replaceAll('__CF_TARGET__',cloudflareTarget).replaceAll('__TC_TARGET__',tencentTarget).replaceAll('__LANG__',language)
-    .replaceAll('__ICONS__',[...icons].map(([url,icon])=>'<link rel="icon" type="'+icon.type+'" href="'+url+'">').join('\n'))
+    .replaceAll('__ICONS__',logo ? '<link rel="icon" type="'+icons.get(logo).type+'" href="'+logo+'">' : '')
     .replaceAll('__LOGO__',logo ? '<img src="'+logo+'" alt="" width="32" height="32">' : '');
   let origin, busy = false, committing = false, pendingClose, settled = false, finish;
   const controller = new AbortController();

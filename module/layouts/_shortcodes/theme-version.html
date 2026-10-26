@@ -1,0 +1,10 @@
+{{- $themeVersion := "" -}}
+{{- $themeFound := false -}}
+{{- range hugo.Deps -}}
+  {{- if or (eq .Path "github.com/SwawHQ/banyan/module") (eq .Path "banyan") -}}
+    {{- $themeFound = true -}}
+    {{- $themeVersion = .Version -}}
+    {{- with .Replace -}}{{- $themeVersion = .Version -}}{{- end -}}
+  {{- end -}}
+{{- end -}}
+{{ if $themeFound }}<p>{{ .Get "label" | default "Theme version" }}: {{ if $themeVersion }}<code>{{ $themeVersion }}</code>{{ else }}{{ .Get "local" | default "Local development" }}{{ end }}</p>{{ end }}

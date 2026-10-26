@@ -1,9 +1,13 @@
-{{- $policy := hugo.Data.delivery | default dict -}}
+{{- $policy := dict -}}
+{{- with resources.Get "site/delivery.toml" -}}
+  {{- $policy = . | transform.Unmarshal | default dict -}}
+{{- end -}}
 {{- if eq (len $policy) 0 -}}
-  {{- errorf "Build failed: missing data/delivery.toml." -}}
+  {{- errorf "Build failed: missing assets/site/delivery.toml." -}}
 {{- end -}}
 {{- partial "./validate.html" $policy -}}
 {{- $routes := index $policy "routes" | default slice -}}
+{{- $redirects := partial "system-delivery/deployment/redirect-rules.html" (dict "rules" (index $policy "redirects" | default slice)) -}}
 {{- $swRoutes := slice -}}
 {{- range $route := $routes -}}
   {{- with index $route "sw" -}}
@@ -11,4 +15,4 @@
   {{- end -}}
 {{- end -}}
 {{- /* Source exceptions come last; the worker returns its first matching rule. */ -}}
-{{- return (merge $policy (dict "routes" $routes "sw_routes" (collections.Reverse $swRoutes))) -}}
+{{- return (merge $policy (dict "routes" $routes "redirects" $redirects "sw_routes" (collections.Reverse $swRoutes))) -}}

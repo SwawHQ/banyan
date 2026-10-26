@@ -8,9 +8,12 @@ import {spawnSync} from 'node:child_process';
 import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
 import {active} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/state.mjs';
 import {panelState} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
-import {fixtureEnvironment,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {command as lifecycleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/lifecycle/options.mjs';
+import {command as checkCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/check/options.mjs';
+import {command as nativeCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/native/options.mjs';
+import {command as contentCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/content/options.mjs';
 import {command as languageCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/language/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
@@ -47,22 +50,19 @@ before(()=>{
   for(const lang of ['en','zh','zh-tw']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
     for(const [name,url] of [['powered-by',panel],['language',language]]) {
-      let text=fs.readFileSync(path.join(root,'module/content/'+name+'/index'+suffix+'.md'),'utf8').replace(/^url:.*$/m,'url: '+prefix+url+'\n');
-      if(name==='powered-by')for(const [key,value] of Object.entries({yes:lang+' worker yes',no:lang+' worker no'}))
-        text=text.replace(new RegExp('^    '+key+':.*$','m'),'    '+key+': '+JSON.stringify(value));
-      write(path.join(content,name+'/index'+suffix+'.md'),text);
+      const filename=(name==='language'?'_index':'index')+suffix+'.md';
+      const text=fs.readFileSync(path.join(root,'content',name,filename),'utf8').replace(/^url:.*$/m,'url: '+prefix+url+'\n');
+      write(path.join(content,name,filename),text);
     }
-    write(path.join(content,'reader-start/index'+suffix+'.md'),'---\ntitle: Independent update source\nurl: '+prefix+from+'\nlayout: page-article\nroot_nav: true\nicon: code\nweight: 87\nbuild:\n  list: local\n---\n\nIndependent update source.');
+    write(path.join(content,'reader-start/index'+suffix+'.md'),`---\ntitle: Independent update source\nurl: ${prefix}${from}\nlayout: page-article-norss\nweight: 87\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nIndependent update source.`);
   }
-  const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n';
+  const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureI18nMount;
   const build=(name,version=versions[0],asset,code,mode='enable')=>{
     const assets=path.join(work,name+'-assets');
     if(asset)write(path.join(assets,asset),code);
-    const data=path.join(work,name+'-data');
-    write(path.join(data,'delivery.toml'),serviceWorkerPolicy(mode));
-    write(config,mounts+(asset?'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n':'')+
-      '[[module.mounts]]\nsource = '+JSON.stringify(data.replaceAll('\\','/'))+'\ntarget = "data"\n'+
-      '[[module.mounts]]\nsource = "data"\ntarget = "data"\n[params.build]\nversion = "'+version+'"\n');
+    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(mode)));
+    write(config,mounts+'[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+
+      '[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[params.build]\nversion = "'+version+'"\n');
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],
       {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
     assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
@@ -96,7 +96,8 @@ test('update declarations require the next build and describe all paths',()=>{
   assert.throws(()=>parseArguments(lifecycleCommand(),[]),/--next is required/);
   assert.throws(()=>parseArguments(lifecycleCommand(),['--next','new','--page','https://example.invalid/']));
   const options=parseArguments(lifecycleCommand(),['old','--next','new']);
-  assert.equal(options.page,'/powered-by/');assert.equal(options.from,'/about/');
+  assert.equal(options.page,'/powered-by/');assert.equal(options.from,'/');
+  for(const factory of [checkCommand,nativeCommand,contentCommand])assert.equal(parseArguments(factory(),['--next','new']).from,'/');
   for(const flag of ['next','page','from'])assert.match(helpFor(lifecycleCommand(),'en'),new RegExp('--'+flag+' <'));
   assert.throws(()=>parseArguments(languageCommand(),['--next','new']),/--to is required/);
   assert.throws(()=>parseArguments(languageCommand(),['--next','new','--to','bad value']),/language code/);

@@ -5,14 +5,14 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {sortCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/sort/options.mjs';
 import {isolationCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/isolation/options.mjs';
 import {sourceCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/source/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
-const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
+const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-breadcrumb');
 const article='/d/breadcrumb-fixture/one/',collection='/d/breadcrumb-fixture/';
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
@@ -23,6 +23,7 @@ function cli(command,args=[],directory=output){
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
 function script(directory,route,text){write(path.join(directory,'probe.js'),text);fs.appendFileSync(path.join(directory,route,'index.html'),'<script defer src="/probe.js"></script>');}
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-breadcrumb-'));skill=path.join(work,'skill');output=path.join(work,'public');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const runtime='node';
@@ -40,12 +41,13 @@ before(()=>{
   for(const [index,name] of ['one','two','three','four','five','six'].entries())write(path.join(content,'d/breadcrumb-fixture',name+'.md'),
     `---\ntitle: ${name}\nurl: ${collection+name}/\ndate: "2026-01-0${index+1}T00:00:00+08:00"\n---\n\n## Chapter\n\n`+'Text for the source-column fixture.\n\n'.repeat(20));
   for(const suffix of ['','.zh','.zh-tw']) {
+    write(path.join(content,'discover','_index'+suffix+'.md'),directoryPage('Sources'));
     write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
     write(path.join(content,'discover/tooling/devtools','_index'+suffix+'.md'),directoryPage('Devtools'));
   }
   write(path.join(content,'discover/tooling/_map.toml'),"refs = [\"/d/breadcrumb-fixture/one\",\"/d/breadcrumb-fixture/three\",\"/d/breadcrumb-fixture/five\"]\n");
   write(path.join(content,'discover/tooling/devtools/_map.toml'),"refs = [\"/d/breadcrumb-fixture/two\",\"/d/breadcrumb-fixture/four\",\"/d/breadcrumb-fixture/six\"]\n");
-  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
+  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
 });

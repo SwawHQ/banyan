@@ -5,13 +5,13 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureContentDirectory} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {urlCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/settings/url/options.mjs';
 import {historyCommand,pageList} from '../.agents/skills/swaw-banyan/tasks/check/browser/settings/history/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
-const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
+const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-settings-tests');
 const article='/d/settings-fixture/#from=all&sorts=name-asc&anchor=details';
 const pages=['/prefs/one/','/prefs/appearance/','/prefs/plain/','/prefs/language/'];
 let work,skill,output;
@@ -33,6 +33,7 @@ function probe(directory,name,code,routes){
   }
 }
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-settings-'));skill=path.join(work,'skill');output=path.join(work,'public');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const runtime='node';
@@ -47,13 +48,14 @@ before(()=>{
   for(const lang of ['en','zh','zh-tw']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
     for(const [name,route] of [['my','one'],['appearance','appearance'],['language','language']]) {
-      const text=fs.readFileSync(path.join(root,'module/content',name,'index'+suffix+'.md'),'utf8');
-      write(path.join(content,name,'index'+suffix+'.md'),text.replace(/^url:.*$/m,'url: '+prefix+'/prefs/'+route+'/\n'));
+      const filename=(name==='my'?'index':'_index')+suffix+'.md';
+      const text=fs.readFileSync(path.join(root,'content',name,filename),'utf8');
+      write(path.join(content,name,filename),text.replace(/^url:.*$/m,'url: '+prefix+'/prefs/'+route+'/\n'));
     }
     write(path.join(content,'settings-plain/index'+suffix+'.md'),
-      '---\ntitle: Independent plain settings\nlayout: page-article\nurl: '+prefix+'/prefs/plain/\nroot_nav: true\nicon: code\nweight: 85\nbuild:\n  list: local\n---\n\nPlain settings have browser Back and no custom Back link.');
+      `---\ntitle: Independent plain settings\nlayout: page-article-norss\nurl: ${prefix}/prefs/plain/\nweight: 85\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nPlain settings have browser Back and no custom Back link.`);
   }
-  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n');
+  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureI18nMount);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
 });

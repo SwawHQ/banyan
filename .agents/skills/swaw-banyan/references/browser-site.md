@@ -101,7 +101,7 @@ Use `check/browser/site --updates` for a temporary program-update probe without
 editing content. To test two actual code states, build those states separately.
 
 `pwa/disable` needs an enabled build followed by one with
-`service_worker.mode = "disable"`. `off` does not perform cleanup.
+`sw.mode = "disable"`. `off` does not perform cleanup.
 Disable prefetch in the second build when checking SW removal without prefetch hints.
 
 For `pwa/content`, supply two builds with identical `sw.js` bytes and different

@@ -34,7 +34,8 @@ import {
     });
 
     function writePre(id, value) {
-        document.getElementById(id).textContent = JSON.stringify(value, null, 2);
+        const node = document.getElementById(id);
+        if (node) node.textContent = JSON.stringify(value, null, 2);
     }
 
     function describeWorker(worker) {
@@ -61,6 +62,7 @@ import {
             serviceWorkerApi: supportsServiceWorkerApi(),
             secureContext: window.isSecureContext,
             serviceWorker: {
+                controlled: Boolean(container?.controller),
                 controller: describeWorker(container?.controller),
                 ...workerSnapshot
             }

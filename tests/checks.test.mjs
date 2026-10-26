@@ -9,6 +9,7 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {hugoEnvironment} from '../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
+import {loadDependency} from '../.agents/skills/swaw-banyan/tasks/_shared/dependencies.mjs';
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {inspectDocumentMetadata} from '../.agents/skills/swaw-banyan/tasks/check/html/metadata/document.mjs';
 import {inspectDocumentControls} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/controls.mjs';
@@ -27,7 +28,7 @@ const security = {
   'Referrer-Policy':'strict-origin-when-cross-origin'
 };
 const rules = JSON.stringify({prefetch:[{source:'document',where:{and:[{selector_matches:'html[data-prefetch-native-ready] a'},{selector_matches:'html[data-prefetch-ready] a:has(> .item-icon > svg.icon-folder)'},{href_matches:'/*',relative_to:'document'}]},eagerness:'eager'}]});
-const updatePanel='<div data-site-update-panel><p>Controlled: <span data-pwa-controlled>—</span></p><p data-site-update-status role=status aria-live=polite></p></div>';
+const updatePanel='<div data-site-update-panel><p data-site-update-status role=status aria-live=polite></p></div>';
 const updateAction='<button type=button data-site-update-action=check><span data-site-update-action-label>Check</span></button>';
 const dateRow=value=>'<div class=document-meta__row><span><svg><use href=#icon-clock></use></svg></span><time datetime="'+value+'">'+value+'</time></div>';
 const metadata=inner=>'<div class=document-meta>'+inner+'</div>';
@@ -76,10 +77,10 @@ before(async () => {
   tools[runtime] = {source:'path',path:process.execPath,version:process.versions.node};
   const {writeBindings} = await import(pathToFileURL(path.join(skill,'tasks/_shared/tools/bindings.mjs')));
   writeBindings({schema:'swaw-banyan.bindings/v1',runtime,tools},path.join(skill,'.tools'));
-  write(site,'hugo.toml','baseURL = "https://example.test/"\n[params.media.responsive_images]\nmax_width = 600\nsizes = "auto, 600px"\n');
+  write(site,'hugo.toml','baseURL = "https://example.test/"\n[params.media.responsive_images]\nwidths = [600]\n');
   fs.cpSync(path.join(source,'node_modules'),path.join(skill,'node_modules'),{recursive:true});
   fixturePairing(site);
-  write(site,'content/_index.md','---\ntitle: Home\nshare_image: false\n---\n');
+  write(site,'content/_index.md','---\ntitle: Home\nparams: {share_image: false}\n---\n');
   write(site,'public/index.html','<html lang=en><head><title>Home</title><meta name=description content="Home description"><link rel=canonical href="https://example.test/"></head><body><h1>Home</h1><script src="/js/main.0123456789abcdef.js"></script></body></html>');
   write(site,'public/js/main.0123456789abcdef.js','void 0;');
   write(site,'public/robots.txt','User-agent: *\nSitemap: https://example.test/sitemap.xml');
@@ -151,6 +152,26 @@ test('LLMS compares sitemap coverage with escaped Markdown and a site subpath',(
   checked('check/llms',directory,/outside Canonical site/);
 });
 
+test('LLMS permits cross-group page references and rejects repeats within a group',()=>{
+  const directory=output('llms groups'),siteURL='https://example.test/';
+  const urls=[siteURL,siteURL+'guide/'];
+  write(directory,'guide/index.html','<h1>Guide</h1>');
+  write(directory,'sitemap.xml',sitemapText(urls));
+  const valid=llmsText(siteURL,siteURL+'sitemap.xml',urls);
+  const reference='- [Reference](<'+urls[1]+'>)';
+  for(const heading of ['## Other','## Pages','## Pages ##']) {
+    write(directory,'llms.txt',valid+'\n\n'+heading+'\n'+reference);
+    const result=cli('check/llms',[directory]);
+    assert.equal(result.status,0,result.stdout+result.stderr);
+  }
+  write(directory,'llms.txt',valid+'\n\n### Other\n'+reference);
+  checked('check/llms',directory,/duplicate link in its group/);
+  write(directory,'llms.txt',valid+'\n\n## Other\n'+reference+'\n'+reference);
+  checked('check/llms',directory,/duplicate link in its group/);
+  write(directory,'llms.txt',valid.replace('\n\n## Pages\n','\n\n')+'\n'+reference);
+  checked('check/llms',directory,/duplicate link in its group/);
+});
+
 test('LLMS verifies every sitemap language index without requiring a root LLMS file',()=>{
   const directory=output('llms languages'),siteURL='https://example.test/base/';
   const languages=['en','zh'];
@@ -185,6 +206,8 @@ test('LLMS verifies every sitemap language index without requiring a root LLMS f
   assert.equal(result.status,0,result.stdout+result.stderr);
   write(directory,'llms.txt',rootCatalog+'\n- [中文](<'+siteURL+'zh/llms.txt>)');
   checked('check/llms',directory,/duplicate link.*zh\/llms\.txt/);
+  write(directory,'llms.txt',rootCatalog+'\n\n## Other\n- [中文](<'+siteURL+'zh/llms.txt>)');
+  checked('check/llms',directory,/duplicate link to a language index.*zh\/llms\.txt/);
 });
 
 test('LLMS rejects invalid metadata, malformed XML and Markdown links',()=>{
@@ -252,17 +275,25 @@ test('stylesheet checks allow CSS attachments and retain stylesheet contracts',(
 test('script controllers follow declared page capabilities and stay out of shared bundles',() => {
   const html=fs.readFileSync(path.join(site,'public/index.html'),'utf8');
   const cases=[['preferences/language-page','<div data-language-settings></div>'],
-    ['preferences/back-links','<a data-page-action=back href=/>Back</a>'],['updates/page',updatePanel]];
+    ['preferences/back-links','<a data-page-action=back href=/>Back</a>'],['updates/page',updatePanel],
+    ['pages/offline','<p data-page-actions><a data-page-action=reload href=/>Retry</a></p>']];
   for(const [family,marker] of cases) {
     const src='/js/'+family+'.0123456789abcdef.js',script='<script src="'+src+'"></script>';
     const directory=output('controller-'+family.replaceAll('/','-'),html.replace('</body>',marker+script+'</body>'));
     write(directory,src.slice(1),'void 0;');
     assert.equal(cli('check/html/scripts',[directory]).status,0,family);
+    write(directory,'index.html',html.replace('</body>',marker+script+script+'</body>'));
+    checked('check/html/scripts',directory,/Controller loading boundary.*found 2/);
     write(directory,'index.html',html.replace('</body>',marker+'</body>'));
     checked('check/html/scripts',directory,/Controller loading boundary.*expected 1/);
     write(directory,'index.html',html.replace('</body>',script+'</body>'));
     checked('check/html/scripts',directory,/Controller loading boundary.*expected 0/);
   }
+  const independent=cases.filter(([family])=>family!=='preferences/language-page');
+  const combined=output('combined-controllers',html.replace('</body>',independent.map(([family,marker])=>
+    marker+'<script src="/js/'+family+'.0123456789abcdef.js"></script>').join('')+'</body>'));
+  for(const [family] of independent)write(combined,'js/'+family+'.0123456789abcdef.js','void 0;');
+  assert.equal(cli('check/html/scripts',[combined]).status,0,'Page capabilities must load their controllers independently.');
   const global=output('shared-sw-controller');write(global,'js/sw-manager.enable.0123456789abcdef.js','document.querySelector("[data-site-update-panel]");');
   write(global,'index.html',html.replace('</body>','<script src=/js/sw-manager.enable.0123456789abcdef.js></script></body>'));
   checked('check/html/scripts',global,/stay out of shared bundle/);
@@ -318,7 +349,7 @@ test('shared update controls accept a disabled worker and reject broken static c
   assert.match(inspectDocumentControls(updatePanel+updatePanel)[0],/at most once/);
 });
 
-test('sitemap checks cross-file indexing and robots checks its own declaration',() => {
+test('sitemap checks cross-file indexing and robots validates declared Sitemap URLs',() => {
   const directory = output('empty sitemap');
   write(directory,'sitemap.xml','<urlset></urlset>');
   checked('check/sitemap',directory,/Indexable page must appear/);
@@ -334,7 +365,9 @@ test('sitemap checks cross-file indexing and robots checks its own declaration',
   write(directory,'index.html',html);
   assert.equal(cli('check/html/metadata',[directory]).status,0);
   write(directory,'robots.txt','User-agent: *');
-  checked('check/robots',directory,/Sitemap directive/);
+  assert.equal(cli('check/robots',[directory]).status,0);
+  write(directory,'robots.txt','User-agent: ExampleBot\nSitemap: /sitemap.xml');
+  checked('check/robots',directory,/Sitemap is not a valid absolute HTTP\(S\) URL/);
 });
 test('breadcrumb and prefetch payload checks keep parsing failures and runtime pairing separate',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
@@ -404,13 +437,17 @@ test('image checks split responsive, share and icon failures and read resolved H
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
   const image = '/media/content/photo.' + 'a'.repeat(64) + '.jpg';
   const candidate = '/media/content/photo.' + 'b'.repeat(64) + '.webp';
-  const markup = '<a class=md-image-link target=_blank rel=noopener><picture class=md-responsive-image><source type=image/webp srcset="' + candidate + ' 600w" sizes="auto, 600px"><img src="' + image + '" width=900 height=600 loading=lazy decoding=async></picture></a>';
+  const markup = '<a class=md-image-link target=_blank rel=noopener><picture class=md-responsive-image><source type=image/webp srcset="' + candidate + ' 600w" sizes="auto, 600px"><img src="' + image + '" width=900 height=600 sizes=auto loading=lazy decoding=async></picture></a>';
   const directory = output('responsive',html.replace('</body>',markup + '</body>'));
   write(directory,image.slice(1),'original'); write(directory,candidate.slice(1),'candidate');
   assert.equal(cli('check/img/responsive',[directory]).status,0);
   assert.equal(fs.existsSync(path.join(site,'node_modules')),false);
+  write(directory,'index.html',html.replace('</body>',markup.replace(' sizes=auto','') + '</body>'));
+  checked('check/img/responsive',directory,/img sizes must be auto/);
   write(directory,'index.html',html.replace('</body>',markup.replace('auto, 600px','wrong') + '</body>'));
-  checked('check/img/responsive',directory,/sizes must match resolved/);
+  checked('check/img/responsive',directory,/webp sizes must start with auto/);
+  write(directory,'index.html',html.replace('</body>',markup.replace('auto, 600px','auto')+'</body>'));
+  assert.equal(cli('check/img/responsive',[directory]).status,0);
   assert.equal(cli('check/img/share',[directory]).status,0);
   const icons = output('icons',html.replace('</body>','<img class=icon--image src=/missing.png></body>'));
   checked('check/img/icons',icons,/existing hashed resource/);
@@ -420,35 +457,43 @@ test('image checks split responsive, share and icon failures and read resolved H
   checked('check/img/share',shares,/not a readable JPEG/);
   const config=fs.readFileSync(path.join(site,'hugo.toml'),'utf8');
   try {
-    write(site,'hugo.toml',config+'\n[languages.en]\nlocale = "en-US"\n[languages.fr]\nlocale = "fr-FR"\n[languages.fr.params.media.responsive_images]\nmax_width = 420\nsizes = "auto, 420px"\n');
+    write(directory,'index.html',html.replace('</body>',markup+'</body>'));
+    for(const widths of ['[]','[0]','[-1]','[600.5]','"600"']) {
+      write(site,'hugo.toml',config.replace('widths = [600]','widths = '+widths));
+      checked('check/img/responsive',directory,/must define positive integer widths/);
+    }
+    write(site,'hugo.toml',config+'\n[languages.en]\nlocale = "en-US"\n[languages.fr]\nlocale = "fr-FR"\n[languages.fr.params.media.responsive_images]\nwidths = [420]\n');
     const localized=output('responsive-locale',html.replace('lang=en','lang=fr-FR').replace('</body>',markup.replace('600w','420w').replace('auto, 600px','auto, 420px')+'</body>'));
     write(localized,image.slice(1),'original');write(localized,candidate.slice(1),'candidate');
     assert.equal(cli('check/img/responsive',[localized]).status,0);
     write(localized,'index.html',fs.readFileSync(path.join(localized,'index.html'),'utf8').replace('lang=fr-FR','lang=en-US'));
-    checked('check/img/responsive',localized,/expected 600w|sizes must match resolved/);
+    checked('check/img/responsive',localized,/expected 600w/);
   } finally {write(site,'hugo.toml',config);}
 });
-test('content checks parse YAML, TOML and JSON and validate only declared fields',() => {
+test('content checks parse nested params in YAML, TOML and JSON',() => {
   for (const [name,text] of [
-    ['yaml.md','---\nshare_image: false\ntranslation_placeholder: true\nbuild: {list: never}\n---\nBody'],
-    ['toml.md','+++\nshare_image = false\ntranslation_placeholder = true\n[build]\nlist = "never"\n+++\nBody'],
-    ['json.md','{"title":"Escaped \\" } brace","share_image":false,"translation_placeholder":true,"build":{"list":"never"}}\nBody'],
+    ['yaml.md','---\nparams:\n  share_image: false\n---\nBody'],
+    ['toml.md','+++\n[PaRaMs]\nShArE_ImAgE = "cover.jpg"\n+++\nBody'],
+    ['json.md',JSON.stringify({title:'Escaped " } brace',PaRaMs:{ShArE_ImAgE:false}})+'\nBody'],
     ['inherit.md','---\ntitle: Uses Hugo inheritance\n---\nBody']
   ]) write(site,'content/' + name,text);
-  for (const command of ['check/content/share-image','check/content/translation-placeholder']) {
-    const result = cli(command); assert.equal(result.status,0,result.stderr);
+  const result = cli('check/content/share-image'); assert.equal(result.status,0,result.stderr);
+  for (const [text,command,pattern] of [
+    ['---\nparams: {share_image: true}\n---\n','share-image',/params.share_image must be false/],
+    ['+++\n[params]\nshare_image = " "\n+++\n','share-image',/params.share_image must be false/],
+    [JSON.stringify({params:{share_image:[]}}),'share-image',/params.share_image must be false/],
+    ['---\nparams: {share_image: null}\n---\n','share-image',/params.share_image must be false/],
+    ['---\nparams: {images: []}\n---\n','share-image',/Use params.share_image instead of params.images/],
+    ['---\nparams: []\n---\n','share-image',/params must be an object/],
+    ['+++\nparams = "invalid"\n+++\n','share-image',/params must be an object/],
+    ['+++\nparams = 2026-10-24T00:00:00Z\n+++\n','share-image',/params must be an object/],
+    [JSON.stringify({params:null}),'share-image',/params must be an object/],
+    ['+++\ntitle = [\n+++\n','share-image',/Invalid front matter/]
+  ]) {
+    write(site,'content/invalid.md',text);
+    try { checked('check/content/'+command,site,pattern); }
+    finally { fs.unlinkSync(path.join(site,'content/invalid.md')); }
   }
-  write(site,'content/toml.md','+++\nshare_image = true\n+++\nBody');
-  checked('check/content/share-image',site,/share_image must be false/);
-  assert.equal(cli('check/content/translation-placeholder').status,0);
-  fs.unlinkSync(path.join(site,'content/toml.md'));
-  write(site,'content/yaml.md','---\ntranslation_placeholder: true\n---\n');
-  checked('check/content/translation-placeholder',site,/build.list to never/);
-  assert.equal(cli('check/content/share-image').status,0);
-  fs.unlinkSync(path.join(site,'content/yaml.md'));
-  write(site,'content/bad.md','+++\ntitle = [\n+++\n');
-  checked('check/content/share-image',site,/Invalid front matter/);
-  fs.unlinkSync(path.join(site,'content/bad.md'));
 });
 test('HTTP checks validate supplied URLs and separate security, cache and speculation failures',async () => {
   for (const [command,url] of [['check/http/security',origin],['check/http/cache',origin+'/sw.js'],['check/http/speculation',origin+'/?spec']]) {
@@ -486,18 +531,20 @@ test('every declared task exposes help before consulting output, content or tool
 
 test('native Hugo generates EdgeOne config and respects its Hugo version override',() => {
   const theme = fileURLToPath(new URL('../module/',import.meta.url));
-  const defaults = fs.readFileSync(path.join(theme,'data/delivery.toml'),'utf8');
+  const toml = loadDependency('@iarna/toml');
+  const defaults = toml.parse(fs.readFileSync(new URL('../assets/site/delivery.toml',import.meta.url),'utf8'));
   for (const override of ['', '0.156.0']) {
+    const policy = structuredClone(defaults);
+    if (override) policy.platform.edgeone.makers.hugoVersion = override;
     const fixture = path.join(work,'edgeone '+(override || 'default'));
     write(fixture,'hugo.toml','baseURL = "https://example.test/"\ndisableKinds = ["RSS","sitemap"]\n[taxonomies]\n');
     write(fixture,'content/_index.md','---\ntitle: Fixture\n---\n');
-    write(fixture,'layouts/home.html','{{ partial "system-delivery/deployment/edgeone-config.html" (dict "edgeone" .Site.Data.policy.platform.edgeone.makers) | jsonify }}');
+    write(fixture,'layouts/home.html','{{ $policy := resources.Get "site/policy.toml" | transform.Unmarshal }}{{ partial "system-delivery/deployment/edgeone-config.html" (dict "edgeone" $policy.platform.edgeone.makers) | jsonify }}');
     write(fixture,'layouts/_partials/system-delivery/deployment/edgeone-config.html',fs.readFileSync(path.join(theme,
       'layouts/_partials/system-delivery/deployment/edgeone-config.html')));
     write(fixture,'layouts/_partials/system-delivery/deployment/cache-header-routes.html',fs.readFileSync(path.join(theme,
       'layouts/_partials/system-delivery/deployment/cache-header-routes.html')));
-    write(fixture,'data/policy.toml',override ? defaults.replace('[platform.edgeone.makers]',
-      '[platform.edgeone.makers]\nhugoVersion = "'+override+'"') : defaults);
+    write(fixture,'assets/site/policy.toml',toml.stringify(policy));
     const result = spawnSync(toolExecutable('hugo'),['--minify'],{cwd:fixture,
       env:hugoEnvironment({...process.env,GIT_OPTIONAL_LOCKS:'0',HUGO_CACHEDIR:path.join(fixture,'cache'),
         HUGO_RESOURCEDIR:path.join(fixture,'resources')}),encoding:'utf8',timeout:30000});

@@ -11,7 +11,7 @@ import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/cs
 import {inspect as inspectSri} from '../../.agents/skills/swaw-banyan/tasks/check/sri/inspect.mjs';
 import {verifyRetiredOutput} from '../output/retired.mjs';
 
-import {fixtureEnvironment} from '../_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureI18nMount} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'banyan-csp-contract-'));
@@ -55,7 +55,7 @@ try {
     fs.writeFileSync(path.join(overlay, 'theme-boot.js'), read(path.join(sourceRoot, 'theme-boot.js'))
         + '\nwindow.__banyanCspContract = "changed";\n');
     const changed = build('changed', '[[module.mounts]]\nsource = "' + rel(path.join(work, 'assets'))
-        + '"\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n');
+        + '"\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+fixtureI18nMount);
     verifyCspOutput(changed);
     assert.notEqual(scriptPolicy(changed), scriptPolicy(production), 'Changing source automatically updates CSP hashes');
 

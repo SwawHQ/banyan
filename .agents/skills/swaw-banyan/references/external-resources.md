@@ -1,18 +1,20 @@
 # External resources
 
 Run `swban sync/ext [id...]` from the site root to fetch resources declared in
-`data/external-resources.yaml`. With no IDs, it syncs all declarations. This
+`assets/site/external-resources.yaml`. With no IDs, it syncs all declarations. This
 command writes the declared site files; it is not a check or a build step.
 
 ```yaml
 resources:
   - id: catalogue
     source: https://example.com/catalogue.json
-    target: data/catalogue.json
+    target: assets/site/catalogue.json
     validators: [json, "min-size:2KiB", "max-size:1MB"]
 ```
 
 Each declaration needs `id`, HTTP(S) `source` and a site-relative `target`.
+Use `assets/site/` for site resources or `content/<page>/` for page-bundle files.
+The target is relative to the site root, not the registry's directory.
 Optional validators are `json`, `json:<dot.path>`, `min-size:<size>` and
 `max-size:<size>`. For example, `json:items` requires that property to exist.
 

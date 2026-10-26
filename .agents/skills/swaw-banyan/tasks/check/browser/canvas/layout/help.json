@@ -1,36 +1,36 @@
 {
   "en": {
     "summary": "Declared widths, gaps and document canvas; Chromium",
-    "usage": "swban check/browser/canvas/layout [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>] [--height <px>] [--widths <list>]",
+    "usage": "swban check/browser/canvas/layout [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--height <px>] [--widths <list>]",
     "details": [
       "  dir              Published site directory; default: public",
       "  --headed         Show the browser window",
       "  --trace          Save trace.zip; default output: system temporary directory",
       "  --out <dir>      Save JSON and screenshot in a new subdirectory",
       "  --timeout <ms>   Browser launch and individual action timeout; default: 15000",
-      "  --page <path>    Published page; default: /about/",
+      "  --page <path>    Published page",
       "  --height <px>    Viewport height in pixels; default: 900",
       "  --widths <list>  Comma-separated viewport widths in pixels; default: 390,1024,1440",
       "",
-      "swban check/browser/canvas/layout ./preview --page /article/",
-      "swban check/browser/canvas/layout ./preview --page /article/ --trace --out ./browser-report"
+      "swban check/browser/canvas/layout ./preview --page /p/article/",
+      "swban check/browser/canvas/layout ./preview --page /p/article/ --trace --out ./browser-report"
     ]
   },
   "zh": {
     "summary": "声明列宽、间距与文档画幅；Chromium",
-    "usage": "swban check/browser/canvas/layout [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>] [--height <px>] [--widths <list>]",
+    "usage": "swban check/browser/canvas/layout [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--height <px>] [--widths <list>]",
     "details": [
       "  dir              已完成的站点构建目录；默认：public",
       "  --headed         显示浏览器窗口",
       "  --trace          保存 trace.zip；默认输出到系统临时目录",
       "  --out <dir>      在新子目录保存 JSON 和截图",
       "  --timeout <ms>   浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
-      "  --page <path>    已构建的页面；默认：/about/",
+      "  --page <path>    已构建的页面",
       "  --height <px>    视口高度，单位为像素；默认：900",
       "  --widths <list>  视口宽度，单位为像素，用逗号分隔；默认：390,1024,1440",
       "",
-      "swban check/browser/canvas/layout ./preview --page /article/",
-      "swban check/browser/canvas/layout ./preview --page /article/ --trace --out ./browser-report"
+      "swban check/browser/canvas/layout ./preview --page /p/article/",
+      "swban check/browser/canvas/layout ./preview --page /p/article/ --trace --out ./browser-report"
     ]
   }
 }

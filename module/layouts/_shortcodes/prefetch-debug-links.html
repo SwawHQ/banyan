@@ -1,0 +1,27 @@
+{{- $page := .Page -}}
+{{- if not ($page.HasShortcode "prefetch-debug-controls") -}}
+  {{- errorf "Build failed: %s requires prefetch-debug-controls." $page.File.Path -}}
+{{- end -}}
+{{- $labels := partial "feature-prefetch-debug/labels.html" $page -}}
+{{- $collection := false -}}
+{{- $article := false -}}
+{{- range sort $page.Site.Pages "RelPermalink" -}}
+  {{- $render := .Params.build.render | default "always" -}}
+  {{- if and .RelPermalink (ne .RelPermalink $page.RelPermalink) (.OutputFormats.Get "html") (not (in (slice "never" "link") $render)) -}}
+    {{- if not $collection -}}
+      {{- $collectionConfig := partial "feature-browse/collection/config.html" (dict "page" .) -}}
+      {{- if $collectionConfig.sortable -}}{{- $collection = . -}}{{- end -}}
+    {{- end -}}
+    {{- if and (not $article) (eq .Layout "page-article-rss") -}}{{- $article = . -}}{{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $items := slice -}}
+{{- with $collection -}}
+  {{- $items = $items | append (dict "href" .RelPermalink "title" .Title "text" (printf "%s: %s" $labels.collection .LinkTitle) "icon" "folder" "dataAttrs" (dict "prefetch-test-link" "collection")) -}}
+{{- end -}}
+{{- with $article -}}
+  {{- $items = $items | append (dict "href" .RelPermalink "title" .Title "text" (printf "%s: %s" $labels.article .LinkTitle) "icon" "file" "dataAttrs" (dict "prefetch-test-link" "article")) -}}
+{{- end -}}
+{{- if $items -}}
+  {{- partial "system-ui/list/render.html" (dict "items" $items) -}}
+{{- end -}}

@@ -1,0 +1,7 @@
+{{- $library := dict -}}
+{{- with resources.Get "site/icons.toml" -}}
+  {{- $library = . | transform.Unmarshal | default dict -}}
+{{- else -}}
+  {{- errorf "Build failed: missing assets/site/icons.toml." -}}
+{{- end -}}
+{{- return $library -}}

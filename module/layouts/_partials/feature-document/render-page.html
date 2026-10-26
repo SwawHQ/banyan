@@ -15,4 +15,6 @@
     {{- end -}}
   </div>
 </article>
-{{- if and .IsPage (eq .Layout "page-article") -}}{{- partial "./schema.html" . -}}{{- end -}}
+{{- if and .IsPage (index (partial "system-ui/page-slots.html" (dict "ctx" .)) "meta") -}}
+  {{- partial "./schema.html" . -}}
+{{- end -}}

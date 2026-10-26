@@ -1,12 +1,7 @@
-{{- $ctx := .ctx | default . -}}
-{{- $slotFlags := .slot_flags | default dict -}}
-{{- $breadcrumbModel := .breadcrumb_model | default dict -}}
-{{- $breadcrumbItems := slice -}}
-{{- with index $slotFlags "breadcrumb" -}}
-  {{- $breadcrumbItems = index $breadcrumbModel "schema_items" | default slice -}}
-{{- end -}}
+{{- $ctx := . -}}
+{{- $pathModel := partial "feature-browse/navigation/path/model.html" (dict "ctx" $ctx) -}}
 {{- $directoryItems := slice -}}
-{{- range $breadcrumbItems -}}
+{{- range $pathModel.schema_items -}}
   {{- if ne (index . "current") true -}}
     {{- $directoryItems = $directoryItems | append . -}}
   {{- end -}}
@@ -15,7 +10,7 @@
 {{- if gt (len $directoryItems) 0 -}}
   {{- $directoryPaths = $directoryPaths | append (dict "items" $directoryItems "reference" "") -}}
 {{- end -}}
-{{- if and $ctx.IsPage (index $slotFlags "breadcrumb") -}}
+{{- if $ctx.IsPage -}}
   {{- $directoryIndex := partialCached "feature-browse/directory/index.html" $ctx.Site $ctx.Site.Language.Lang -}}
   {{- range index $directoryIndex.incoming $ctx.Path | default slice -}}
     {{- if not (partial "feature-browse/is-rendered-html.html" .) -}}{{- continue -}}{{- end -}}

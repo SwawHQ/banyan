@@ -1,7 +1,7 @@
 {{- $routes := partial "./cache-header-routes.html" (dict "routes" (.routes | default slice) "platform" "cloudflare" "product" "pages") -}}
 {{- $lines := slice -}}
 
-{{- $lines = $lines | append "# GENERATED FILE: edit data/delivery.toml or Banyan's deployment templates." -}}
+{{- $lines = $lines | append "# GENERATED FILE: edit assets/site/delivery.toml or Banyan's deployment templates." -}}
 {{- $lines = $lines | append "" -}}
 
 {{- range $route := $routes -}}

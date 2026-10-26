@@ -3,7 +3,7 @@ import {parseWidths} from '../../_shared/viewport.mjs';
 
 export function canvasLayoutCommand(command) {
   const spec=browserCommand(command,[
-    {name:'page',value:'path',default:'/about/',parse:sitePath},
+    {name:'page',value:'path',required:true,parse:sitePath},
     {name:'height',value:'px',default:900,parse:value=>{
       if(!/^\d+$/.test(value)||!Number.isSafeInteger(Number(value))||Number(value)<240||Number(value)>3840)
         throw new Error('--height must be an integer from 240 to 3840.');

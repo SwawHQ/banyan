@@ -2,15 +2,11 @@
 {{- $slotFlags := partial "system-ui/page-slots.html" (dict "ctx" .) -}}
 {{- $metaHTML := "" -}}
 {{- if index $slotFlags "meta" -}}
-  {{- $breadcrumbModel := dict -}}
-  {{- if index $slotFlags "breadcrumb" -}}
-    {{- $breadcrumbModel = partial "feature-browse/navigation/path/model.html" (dict "ctx" .) -}}
-  {{- end -}}
-  {{- $metaHTML = trim (printf "%s" (partial "./meta.html" (dict "ctx" . "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel))) " \r\n\t" -}}
+  {{- $metaHTML = trim (printf "%s" (partial "./meta.html" .)) " \r\n\t" -}}
 {{- end -}}
-{{- $isArticle := eq .Layout "page-article" -}}
+{{- $isArticle := in (slice "page-article-norss" "page-article-rss") .Layout -}}
 {{- $tocHTML := "" -}}
-{{- if $isArticle -}}
+{{- if and $isArticle (index $slotFlags "meta") -}}
   {{- $tocHTML = trim (printf "%s" (partial "./toc.html" .)) " \r\n\t" -}}
 {{- end -}}
 {{- $label := "document_aside" -}}

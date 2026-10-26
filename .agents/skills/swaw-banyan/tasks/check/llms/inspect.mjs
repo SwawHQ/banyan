@@ -85,17 +85,19 @@ export async function inspect(directory) {
     const sitemapMatch = text.match(/^Sitemap:\s*(\S+)/m);
     const sitemapURL = sitemapMatch ? parseURL(sitemapMatch[1],`${relative} Sitemap`) : '';
     if (!sitemapMatch) issues.push(`${relative} is missing a Sitemap line.`);
-    const links = [], seen = new Set();
+    const links = [];
+    let seen = new Set();
     for (const line of text.split(/\r?\n/)) {
+      if (/^ {0,3}##(?:[\t ]|$)/.test(line)) seen = new Set();
       if (/^\s*-\s*\[/.test(line) && !markdownLinks(line).length) issues.push(`${relative} contains a malformed Markdown link: ${line.trim()}`);
-    }
-    for (const target of markdownLinks(text)) {
-      const url = parseURL(target,`${relative} link`);
-      if (!url) continue;
-      if (seen.has(url)) issues.push(`${relative} contains a duplicate link: ${url}`);
-      seen.add(url);
-      links.push(url);
-      if (canonical) await requireFile(outputPath(url,canonical,`${relative} link`),relative);
+      for (const target of markdownLinks(line)) {
+        const url = parseURL(target,`${relative} link`);
+        if (!url) continue;
+        if (seen.has(url)) issues.push(`${relative} contains a duplicate link in its group: ${url}`);
+        seen.add(url);
+        links.push(url);
+        if (canonical) await requireFile(outputPath(url,canonical,`${relative} link`),relative);
+      }
     }
     documents.set(relative,{siteURL:canonical,sitemapURL,links});
   }
@@ -104,6 +106,12 @@ export async function inspect(directory) {
   const indexURLs = new Set([...documents].map(([relative,document]) => documentURL(relative,document)).filter(Boolean));
   const catalogs = sitemapURL => [...documents].filter(([,document]) => document.sitemapURL === sitemapURL);
   for (const [relative,document] of documents) {
+    const seenCatalogs = new Set();
+    for (const url of document.links) {
+      if (!indexURLs.has(url)) continue;
+      if (seenCatalogs.has(url)) issues.push(`${relative} contains a duplicate link to a language index: ${url}`);
+      seenCatalogs.add(url);
+    }
     if (!document.siteURL || !document.sitemapURL) continue;
     const sitemapPath = outputPath(document.sitemapURL,document.siteURL,`${relative} Sitemap`);
     if (!sitemapPath) continue;

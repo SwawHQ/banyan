@@ -1,7 +1,7 @@
 {{- $redirects := .redirects | default slice -}}
 {{- $lines := slice -}}
 
-{{- $lines = $lines | append "# GENERATED FILE: do not edit public/_redirects by hand; update data/redirects.toml instead." -}}
+{{- $lines = $lines | append "# GENERATED FILE: do not edit public/_redirects by hand; update assets/site/delivery.toml instead." -}}
 {{- $lines = $lines | append "" -}}
 
 {{- range $rule := $redirects -}}
