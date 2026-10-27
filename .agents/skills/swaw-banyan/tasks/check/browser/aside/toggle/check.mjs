@@ -100,8 +100,24 @@ export async function check({page,baseUrl,options}) {
       }
       await close.evaluate(node=>node.focus({preventScroll:true}));await page.keyboard.press('Enter');await afterPaint(page);
       assert.equal(await toggle.getAttribute('aria-expanded'),'false');assert.equal(await page.evaluate(()=>document.activeElement.id),'main');
+      await openAside(page,options.touch);
+      await page.reload({waitUntil:'load'});
+      assert.equal(await toggle.getAttribute('aria-expanded'),'true','Reload must retain the expanded aside.');
+      assert.equal(await page.locator('#document-aside').isVisible(),true);
+      await activate(page,close,options.touch);
+      await page.reload({waitUntil:'load'});
+      assert.equal(await toggle.getAttribute('aria-expanded'),'false','Reload must retain the collapsed aside.');
+      await page.evaluate(()=>localStorage.setItem('banyan:document-aside-expanded','invalid'));
+      await page.reload({waitUntil:'load'});
+      assert.equal(await toggle.getAttribute('aria-expanded'),'false','Invalid stored state must leave the aside collapsed.');
       results.push({width,collapsed,progress});
     }
+    await page.addInitScript(()=>Object.defineProperty(window,'localStorage',{get(){throw new Error('Storage unavailable');}}));
+    await page.reload({waitUntil:'load'});
+    assert.equal(await page.locator('#document-aside-toggle').getAttribute('aria-expanded'),'false');
+    await openAside(page,options.touch);
+    await activate(page,page.locator('#document-aside-close'),options.touch);
+    assert.equal(await page.locator('#document-aside-toggle').getAttribute('aria-expanded'),'false','Aside controls must work without storage.');
     assert.deepEqual(errors,[],'Aside interactions must not raise JS errors.');
     return {page:options.page,touch:options.touch,cases:results};
   } finally {page.off('pageerror',record);}

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse,visiblePoint,activate} from '../../_shared/viewport.mjs';
+import {assertCanvasEnd} from '../_shared/state.mjs';
 
 const read=page=>page.evaluate(()=>({x:scrollX,maxX:document.scrollingElement.scrollWidth-document.scrollingElement.clientWidth,y:document.querySelector('.page-content').scrollTop,
   mode:document.documentElement.dataset.canvasWheel,pointer:document.documentElement.dataset.canvasPointer}));
@@ -9,6 +10,9 @@ async function visit(page,url) {
   assert.ok(response?.ok(),'Wheel pages must return successful responses.');
   await waitForBrowse(page);await afterPaint(page);
   await page.waitForFunction(()=>document.documentElement.dataset.canvasWheel==='ready');
+  const toggle=page.locator('#document-aside-toggle');
+  if(await toggle.count()&&await toggle.getAttribute('aria-expanded')==='true')await activate(page,toggle);
+  await afterPaint(page);
 }
 
 async function reveal(page,locator) {
@@ -46,15 +50,15 @@ async function settledWheel(page,delta) {
 
 async function tailState(page) {
   return page.evaluate(()=>{
-    const shell=document.querySelector('.page-shell'),style=getComputedStyle(shell),probe=document.createElement('div');
-    probe.style.cssText='position:absolute;visibility:hidden;pointer-events:none;inline-size:var(--canvas-tail-inline);block-size:0';
-    shell.append(probe);const tail=probe.getBoundingClientRect().width;probe.remove();
+    const shell=document.querySelector('.page-shell'),style=getComputedStyle(shell),group=shell.querySelector('.reading-group');
     const lastRight=Math.max(...[...document.querySelectorAll('.page-column')].filter(node=>node.getClientRects().length)
       .map(node=>node.getBoundingClientRect().right+scrollX));
+    const readingColumns=[...shell.querySelectorAll('.page-content,.document-aside')].filter(node=>node.getClientRects().length);
+    const tail=group.getBoundingClientRect().right-readingColumns.at(-1).getBoundingClientRect().right;
     return {tail,padding:parseFloat(style.paddingInlineEnd),edge:parseFloat(style.getPropertyValue('--page-edge-inline')),
       width:document.querySelector('.page').getBoundingClientRect().width,
       scrollWidth:document.scrollingElement.scrollWidth,lastRight,
-      column:document.querySelector('.page-rail').getBoundingClientRect().width,
+      readingWidth:readingColumns.at(-1).getBoundingClientRect().right-readingColumns[0].getBoundingClientRect().left,
       snap:getComputedStyle(document.documentElement).scrollSnapType,
       align:[...document.querySelectorAll('.page-column')].map(node=>getComputedStyle(node).scrollSnapAlign)};
   });
@@ -68,13 +72,18 @@ export async function check({page,baseUrl,options}) {
   for(const width of options.widths.split(',').map(Number)) {
     stage=width+' layout';
     await page.setViewportSize({width,height:900});await visit(page,baseUrl+options.page);
+    await page.setViewportSize({width:width+160,height:900});await afterPaint(page);
+    const resized=await tailState(page);
+    assert.ok(Math.abs(resized.tail-Math.max(0,resized.width-resized.readingWidth))<=1,'Resizing must update the tail space.');
+    await page.setViewportSize({width,height:900});await afterPaint(page);
     const geometry=await tailState(page);
-    assert.ok(Math.abs(geometry.tail-Math.max(0,geometry.width-geometry.column/2))<=1,
-      'Tail space must equal the canvas width minus half a navigation column.');
-    assert.ok(Math.abs(geometry.padding-geometry.tail-geometry.edge)<=1,'Tail padding must retain the page edge.');
+    assert.ok(Math.abs(geometry.tail-Math.max(0,geometry.width-geometry.readingWidth))<=1,
+      'Tail space must equal the canvas width minus the final reading columns, with a zero minimum.');
+    assert.ok(Math.abs(geometry.padding-geometry.edge)<=1,'Canvas padding must retain only the page edge.');
     assert.ok(geometry.scrollWidth+1>=geometry.lastRight+geometry.tail,'The document scroll range must include the full tail space.');
     assert.equal(geometry.snap,'none','Normal browsing must retain native scrolling without added snapping.');
     assert.ok(geometry.align.every(value=>value==='none'),'Normal columns must retain native scrollIntoView alignment.');
+    await assertCanvasEnd(page);await positionCanvas(page,0);
     const gap=await gapPoint(page);await page.mouse.move(gap.x,gap.y);
     const readyCursor=await page.evaluate(({x,y})=>getComputedStyle(document.elementFromPoint(x,y)).cursor,gap);
     assert.ok(!['auto','default','text','pointer'].includes(readyCursor),'Column gaps must show a horizontal wheel cursor.');
@@ -100,20 +109,22 @@ export async function check({page,baseUrl,options}) {
       assert.notEqual(cursor,readyCursor,point.name+' must not advertise horizontal wheel mode before scrolling.');
     }
     await page.evaluate(()=>scrollTo({left:document.scrollingElement.scrollWidth,top:0,behavior:'instant'}));await afterPaint(page);
-    const tailPoint={x:width-30,y:100};await page.mouse.move(tailPoint.x,tailPoint.y);
-    const tailCursor=await page.evaluate(({x,y})=>{
-      const lastRight=Math.max(...[...document.querySelectorAll('.page-column')].filter(node=>node.getClientRects().length)
-        .map(node=>node.getBoundingClientRect().right));
-      if(x<=lastRight)throw new Error('The tail cursor point must lie after the last visible column.');
-      return getComputedStyle(document.elementFromPoint(x,y)).cursor;
-    },tailPoint);
-    assert.notEqual(tailCursor,readyCursor,'Tail space must not advertise horizontal wheel mode before scrolling.');
+    if(geometry.tail>1) {
+      const tailPoint={x:width-geometry.edge-geometry.tail/2,y:100};await page.mouse.move(tailPoint.x,tailPoint.y);
+      const tailCursor=await page.evaluate(({x,y})=>{
+        const lastRight=Math.max(...[...document.querySelectorAll('.page-column')].filter(node=>node.getClientRects().length)
+          .map(node=>node.getBoundingClientRect().right));
+        if(x<=lastRight)throw new Error('The tail cursor point must lie after the last visible column.');
+        return getComputedStyle(document.elementFromPoint(x,y)).cursor;
+      },tailPoint);
+      assert.notEqual(tailCursor,readyCursor,'Tail space must not advertise horizontal wheel mode before scrolling.');
+    }
     await page.evaluate(()=>scrollTo({left:0,top:0,behavior:'instant'}));await afterPaint(page);
     stage=width+' gap and continuous mode';await enter(page);
     const content=page.locator('.page-content');await reveal(page,content);
     const before=await read(page);
-    await page.mouse.wheel(0,120);
-    await page.waitForFunction(x=>scrollX>x+1,before.x);
+    await page.mouse.wheel(0,-120);
+    await page.waitForFunction(x=>scrollX<x-1,before.x);
     const locked=await read(page);
     assert.equal(locked.y,before.y,'Horizontal wheel mode must preserve the article reading position.');
     const lockedCursor=await content.evaluate(node=>getComputedStyle(node.querySelector('p')??node).cursor);
@@ -125,8 +136,10 @@ export async function check({page,baseUrl,options}) {
     assert.ok(await page.locator('.page-column').evaluateAll(nodes=>nodes.every(node=>
       getComputedStyle(node).scrollSnapAlign==='none')),'Locked columns must not expose snap points.');
     stage=width+' light snapping';
-    const edgeX=await content.evaluate(node=>node.getBoundingClientRect().left+scrollX-parseFloat(getComputedStyle(document.body).paddingInlineStart));
+    const edgeX=await page.locator('.path-column').first().evaluate(node=>node.getBoundingClientRect().left+scrollX-parseFloat(getComputedStyle(document.body).paddingInlineStart));
     const snapY=(await read(page)).y;
+    const maxX=(await read(page)).maxX;
+    assert.ok(edgeX>=73&&edgeX+73<=maxX,'The path column must allow both approach directions.');
     for(const direction of [1,-1]) {
       await positionCanvas(page,edgeX-direction*72);await settledWheel(page,direction*8);
       assert.ok(Math.abs((await read(page)).x-edgeX)<=1,'A column edge exactly 64 pixels ahead must align after wheel idle.');
@@ -137,9 +150,9 @@ export async function check({page,baseUrl,options}) {
       await positionCanvas(page,edgeX-direction*73);await settledWheel(page,direction*8);
       assert.ok(Math.abs((await read(page)).x-(edgeX-direction*65))<=1,'An edge 65 pixels away must remain outside the fixed snap range.');
     }
-    const navEdge=await page.locator('.path-column').first().evaluate(node=>node.getBoundingClientRect().left+scrollX-parseFloat(getComputedStyle(document.body).paddingInlineStart));
-    await positionCanvas(page,navEdge-72);await settledWheel(page,8);
-    assert.ok(Math.abs((await read(page)).x-navEdge)<=1,'Narrow navigation columns must use the same fixed snap range as articles.');
+    const mainEdge=await content.evaluate(node=>node.getBoundingClientRect().left+scrollX-parseFloat(getComputedStyle(document.body).paddingInlineStart));
+    await positionCanvas(page,mainEdge-72);await settledWheel(page,8);
+    assert.ok(Math.abs((await read(page)).x-mainEdge)<=1,'Reading columns must use the same fixed snap range as navigation.');
     await positionCanvas(page,edgeX-24);
     const activeX=await page.evaluate(async()=>{
       const shell=document.querySelector('.page-shell');
@@ -219,16 +232,33 @@ export async function check({page,baseUrl,options}) {
 
     stage=width+' metadata';
     if(await page.locator('#document-aside-toggle').count()) {
-      await activate(page,page.locator('#document-aside-toggle'));
+      if(await page.locator('#document-aside-toggle').getAttribute('aria-expanded')!=='true')await activate(page,page.locator('#document-aside-toggle'));
       assert.equal(await page.locator('#document-aside-toggle').getAttribute('aria-expanded'),'true');
+      await afterPaint(page);
       const aside=await tailState(page);
-      assert.equal(aside.tail,geometry.tail,'Opening metadata must retain the fixed tail formula.');
+      assert.ok(Math.abs(aside.tail-Math.max(0,aside.width-aside.readingWidth))<=1,'Metadata tail space must subtract both reading columns and their gap.');
+      await assertCanvasEnd(page);
+      const groupGap=await page.evaluate(()=>{
+        const content=document.querySelector('.page-content'),aside=document.querySelector('.document-aside');
+        scrollBy({left:(content.getBoundingClientRect().right+aside.getBoundingClientRect().left-innerWidth)/2,top:0,behavior:'instant'});
+        const point={x:(content.getBoundingClientRect().right+aside.getBoundingClientRect().left)/2,y:120};
+        if(document.elementFromPoint(point.x,point.y)!==document.querySelector('.reading-group'))throw new Error('The reading-column gap must hit the reading group.');
+        return point;
+      });
+      await afterPaint(page);await page.mouse.move(groupGap.x,groupGap.y);
+      assert.equal(await page.evaluate(({x,y})=>getComputedStyle(document.elementFromPoint(x,y)).cursor,groupGap),readyCursor,
+        'The gap inside the reading group must show the same horizontal wheel cursor.');
       const asideEdge=await page.locator('.document-aside').evaluate(node=>node.getBoundingClientRect().left+scrollX-parseFloat(getComputedStyle(document.body).paddingInlineStart));
       await positionCanvas(page,asideEdge-20);await page.mouse.move(20,100);
       await page.evaluate(()=>document.querySelector('.page-shell').dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:8})));
       await page.waitForTimeout(300);
       const asideX=(await read(page)).x;
-      assert.ok(Math.abs(asideX-asideEdge)<=1,'Metadata columns must align within the fixed 64-pixel range: '+JSON.stringify({target:asideEdge,actual:asideX}));
+      const maxAsideX=(await read(page)).maxX;
+      const expectedAsideX=asideEdge<=maxAsideX?asideEdge:Math.min(maxAsideX,asideEdge-12);
+      assert.ok(Math.abs(asideX-expectedAsideX)<=1,'Metadata alignment must stay within the native scroll range: '+JSON.stringify({target:asideEdge,max:maxAsideX,actual:asideX}));
+      await activate(page,page.locator('#document-aside-toggle'));await afterPaint(page);
+      assert.ok(Math.abs((await tailState(page)).tail-geometry.tail)<=1,'Closing metadata must restore the single-column tail space.');
+      await assertCanvasEnd(page);
     }
 
     stage=width+' short article and left click';await visit(page,baseUrl+options.short);
@@ -237,13 +267,13 @@ export async function check({page,baseUrl,options}) {
     assert.notEqual(shortCursor,readyCursor,'A short article must keep its normal cursor until its first wheel event.');
     assert.ok(await short.evaluate(node=>node.scrollHeight<=node.clientHeight+1),'Choose a short article that fits at 900 pixels high.');
     const shortBefore=await read(page);stage=width+' short article';
-    await page.mouse.wheel(0,120);
-    await page.waitForFunction(x=>document.documentElement.dataset.canvasWheel==='locked'&&scrollX>x+1,shortBefore.x);
+    await page.mouse.wheel(0,-120);
+    await page.waitForFunction(x=>document.documentElement.dataset.canvasWheel==='locked'&&scrollX<x-1,shortBefore.x);
     const shortState=await read(page);
     await page.waitForTimeout(400);
     const shortResumedBefore=await read(page);stage=width+' short article after pause';
-    await page.mouse.wheel(0,200);
-    await page.waitForFunction(x=>scrollX>x+1,shortResumedBefore.x);
+    await page.mouse.wheel(0,-120);
+    await page.waitForFunction(x=>scrollX<x-1,shortResumedBefore.x);
     assert.equal((await read(page)).mode,'locked','A short column must resume horizontal scrolling after a pause.');
     stage=width+' left click';
     const href=await page.locator('main a[href]').evaluateAll(nodes=>nodes.find(node=>node.origin===location.origin
@@ -333,9 +363,9 @@ export async function check({page,baseUrl,options}) {
     assert.equal((await read(page)).mode,'ready','Native wheel input must not activate horizontal conversion.');
     stage=width+' no horizontal overflow';
     await page.evaluate(()=>{
-      const shell=document.querySelector('.page-shell'),content=document.createElement('div');
+      const shell=document.querySelector('.page-shell'),group=shell.querySelector('.reading-group'),content=document.createElement('div');
       content.className='page-column page-content';content.textContent='No overflow';
-      content.style.cssText='inline-size:100px;block-size:80px;padding:0';shell.replaceChildren(content);
+      content.style.cssText='inline-size:100px;block-size:80px;padding:0';group.replaceChildren(content);shell.replaceChildren(group);
       shell.style.cssText='inline-size:100%;min-inline-size:0;padding:0;column-gap:0';
       scrollTo({left:0,top:0,behavior:'instant'});
     });await afterPaint(page);await page.mouse.move(40,40);

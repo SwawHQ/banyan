@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initCanvasWheel();
     initThemePreference();
     initLanguageReturn();
+    initAutoScrollbar(document.scrollingElement);
     document.querySelectorAll('.page-column')
         .forEach(initAutoScrollbar);
 });

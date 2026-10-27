@@ -126,7 +126,7 @@ test('chromium catches blocked value cells and detached values',{timeout:15000},
 
 test('chromium accepts selectable text clipped by fixed field widths',{timeout:10000},()=>{
   const clipped=fixture('clipped-value');
-  write(path.join(clipped,'clipped.css'),':root{--item-date-inline:1.5rem}');
+  write(path.join(clipped,'clipped.css'),'.slot-main--collection{--item-date-inline:1.5rem!important}');
   fs.appendFileSync(path.join(clipped,'all/index.html'),'<link rel="stylesheet" href="/clipped.css">');
   const result=cli('nav/sort',['--page',routes['nav/sort'],'--timeout','5000'],clipped);
   assert.equal(result.status,0,result.stdout+result.stderr);

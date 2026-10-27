@@ -1,4 +1,6 @@
+import assert from 'node:assert/strict';
 import {readRootState} from '../../nav/_shared/root.mjs';
+import {afterPaint} from '../../_shared/viewport.mjs';
 
 export const readCanvas=async page=>({...await page.evaluate(()=>{
   const view=window.visualViewport,rect=node=>{
@@ -39,6 +41,32 @@ export async function panCanvas(page,left) {
     column.scrollIntoView({inline:'start',block:'nearest',behavior:'instant'});
     column.style.scrollMarginInlineStart=previous;
   },left);
+}
+
+export async function assertCanvasEnd(page) {
+  const scripting=await page.evaluate(()=>{
+    scrollTo({left:document.scrollingElement.scrollWidth,top:0,behavior:'instant'});
+    return matchMedia('(scripting: enabled)').matches;
+  });
+  if(scripting)await afterPaint(page);
+  const state=await page.evaluate(()=>{
+    const columns=[...document.querySelectorAll('.page-content,.document-aside')].filter(node=>node.getClientRects().length);
+    const first=columns[0].getBoundingClientRect(),last=columns.at(-1).getBoundingClientRect(),view=window.visualViewport;
+    const group=document.querySelector('.reading-group').getBoundingClientRect();
+    const style=getComputedStyle(document.querySelector('.page-shell')),offset=view?.offsetLeft??0;
+    return {mainLeft:first.left-offset,lastRight:last.right-offset,groupWidth:last.right-first.left,
+      canvasWidth:document.querySelector('.page').getBoundingClientRect().width,viewport:view?.width??innerWidth,
+      edge:parseFloat(getComputedStyle(document.body).paddingInlineStart),padding:parseFloat(style.paddingInlineEnd),
+      tail:group.right-last.right};
+  });
+  assert.ok(Math.abs(state.tail-Math.max(0,state.canvasWidth-state.groupWidth))<=1,'Tail space must fill only the unused reading-group width.');
+  if(state.groupWidth<=state.canvasWidth+1)assert.ok(Math.abs(state.mainLeft-state.edge)<=1,
+    'At the canvas end, the final reading group must align with the page edge: '+JSON.stringify(state));
+  else {
+    assert.ok(Math.abs(state.tail)<=1,'An oversized reading group must have no tail space.');
+    assert.ok(Math.abs(state.lastRight-state.viewport+state.padding)<=1,'At the canvas end, the last column must reach the right page edge.');
+  }
+  return state;
 }
 
 export async function waitForCanvasX(page,x,label='Canvas position') {

@@ -11,7 +11,7 @@ import {scrollbarCommand} from '../.agents/skills/swaw-banyan/tasks/check/browse
 import {historyCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/history/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
-const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
+const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/canvas-scrollbar');
 const engines=[{name:'chromium',suffix:''},{name:'webkit',suffix:'.webkit'}],commands=['scroll','scrollbar','history'];
 const route='/d/canvas-first/#from=all',next='/d/canvas-next/#from=all';
 let work,skill,output;
@@ -24,6 +24,7 @@ function fixture(name){const directory=path.join(work,name);fs.cpSync(output,dir
 function css(directory,text,route='d/canvas-first'){write(path.join(directory,'broken.css'),text);fs.appendFileSync(path.join(directory,route,'index.html'),'<link rel="stylesheet" href="/broken.css">');}
 function script(directory,text){write(path.join(directory,'probe.js'),text);for(const name of ['canvas-first','canvas-next'])fs.appendFileSync(path.join(directory,'d',name,'index.html'),'<script src="/probe.js"></script>');}
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-canvas-'));skill=path.join(work,'skill');output=path.join(work,'public');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const runtime='node';
@@ -67,6 +68,7 @@ test(name+' sizes collection columns from fixed lists and preserves reading widt
     const result=cli('layout'+suffix,['--page',page,'--height','240','--widths','390,1440','--out',path.join(work,'layout-reports')]);
     assert.equal(result.status,0,result.stdout+result.stderr);
     const folder=result.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
+    assert.deepEqual(report.details.noScript.map(state=>state.width),[390,1440],'Static pages must retain narrow and wide end alignment.');
     if(page==='/d/canvas-names/') {
       assert.ok(report.details.cases[1].main.width<report.details.cases[1].declared.main,'Name-only collections must not inherit the reading minimum width.');
       assert.equal(report.details.cases[0].main.width,report.details.cases[1].main.width);
@@ -93,6 +95,14 @@ test(name+' rejects collection width drift, narrowed reading columns and missing
   assert.equal(column.status,1);assert.match(column.stderr,/Every scroll column must use \.page-column/);
 });
 
+test(name+' rejects a missing static reading-group minimum at wide viewports',{timeout:15000},()=>{
+  const args=['--page',route,'--widths','2560'];
+  const valid=cli('layout'+suffix,args);assert.equal(valid.status,0,valid.stdout+valid.stderr);
+  const broken=fixture('static-group-minimum-'+name);css(broken,'@media (scripting:none){.reading-group{min-inline-size:0!important}}');
+  const result=cli('layout'+suffix,args,broken);
+  assert.equal(result.status,1);assert.match(result.stderr,/Tail space must fill only/);
+});
+
 test(name+' runs scroll, scrollbar and history on independent article fixtures',{timeout:30000},()=>{
   for(const command of commands){
     const args=['--page',route,'--out',path.join(work,'reports')];
@@ -104,6 +114,8 @@ test(name+' runs scroll, scrollbar and history on independent article fixtures',
     if(command==='scrollbar') {
       assert.equal(report.details.cases.length,3,'Resizing must return to the first width.');
       assert.equal(typeof report.details.cases[0].resized.supportsColor,'boolean','Reports must declare native color support.');
+      assert.ok(report.details.cases.every(state=>state.canvas.active.x!==state.canvas.idle.x),'Each width must exercise horizontal scrolling.');
+      if(name==='chromium')assert.ok(report.details.cases.every(state=>state.canvas.hover),'Chromium must exercise native scrollbar hovering.');
     }
     if(command==='history')assert.equal(report.details.next,next);
   }
@@ -134,6 +146,23 @@ test(name+' rejects broken scrollbar activity and changed active spacing',{timeo
   }
   const gap=fixture('gap-'+name);css(gap,'.page-content[data-scrolling]{margin-right:20px!important}');
   const moved=cli('scrollbar'+suffix,['--page',route,'--widths','390'],gap);assert.equal(moved.status,1);assert.match(moved.stderr,/preserve the aside gap/);
+});
+
+test(name+' rejects broken canvas scrollbar activity and colors',{timeout:25000},()=>{
+  const blocked=fixture('canvas-scrollbar-blocked-'+name);script(blocked,"window.addEventListener('scroll',event=>{if(event.target===document)event.stopImmediatePropagation();},true);");
+  const inactive=cli('scrollbar'+suffix,['--page',route,'--widths','390','--timeout','1500'],blocked);
+  assert.equal(inactive.status,1);assert.match(inactive.stderr,/Timeout 1500ms/);
+  if(name==='chromium') {
+    for(const [id,rule,message] of [
+      ['idle','html[data-auto-scrollbar]{scrollbar-color:auto!important}',/Idle canvas scrollbar colors/],
+      ['active','html[data-scrolling]{scrollbar-color:transparent transparent!important}',/Canvas scrolling must reveal/],
+      ['hover','html[data-scrollbar-hover]{scrollbar-color:transparent transparent!important}',/Hovering the canvas scrollbar must reveal/]
+    ]) {
+      const broken=fixture('canvas-scrollbar-'+id);css(broken,rule);
+      const result=cli('scrollbar'+suffix,['--page',route,'--widths','390'],broken);
+      assert.equal(result.status,1);assert.match(result.stderr,message);
+    }
+  }
 });
 
 test(name+' rejects manual history restoration and duplicate article URLs',{timeout:15000},()=>{

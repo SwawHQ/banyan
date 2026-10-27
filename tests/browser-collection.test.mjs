@@ -10,6 +10,9 @@ import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/
 import {layoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/collection/layout/options.mjs';
 import {styleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/collection/style/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
+import {loadChromium,loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
+import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {check as checkFirstPaint} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/first-paint/check.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-collection');
 const article='/d/collection-fixture/one/#from=all';let work,skill,output;
@@ -62,13 +65,46 @@ test('collection options declare pages, comparisons, settings and widths',()=>{
 });
 
 test('layout checks directory, flat and reference lists at narrow and wide widths',{timeout:20000},()=>{
-  for(const route of ['/all/','/d/collection-fixture/','/discover/tooling/','/discover/tooling/devtools/']) {
-    const result=cli('layout',['--page',route,'--widths','390,1440']);assert.equal(result.status,0,result.stdout+result.stderr);
+  const directories=[];
+  for(const route of ['/d/collection-fixture/','/discover/tooling/','/discover/tooling/devtools/']) {
+    const state=report(cli('layout',['--page',route,'--widths','390,1440','--out',path.join(work,'reports')]));
+    directories.push(...state.details.cases);
   }
   const state=report(cli('layout',['--page','/all/','--article',article,'--widths','390,1440','--out',path.join(work,'reports')]));
   assert.equal(state.browser,'chromium');assert.ok(state.browserVersion);
   for(const result of state.details.cases){assert.ok(result.main.rows.length>=4);assert.equal(result.path.pathGrid,true);assert.equal(result.path.nameOnly,true);}
+  for(const directory of directories) {
+    const fields=directory.main.heading.fields,aggregate=state.details.cases.find(result=>result.width===directory.width).main.heading.fields;
+    assert.deepEqual(fields.map(cell=>cell.field),['name','date','count']);
+    assert.ok(fields.at(-1).x+fields.at(-1).width-fields[0].x<=390,'Directory fields must fit the 390 CSS px row budget.');
+    for(const [field,comparison] of [['date','date'],['count','size']])assert.ok(
+      Math.abs(fields.find(cell=>cell.field===field).width-aggregate.find(cell=>cell.field===comparison).width)<=.1,
+      'Directory and aggregate layouts must share the '+field+' field width.');
+  }
   assert.equal(fs.existsSync(path.join(work,'node_modules')),false);
+});
+
+for(const [name,loadBrowser] of [['chromium',loadChromium],['webkit',loadWebkit]])test(name+' keeps fixed collection widths at startup and clips long headings without shrinking text',{timeout:15000},async()=>{
+  const server=await createStaticSiteServer(output);let browser;
+  try {
+    await server.start();const type=loadBrowser();browser=await type.launch({headless:true,executablePath:type.executablePath()});
+    const context=await browser.newContext({viewport:{width:390,height:900},serviceWorkers:'block'}),page=await context.newPage();
+    for(const route of ['/d/collection-fixture/','/zh/all/']) {
+      await checkFirstPaint({page,baseUrl:server.getBaseUrl(),options:{page:route,widths:'390,1440'}});
+      for(const font of ['system-ui','monospace']) {
+        const state=await page.locator('.slot-main [data-list-header]').evaluate((header,font)=>{
+          header.style.fontFamily=font;
+          const fields=[...header.children].slice(1,3);
+          const read=()=>fields.map(cell=>({width:cell.getBoundingClientRect().width,fontSize:getComputedStyle(cell).fontSize}));
+          const before=read();
+          for(const cell of fields)cell.querySelector('[data-sort-control]').firstChild.textContent='Long heading '.repeat(20);
+          return {before,after:read(),clipped:fields.every(cell=>cell.scrollWidth>cell.clientWidth&&getComputedStyle(cell).overflowX==='hidden')};
+        },font);
+        assert.deepEqual(state.after,state.before,'Long labels must retain the declared field widths and font sizes.');
+        assert.equal(state.clipped,true,'Labels that exceed the fixed field width must be clipped.');
+      }
+    }
+  } finally {try{if(browser)await browser.close();}finally{await server.stop();}}
 });
 
 test('style checks actual links and choice buttons in both themes and widths',{timeout:45000},()=>{

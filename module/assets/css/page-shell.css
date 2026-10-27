@@ -33,22 +33,33 @@ body {
 }
 
 .page-shell,
+.reading-group,
 .page-column,
 .slot {
     min-width: 0;
     min-block-size: 0;
 }
 
-.page-shell {
+.page-shell,
+.reading-group {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: max-content;
     column-gap: var(--page-shell-gap-inline);
     inline-size: max-content;
-    min-inline-size: 100%;
     block-size: 100%;
-    padding-inline-end: var(--page-edge-inline);
     align-items: start;
+}
+
+.page-shell {
+    box-sizing: border-box;
+    min-inline-size: 100%;
+    padding-inline-end: var(--page-edge-inline);
+}
+
+.reading-group {
+    min-inline-size: 100cqi;
+    justify-content: start;
 }
 
 .page-column {
@@ -141,6 +152,10 @@ body {
         block-size: auto;
         max-block-size: none;
         overflow: visible;
+    }
+
+    .reading-group {
+        display: contents;
     }
 
     .page-shell {

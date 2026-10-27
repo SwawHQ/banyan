@@ -1,5 +1,5 @@
 {{- if or .meta .toc -}}
-<aside id="document-aside" class="page-column document-aside" aria-label="{{ i18n .label }}">
+<aside id="document-aside" class="page-column document-aside{{ if .collapsible }} document-aside--collapsible{{ end }}" aria-label="{{ i18n .label }}">
   {{- with .meta -}}<div class="slot slot-meta" data-slot="meta">{{ . | safeHTML }}</div>{{- end -}}
   {{- .toc | safeHTML -}}
   {{- if .collapsible -}}

@@ -128,15 +128,17 @@
             {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
             <script>{{ $breadcrumbSkeletonInline | safeJS }}</script>
             {{- end -}}
-            <div class="page-column page-content">
-            <main id="main" class="slot slot-main{{ if $hasSortableCollection }} slot-main--collection{{ end }}" data-slot="main" tabindex="-1">
-                {{- block "main" . -}}{{- end -}}
-                {{- if $hasBreadcrumbCapability -}}
-                  {{- partial "system-metadata/seo/breadcrumb.html" (dict "ctx" $ "model" $breadcrumbModel) -}}
-                {{- end -}}
-            </main>
+            <div class="reading-group">
+                <div class="page-column page-content">
+                <main id="main" class="slot slot-main{{ if $hasSortableCollection }} slot-main--collection{{ end }}" data-slot="main" tabindex="-1">
+                    {{- block "main" . -}}{{- end -}}
+                    {{- if $hasBreadcrumbCapability -}}
+                      {{- partial "system-metadata/seo/breadcrumb.html" (dict "ctx" $ "model" $breadcrumbModel) -}}
+                    {{- end -}}
+                </main>
+                </div>
+                {{- partial "feature-document/aside.html" (partialCached "feature-document/aside-model.html" . .RelPermalink) -}}
             </div>
-            {{- partial "feature-document/aside.html" (partialCached "feature-document/aside-model.html" . .RelPermalink) -}}
         </div>
     </div>
     {{- block "body-extra" . -}}{{- end -}}

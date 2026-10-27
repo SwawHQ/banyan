@@ -5,9 +5,12 @@ import {touchDrag} from '../_shared/touch.mjs';
 export async function check({page,context,baseUrl,options}) {
   await page.setViewportSize({width:390,height:900});
   await page.addInitScript(()=>{
-    const trace=window.__swbanTouchSnap={points:0,end:null,calls:[],ends:0};
+    const trace=window.__swbanTouchSnap={points:0,end:null,calls:[],ends:0,release:null};
     for(const name of ['touchstart','touchmove','touchend','touchcancel'])
-      window.addEventListener(name,event=>{trace.points=event.touches.length;},{capture:true,passive:true});
+      window.addEventListener(name,event=>{
+        trace.points=event.touches.length;
+        if(name==='touchend')trace.release={x:window.visualViewport?.pageLeft??scrollX,trusted:event.isTrusted};
+      },{capture:true,passive:true});
     const ended=event=>{
       if(event.target!==document&&event.target!==window.visualViewport)return;
       trace.end=event;trace.ends++;
@@ -74,7 +77,7 @@ export async function check({page,context,baseUrl,options}) {
       'Touch alignment must run from native scrollend after all fingers are released: '+JSON.stringify(approachCalls));
 
     const boundaries=await page.evaluate(()=>{
-      const shell=document.querySelector('.page-shell'),column=document.querySelector('.page-content');
+      const shell=document.querySelector('.page-shell'),column=document.querySelector('.path-column');
       const edge=parseFloat(getComputedStyle(document.body).paddingInlineStart);
       const target=column.getBoundingClientRect().left+scrollX-edge,trace=window.__swbanTouchSnap;
       const position=x=>{
@@ -117,7 +120,7 @@ export async function check({page,context,baseUrl,options}) {
     for(const result of boundaries) {
       if(result.distance===64) {
         assert.ok(Math.abs(result.after-result.target)<=1,'An edge exactly 64 pixels ahead must align: '+JSON.stringify(result));
-        assert.equal(result.calls,1,'Root and visual viewport scrollend must not align twice.');
+        assert.equal(result.calls,1,'Root and visual viewport scrollend must not align twice: '+JSON.stringify(result));
       } else {
         assert.ok(Math.abs(result.after-result.before)<=1,'An outside-range or cancelled gesture must retain its position: '+JSON.stringify(result));
         assert.equal(result.calls,0,'An outside-range or cancelled gesture must not align.');
@@ -126,7 +129,7 @@ export async function check({page,context,baseUrl,options}) {
 
     await cdp.send('Emulation.setPageScaleFactor',{pageScaleFactor:2});
     const zoom=await page.evaluate(()=>{
-      const shell=document.querySelector('.page-shell'),column=document.querySelector('.page-content');
+      const shell=document.querySelector('.page-shell'),column=document.querySelector('.path-column');
       const edge=parseFloat(getComputedStyle(document.body).paddingInlineStart);
       const target=column.getBoundingClientRect().left+scrollX-edge,trace=window.__swbanTouchSnap;
       const position=x=>{
@@ -150,17 +153,19 @@ export async function check({page,context,baseUrl,options}) {
     await cdp.send('Emulation.setPageScaleFactor',{pageScaleFactor:1});await afterPaint(page);
 
     await page.locator('.page-rail').evaluate(node=>node.scrollIntoView({inline:'start',block:'nearest',behavior:'instant'}));await afterPaint(page);
-    await page.evaluate(()=>{window.__swbanTouchSnap.calls=[];window.__swbanTouchSnap.ends=0;});
-    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(300)]});
+    await page.evaluate(()=>{window.__swbanTouchSnap.calls=[];window.__swbanTouchSnap.ends=0;window.__swbanTouchSnap.release=null;});
+    // Input timestamps keep flick velocity independent of Node scheduling.
+    const flickAt=Date.now()/1000;
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(300)],timestamp:flickAt});
     for(let step=1;step<=6;step++) {
-      await page.waitForTimeout(5);
-      await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point(300-140*step/6)]});
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point(300-140*step/6)],timestamp:flickAt+step/120});
     }
-    const release=await read();
-    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[],timestamp:flickAt+7/120});
+    const release=await page.evaluate(()=>window.__swbanTouchSnap.release);
+    assert.equal(release?.trusted,true,'A native flick must release a trusted touch gesture.');
     await page.waitForFunction(()=>window.__swbanTouchSnap.ends>0);await page.waitForTimeout(80);
     const inertia=await read(),inertiaCalls=await page.evaluate(()=>window.__swbanTouchSnap.calls);
-    assert.ok(inertia.x>release.x+1,'Native inertia must continue a fast flick after release.');
+    assert.ok(inertia.x>release.x+1,'Native inertia must continue a fast flick after release: '+JSON.stringify({release,inertia}));
     assert.notEqual(inertia.mode,'locked','Native inertia must not enter mouse wheel mode.');
     assert.ok(inertiaCalls.length<=1,'One native flick must align at most once.');
     assert.ok(inertiaCalls.every(call=>call.inEnd&&call.trustedEnd&&call.points===0),

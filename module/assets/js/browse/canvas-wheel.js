@@ -2,6 +2,7 @@ export function initCanvasWheel() {
     const root = document.documentElement;
     const shell = document.querySelector('.page-shell');
     if (!shell) return;
+    const group = shell.querySelector('.reading-group');
     let mousePoint;
     let middleReleasePending = false;
     let snapTimer;
@@ -45,8 +46,9 @@ export function initCanvasWheel() {
 
     function updateGap() {
         let gap = false;
+        const hit = mousePoint && document.elementFromPoint(mousePoint.x, mousePoint.y);
         if (root.dataset.canvasPointer === 'mouse' && mousePoint
-            && document.elementFromPoint(mousePoint.x, mousePoint.y) === shell) {
+            && (hit === shell || hit === group)) {
             let previousRight;
             for (const column of shell.querySelectorAll('.page-column')) {
                 const rect = column.getBoundingClientRect();

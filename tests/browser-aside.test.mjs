@@ -11,7 +11,7 @@ import {toggleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/a
 import {canvasLayoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/layout/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
-const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
+const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan');
 const engines=[{name:'chromium',suffix:''},{name:'webkit',suffix:'.webkit'}];
 const commands=['aside/toggle','aside/chapters','aside/layout','aside/style','aside/print','canvas/layout'];
 const route='/d/aside-fixture/#from=all';
@@ -25,7 +25,8 @@ function fixture(name){const directory=path.join(work,name);fs.cpSync(output,dir
 function css(directory,text){write(path.join(directory,'broken.css'),text);fs.appendFileSync(path.join(directory,'d/aside-fixture/index.html'),'<link rel="stylesheet" href="/broken.css">');}
 function script(directory,text){write(path.join(directory,'probe.js'),text);fs.appendFileSync(path.join(directory,'d/aside-fixture/index.html'),'<script src="/probe.js"></script>');}
 before(()=>{
-  work=fs.mkdtempSync(path.join(parent,'banyan-browser-aside-'));skill=path.join(work,'skill');output=path.join(work,'public');
+  fs.mkdirSync(parent,{recursive:true});
+  work=fs.mkdtempSync(path.join(parent,'browser-aside-'));skill=path.join(work,'skill');output=path.join(work,'public');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const runtime='node';
   write(path.join(skill,'.tools/bindings.json'),JSON.stringify({schema:'swaw-banyan.bindings/v1',runtime,tools:{

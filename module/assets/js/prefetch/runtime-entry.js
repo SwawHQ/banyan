@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => { void startPrefetch(); }, {
 async function startPrefetch() {
     const root = document.documentElement;
     root.dataset.prefetchReady = '';
-    delete root.dataset.prefetchNativeReady;
     const config = readPrefetchPayload() || {};
     const modes = config.modes || {};
     const rules = readPrefetchRules();
@@ -41,7 +40,6 @@ async function startPrefetch() {
     }
 
     function getAnchorWarmTarget(anchor) {
-        if (!root.hasAttribute('data-prefetch-ready')) return null;
         const rule = readPrefetchRuleForAnchor(anchor, rules);
         const mode = normalizeEagerness(modes[rule]);
         if (mode === 'off' || mode === 'immediate') return null;

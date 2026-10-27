@@ -78,7 +78,7 @@ function applySortableList(list) {
 
 function applySortableLists() {
     const lists = Array.from(document.querySelectorAll('[data-sortable="true"][data-sort-variant]'));
-    lists.forEach((list) => applySortableList(list));
+    lists.forEach(applySortableList);
 }
 
 function initSortableLists() {

@@ -59,7 +59,7 @@ for(const [name,suffix] of [['Chromium',''],['WebKit','.webkit']]) {
 }
 test('wheel check detects a missing tail space',{timeout:20000},()=>{
   const broken=path.join(work,'missing-tail');fs.cpSync(output,broken,{recursive:true});
-  write(path.join(broken,'broken.css'),'.page-shell{--canvas-tail-inline:0px!important}');
+  write(path.join(broken,'broken.css'),'.reading-group{min-inline-size:0!important}');
   fs.appendFileSync(path.join(broken,article,'index.html'),'<link rel="stylesheet" href="/broken.css">');
   const result=cli('',broken);assert.equal(result.status,1);assert.match(result.stderr,/tail|blank|padding|留白/i);
 });

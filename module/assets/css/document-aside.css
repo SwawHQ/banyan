@@ -8,9 +8,9 @@
 }
 
 /* Static HTML keeps the information accessible without scripting and in print.
-   In interactive views aria-expanded is the only open/closed state. */
+   Style the aside directly; mobile :has() state can lag after scrolling. */
 @media screen and (scripting: enabled) {
-    .page-shell:has(#document-aside-toggle[aria-expanded="false"]) > .document-aside {
+    .document-aside--collapsible:not([data-expanded]) {
         display: none;
     }
 

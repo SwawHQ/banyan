@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
+import {assertCanvasEnd} from '../_shared/state.mjs';
 
 export async function check({page,baseUrl,options}) {
   const results=[];
@@ -23,12 +24,16 @@ export async function check({page,baseUrl,options}) {
       const declared={column:measure('var(--navigation-column-inline)'),gap:measure('var(--page-shell-gap-inline)'),main:measure('var(--main-column-inline)')};
       if(list){list.append(probe);declared.list=measure('var(--list-inline-size)');}
       probe.remove();
-      const tracks=[nav,...columns,main].map(rect),canvas=document.querySelector('.page-shell');
+      const tracks=[nav,...columns,main].map(rect),canvas=document.querySelector('.page-shell'),group=canvas.querySelector(':scope > .reading-group');
+      const tailColumns=[...canvas.querySelectorAll('.page-content,.document-aside')].filter(node=>node.getClientRects().length);
+      const tailColumnsWidth=tailColumns.at(-1).getBoundingClientRect().right-tailColumns[0].getBoundingClientRect().left;
+      const tail=group.getBoundingClientRect().right-tailColumns.at(-1).getBoundingClientRect().right;
       const scrollColumns=[...document.querySelectorAll('.page-column,.page-rail,.path-column,.page-content,.document-aside')];
-      const unifiedCanvas=document.querySelectorAll('.page-shell').length===1&&scrollColumns.every(column=>{
+      const unifiedCanvas=document.querySelectorAll('.page-shell').length===1&&canvas.querySelectorAll('.reading-group').length===1
+        &&getComputedStyle(group).overflowX==='visible'&&getComputedStyle(group).overflowY==='visible'&&scrollColumns.every(column=>{
         let parent=column.parentElement;
         while(parent&&parent!==canvas&&getComputedStyle(parent).display==='contents')parent=parent.parentElement;
-        return parent===canvas;
+        return parent===canvas||parent===group;
       });
       const ancestors=new Set();
       for(const column of scrollColumns) {
@@ -50,6 +55,7 @@ export async function check({page,baseUrl,options}) {
         rootEntriesVisible:[...nav.querySelectorAll('[data-root-href]')].every(link=>link.getClientRects().length>0&&getComputedStyle(link).visibility==='visible'),
         prose:prose?rect(prose):null,proseOverflow:prose?prose.scrollWidth-prose.clientWidth:0,
         collection,footer:footer?rect(footer):null,footerInRail:!footer||!!footer.closest('.page-rail'),
+        tail,tailColumnsWidth,canvasWidth:document.querySelector('.page').getBoundingClientRect().width,
         viewport:view?.width||innerWidth,scrollWidth:document.scrollingElement.scrollWidth,x:view?.pageLeft??scrollX};
     });
     assert.ok(state.rootCount>0,'The page must have root navigation entries.');
@@ -60,7 +66,8 @@ export async function check({page,baseUrl,options}) {
     assert.ok(state.columns.every(column=>Math.abs(column.width-state.nav.width)<=1),'Navigation columns must share a width.');
     assert.ok(state.declared.column>0&&Math.abs(state.nav.width-state.declared.column)<=1,'Navigation width must match --navigation-column-inline.');
     assert.deepEqual(state.nestedHorizontalScrollers,[],'Columns must not create a nested horizontal scroller.');
-    assert.equal(state.unifiedCanvas,true,'Every scroll column must belong to the same canvas grid.');
+    assert.equal(state.unifiedCanvas,true,'Every scroll column must belong to the canvas or its non-scrolling reading group.');
+    assert.ok(Math.abs(state.tail-Math.max(0,state.canvasWidth-state.tailColumnsWidth))<=1,'Tail space must subtract the final reading columns and their gap, and must not be negative.');
     assert.ok(state.declared.gap>0&&state.gaps.every(gap=>Math.abs(gap-state.declared.gap)<=.1),'Root, path and main columns must share --page-shell-gap-inline.');
     assert.ok(state.columnLinks.every(count=>count>0),'Each breadcrumb column must have links.');
     assert.ok([state.nav,...state.columns].every(column=>Math.abs(column.y-state.main.y)<=1),'Columns must begin at the same vertical position.');
@@ -79,12 +86,26 @@ export async function check({page,baseUrl,options}) {
     if(state.prose)assert.ok(state.prose.width<=(state.collection?state.main.width:state.viewport)&&state.proseOverflow<=1,'Prose must fit without horizontal overflow.');
     assert.ok(state.footerInRail,'The footer must remain in the root navigation rail.');
     if(state.footer)assert.ok(Math.abs(state.footer.x-state.nav.x)<=1&&state.footer.y>=state.nav.y+state.nav.height,'The footer must align below root navigation.');
+    const end=await assertCanvasEnd(page);
     await page.evaluate(()=>scrollTo({left:0,top:0,behavior:'instant'}));await afterPaint(page);
     const bounds=await page.locator('[data-root-navigation]').boundingBox();
     assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width,'The canvas origin must reveal the complete root navigation.');
-    results.push({width,height:options.height??900,...state});
+    results.push({width,height:options.height??900,...state,end});
   }
   assert.ok(results.every(state=>state.columns.length===results[0].columns.length&&state.rootCount===results[0].rootCount),
     'The same page must expose the same navigation at every width.');
-  return {page:options.page,cases:results};
+  const plain=await page.context().browser().newContext({javaScriptEnabled:false,serviceWorkers:'block'}),noScript=[];
+  plain.setDefaultTimeout(options.timeout??15000);
+  try {
+    const document=await plain.newPage();
+    for(const width of options.widths.split(',').map(Number)) {
+      await document.setViewportSize({width,height:options.height??900});
+      const response=await document.goto(baseUrl+options.page,{waitUntil:'load'})||await document.reload({waitUntil:'load'});
+      assert.ok(response?.ok(),'Static pages must return a successful response.');
+      const aside=document.locator('.document-aside');
+      if(await aside.count())assert.equal(await aside.isVisible(),true,'Static articles must retain their document information.');
+      noScript.push({width,...await assertCanvasEnd(document)});
+    }
+  } finally {await plain.close();}
+  return {page:options.page,cases:results,noScript};
 }
