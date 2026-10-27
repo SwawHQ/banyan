@@ -24,7 +24,7 @@ const productionGuardrails = [
         maxBreadcrumbPayloadBytes: 16,
         maxBreadcrumbSourceCount: 0
     },
-    ...['notes-all','products-all'].map(name=>({
+    ...['articles-all','products-all'].map(name=>({
         label: name,
         rootCollectionSlug: name,
         relativePathLabel: `*/${name}/index.html`,
@@ -39,7 +39,7 @@ const productionGuardrails = [
         breadcrumbPayloadPerItemBytes: 220,
         maxBreadcrumbSourceCount: 1
     })),
-    ...['notes','products'].map(name=>({
+    ...['articles','products'].map(name=>({
         label: name,
         rootCollectionSlug: name,
         relativePathLabel: `*/${name}/index.html`,

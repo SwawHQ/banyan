@@ -42,7 +42,7 @@ test('repository HTML budgets keep raw and gzip failures outside published check
 test('breadcrumb payload and collection source budgets remain repository contracts',async()=>{
   const directory=fixture();
   const sources=JSON.stringify([{f:['href'],rv:['/one/']},{f:['href'],rv:['/two/']}]).replaceAll('"','&quot;');
-  for(const name of ['notes-all','notes','products-all','products']) {
+  for(const name of ['articles-all','articles','products-all','products']) {
     write(directory,name+'/index.html','<html lang=en><body data-entry-breadcrumb-sources="'+sources+'"></body></html>');
     assert.ok((await inspectHtmlBudget(directory)).issues.some(issue=>issue.startsWith(name+' breadcrumb source count exceeded budget')));
   }

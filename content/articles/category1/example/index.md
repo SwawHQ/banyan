@@ -7,7 +7,7 @@ date: "2026-01-02T00:00:00+08:00"
 lastmod: "2026-01-02T00:00:00+08:00"
 # Keep this URL when moving or renaming the bundle.
 url: p/example-product/
-description: One article shown in note and product lists.
+description: One article shown in article and product lists.
 # The section cascade supplies layout and slots; uncomment only to override.
 # layout: page-article-rss
 
@@ -17,7 +17,7 @@ params:
   # slots: [breadcrumb, meta] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
   # List icon; omit to use the listing's default. Choose one form.
   # icon: file
-  # icon: {text: "N"}
+  # icon: {text: "A"}
   # icon: {image: "site/favicon.link.svg", monochrome: true}
   # Omit to inherit a share image; false stops inheritance. Local files belong in this bundle.
   # share_image: cover.jpg
@@ -34,6 +34,6 @@ params:
     value: Publish one article in different list views.
 ---
 
-This article belongs to the notes directory. The products directory references it with `_map.toml`.
+This article belongs to the articles section. The products directory references it with `_map.toml`.
 
-The note lists show article metadata. The product lists use `offer` for the price and value statement. Both link to this page.
+The article lists show article metadata. The product lists use `offer` for the price and value statement. Both link to this page.

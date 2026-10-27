@@ -31,7 +31,7 @@
 
 
 
-仓库根目录维护 `notes`、`notes-all`、`products` 和 `products-all` 四个示例入口，共用一篇文章，并提供可选的设置和说明页面。
+仓库根目录维护文章（`articles`、`articles-all`）和产品（`products`、`products-all`）四个示例入口，共用一篇文章，并提供可选的设置和说明页面。
 Powered by 和预取诊断页面也由站点根 `content/` 维护。Module 只提供布局、脚本和样式，不提供站点内容。
 
 ## 开始使用

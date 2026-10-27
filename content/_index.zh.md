@@ -19,11 +19,11 @@ params:
   # home_signal_guide_chance: 0         #带拖尾引导线的信号比例，范围为 0–100。
   # 按此顺序显示；省略 url 时只显示可选中的文字，不提供链接。
   home_signals:
-    - name: 笔记 - 全部
-      url: /zh/notes-all/
+    - name: 文章 - 全部
+      url: /zh/articles-all/
       primary: true #将此信号的周期加倍；不改变导航优先级。
-    - name: 笔记 - 分类
-      url: /zh/notes/
+    - name: 文章 - 分类
+      url: /zh/articles/
     - name: 产品 - 全部
       url: /zh/products-all/
     - name: 产品 - 分类

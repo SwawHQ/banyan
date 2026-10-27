@@ -63,7 +63,7 @@ Reference pages show active settings and applicable optional fields in comments.
 Omit inherited fields unless the page needs to override them.
 
 ```text
-swban base/hugo new content --kind banyan notes/my-post/index.md  #Create an article
+swban base/hugo new content --kind banyan articles/my-post/index.md  #Create an article
 ```
 
 Additional brand media in `assets/site/` is optional. The site maintains the
@@ -324,12 +324,12 @@ Collection layouts bind their fields, sorting and controls. Use:
 | `page-collection-appearance` | Auto, light and dark buttons |
 
 Only the two `-all` layouts use `params.aggregate`, with a source section path.
-Choose your own directory names. For example, create `content/notes/_index.md`:
+Choose your own directory names. For example, create `content/articles/_index.md`:
 
 ```markdown
 ---
-title: Notes - Categories
-description: Browse notes by topic.
+title: Articles - Categories
+description: Browse articles by topic.
 layout: page-collection-directory
 params:
   slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
@@ -353,13 +353,13 @@ use `params.slots: []` to disable them.
 Powered by and offline pages use `page-article-norss`. The base template loads the
 required script once per page when it uses `site-update` or `page-actions`.
 
-Create `content/notes/sample/_index.md` for a nested directory. Its layouts come
-from the site's `notes` root:
+Create `content/articles/sample/_index.md` for a nested directory. Its layouts come
+from the site's `articles` root:
 
 ```markdown
 ---
 title: Sample
-description: Sample notes.
+description: Sample articles.
 ---
 ```
 
@@ -372,7 +372,7 @@ Sections default to HTML and RSS outputs. Set
 `outputs: [HTML]` to disable a section's feed. Its articles can still appear
 in the site feed when they use `page-article-rss`.
 
-Create an article at `content/notes/sample/alpha/index.md`:
+Create an article at `content/articles/sample/alpha/index.md`:
 
 ```markdown
 ---
@@ -396,11 +396,11 @@ without a leading slash; Hugo adds the current language prefix. Information and
 settings pages use their own paths, such as `url: language/`. Directory pages
 keep their content paths. No per-section permalink rule is needed.
 
-To list the article in another directory, create `content/notes/related/_index.md`
+To list the article in another directory, create `content/articles/related/_index.md`
 with its title and description. Put one shared `_map.toml` beside it:
 
 ```toml
-refs = ["/notes/sample/alpha"]
+refs = ["/articles/sample/alpha"]
 ```
 
 Targets are logical content paths. Each language uses its own target translation.
@@ -409,15 +409,15 @@ page. A reference directory and its ancestors use `build.list: always` or `local
 Resource publishing follows Hugo's `build.publishResources` setting, including
 `_map.toml`.
 
-Create `content/notes-all/_index.md` to list all articles under `notes`:
+Create `content/articles-all/_index.md` to list all articles under `articles`:
 
 ```markdown
 ---
-title: Notes - All
-description: All notes.
+title: Articles - All
+description: All articles.
 layout: page-collection-directory-all
 params:
-  aggregate: /notes
+  aggregate: /articles
   slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---
 ```

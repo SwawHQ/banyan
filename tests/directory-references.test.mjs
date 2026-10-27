@@ -514,19 +514,19 @@ test('non-rendered reference directories do not become article metadata or navig
 });
 
 test('explicit article URLs survive moves to a new root and reject conflicting URLs',()=>{
-  const originalDirectory=path.join(source,'content/library/original/item'),movedDirectory=path.join(source,'content/notes/moved/item');
+  const originalDirectory=path.join(source,'content/library/original/item'),movedDirectory=path.join(source,'content/articles/moved/item');
   const maps=['references','references/nested','second'].map(name=>path.join(source,'content/library',name,'_map.toml'));
   const originals=maps.map(file=>fs.readFileSync(file,'utf8'));
   try {
     const before=path.join(work,'flat-before');passed(build(source,before));
     for(const [,prefix] of locales)assert.ok(read(prefix+'/p/'+(prefix==='/zh'?'translated-item':'item')+'/','index.html',before).includes('Shared'));
     for(const [suffix] of locales) {
-      write(path.join(source,'content/notes/_index'+suffix+'.md'),directoryPage('Notes'));
-      write(path.join(source,'content/notes/moved/_index'+suffix+'.md'),directoryPage('Moved'));
+      write(path.join(source,'content/articles/_index'+suffix+'.md'),directoryPage('Articles'));
+      write(path.join(source,'content/articles/moved/_index'+suffix+'.md'),directoryPage('Moved'));
     }
     assert.ok(originalDirectory.startsWith(source+path.sep)&&movedDirectory.startsWith(source+path.sep));
     fs.renameSync(originalDirectory,movedDirectory);
-    for(const [index,file] of maps.entries())write(file,originals[index].replaceAll('/library/original/item','/notes/moved/item'));
+    for(const [index,file] of maps.entries())write(file,originals[index].replaceAll('/library/original/item','/articles/moved/item'));
     const after=path.join(work,'flat-after');passed(build(source,after));
     for(const [,prefix] of locales) {
       const url=prefix+'/p/'+(prefix==='/zh'?'translated-item':'item')+'/';
@@ -542,7 +542,7 @@ test('explicit article URLs survive moves to a new root and reject conflicting U
   } finally {
     if(fs.existsSync(movedDirectory))fs.renameSync(movedDirectory,originalDirectory);
     for(const [index,file] of maps.entries())write(file,originals[index]);
-    fs.rmSync(path.join(source,'content/notes'),{recursive:true,force:true});
+    fs.rmSync(path.join(source,'content/articles'),{recursive:true,force:true});
     fs.rmSync(path.join(source,'content/library/other-intro'),{recursive:true,force:true});
   }
 });

@@ -85,7 +85,7 @@ test('the reference site owns its columns and keeps documentation on Swaw',async
   for(const prefix of ['','zh/','zh-tw/']) {
     const home=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
     const roots=extractStartTags(home,'a').map(tag=>extractTagAttribute(tag,'data-root-href')).filter(Boolean);
-    for(const name of ['notes','notes-all','products','products-all','about']) {
+    for(const name of ['articles','articles-all','products','products-all','about']) {
       const pathname='/'+prefix+name+'/';
       const html=fs.readFileSync(path.join(output,pathname,'index.html'),'utf8');
       assert.equal(extractCanonicalHref(html),origin+pathname);
@@ -107,8 +107,8 @@ test('the reference site owns its columns and keeps documentation on Swaw',async
     for(const file of [path.join(output,prefix||'en/','sitemap.xml'),path.join(output,prefix,'llms.txt')])
       assert.ok(!fs.readFileSync(file,'utf8').includes('/_res/'),'Resource pages stay out of discovery outputs.');
     assert.equal(roots.includes('/'+prefix+'github/'),false,'No standalone GitHub entry.');
-    for(const name of ['discover','all','catalog','catalog-all','changelog','github'])
-      assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'No business column is injected: '+name);
+    for(const name of ['notes','notes-all','discover','all','catalog','catalog-all','changelog','github'])
+      assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'No retired or unconfigured column is published: '+name);
     assert.ok(extractStartTags(home,'a').some(tag=>extractTagAttribute(tag,'href').startsWith('https://swaw.com/')&&extractTagAttribute(tag,'href').includes('/d/banyan/docs/')));
   }
   assert.deepEqual((await inspectSitemap(output)).issues,[]);
@@ -146,18 +146,18 @@ test('settings sections use choice controls without article collection capabilit
   }
 });
 
-test('one translated article supplies the note and product lists through one shared reference',async()=>{
+test('one translated article supplies the article and product lists through one shared reference',async()=>{
   const files=await filesUnder(path.join(root,'content'));
   const maps=files.filter(file=>path.basename(file)==='_map.toml');
   assert.deepEqual(maps.map(file=>path.relative(root,file).replaceAll('\\','/')),['content/products/examples/_map.toml']);
-  assert.equal(fs.readFileSync(maps[0],'utf8').trim(),'refs = ["/notes/category1/example"]');
-  const articleFiles=files.filter(file=>file.startsWith(path.join(root,'content/notes')+path.sep)
+  assert.equal(fs.readFileSync(maps[0],'utf8').trim(),'refs = ["/articles/category1/example"]');
+  const articleFiles=files.filter(file=>file.startsWith(path.join(root,'content/articles')+path.sep)
     &&/\.md$/.test(file)&&!/^_index(?:\.|$)/.test(path.basename(file)));
   assert.deepEqual(articleFiles.map(file=>path.relative(root,file).replaceAll('\\','/')).sort(),
-    ['content/notes/category1/example/index.md','content/notes/category1/example/index.zh-tw.md','content/notes/category1/example/index.zh.md']);
+    ['content/articles/category1/example/index.md','content/articles/category1/example/index.zh-tw.md','content/articles/category1/example/index.zh.md']);
   for(const prefix of ['','zh/','zh-tw/']) {
     const href='/'+prefix+'p/example-product/';
-    for(const [directory,variant] of [['notes/category1','section'],['notes-all','all'],['products/examples','products'],['products-all','products']]) {
+    for(const [directory,variant] of [['articles/category1','section'],['articles-all','all'],['products/examples','products'],['products-all','products']]) {
       const html=fs.readFileSync(path.join(output,prefix,directory,'index.html'),'utf8');
       const main=extractBlocks(html,'main')[0].inner;
       const entries=extractStartTags(main,'a').filter(tag=>/\bdata-list-entry(?:\s|=|>)/.test(tag));
@@ -170,12 +170,12 @@ test('one translated article supplies the note and product lists through one sha
     assert.ok(article.includes('/'+prefix+'products/examples/'),'Article metadata exposes its reference directory');
     const llms=fs.readFileSync(path.join(output,prefix,'llms.txt'),'utf8');
     const entry='](<'+origin+href+'>)';
-    assert.equal(llms.split(entry).length-1,2,'LLMS retains the note and product groups.');
-    for(const directory of ['notes/category1','products/examples']) {
+    assert.equal(llms.split(entry).length-1,2,'LLMS retains the article and product groups.');
+    for(const directory of ['articles/category1','products/examples']) {
       const group=llms.split(/^## /m).find(text=>text.includes('](<'+origin+'/'+prefix+directory+'/>)'));
       assert.equal(group?.split(entry).length-1,1,directory+' lists the article once.');
     }
-    for(const directory of ['notes','notes-all','products','products-all']) {
+    for(const directory of ['articles','articles-all','products','products-all']) {
       const feed=fs.readFileSync(path.join(output,prefix,directory,'index.xml'),'utf8');
       assert.equal((feed.match(/<item>/g)||[]).length,1,directory+' RSS has one article');
       assert.ok(feed.includes(origin+href));

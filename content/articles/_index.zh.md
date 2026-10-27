@@ -1,14 +1,14 @@
 ---
 # 在第一列导航中显示此首页直属子栏目；weight 决定顺序。
-title: 笔记 - 分类
-description: 按分类浏览笔记。
+title: 文章 - 分类
+description: 按分类浏览文章。
 weight: 20
 layout: page-collection-directory
 
 params:
   # 此栏目使用默认文件夹图标；设置以下任意一种值可替换它。
   # icon: folder
-  # icon: {text: "N"}
+  # icon: {text: "A"}
   # icon: {image: "site/icon-192.png", monochrome: true}
   # 列表行图标继承这些默认值；各行自身的 icon 优先。
   # list_icon_folder: folder

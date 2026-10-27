@@ -1,14 +1,14 @@
 ---
 # 在第一欄導覽顯示此首頁直屬頁面；weight 控制順序。
-title: 筆記 - 分類
-description: 按分類瀏覽筆記。
+title: 文章 - 分類
+description: 按分類瀏覽文章。
 weight: 20
 layout: page-collection-directory
 
 params:
   # 此項目使用預設資料夾圖示；設定以下其中一種值可替換。
   # icon: folder
-  # icon: {text: "N"}
+  # icon: {text: "A"}
   # icon: {image: "site/icon-192.png", monochrome: true}
   # 清單項目繼承這些預設圖示；各項目自己的 icon 優先。
   # list_icon_folder: folder

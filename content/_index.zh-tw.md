@@ -19,11 +19,11 @@ params:
   # home_signal_guide_chance: 0         #帶尾隨引導線的訊號比例，範圍為 0–100。
   # 項目依此順序顯示；省略 url 時，文字可選取但沒有連結。
   home_signals:
-    - name: 筆記 - 全部
-      url: /zh-tw/notes-all/
+    - name: 文章 - 全部
+      url: /zh-tw/articles-all/
       primary: true #將此訊號的週期加倍，不改變導覽優先順序。
-    - name: 筆記 - 分類
-      url: /zh-tw/notes/
+    - name: 文章 - 分類
+      url: /zh-tw/articles/
     - name: 產品 - 全部
       url: /zh-tw/products-all/
     - name: 產品 - 分類

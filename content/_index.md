@@ -19,11 +19,11 @@ params:
   # home_signal_guide_chance: 0         #0-100 share of signals with a trailing guide line.
   # Entries follow this order; omit url for selectable text without a link.
   home_signals:
-    - name: Notes - All
-      url: /notes-all/
+    - name: Articles - All
+      url: /articles-all/
       primary: true #Doubles this signal's cycle time; does not change navigation priority.
-    - name: Notes - Categories
-      url: /notes/
+    - name: Articles - Categories
+      url: /articles/
     - name: Products - All
       url: /products-all/
     - name: Products - Categories

@@ -47,19 +47,19 @@ function consumer(name,{replacement='',multilingual=false}={}) {
   for(const suffix of multilingual?['','.zh','.zh-tw']:['']) {
     const translated=value=>value.replace(/^title: (.+)$/m,'title: $1'+suffix);
     write(root,'content/_index'+suffix+'.md',markdown[0]);
-    write(root,'content/notes/_index'+suffix+'.md',translated(markdown[1]));
-    write(root,'content/notes/sample/_index'+suffix+'.md',translated(markdown[2]));
-    write(root,'content/notes/related/_index'+suffix+'.md',translated(markdown[2].replaceAll('Sample','Related')));
+    write(root,'content/articles/_index'+suffix+'.md',translated(markdown[1]));
+    write(root,'content/articles/sample/_index'+suffix+'.md',translated(markdown[2]));
+    write(root,'content/articles/related/_index'+suffix+'.md',translated(markdown[2].replaceAll('Sample','Related')));
     for(const [name,title,date] of [['alpha','Alpha','2026-01-01'],['beta','Beta','2026-01-02']])
-      write(root,'content/notes/sample/'+name+'/index'+suffix+'.md',translated(markdown[3]
+      write(root,'content/articles/sample/'+name+'/index'+suffix+'.md',translated(markdown[3]
         .replaceAll('alpha',name).replaceAll('Alpha',title).replaceAll('2026-01-01',date)));
-    write(root,'content/notes-all/_index'+suffix+'.md',translated(markdown[4]));
+    write(root,'content/articles-all/_index'+suffix+'.md',translated(markdown[4]));
     write(root,'content/products/_index'+suffix+'.md',translated(markdown[5]));
     write(root,'content/products/free/_index'+suffix+'.md',translated(markdown[6]));
     write(root,'content/products/featured/_index'+suffix+'.md',translated(markdown[6].replaceAll('Free','Featured')));
     write(root,'content/products-all/_index'+suffix+'.md',translated(markdown[7]));
   }
-  for(const directory of ['notes/related','products/free','products/featured'])
+  for(const directory of ['articles/related','products/free','products/featured'])
     write(root,'content/'+directory+'/_map.toml',toml[2]);
   return root;
 }
@@ -73,19 +73,19 @@ function checks(root,owner,output) {
     passed(root,owner,['check/'+task,output]);
 }
 function directoryDefaults(output,{prefix='',suffix=''}={}) {
-  const directory=fs.readFileSync(path.join(output,prefix,'notes/index.html'),'utf8');
-  assert.ok(directory.includes('<title>Notes - Categories'+suffix));
+  const directory=fs.readFileSync(path.join(output,prefix,'articles/index.html'),'utf8');
+  assert.ok(directory.includes('<title>Articles - Categories'+suffix));
   assert.match(directory,/data-sort-variant="?section\b/);
   assert.ok(directory.includes('Sample'+suffix));
-  const section=fs.readFileSync(path.join(output,prefix,'notes/sample/index.html'),'utf8');
+  const section=fs.readFileSync(path.join(output,prefix,'articles/sample/index.html'),'utf8');
   assert.match(section,/data-sort-variant="?section\b/);
   for(const name of ['alpha','beta'])assert.match(section,new RegExp('href=["\']?/'+prefix+'p/'+name+'/'));
-  const related=fs.readFileSync(path.join(output,prefix,'notes/related/index.html'),'utf8');
-  assert.ok(related.includes('/'+prefix+'p/alpha/#from=notes/related'));
+  const related=fs.readFileSync(path.join(output,prefix,'articles/related/index.html'),'utf8');
+  assert.ok(related.includes('/'+prefix+'p/alpha/#from=articles/related'));
   assert.ok(fs.readFileSync(path.join(output,prefix,'p/alpha/index.html'),'utf8').includes('data-directory-reference'));
-  assert.equal(fs.existsSync(path.join(output,prefix,'notes/related/_map.toml')),false);
-  const entries=fs.readFileSync(path.join(output,prefix,'notes-all/index.html'),'utf8');
-  assert.ok(entries.includes('<title>Notes - All'+suffix));
+  assert.equal(fs.existsSync(path.join(output,prefix,'articles/related/_map.toml')),false);
+  const entries=fs.readFileSync(path.join(output,prefix,'articles-all/index.html'),'utf8');
+  assert.ok(entries.includes('<title>Articles - All'+suffix));
   for(const name of ['alpha','beta'])assert.ok(entries.includes('/'+prefix+'p/'+name+'/'));
   const products=fs.readFileSync(path.join(output,prefix,'products-all/index.html'),'utf8');
   assert.ok(products.includes('<title>Products - All'+suffix));
@@ -340,7 +340,7 @@ test('site content, palette, translations and delivery data drive a fresh instal
   assert.deepEqual(fs.readdirSync(path.join(output,'site')).filter(file=>/\.(?:toml|ya?ml)$/.test(file)),[],
     'Configuration sources stay unpublished, including fingerprinted copies');
   directoryDefaults(output,{prefix:'zh/',suffix:'.zh'});
-  assert.ok(fs.readFileSync(path.join(output,'zh/notes/index.html'),'utf8').includes('本站名称'));
+  assert.ok(fs.readFileSync(path.join(output,'zh/articles/index.html'),'utf8').includes('本站名称'));
   const rss=fs.readFileSync(path.join(output,'zh/rss/index.html'),'utf8');
   assert.ok(rss.includes('本站订阅'));assert.ok(rss.includes('/zh/index.xml'));
   const css=fs.readdirSync(path.join(output,'css')).filter(name=>name.endsWith('.css')).map(name=>fs.readFileSync(path.join(output,'css',name),'utf8')).join('');

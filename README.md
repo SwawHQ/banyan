@@ -27,7 +27,7 @@ with Miller column navigation.
 
 **9.** RSS, social metadata, sitemap, robots.txt, and llms.txt
 
-The repository root owns `notes`, `notes-all`, `products` and `products-all` examples.
+The repository root owns article (`articles`, `articles-all`) and product (`products`, `products-all`) examples.
 They share one article. The root also owns optional settings and information
 pages, including Powered by and prefetch diagnostics. The Module supplies reusable
 layouts, scripts and styles; it contains no site content.
