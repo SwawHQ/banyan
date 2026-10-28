@@ -28,7 +28,7 @@ before(()=>{
   source=path.join(work,'source with spaces 树');
   fixtureSiteFiles(source);
   fixtureSitePages(source,['appearance','language','my','_res','rss','powered-by']);
-  const config=fs.readFileSync(path.join(root,'hugo.toml'),'utf8');
+  const config='disableLanguages = ["ar"]\n'+fs.readFileSync(path.join(root,'hugo.toml'),'utf8');
   write(source,'hugo.toml',config);
   write(source,'assets/site/delivery.toml',fixtureDelivery(serviceWorkerPolicy('enable')));
   write(source,'go.mod','module fixture.invalid/site\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\nreplace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(root,'module').replaceAll('\\','/'))+'\n');

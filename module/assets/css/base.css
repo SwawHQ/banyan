@@ -31,14 +31,15 @@ a {
 }
 
 .skip-link {
-    position: absolute;
-    left: -9999px;
-    top: auto;
+    position: fixed;
+    inset-inline-start: 8px;
+    inset-block-start: 0;
+    transform: translateY(-100%);
 }
 
 .skip-link:focus {
-    left: 8px;
-    top: 8px;
+    inset-block-start: 8px;
+    transform: none;
     background: var(--bg);
     color: var(--fg);
     outline: 2px solid var(--focus-ring);

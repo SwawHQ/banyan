@@ -83,7 +83,8 @@ test('language options expose paths, target codes and source fragments',()=>{
 test('choices use real native links without JS and accessible translated settings',{timeout:45000},()=>{
   const state=report(cli('choices',['--page','/zh/language/','--trace','--out',path.join(work,'reports')]));
   assert.equal(state.browser,'chromium');assert.ok(state.browserVersion);
-  assert.equal(state.details.staticCases.length,3);assert.equal(state.details.runtimeCases.length,3);
+  assert.deepEqual(state.details.staticCases.map(state=>state.language),['en','zh','zh-tw','ar']);
+  assert.deepEqual(state.details.runtimeCases.map(state=>state.language),['en','zh','zh-tw','ar']);
   assert.equal(fs.existsSync(path.join(work,'node_modules')),false);
 });
 

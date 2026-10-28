@@ -54,7 +54,9 @@ function buildCollectionItemContent(item) {
 
     const title = document.createElement('span');
     title.className = 'item-title';
-    title.textContent = item?.text || '';
+    const text = document.createElement('bdi');
+    text.textContent = item?.text || '';
+    title.appendChild(text);
     fragment.append(icon, title);
     return fragment;
 }
@@ -93,7 +95,9 @@ function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
     label.className = 'path-column-label';
     label.href = collectionSource.href;
     label.title = collectionSource.label;
-    label.textContent = collectionSource.label;
+    const labelText = document.createElement('bdi');
+    labelText.textContent = collectionSource.label;
+    label.appendChild(labelText);
     field.appendChild(label);
 
     const state = getCollectionSortState(collectionSource);

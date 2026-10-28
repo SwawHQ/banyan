@@ -16,8 +16,10 @@ import {inspect as inspectScripts} from '../.agents/skills/swaw-banyan/tasks/che
 import {extractStartTags,extractTagAttribute,extractCanonicalHref} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {extractBlocks,stripRawText} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {filesUnder} from '../.agents/skills/swaw-banyan/tasks/_shared/output.mjs';
+import {parseToml} from '../.agents/skills/swaw-banyan/tasks/_shared/parsers.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),origin='https://banyan.swaw.com';
+const languages=['en','zh','zh-tw','ar'],prefixes=['','zh/','zh-tw/','ar/'],suffixes=['','.zh','.zh-tw','.ar'];
 let work,output;
 before(()=>{
   const parent=path.join(os.tmpdir(),'swaw/banyan/reference-site-tests');
@@ -31,7 +33,7 @@ after(()=>{if(work){assert.equal(path.basename(path.dirname(fs.realpathSync(work
 
 test('functional articles keep their shortcode scripts without article metadata, chapters or BlogPosting',async()=>{
   assert.deepEqual((await inspectScripts(output)).issues,[]);
-  for(const prefix of ['','zh/','zh-tw/'])for(const [route,family] of [['powered-by','updates/page'],['_res/offline','pages/offline']]) {
+  for(const prefix of prefixes)for(const [route,family] of [['powered-by','updates/page'],['_res/offline','pages/offline']]) {
     const html=fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');
     const scripts=extractStartTags(html,'script').map(tag=>extractTagAttribute(tag,'src')||'');
     assert.equal(scripts.filter(src=>src.includes('/js/'+family+'.')).length,1,prefix+route+' loads its controller once.');
@@ -59,7 +61,7 @@ test('the reference site owns its images, manifest and robots templates',()=>{
 });
 
 test('the reference site owns its delivery data, icons and interface translations',()=>{
-  for(const relative of ['assets/site/delivery.toml','assets/site/icons.toml','assets/i18n/en.toml','assets/i18n/zh.toml','assets/i18n/zh-tw.toml']) {
+  for(const relative of ['assets/site/delivery.toml','assets/site/icons.toml',...languages.map(language=>'assets/i18n/'+language+'.toml')]) {
     assert.ok(fs.existsSync(path.join(root,relative)),'Site-owned file: '+relative);
     assert.equal(fs.existsSync(path.join(root,'module',relative)),false,'Configuration stays outside the Module: '+relative);
   }
@@ -68,13 +70,22 @@ test('the reference site owns its delivery data, icons and interface translation
   assert.equal(fs.existsSync(path.join(output,'i18n')),false,'Interface dictionaries are not published as assets');
   assert.deepEqual(fs.readdirSync(path.join(output,'site')).filter(file=>/\.(?:toml|ya?ml)$/.test(file)),[],
     'Configuration sources stay unpublished, including fingerprinted copies');
+  const english=parseToml(fs.readFileSync(path.join(root,'assets/i18n/en.toml'),'utf8'));
+  for(const language of languages) {
+    const dictionary=parseToml(fs.readFileSync(path.join(root,'assets/i18n',language+'.toml'),'utf8'));
+    assert.deepEqual(Object.keys(dictionary).sort(),Object.keys(english).sort(),language+' has every interface key');
+    for(const [key,value] of Object.entries(dictionary)) {
+      assert.ok(value.other?.trim(),language+': '+key+' has display text');
+      if(language==='ar')assert.match(value.other,/[\u0600-\u06ff]/,key+' has Arabic display text');
+    }
+  }
 });
 
 test('the reference site owns its columns and keeps documentation on Swaw',async()=>{
   assert.equal(fs.existsSync(path.join(root,'module/content')),false,'All site content stays outside the Module');
-  for(const name of ['my','_res/offline','rss','powered-by'])for(const suffix of ['','.zh','.zh-tw'])
+  for(const name of ['my','_res/offline','rss','powered-by'])for(const suffix of suffixes)
     assert.ok(fs.existsSync(path.join(root,'content',name,'index'+suffix+'.md')),'Reference page: '+name+suffix);
-  for(const name of ['appearance','language'])for(const suffix of ['','.zh','.zh-tw']) {
+  for(const name of ['appearance','language'])for(const suffix of suffixes) {
     assert.ok(fs.existsSync(path.join(root,'content',name,'_index'+suffix+'.md')),'Reference section: '+name+suffix);
     assert.equal(fs.existsSync(path.join(root,'content',name,'index'+suffix+'.md')),false,'Settings have one section source.');
   }
@@ -82,7 +93,7 @@ test('the reference site owns its columns and keeps documentation on Swaw',async
   for(const name of ['offline','powered-by.debug'])assert.equal(fs.existsSync(path.join(root,'content',name)),false,'Resource sources use the shared branch.');
   assert.equal(fs.existsSync(path.join(root,'content/discover/docs')),false);
   assert.equal(fs.existsSync(path.join(root,'content/changelog')),false);
-  for(const prefix of ['','zh/','zh-tw/']) {
+  for(const prefix of prefixes) {
     const home=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
     const roots=extractStartTags(home,'a').map(tag=>extractTagAttribute(tag,'data-root-href')).filter(Boolean);
     for(const name of ['articles','articles-all','products','products-all','about']) {
@@ -117,8 +128,36 @@ test('the reference site owns its columns and keeps documentation on Swaw',async
   verifyCspOutput(output);
 });
 
+test('Arabic pages use RTL and demonstrate mixed text without losing translations',async()=>{
+  const contentFiles=await filesUnder(path.join(root,'content'));
+  const english=contentFiles.filter(file=>/(?:^|[\\/])(?:_index|index)\.md$/.test(file)
+    &&!['content/_res/_index.md','content/_res/home-art/_index.md'].includes(path.relative(root,file).replaceAll('\\','/')));
+  for(const file of english)assert.ok(fs.existsSync(file.replace(/\.md$/,'.ar.md')),'Arabic counterpart: '+file);
+  for(const [index,prefix] of prefixes.entries())for(const route of ['', 'language/', 'appearance/', 'articles-all/', 'p/example-product/', '_res/offline/', '404.html']) {
+    const html=fs.readFileSync(path.join(output,prefix,route.endsWith('.html')?route:route+'index.html'),'utf8');
+    const tag=extractStartTags(html,'html')[0];
+    assert.equal(extractTagAttribute(tag,'lang'),languages[index]);
+    assert.equal(extractTagAttribute(tag,'dir'),prefix==='ar/'?'rtl':'ltr');
+    if(prefix==='ar/') {
+      const main=extractBlocks(html,'main')[0].inner;
+      assert.match(main,/[\u0600-\u06ff]/,route+' contains Arabic text');
+      assert.match(extractBlocks(html,'a',tag=>extractTagAttribute(tag,'class')==='skip-link')[0].inner,/[\u0600-\u06ff]/);
+    }
+  }
+  const article=fs.readFileSync(path.join(output,'ar/p/example-product/index.html'),'utf8');
+  const main=extractBlocks(article,'main')[0].inner;
+  for(const tag of ['ul','ol','blockquote','table','pre','code'])assert.ok(extractBlocks(main,tag).length,'Arabic example includes '+tag);
+  for(const value of ['Banyan','Hugo','v1.2.3','2026-10-28','19.95 USD','article-123.md','١٢٣'])assert.ok(main.includes(value),'Mixed text retains '+value);
+  assert.ok(main.includes('https://example.com/docs/?lang=ar&amp;version=2'));
+  assert.ok(extractStartTags(article,'link').some(tag=>extractTagAttribute(tag,'hreflang')==='en'));
+  const home=fs.readFileSync(path.join(output,'ar/index.html'),'utf8');
+  const signals=extractStartTags(home,'a').filter(tag=>/\bdata-page-home-signal(?:\s|=|>)/.test(tag));
+  assert.equal(signals.length,6);
+  assert.ok(signals.slice(0,4).every(tag=>extractTagAttribute(tag,'href').startsWith('/ar/')));
+});
+
 test('settings sections use choice controls without article collection capabilities',()=>{
-  for(const prefix of ['','zh/','zh-tw/'])for(const name of ['language','appearance']) {
+  for(const prefix of prefixes)for(const name of ['language','appearance']) {
     const pathname='/'+prefix+name+'/',html=fs.readFileSync(path.join(output,prefix,name,'index.html'),'utf8');
     const main=extractBlocks(html,'main')[0].inner,body=extractStartTags(html,'body')[0];
     assert.equal(extractCanonicalHref(html),origin+pathname);
@@ -134,8 +173,8 @@ test('settings sections use choice controls without article collection capabilit
     assert.equal(back.length,1);assert.equal(extractTagAttribute(back[0],'href'),'/'+prefix);
     if(name==='language') {
       const choices=links.filter(tag=>extractTagAttribute(tag,'data-language-choice'));
-      assert.deepEqual(choices.map(tag=>extractTagAttribute(tag,'data-language-choice')),['en','zh','zh-tw']);
-      assert.deepEqual(choices.map(tag=>extractTagAttribute(tag,'href')),['/language/','/zh/language/','/zh-tw/language/']);
+      assert.deepEqual(choices.map(tag=>extractTagAttribute(tag,'data-language-choice')),languages);
+      assert.deepEqual(choices.map(tag=>extractTagAttribute(tag,'href')),prefixes.map(prefix=>'/'+prefix+'language/'));
       assert.deepEqual(choices.filter(tag=>extractTagAttribute(tag,'aria-current')==='page').map(tag=>extractTagAttribute(tag,'data-language-choice')),[prefix?prefix.slice(0,-1):'en']);
     } else {
       const choices=extractStartTags(main,'button').filter(tag=>extractTagAttribute(tag,'data-theme-choice'));
@@ -154,8 +193,8 @@ test('one translated article supplies the article and product lists through one 
   const articleFiles=files.filter(file=>file.startsWith(path.join(root,'content/articles')+path.sep)
     &&/\.md$/.test(file)&&!/^_index(?:\.|$)/.test(path.basename(file)));
   assert.deepEqual(articleFiles.map(file=>path.relative(root,file).replaceAll('\\','/')).sort(),
-    ['content/articles/category1/example/index.md','content/articles/category1/example/index.zh-tw.md','content/articles/category1/example/index.zh.md']);
-  for(const prefix of ['','zh/','zh-tw/']) {
+    suffixes.map(suffix=>'content/articles/category1/example/index'+suffix+'.md').sort());
+  for(const prefix of prefixes) {
     const href='/'+prefix+'p/example-product/';
     for(const [directory,variant] of [['articles/category1','section'],['articles-all','all'],['products/examples','products'],['products-all','products']]) {
       const html=fs.readFileSync(path.join(output,prefix,directory,'index.html'),'utf8');
@@ -186,12 +225,12 @@ test('one translated article supplies the article and product lists through one 
 });
 
 test('production discovery uses the official origin in sitemap, RSS and robots',()=>{
-  for(const file of ['sitemap.xml','en/sitemap.xml','zh/sitemap.xml','index.xml','zh/index.xml','robots.txt','llms.txt']) {
+  for(const file of ['sitemap.xml','en/sitemap.xml','zh/sitemap.xml','ar/sitemap.xml','index.xml','zh/index.xml','ar/index.xml','robots.txt','llms.txt']) {
     const text=fs.readFileSync(path.join(output,file),'utf8');
     assert.ok(text.includes(origin),file+' must use the official origin');
     assert.doesNotMatch(text,/https?:\/\/localhost:1313/,file+' must not publish preview URLs');
   }
-  for(const prefix of ['','zh/','zh-tw/']) {
+  for(const prefix of prefixes) {
     const feed=fs.readFileSync(path.join(output,prefix,'index.xml'),'utf8');
     const sitemap=fs.readFileSync(path.join(output,prefix||'en/','sitemap.xml'),'utf8');
     const llms=fs.readFileSync(path.join(output,prefix,'llms.txt'),'utf8');
@@ -208,7 +247,7 @@ test('production discovery uses the official origin in sitemap, RSS and robots',
 
 test('Powered by contains translated diagnostics and same-language test links',()=>{
   assert.equal(fs.existsSync(path.join(output,'prefetchdebug')),false);
-  for(const prefix of ['','zh/','zh-tw/']) {
+  for(const prefix of prefixes) {
     const html=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
     const language=prefix?prefix.slice(0,-1):'en';
     assert.equal(extractCanonicalHref(html),origin+'/'+prefix+'powered-by/');
@@ -224,7 +263,7 @@ test('Powered by contains translated diagnostics and same-language test links',(
     const summary=extractBlocks(disclosure[0].html,'summary');
     assert.equal(summary.length,1,'The diagnostic disclosure has one native toggle.');
     assert.ok(summary[0].inner.trim(),'The toggle has visible text.');
-    if(prefix)assert.match(summary[0].inner,/[\u3400-\u9fff]/,'The toggle follows the page language.');
+    if(prefix)assert.match(summary[0].inner,prefix==='ar/'?/[\u0600-\u06ff]/:/[\u3400-\u9fff]/,'The toggle follows the page language.');
     for(const key of ['support','env','actions','runtime','payload'])
       assert.equal(extractStartTags(disclosure[0].html,'pre').filter(tag=>extractTagAttribute(tag,'id')==='prefetch-debug-'+key).length,1,'One collapsed diagnostic panel: '+key);
     const links=extractStartTags(html,'a').filter(tag=>extractTagAttribute(tag,'data-prefetch-test-link'));
@@ -232,7 +271,7 @@ test('Powered by contains translated diagnostics and same-language test links',(
     for(const link of links) {
       const href=extractTagAttribute(link,'href');
       assert.ok(href.startsWith('/'+prefix),'Diagnostic targets retain the page language: '+href);
-      if(!prefix)assert.doesNotMatch(href,/^\/(?:zh|zh-tw)\//);
+      if(!prefix)assert.doesNotMatch(href,/^\/(?:zh|zh-tw|ar)\//);
       assert.ok(fs.existsSync(path.join(output,new URL(href,origin).pathname,'index.html')));
     }
     const collectionPath=new URL(extractTagAttribute(links[0],'href'),origin).pathname;
@@ -256,7 +295,7 @@ test('Powered by contains translated diagnostics and same-language test links',(
 });
 
 test('Powered by build section shows only the matching content version',async()=>{
-  for(const prefix of ['','zh/','zh-tw/']) {
+  for(const prefix of prefixes) {
     const html=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
     const times=extractStartTags(html,'time').filter(tag=>tag.includes('data-site-update-version'));
     assert.equal(times.length,1);

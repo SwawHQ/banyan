@@ -56,7 +56,7 @@ async function cachedImages() {
 before(async()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));source=path.join(work,'source');timings={};
   fixtureSiteFiles(source);
-  write(path.join(source,'hugo.toml'),'disableLanguages = ["zh", "zh-tw"]\n'+fs.readFileSync(path.join(root,'hugo.toml'),'utf8'));
+  write(path.join(source,'hugo.toml'),'disableLanguages = ["zh", "zh-tw", "ar"]\n'+fs.readFileSync(path.join(root,'hugo.toml'),'utf8'));
   write(path.join(source,'go.mod'),'module fixture.invalid/images\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\n'+
     'replace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(root,'module').replaceAll('\\','/'))+'\n');
   write(path.join(source,'content/_index.md'),'---\ntitle: Image fixture\ndescription: Isolated image processing fixture.\nlayout: page-home\nparams: {share_image: false}\n---\n\n{{< home-art "/_res/home-art/wind" >}}\n');

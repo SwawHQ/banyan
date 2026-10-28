@@ -18,8 +18,9 @@
 }
 
 .prose :is(th, td):where(:not(.chroma, .chroma *)) {
-    padding: 4px 1px 4px 4px;
-    text-align: left;
+    padding-block: 4px;
+    padding-inline: 4px 1px;
+    text-align: start;
     vertical-align: top;
     font-size: 12px;
     color: var(--table-text);

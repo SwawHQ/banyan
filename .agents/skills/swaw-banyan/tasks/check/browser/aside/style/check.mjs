@@ -44,8 +44,9 @@ export async function check({page,baseUrl,options}) {
       assert.deepEqual(await paint(toggle),await paint(selected),'The expanded toggle must reuse selected navigation styles.');
       assert.equal(await toggle.evaluate(node=>getComputedStyle(node).borderTopWidth),'0px');
       assert.ok(await page.evaluate(()=>{
+        const edge=getComputedStyle(document.documentElement).direction==='rtl'?'right':'left';
         const starts=['.document-toc a[data-chapter-anchor="main"] .item-title','.document-toc__h2 .item-title','#document-aside-close .item-title']
-          .map(selector=>document.querySelector(selector).getBoundingClientRect().left);
+          .map(selector=>document.querySelector(selector).getBoundingClientRect()[edge]);
         return starts.every(left=>Math.abs(left-starts[0])<0.1);
       }),'The close control and top-level chapters must align with the chapter header.');
       await activate(page,close);

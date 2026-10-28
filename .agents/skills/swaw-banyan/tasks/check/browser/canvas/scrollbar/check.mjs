@@ -7,7 +7,8 @@ const read=page=>page.locator('.page-content').evaluate(column=>{
   const aside=document.querySelector('.document-aside').getBoundingClientRect();
   return {supportsColor:CSS.supports('scrollbar-color','auto'),color:getComputedStyle(column).getPropertyValue('scrollbar-color'),
     nestedColor:getComputedStyle(column.firstElementChild).getPropertyValue('scrollbar-color'),
-    width:column.clientWidth,scrollbar:column.offsetWidth-column.clientWidth,gap:aside.left-column.getBoundingClientRect().right,
+    width:column.clientWidth,scrollbar:column.offsetWidth-column.clientWidth,
+    gap:getComputedStyle(column).direction==='rtl'?column.getBoundingClientRect().left-aside.right:aside.left-column.getBoundingClientRect().right,
     expectedGap:parseFloat(getComputedStyle(column.parentElement).columnGap),overflowX:column.scrollWidth-column.clientWidth,
     maxY:column.scrollHeight-column.clientHeight,y:column.scrollTop,
     hidesIdle:matchMedia('(hover: hover) and (pointer: fine) and (forced-colors: none)').matches};
@@ -18,7 +19,8 @@ const readCanvas=page=>page.evaluate(()=>{
   return {color:getComputedStyle(canvas).getPropertyValue('scrollbar-color'),
     nestedColor:getComputedStyle(document.body).getPropertyValue('scrollbar-color'),
     width:canvas.clientWidth,gutter:innerHeight-canvas.clientHeight,
-    maxX:canvas.scrollWidth-(window.visualViewport?.width??canvas.clientWidth),x:window.visualViewport?.pageLeft??scrollX};
+    maxX:canvas.scrollWidth-(window.visualViewport?.width??canvas.clientWidth),
+    x:(window.visualViewport?.pageLeft??scrollX)*(getComputedStyle(canvas).direction==='rtl'?-1:1)};
 });
 const idleCanvas=page=>page.waitForFunction(()=>!document.scrollingElement.hasAttribute('data-scrolling'));
 
@@ -56,6 +58,23 @@ export async function check({page,baseUrl,options}) {
     }
     assert.equal(settled.y,active.y,'Idle must preserve the reading position.');
     assert.ok(active.y>0&&active.y!==resized.y,'Exercise a changed reading position.');
+    let readingHover;
+    if(!options.touch&&resized.scrollbar>0) {
+      const point=await page.locator('.page-content').evaluate(column=>{
+        column.scrollIntoView({inline:'start',block:'nearest',behavior:'instant'});
+        const box=column.getBoundingClientRect(),border=parseFloat(getComputedStyle(column).borderLeftWidth);
+        const gutter=column.offsetWidth-column.clientWidth;
+        return {x:column.clientLeft>border?box.left+gutter/2:box.right-gutter/2,y:Math.min(box.bottom,innerHeight)-40,
+          center:(box.left+box.right)/2};
+      });
+      await afterPaint(page);await page.mouse.move(point.x,point.y);
+      await page.waitForFunction(()=>document.querySelector('.page-content').hasAttribute('data-scrollbar-hover'));
+      readingHover=await read(page);
+      if(resized.supportsColor)assert.equal(readingHover.color,'auto','Hovering either reading scrollbar edge must reveal native colors.');
+      await page.mouse.move(point.center,point.y);
+      await page.waitForFunction(()=>!document.querySelector('.page-content').hasAttribute('data-scrollbar-hover'));
+    }
+    await idleCanvas(page);
     const canvasIdle=await readCanvas(page);
     assert.ok(canvasIdle.maxX>0,'The canvas must scroll horizontally.');
     if(resized.supportsColor) {
@@ -81,7 +100,7 @@ export async function check({page,baseUrl,options}) {
       await page.waitForFunction(()=>!document.scrollingElement.hasAttribute('data-scrollbar-hover'));
       if(resized.supportsColor)assert.equal((await readCanvas(page)).color,expected,'Leaving the canvas scrollbar must restore idle colors.');
     }
-    cases.push({width,resized,active,idle:settled,canvas:{idle:canvasIdle,active:canvasActive,settled:canvasSettled,hover:canvasHover}});
+    cases.push({width,resized,active,idle:settled,readingHover,canvas:{idle:canvasIdle,active:canvasActive,settled:canvasSettled,hover:canvasHover}});
   }
   const first=cases[0].resized,last=cases.at(-1).resized;
   assert.equal(last.width,first.width,'Returning to the first viewport width must restore the reading width.');

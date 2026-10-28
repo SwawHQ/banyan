@@ -74,3 +74,6 @@ other = '章節'
 other = '目錄與資訊'
 [document_aside_close]
 other = '收起'
+
+[skip_to_content]
+other = "跳至正文"

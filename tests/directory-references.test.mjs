@@ -21,7 +21,7 @@ import {readFieldValue} from '../module/assets/js/browse/navigation-state.contra
 
 const repository=fileURLToPath(new URL('../',import.meta.url));
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/directory-references-tests');
-const locales=[['',''],['.zh','/zh'],['.zh-tw','/zh-tw']];
+const locales=[['',''],['.zh','/zh'],['.zh-tw','/zh-tw'],['.ar','/ar']];
 let work,source,output;
 function write(file,text) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function article(title,fields='') {return '---\ntitle: '+title+'\ndescription: Description for '+title+'.\ndate: 2026-01-01\n'+
@@ -47,7 +47,7 @@ before(()=>{
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
   fs.cpSync(path.join(repository,'archetypes'),path.join(source,'archetypes'),{recursive:true});
   write(path.join(source,'hugo.toml'),'theme="banyan"\nbaseURL="https://example.test/"\ntitle="Reference fixture"\ndefaultContentLanguage="en"\nenableRobotsTXT=true\nprintPathWarnings=true\npanicOnWarning=true\n'+
-    '[minify]\ndisableJS=true\n[params.appearance]\npalette="css/theme.css"\n[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n[languages.zh-tw]\nlabel="繁體"\nweight=3\n'+
+    '[minify]\ndisableJS=true\n[params.appearance]\npalette="css/theme.css"\n[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n[languages.zh-tw]\nlabel="繁體"\nweight=3\n[languages.ar]\nlabel="العربية"\ndirection="rtl"\nweight=4\n'+
     '[taxonomies]\n[[cascade]]\n[cascade.build]\npublishResources=false\n[outputs]\nhome=["HTML","RSS","LLMS","DIRECTORY"]\nsection=["HTML","RSS"]\npage=["HTML"]\n'+
     '[outputFormats.LLMS]\nmediaType="text/plain"\nbaseName="llms"\nisPlainText=true\nnotAlternative=true\n'+
     '[outputFormats.DIRECTORY]\nmediaType="application/json"\nbaseName="directory"\nisPlainText=true\nnotAlternative=true\n'+fixtureSiteMounts);

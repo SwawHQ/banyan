@@ -1,10 +1,10 @@
 .prose ul {
-    padding-left: 1.4em;
+    padding-inline-start: 1.4em;
     list-style-type: disc;
 }
 
 .prose ol {
-    padding-left: 1.6em;
+    padding-inline-start: 1.6em;
     list-style-type: decimal;
 }
 
@@ -35,5 +35,5 @@
 /* 嵌套列表缩进 */
 .prose :is(ul, ol) :is(ul, ol) {
     margin-top: 12px;
-    padding-left: 1.2em;
+    padding-inline-start: 1.2em;
 }

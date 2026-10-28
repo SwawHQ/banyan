@@ -9,7 +9,7 @@ export async function check({page,context,baseUrl,options}) {
     for(const name of ['touchstart','touchmove','touchend','touchcancel'])
       window.addEventListener(name,event=>{
         trace.points=event.touches.length;
-        if(name==='touchend')trace.release={x:window.visualViewport?.pageLeft??scrollX,trusted:event.isTrusted};
+        if(name==='touchend')trace.release={x:(window.visualViewport?.pageLeft??scrollX)*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1),trusted:event.isTrusted};
       },{capture:true,passive:true});
     const ended=event=>{
       if(event.target!==document&&event.target!==window.visualViewport)return;
@@ -27,18 +27,20 @@ export async function check({page,context,baseUrl,options}) {
   const url=baseUrl+options.page,response=await page.goto(url,{waitUntil:'load'});
   assert.ok(response?.ok(),'The touch article must return a successful response.');
   await waitForBrowse(page);await afterPaint(page);
+  const rtl=await page.evaluate(()=>getComputedStyle(document.documentElement).direction==='rtl');
   const read=()=>page.evaluate(()=>{
     const view=window.visualViewport,edge=parseFloat(getComputedStyle(document.body).paddingInlineStart);
-    return {x:view?.pageLeft??scrollX,y:document.querySelector('.page-content').scrollTop,
+    const rtl=getComputedStyle(document.documentElement).direction==='rtl',direction=rtl?-1:1;
+    return {x:(view?.pageLeft??scrollX)*direction||0,y:document.querySelector('.page-content').scrollTop,
       width:view?.width??innerWidth,mode:document.documentElement.dataset.canvasWheel,
       snap:getComputedStyle(document.documentElement).scrollSnapType,
       columns:[...document.querySelectorAll('.page-column')].filter(node=>node.getBoundingClientRect().width).map(node=>({
-        x:node.getBoundingClientRect().left+scrollX-edge,width:node.getBoundingClientRect().width,
+        x:(rtl?document.documentElement.clientWidth-node.getBoundingClientRect().right-scrollX:node.getBoundingClientRect().left+scrollX)-edge,width:node.getBoundingClientRect().width,
         align:getComputedStyle(node).scrollSnapAlign}))};
   });
   const cdp=await context.newCDPSession(page),cases=[];
   const swipe=async({x,dx=0,dy=0,y=700})=>{
-    const drag=await touchDrag(page,cdp,{x,dx,dy,y}),after=await read();
+    const drag=await touchDrag(page,cdp,{x:rtl?390-x:x,dx:rtl?-dx:dx,dy,y}),after=await read();
     assert.equal(after.snap,'none','Touch scrolling must retain native free positioning.');
     assert.ok(after.columns.every(column=>column.align==='none'),'Touch columns must not expose paging stops.');
     assert.equal(page.url(),url,'A touch gesture must not activate a link.');
@@ -58,7 +60,7 @@ export async function check({page,context,baseUrl,options}) {
 
     await page.locator('.page-rail').evaluate(node=>node.scrollIntoView({inline:'start',block:'nearest',behavior:'instant'}));await afterPaint(page);
     await page.evaluate(()=>{window.__swbanTouchSnap.calls=[];});
-    const point=x=>({x,y:700,id:1});
+    const point=x=>({x:rtl?390-x:x,y:700,id:1});
     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(300)]});
     for(let step=1;step<=12;step++) {
       await page.waitForTimeout(40);
@@ -70,7 +72,7 @@ export async function check({page,context,baseUrl,options}) {
     assert.deepEqual(await page.evaluate(()=>window.__swbanTouchSnap.calls),[],
       'Holding a touch near an edge must not align while the finger is down.');
     await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-    await page.waitForFunction(x=>Math.abs((window.visualViewport?.pageLeft??scrollX)-x)<=1,first);
+    await page.waitForFunction(x=>Math.abs((window.visualViewport?.pageLeft??scrollX)*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)-x)<=1,first);
     const approached=await read(),approachCalls=await page.evaluate(()=>window.__swbanTouchSnap.calls);
     assert.equal(approachCalls.length,1,'A finished native gesture must align once.');
     assert.ok(approachCalls[0].inEnd&&approachCalls[0].trustedEnd&&approachCalls[0].points===0,
@@ -79,10 +81,12 @@ export async function check({page,context,baseUrl,options}) {
     const boundaries=await page.evaluate(()=>{
       const shell=document.querySelector('.page-shell'),column=document.querySelector('.path-column');
       const edge=parseFloat(getComputedStyle(document.body).paddingInlineStart);
-      const target=column.getBoundingClientRect().left+scrollX-edge,trace=window.__swbanTouchSnap;
+      const rtl=getComputedStyle(document.documentElement).direction==='rtl',axis=rtl?-1:1;
+      const columnStart=()=>rtl?document.documentElement.clientWidth-column.getBoundingClientRect().right-scrollX:column.getBoundingClientRect().left+scrollX;
+      const target=columnStart()-edge,trace=window.__swbanTouchSnap;
       const position=x=>{
         const previous=column.style.scrollMarginInlineStart;
-        column.style.scrollMarginInlineStart=column.getBoundingClientRect().left+scrollX-x+'px';
+        column.style.scrollMarginInlineStart=columnStart()-x+'px';
         window.__swbanTouchNativeView.call(column,{inline:'start',block:'nearest',behavior:'instant'});
         column.style.scrollMarginInlineStart=previous;
       };
@@ -95,10 +99,10 @@ export async function check({page,context,baseUrl,options}) {
         touch('touchstart',[250]);touch('touchmove',[250-direction*20]);
         position(target-direction*distance);
         document.dispatchEvent(new Event('scroll',{bubbles:true}));window.visualViewport?.dispatchEvent(new Event('scroll'));
-        const before=window.visualViewport?.pageLeft??scrollX;
+        const before=(window.visualViewport?.pageLeft??scrollX)*axis;
         touch('touchend',[]);document.dispatchEvent(new Event('scrollend'));
         window.visualViewport?.dispatchEvent(new Event('scrollend'));
-        results.push({direction,distance,target,before,after:window.visualViewport?.pageLeft??scrollX,calls:trace.calls.length});
+        results.push({direction,distance,target,before,after:(window.visualViewport?.pageLeft??scrollX)*axis,calls:trace.calls.length});
       }
       for(const cancel of ['multitouch','touchcancel','mouse','wheel','keyboard','resize']) {
         position(target-68);trace.calls=[];
@@ -110,10 +114,10 @@ export async function check({page,context,baseUrl,options}) {
         else if(cancel==='wheel')shell.dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaX:1}));
         else if(cancel==='keyboard')window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));
         else window.dispatchEvent(new Event('resize'));
-        const before=window.visualViewport?.pageLeft??scrollX;
+        const before=(window.visualViewport?.pageLeft??scrollX)*axis;
         touch('touchend',[]);document.dispatchEvent(new Event('scrollend'));
         window.visualViewport?.dispatchEvent(new Event('scrollend'));
-        results.push({cancel,before,after:window.visualViewport?.pageLeft??scrollX,calls:trace.calls.length});
+        results.push({cancel,before,after:(window.visualViewport?.pageLeft??scrollX)*axis,calls:trace.calls.length});
       }
       position(target);return results;
     });
@@ -131,10 +135,12 @@ export async function check({page,context,baseUrl,options}) {
     const zoom=await page.evaluate(()=>{
       const shell=document.querySelector('.page-shell'),column=document.querySelector('.path-column');
       const edge=parseFloat(getComputedStyle(document.body).paddingInlineStart);
-      const target=column.getBoundingClientRect().left+scrollX-edge,trace=window.__swbanTouchSnap;
+      const rtl=getComputedStyle(document.documentElement).direction==='rtl';
+      const columnStart=()=>rtl?document.documentElement.clientWidth-column.getBoundingClientRect().right-scrollX:column.getBoundingClientRect().left+scrollX;
+      const target=columnStart()-edge,trace=window.__swbanTouchSnap;
       const position=x=>{
         const previous=column.style.scrollMarginInlineStart;
-        column.style.scrollMarginInlineStart=column.getBoundingClientRect().left+scrollX-x+'px';
+        column.style.scrollMarginInlineStart=columnStart()-x+'px';
         window.__swbanTouchNativeView.call(column,{inline:'start',block:'nearest',behavior:'instant'});
         column.style.scrollMarginInlineStart=previous;
       };
@@ -179,7 +185,7 @@ export async function check({page,context,baseUrl,options}) {
     await content.evaluate(node=>{node.scrollTop=0;});await afterPaint(page);
     const code=page.locator('.prose pre').first();await code.evaluate(node=>{node.scrollLeft=0;});
     const codePoint=await visiblePoint(code),nestedBefore=await read();
-    await swipe({x:Math.min(280,codePoint.x),y:codePoint.y,dx:-80});
+    await touchDrag(page,cdp,{x:Math.min(280,codePoint.x),y:codePoint.y,dx:-80});
     assert.ok(await code.evaluate(node=>node.scrollLeft>0),'Native code scrolling must remain available inside a column.');
     assert.ok(Math.abs((await read()).x-nestedBefore.x)<=1,'Nested code scrolling must preserve the canvas position.');
 
@@ -188,7 +194,9 @@ export async function check({page,context,baseUrl,options}) {
       node.scrollIntoView({inline:'start',block:'nearest',behavior:'instant'});});await afterPaint(page);
     const wideStart=await read();
     assert.ok(wideStart.columns.at(-1).width>wideStart.width,'The final column must exceed the visible viewport.');
-    const right=()=>content.evaluate(node=>node.getBoundingClientRect().right-(window.visualViewport?.offsetLeft??0));
+    const right=()=>content.evaluate(node=>getComputedStyle(document.documentElement).direction==='rtl'
+      ?(window.visualViewport?.width??innerWidth)-node.getBoundingClientRect().left+(window.visualViewport?.offsetLeft??0)
+      :node.getBoundingClientRect().right-(window.visualViewport?.offsetLeft??0));
     for(let attempt=0;attempt<6&&(await right())>wideStart.width-8;attempt++)
       await swipe({x:330,dx:-180});
     const wideEnd=await read();

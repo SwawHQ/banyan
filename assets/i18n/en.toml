@@ -74,3 +74,6 @@ other = 'On this page'
 other = 'Contents & info'
 [document_aside_close]
 other = 'Hide'
+
+[skip_to_content]
+other = "Skip to content"

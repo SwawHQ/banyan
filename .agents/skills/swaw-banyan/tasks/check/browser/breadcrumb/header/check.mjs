@@ -9,10 +9,12 @@ async function readHeader(header) {
     if(!label||!separator||!sort||!arrow)return null;
     const bounds=node.getBoundingClientRect(),labelBox=label.getBoundingClientRect(),sepBox=separator.getBoundingClientRect();
     const sortBox=sort.getBoundingClientRect(),arrowBox=arrow.getBoundingClientRect();
+    const rtl=getComputedStyle(node).direction==='rtl';
     return {width:node.clientWidth,contentWidth:node.scrollWidth,left:bounds.left,right:bounds.right,
       label:label.textContent.trim(),title:label.title,labelWidth:labelBox.width,labelContentWidth:label.scrollWidth,
-      sortLeft:sortBox.left,sortRight:sortBox.right,sortWidth:sortBox.width,arrowRight:arrowBox.right,arrowWidth:arrowBox.width,
-      labelToSeparator:sepBox.left-labelBox.right,separatorToSort:sortBox.left-sepBox.right,
+      sortLeft:sortBox.left,sortRight:sortBox.right,sortWidth:sortBox.width,arrowLeft:arrowBox.left,arrowRight:arrowBox.right,arrowWidth:arrowBox.width,
+      labelToSeparator:rtl?labelBox.left-sepBox.right:sepBox.left-labelBox.right,
+      separatorToSort:rtl?sepBox.left-sortBox.right:sortBox.left-sepBox.right,
       indicator:arrow.textContent.trim(),visible:getComputedStyle(sort).visibility==='visible'&&getComputedStyle(sort).display!=='none'};
   });
 }
@@ -21,7 +23,7 @@ function checkHeader(state) {
   assert.ok(state,'Column must have a label, separator and sort control.');
   assert.ok(state.label&&state.title===state.label,'Column label must retain its full title.');
   assert.ok(state.width>0&&state.labelWidth>0&&state.sortWidth>0&&state.arrowWidth>0&&state.visible,'Column label and sort control must be visible.');
-  assert.ok(state.contentWidth<=state.width+1&&state.sortLeft>=state.left-.1&&state.sortRight<=state.right+.1&&state.arrowRight<=state.right+.1,
+  assert.ok(state.contentWidth<=state.width+1&&state.sortLeft>=state.left-.1&&state.sortRight<=state.right+.1&&state.arrowLeft>=state.left-.1&&state.arrowRight<=state.right+.1,
     'Column label must not clip the sort control or direction indicator.');
   assert.ok(state.labelToSeparator>0&&state.separatorToSort>0,'Label, separator and sort control must have visible spacing.');
 }

@@ -115,7 +115,7 @@ test(name+' rejects hidden or duplicate roots and footer overlap at the requeste
   assert.equal(invisible.status,1);assert.match(invisible.stderr,/Every root entry must remain visible/);
   const duplicate=fixture('root-duplicate-'+name);script(duplicate,"const nav=document.querySelector('[data-root-navigation]');nav.after(nav.cloneNode(true));");
   const repeated=cli('canvas/layout'+suffix,['--page',route,'--widths','390'],duplicate);
-  assert.equal(repeated.status,1);assert.match(repeated.stderr,/one root navigation/);
+  assert.equal(repeated.status,1);assert.match(repeated.stderr,/Root navigation must match the declared visibility/);
   const overlap=fixture('root-footer-'+name);script(overlap,"const footer=document.createElement('footer');footer.className='slot-footer';footer.textContent='Fault footer';footer.style.cssText='position:fixed;top:0;left:0;display:block';document.querySelector('.page-rail').prepend(footer);");
   const covered=cli('canvas/layout'+suffix,['--page',route,'--widths','390','--height','844'],overlap);
   assert.equal(covered.status,1);assert.match(covered.stderr,/footer must align below root navigation/);

@@ -55,13 +55,13 @@
 }
 
 .item-field--count {
-    text-align: right;
+    text-align: end;
 }
 
 .item-count-unit {
     display: inline-block;
     min-width: 3ch;
-    text-align: left;
+    text-align: start;
 }
 
 .item-list a {

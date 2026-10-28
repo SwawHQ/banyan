@@ -9,7 +9,7 @@ export async function check({page,baseUrl,options}) {
       const main=document.querySelector('.page-content'),aside=document.querySelector('#document-aside'),right=aside.getBoundingClientRect();
       const stage=getComputedStyle(main.parentElement);
       return {sibling:main.parentElement===aside.parentElement,followsMain:main.nextElementSibling===aside,
-        gap:right.left-main.getBoundingClientRect().right,expectedGap:parseFloat(stage.columnGap),
+        gap:stage.direction==='rtl'?main.getBoundingClientRect().left-right.right:right.left-main.getBoundingClientRect().right,expectedGap:parseFloat(stage.columnGap),
         asideWidth:right.width,topDifference:right.top-document.querySelector('[data-root-navigation]').getBoundingClientRect().top,
         overflow:aside.scrollWidth-aside.clientWidth};
     });

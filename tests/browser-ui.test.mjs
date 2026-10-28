@@ -60,7 +60,7 @@ before(async () => {
   const consumer=path.join(work,'consumer');starter=path.join(work,'starter');
   fixtureSiteFiles(consumer);
   fixtureSitePages(consumer,['appearance','language','my','_res','rss','powered-by']);
-  write(path.join(consumer,'hugo.toml'),fs.readFileSync(path.join(root,'hugo.toml'),'utf8'));
+  write(path.join(consumer,'hugo.toml'),'disableLanguages = ["ar"]\n'+fs.readFileSync(path.join(root,'hugo.toml'),'utf8'));
   write(path.join(consumer,'go.mod'),'module example.test/starter\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\nreplace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(root,'module').replaceAll('\\','/'))+'\n');
   for(const suffix of ['','.zh','.zh-tw'])write(path.join(consumer,'content/_index'+suffix+'.md'),'---\ntitle: Independent starter\ndescription: A minimal consumer site.\nlayout: page-home\n---\n\n{{< home-art "/_res/home-art/wind" >}}\n');
   const independent=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',starter],{

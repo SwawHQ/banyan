@@ -19,7 +19,7 @@ import {extractStartTags,extractTagAttribute,extractCanonicalHref,decodeHtmlAttr
 import {filesUnder} from '../.agents/skills/swaw-banyan/tasks/_shared/output.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/home-art');
-const languages=[['','en'],['zh/','zh'],['zh-tw/','zh-tw']],wind='/_res/home-art/wind';
+const languages=[['','en'],['zh/','zh'],['zh-tw/','zh-tw'],['ar/','ar']],wind='/_res/home-art/wind';
 const entry=source=>'{{< home-art '+JSON.stringify(source)+' >}}';
 let work,site;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}

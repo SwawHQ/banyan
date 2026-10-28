@@ -4,6 +4,7 @@
 }
 
 .page-home {
+    --page-home-inline-direction: 1;
     --page-home-signal-peak-opacity: 0.9;
     --page-home-signal-guide-opacity: 0.45;
     --page-home-signal-primary-peak-opacity: 0.9;
@@ -15,6 +16,10 @@
     box-sizing: border-box;
     block-size: 34rem;
     padding-block-start: var(--page-home-wind-field-start-offset, 18rem);
+}
+
+.page-home:dir(rtl) {
+    --page-home-inline-direction: -1;
 }
 
 [data-theme="dark"] .page-home {
@@ -183,6 +188,7 @@
     inset-block-start: calc(var(--page-home-wind-field-height, 13.2rem) + var(--page-home-horizon-windsock-contact-offset) - var(--page-home-windsock-foot-offset));
     inset-inline-start: 78%;
     overflow: visible;
+    transform: scaleX(var(--page-home-inline-direction));
 }
 
 .page-home__windsock-sock {
@@ -240,13 +246,13 @@
 @keyframes page-home-signal-drift {
     0% {
         opacity: 0;
-        transform: translate(-8rem, 0.08rem) rotate(-2deg);
+        transform: translate(calc(-8rem * var(--page-home-inline-direction)), 0.08rem) rotate(-2deg);
         visibility: hidden;
     }
 
     7.99% {
         opacity: 0;
-        transform: translate(-8rem, 0.08rem) rotate(-2deg);
+        transform: translate(calc(-8rem * var(--page-home-inline-direction)), 0.08rem) rotate(-2deg);
         visibility: hidden;
     }
 
@@ -258,19 +264,19 @@
 
     28% {
         opacity: var(--page-home-signal-peak-opacity);
-        transform: translate(calc(100cqi + 1rem), -0.08rem) rotate(1deg);
+        transform: translate(calc((100cqi + 1rem) * var(--page-home-inline-direction)), -0.08rem) rotate(1deg);
         visibility: visible;
     }
 
     28.01% {
         opacity: 0;
-        transform: translate(var(--page-home-signal-travel), 0.04rem) rotate(1deg);
+        transform: translate(calc(var(--page-home-signal-travel) * var(--page-home-inline-direction)), 0.04rem) rotate(1deg);
         visibility: hidden;
     }
 
     100% {
         opacity: 0;
-        transform: translate(var(--page-home-signal-travel), 0.04rem) rotate(1deg);
+        transform: translate(calc(var(--page-home-signal-travel) * var(--page-home-inline-direction)), 0.04rem) rotate(1deg);
         visibility: hidden;
     }
 }

@@ -4,9 +4,11 @@ export function initAutoScrollbar(column) {
     let timer;
     column.dataset.autoScrollbar = '';
     column.addEventListener('pointermove', event => {
+        const x = event.clientX - column.getBoundingClientRect().left;
         column.toggleAttribute('data-scrollbar-hover',
             canvas ? event.clientY >= column.clientHeight
-                : event.target === column && event.offsetX >= column.clientWidth);
+                : event.target === column && (x < column.clientLeft
+                    || x >= column.clientLeft + column.clientWidth));
     });
     column.addEventListener('pointerleave', () => column.removeAttribute('data-scrollbar-hover'));
     const onScroll = () => {

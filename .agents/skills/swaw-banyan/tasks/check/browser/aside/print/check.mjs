@@ -9,8 +9,11 @@ export async function check({page,baseUrl,options}) {
       assert.equal(await page.locator(selector).isVisible(),false,'Print must hide screen-only controls: '+selector);
     const state=await page.evaluate(()=>{
       const main=document.querySelector('.page-content'),aside=document.querySelector('#document-aside'),rail=document.querySelector('.page-rail');
+      const rtl=getComputedStyle(document.documentElement).direction==='rtl';
       return {below:aside.getBoundingClientRect().top>=main.getBoundingClientRect().bottom,
-        mainLeft:main.getBoundingClientRect().left,asideLeft:aside.getBoundingClientRect().left,railRight:rail.getBoundingClientRect().right,
+        mainLeft:rtl?-main.getBoundingClientRect().right:main.getBoundingClientRect().left,
+        asideLeft:rtl?-aside.getBoundingClientRect().right:aside.getBoundingClientRect().left,
+        railRight:rtl?-rail.getBoundingClientRect().left:rail.getBoundingClientRect().right,
         gap:parseFloat(getComputedStyle(document.querySelector('.page-shell')).columnGap),
         overflow:getComputedStyle(aside).overflowY,clipped:aside.scrollHeight>aside.clientHeight+1||main.scrollHeight>main.clientHeight+1};
     });

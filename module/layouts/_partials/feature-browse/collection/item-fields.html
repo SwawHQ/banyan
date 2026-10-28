@@ -1,11 +1,11 @@
 {{- $row := .row -}}
 {{- $view := .view -}}
 {{- if eq $view "products" -}}
-  <span class="item-field item-field--price" data-item-field="price" title="{{ $row.price_text }}">{{ $row.price_text }}</span>
-  <span class="item-field item-field--value" data-item-field="value" title="{{ $row.value_text }}">{{ $row.value_text }}</span>
+  <span class="item-field item-field--price" data-item-field="price" title="{{ $row.price_text }}"><bdi>{{ $row.price_text }}</bdi></span>
+  <span class="item-field item-field--value" data-item-field="value" title="{{ $row.value_text }}"><bdi>{{ $row.value_text }}</bdi></span>
 {{- else if ne $view "name" -}}
-  <span class="item-field item-field--date" data-item-field="date" title="{{ $row.date_text }}">{{ $row.date_text }}</span>
+  <span class="item-field item-field--date" data-item-field="date" title="{{ $row.date_text }}"><bdi dir="ltr">{{ $row.date_text }}</bdi></span>
   {{- $count := $row.count_text -}}{{- $unit := $row.count_unit -}}
   {{- if eq $view "all" -}}{{- $count = $row.size_text -}}{{- $unit = $row.size_unit -}}{{- end -}}
-  <span class="item-field item-field--count" data-item-field="{{ cond (eq $view "all") "size" "count" }}" title="{{ $count }}{{ if $unit }} KB{{ end }}"><span>{{ $count }}</span><span class="item-count-unit">{{ $unit | safeHTML }}</span></span>
+  <span class="item-field item-field--count" data-item-field="{{ cond (eq $view "all") "size" "count" }}" title="{{ $count }}{{ if $unit }} KB{{ end }}"><bdi dir="ltr"><span>{{ $count }}</span><span class="item-count-unit">{{ $unit | safeHTML }}</span></bdi></span>
 {{- end -}}

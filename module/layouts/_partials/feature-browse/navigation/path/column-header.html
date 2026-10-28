@@ -10,7 +10,7 @@
 {{- if gt (len $parts) 1 -}}{{- $order = index $parts 1 -}}{{- end -}}
 {{- if and $label $href -}}
 <span class="item-field item-field--name" data-item-field="name">
-  <a class="path-column-label" href="{{ $href }}" title="{{ $label }}">{{ $label }}</a>
+  <a class="path-column-label" href="{{ $href }}" title="{{ $label }}"><bdi>{{ $label }}</bdi></a>
 {{- if and $sortVariant $field $order -}}
   {{- $sortCopy := partial "feature-browse/collection/sort/copy.html" $ctx -}}
   {{- $fieldLabels := index $sortCopy "fields" -}}

@@ -14,7 +14,7 @@ import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/
 import {decodeHtmlAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)), parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/llms-sitemap-tests');
-const languages=[['',''],['.zh','/zh'],['.zh-tw','/zh-tw']];
+const languages=[['',''],['.zh','/zh'],['.zh-tw','/zh-tw'],['.ar','/ar']];
 const cases={local:'build: {list: local}\naliases: [/sitemap-alias/]',
   'never-list':'build: {list: never}',disabled:'sitemap: {disable: true}',
   noindex:'params: {robots: "follow, NOINDEX"}',none:'params: {robots: none}',
@@ -44,7 +44,7 @@ before(()=>{
   content=path.join(work,'content');config=path.join(work,'overlay.toml');
   for(const [suffix] of languages) {
     for(const [name,fields] of Object.entries(cases)) write(path.join(content,`sitemap-${name}/index${suffix}.md`),page(name,fields));
-    const mixed=suffix==='.zh'?'sitemap: {disable: true}':suffix==='.zh-tw'?'params: {robots: noindex}':'';
+    const mixed=suffix==='.zh'?'sitemap: {disable: true}':suffix?'params: {robots: noindex}':'';
     write(path.join(content,`sitemap-mixed/index${suffix}.md`),page('mixed',mixed));
     write(path.join(content,`sitemap-cascade/_index${suffix}.md`),page('cascade','cascade: {sitemap: {disable: true}}'));
     write(path.join(content,`sitemap-cascade/child${suffix}.md`),page('child','','sitemap-cascade/sitemap-child/'));
@@ -83,7 +83,7 @@ test('sitemap and grouped LLMS share rendered HTML pages, exclusions and metadat
     for(const name of ['disabled','noindex','none','unrendered','link','text','draft','alias','cascade','cascade/sitemap-child']) {
       assert.ok(!locs.includes(`https://example.test${prefix}/sitemap-${name}/`),`${prefix}/${name}`);
     }
-    assert.doesNotMatch(xml,/href="https:\/\/example\.test\/(?:zh|zh-tw)\/sitemap-mixed\/"/);
+    assert.doesNotMatch(xml,/href="https:\/\/example\.test\/(?:zh|zh-tw|ar)\/sitemap-mixed\/"/);
     assert.equal(locs.includes(`https://example.test${prefix}/sitemap-mixed/`),prefix==='');
     assert.ok(!locs.includes(`https://example.test${prefix}/sitemap-parent/`));
     assert.ok(locs.includes(`https://example.test${prefix}/sitemap-parent/sitemap-parent-child/`),'A disabled parent must not hide an eligible child');
@@ -95,7 +95,7 @@ test('sitemap and grouped LLMS share rendered HTML pages, exclusions and metadat
     assert.ok(special.endsWith(': First \\[detail\\] Second \\_value\\_'),special);
     assert.equal([...llms.slice(0,llms.indexOf(special)).matchAll(/^## (.+)$/gm)].at(-1)[1],'LLMS Group','Group by Hugo hierarchy');
     const undescribed=llms.split('\n').find(line=>line.includes('/d/llms-undescribed/'));
-    assert.match(undescribed,/^\- \[LLMS undescribed\]\(<https:\/\/example\.test(?:\/zh|\/zh-tw)?\/d\/llms-undescribed\/>\)$/);
+    assert.match(undescribed,/^\- \[LLMS undescribed\]\(<https:\/\/example\.test(?:\/zh|\/zh-tw|\/ar)?\/d\/llms-undescribed\/>\)$/);
     const groups=llms.split(/^## /m).slice(1);
     const shared='https://example.test'+prefix+'/d/llms-special/';
     assert.equal(llmsUrls(llms).filter(url=>url===shared).length,3,'One physical group and two reference groups');
@@ -191,9 +191,9 @@ test('full preview rebuilds remove disabled, unrendered, renamed and deleted pag
 
 test('LLMS supports site subpaths, language routing, independent weights and disabled output',async()=>{
   const variants=[
-    {name:'monolingual-subpath',config:'disableLanguages = ["zh", "zh-tw"]\n',base:'https://example.test/manual/',files:['llms.txt']},
-    {name:'language-subdir',config:'defaultContentLanguageInSubdir = true\n',files:['en/llms.txt','zh/llms.txt','zh-tw/llms.txt']},
-    {name:'language-weight',config:'[languages.en]\nweight = 9\n[languages.zh]\nweight = 1\n',files:['llms.txt','zh/llms.txt','zh-tw/llms.txt']},
+    {name:'monolingual-subpath',config:'disableLanguages = ["zh", "zh-tw", "ar"]\n',base:'https://example.test/manual/',files:['llms.txt']},
+    {name:'language-subdir',config:'defaultContentLanguageInSubdir = true\n',files:['en/llms.txt','zh/llms.txt','zh-tw/llms.txt','ar/llms.txt']},
+    {name:'language-weight',config:'[languages.en]\nweight = 9\n[languages.zh]\nweight = 1\n',files:['llms.txt','zh/llms.txt','zh-tw/llms.txt','ar/llms.txt']},
     {name:'disabled',config:'[outputs]\nhome = ["HTML", "RSS"]\n',files:[]}
   ];
   for(const variant of variants) {
@@ -209,7 +209,7 @@ test('LLMS supports site subpaths, language routing, independent weights and dis
       assertLlmsMatchesSitemap(text,urls(fs.readFileSync(sitemap,'utf8')));
     }
     if(variant.name!=='language-subdir')assert.equal(fs.existsSync(path.join(destination,'en/llms.txt')),false,'Do not copy the default language LLMS');
-    if(!variant.files.length)for(const prefix of ['','en','zh','zh-tw'])
+    if(!variant.files.length)for(const prefix of ['','en','zh','zh-tw','ar'])
       assert.equal(fs.existsSync(path.join(destination,prefix,'llms.txt')),false,'LLMS must remain optional');
     if(variant.files.length)assert.deepEqual((await inspectLlms(destination)).issues,[],variant.name);
   }

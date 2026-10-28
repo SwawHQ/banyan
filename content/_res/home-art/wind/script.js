@@ -35,7 +35,6 @@
 
     const setSignalSelected = (control, selected) => {
         const signal = control.closest(".page-home__signal");
-        control.toggleAttribute("data-page-home-signal-selected", selected);
         if (control instanceof HTMLButtonElement) {
             control.setAttribute("aria-pressed", selected ? "true" : "false");
         }

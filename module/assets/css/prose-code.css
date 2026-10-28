@@ -1,5 +1,8 @@
 .prose :is(pre, .highlight) {
     margin: 18px 0 18px 0;
+    direction: ltr;
+    text-align: start;
+    unicode-bidi: isolate;
 }
 
 .prose .highlight {

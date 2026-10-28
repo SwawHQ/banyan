@@ -36,7 +36,7 @@ function passed(root,owner,args) {
 function consumer(name,{replacement='',multilingual=false}={}) {
   const root=path.join(work,name);
   let config=toml[1]+'\n'+toml[0];
-  if(multilingual)config=config.replace('disableLanguages = ["zh", "zh-tw"]','disableLanguages = []')+
+  if(multilingual)config=config.replace('disableLanguages = ["zh", "zh-tw", "ar"]','disableLanguages = ["ar"]')+
     '\n[languages.zh]\nlabel = "中文"\nlocale = "zh-CN"\nweight = 2\nparams.icon = { text = "简" }\n'+
     '\n[languages.zh-tw]\nlabel = "繁體"\nlocale = "zh-TW"\nweight = 3\nparams.icon = { text = "繁" }\n';
   write(root,'hugo.toml',config);

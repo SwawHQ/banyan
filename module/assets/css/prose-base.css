@@ -10,6 +10,8 @@
 
 .prose code {
     font-family: Operator Mono, Consolas, Monaco, Menlo, monospace;
+    direction: ltr;
+    unicode-bidi: isolate;
 }
 
 .prose hr {
@@ -22,7 +24,7 @@
 .prose :is(h1, h2, h3, h4, h5, h6) {
     scroll-margin-block-start: 12px;
     display: block;
-    text-align: left;
+    text-align: start;
     letter-spacing: 0;
 }
 
@@ -101,7 +103,7 @@
     margin-top: -18px;
     margin-bottom: 12px;
     font-size: 12px;
-    text-align: left;
+    text-align: start;
     color: var(--muted);
 }
 

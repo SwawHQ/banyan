@@ -1,7 +1,7 @@
 import {afterPaint} from '../../_shared/viewport.mjs';
 
 export const touchPosition=page=>page.evaluate(()=>({
-  x:window.visualViewport?.pageLeft??scrollX,y:document.querySelector('.page-content').scrollTop
+  x:(window.visualViewport?.pageLeft??scrollX)*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)||0,y:document.querySelector('.page-content').scrollTop
 }));
 
 // Native CDP input; DOM dispatchEvent and scrollTo do not exercise touch scrolling.
@@ -16,6 +16,6 @@ export async function touchDrag(page,cdp,{x,y=180,dx,dy=0}) {
   // Pause before release so inertia does not hide the final position.
   await page.waitForTimeout(120);
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-  await afterPaint(page);
+  if(await page.evaluate(()=>matchMedia('(scripting: enabled)').matches))await afterPaint(page);
   return {x,y,dx,dy,before,after:await touchPosition(page)};
 }

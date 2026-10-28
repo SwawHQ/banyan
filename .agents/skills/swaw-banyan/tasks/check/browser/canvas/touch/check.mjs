@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {readCanvas,waitForCanvasX} from '../_shared/state.mjs';
 import {touchDrag,touchPosition} from '../_shared/touch.mjs';
+import {installStartupProbe} from '../_shared/startup.mjs';
 import {openAside} from '../../aside/_shared/page.mjs';
 
 export async function check({page,context,baseUrl,options}) {
   await page.setViewportSize({width:390,height:900});
+  await installStartupProbe(page);
   assert.notEqual(options.page,options.next,'--next must select a different page.');
   await page.addInitScript(()=>{
     window.__swbanTouchStarts=[];
@@ -17,14 +19,15 @@ export async function check({page,context,baseUrl,options}) {
   assert.ok(response?.ok(),'Article must return a successful response.');await waitForBrowse(page);await afterPaint(page);
   const initial=await readCanvas(page),width=initial.viewport;
   assert.equal(initial.canvasOffsetX,0,'A direct visit must start at the canvas origin.');
+  assert.ok(Number.isFinite(initial.firstFrameX)&&Math.abs(initial.firstFrameX)<=1,'The first mobile frame must start at the canvas origin.');
   assert.ok(await page.evaluate(()=>navigator.maxTouchPoints>0),'The browser context must support native touch input.');
-  assert.ok(initial.nav.x>=0&&initial.nav.right<=width,'Root navigation must be visible before dragging.');
+  assert.ok(initial.nav.x>=0&&initial.nav.x<=16&&initial.nav.right<=width,'Root navigation must be visible at the reading start before dragging.');
   const cdp=await context.newCDPSession(page),drags=[],documents=[];
   const record=request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())documents.push(request.url());};
   page.on('request',record);
   try {
     const swipe=async(x,dx,dy=0,y=180)=>{
-      const drag=await touchDrag(page,cdp,{x,dx,dy,y});
+      const drag=await touchDrag(page,cdp,{x:initial.direction===-1?width-x:x,dx:dx*initial.direction,dy,y});
       drags.push(drag);
       if(!dy)assert.equal(drag.after.y,drag.before.y,'Horizontal touch input must preserve the vertical reading position.');
       assert.equal(page.url(),url,'Dragging a navigation link must not activate it.');
@@ -33,11 +36,12 @@ export async function check({page,context,baseUrl,options}) {
     };
     const root=await page.locator('[data-root-navigation] [data-root-href]').first().evaluate(node=>{
       const box=node.getBoundingClientRect(),view=window.visualViewport;
-      return {x:Math.min(view?.width||innerWidth,box.right-(view?.offsetLeft||0))-12,
+      const width=view?.width||innerWidth,rtl=getComputedStyle(document.documentElement).direction==='rtl';
+      return {x:Math.min(width,rtl?width-box.left+(view?.offsetLeft||0):box.right-(view?.offsetLeft||0))-12,
         y:(box.top+box.bottom)/2-(view?.offsetTop||0)};
     });
     await swipe(root.x,-Math.min(180,root.x-15),0,root.y);
-    assert.ok((await touchPosition(page)).x>0,'A leftward drag on a root link must move the canvas.');
+    assert.ok((await touchPosition(page)).x>0,'A drag in the reading direction on a root link must move the canvas.');
     const limit=Math.ceil(initial.maxX/(width-90))+4;
     for(let attempt=0;attempt<limit&&(await readCanvas(page)).main.x>16;attempt++)
       await swipe(width-40,-Math.min(width-90,(await readCanvas(page)).main.x));
@@ -47,7 +51,9 @@ export async function check({page,context,baseUrl,options}) {
     await openAside(page,true);
     const asideBounds=()=>page.locator('.document-aside').evaluate(node=>{
       const box=node.getBoundingClientRect(),offset=window.visualViewport?.offsetLeft||0;
-      return {x:box.x-offset,right:box.right-offset};
+      return getComputedStyle(document.documentElement).direction==='rtl'
+        ?{x:(window.visualViewport?.width||innerWidth)-box.right+offset,right:(window.visualViewport?.width||innerWidth)-box.left+offset}
+        :{x:box.x-offset,right:box.right-offset};
     });
     for(let attempt=0;attempt<limit&&(await asideBounds()).right>width;attempt++)
       await swipe(width-40,-Math.min(width-90,Math.max(40,(await asideBounds()).right-width)));

@@ -18,5 +18,5 @@ export async function openAside(page,touch=false) {
 export const readingState = page => page.evaluate(()=>{
   const content=document.querySelector('.page-content'),main=document.getElementById('main').getBoundingClientRect(),view=window.visualViewport;
   return {width:main.width,height:content.scrollHeight,y:content.scrollTop,left:main.left-(view?.offsetLeft||0),
-    right:main.right-(view?.offsetLeft||0),x:view?.pageLeft??scrollX,canvasWidth:document.scrollingElement.scrollWidth,viewport:view?.width||innerWidth};
+    right:main.right-(view?.offsetLeft||0),x:(view?.pageLeft??scrollX)*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)||0,canvasWidth:document.scrollingElement.scrollWidth,viewport:view?.width||innerWidth};
 });

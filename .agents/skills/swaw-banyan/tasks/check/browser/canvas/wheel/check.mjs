@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse,visiblePoint,activate} from '../../_shared/viewport.mjs';
-import {assertCanvasEnd} from '../_shared/state.mjs';
+import {assertCanvasEnd,panCanvas} from '../_shared/state.mjs';
 
-const read=page=>page.evaluate(()=>({x:scrollX,maxX:document.scrollingElement.scrollWidth-document.scrollingElement.clientWidth,y:document.querySelector('.page-content').scrollTop,
+const read=page=>page.evaluate(()=>({x:scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1),maxX:document.scrollingElement.scrollWidth-document.scrollingElement.clientWidth,y:document.querySelector('.page-content').scrollTop,
   mode:document.documentElement.dataset.canvasWheel,pointer:document.documentElement.dataset.canvasPointer}));
+
+const columnEdge=locator=>locator.evaluate(node=>{
+  const box=node.getBoundingClientRect(),rtl=getComputedStyle(document.documentElement).direction==='rtl';
+  return (rtl?innerWidth-box.right-scrollX:box.left+scrollX)-parseFloat(getComputedStyle(document.body).paddingInlineStart);
+});
 
 async function visit(page,url) {
   const response=await page.goto(url,{waitUntil:'load'});
@@ -25,7 +30,7 @@ async function gapPoint(page) {
   return page.evaluate(()=>{
     const root=document.querySelector('.page-rail').getBoundingClientRect();
     const gap=parseFloat(getComputedStyle(document.querySelector('.page-shell')).columnGap);
-    const point={x:root.right+gap/2,y:Math.min(120,innerHeight/2)};
+    const point={x:getComputedStyle(document.documentElement).direction==='rtl'?root.left-gap/2:root.right+gap/2,y:Math.min(120,innerHeight/2)};
     if(point.x<0||point.x>=innerWidth)throw new Error('The root navigation gap must be visible.');
     if(document.elementFromPoint(point.x,point.y)?.closest('.page-column'))throw new Error('The wheel start point must be a column gap.');
     return point;
@@ -36,12 +41,12 @@ async function enter(page) {
   const gap=await gapPoint(page);await page.mouse.move(gap.x,gap.y);
   const before=await read(page);
   await page.mouse.wheel(0,160);
-  await page.waitForFunction(x=>document.documentElement.dataset.canvasWheel==='locked'&&scrollX>x+1,before.x);
+  await page.waitForFunction(x=>document.documentElement.dataset.canvasWheel==='locked'&&scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)>x+1,before.x);
   return gap;
 }
 
 async function positionCanvas(page,x) {
-  await page.evaluate(x=>scrollTo({left:x,top:0,behavior:'instant'}),x);await afterPaint(page);
+  await panCanvas(page,x);await afterPaint(page);
 }
 
 async function settledWheel(page,delta) {
@@ -51,14 +56,18 @@ async function settledWheel(page,delta) {
 async function tailState(page) {
   return page.evaluate(()=>{
     const shell=document.querySelector('.page-shell'),style=getComputedStyle(shell),group=shell.querySelector('.reading-group');
+    const rtl=style.direction==='rtl',rect=node=>{
+      const box=node.getBoundingClientRect();
+      return {x:rtl?innerWidth-box.right:box.left,right:rtl?innerWidth-box.left:box.right};
+    };
     const lastRight=Math.max(...[...document.querySelectorAll('.page-column')].filter(node=>node.getClientRects().length)
-      .map(node=>node.getBoundingClientRect().right+scrollX));
+      .map(node=>rect(node).right+scrollX*(rtl?-1:1)));
     const readingColumns=[...shell.querySelectorAll('.page-content,.document-aside')].filter(node=>node.getClientRects().length);
-    const tail=group.getBoundingClientRect().right-readingColumns.at(-1).getBoundingClientRect().right;
+    const tail=rect(group).right-rect(readingColumns.at(-1)).right;
     return {tail,padding:parseFloat(style.paddingInlineEnd),edge:parseFloat(style.getPropertyValue('--page-edge-inline')),
       width:document.querySelector('.page').getBoundingClientRect().width,
       scrollWidth:document.scrollingElement.scrollWidth,lastRight,
-      readingWidth:readingColumns.at(-1).getBoundingClientRect().right-readingColumns[0].getBoundingClientRect().left,
+      rtl,readingWidth:rect(readingColumns.at(-1)).right-rect(readingColumns[0]).x,
       snap:getComputedStyle(document.documentElement).scrollSnapType,
       align:[...document.querySelectorAll('.page-column')].map(node=>getComputedStyle(node).scrollSnapAlign)};
   });
@@ -88,7 +97,7 @@ export async function check({page,baseUrl,options}) {
     const readyCursor=await page.evaluate(({x,y})=>getComputedStyle(document.elementFromPoint(x,y)).cursor,gap);
     assert.ok(!['auto','default','text','pointer'].includes(readyCursor),'Column gaps must show a horizontal wheel cursor.');
     stage=width+' ready cursor bounds';
-    await page.evaluate(()=>scrollTo({left:document.scrollingElement.scrollWidth,top:0,behavior:'instant'}));await afterPaint(page);
+    await positionCanvas(page,(await read(page)).maxX);
     const stationary=await page.evaluate(({x,y})=>({
       gap:document.documentElement.hasAttribute('data-canvas-wheel-gap'),
       cursor:getComputedStyle(document.elementFromPoint(x,y)).cursor
@@ -101,20 +110,23 @@ export async function check({page,baseUrl,options}) {
     const blankPoints=await page.evaluate(()=>{
       const rail=document.querySelector('.page-rail').getBoundingClientRect();
       if(rail.bottom+10>=innerHeight)throw new Error('Choose a root navigation that leaves blank space below it.');
-      return [{name:'below navigation',x:(rail.left+rail.right)/2,y:rail.bottom+10},{name:'page edge',x:2,y:100}];
+      return [{name:'below navigation',x:(rail.left+rail.right)/2,y:rail.bottom+10},
+        {name:'page edge',x:getComputedStyle(document.documentElement).direction==='rtl'?innerWidth-2:2,y:100}];
     });
     for(const point of blankPoints) {
       await page.mouse.move(point.x,point.y);
       const cursor=await page.evaluate(({x,y})=>getComputedStyle(document.elementFromPoint(x,y)).cursor,point);
       assert.notEqual(cursor,readyCursor,point.name+' must not advertise horizontal wheel mode before scrolling.');
     }
-    await page.evaluate(()=>scrollTo({left:document.scrollingElement.scrollWidth,top:0,behavior:'instant'}));await afterPaint(page);
+    await positionCanvas(page,(await read(page)).maxX);
     if(geometry.tail>1) {
-      const tailPoint={x:width-geometry.edge-geometry.tail/2,y:100};await page.mouse.move(tailPoint.x,tailPoint.y);
+      const tailX=width-geometry.edge-geometry.tail/2;
+      const tailPoint={x:geometry.rtl?width-tailX:tailX,y:100};await page.mouse.move(tailPoint.x,tailPoint.y);
       const tailCursor=await page.evaluate(({x,y})=>{
+        const rtl=getComputedStyle(document.documentElement).direction==='rtl';
         const lastRight=Math.max(...[...document.querySelectorAll('.page-column')].filter(node=>node.getClientRects().length)
-          .map(node=>node.getBoundingClientRect().right));
-        if(x<=lastRight)throw new Error('The tail cursor point must lie after the last visible column.');
+          .map(node=>rtl?innerWidth-node.getBoundingClientRect().left:node.getBoundingClientRect().right));
+        if((rtl?innerWidth-x:x)<=lastRight)throw new Error('The tail cursor point must lie after the last visible column.');
         return getComputedStyle(document.elementFromPoint(x,y)).cursor;
       },tailPoint);
       assert.notEqual(tailCursor,readyCursor,'Tail space must not advertise horizontal wheel mode before scrolling.');
@@ -124,7 +136,7 @@ export async function check({page,baseUrl,options}) {
     const content=page.locator('.page-content');await reveal(page,content);
     const before=await read(page);
     await page.mouse.wheel(0,-120);
-    await page.waitForFunction(x=>scrollX<x-1,before.x);
+    await page.waitForFunction(x=>scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)<x-1,before.x);
     const locked=await read(page);
     assert.equal(locked.y,before.y,'Horizontal wheel mode must preserve the article reading position.');
     const lockedCursor=await content.evaluate(node=>getComputedStyle(node.querySelector('p')??node).cursor);
@@ -136,7 +148,7 @@ export async function check({page,baseUrl,options}) {
     assert.ok(await page.locator('.page-column').evaluateAll(nodes=>nodes.every(node=>
       getComputedStyle(node).scrollSnapAlign==='none')),'Locked columns must not expose snap points.');
     stage=width+' light snapping';
-    const edgeX=await page.locator('.path-column').first().evaluate(node=>node.getBoundingClientRect().left+scrollX-parseFloat(getComputedStyle(document.body).paddingInlineStart));
+    const edgeX=await columnEdge(page.locator('.path-column').first());
     const snapY=(await read(page)).y;
     const maxX=(await read(page)).maxX;
     assert.ok(edgeX>=73&&edgeX+73<=maxX,'The path column must allow both approach directions.');
@@ -150,7 +162,7 @@ export async function check({page,baseUrl,options}) {
       await positionCanvas(page,edgeX-direction*73);await settledWheel(page,direction*8);
       assert.ok(Math.abs((await read(page)).x-(edgeX-direction*65))<=1,'An edge 65 pixels away must remain outside the fixed snap range.');
     }
-    const mainEdge=await content.evaluate(node=>node.getBoundingClientRect().left+scrollX-parseFloat(getComputedStyle(document.body).paddingInlineStart));
+    const mainEdge=await columnEdge(content);
     await positionCanvas(page,mainEdge-72);await settledWheel(page,8);
     assert.ok(Math.abs((await read(page)).x-mainEdge)<=1,'Reading columns must use the same fixed snap range as navigation.');
     await positionCanvas(page,edgeX-24);
@@ -158,7 +170,7 @@ export async function check({page,baseUrl,options}) {
       const shell=document.querySelector('.page-shell');
       const wheel=deltaY=>shell.dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY}));
       wheel(8);await new Promise(resolve=>setTimeout(resolve,120));wheel(4);
-      await new Promise(resolve=>setTimeout(resolve,120));return scrollX;
+      await new Promise(resolve=>setTimeout(resolve,120));return scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1);
     });
     assert.ok(Math.abs(activeX-(edgeX-12))<=1,'Continued wheel input must postpone alignment until the latest input stops.');
     await page.waitForTimeout(100);
@@ -176,9 +188,9 @@ export async function check({page,baseUrl,options}) {
           {bubbles:true,cancelable:true,pointerType:cancel==='touch'?'touch':'mouse',button:1}));
         else if(cancel==='horizontal'||cancel==='zoom')shell.dispatchEvent(new WheelEvent('wheel',
           {bubbles:true,cancelable:true,deltaX:cancel==='horizontal'?8:0,deltaY:cancel==='zoom'?8:0,ctrlKey:cancel==='zoom'}));
-        else if(cancel==='external')scrollBy({left:12,top:0,behavior:'instant'});
+        else if(cancel==='external')scrollBy({left:getComputedStyle(document.documentElement).direction==='rtl'?-12:12,top:0,behavior:'instant'});
         else window.dispatchEvent(new Event('blur'));
-        return scrollX;
+        return scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1);
       },cancel);
       await page.waitForTimeout(300);
       assert.ok(Math.abs((await read(page)).x-cancelledX)<=1,cancel+' must cancel pending alignment.');
@@ -186,7 +198,7 @@ export async function check({page,baseUrl,options}) {
     await page.mouse.move(20,100);
     await page.evaluate(()=>document.querySelector('.page-shell').dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:40})));
     const resumedBefore=await read(page);await page.mouse.wheel(0,200);
-    await page.waitForFunction(x=>scrollX>x+1,resumedBefore.x);
+    await page.waitForFunction(x=>scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)>x+1,resumedBefore.x);
     const resumed=await read(page);
     assert.equal(resumed.mode,'locked','A wheel event after a pause must retain horizontal mode.');
     assert.equal(resumed.y,resumedBefore.y,'Resumed horizontal scrolling must preserve reading progress.');
@@ -221,8 +233,9 @@ export async function check({page,baseUrl,options}) {
       const overflow=await node.evaluate(element=>({width:element.clientWidth,scroll:element.scrollWidth}));
       assert.ok(overflow.scroll>overflow.width+1,'Code and table samples must overflow horizontally: '+selector+' '+JSON.stringify(overflow));
       await node.evaluate(element=>{element.scrollLeft=0;});
-      const nestedBefore=await read(page);await page.mouse.wheel(120,0);
-      await page.waitForFunction(selector=>document.querySelector(selector).scrollLeft>0,selector);
+      const nestedBefore=await read(page),direction=await node.evaluate(node=>getComputedStyle(node).direction==='rtl'?-1:1);
+      await page.mouse.wheel(120*direction,0);
+      await page.waitForFunction(selector=>Math.abs(document.querySelector(selector).scrollLeft)>0,selector);
       await page.mouse.wheel(0,100);await afterPaint(page);
       const state=await read(page);
       assert.equal(state.mode,'ready','Nested code and tables must not activate canvas wheel mode.');
@@ -240,15 +253,18 @@ export async function check({page,baseUrl,options}) {
       await assertCanvasEnd(page);
       const groupGap=await page.evaluate(()=>{
         const content=document.querySelector('.page-content'),aside=document.querySelector('.document-aside');
-        scrollBy({left:(content.getBoundingClientRect().right+aside.getBoundingClientRect().left-innerWidth)/2,top:0,behavior:'instant'});
-        const point={x:(content.getBoundingClientRect().right+aside.getBoundingClientRect().left)/2,y:120};
+        const middle=()=>getComputedStyle(content).direction==='rtl'
+          ?(content.getBoundingClientRect().left+aside.getBoundingClientRect().right)/2
+          :(content.getBoundingClientRect().right+aside.getBoundingClientRect().left)/2;
+        scrollBy({left:middle()-innerWidth/2,top:0,behavior:'instant'});
+        const point={x:middle(),y:120};
         if(document.elementFromPoint(point.x,point.y)!==document.querySelector('.reading-group'))throw new Error('The reading-column gap must hit the reading group.');
         return point;
       });
       await afterPaint(page);await page.mouse.move(groupGap.x,groupGap.y);
       assert.equal(await page.evaluate(({x,y})=>getComputedStyle(document.elementFromPoint(x,y)).cursor,groupGap),readyCursor,
         'The gap inside the reading group must show the same horizontal wheel cursor.');
-      const asideEdge=await page.locator('.document-aside').evaluate(node=>node.getBoundingClientRect().left+scrollX-parseFloat(getComputedStyle(document.body).paddingInlineStart));
+      const asideEdge=await columnEdge(page.locator('.document-aside'));
       await positionCanvas(page,asideEdge-20);await page.mouse.move(20,100);
       await page.evaluate(()=>document.querySelector('.page-shell').dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:8})));
       await page.waitForTimeout(300);
@@ -268,12 +284,12 @@ export async function check({page,baseUrl,options}) {
     assert.ok(await short.evaluate(node=>node.scrollHeight<=node.clientHeight+1),'Choose a short article that fits at 900 pixels high.');
     const shortBefore=await read(page);stage=width+' short article';
     await page.mouse.wheel(0,-120);
-    await page.waitForFunction(x=>document.documentElement.dataset.canvasWheel==='locked'&&scrollX<x-1,shortBefore.x);
+    await page.waitForFunction(x=>document.documentElement.dataset.canvasWheel==='locked'&&scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)<x-1,shortBefore.x);
     const shortState=await read(page);
     await page.waitForTimeout(400);
     const shortResumedBefore=await read(page);stage=width+' short article after pause';
     await page.mouse.wheel(0,-120);
-    await page.waitForFunction(x=>scrollX<x-1,shortResumedBefore.x);
+    await page.waitForFunction(x=>scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)<x-1,shortResumedBefore.x);
     assert.equal((await read(page)).mode,'locked','A short column must resume horizontal scrolling after a pause.');
     stage=width+' left click';
     const href=await page.locator('main a[href]').evaluateAll(nodes=>nodes.find(node=>node.origin===location.origin
@@ -323,7 +339,7 @@ export async function check({page,baseUrl,options}) {
         const resumePoint=await gapPoint(page);await page.mouse.click(resumePoint.x,resumePoint.y);
         assert.equal((await read(page)).mode,'ready','Another click must resume normal wheel handling.');
         const resumedX=(await read(page)).x;await page.mouse.wheel(0,40);
-        await page.waitForFunction(x=>document.documentElement.dataset.canvasWheel==='locked'&&scrollX>x+1,resumedX);
+        await page.waitForFunction(x=>document.documentElement.dataset.canvasWheel==='locked'&&scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)>x+1,resumedX);
         const releaseOnly=await page.evaluate(()=>{
           const shell=document.querySelector('.page-shell'),results=[];
           const emit=(type,button)=>shell.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerType:'mouse',button}));

@@ -1,6 +1,87 @@
 import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {assertCanvasEnd} from '../_shared/state.mjs';
+import {touchDrag} from '../_shared/touch.mjs';
+
+const staticState=page=>page.evaluate(()=>{
+  const view=window.visualViewport,offset=view?.offsetLeft??0,viewport=view?.width??innerWidth;
+  const rect=node=>{const box=node.getBoundingClientRect();return {left:box.left-offset,right:box.right-offset,width:box.width};};
+  const columns=[...document.querySelectorAll('.page-column')].filter(node=>node.getClientRects().length);
+  const first=document.querySelector('[data-root-navigation]')??document.querySelector('#main');
+  let scroller=first.parentElement;
+  while(scroller&&scroller!==document.scrollingElement
+    &&!(/auto|scroll/.test(getComputedStyle(scroller).overflowX)&&scroller.scrollWidth>scroller.clientWidth+1))scroller=scroller.parentElement;
+  scroller??=document.scrollingElement;
+  return {direction:document.documentElement.dir,flow:getComputedStyle(document.querySelector('.page-shell')).direction,
+    first:rect(first),last:rect(columns.at(-1)),viewport,scroller:scroller.tagName,
+    x:scroller===document.scrollingElement?(view?.pageLeft??scrollX):scroller.scrollLeft,
+    edge:parseFloat(getComputedStyle(document.body).paddingInlineStart),
+    scrollWidth:scroller.scrollWidth};
+});
+
+function assertStaticStart(state) {
+  assert.ok(state.first.left>=-1&&state.first.right<=state.viewport+1,
+    'Static first content column must be visible on arrival: '+JSON.stringify(state));
+  const start=state.flow==='rtl'?state.viewport-state.first.right:state.first.left;
+  assert.ok(Math.abs(start-state.edge)<=1,'Static first column must start at the reading edge: '+JSON.stringify(state));
+}
+
+export async function checkStaticLayout({browser,baseUrl,options}) {
+  const noScript=[];
+  for(const mobile of [false,true]) {
+    const context=await browser.newContext({javaScriptEnabled:false,serviceWorkers:'block',
+      ...(mobile?{hasTouch:true,isMobile:true}:{})});
+    context.setDefaultTimeout(options.timeout??15000);context.setDefaultNavigationTimeout(options.timeout??15000);
+    let cdp;
+    try {
+      const page=await context.newPage();
+      if(mobile&&browser.browserType().name()==='chromium')cdp=await context.newCDPSession(page);
+      for(const width of mobile?[390]:options.widths.split(',').map(Number)) {
+        await page.setViewportSize({width,height:options.height??900});
+        await page.goto('about:blank');
+        const response=await page.goto(baseUrl+options.page,{waitUntil:'load'});
+        assert.ok(response?.ok(),'Static pages must return a successful response.');
+        const initial=await staticState(page);assertStaticStart(initial);
+        const aside=page.locator('.document-aside');
+        if(await aside.count())assert.equal(await aside.isVisible(),true,'Static articles must retain their document information.');
+        const url=page.url(),endVisible=state=>state.flow==='rtl'?state.last.left>=state.edge-1:state.last.right<=state.viewport-state.edge+1;
+        let current=initial,gestures=0;
+        const input=cdp?'touch':mobile?null:'wheel';
+        const limit=Math.ceil(initial.scrollWidth/(initial.viewport-80))+4;
+        while(input&&!endVisible(current)&&gestures<limit) {
+          const direction=current.flow==='rtl'?-1:1;
+          const before=current.x;
+          const point=await page.evaluate(({width,direction})=>{
+            const view=window.visualViewport,x=direction===1?width-2:2;
+            const padding=parseFloat(getComputedStyle(document.body).paddingBlockStart);
+            for(const y of [Math.max(.5,padding/2),1,(view?.height??innerHeight)-1]) {
+              let node=document.elementFromPoint(x+(view?.offsetLeft??0),y+(view?.offsetTop??0)),nested=false;
+              for(;node&&node!==document.body&&node!==document.documentElement;node=node.parentElement)
+                if(!node.matches('.page,.page-shell,.reading-group')&&/auto|scroll/.test(getComputedStyle(node).overflowX)
+                  &&node.scrollWidth>node.clientWidth+1){nested=true;break;}
+              if(!nested)return {x,y};
+            }
+            return null;
+          },{width,direction});
+          assert.ok(point,'Static input needs a canvas edge outside nested horizontal scrollers.');
+          if(cdp)await touchDrag(page,cdp,{...point,dx:-direction*(width-80)});
+          else {
+            await page.mouse.move(point.x,point.y);
+            await page.mouse.wheel(direction*initial.scrollWidth,0);
+            await page.waitForTimeout(80);
+          }
+          current=await staticState(page);gestures++;
+          assert.ok(Math.abs(current.x-before)>1,'Native horizontal input must move the static canvas: '+JSON.stringify(current));
+        }
+        if(input)assert.ok(endVisible(current),'Native horizontal input must reveal the static final column: '+JSON.stringify(current));
+        assert.equal(page.url(),url,'Static horizontal input must not activate a link.');
+        noScript.push({width,mobile,initial,native:{input,gestures,state:current,
+          ...(input?{}:{skipReason:'Native mobile gestures are unavailable in Playwright WebKit.'})},...await assertCanvasEnd(page)});
+      }
+    } finally {try{await cdp?.detach();}finally{await context.close();}}
+  }
+  return {noScript:noScript.filter(state=>!state.mobile),noScriptMobile:noScript.find(state=>state.mobile)};
+}
 
 export async function check({page,baseUrl,options}) {
   const results=[];
@@ -10,8 +91,9 @@ export async function check({page,baseUrl,options}) {
     const response=await page.goto(baseUrl+options.page,{waitUntil:'load'});
     assert.ok(response?.ok(),'Page must return a successful response.');await waitForBrowse(page);await afterPaint(page);
     const state=await page.evaluate(()=>{
-      const view=window.visualViewport,rect=node=>{
-        const box=node.getBoundingClientRect();return {x:box.x-(view?.offsetLeft||0),y:box.y-(view?.offsetTop||0),width:box.width,right:box.right-(view?.offsetLeft||0),height:box.height};
+      const view=window.visualViewport,rtl=getComputedStyle(document.documentElement).direction==='rtl',viewport=view?.width||innerWidth,rect=node=>{
+        const box=node.getBoundingClientRect(),x=box.x-(view?.offsetLeft||0),right=box.right-(view?.offsetLeft||0);
+        return {x:rtl?viewport-right:x,y:box.y-(view?.offsetTop||0),width:box.width,right:rtl?viewport-x:right,height:box.height};
       };
       const nav=document.querySelector('[data-root-navigation]'),main=document.querySelector('#main'),content=document.querySelector('.page-content'),prose=document.querySelector('.prose'),footer=document.querySelector('.slot-footer');
       const collection=main.classList.contains('slot-main--collection'),list=collection?main.querySelector('.item-list'):null;
@@ -26,8 +108,8 @@ export async function check({page,baseUrl,options}) {
       probe.remove();
       const tracks=[nav,...columns,main].filter(Boolean).map(rect),canvas=document.querySelector('.page-shell'),group=canvas.querySelector(':scope > .reading-group');
       const tailColumns=[...canvas.querySelectorAll('.page-content,.document-aside')].filter(node=>node.getClientRects().length);
-      const tailColumnsWidth=tailColumns.at(-1).getBoundingClientRect().right-tailColumns[0].getBoundingClientRect().left;
-      const tail=group.getBoundingClientRect().right-tailColumns.at(-1).getBoundingClientRect().right;
+      const tailColumnsWidth=rect(tailColumns.at(-1)).right-rect(tailColumns[0]).x;
+      const tail=rect(group).right-rect(tailColumns.at(-1)).right;
       const scrollColumns=[...document.querySelectorAll('.page-column,.page-rail,.path-column,.page-content,.document-aside')];
       const unifiedCanvas=document.querySelectorAll('.page-shell').length===1&&canvas.querySelectorAll('.reading-group').length===1
         &&getComputedStyle(group).overflowX==='visible'&&getComputedStyle(group).overflowY==='visible'&&scrollColumns.every(column=>{
@@ -95,18 +177,5 @@ export async function check({page,baseUrl,options}) {
   }
   assert.ok(results.every(state=>state.columns.length===results[0].columns.length&&state.rootCount===results[0].rootCount),
     'The same page must expose the same navigation at every width.');
-  const plain=await page.context().browser().newContext({javaScriptEnabled:false,serviceWorkers:'block'}),noScript=[];
-  plain.setDefaultTimeout(options.timeout??15000);
-  try {
-    const document=await plain.newPage();
-    for(const width of options.widths.split(',').map(Number)) {
-      await document.setViewportSize({width,height:options.height??900});
-      const response=await document.goto(baseUrl+options.page,{waitUntil:'load'})||await document.reload({waitUntil:'load'});
-      assert.ok(response?.ok(),'Static pages must return a successful response.');
-      const aside=document.locator('.document-aside');
-      if(await aside.count())assert.equal(await aside.isVisible(),true,'Static articles must retain their document information.');
-      noScript.push({width,...await assertCanvasEnd(document)});
-    }
-  } finally {await plain.close();}
-  return {page:options.page,cases:results,noScript};
+  return {page:options.page,cases:results,...await checkStaticLayout({browser:page.context().browser(),baseUrl,options})};
 }

@@ -49,7 +49,7 @@
     ) -}}
 {{- end -}}
 <!DOCTYPE html>
-<html lang="{{ .Site.Language.Lang }}"
+<html lang="{{ .Site.Language.Lang }}" dir="{{ .Site.Language.Direction | default "ltr" }}"
     {{- if .Sitemap.Disable }} data-sitemap-disabled="true"{{ end }}
     {{- if $hasBreadcrumbCapability }}
     data-can-sort-collection-breadcrumb="{{ if and (gt (len $pageCollectionSource) 0) (ne .Kind "page") }}true{{ else }}false{{ end }}"

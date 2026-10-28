@@ -119,7 +119,7 @@ test('chromium catches blocked value cells and detached values',{timeout:15000},
   const cells=fixture('cells');
   script(cells,'all',`document.addEventListener('click',event=>{
     const control=event.target.closest('[data-sort-field="name"]'),grid=control?.closest('[data-sortable]');
-    if(grid&&!grid.className) queueMicrotask(()=>grid.querySelector('[data-list-item] > [data-item-field="date"]').textContent='Detached value');
+    if(grid&&!grid.className) queueMicrotask(()=>grid.querySelector('[data-list-item] > [data-item-field="date"] bdi').textContent='Detached value');
   });`);
   const result=cli('nav/sort',['--page',routes['nav/sort']],cells);assert.equal(result.status,1);assert.match(result.stderr,/all of its cell values/);
 });

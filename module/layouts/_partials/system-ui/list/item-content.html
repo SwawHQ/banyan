@@ -4,4 +4,4 @@
 <span class="item-icon{{ if $isText }} item-icon--text{{ end }}"{{ if reflect.IsMap $icon }} aria-hidden="true"{{ end }}>
   {{- partial "system-ui/icon/render.html" (dict "name" $icon) -}}
 </span>
-<span class="item-title"{{ with .labelAttr }} {{ printf "data-%s" . | safeHTMLAttr }}{{ end }}>{{ $text }}</span>
+<span class="item-title"{{ with .labelAttr }} {{ printf "data-%s" . | safeHTMLAttr }}{{ end }}><bdi>{{ $text }}</bdi></span>

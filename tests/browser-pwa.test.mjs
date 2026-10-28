@@ -45,7 +45,7 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
-  for(const lang of ['en','zh','zh-tw']) {
+  for(const lang of ['en','zh','zh-tw','ar']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
     let text=fs.readFileSync(path.join(root,'content/powered-by/index'+suffix+'.md'),'utf8')
       .replace(/^url:.*$/m,'url: '+prefix+panel+'\n');
@@ -92,7 +92,7 @@ before(()=>{
       write(path.join(directory,name),code);
       tags.push(type==='css'?'<link rel="stylesheet" href="/'+name+'">':'<script defer src="/'+name+'"></script>');
     }
-    for(const prefix of ['','/zh','/zh-tw']) {
+    for(const prefix of ['','/zh','/zh-tw','/ar']) {
       const file=path.join(directory,prefix+from,'index.html');
       write(file,fs.readFileSync(file,'utf8').replace('</head>',tags.join('')+'</head>'));
     }
@@ -111,7 +111,7 @@ test('panel declarations expose paths, widths and detailed help',()=>{
 });
 
 test('unavailable panels render localized copy across visits, reloads and native history',{timeout:20000},()=>{
-  for(const lang of ['en','zh','zh-tw']) {
+  for(const lang of ['en','zh','zh-tw','ar']) {
     const prefix=lang==='en'?'':'/'+lang;
     const state=report(cli(['--page',prefix+panel,'--from',prefix+from,'--out',path.join(work,'reports')]));
     assert.equal(state.details.cases.length,8);
@@ -180,7 +180,7 @@ test('offline declarations expose the first page and reject unhandled URL state'
 });
 
 test('real workers cache a controlled navigation and its assets before an offline reload',{timeout:20000},()=>{
-  for(const page of [from,'/zh'+from,'/']) {
+  for(const page of [from,'/zh'+from,'/ar'+from,'/']) {
     const state=report(offline(['--page',page,'--trace','--out',path.join(work,'reports')]));
     assert.equal(state.details.initialDocumentCached,false);assert.equal(state.details.controlledNavigation,true);
     assert.equal(state.details.offlineDocument,true);assert.equal(state.details.offlineAssets,state.details.assets.length);

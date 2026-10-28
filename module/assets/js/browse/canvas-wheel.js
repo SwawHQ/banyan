@@ -3,6 +3,7 @@ export function initCanvasWheel() {
     const shell = document.querySelector('.page-shell');
     if (!shell) return;
     const group = shell.querySelector('.reading-group');
+    const rtl = root.dir === 'rtl';
     let mousePoint;
     let middleReleasePending = false;
     let snapTimer;
@@ -26,10 +27,11 @@ export function initCanvasWheel() {
         for (const column of shell.querySelectorAll('.page-column')) {
             const rect = column.getBoundingClientRect();
             if (!rect.width) continue;
-            const next = window.scrollX + rect.left - edge;
+            const next = window.scrollX + (rtl ? rect.right - root.clientWidth + edge : rect.left - edge);
+            const offset = rtl ? -next : next;
             const distance = (next - position) * direction;
             // Finish approaching an edge; never pull a departing column back.
-            if (distance > 0 && distance <= 64 && next >= 0 && next <= max
+            if (distance > 0 && distance <= 64 && offset >= 0 && offset <= max
                 && distance < nearest) {
                 nearest = distance;
                 target = column;
@@ -37,10 +39,7 @@ export function initCanvasWheel() {
         }
         if (target) {
             // Native targeting includes the phone's visual viewport.
-            const previous = target.style.scrollMarginInlineStart;
-            target.style.scrollMarginInlineStart = `${edge}px`;
             target.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'instant' });
-            target.style.scrollMarginInlineStart = previous;
         }
     }
 
@@ -49,15 +48,17 @@ export function initCanvasWheel() {
         const hit = mousePoint && document.elementFromPoint(mousePoint.x, mousePoint.y);
         if (root.dataset.canvasPointer === 'mouse' && mousePoint
             && (hit === shell || hit === group)) {
-            let previousRight;
+            let previousEnd;
+            const x = rtl ? -mousePoint.x : mousePoint.x;
             for (const column of shell.querySelectorAll('.page-column')) {
                 const rect = column.getBoundingClientRect();
                 if (!rect.width) continue;
-                if (previousRight !== undefined && mousePoint.x >= previousRight && mousePoint.x < rect.left) {
+                const start = rtl ? -rect.right : rect.left;
+                if (previousEnd !== undefined && x >= previousEnd && x < start) {
                     gap = true;
                     break;
                 }
-                previousRight = rect.right;
+                previousEnd = rtl ? -rect.left : rect.right;
             }
         }
         root.toggleAttribute('data-canvas-wheel-gap', gap);
@@ -183,7 +184,7 @@ export function initCanvasWheel() {
             ? parseFloat(getComputedStyle(shell).lineHeight)
             : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? root.clientWidth : 1;
         const before = canvasX();
-        window.scrollBy({ left: event.deltaY * unit, top: 0, behavior: 'instant' });
+        window.scrollBy({ left: event.deltaY * unit * (rtl ? -1 : 1), top: 0, behavior: 'instant' });
         const position = canvasX();
         const direction = Math.sign(position - before);
         if (!direction) return;

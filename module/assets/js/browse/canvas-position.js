@@ -5,6 +5,8 @@ const CANVAS_NAVIGATION_KEY = 'banyan:canvas-navigation';
 // Carry only the horizontal position of one same-tab collection navigation.
 // History traversal and reload keep the browser's native horizontal restoration.
 export function initCanvasPosition() {
+    const root = document.documentElement;
+    const rtl = root.dir === 'rtl';
     let pending;
     try {
         const raw = sessionStorage[CANVAS_NAVIGATION_KEY];
@@ -34,9 +36,11 @@ export function initCanvasPosition() {
     });
 
     const navigation = performance.getEntriesByType('navigation')[0];
-    if (navigation?.type !== 'navigate' || readAnchor(location.hash)
-        || pending?.target !== location.href || pending.source !== document.referrer
-        || !Number.isFinite(pending.x) || pending.x <= 0) return;
+    if (navigation?.type !== 'navigate' || readAnchor(location.hash)) return;
+    const carry = pending?.target === location.href && pending.source === document.referrer
+        && Number.isFinite(pending.x) && pending.x * (rtl ? -1 : 1) > 0;
+    if (!carry && !rtl) return;
+    const targetX = carry ? pending.x : 0;
 
     const lifecycle = new AbortController();
     const options = { capture: true, passive: true, signal: lifecycle.signal };
@@ -49,12 +53,15 @@ export function initCanvasPosition() {
         if (!main) return;
         stop();
         // Early user input, an anchor or native restoration takes priority.
-        if (readAnchor(location.hash) || (window.visualViewport?.pageLeft ?? scrollX)
+        if (readAnchor(location.hash) || (!rtl && (window.visualViewport?.pageLeft ?? scrollX))
             || (window.visualViewport?.pageTop ?? scrollY)) return;
 
-        // Use the existing main track as a native scroll target at the saved x.
+        // Use the existing main track as a native scroll target at the requested x.
         // scrollIntoView moves the visual viewport too, unlike scrollTo on mobile.
-        main.style.scrollMarginInlineStart = `${main.getBoundingClientRect().left + scrollX - pending.x}px`;
+        const rect = main.getBoundingClientRect();
+        const start = rtl ? root.clientWidth - rect.right : rect.left;
+        // Mobile RTL can start with its visual viewport at the canvas end.
+        main.style.scrollMarginInlineStart = `${start + (scrollX - targetX) * (rtl ? -1 : 1)}px`;
         main.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'instant' });
         main.style.scrollMarginInlineStart = '';
     });

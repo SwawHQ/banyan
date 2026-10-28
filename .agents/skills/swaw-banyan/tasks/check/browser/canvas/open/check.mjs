@@ -31,7 +31,7 @@ async function checkOpenResult(page,before,name,state,target) {
   assert.ok(before.columns.every((column,index)=>Math.abs(column.x-after.columns[index].x)<=1&&Math.abs(column.width-after.columns[index].width)<=1),
     'Existing source columns must stay in place.');
   assert.ok(Math.abs(after.columns.at(-1).x-before.main.x)<=1,'The original collection must remain in the same column.');
-  assert.ok(after.mainDocumentX>before.mainDocumentX,'Article content must extend the canvas to the right.');
+  assert.ok(after.mainDocumentX>before.mainDocumentX,'Article content must extend the canvas in the reading direction.');
   assert.equal(after.readingY,0,'A new article must start at the top.');
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('banyan:canvas-navigation')),null,'The one-navigation record must be consumed.');
   const selected=page.locator('[data-slot=breadcrumb] [aria-current="page"][href]');
@@ -124,7 +124,8 @@ export async function check({page,context,baseUrl,options}) {
     assert.ok(response?.ok(),'Source collection must return a successful response.');await waitForBrowse(page);await afterPaint(page);
     const initial=await readCanvas(page);assert.equal(initial.canvasOffsetX,0,'A direct source visit must start at the canvas origin.');
     const entry=await articleLink(page,options.page);await centerVertically(entry);
-    const left=await entry.evaluate(node=>node.getBoundingClientRect().left+scrollX);
+    const left=await entry.evaluate(node=>getComputedStyle(document.documentElement).direction==='rtl'
+      ?document.documentElement.clientWidth-node.getBoundingClientRect().right-scrollX:node.getBoundingClientRect().left+scrollX);
     const pan=options.drag?0:typeof options.pan==='number'?options.pan:(width<=430?Math.min(initial.maxX,Math.max(0,left-width/5)):0);
     assert.ok(pan<=initial.maxX,'--pan must stay within the source canvas scroll range.');
     await panCanvas(page,pan);await afterPaint(page);await waitForCanvasX(page,pan);
@@ -135,7 +136,7 @@ export async function check({page,context,baseUrl,options}) {
       const sourceUrl=page.url(),cdp=await context.newCDPSession(page),documents=[];
       const record=request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())documents.push(request.url());};
       page.on('request',record);
-      try {drag=await touchDrag(page,cdp,{x:width-40,dx:-options.drag});}
+      try {drag=await touchDrag(page,cdp,{x:initial.direction===-1?40:width-40,dx:-options.drag*initial.direction});}
       finally {page.off('request',record);await cdp.detach();}
       assert.equal(page.url(),sourceUrl,'Dragging the source must not activate a link.');
       assert.deepEqual(documents,[],'Dragging the source must not request a new document.');

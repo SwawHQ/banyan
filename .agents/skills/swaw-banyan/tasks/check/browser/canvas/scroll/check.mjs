@@ -5,7 +5,8 @@ import {openAside} from '../../aside/_shared/page.mjs';
 const columns='.page-rail,.path-column,.page-content,.document-aside:not([hidden])';
 const read=page=>page.evaluate(selector=>{
   const doc=document.scrollingElement,main=document.querySelector('.page-content'),meta=document.querySelector('.slot-meta');
-  return {documentHeight:doc.scrollHeight,viewportHeight:doc.clientHeight,rootY:scrollY,x:scrollX,maxX:doc.scrollWidth-doc.clientWidth,
+  return {direction:getComputedStyle(doc).direction==='rtl'?-1:1,documentHeight:doc.scrollHeight,viewportHeight:doc.clientHeight,rootY:scrollY,
+    x:scrollX*(getComputedStyle(doc).direction==='rtl'?-1:1)||0,maxX:doc.scrollWidth-doc.clientWidth,
     readingY:main.scrollTop,metaInContent:!!meta&&main.contains(meta),metaInAside:!!meta&&!!meta.closest('.document-aside'),metadata:!!meta,
     columns:[...document.querySelectorAll(selector)].filter(node=>node.getClientRects().length).map(node=>({className:node.className,
       x:node.scrollLeft,y:node.scrollTop,maxY:node.scrollHeight-node.clientHeight,clientWidth:node.clientWidth,
@@ -48,7 +49,7 @@ export async function check({page,baseUrl,options}) {
     assert.ok(state.columns.every(column=>column.x===0&&column.scrollWidth<=column.clientWidth+1),
       'Columns must not create inner horizontal scrollbars.');
     assert.ok(state.columns.every(column=>column.bottom<=state.viewportHeight+1),'Columns must stay within the viewport height.');
-    await page.evaluate(x=>scrollTo({left:x,top:0,behavior:'instant'}),state.maxX);await afterPaint(page);
+    await page.evaluate(x=>scrollTo({left:x,top:0,behavior:'instant'}),state.maxX*state.direction);await afterPaint(page);
     const panned=await read(page);
     assert.ok(Math.abs(panned.x-state.maxX)<=1,'The document must own horizontal canvas scrolling.');
     assert.ok(panned.columns.every((column,i)=>column.y===state.columns[i].y&&column.x===0),

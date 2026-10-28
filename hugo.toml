@@ -99,3 +99,9 @@ zh-tw.label = "繁體"
 zh-tw.locale = "zh-TW"
 zh-tw.weight = 3
 zh-tw.params.icon.text = "繁"
+
+ar.label = "العربية"
+ar.locale = "ar"
+ar.direction = "rtl"
+ar.weight = 4
+ar.params.icon.text = "ع"

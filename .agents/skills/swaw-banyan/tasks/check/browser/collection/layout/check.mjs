@@ -32,7 +32,8 @@ async function readList(list) {
     return {top:box.top,nameWidth:header.getBoundingClientRect().width,headerX:header.getBoundingClientRect().left-box.left,declaredWidth,
       fields,heading:readFields(heading),items:items.map(readFields),headerTrack:heading.getBoundingClientRect().height,
       headerY:range.getBoundingClientRect().top-box.top,rowY:row.top-box.top,rowHeight:row.height,rowWidth:row.width,
-      iconX:mark.left-row.left,titleGap:title.getBoundingClientRect().left-mark.right,
+      iconX:separator.direction==='rtl'?row.right-mark.right:mark.left-row.left,
+      titleGap:separator.direction==='rtl'?mark.left-title.getBoundingClientRect().right:title.getBoundingClientRect().left-mark.right,
       separatorY:heading.getBoundingClientRect().bottom-box.top,separatorWidth:Number.parseFloat(separator.borderBottomWidth),
       paddingStart:Number.parseFloat(getComputedStyle(link).paddingInlineStart),
       rows:rows.map(row=>({x:row.getBoundingClientRect().left-box.left,width:row.getBoundingClientRect().width,height:row.getBoundingClientRect().height})),
@@ -57,7 +58,7 @@ function checkList(state) {
       'Every row field must match its header width and column start.');
   }
   assert.ok(state.heading.fields.every(cell=>cell.field==='name'||cell.contentWidth<=cell.width+1),
-    'Metadata headers and sort indicators must fit their fixed field width.');
+    'Metadata headers and sort indicators must fit their fixed field width: '+JSON.stringify(state.heading.fields));
   assert.ok(Math.abs(state.rootWidth-state.nameWidth)<=1&&Math.abs(state.rootHeight-state.rowHeight)<=.1,'Collection rows must share root navigation dimensions.');
   assert.ok(state.rows.every(row=>Math.abs(row.width-state.nameWidth)<=1&&Math.abs(row.height-state.rowHeight)<=.1&&Math.abs(row.x-state.headerX)<=.1),
     'Name rows must share width, height and column start.');

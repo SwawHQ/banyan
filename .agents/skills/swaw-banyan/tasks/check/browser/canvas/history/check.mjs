@@ -3,7 +3,7 @@ import {openArticle,openAside} from '../../aside/_shared/page.mjs';
 import {activate,afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {panCanvas,waitForCanvasX} from '../_shared/state.mjs';
 
-const position=page=>page.evaluate(()=>({x:window.visualViewport?.pageLeft??scrollX,y:document.querySelector('.page-content').scrollTop}));
+const position=page=>page.evaluate(()=>({x:(window.visualViewport?.pageLeft??scrollX)*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1),y:document.querySelector('.page-content').scrollTop}));
 async function pan(page,fraction) {
   const left=await page.evaluate(fraction=>{
     const doc=document.scrollingElement,main=document.querySelector('.page-content');

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {setTheme} from '../../_shared/theme.mjs';
 import {activate,clickVisible,afterPaint} from '../../_shared/viewport.mjs';
 import {openArticle,openAside,readingState} from '../_shared/page.mjs';
+import {panCanvas} from '../../canvas/_shared/state.mjs';
 
 export async function check({page,baseUrl,options}) {
   await page.emulateMedia({reducedMotion:'reduce'});
@@ -78,10 +79,7 @@ export async function check({page,baseUrl,options}) {
       await openAside(page,options.touch);
       const available=await readingState(page);
       if(available.canvasWidth-available.viewport>boundary+90) {
-        await page.locator('.page-content').evaluate((node,x)=>{
-          node.style.scrollMarginInlineStart=`${node.getBoundingClientRect().left+scrollX-x}px`;
-          node.scrollIntoView({inline:'start',block:'nearest',behavior:'instant'});node.style.scrollMarginInlineStart='';
-        },boundary+100);
+        await panCanvas(page,boundary+100);
         await afterPaint(page);
         const beyond=await readingState(page);
         assert.ok(beyond.x>boundary+90,'Exercise a position beyond the closed canvas edge.');

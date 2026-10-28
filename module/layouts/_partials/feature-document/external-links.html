@@ -42,7 +42,7 @@
   {{- range $links -}}
     <div class="document-meta__row">
       <span class="item-icon">{{ partial "system-ui/icon/render.html" (dict "name" .icon) }}</span>
-      <a href="{{ .href }}" target="{{ .target }}" rel="{{ .rel }}">{{ .text }}</a>
+      <a href="{{ .href }}" target="{{ .target }}" rel="{{ .rel }}"><bdi>{{ .text }}</bdi></a>
     </div>
   {{- end -}}
 </nav>

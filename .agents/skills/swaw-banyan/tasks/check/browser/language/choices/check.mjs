@@ -11,7 +11,7 @@ async function readChoices(page) {
         translated:link.dataset.hasTrans==='true',disabled:link.hasAttribute('disabled')||link.getAttribute('aria-disabled')==='true',
         current:link.getAttribute('aria-current')||'',selected:link.classList.contains('is-current'),
         label:link.querySelector('.item-title')?.textContent.trim(),
-        left:link.querySelector('.item-title')?.getBoundingClientRect().left,
+        start:link.querySelector('.item-title')?.getBoundingClientRect()[getComputedStyle(picker).direction==='rtl'?'right':'left'],
         iconHidden:link.querySelector('.item-icon')?.getAttribute('aria-hidden')==='true'||
           link.querySelector('.item-icon .icon')?.getAttribute('aria-hidden')==='true',
         icon:link.querySelector('.item-icon')?.textContent.trim()
@@ -37,7 +37,7 @@ export async function assertChoices(page,baseUrl) {
     assert.equal(choice.current,choice.code===state.language?'page':'','Current language must match the document language.');
     assert.equal(choice.selected,choice.code===state.language,'Visible language selection must match aria-current.');
   }
-  const positions=state.choices.map(choice=>choice.left);
+  const positions=state.choices.map(choice=>choice.start);
   assert.ok(positions.every(Number.isFinite)&&Math.max(...positions)-Math.min(...positions)<=1,'Language titles must share one aligned column.');
   return state;
 }

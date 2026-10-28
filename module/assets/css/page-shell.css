@@ -22,6 +22,14 @@ body {
     overscroll-behavior: none;
 }
 
+@media screen and (scripting: none) {
+    /* Contain RTL overflow so mobile browsers start at the first column. */
+    /* shortcut: no-script Back retains x through BFCache only; remove this container when mobile RTL origins are fixed. */
+    html[dir="rtl"] body {
+        overflow-x: auto;
+    }
+}
+
 .page {
     box-sizing: border-box;
     block-size: 100%;
@@ -68,6 +76,7 @@ body {
     overflow-y: auto;
     /* Stop vertical boundary effects; horizontal gestures still reach the canvas. */
     overscroll-behavior-y: none;
+    scroll-margin-inline-start: var(--page-edge-inline);
 }
 
 .page-rail,

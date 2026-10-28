@@ -6,6 +6,7 @@ import os from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
+import {extractElementText} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 import {fixtureEnvironment,fixtureSiteMounts,directoryPage} from '../_shared/hugo.mjs';
 
@@ -65,7 +66,8 @@ try {
     }
     function directoryLabel(document) {
         const row = document.match(/<nav class="document-meta__row document-meta__row--path"[\s\S]*?<\/nav>/)?.[0];
-        return row?.match(/<a\b[^>]*href="(?:\/zh|\/zh-tw)?\/d\/"[^>]*>([^<]*)<\/a>/)?.[1];
+        const link = row?.match(/<a\b[^>]*href="(?:\/zh|\/zh-tw)?\/d\/"[^>]*>[\s\S]*?<\/a>/)?.[0] || '';
+        return extractElementText(link, 'a');
     }
     try {
         await until(async () => (await html('/zh/d/')).includes('Before rename'));
