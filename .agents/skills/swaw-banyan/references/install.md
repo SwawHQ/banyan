@@ -30,6 +30,7 @@ An existing site must supply these files in its own root:
 | `assets/site/delivery.toml` | Complete site delivery policy |
 | `assets/site/icons.toml` | Named SVG icons |
 | `assets/i18n/<language>.toml` | Interface dictionary for each enabled language |
+| `content/_res/home-art/<theme>/` | Hidden home art bundle: translated pages, CSS, JS and images |
 
 Copy the reference site's `assets/site/` into an existing site,
 then replace the images with its own identity and review the manifest and robots
@@ -71,8 +72,9 @@ complete manifest template; the Module reads and executes it to publish
 `/site/site.<hash>.webmanifest`. Images publish with fingerprinted URLs under
 `/site/*`. The Module retains built-in palettes. To customize a palette, place
 a file at the same path in the site's `assets/` directory.
-The homepage windsock is inline SVG in `layouts/page-home.html`, without a
-separate image request. Override that template in the site to change its shape;
+The homepage windsock is inline SVG in the `home-art/wind/scene` shortcode,
+without a separate image request. To change its shape, override
+`layouts/_shortcodes/home-art/wind/scene.html` in the site;
 the selected CSS palette controls its colors.
 
 ## Inspect an existing site
@@ -251,9 +253,10 @@ settings, locale, icon, `assets/i18n/<language>.toml` dictionary and required co
 translations, including the home. Adding or removing a language requires matching
 changes in `hugo.toml`, the site's `assets/i18n/` and its content translations.
 The [demo configuration](https://github.com/SwawHQ/banyan/blob/main/hugo.toml)
-shows all three languages. Keep the native mount above so Hugo reads the site's
-dictionaries. The root reference site supplies translated settings and information
-pages, including Powered by and prefetch diagnostics. The Module contains no
+shows all three languages. The mount above loads site dictionaries.
+The root reference site supplies
+translated settings and information pages, including Powered by and prefetch
+diagnostics. The Module contains no
 site content. Each site owns its home, branding and content directories.
 
 Home and published direct children appear in the first navigation column.
@@ -293,8 +296,45 @@ Create `content/_index.md` for the site's home:
 title: My site
 description: Describe this site.
 layout: page-home
+params:
+  show_navigation: true
 ---
+
+{{< home-art "/_res/home-art/wind" >}}
 ```
+
+The home page's `params.show_navigation` controls the first navigation column
+and defaults to `true`. It also applies to homes without a `home-art` shortcode.
+
+Copy `content/_res/home-art/wind/` from the reference site. It is a hidden Hugo
+leaf bundle with `index.md`, `index.zh.md`, `index.zh-tw.md`, `style.css` and
+`script.js`. Each home renders the selected bundle in its current language.
+The bundle has no standalone page. The home keeps its own title, description
+and published URL.
+
+Configure the art in each bundle page's front matter:
+
+```yaml
+build:
+  list: never
+  render: never
+  publishResources: false
+params:
+  styles: [style.css]
+  scripts: [script.js]
+  brand_line: Clear structure for exploratory publishing.
+```
+
+Use `{{< home-art/wind/scene >}}` in the bundle page's body. Keep `home_signals`
+and scene settings in its `params`. `styles` and `scripts` select CSS and JS from
+the bundle; the framework loads them as same-origin fingerprinted external files.
+
+To add an art theme, create another hidden leaf bundle and put its shortcode
+in the body. Write its HTML in `layouts/_shortcodes/`; shortcode templates read
+the bundle page's `.Page.Params` and `.Page.Resources`. The wind example uses
+`layouts/_shortcodes/home-art/wind/scene.html` and the helper
+`layouts/_partials/entry-page-home/wind/model.html`, supplied by the Module.
+Put a file at the same path in the site to override it.
 
 Set each language's default description in its home page. Page SEO uses the
 page's own `description`, then the home page's `description` for that language.

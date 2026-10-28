@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {anchorsCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/anchors/options.mjs';
 import {sortCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/sort/options.mjs';
@@ -55,7 +55,7 @@ before(()=>{
     ['tie-z','Z date tie','2026-01-01T12:00:03+08:00']
   ])write(path.join(content,'d/swban-sort-'+name+'.md'),front(title,'/d/swban-sort-'+name+'/').replace('2026-01-01T00:00:00+08:00',time)+'Date precision and name tie fixture.');
   const config=path.join(work,'fixture.toml');
-  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
+  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{
     cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000
   });

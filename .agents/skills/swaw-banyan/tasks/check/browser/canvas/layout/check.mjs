@@ -24,7 +24,7 @@ export async function check({page,baseUrl,options}) {
       const declared={column:measure('var(--navigation-column-inline)'),gap:measure('var(--page-shell-gap-inline)'),main:measure('var(--main-column-inline)')};
       if(list){list.append(probe);declared.list=measure('var(--list-inline-size)');}
       probe.remove();
-      const tracks=[nav,...columns,main].map(rect),canvas=document.querySelector('.page-shell'),group=canvas.querySelector(':scope > .reading-group');
+      const tracks=[nav,...columns,main].filter(Boolean).map(rect),canvas=document.querySelector('.page-shell'),group=canvas.querySelector(':scope > .reading-group');
       const tailColumns=[...canvas.querySelectorAll('.page-content,.document-aside')].filter(node=>node.getClientRects().length);
       const tailColumnsWidth=tailColumns.at(-1).getBoundingClientRect().right-tailColumns[0].getBoundingClientRect().left;
       const tail=group.getBoundingClientRect().right-tailColumns.at(-1).getBoundingClientRect().right;
@@ -41,7 +41,7 @@ export async function check({page,baseUrl,options}) {
       }
       const nestedHorizontalScrollers=[...ancestors].filter(node=>['auto','scroll','hidden'].includes(getComputedStyle(node).overflowX)
         &&node.scrollWidth>node.clientWidth+1).map(node=>node.className);
-      return {main:rect(main),nav:rect(nav),columns:columns.map(rect),columnLinks:columns.map(node=>node.querySelectorAll('[data-list-entry][href]').length),
+      return {main:rect(main),nav:nav?rect(nav):null,navigationEnabled:document.body.dataset.homeNavigation!=='false',railCount:document.querySelectorAll('.page-rail').length,columns:columns.map(rect),columnLinks:columns.map(node=>node.querySelectorAll('[data-list-entry][href]').length),
         declared,gaps:tracks.slice(1).map((track,index)=>track.x-tracks[index].right),
         unifiedCanvas,nestedHorizontalScrollers,clientWidth:document.scrollingElement.clientWidth,
         readingClientWidth:content.clientWidth,readingWidth:rect(content).width,
@@ -51,26 +51,27 @@ export async function check({page,baseUrl,options}) {
         plainColumns:columns.every(node=>node.querySelector(':scope > .item-list.item-list--path-column')&&!node.querySelector('[aria-expanded],[role="menu"],[hidden]')),
         sharedColumns:scrollColumns.every(node=>node.classList.contains('page-column')),
         rootNavigationCount:document.querySelectorAll('[data-root-navigation]').length,
-        rootCount:nav.querySelectorAll('[data-root-href]').length,
-        rootEntriesVisible:[...nav.querySelectorAll('[data-root-href]')].every(link=>link.getClientRects().length>0&&getComputedStyle(link).visibility==='visible'),
+        rootCount:nav?.querySelectorAll('[data-root-href]').length??0,
+        rootEntriesVisible:[...nav?.querySelectorAll('[data-root-href]')??[]].every(link=>link.getClientRects().length>0&&getComputedStyle(link).visibility==='visible'),
         prose:prose?rect(prose):null,proseOverflow:prose?prose.scrollWidth-prose.clientWidth:0,
         collection,footer:footer?rect(footer):null,footerInRail:!footer||!!footer.closest('.page-rail'),
         tail,tailColumnsWidth,canvasWidth:document.querySelector('.page').getBoundingClientRect().width,
         viewport:view?.width||innerWidth,scrollWidth:document.scrollingElement.scrollWidth,x:view?.pageLeft??scrollX};
     });
-    assert.ok(state.rootCount>0,'The page must have root navigation entries.');
-    assert.equal(state.rootNavigationCount,1,'The page must have one root navigation.');
+    if(state.navigationEnabled)assert.ok(state.rootCount>0,'The page must have root navigation entries.');
+    else assert.equal(state.railCount,0,'Disabled root navigation must not reserve a rail.');
+    assert.equal(state.rootNavigationCount,state.navigationEnabled?1:0,'Root navigation must match the declared visibility.');
     assert.equal(state.rootEntriesVisible,true,'Every root entry must remain visible.');
     assert.equal(state.sharedColumns,true,'Every scroll column must use .page-column.');
     assert.equal(state.plainColumns,true,'Breadcrumb columns must use the shared plain list layout.');
-    assert.ok(state.columns.every(column=>Math.abs(column.width-state.nav.width)<=1),'Navigation columns must share a width.');
-    assert.ok(state.declared.column>0&&Math.abs(state.nav.width-state.declared.column)<=1,'Navigation width must match --navigation-column-inline.');
+    assert.ok(state.columns.every(column=>Math.abs(column.width-state.declared.column)<=1),'Navigation columns must share a width.');
+    if(state.nav)assert.ok(state.declared.column>0&&Math.abs(state.nav.width-state.declared.column)<=1,'Navigation width must match --navigation-column-inline.');
     assert.deepEqual(state.nestedHorizontalScrollers,[],'Columns must not create a nested horizontal scroller.');
     assert.equal(state.unifiedCanvas,true,'Every scroll column must belong to the canvas or its non-scrolling reading group.');
     assert.ok(Math.abs(state.tail-Math.max(0,state.canvasWidth-state.tailColumnsWidth))<=1,'Tail space must subtract the final reading columns and their gap, and must not be negative.');
     assert.ok(state.declared.gap>0&&state.gaps.every(gap=>Math.abs(gap-state.declared.gap)<=.1),'Root, path and main columns must share --page-shell-gap-inline.');
     assert.ok(state.columnLinks.every(count=>count>0),'Each breadcrumb column must have links.');
-    assert.ok([state.nav,...state.columns].every(column=>Math.abs(column.y-state.main.y)<=1),'Columns must begin at the same vertical position.');
+    assert.ok([state.nav,...state.columns].filter(Boolean).every(column=>Math.abs(column.y-state.main.y)<=1),'Columns must begin at the same vertical position.');
     assert.equal(state.x,0,'Direct visits must preserve the canvas origin.');
     if(state.collection) {
       assert.ok(state.list&&state.declared.list>0&&Math.abs(state.list.width-state.declared.list)<=1,'Collection list width must match its determined field width.');
@@ -82,14 +83,14 @@ export async function check({page,baseUrl,options}) {
       assert.ok(state.declared.main>0&&state.main.width+1>=minimumMain,'Main must not shrink below --main-column-inline within its reading column.');
     }
     if(state.main.right>state.viewport)assert.ok(state.scrollWidth>state.clientWidth,'Canvas overflow must reach the document scroller.');
-    if(width<=430)assert.ok(state.scrollWidth>state.viewport&&state.nav.x>=0&&state.nav.right<=state.viewport,'Narrow pages must pan while keeping root navigation visible.');
+    if(width<=430&&state.nav)assert.ok(state.scrollWidth>state.viewport&&state.nav.x>=0&&state.nav.right<=state.viewport,'Narrow pages must pan while keeping root navigation visible.');
     if(state.prose)assert.ok(state.prose.width<=(state.collection?state.main.width:state.viewport)&&state.proseOverflow<=1,'Prose must fit without horizontal overflow.');
     assert.ok(state.footerInRail,'The footer must remain in the root navigation rail.');
     if(state.footer)assert.ok(Math.abs(state.footer.x-state.nav.x)<=1&&state.footer.y>=state.nav.y+state.nav.height,'The footer must align below root navigation.');
     const end=await assertCanvasEnd(page);
     await page.evaluate(()=>scrollTo({left:0,top:0,behavior:'instant'}));await afterPaint(page);
-    const bounds=await page.locator('[data-root-navigation]').boundingBox();
-    assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width,'The canvas origin must reveal the complete root navigation.');
+    const bounds=await page.locator(state.navigationEnabled?'[data-root-navigation]':'#main').boundingBox();
+    assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width,'The canvas origin must reveal the first content column.');
     results.push({width,height:options.height??900,...state,end});
   }
   assert.ok(results.every(state=>state.columns.length===results[0].columns.length&&state.rootCount===results[0].rootCount),

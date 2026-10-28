@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {urlCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/settings/url/options.mjs';
 import {historyCommand,pageList} from '../.agents/skills/swaw-banyan/tasks/check/browser/settings/history/options.mjs';
@@ -55,7 +55,7 @@ before(()=>{
     write(path.join(content,'settings-plain/index'+suffix+'.md'),
       `---\ntitle: Independent plain settings\nlayout: page-article-norss\nurl: ${prefix}/prefs/plain/\nweight: 85\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nPlain settings have browser Back and no custom Back link.`);
   }
-  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureI18nMount);
+  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureSiteMounts);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
 });

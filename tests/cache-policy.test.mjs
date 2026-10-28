@@ -7,7 +7,7 @@ import vm from 'node:vm';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {parseHeaders,cloudflareHeaders} from '../.agents/skills/swaw-banyan/tasks/_shared/headers.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
@@ -20,7 +20,7 @@ function build(name,policy,config='',workerConfig=serviceWorkerPolicy('enable'))
   const directory=path.join(work,name),overlay=path.join(directory,'assets'),assets=path.join(work,'assets');
   write(path.join(overlay,'site/delivery.toml'),fixtureDelivery(policy,workerConfig));
   const mounts=[['assets','assets'],['assets',assets],['assets',overlay]]
-    .map(([target,source])=>'[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+fixtureI18nMount;
+    .map(([target,source])=>'[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+fixtureSiteMounts;
   const configFile=path.join(directory,'fixture.toml'),output=path.join(directory,'public');
   write(configFile,mounts+config);
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--cleanDestinationDir','--config','hugo.toml,'+configFile,'--destination',output],

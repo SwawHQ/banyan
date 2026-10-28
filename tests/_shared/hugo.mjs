@@ -6,9 +6,13 @@ import {resolveBinding} from '../../.agents/skills/swaw-banyan/tasks/_shared/too
 import {loadDependency} from '../../.agents/skills/swaw-banyan/tasks/_shared/dependencies.mjs';
 
 export const fixtureTools=()=>Object.fromEntries(['git','go','hugo'].map(name=>[name,{...resolveBinding(name),source:'path'}]));
-export const fixtureI18nMount='\n[[module.mounts]]\nsource = "assets/i18n"\ntarget = "i18n"\n';
+export const fixtureSiteMounts='\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+
+  '[[module.mounts]]\nsource = "assets/i18n"\ntarget = "i18n"\n'+
+  '[[module.mounts]]\nsource = "layouts"\ntarget = "layouts"\n';
 export function fixtureSiteFiles(directory) {
   fs.cpSync(new URL('../../assets/i18n/',import.meta.url),path.join(directory,'assets/i18n'),{recursive:true});
+  fs.cpSync(new URL('../../content/_res/home-art/',import.meta.url),path.join(directory,'content/_res/home-art'),{recursive:true});
+  fs.copyFileSync(new URL('../../content/_res/_index.md',import.meta.url),path.join(directory,'content/_res/_index.md'));
   const siteAssets=path.join(directory,'assets/site');
   fs.mkdirSync(siteAssets,{recursive:true});
   for(const file of ['icons.toml','delivery.toml','favicon.ico','favicon.link.svg','icon-180.png','icon-192.png','icon-256.png','icon-512.png','manifest.webmanifest.tmpl','robots.txt.tmpl'])

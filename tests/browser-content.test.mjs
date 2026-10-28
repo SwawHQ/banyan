@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {verifyCspOutput} from '../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 
@@ -38,7 +38,7 @@ before(()=>{
     write(path.join(content,'content-start/index'+suffix+'.md'),`---\ntitle: Independent content source\nurl: ${prefix}${from}\nlayout: page-article-norss\nweight: 87\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nIndependent content source.`);
   }
   const mounts=[['content',content],['content','content'],['assets','assets'],['assets',assets]]
-    .map(([target,directory])=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+fixtureI18nMount;
+    .map(([target,directory])=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+fixtureSiteMounts;
   const build=(name,version,policy=serviceWorkerPolicy('enable'))=>{
     write(path.join(assets,'site/delivery.toml'),fixtureDelivery(policy));
     write(config,mounts+'[params.build]\nversion = "'+version+'"\n');

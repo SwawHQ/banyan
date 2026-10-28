@@ -7,7 +7,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 
-import {fixtureEnvironment,fixtureI18nMount,directoryPage} from '../_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,directoryPage} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
 const work = await fs.mkdtemp(path.join(os.tmpdir(), 'banyan-path-rebuild-'));
@@ -26,7 +26,7 @@ try {
             '---\ntitle: Path rebuild probe\nurl: d/banyan-path-rebuild-probe/\ndate: 2026-01-01\n---\nSynthetic article for the ancestor title contract.\n');
     }
     const config = path.join(work, 'overlay.toml');
-    await fs.writeFile(config, `[[module.mounts]]\nsource = "${relative(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
+    await fs.writeFile(config, `[[module.mounts]]\nsource = "${relative(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);
     const portProbe = net.createServer();
     await new Promise((resolve, reject) => {
         portProbe.once('error', reject);

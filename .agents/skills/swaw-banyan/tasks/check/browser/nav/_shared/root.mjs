@@ -4,12 +4,19 @@ export const readRootState=page=>page.evaluate(()=>{
   const navigation=document.querySelector('[data-root-navigation]');
   const links=[...navigation?.querySelectorAll('[data-root-href]')??[]];
   return {count:document.querySelectorAll('[data-root-navigation]').length,
+    enabled:document.body.dataset.homeNavigation!=='false',railCount:document.querySelectorAll('.page-rail').length,
     roots:links.map(link=>link.dataset.rootHref),
     selected:links.filter(link=>link.classList.contains('is-current')).map(link=>link.dataset.rootHref),
     current:links.filter(link=>link.getAttribute('aria-current')==='page').map(link=>link.dataset.rootHref)};
 });
 
 export function assertRootSelection(state,expected=false) {
+  if(state.enabled===false) {
+    assert.equal(state.count,0,'Disabled root navigation must be absent.');
+    assert.equal(state.railCount,0,'Disabled root navigation must not reserve a rail.');
+    assert.deepEqual(state.roots,[],'Disabled root navigation must not retain links.');
+    return;
+  }
   assert.equal(state.count,1,'The page must have one root navigation.');
   assert.ok(state.roots.length>0,'Root navigation must contain links.');
   assert.equal(new Set(state.roots).size,state.roots.length,'Root entries must be unique.');

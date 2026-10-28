@@ -1,0 +1,33 @@
+{{- if not .Page.IsHome -}}
+  {{- errorf "Build failed: home-art is only supported on the homepage (%s)." .Position -}}
+{{- else if or .IsNamedParams (ne (len .Params) 1) -}}
+  {{- errorf "Build failed: home-art requires one /_res/ page path (%s)." .Position -}}
+{{- else -}}
+  {{- $src := .Get 0 -}}
+  {{- if ne (printf "%T" $src) "string" -}}
+    {{- errorf "Build failed: home-art requires a string /_res/ page path (%s)." .Position -}}
+  {{- else -}}
+    {{- $src = strings.TrimSuffix "/" $src -}}
+    {{- if or (not (hasPrefix $src "/_res/")) (ne (path.Clean $src) $src) (findRE `[\\?#]` $src) -}}
+      {{- errorf "Build failed: home-art path %q must name a page bundle under /_res/ (%s)." $src .Position -}}
+    {{- else -}}
+      {{- with $art := .Page.Site.GetPage $src -}}
+        {{- if or (ne $art.BundleType "leaf") $art.RelPermalink -}}
+          {{- errorf "Build failed: home-art %q must be a leaf bundle with build.render: never." $src -}}
+        {{- else -}}
+          {{- $invocation := printf "%s" $.Position -}}
+          {{- $previous := $.Page.Store.Get "homeArtInvocation" -}}
+          {{- if and $previous (ne $previous $invocation) -}}
+            {{- errorf "Build failed: the homepage supports only one home-art shortcode (%s)." $.Position -}}
+          {{- else -}}
+            {{- $.Page.Store.Set "homeArtInvocation" $invocation -}}
+            {{- $.Page.Store.Set "homeArt" $art -}}
+            {{- $art.Content -}}
+          {{- end -}}
+        {{- end -}}
+      {{- else -}}
+        {{- errorf "Build failed: home-art cannot resolve %q in language %q (%s)." $src .Page.Language.Lang .Position -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

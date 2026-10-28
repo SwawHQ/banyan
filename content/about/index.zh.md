@@ -9,7 +9,7 @@ layout: page-article-norss #显示 Markdown 正文，不作为 RSS 条目。
 
 params:
   # browser_title: "关于本站" #替换浏览器标签页中站点名称前的标题。
-  # icon: info #使用 assets/site/icons.toml 中的名称，或 {text: "?"}。
+  icon: {image: "site/favicon.link.svg"}
   # share_image: false #此页面不继承社交分享预览图。
   slots: [breadcrumb] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
 ---

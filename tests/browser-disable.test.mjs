@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {command} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/disable/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -57,7 +57,7 @@ before(()=>{
     const prefix=language==='en'?'':'/'+language,suffix=language==='en'?'':'.'+language;
     write(path.join(content,'cleanup-start/index'+suffix+'.md'),'---\ntitle: Independent cleanup source\nurl: '+prefix+page+'\nlayout: page-article-norss\n---\n\nIndependent worker cleanup page.');
   }
-  const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureI18nMount;
+  const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureSiteMounts;
   const build=(name,mode,asset,code)=>{
     const assets=path.join(work,name+'-assets');if(asset)write(path.join(assets,'js/pwa/'+asset),code);
     write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(mode)));

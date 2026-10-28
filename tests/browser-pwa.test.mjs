@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {panelCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/panel/options.mjs';
 import {offlineCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/offline/options.mjs';
@@ -57,7 +57,7 @@ before(()=>{
       `---\ntitle: Independent panel source\nlayout: page-article-norss\nurl: ${prefix}${from}\nweight: 84\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nIndependent panel navigation source.`);
   }
   const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+
-    '[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+fixtureI18nMount;
+    '[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+fixtureSiteMounts;
   const build=(configuration,destination,mode='enable')=>{
     const assets=path.join(work,'delivery-assets');
     write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(mode)));

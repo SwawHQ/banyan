@@ -1,4 +1,19 @@
 {{- partial "feature-browse/directory/assert-map-resources.html" . -}}
+{{- /* Resolve shortcode settings before emitting the head and navigation. */ -}}
+{{- if and .IsHome (.HasShortcode "home-art") -}}{{- $content := .Content -}}{{- end -}}
+{{- $homeArt := .Store.Get "homeArt" -}}
+{{- $homeAssets := dict -}}
+{{- $showHomeNavigation := true -}}
+{{- if and .IsHome (isset .Params "show_navigation") -}}
+  {{- if ne (printf "%T" .Params.show_navigation) "bool" -}}
+    {{- errorf "Build failed: homepage %s params.show_navigation must be true or false." .File.Path -}}
+  {{- else -}}
+    {{- $showHomeNavigation = .Params.show_navigation -}}
+  {{- end -}}
+{{- end -}}
+{{- with $homeArt -}}
+  {{- $homeAssets = partial "entry-page-home/assets.html" . -}}
+{{- end -}}
 {{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
 {{- $pwaConfig := partial "system-delivery/pwa/config.html" (dict "ctx" . "delivery" $delivery) -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}
@@ -6,7 +21,7 @@
 {{- $offlineFallbacks := index $pwaConfig "offline_fallbacks" -}}
 {{- $isOfflinePage := index $pwaConfig "is_offline_page" -}}
 {{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" $delivery) "prefetch" -}}
-{{- $isPrefetchDebug := .HasShortcode "prefetch-debug-controls" -}}
+{{- $isPrefetchDebug := or (.HasShortcode "prefetch-debug-controls") (and $homeArt ($homeArt.HasShortcode "prefetch-debug-controls")) -}}
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
 {{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $buildVersion := partial "system-build/version.html" $primarySite.Home -}}
@@ -80,6 +95,14 @@
     <script>{{ $breadcrumbPendingInline | safeJS }}</script>
     {{- end }}
     {{- partial "system-ui/page-styles.html" . -}}
+    {{- with $homeArt -}}
+      {{- range $homeAssets.styles }}
+    <link rel="stylesheet" data-home-art="{{ $homeArt.Path }}" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
+      {{- end -}}
+      {{- range $.Store.Get "homeArtStyles" }}
+    <link rel="stylesheet" data-home-art="{{ $homeArt.Path }}" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
+      {{- end -}}
+    {{- end -}}
     <script>{{ index $inlineScripts "canvas_position" | safeJS }}</script>
     {{- block "head-extra" . -}}{{- end -}}
     {{- hugo.Generator -}}
@@ -102,7 +125,7 @@
       "is_offline_page" $isOfflinePage
     ) -}}
 </head>
-<body data-language-return-missing="{{ i18n "language_return_missing" }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}"{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
+<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }} data-language-return-missing="{{ i18n "language_return_missing" }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}"{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
     {{- if and .IsPage (eq (trim (printf "%v" (.Params.url | default "")) " \r\n\t") "") -}}
 {{- errorf "Build failed: page %q (title: %q) requires a non-empty url field, for example url: p/article-name/." .File.Path .Title -}}
     {{- end -}}
@@ -117,12 +140,14 @@
           {{- $hasPathColumns = gt (len $pathColumns) 0 -}}
         {{- end -}}
         <div class="page-shell">
+            {{- if $showHomeNavigation -}}
             <div class="page-column page-rail">
                 {{- partial "feature-browse/navigation/root/render.html" . -}}
                 {{- if gt (len $browserNavigationSources) 0 -}}
                 <script>{{ index $inlineScripts "root_navigation" | safeJS }}</script>
                 {{- end -}}
             </div>
+            {{- end -}}
             {{- if $hasPathColumns -}}
             {{- partial "feature-browse/navigation/path/render.html" (dict "ctx" $ "columns" $pathColumns) -}}
             {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
@@ -142,10 +167,15 @@
         </div>
     </div>
     {{- block "body-extra" . -}}{{- end -}}
-    {{- if .HasShortcode "site-update" -}}
+    {{- with $homeArt -}}
+      {{- range $homeAssets.scripts }}
+    <script data-home-art="{{ $homeArt.Path }}" src="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}" defer></script>
+      {{- end -}}
+    {{- end -}}
+    {{- if or (.HasShortcode "site-update") (and $homeArt ($homeArt.HasShortcode "site-update")) -}}
       {{- partial "system-assets/script.html" (dict "path" "js/updates/page.js") -}}
     {{- end -}}
-    {{- if .HasShortcode "page-actions" -}}
+    {{- if or (.HasShortcode "page-actions") (and $homeArt ($homeArt.HasShortcode "page-actions")) -}}
       {{- partial "system-assets/script.html" (dict "path" "js/pages/offline.js") -}}
     {{- end -}}
     {{- if $isPrefetchDebug -}}

@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {sortCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/sort/options.mjs';
 import {isolationCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/isolation/options.mjs';
@@ -47,7 +47,7 @@ before(()=>{
   }
   write(path.join(content,'discover/tooling/_map.toml'),"refs = [\"/d/breadcrumb-fixture/one\",\"/d/breadcrumb-fixture/three\",\"/d/breadcrumb-fixture/five\"]\n");
   write(path.join(content,'discover/tooling/devtools/_map.toml'),"refs = [\"/d/breadcrumb-fixture/two\",\"/d/breadcrumb-fixture/four\",\"/d/breadcrumb-fixture/six\"]\n");
-  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
+  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
 });

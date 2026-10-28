@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {spawn,spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
-import {fixtureEnvironment,fixtureI18nMount} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
 import {inspect} from '../.agents/skills/swaw-banyan/tasks/check/sitemap/inspect.mjs';
 import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/llms/inspect.mjs';
 import {decodeHtmlAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
@@ -67,7 +67,7 @@ before(()=>{
   write(config,`[[module.mounts]]\nsource = "${relative(content)}"\ntarget = "content"\n`+
     '[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+
     `[[module.mounts]]\nsource = "${relative(path.join(work,'layouts'))}"\ntarget = "layouts"\n`+
-    '[outputFormats.TEXT]\nmediaType = "text/plain"\nbaseName = "page"\nisPlainText = true\n'+fixtureI18nMount);
+    '[outputFormats.TEXT]\nmediaType = "text/plain"\nbaseName = "page"\nisPlainText = true\n'+fixtureSiteMounts);
 });
 after(()=>{if(work){assert.equal(path.dirname(fs.realpathSync(work)),parent);fs.rmSync(work,{recursive:true,force:true});}});
 

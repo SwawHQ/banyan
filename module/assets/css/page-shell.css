@@ -168,6 +168,15 @@ body {
         grid-row: 1 / span 3;
     }
 
+    [data-home-navigation="false"] .page-shell {
+        grid-template-columns: max-content;
+    }
+
+    [data-home-navigation="false"] .page-content,
+    [data-home-navigation="false"] .document-aside {
+        grid-column: 1;
+    }
+
     .path-navigation,
     .page-content,
     .document-aside {

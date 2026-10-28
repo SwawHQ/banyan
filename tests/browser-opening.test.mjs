@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {openCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/open/options.mjs';
 import {firstPaintCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/first-paint/options.mjs';
@@ -63,7 +63,7 @@ before(()=>{
   }
   write(path.join(content,'discover/tooling/_map.toml'),"refs = [\"/discover/reference-note\"]\n");
   write(path.join(content,'discover/tooling/devtools/_map.toml'),"refs = [\"/d/canvas-first\",\"/d/canvas-next\"]\n");
-  write(config,`[taxonomies]\n[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
+  write(config,`[taxonomies]\n[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);
   const built=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(built.error);assert.equal(built.status,0,built.stdout+built.stderr);
 },{timeout:60000});

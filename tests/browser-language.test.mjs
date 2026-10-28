@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {choicesCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/choices/options.mjs';
 import {returnCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/return/options.mjs';
@@ -59,7 +59,7 @@ before(()=>{
   }
   write(path.join(content,'d/language-fixture/untranslated.en.md'),
     '---\ntitle: Independent untranslated page\nurl: /d/language-fixture/untranslated/\ndate: 2026-01-01\n---\n\n## Details\n\nUntranslated fixture content.');
-  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n[languages.en.params.icon]\ntext = "AX"\n[languages.zh]\nlabel = "Independent target language"\n[languages.zh-tw.params.icon]\ntext = "繁"\n'+fixtureI18nMount);
+  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n[languages.en.params.icon]\ntext = "AX"\n[languages.zh]\nlabel = "Independent target language"\n[languages.zh-tw.params.icon]\ntext = "繁"\n'+fixtureSiteMounts);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
 });

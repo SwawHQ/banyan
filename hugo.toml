@@ -78,7 +78,11 @@ build.timestamp_layout = "20060102150405"
 [module]
 hugoVersion.min = "0.168.0"
 imports = [{ path = "github.com/SwawHQ/banyan/module" }]
-mounts = [{ source = "assets/i18n", target = "i18n" }]
+mounts = [
+  { source = "assets", target = "assets" },
+  { source = "assets/i18n", target = "i18n" },
+  { source = "layouts", target = "layouts" },
+]
 
 [languages]
 en.label = "English"

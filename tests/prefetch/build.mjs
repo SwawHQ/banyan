@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
-import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery} from '../_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureDelivery} from '../_shared/hugo.mjs';
 import {extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 const siteRoot = process.cwd(), temporaryRoot = path.join(fs.realpathSync(os.tmpdir()), 'swaw/banyan/prefetch-build-tests');
@@ -31,7 +31,7 @@ try {
         fs.mkdirSync(path.join(assets,'site'),{recursive:true});
         fs.writeFileSync(path.join(assets,'site/delivery.toml'),fixtureDelivery(policy));
         fs.writeFileSync(configFile,config+'\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n[[module.mounts]]\nsource = '+
-            JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n'+fixtureI18nMount);
+            JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n'+fixtureSiteMounts);
         const result = spawnSync(hugo, ['--noBuildLock',
             '--config', 'hugo.toml,' + rel(configFile), '--minify',
             '--cleanDestinationDir', '--destination', rel(output)

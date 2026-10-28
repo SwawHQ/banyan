@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {toggleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/aside/toggle/options.mjs';
 import {canvasLayoutCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/layout/options.mjs';
@@ -40,7 +40,7 @@ before(()=>{
   let body=('Leading article text to exercise independent reading progress.\n\n'.repeat(12));
   for(let i=0;i<20;i++)body+=(i%2?'###':'##')+' Chapter '+i+' 测试 '+('long heading words '.repeat(i===10?8:1))+'\n\n'+('A paragraph with enough words to exercise the reading column and native chapter links.\n\n'.repeat(6));
   write(path.join(content,'d/aside-fixture.md'),front+body);
-  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
+  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);
   const built=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(built.error);assert.equal(built.status,0,built.stdout+built.stderr);
 },{timeout:60000});

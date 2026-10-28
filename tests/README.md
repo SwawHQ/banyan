@@ -43,6 +43,7 @@ local wheel fixtures. Without these inputs, integration cases are skipped.
 | `browser-{aside,breadcrumb,canvas,collection,nav,opening,presentation,wheel}.test.mjs` | Navigation, geometry, native input and first paint |
 | `browser-{language,settings,ui}.test.mjs` | Translation, history, preferences and palette |
 | `responsive-images.test.mjs` | Image processing, browser selection, original links and build-cache reuse |
+| `home-art.test.mjs` | Hidden home-art bundles, translated shortcode content, host navigation, resource isolation and preview rebuilds |
 | `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
 | `output.test.mjs` | Repository budgets and retired-output faults |
 | `sitemap.test.mjs` | Sitemap/LLMS parity, native exclusions, language routing and rebuilds |

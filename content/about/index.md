@@ -9,7 +9,7 @@ layout: page-article-norss #Render Markdown without RSS inclusion.
 
 params:
   # browser_title: "About this site" #Replace the title before the site name in browser tabs.
-  # icon: info #Use a name from assets/site/icons.toml, or {text: "?"}.
+  icon: {image: "site/favicon.link.svg"}
   # share_image: false #Stop inherited social preview images for this page.
   slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---

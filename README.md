@@ -58,6 +58,15 @@ the theme does not supply these files. Language changes require matching
 `hugo.toml` settings, interface dictionaries and content translations.
 Home and published direct children of `content/` appear in the first navigation
 column. Set each language's default description in its home page `description`.
+For `layout: page-home`, put `{{< home-art "/_res/home-art/wind" >}}` in the
+home page body. Keep the selected art in a hidden leaf bundle under
+`content/_res/home-art/`, with translated `index.md` files and companion CSS/JS.
+The art renders inside the home and has no standalone page.
+Set its text and scene options in `params`. On the home page,
+`params.show_navigation` controls the first navigation column and defaults to
+`true`, with or without home art. The art bundle's `styles` and `scripts` select
+resources, published as fingerprinted external files. The wind bundle uses the
+`home-art/wind/scene` shortcode; sites can override its HTML in `layouts/_shortcodes/`.
 Keep internal pages in `content/_res/`; its shared `_index.md` hides this branch
 from navigation and discovery. Its Offline and prefetch diagnostic
 pages publish under `_res/`. Delete optional pages you do not need. SW `enable`

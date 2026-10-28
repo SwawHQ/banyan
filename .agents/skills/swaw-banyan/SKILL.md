@@ -37,6 +37,7 @@ Powered by 和离线页使用 `page-article-norss`；公共模板按 `site-updat
 集合布局直接绑定字段和行为：`page-collection` 只显示名称，`page-collection-directory` 显示目录信息，`page-collection-products` 显示产品信息。后两者的 `-all` 布局通过 `params.aggregate` 指定来源栏目。
 语言和外观设置使用 `_index.md`，布局分别为 `page-collection-language`、`page-collection-appearance`，并设置 `outputs: [HTML]`。
 各语言的默认描述由对应首页的 `description` 提供；页面可用自己的 `description` 覆盖。
+`page-home` 宿主首页的 `params.show_navigation` 控制第一列导航，默认为 `true`；没有引用艺术包时也适用。首页正文用 `{{< home-art "/_res/home-art/wind" >}}` 引用艺术页。站点在 `content/_res/home-art/<主题>/` 维护隐藏叶子包：各语言的 `index.md` 保存正文和 `params`，CSS、JS 放在同一包内。艺术包的 `params.styles` 和 `params.scripts` 选择指纹外链资源。风场正文使用 `{{< home-art/wind/scene >}}`，文字和场景参数也放在该页的 `params`。Module 提供短代码模板与计算模板；站点可用 `layouts` 下的同路径文件覆写。
 第一列默认显示首页和已发布的直属子页。内部页放在 `content/_res/`，公开 URL 使用 `_res/…`；共用的 `_index.md` 统一隐藏其导航和站点发现入口。
 界面字典放在 `assets/i18n/`，由项目 `hugo.toml` 挂载到 Hugo 的 `i18n`。
 

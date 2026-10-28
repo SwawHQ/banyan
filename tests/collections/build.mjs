@@ -14,7 +14,7 @@ import {waitForBrowse} from '../../.agents/skills/swaw-banyan/tasks/check/browse
 import {extractBlocks} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
-import {fixtureEnvironment,fixtureI18nMount,directoryPage,fixtureContentDirectory} from '../_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,directoryPage,fixtureContentDirectory} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
 const temporaryRoot = path.join(os.tmpdir(), 'swaw/banyan/collections');
@@ -91,7 +91,7 @@ try {
     write(path.join(overlay, 'd/contract-no-offer/badge.webp'), imageBytes);
     write(path.join(overlay, 'd/contract-image/badge.webp'), imageBytes);
     const config = path.join(work, 'overlay.toml');
-    write(config, `[taxonomies]\n[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
+    write(config, `[taxonomies]\n[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);
     for(const lang of langs) {
         write(path.join(overlay, `topics/_index${lang}.md`),directoryPage('Topics'));
         write(path.join(overlay, `products/_index${lang}.md`),directoryPage('Products','','list_icon_file: product')

@@ -2,7 +2,8 @@ import path from 'node:path';
 import {filesUnder,relativeName} from '../../../_shared/output.mjs';
 import {classify} from './policy.mjs';
 
-const fingerprint=/\.[a-f0-9]{64}\.[^.]+$/;
+// Hugo fingerprints entry points; esbuild hashes their file-loader dependencies.
+const fingerprint=/(?:\.[a-f0-9]{64}|-[A-Z2-7]{8})\.[^.]+$/;
 
 export async function inspectFiles(outputs,basePath) {
   const issues=[],warnings=[],counts={files:0,fingerprinted:0,missingFingerprint:0,outsideFingerprint:0,
@@ -38,7 +39,7 @@ export async function inspectFiles(outputs,basePath) {
         uncertain.add(state.channel+' final Cache-Control merge not verified: '+state.rules.join(', '));
     }
     if(!channels)continue;
-    if(expected&&!hashed)issue('missingFingerprint',relative+': fingerprinted path contains a file without a SHA-256 filename.');
+    if(expected&&!hashed)issue('missingFingerprint',relative+': fingerprinted path contains a file without a content hash in its filename.');
     else if(!expected&&determined&&hashed)issue('outsideFingerprint',relative+': fingerprinted filename is outside fingerprinted paths.');
   }
   for(const [kind,count] of examples)if(count>10)issues.push(kind+': '+(count-10)+' additional findings omitted.');

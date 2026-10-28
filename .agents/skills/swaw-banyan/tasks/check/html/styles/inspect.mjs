@@ -1,6 +1,6 @@
 import {isFile,insideOutput,localReference} from '../../../_shared/output.mjs';
 import {readPages,pageState,publishedURL} from '../../../_shared/html/read.mjs';
-import {extractStylesheetHrefs,normalizeCssAssetFamilyKey,hasClassToken,extractStartTags} from '../../../_shared/html/markup.mjs';
+import {normalizeCssAssetFamilyKey,hasClassToken,extractStartTags,extractTagAttribute} from '../../../_shared/html/markup.mjs';
 
 function inspectStylesheetContract(rows) {
     const issues = [];
@@ -21,6 +21,7 @@ function inspectStylesheetContract(rows) {
         const entries = row.stylesheetRefs.map((ref, index) => ({
             family: row.stylesheetFamilyKeys[index],
             ref,
+            homeArt: row.stylesheetHomeArts[index],
         }));
         const refsFor = (family) => entries.filter((entry) => entry.family === family);
         const pageEntries = refsFor('/css/page.css');
@@ -29,13 +30,19 @@ function inspectStylesheetContract(rows) {
         if (row.hasProse) {
             allowedFamilies.add('/css/prose.css');
         }
-        if (row.hasPageHome) {
-            allowedFamilies.add('/css/page-home.css');
+        if (row.homeArtCount > 1) {
+            issues.push(`${row.relativePath}: page must declare one data-home-art-source body; found ${row.homeArtCount}.`);
         }
-        const unexpectedEntries = entries.filter(({ family }) => (
-            !allowedFamilies.has(family)
-            && !(row.hasPageHome && family.startsWith('/css/page-home-scene.'))
+        for (const entry of entries.filter(entry => entry.homeArt && entry.homeArt !== row.homeArt)) {
+            issues.push(`${row.relativePath}: stylesheet ${entry.ref} declares home art ${entry.homeArt}, expected ${row.homeArt || '<none>'}.`);
+        }
+        const unexpectedEntries = entries.filter(entry => (
+            !allowedFamilies.has(entry.family)
+            && (!row.homeArt || entry.homeArt !== row.homeArt)
         ));
+        if (new Set(row.stylesheetRefs).size !== row.stylesheetRefs.length) {
+            issues.push(`${row.relativePath}: stylesheet references must be unique.`);
+        }
 
         if (pageEntries.length !== 1 || entries[0]?.family !== '/css/page.css') {
             issues.push(`${row.relativePath}: expected one leading page.css stylesheet, got ${row.stylesheetRefs.join(', ') || '<none>'}.`);
@@ -54,13 +61,6 @@ function inspectStylesheetContract(rows) {
             proseStyleRefs.add(entry.ref);
         }
 
-        if (row.hasPageHome) {
-            const pageHomeStyleCount = refsFor('/css/page-home.css').length;
-            const sceneCount = entries.filter(({ family }) => family.startsWith('/css/page-home-scene.')).length;
-            if (entries.length !== 3 || pageHomeStyleCount !== 1 || sceneCount !== 1) {
-                issues.push(`${row.relativePath}: homepage must keep page.css plus one page-home.css and one scene stylesheet; got ${row.stylesheetRefs.join(', ') || '<none>'}.`);
-            }
-        }
     }
 
     // Each configured palette has its own Concat target and one content fingerprint.
@@ -90,11 +90,16 @@ function inspectStylesheetContract(rows) {
 export async function inspect(directory) {
   const {root,pages} = await readPages(directory), siteURL = await publishedURL(root);
   const rows = await Promise.all(pages.map(async page => {
-    const refs = extractStylesheetHrefs(page.text).map(ref => localReference(ref,{siteURL,page:page.relativePath})).filter(Boolean).map(ref => '/' + ref);
+    const stylesheets = extractStartTags(page.text,'link').filter(tag => extractTagAttribute(tag,'rel').toLowerCase().split(/\s+/).includes('stylesheet'))
+      .map(tag => ({ref:localReference(extractTagAttribute(tag,'href').trim(),{siteURL,page:page.relativePath}),homeArt:extractTagAttribute(tag,'data-home-art')}))
+      .filter(sheet => sheet.ref);
+    const refs = stylesheets.map(sheet => '/' + sheet.ref);
+    const homeArts = extractStartTags(page.text,'body').map(tag => extractTagAttribute(tag,'data-home-art-source')).filter(Boolean);
     const missing = [];
     for (const ref of refs) if (!await isFile(insideOutput(root,ref.slice(1)))) missing.push(ref);
     return {...pageState(page),stylesheetRefs:refs,stylesheetFamilyKeys:refs.map(normalizeCssAssetFamilyKey),
-      hasProse:hasClassToken(page.text,'prose'),hasPageHome:hasClassToken(page.text,'page-home'),
+      stylesheetHomeArts:stylesheets.map(sheet => sheet.homeArt),homeArt:homeArts.length===1?homeArts[0]:'',homeArtCount:homeArts.length,
+      hasProse:hasClassToken(page.text,'prose'),
       isPrefetchDebug:extractStartTags(page.text,'body').some(tag => /(?:^|\s)data-prefetch-debug(?:\s|=|>)/i.test(tag)),
       missingStylesheetRefs:missing};
   }));

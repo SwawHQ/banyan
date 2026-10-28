@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureDelivery} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
 import {visit,update,naturallyActivate,observe,quiet,settled} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
@@ -40,7 +40,7 @@ before(()=>{
       (['next','latest'].includes(name)?'\n[[routes]]\npath = "/*offline-next/"\nhttp.headers.Vary = "Accept"\n':'')));
     write(config,[['content',content],['content','content'],['assets','assets'],['assets',assets]]
       .map(([target,directory])=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+
-      '[params.build]\nversion = "'+version+'"\n'+fixtureI18nMount);
+      '[params.build]\nversion = "'+version+'"\n'+fixtureSiteMounts);
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),
       ['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],
       {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});

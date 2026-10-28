@@ -1,0 +1,34 @@
+{{- $art := . -}}
+{{- $styles := slice -}}
+{{- $scripts := slice -}}
+{{- range $kind := slice "styles" "scripts" -}}
+  {{- if isset $art.Params $kind -}}
+    {{- $paths := index $art.Params $kind -}}
+    {{- if not (reflect.IsSlice $paths) -}}
+      {{- errorf "Build failed: home-art %s params.%s must be a list of local resource paths." $art.File.Path $kind -}}
+    {{- else -}}
+      {{- range $src := uniq $paths -}}
+        {{- $extension := cond (eq $kind "styles") ".css" ".js" -}}
+        {{- if ne (printf "%T" $src) "string" -}}
+          {{- errorf "Build failed: home-art %s params.%s entries must be strings." $art.File.Path $kind -}}
+        {{- else if or (eq $src "") (hasPrefix $src "/") (ne (path.Clean $src) $src) (in (split $src "/") "..") (findRE `[\\:?#]` $src) (ne (path.Ext $src) $extension) -}}
+          {{- errorf "Build failed: home-art %s params.%s path %q must name a local %s bundle resource." $art.File.Path $kind $src $extension -}}
+        {{- else -}}
+          {{- with $resource := $art.Resources.Get $src -}}
+            {{- $directory := cond (eq $kind "styles") "css" "js" -}}
+            {{- $target := path.Join $directory (strings.TrimPrefix "/_res/" $art.Path) $src -}}
+            {{- $options := dict "targetPath" $target "minify" (not hugo.IsServer) "importContext" $art.Resources -}}
+            {{- if eq $kind "styles" -}}
+              {{- $styles = $styles | append ($resource | css.Build $options | fingerprint) -}}
+            {{- else -}}
+              {{- $scripts = $scripts | append ($resource | js.Build $options | fingerprint) -}}
+            {{- end -}}
+          {{- else -}}
+            {{- errorf "Build failed: home-art %s cannot resolve %s resource %q." $art.File.Path $kind $src -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return (dict "styles" $styles "scripts" $scripts) -}}

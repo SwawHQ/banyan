@@ -23,6 +23,15 @@
 # 24px 线描图标使用 2 单位描边，在默认 15px 显示尺寸下约为 1.25px。
 # 其他 viewBox 按实际显示线宽调整，并为外缘描边保留空间。
 
+[home]
+viewBox = "0 0 24 24"
+fill = "none"
+stroke = "currentColor"
+stroke_linecap = "round"
+stroke_linejoin = "round"
+stroke_width = "2"
+body = '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21v-9h6v9"/>'
+
 [file]
 viewBox = "0 0 24 24"
 body = '<path fill="var(--icon-accent)" d="M3 1h12.414L21 6.586V23H3V1Zm2 2v18h14V9h-6V3H5Zm10 .414V7h3.586L15 3.414Z"/>'

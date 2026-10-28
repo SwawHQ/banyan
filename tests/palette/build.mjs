@@ -12,7 +12,7 @@ import {createStaticSiteServer} from '../../.agents/skills/swaw-banyan/tasks/che
 import {check as checkContrast} from '../../.agents/skills/swaw-banyan/tasks/check/browser/palette/contrast/check.mjs';
 import {check as checkRoles} from '../../.agents/skills/swaw-banyan/tasks/check/browser/palette/roles/check.mjs';
 
-import {fixtureEnvironment,fixtureI18nMount} from '../_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
 const workRoot = path.join(os.tmpdir(), 'swaw/banyan/module-organization-fixes/palette');
@@ -73,7 +73,7 @@ try {
     write(path.join(overlay, 'css/custom.css'), monochromeCss.replace(/--accent:\s*[^;]+;/, '--accent: #234567;')
         .replace(/--list-header-border:\s*[^;]+;/, '--list-header-border: #9c334f;'));
     write(path.join(overlay, 'invalid.txt'), 'This is not CSS.');
-    const mounts = `[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n`+fixtureI18nMount;
+    const mounts = `[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n`+fixtureSiteMounts;
     const overridden = build('site-override', paletteConfig('"css/theme.css"') + mounts);
     assert.equal(pageCss(overridden).text.match(/--accent:\s*([^;}]+)/)?.[1].trim(), '#123456', 'Hugo must prefer a same-path site asset over the theme asset.');
     const custom = build('custom', paletteConfig('"css/custom.css"') + mounts);

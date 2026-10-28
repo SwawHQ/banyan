@@ -41,6 +41,16 @@ test('delivery checks policy fingerprints while permitting ordinary attachment f
   assert.equal(failed.issues.length,2);
 }));
 
+test('delivery recognizes native esbuild file dependencies and rejects malformed hashes',()=>fixture(async({root,write})=>{
+  await write('_headers',headers);await write('_redirects','');
+  for(const file of ['leaf-OHPTXIWX.svg','font-CQFGD2NG.woff2'])await write('assets/'+file);
+  assert.deepEqual((await inspect(root)).issues,[]);
+  for(const file of ['lower-ohptxiwx.svg','short-OHPTXIW.svg','digit-OHPTXIW1.svg'])await write('assets/'+file);
+  const failed=await inspect(root);assert.equal(failed.summary.missingFingerprint,3);
+  await write('elsewhere/leaf-OHPTXIWX.svg');
+  assert.equal((await inspect(root)).summary.outsideFingerprint,1);
+}));
+
 test('classification honors SW priority, CF unset, encoded paths and HTML aliases',()=>fixture(async({root,write})=>{
   await write('_headers',headers+'/assets/live.json\n  ! Cache-Control\n  Cache-Control: no-cache\n'+
     '/%E4%B8%AD/*\n  ! Cache-Control\n  Cache-Control: immutable\n'+

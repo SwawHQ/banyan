@@ -7,7 +7,7 @@ import net from 'node:net';
 import {fileURLToPath} from 'node:url';
 import {spawn,spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
-import {fixtureEnvironment,fixtureI18nMount,directoryPage,fixtureSiteFiles,fixtureSitePages} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,directoryPage,fixtureSiteFiles,fixtureSitePages} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {inspect as inspectSitemap} from '../.agents/skills/swaw-banyan/tasks/check/sitemap/inspect.mjs';
 import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/llms/inspect.mjs';
@@ -50,7 +50,7 @@ before(()=>{
     '[minify]\ndisableJS=true\n[params.appearance]\npalette="css/theme.css"\n[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n[languages.zh-tw]\nlabel="繁體"\nweight=3\n'+
     '[taxonomies]\n[[cascade]]\n[cascade.build]\npublishResources=false\n[outputs]\nhome=["HTML","RSS","LLMS","DIRECTORY"]\nsection=["HTML","RSS"]\npage=["HTML"]\n'+
     '[outputFormats.LLMS]\nmediaType="text/plain"\nbaseName="llms"\nisPlainText=true\nnotAlternative=true\n'+
-    '[outputFormats.DIRECTORY]\nmediaType="application/json"\nbaseName="directory"\nisPlainText=true\nnotAlternative=true\n'+fixtureI18nMount);
+    '[outputFormats.DIRECTORY]\nmediaType="application/json"\nbaseName="directory"\nisPlainText=true\nnotAlternative=true\n'+fixtureSiteMounts);
   write(path.join(source,'layouts/home.directory.json'),
     '{{- $index := partialCached "feature-browse/directory/index.html" .Site .Site.Language.Lang -}}'+
     '{{- $out := dict -}}{{- range $kind := slice "direct" "recursive" "incoming" -}}{{- $groups := dict -}}'+

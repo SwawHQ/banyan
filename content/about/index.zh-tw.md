@@ -9,7 +9,7 @@ layout: page-article-norss #渲染 Markdown 正文，不加入 RSS 項目。
 
 params:
   # browser_title: "關於本站" #替換瀏覽器分頁中、網站名稱前的標題。
-  # icon: info #使用 assets/site/icons.toml 中的名稱，或 {text: "?"}。
+  icon: {image: "site/favicon.link.svg"}
   # share_image: false #此頁面不繼承社群預覽圖片。
   slots: [breadcrumb] #breadcrumb：路徑導覽欄；meta：文章中繼資料、章節目錄和 BlogPosting；[]：全部關閉。
 ---

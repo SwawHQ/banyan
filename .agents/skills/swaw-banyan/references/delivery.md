@@ -52,8 +52,8 @@ The command reads `_headers`, `_redirects`, `edgeone.json` and `sw-policy.json`
 when present. It checks the generated formats, fingerprint paths and redirect
 rules, then visits each published file name once.
 
-- A path marked `fingerprinted` by SW or `immutable` by HTTP expects a full
-  lowercase SHA-256 fingerprint in its file name. Missing fingerprints are reported.
+- A path marked `fingerprinted` by SW or `immutable` by HTTP expects a Hugo
+  SHA-256 fingerprint or a native esbuild resource hash. Missing hashes are reported.
 - HTTP and SW policies are independent. Either HTTP `immutable` or SW
   `fingerprinted` is sufficient to mark a fingerprint path.
 - Outside fingerprint paths, fingerprinted file names are reported.

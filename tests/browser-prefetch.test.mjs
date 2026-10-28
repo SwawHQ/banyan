@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {readBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/bindings.mjs';
 import {command as rulesCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/rules/options.mjs';
@@ -99,7 +99,7 @@ before(()=>{
   for(const [index,name] of ['one','two'].entries())write(path.join(content,'d/prefetch-scopes/child',name+'.md'),
     '---\ntitle: '+name+'\nurl: /d/prefetch-scopes/child/'+name+'/\nlayout: page-article-norss\ndate: 2026-01-0'+(index+1)+'\n---\nScope article.');
   const mount=(directory,target)=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n';
-  const mounts=mount(content,'content')+mount('content','content')+mount(layouts,'layouts')+mount('layouts','layouts')+fixtureI18nMount;
+  const mounts=mount(content,'content')+mount('content','content')+mount(layouts,'layouts')+mount('layouts','layouts')+fixtureSiteMounts;
   function build(name,enabled=true,runtimeSource,prerenderOnly=false,columnPolicy='') {
     const assets=path.join(work,name+'-assets');
     write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(!columnPolicy&&enabled?'enable':'off')+(columnPolicy||'[prefetch]\nenabled='+enabled+

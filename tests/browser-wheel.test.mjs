@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureContentDirectory,fixtureI18nMount} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory,fixtureSiteMounts} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
@@ -36,7 +36,7 @@ before(()=>{
   write(path.join(content,'d/wheel-long.md'),front('Wheel long article',article)+body);
   write(path.join(content,'d/wheel-short.md'),front('Wheel short article',short)+'Short reading text.\n\n[Read the long article]('+article+')\n');
   write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n'+
-    '[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureI18nMount);
+    '[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureSiteMounts);
   const built=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],
     {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000,windowsHide:true});
   assert.ifError(built.error);assert.equal(built.status,0,built.stdout+built.stderr);

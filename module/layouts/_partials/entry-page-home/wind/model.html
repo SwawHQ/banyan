@@ -1,33 +1,34 @@
-{{- $page := . -}}
-{{- $signals := $page.Params.home_signals | default slice -}}
-{{- $guideChance := $page.Params.home_signal_guide_chance | default 0 -}}
+{{- $config := .Params -}}
+{{- $context := .File.Path -}}
+{{- $signals := $config.home_signals | default slice -}}
+{{- $guideChance := $config.home_signal_guide_chance | default 0 -}}
 {{- $horizonOffsetRem := 31.2 -}}
 {{- $groundSpaceRem := 2.8 -}}
 {{- $signalFontSizeRem := 0.72 -}}
 {{- $signalMinLiftRem := 0.9 -}}
 {{- $signalSlotStepRem := div $signalFontSizeRem 2 -}}
 {{- $windFieldStartOffsetRem := 6.0 -}}
-{{- if isset $page.Params "home_wind_field_start_offset_rem" -}}
-{{- $windFieldStartOffsetRem = $page.Params.home_wind_field_start_offset_rem -}}
+{{- if isset $config "home_wind_field_start_offset_rem" -}}
+{{- $windFieldStartOffsetRem = $config.home_wind_field_start_offset_rem -}}
 {{- end -}}
 {{- if lt $windFieldStartOffsetRem 0 -}}
-{{- errorf "%s: home_wind_field_start_offset_rem must be greater than or equal to 0; got %v." $page.File.Path $windFieldStartOffsetRem -}}
+{{- errorf "%s: home_wind_field_start_offset_rem must be greater than or equal to 0; got %v." $context $windFieldStartOffsetRem -}}
 {{- end -}}
 {{- $windFieldHeightRem := sub $horizonOffsetRem $windFieldStartOffsetRem -}}
 {{- $signalSlotCount := int (div (sub $windFieldHeightRem $signalMinLiftRem) $signalSlotStepRem) -}}
 {{- if lt $signalSlotCount 1 -}}
 {{- $maxStartOffsetRem := sub $horizonOffsetRem (add $signalMinLiftRem $signalSlotStepRem) -}}
-{{- errorf "%s: home_wind_field_start_offset_rem must be less than or equal to %.2f; got %v." $page.File.Path $maxStartOffsetRem $windFieldStartOffsetRem -}}
+{{- errorf "%s: home_wind_field_start_offset_rem must be less than or equal to %.2f; got %v." $context $maxStartOffsetRem $windFieldStartOffsetRem -}}
 {{- end -}}
 {{- $signalSlotStride := 13 -}}
 {{- $signalDriftSeconds := 90 -}}
-{{- if isset $page.Params "home_signal_drift_seconds" -}}
-{{- $signalDriftSeconds = int $page.Params.home_signal_drift_seconds -}}
+{{- if isset $config "home_signal_drift_seconds" -}}
+{{- $signalDriftSeconds = int $config.home_signal_drift_seconds -}}
 {{- end -}}
 {{- if lt $signalDriftSeconds 24 -}}{{- $signalDriftSeconds = 24 -}}{{- end -}}
 {{- $signalLaunchGapSeconds := 4 -}}
-{{- if isset $page.Params "home_signal_launch_gap_seconds" -}}
-{{- $signalLaunchGapSeconds = int $page.Params.home_signal_launch_gap_seconds -}}
+{{- if isset $config "home_signal_launch_gap_seconds" -}}
+{{- $signalLaunchGapSeconds = int $config.home_signal_launch_gap_seconds -}}
 {{- end -}}
 {{- if lt $signalLaunchGapSeconds 1 -}}{{- $signalLaunchGapSeconds = 1 -}}{{- end -}}
 {{- $signalDurationSpreadSeconds := 16 -}}

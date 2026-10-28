@@ -8,7 +8,7 @@ import {spawnSync} from 'node:child_process';
 import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
 import {active} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/state.mjs';
 import {panelState} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
-import {fixtureEnvironment,fixtureI18nMount,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {command as lifecycleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/lifecycle/options.mjs';
 import {command as checkCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/check/options.mjs';
@@ -56,7 +56,7 @@ before(()=>{
     }
     write(path.join(content,'reader-start/index'+suffix+'.md'),`---\ntitle: Independent update source\nurl: ${prefix}${from}\nlayout: page-article-norss\nweight: 87\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nIndependent update source.`);
   }
-  const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureI18nMount;
+  const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureSiteMounts;
   const build=(name,version=versions[0],asset,code,mode='enable')=>{
     const assets=path.join(work,name+'-assets');
     if(asset)write(path.join(assets,asset),code);

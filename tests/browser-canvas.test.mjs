@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureI18nMount,fixtureContentDirectory} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {scrollbarCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/scrollbar/options.mjs';
 import {historyCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/history/options.mjs';
@@ -42,7 +42,7 @@ before(()=>{
   write(path.join(content,'d/canvas-names/_index.md'),'---\ntitle: Canvas names\nlayout: page-collection\n---\n\n'+
     'Collection introduction with enough words to wrap inside the declared list width. '.repeat(16)+'\n');
   for(let index=0;index<20;index++)write(path.join(content,'d/canvas-names',index+'.md'),`---\ntitle: Name ${index}\nurl: d/canvas-names/canvas-name-${index}/\n---\nName fixture.\n`);
-  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureI18nMount);
+  write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);
   const built=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(built.error);assert.equal(built.status,0,built.stdout+built.stderr);
 });
