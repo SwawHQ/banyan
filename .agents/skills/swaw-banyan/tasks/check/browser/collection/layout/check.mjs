@@ -28,7 +28,7 @@ async function readList(list) {
     const children=[...node.children],fields=[...heading.children].map(cell=>cell.dataset.itemField);
     const readFields=row=>({display:getComputedStyle(row).display,columns:getComputedStyle(row).gridTemplateColumns,
       template:getComputedStyle(row).getPropertyValue('--list-field-tracks'),
-      fields:[...row.children].map(cell=>({field:cell.dataset.itemField,x:cell.getBoundingClientRect().left-box.left,width:cell.getBoundingClientRect().width}))});
+      fields:[...row.children].map(cell=>({field:cell.dataset.itemField,x:cell.getBoundingClientRect().left-box.left,width:cell.getBoundingClientRect().width,contentWidth:cell.scrollWidth}))});
     return {top:box.top,nameWidth:header.getBoundingClientRect().width,headerX:header.getBoundingClientRect().left-box.left,declaredWidth,
       fields,heading:readFields(heading),items:items.map(readFields),headerTrack:heading.getBoundingClientRect().height,
       headerY:range.getBoundingClientRect().top-box.top,rowY:row.top-box.top,rowHeight:row.height,rowWidth:row.width,
@@ -56,6 +56,8 @@ function checkList(state) {
     assert.ok(row.fields.every((cell,index)=>cell.width>0&&Math.abs(cell.x-state.heading.fields[index].x)<=.1&&Math.abs(cell.width-state.heading.fields[index].width)<=.1),
       'Every row field must match its header width and column start.');
   }
+  assert.ok(state.heading.fields.every(cell=>cell.field==='name'||cell.contentWidth<=cell.width+1),
+    'Metadata headers and sort indicators must fit their fixed field width.');
   assert.ok(Math.abs(state.rootWidth-state.nameWidth)<=1&&Math.abs(state.rootHeight-state.rowHeight)<=.1,'Collection rows must share root navigation dimensions.');
   assert.ok(state.rows.every(row=>Math.abs(row.width-state.nameWidth)<=1&&Math.abs(row.height-state.rowHeight)<=.1&&Math.abs(row.x-state.headerX)<=.1),
     'Name rows must share width, height and column start.');

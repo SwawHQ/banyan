@@ -22,14 +22,8 @@
     {{- $offer := partial "feature-browse/collection/products/offer.html" (dict "page" $node) -}}
     {{- $row = merge $row $offer -}}
   {{- else if eq $config.view "all" -}}
-    {{- $pathText := "/" -}}
-    {{- $pathHref := $node.Site.Home.RelPermalink -}}
-    {{- with $node.Parent -}}
-      {{- $pathText = partial "./logical-path.html" (dict "ctx" $node "href" .RelPermalink) -}}
-      {{- $pathHref = .RelPermalink -}}
-    {{- end -}}
     {{- $bytes := len $node.RawContent -}}
-    {{- $row = merge $row (dict "sort_size" (printf "%v" $bytes) "size_text" (printf "%v" (div (add $bytes 1023) 1024)) "size_unit" "&thinsp;KB" "sort_path" (trim $pathText "/") "path_text" $pathText "path_href" $pathHref) -}}
+    {{- $row = merge $row (dict "sort_size" (printf "%v" $bytes) "size_text" (printf "%v" (div (add $bytes 1023) 1024)) "size_unit" "&thinsp;KB") -}}
   {{- end -}}
   {{- $decorated = $decorated | append $row -}}
 {{- end -}}

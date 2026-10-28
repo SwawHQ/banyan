@@ -2,12 +2,8 @@
 other = "Name"
 [list_col_date]
 other = "Updated"
-[list_col_count]
-other = "Count"
 [list_col_size]
 other = "Size"
-[list_col_path]
-other = "Path"
 [list_sort_name_asc]
 other = "Sort by name ascending"
 [list_sort_name_desc]
@@ -16,18 +12,10 @@ other = "Sort by name descending"
 other = "Sort by update time ascending"
 [list_sort_date_desc]
 other = "Sort by update time descending"
-[list_sort_count_asc]
-other = "Sort by count ascending"
-[list_sort_count_desc]
-other = "Sort by count descending"
 [list_sort_size_asc]
 other = "Sort by size ascending"
 [list_sort_size_desc]
 other = "Sort by size descending"
-[list_sort_path_asc]
-other = "Sort by path ascending"
-[list_sort_path_desc]
-other = "Sort by path descending"
 
 [products_col_name]
 other = "Name"

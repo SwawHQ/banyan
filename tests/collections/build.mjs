@@ -181,6 +181,8 @@ try {
             else if(view==='all')assert.deepEqual(hrefs,payload(output,lang,'all').rows.map(row=>row.href).sort(),'The -all preset reads the same recursive members as its aggregate.');
             else assert.deepEqual(hrefs, directoryMembers.get(lang), `${view} must not filter native directory members`);
             assert.equal(current.sv, view === 'directory' ? 'section' : view);
+            const aggregate = payload(output, lang, 'all');
+            assert(aggregate.rows.every(row => !('sort_path' in row) && !('path_text' in row) && !('path_href' in row)), 'aggregate rows omit the removed Path column');
             assert.equal(payload(output, lang, 'd/contract-inherit').sv, view==='all'?'section':current.sv, 'undeclared sections inherit the native cascade layout');
             assert.equal(payload(output, lang, 'd/contract-override').sv, 'section');
             assert.equal(payload(output, lang, 'd/contract-override/child').sv, 'section', 'nearest cascade wins');

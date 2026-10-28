@@ -8,7 +8,4 @@
   {{- $count := $row.count_text -}}{{- $unit := $row.count_unit -}}
   {{- if eq $view "all" -}}{{- $count = $row.size_text -}}{{- $unit = $row.size_unit -}}{{- end -}}
   <span class="item-field item-field--count" data-item-field="{{ cond (eq $view "all") "size" "count" }}" title="{{ $count }}{{ if $unit }} KB{{ end }}"><span>{{ $count }}</span><span class="item-count-unit">{{ $unit | safeHTML }}</span></span>
-  {{- if eq $view "all" -}}
-    <span class="item-field item-field--path" data-item-field="path">{{ partial "system-ui/link.html" (dict "href" $row.path_href "text" $row.path_text "title" $row.path_text "class" "item-control" "textClass" "item-title") }}</span>
-  {{- end -}}
 {{- end -}}

@@ -28,8 +28,7 @@ export const SORT_VARIANTS = Object.freeze({
         fields: {
             name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
             date: { dataKey: 'sortDate', type: 'number', defaultOrder: 'desc' },
-            size: { dataKey: 'sortSize', type: 'number', defaultOrder: 'desc' },
-            path: { dataKey: 'sortPath', type: 'string', defaultOrder: 'asc' }
+            size: { dataKey: 'sortSize', type: 'number', defaultOrder: 'desc' }
         }
     },
     products: {

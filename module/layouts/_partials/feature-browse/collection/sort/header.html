@@ -1,24 +1,25 @@
 {{- $page := .page -}}
 {{- $config := .config -}}
 {{- $fields := slice "name" "date" "count" -}}
-{{- $classes := dict "name" "item-field--name" "date" "item-field--date" "count" "item-field--count" "size" "item-field--count" "path" "item-field--path" "price" "item-field--price" "value" "item-field--value" -}}
+{{- $classes := dict "name" "item-field--name" "date" "item-field--date" "count" "item-field--count" "size" "item-field--count" "price" "item-field--price" "value" "item-field--value" -}}
 {{- $prefix := "list" -}}
 {{- if eq $config.view "name" -}}
   {{- $fields = slice "name" -}}
 {{- else if eq $config.view "all" -}}
-  {{- $fields = slice "name" "date" "size" "path" -}}
+  {{- $fields = slice "name" "date" "size" -}}
 {{- else if eq $config.view "products" -}}
   {{- $fields = slice "name" "price" "value" -}}
   {{- $prefix = "products" -}}
 {{- end -}}
 {{- $default := split $config.default_sort "-" -}}
 {{- range $field := $fields -}}
+  {{- $labelField := cond (eq $field "count") "size" $field -}}
   {{- partial "./field.html" (dict
     "class" (index $classes $field) "ctx" $page "baseHref" $page.RelPermalink
-    "field" $field "label" (i18n (printf "%s_col_%s" $prefix $field))
-    "defaultOrder" (cond (in (slice "name" "path" "value") $field) "asc" "desc")
+    "field" $field "label" (i18n (printf "%s_col_%s" $prefix $labelField))
+    "defaultOrder" (cond (in (slice "name" "value") $field) "asc" "desc")
     "currentField" (index $default 0) "currentOrder" (index $default 1)
-    "titleAsc" (i18n (printf "%s_sort_%s_asc" $prefix $field))
-    "titleDesc" (i18n (printf "%s_sort_%s_desc" $prefix $field))
+    "titleAsc" (i18n (printf "%s_sort_%s_asc" $prefix $labelField))
+    "titleDesc" (i18n (printf "%s_sort_%s_desc" $prefix $labelField))
   ) -}}
 {{- end -}}

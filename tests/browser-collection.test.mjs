@@ -13,6 +13,7 @@ import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_share
 import {loadChromium,loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {check as checkFirstPaint} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/first-paint/check.mjs';
+import {check as checkCollectionLayout} from '../.agents/skills/swaw-banyan/tasks/check/browser/collection/layout/check.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-collection');
 const article='/d/collection-fixture/one/#from=all';let work,skill,output;
@@ -39,7 +40,7 @@ before(()=>{
   write(path.join(content,'d/collection-fixture/_index.md'),'---\ntitle: Independent Collection\n---\n');
   for(const [index,name] of ['one','two','three','four'].entries())write(path.join(content,'d/collection-fixture',name+'.md'),
     `---\ntitle: ${name==='three'?'Long name 测试 '+('collection title '.repeat(12)):name}\nurl: /d/collection-fixture/${name}/\ndate: "2026-01-0${index+1}T00:00:00+08:00"\n---\n\n## Chapter\n\n`+'Independent collection text.\n\n'.repeat(20));
-  for(const name of ['translated-one','translated-two'])write(path.join(content,'d',name+'.zh.md'),
+  for(const suffix of ['.zh','.zh-tw'])for(const name of ['translated-one','translated-two'])write(path.join(content,'d',name+suffix+'.md'),
     `---\ntitle: ${name}\nurl: d/${name}/\ndate: 2026-01-01\n---\n\n独立翻译内容。`);
   for(const suffix of ['','.zh','.zh-tw']) {
     write(path.join(content,'discover','_index'+suffix+'.md'),directoryPage('Sources'));
@@ -72,16 +73,29 @@ test('layout checks directory, flat and reference lists at narrow and wide width
   }
   const state=report(cli('layout',['--page','/all/','--article',article,'--widths','390,1440','--out',path.join(work,'reports')]));
   assert.equal(state.browser,'chromium');assert.ok(state.browserVersion);
-  for(const result of state.details.cases){assert.ok(result.main.rows.length>=4);assert.equal(result.path.pathGrid,true);assert.equal(result.path.nameOnly,true);}
+  for(const result of state.details.cases){assert.ok(result.main.rows.length>=4);assert.deepEqual(result.main.fields,['name','date','size']);assert.equal(result.path.pathGrid,true);assert.equal(result.path.nameOnly,true);}
   for(const directory of directories) {
     const fields=directory.main.heading.fields,aggregate=state.details.cases.find(result=>result.width===directory.width).main.heading.fields;
     assert.deepEqual(fields.map(cell=>cell.field),['name','date','count']);
     assert.ok(fields.at(-1).x+fields.at(-1).width-fields[0].x<=390,'Directory fields must fit the 390 CSS px row budget.');
-    for(const [field,comparison] of [['date','date'],['count','size']])assert.ok(
+    for(const [field,comparison] of [['name','name'],['date','date'],['count','size']])assert.ok(
       Math.abs(fields.find(cell=>cell.field===field).width-aggregate.find(cell=>cell.field===comparison).width)<=.1,
       'Directory and aggregate layouts must share the '+field+' field width.');
   }
   assert.equal(fs.existsSync(path.join(work,'node_modules')),false);
+});
+
+test('directory and aggregate headers fit their shared fixed columns in all languages',{timeout:20000},async()=>{
+  const server=await createStaticSiteServer(output);let browser;
+  try {
+    await server.start();const type=loadChromium();browser=await type.launch({headless:true,executablePath:type.executablePath()});
+    const context=await browser.newContext({viewport:{width:390,height:900},serviceWorkers:'block'}),page=await context.newPage();
+    for(const prefix of ['','/zh','/zh-tw'])for(const route of ['/d/','/all/']) {
+      for(const field of ['date',route==='/all/'?'size':'count']) {
+        await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:prefix+route+'#sort='+field+'-desc',widths:'390,1440'}});
+      }
+    }
+  } finally {try{if(browser)await browser.close();}finally{await server.stop();}}
 });
 
 for(const [name,loadBrowser] of [['chromium',loadChromium],['webkit',loadWebkit]])test(name+' keeps fixed collection widths at startup and clips long headings without shrinking text',{timeout:15000},async()=>{
@@ -116,7 +130,7 @@ test('style checks actual links and choice buttons in both themes and widths',{t
 });
 
 test('layout rejects narrowed names, changed headers, moved rows, padding and missing separators',{timeout:20000},()=>{
-  const width=fixture('name-width');css(width,'all','.item-list--all > .list-item{grid-template-columns:100px 10ch 6ch 225px!important}');
+  const width=fixture('name-width');css(width,'all','.item-list--all > .list-item{grid-template-columns:100px 10ch 6ch!important}');
   const narrowed=cli('layout',['--page','/all/','--widths','390'],width);assert.equal(narrowed.status,1);assert.match(narrowed.stderr,/Name column must match/);
   const header=fixture('header');css(header,'d/collection-fixture/one','.item-list--path-column .list-header{padding-block-start:5px!important}');
   const shifted=cli('layout',['--page','/all/','--article',article,'--widths','390'],header);assert.equal(shifted.status,1);assert.match(shifted.stderr,/Main and path lists must align/);
@@ -130,9 +144,10 @@ test('layout rejects narrowed names, changed headers, moved rows, padding and mi
 
 test('layout rejects field drift, subgrid and content-sized tracks',{timeout:20000},()=>{
   for(const [name,rule,message] of [
+    ['long-heading','.slot-main [data-list-header] [data-item-field="date"] a::after{content:"Long metadata heading"}',/Metadata headers and sort indicators must fit/],
     ['field-width','[data-list-item] > [data-item-field="date"]{width:1px!important}',/field must match its header width/],
     ['subgrid','[data-list-item]{grid-template-columns:subgrid!important}',/independent Grid/],
-    ['content-track','.item-list--all{--list-field-tracks:var(--navigation-column-inline) max-content 6ch 225px!important}',/determined widths/]
+    ['content-track','.item-list--all{--list-field-tracks:var(--navigation-column-inline) max-content 6ch!important}',/determined widths/]
   ]) {
     const broken=fixture(name);css(broken,'all',rule);
     const result=cli('layout',['--page','/all/','--widths','390'],broken);assert.equal(result.status,1);assert.match(result.stderr,message);

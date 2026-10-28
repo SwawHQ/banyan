@@ -1,7 +1,6 @@
 :root {
     --item-date-inline: 5.6rem;
-    --item-count-inline: 4.1rem;
-    --item-path-inline: 12rem;
+    --item-count-inline: 3.3rem;
     --item-price-inline: 6rem;
     --item-value-inline: 18rem;
     --item-field-gap: 0.6rem;
@@ -19,15 +18,11 @@
 }
 
 .item-list--directory,
-.slot-main--collection:has(.item-list--directory) {
+.item-list--all,
+.slot-main--collection:has(.item-list--directory, .item-list--all) {
+    --item-field-gap: 0.5rem;
     --list-field-tracks: var(--navigation-column-inline) var(--item-date-inline) var(--item-count-inline);
     --list-inline-size: calc(var(--navigation-column-inline) + var(--item-date-inline) + var(--item-count-inline) + 2 * var(--item-field-gap));
-}
-
-.item-list--all,
-.slot-main--collection:has(.item-list--all) {
-    --list-field-tracks: var(--navigation-column-inline) var(--item-date-inline) var(--item-count-inline) var(--item-path-inline);
-    --list-inline-size: calc(var(--navigation-column-inline) + var(--item-date-inline) + var(--item-count-inline) + var(--item-path-inline) + 3 * var(--item-field-gap));
 }
 
 .item-list--products,

@@ -2,12 +2,8 @@
 other = "名稱"
 [list_col_date]
 other = "更新時間"
-[list_col_count]
-other = "計數"
 [list_col_size]
 other = "大小"
-[list_col_path]
-other = "路徑"
 [list_sort_name_asc]
 other = "按名稱升冪排序"
 [list_sort_name_desc]
@@ -16,18 +12,10 @@ other = "按名稱降冪排序"
 other = "按更新時間升冪排序"
 [list_sort_date_desc]
 other = "按更新時間降冪排序"
-[list_sort_count_asc]
-other = "按計數升冪排序"
-[list_sort_count_desc]
-other = "按計數降冪排序"
 [list_sort_size_asc]
 other = "按大小升冪排序"
 [list_sort_size_desc]
 other = "按大小降冪排序"
-[list_sort_path_asc]
-other = "按路徑升冪排序"
-[list_sort_path_desc]
-other = "按路徑降冪排序"
 
 [products_col_name]
 other = "名稱"

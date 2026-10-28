@@ -17,7 +17,7 @@
   {{- $href := $row.href -}}
   {{- if eq $row.kind "page" -}}{{- $href = printf "%s#from=%s" $href $from -}}{{- end -}}
   {{- $attrs := dict -}}
-  {{- range $key := slice "group" "name" "date" "count" "size" "path" "price" "value" -}}
+  {{- range $key := slice "group" "name" "date" "count" "size" "price" "value" -}}
     {{- if isset $row (printf "sort_%s" $key) -}}
       {{- $attrs = merge $attrs (dict (printf "sort-%s" $key) (index $row (printf "sort_%s" $key))) -}}
     {{- end -}}
