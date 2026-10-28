@@ -14,6 +14,18 @@ function within(root,file) {
   const relative = path.relative(root,file);
   return relative !== '..' && !relative.startsWith('..'+path.sep) && !path.isAbsolute(relative);
 }
+export async function listenOnLoopback(server) {
+  // Port 0 can select a port blocked by browsers and fetch.
+  for(let attempt=0;attempt<10;attempt++) {
+    try {
+      const ready=once(server,'listening');
+      server.listen(randomInt(49152,65536),'127.0.0.1');
+      await ready;return;
+    } catch(error) {
+      if(!['EADDRINUSE','EACCES'].includes(error.code)||attempt===9)throw error;
+    }
+  }
+}
 async function readRoot(directory) {
   const root = await fs.realpath(directory);
   if (!(await fs.stat(path.join(root,'index.html'))).isFile()) throw new Error('Build directory must contain index.html.');
@@ -50,17 +62,7 @@ export async function createStaticSiteServer(directory) {
   return {
     async setRoot(directory) { current = await readRoot(directory); },
     async start() {
-      // The OS can assign port 0 below the dynamic range, including browser-blocked ports.
-      for(let attempt=0;attempt<10;attempt++) {
-        try {
-          const ready=once(server,'listening');
-          server.listen(randomInt(49152,65536),'127.0.0.1');
-          await ready;return;
-        } catch(error) {
-          // Windows can reject unavailable ports with EACCES.
-          if(!['EADDRINUSE','EACCES'].includes(error.code)||attempt===9)throw error;
-        }
-      }
+      await listenOnLoopback(server);
     },
     getBaseUrl() { return 'http://127.0.0.1:'+server.address().port; },
     async stop() {
