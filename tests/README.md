@@ -48,6 +48,7 @@ local wheel fixtures. Without these inputs, integration cases are skipped.
 | `output.test.mjs` | Repository budgets and retired-output faults |
 | `sitemap.test.mjs` | Sitemap/LLMS parity, native exclusions, language routing and rebuilds |
 | `directory-references.test.mjs` | TOML references, native taxonomy configuration, multilingual membership, feeds, canonical outputs and rebuilds |
+| `aggregate-time-ranges.test.mjs` | Manual aggregate ranges, exclusive tree membership, validation, feeds, source navigation and preview rebuilds |
 | `reference-site.test.mjs` | Minimal reference-site ownership, production discovery and build metadata |
 
 Each suite keeps its successful cases and fault fixtures. Domain suites own

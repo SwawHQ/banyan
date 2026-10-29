@@ -9,5 +9,7 @@ params:
   # icon: {text: "A"} #覆寫此項目的預設資料夾圖示。
   # aggregate 讀取此欄目下的全部文章及 _map.toml 引用，並去除重複項目。
   aggregate: /articles
+  # 可選 Lastmod 範圍：包含起點，不包含終點；子欄目範例見安裝說明。
+  # time_range: {start: "2000-01-01", end: "2005-02-01"}
   slots: [breadcrumb] #breadcrumb：路徑導覽欄；meta：文章中繼資料、章節目錄和 BlogPosting；[]：全部關閉。
 ---

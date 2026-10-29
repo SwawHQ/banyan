@@ -2,9 +2,9 @@
 {{- $config := .config -}}
 {{- if not $config -}}{{- $config = partial "./config.html" (dict "page" $page) -}}{{- end -}}
 {{- $rows := slice -}}
-{{- if eq $config.provider "aggregate" -}}
-  {{- $members := partial "./articles.html" $page -}}
-  {{- range $members -}}{{- $rows = $rows | append (partial "feature-browse/collection/rows/page.html" (dict "page" .)) -}}{{- end -}}
+{{- if and (eq $config.provider "aggregate") (or (not $config.time_tree) (ne $page.Kind "section")) -}}
+  {{- $members := partialCached "./members.html" $page $page.Language.Lang $page.Path -}}
+  {{- range $members.direct -}}{{- $rows = $rows | append (partial "feature-browse/collection/rows/page.html" (dict "page" .)) -}}{{- end -}}
 {{- else -}}
   {{- if eq $page.Kind "section" -}}
     {{- $rows = partial "feature-browse/collection/rows/section.html" (dict "page" $page) -}}

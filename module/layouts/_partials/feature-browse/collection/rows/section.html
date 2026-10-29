@@ -5,12 +5,14 @@
 {{- if ne $page.Kind "section" -}}
   {{- errorf "Build failed: feature-browse/collection/rows/section.html only supports kind=section; current page %q has kind=%q." $page.RelPermalink $page.Kind -}}
 {{- end -}}
-{{- $directory := partial "feature-browse/directory/members.html" $page -}}
+{{- $directory := partialCached "feature-browse/collection/members.html" $page $page.Language.Lang $page.Path -}}
 {{- $direct := $directory.direct -}}
+{{- $sections := $page.Sections -}}
+{{- if isset $directory "sections" -}}{{- $sections = $directory.sections -}}{{- end -}}
 {{- $sectionRows := slice -}}
-{{- range $section := $page.Sections -}}
+{{- range $section := $sections -}}
   {{- if not (partial "feature-browse/is-rendered-html.html" .) -}}{{- continue -}}{{- end -}}
-  {{- $membership := partial "feature-browse/directory/members.html" $section -}}
+  {{- $membership := partialCached "feature-browse/collection/members.html" $section $section.Language.Lang $section.Path -}}
   {{- $members := $membership.recursive -}}
   {{- $count := len $members -}}
   {{- $dateValue := $section.Lastmod -}}

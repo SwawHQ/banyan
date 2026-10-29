@@ -1,0 +1,80 @@
+{{- $page := . -}}
+{{- $target := $page -}}
+{{- $config := partial "./config.html" (dict "page" $page) -}}
+{{- $result := dict "direct" slice "recursive" slice -}}
+{{- with $page.Params.aggregate -}}
+  {{- $target = $page.Site.GetPage . -}}
+  {{- if not $target -}}{{- errorf "List page %s cannot resolve aggregate: %s." $page.RelPermalink . -}}{{- end -}}
+{{- end -}}
+{{- if or (not $target) (ne $target.Kind "section") -}}
+  {{- errorf "Article collection %s must reference an ordinary section." $page.RelPermalink -}}
+{{- else -}}
+  {{- /* Aggregate sources stay physical so a child view can reference its own ancestor. */ -}}
+  {{- $result = partial "feature-browse/directory/members.html" $target -}}
+  {{- if eq $config.provider "aggregate" -}}
+    {{- $scope := $result.recursive -}}
+    {{- $range := partialCached "./time-range.html" $page $page.Language.Lang $page.Path -}}
+    {{- if $range -}}
+      {{- $scope = slice -}}
+      {{- range $article := $result.recursive -}}
+        {{- if and (not ($article.Lastmod.Before $range.start)) ($article.Lastmod.Before $range.end) -}}
+          {{- $scope = $scope | append $article -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $direct := $scope -}}
+    {{- $sections := slice -}}
+    {{- if $config.time_tree -}}
+      {{- with $parent := $page.Parent -}}
+        {{- if eq $parent.Layout "page-collection-directory-all" -}}
+          {{- if not $range -}}{{- errorf "Collection page %s needs time_range as a child of %s." $page.RelPermalink $parent.RelPermalink -}}{{- end -}}
+          {{- $parentSource := $parent.Site.GetPage $parent.Params.aggregate -}}
+          {{- if and $parentSource (ne $parentSource.Path $target.Path) -}}
+            {{- errorf "Collection page %s must use the same aggregate source as %s." $page.RelPermalink $parent.RelPermalink -}}
+          {{- end -}}
+          {{- $parentRange := partialCached "./time-range.html" $parent $parent.Language.Lang $parent.Path -}}
+          {{- if and $range $parentRange -}}
+            {{- if or ($range.start.Before $parentRange.start) ($range.end.After $parentRange.end) -}}
+              {{- errorf "Collection page %s time_range is outside parent %s." $page.RelPermalink $parent.RelPermalink -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+      {{- $ranges := slice -}}
+      {{- range $child := $page.Sections -}}
+        {{- if not (partial "feature-browse/is-rendered-html.html" $child) -}}{{- continue -}}{{- end -}}
+        {{- if ne $child.Layout "page-collection-directory-all" -}}
+          {{- errorf "Collection page %s needs page-collection-directory-all and time_range as a child of %s." $child.RelPermalink $page.RelPermalink -}}
+          {{- continue -}}
+        {{- end -}}
+        {{- $childRange := partialCached "./time-range.html" $child $child.Language.Lang $child.Path -}}
+        {{- if not $childRange -}}
+          {{- errorf "Collection page %s needs time_range as a child of %s." $child.RelPermalink $page.RelPermalink -}}
+          {{- continue -}}
+        {{- end -}}
+        {{- $ranges = $ranges | append (dict "page" $child "range" $childRange "start" ($childRange.start.UTC.Format "20060102150405.000000000")) -}}
+      {{- end -}}
+      {{- $previous := dict -}}
+      {{- range sort $ranges "start" -}}
+        {{- $child := .page -}}
+        {{- if and $previous (.range.start.Before $previous.range.end) -}}
+          {{- errorf "Collection pages %s and %s have overlapping time_range values." $previous.page.RelPermalink $child.RelPermalink -}}
+        {{- end -}}
+        {{- $previous = . -}}
+        {{- $children := partialCached "./members.html" $child $child.Language.Lang $child.Path -}}
+        {{- $direct = $direct | complement $children.recursive -}}
+        {{- $sections = $sections | append $child -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $result = dict "direct" $direct "recursive" $scope "sections" $sections -}}
+  {{- else -}}
+    {{- $recursive := $result.recursive -}}
+    {{- range $child := $page.Sections -}}
+      {{- if not (partial "feature-browse/is-rendered-html.html" $child) -}}{{- continue -}}{{- end -}}
+      {{- $members := partialCached "./members.html" $child $child.Language.Lang $child.Path -}}
+      {{- range $members.recursive -}}{{- $recursive = $recursive | append . -}}{{- end -}}
+    {{- end -}}
+    {{- $result = merge $result (dict "recursive" (uniq $recursive)) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $result -}}

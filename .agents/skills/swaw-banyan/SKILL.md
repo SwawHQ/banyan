@@ -35,6 +35,7 @@ Front matter 自定义字段统一放在 `params` 中；Hugo 原生字段保留�
 Powered by 和离线页使用 `page-article-norss`；公共模板按 `site-update` 和 `page-actions` 短代码在每页加载一次所需脚本。
 `page-article-rss` 可作为 RSS 条目；`page-article-norss` 保留相同正文功能，不作为 RSS 条目。栏目默认输出 HTML 和 RSS；`outputs: [HTML]` 仅关闭该栏目的订阅源。
 集合布局直接绑定字段和行为：`page-collection` 只显示名称，`page-collection-directory` 显示目录信息，`page-collection-products` 显示产品信息。后两者的 `-all` 布局通过 `params.aggregate` 指定来源栏目。
+`page-collection-directory-all` 的 `params.time_range` 按 Hugo `Lastmod` 筛选文章；手动子栏目接收各自时间范围内的文章，剩余文章留在父栏目，配置示例见 [安装说明](references/install.md)。
 语言和外观设置使用 `_index.md`，布局分别为 `page-collection-language`、`page-collection-appearance`，并设置 `outputs: [HTML]`。
 各语言的默认描述由对应首页的 `description` 提供；页面可用自己的 `description` 覆盖。
 `page-home` 宿主首页的 `params.show_navigation` 控制第一列导航，默认为 `true`；没有引用艺术包时也适用。首页正文用 `{{< home-art "/_res/home-art/wind" >}}` 引用艺术页。站点在 `content/_res/home-art/<主题>/` 维护隐藏叶子包：各语言的 `index.md` 保存正文和 `params`，CSS、JS 放在同一包内。艺术包的 `params.styles` 和 `params.scripts` 选择指纹外链资源。风场正文使用 `{{< home-art/wind/scene >}}`，文字和场景参数也放在该页的 `params`。Module 提供短代码模板与计算模板；站点可用 `layouts` 下的同路径文件覆写。

@@ -358,7 +358,7 @@ Collection layouts bind their fields, sorting and controls. Use:
 | --- | --- |
 | `page-collection` | Direct entries, names only |
 | `page-collection-directory` | Direct entries with date and count |
-| `page-collection-directory-all` | All articles under `params.aggregate`, with date, size and path |
+| `page-collection-directory-all` | Articles under `params.aggregate`, with date and size; optional time ranges form a directory tree |
 | `page-collection-products` | Direct entries with price and value |
 | `page-collection-products-all` | All articles under `params.aggregate`, with price and value |
 | `page-collection-language` | Enabled language links |
@@ -462,6 +462,43 @@ params:
   slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---
 ```
+
+To divide this aggregate by time, keep articles in their source directories and
+create child sections under `content/articles-all/`. Add this cascade to the
+aggregate root so child sections use the same layout and source:
+
+```yaml
+cascade:
+  - target: {kind: section}
+    layout: page-collection-directory-all
+    params:
+      aggregate: /articles
+      slots: [breadcrumb]
+```
+
+Set each child section's range in its `_index.md`. For example,
+`content/articles-all/2000-2005/_index.md`:
+
+```markdown
+---
+title: 2000–2005
+params:
+  time_range:
+    start: "2000-01-01"
+    end: "2005-02-01"
+---
+```
+
+The start is included and the end is excluded. Dates and times use the site's
+`timeZone` unless they specify an offset; values can include seconds, such as
+`2000-01-01T12:30:15+08:00`. Selection uses Hugo's `Lastmod`, including the
+`[frontmatter] lastmod` setting.
+
+Create further child sections in the same way. Each list shows its child
+sections and the articles not assigned to them. Folder counts include all
+articles in their range; direct articles show their sizes. The section's RSS
+includes the whole range, including articles in child sections. Article links
+retain this browsing path through `#from`; article URLs stay unchanged.
 
 Products use the same directories and references. Create
 `content/products/_index.md`:

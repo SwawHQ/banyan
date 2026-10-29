@@ -1,0 +1,32 @@
+{{- $page := . -}}
+{{- $result := dict -}}
+{{- if isset $page.Params "time_range" -}}
+  {{- $range := $page.Params.time_range -}}
+  {{- if or (not (reflect.IsMap $range)) (ne (len $range) 2) (not (isset $range "start")) (not (isset $range "end")) -}}
+    {{- errorf "Collection page %s time_range must contain only start and end." $page.RelPermalink -}}
+  {{- else -}}
+    {{- $values := dict -}}
+    {{- range $key := slice "start" "end" -}}
+      {{- $raw := index $range $key -}}
+      {{- $type := printf "%T" $raw -}}
+      {{- if or (not (in (slice "string" "time.Time") $type)) (eq (trim (printf "%v" $raw) " \r\n\t") "") -}}
+        {{- errorf "Collection page %s time_range.%s must be a date or time." $page.RelPermalink $key -}}
+      {{- else -}}
+        {{- $parsed := try (time.AsTime $raw) -}}
+        {{- if $parsed.Err -}}
+          {{- errorf "Collection page %s has invalid time_range.%s: %v." $page.RelPermalink $key $raw -}}
+        {{- else -}}
+          {{- $values = merge $values (dict $key $parsed.Value) -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if eq (len $values) 2 -}}
+      {{- if not ($values.start.Before $values.end) -}}
+        {{- errorf "Collection page %s time_range.start must be before time_range.end." $page.RelPermalink -}}
+      {{- else -}}
+        {{- $result = $values -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $result -}}

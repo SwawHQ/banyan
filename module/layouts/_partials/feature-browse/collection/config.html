@@ -11,6 +11,21 @@
 {{- $view := index $views $page.Layout | default "" -}}
 {{- $provider := "" -}}
 {{- $script := "" -}}
+{{- $timeTree := false -}}
+{{- if isset $page.Params "time_range" -}}
+  {{- if ne $page.Layout "page-collection-directory-all" -}}
+    {{- errorf "Collection page %s only accepts time_range with page-collection-directory-all." $page.RelPermalink -}}
+  {{- else -}}
+    {{- $timeTree = true -}}
+  {{- end -}}
+{{- end -}}
+{{- if eq $page.Layout "page-collection-directory-all" -}}
+  {{- range $page.Sections -}}
+    {{- if and (eq .Layout "page-collection-directory-all") (partial "feature-browse/is-rendered-html.html" .) -}}
+      {{- $timeTree = true -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
 {{- if $view -}}
   {{- $provider = "section" -}}
   {{- if eq $page.Layout "page-collection-language" -}}
@@ -37,5 +52,6 @@
     {{- errorf "Choice page %s needs outputs: [HTML]." $page.RelPermalink -}}
   {{- end -}}
 {{- end -}}
+{{- if $timeTree -}}{{- $view = "directory" -}}{{- end -}}
 {{- $variant := cond (eq $view "directory") "section" $view -}}
-{{- return (dict "view" $view "provider" $provider "script" $script "sortable" (and (ne $view "") (ne $view "choice")) "sort_variant" $variant "default_sort" (cond (in (slice "name" "products") $view) "name-asc" "date-desc")) -}}
+{{- return (dict "view" $view "provider" $provider "script" $script "time_tree" $timeTree "sortable" (and (ne $view "") (ne $view "choice")) "sort_variant" $variant "default_sort" (cond (in (slice "name" "products") $view) "name-asc" "date-desc")) -}}
