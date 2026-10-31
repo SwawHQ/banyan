@@ -5,7 +5,7 @@
 # sw.js（Service Worker）应用配置；各路由的缓存策略见 sw.bucket。
 # enable：注册并启用；disable：访问页面时注销本站 SW，并清除受管缓存。
 # off：不加载 SW 管理逻辑；已安装的 SW 不会自动注销。
-mode = "off"
+mode = "enable"
 # 内容版本检查的最小间隔，单位：分钟。
 content_check_interval = 5
 # 离线提示页的站内路径；启用 SW 时，每种语言均需提供对应页面。
