@@ -96,7 +96,7 @@ for(const [name,suffix] of [['Chromium',''],['WebKit','.webkit']]) {
     } finally {try{await browser?.close();}finally{await server.stop();}}
   });
 
-  test(name+' checks wheel locking, native clicks, gap-only cursors and light edge alignment',{timeout:65000},()=>{
+  test(name+' checks wheel locking, native clicks, demand-driven gap markers and light edge alignment',{timeout:65000},()=>{
     const result=cli(suffix);assert.equal(result.status,0,result.stdout+result.stderr);
   });
   test(name+' checks the same wheel behavior and canvas bounds in RTL',{timeout:65000},()=>{

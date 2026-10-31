@@ -5,6 +5,61 @@ import {assertCanvasEnd,panCanvas} from '../_shared/state.mjs';
 const read=page=>page.evaluate(()=>({x:scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1),maxX:document.scrollingElement.scrollWidth-document.scrollingElement.clientWidth,y:document.querySelector('.page-content').scrollTop,
   mode:document.documentElement.dataset.canvasWheel,pointer:document.documentElement.dataset.canvasPointer}));
 
+const hint=page=>page.evaluate(()=>{
+  const node=document.querySelector('[data-canvas-wheel-hint]');
+  if(!node)return {visible:false};
+  const style=getComputedStyle(node);
+  return {visible:!node.hidden&&style.display!=='none'&&style.visibility!=='hidden'&&Number(style.opacity)>0&&node.getClientRects().length>0,
+    pointerEvents:style.pointerEvents,ariaHidden:node.getAttribute('aria-hidden'),transform:style.transform};
+});
+
+async function checkHint(page,visible,message) {
+  await afterPaint(page);const state=await hint(page);
+  assert.equal(state.visible,visible,message);
+  if(visible) {
+    assert.equal(state.pointerEvents,'none','The wheel marker must not intercept links or hit testing.');
+    assert.equal(state.ariaHidden,'true','The decorative wheel marker must stay outside the accessibility tree.');
+  }
+  return state;
+}
+
+async function checkHintWork(page) {
+  return page.evaluate(async()=>{
+    const node=document.querySelector('[data-canvas-wheel-hint]'),shell=document.querySelector('.page-shell');
+    const nativeFrame=window.requestAnimationFrame.bind(window),nativeHit=document.elementFromPoint.bind(document);
+    const nativeRect=Element.prototype.getBoundingClientRect;
+    const calls={requested:0,fired:0,writes:0,hits:0,rects:0};
+    const observer=new MutationObserver(records=>{calls.writes+=records.length;});observer.observe(node,{attributes:true,attributeFilter:['style']});
+    window.requestAnimationFrame=callback=>{calls.requested++;return nativeFrame(time=>{calls.fired++;callback(time);});};
+    document.elementFromPoint=(...args)=>{calls.hits++;return nativeHit(...args);};
+    Element.prototype.getBoundingClientRect=function(){if(this.classList.contains('page-column'))calls.rects++;return nativeRect.call(this);};
+    const frame=()=>new Promise(resolve=>nativeFrame(resolve));
+    try {
+      for(let index=0;index<100;index++)shell.dispatchEvent(new PointerEvent('pointermove',
+        {bubbles:true,pointerType:'mouse',clientX:120+index/10,clientY:160+index/10}));
+      await frame();await frame();
+      const moving={...calls,transform:getComputedStyle(node).transform};
+      await new Promise(resolve=>setTimeout(resolve,100));await frame();
+      const idle={...calls},cancelled=[];
+      for(const type of ['leave','hidden']) {
+        const before={...calls},descriptor=Object.getOwnPropertyDescriptor(document,'hidden');
+        try {
+          shell.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerType:'mouse',clientX:150,clientY:180}));
+          if(type==='leave')document.documentElement.dispatchEvent(new PointerEvent('pointerleave',{pointerType:'mouse'}));
+          else {Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));}
+          await frame();await frame();
+          cancelled.push({type,requested:calls.requested-before.requested,fired:calls.fired-before.fired,writes:calls.writes-before.writes,hidden:node.hidden});
+        } finally {
+          if(type==='hidden'){if(descriptor)Object.defineProperty(document,'hidden',descriptor);else delete document.hidden;}
+        }
+        shell.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerType:'mouse',clientX:140,clientY:170}));
+        await frame();await frame();
+      }
+      return {moving,idle,cancelled};
+    } finally {observer.disconnect();window.requestAnimationFrame=nativeFrame;document.elementFromPoint=nativeHit;Element.prototype.getBoundingClientRect=nativeRect;}
+  });
+}
+
 const columnEdge=locator=>locator.evaluate(node=>{
   const box=node.getBoundingClientRect(),rtl=getComputedStyle(document.documentElement).direction==='rtl';
   return (rtl?innerWidth-box.right-scrollX:box.left+scrollX)-parseFloat(getComputedStyle(document.body).paddingInlineStart);
@@ -95,18 +150,19 @@ export async function check({page,baseUrl,options}) {
     await assertCanvasEnd(page);await positionCanvas(page,0);
     const gap=await gapPoint(page);await page.mouse.move(gap.x,gap.y);
     const readyCursor=await page.evaluate(({x,y})=>getComputedStyle(document.elementFromPoint(x,y)).cursor,gap);
-    assert.ok(!['auto','default','text','pointer'].includes(readyCursor),'Column gaps must show a horizontal wheel cursor.');
-    stage=width+' ready cursor bounds';
+    assert.ok(!readyCursor.includes('url('),'Column gaps must retain a native cursor.');
+    await checkHint(page,true,'Column gaps must show a horizontal wheel marker.');
+    stage=width+' ready marker bounds';
     await positionCanvas(page,(await read(page)).maxX);
     const stationary=await page.evaluate(({x,y})=>({
       gap:document.documentElement.hasAttribute('data-canvas-wheel-gap'),
       cursor:getComputedStyle(document.elementFromPoint(x,y)).cursor
     }),gap);
-    assert.equal(stationary.gap,false,'Scrolling a gap out from under a stationary mouse must clear its cursor hint.');
-    assert.notEqual(stationary.cursor,readyCursor,'Tail space under a stationary mouse must keep its normal cursor.');
+    assert.equal(stationary.gap,false,'Scrolling a gap out from under a stationary mouse must clear its marker hint.');
+    assert.ok(!stationary.cursor.includes('url('),'Tail space under a stationary mouse must keep a native cursor.');
+    await checkHint(page,false,'Scrolling a gap away must hide its marker under a stationary mouse.');
     await page.evaluate(()=>scrollTo({left:0,top:0,behavior:'instant'}));await afterPaint(page);
-    assert.equal(await page.evaluate(({x,y})=>getComputedStyle(document.elementFromPoint(x,y)).cursor,gap),readyCursor,
-      'Scrolling a gap back under a stationary mouse must restore its cursor hint.');
+    await checkHint(page,true,'Scrolling a gap back under a stationary mouse must restore its marker.');
     const blankPoints=await page.evaluate(()=>{
       const rail=document.querySelector('.page-rail').getBoundingClientRect();
       if(rail.bottom+10>=innerHeight)throw new Error('Choose a root navigation that leaves blank space below it.');
@@ -116,7 +172,8 @@ export async function check({page,baseUrl,options}) {
     for(const point of blankPoints) {
       await page.mouse.move(point.x,point.y);
       const cursor=await page.evaluate(({x,y})=>getComputedStyle(document.elementFromPoint(x,y)).cursor,point);
-      assert.notEqual(cursor,readyCursor,point.name+' must not advertise horizontal wheel mode before scrolling.');
+      assert.ok(!cursor.includes('url('),point.name+' must keep a native cursor.');
+      await checkHint(page,false,point.name+' must not advertise horizontal wheel mode before scrolling.');
     }
     await positionCanvas(page,(await read(page)).maxX);
     if(geometry.tail>1) {
@@ -129,9 +186,12 @@ export async function check({page,baseUrl,options}) {
         if((rtl?innerWidth-x:x)<=lastRight)throw new Error('The tail cursor point must lie after the last visible column.');
         return getComputedStyle(document.elementFromPoint(x,y)).cursor;
       },tailPoint);
-      assert.notEqual(tailCursor,readyCursor,'Tail space must not advertise horizontal wheel mode before scrolling.');
+      assert.ok(!tailCursor.includes('url('),'Tail space must keep a native cursor.');
+      await checkHint(page,false,'Tail space must not advertise horizontal wheel mode before scrolling.');
     }
     await page.evaluate(()=>scrollTo({left:0,top:0,behavior:'instant'}));await afterPaint(page);
+    const nativeArticleCursor=await page.locator('.page-content p').first().evaluate(node=>{node.style.cursor='text';return getComputedStyle(node).cursor;});
+    const nativeLinkCursor=await page.locator('[data-root-navigation] a').first().evaluate(node=>{node.style.cursor='pointer';return getComputedStyle(node).cursor;});
     stage=width+' gap and continuous mode';await enter(page);
     const content=page.locator('.page-content');await reveal(page,content);
     const before=await read(page);
@@ -140,9 +200,26 @@ export async function check({page,baseUrl,options}) {
     const locked=await read(page);
     assert.equal(locked.y,before.y,'Horizontal wheel mode must preserve the article reading position.');
     const lockedCursor=await content.evaluate(node=>getComputedStyle(node.querySelector('p')??node).cursor);
-    assert.notEqual(lockedCursor,readyCursor,'Locked mode must have a distinct cursor across the columns.');
+    assert.equal(lockedCursor,nativeArticleCursor,'Locked mode must retain the article text cursor.');
+    assert.equal(await page.locator('[data-root-navigation] a').first().evaluate(node=>getComputedStyle(node).cursor),nativeLinkCursor,
+      'Locked mode must retain native link cursors.');
+    await checkHint(page,true,'Locked mode must show its marker across reading columns.');
     await page.waitForTimeout(400);
     assert.equal((await read(page)).mode,'locked','A pause must not exit horizontal wheel mode.');
+    const markerWork=await checkHintWork(page);
+    assert.equal(markerWork.moving.requested,1,'A burst of pointer events must request at most one marker frame.');
+    assert.equal(markerWork.moving.fired,1,'A burst of pointer events must execute one marker frame.');
+    assert.equal(markerWork.moving.writes,1,'A pointer burst must move only the marker once per frame.');
+    assert.equal(markerWork.moving.hits,0,'Locked pointer movement must not run gap hit tests.');
+    assert.equal(markerWork.moving.rects,0,'Locked pointer movement must not scan column rectangles.');
+    assert.notEqual(markerWork.moving.transform,'none','The marker must follow pointer coordinates.');
+    for(const key of ['requested','fired','writes'])assert.equal(markerWork.idle[key],markerWork.moving[key],'An idle pointer must stop marker work: '+key);
+    for(const cancelled of markerWork.cancelled) {
+      assert.equal(cancelled.requested,1,'A moved marker must first request one frame: '+cancelled.type);
+      assert.equal(cancelled.fired,0,'Leaving or hiding the page must cancel the pending marker frame: '+cancelled.type);
+      assert.equal(cancelled.writes,0,'A cancelled marker frame must not update styles: '+cancelled.type);
+      assert.equal(cancelled.hidden,true,'Leaving or hiding the page must hide the marker: '+cancelled.type);
+    }
     const snap=await page.evaluate(()=>getComputedStyle(document.documentElement).scrollSnapType);
     assert.equal(snap,'none','Locked mode must not add native snapping.');
     assert.ok(await page.locator('.page-column').evaluateAll(nodes=>nodes.every(node=>
@@ -209,7 +286,8 @@ export async function check({page,baseUrl,options}) {
 
     stage=width+' vertical article';await reveal(page,content);
     const articleCursor=await content.evaluate(node=>getComputedStyle(node.querySelector('p')??node).cursor);
-    assert.notEqual(articleCursor,readyCursor,'An article must keep its normal cursor before horizontal wheel mode starts.');
+    assert.equal(articleCursor,nativeArticleCursor,'An article must keep its normal cursor before horizontal wheel mode starts.');
+    await checkHint(page,false,'A vertically scrollable article must not show a ready marker.');
     await content.evaluate(node=>{node.scrollTop=0;});await afterPaint(page);
     const verticalBefore=await read(page);
     assert.ok(await content.evaluate(node=>node.scrollHeight>node.clientHeight+1),'Choose a long article that scrolls vertically.');
@@ -262,8 +340,7 @@ export async function check({page,baseUrl,options}) {
         return point;
       });
       await afterPaint(page);await page.mouse.move(groupGap.x,groupGap.y);
-      assert.equal(await page.evaluate(({x,y})=>getComputedStyle(document.elementFromPoint(x,y)).cursor,groupGap),readyCursor,
-        'The gap inside the reading group must show the same horizontal wheel cursor.');
+      await checkHint(page,true,'The gap inside the reading group must show the ready marker.');
       const asideEdge=await columnEdge(page.locator('.document-aside'));
       await positionCanvas(page,asideEdge-20);await page.mouse.move(20,100);
       await page.evaluate(()=>document.querySelector('.page-shell').dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:8})));
@@ -280,7 +357,8 @@ export async function check({page,baseUrl,options}) {
     stage=width+' short article and left click';await visit(page,baseUrl+options.short);
     const short=page.locator('.page-content');await reveal(page,short);
     const shortCursor=await short.evaluate(node=>getComputedStyle(node.querySelector('p')??node).cursor);
-    assert.notEqual(shortCursor,readyCursor,'A short article must keep its normal cursor until its first wheel event.');
+    assert.ok(!shortCursor.includes('url('),'A short article must keep its normal cursor until its first wheel event.');
+    await checkHint(page,false,'A short article must show no marker until its first wheel event.');
     assert.ok(await short.evaluate(node=>node.scrollHeight<=node.clientHeight+1),'Choose a short article that fits at 900 pixels high.');
     const shortBefore=await read(page);stage=width+' short article';
     await page.mouse.wheel(0,-120);
@@ -334,7 +412,8 @@ export async function check({page,baseUrl,options}) {
         assert.equal(released.mode,'suspended','Releasing the initial middle click must keep custom wheel handling suspended.');
         assert.equal(released.allowed,true,'Wheel input after middle release must remain native.');
         assert.equal(released.after,released.before,'Suspended wheel handling must not move the canvas through JavaScript.');
-        assert.ok(['auto','default'].includes(released.cursor),'Suspended mode must hide the custom cursor.');
+        assert.ok(!released.cursor.includes('url('),'Suspended mode must keep a native cursor.');
+        await checkHint(page,false,'Native middle-button scrolling must hide the marker.');
         await page.evaluate(()=>scrollTo({left:0,top:0,behavior:'instant'}));await afterPaint(page);
         const resumePoint=await gapPoint(page);await page.mouse.click(resumePoint.x,resumePoint.y);
         assert.equal((await read(page)).mode,'ready','Another click must resume normal wheel handling.');
@@ -369,6 +448,7 @@ export async function check({page,baseUrl,options}) {
     assert.equal(touch.allowed,true,'Touch input must not be cancelled by mouse wheel handling.');
     assert.equal(touch.mode,'ready','Touch input must clear mouse wheel mode.');
     assert.notEqual(touch.pointer,'mouse','Touch input must clear the mouse input marker.');
+    await checkHint(page,false,'Touch input must hide the mouse-only marker.');
     const touchWheel=await page.evaluate(()=>document.querySelector('.page-shell').dispatchEvent(
       new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:120})));
     assert.equal(touchWheel,true,'Wheel conversion must require mouse pointer input.');
@@ -393,7 +473,7 @@ export async function check({page,baseUrl,options}) {
     assert.ok(noOverflow.maxX<=1,'The no-overflow sample must fit the viewport.');
     assert.equal(noOverflow.allowed,true,'A page without horizontal overflow must not cancel the wheel event.');
     assert.equal(noOverflow.mode,'ready','A page without horizontal overflow must not enter horizontal mode.');
-    cases.push({width,geometry,locked,edgeX,resumed,vertical,bottom,nested,short:shortState,buttons,touch,passthrough,noOverflow});
+    cases.push({width,geometry,locked,markerWork,edgeX,resumed,vertical,bottom,nested,short:shortState,buttons,touch,passthrough,noOverflow});
   }
   } catch(error) {error.message=stage+': '+error.message;throw error;}
   return {page:options.page,short:options.short,cases};

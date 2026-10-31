@@ -1,19 +1,26 @@
+[data-canvas-wheel-hint] {
+    display: none;
+}
+
 @media screen {
-    .page-shell {
-        --canvas-wheel-ready-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 16h26M8 11l-5 5 5 5m16-10 5 5-5 5'/%3E%3Crect x='12' y='5' width='8' height='22' rx='4'/%3E%3C/g%3E%3Cg fill='white' stroke='%23222' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath fill='none' d='M3 16h26M8 11l-5 5 5 5m16-10 5 5-5 5'/%3E%3Crect x='12' y='5' width='8' height='22' rx='4'/%3E%3Cpath d='M16 9v5'/%3E%3C/g%3E%3C/svg%3E") 16 16, all-scroll;
-        --canvas-wheel-locked-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath fill='none' stroke='white' stroke-width='5' d='M3 16h26M8 11l-5 5 5 5m16-10 5 5-5 5'/%3E%3Cpath fill='none' stroke='%23222' stroke-width='2.5' d='M3 16h26M8 11l-5 5 5 5m16-10 5 5-5 5'/%3E%3Crect x='12' y='5' width='8' height='22' rx='4' fill='%23222' stroke='white' stroke-width='1.5'/%3E%3Cpath stroke='white' stroke-width='2' d='M16 9v5'/%3E%3C/g%3E%3C/svg%3E") 16 16, all-scroll;
+    [data-canvas-wheel-hint]:not([hidden]) {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 20;
+        inline-size: 18px;
+        block-size: 16px;
+        font: 12px/16px system-ui, sans-serif;
+        text-align: center;
+        direction: ltr;
+        color: var(--muted);
+        opacity: 0.5;
+        pointer-events: none;
+        user-select: none;
     }
 
-    .page-column {
-        cursor: auto;
-    }
-
-    html[data-canvas-pointer="mouse"][data-canvas-wheel="ready"][data-canvas-wheel-gap] .page-shell {
-        cursor: var(--canvas-wheel-ready-cursor);
-    }
-
-    html[data-canvas-wheel="locked"] .page-shell,
-    html[data-canvas-wheel="locked"] .page-shell * {
-        cursor: var(--canvas-wheel-locked-cursor) !important;
+    html[data-canvas-wheel="locked"] [data-canvas-wheel-hint] {
+        opacity: 0.8;
     }
 }

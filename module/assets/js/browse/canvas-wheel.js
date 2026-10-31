@@ -8,8 +8,40 @@ export function initCanvasWheel() {
     let middleReleasePending = false;
     let snapTimer;
     let touchScroll;
+    let hintFrame = 0;
+    let hintPosition = '';
+    const hint = document.createElement('span');
+    hint.dataset.canvasWheelHint = '';
+    hint.setAttribute('aria-hidden', 'true');
+    hint.textContent = '↔';
+    hint.hidden = true;
+    document.body.appendChild(hint);
     root.dataset.canvasWheel = 'ready';
     const canvasX = () => window.visualViewport?.pageLeft ?? window.scrollX;
+    const hintTransform = () => `translate(${Math.max(0, Math.min(mousePoint.x + 12, innerWidth - 20))}px, ${Math.max(0, Math.min(mousePoint.y + 12, innerHeight - 18))}px)`;
+
+    function hideHint() {
+        if (hintFrame) cancelAnimationFrame(hintFrame);
+        hintFrame = 0;
+        if (!hint.hidden) hint.hidden = true;
+    }
+
+    function updateHint() {
+        if (!mousePoint || document.hidden || root.dataset.canvasPointer !== 'mouse'
+            || !(root.dataset.canvasWheel === 'locked'
+                || (root.dataset.canvasWheel === 'ready' && root.hasAttribute('data-canvas-wheel-gap')))) {
+            hideHint();
+            return;
+        }
+        if (hintFrame || (!hint.hidden && hintPosition === hintTransform())) return;
+        // Read the latest coordinates once per frame; do not schedule an idle loop.
+        hintFrame = requestAnimationFrame(() => {
+            hintFrame = 0;
+            hintPosition = hintTransform();
+            hint.style.transform = hintPosition;
+            hint.hidden = false;
+        });
+    }
 
     function unlock() {
         clearTimeout(snapTimer);
@@ -44,10 +76,11 @@ export function initCanvasWheel() {
     }
 
     function updateGap() {
+        if (root.dataset.canvasWheel !== 'ready') return;
         let gap = false;
-        const hit = mousePoint && document.elementFromPoint(mousePoint.x, mousePoint.y);
-        if (root.dataset.canvasPointer === 'mouse' && mousePoint
-            && (hit === shell || hit === group)) {
+        const hit = root.dataset.canvasPointer === 'mouse' && mousePoint
+            && document.elementFromPoint(mousePoint.x, mousePoint.y);
+        if (hit === shell || hit === group) {
             let previousEnd;
             const x = rtl ? -mousePoint.x : mousePoint.x;
             for (const column of shell.querySelectorAll('.page-column')) {
@@ -62,13 +95,15 @@ export function initCanvasWheel() {
             }
         }
         root.toggleAttribute('data-canvas-wheel-gap', gap);
+        updateHint();
     }
 
     function markMouse(event) {
         touchScroll = undefined;
         if (root.dataset.canvasPointer !== 'mouse') root.dataset.canvasPointer = 'mouse';
         mousePoint = { x: event.clientX, y: event.clientY };
-        updateGap();
+        if (root.dataset.canvasWheel === 'locked') updateHint();
+        else updateGap();
     }
 
     window.addEventListener('scroll', updateGap, { passive: true });
@@ -76,6 +111,7 @@ export function initCanvasWheel() {
         clearTimeout(snapTimer);
         touchScroll = undefined;
         updateGap();
+        updateHint();
     }, { passive: true });
     for (const viewport of [document, window.visualViewport].filter(Boolean)) {
         viewport.addEventListener('scroll', event => {
@@ -121,6 +157,7 @@ export function initCanvasWheel() {
         if (event.pointerType === 'mouse') {
             markMouse(event);
         } else {
+            mousePoint = undefined;
             if (event.pointerType !== 'touch') {
                 touchScroll = undefined;
                 delete root.dataset.canvasPointer;
@@ -133,6 +170,7 @@ export function initCanvasWheel() {
         clearTimeout(snapTimer);
         touchScroll = undefined;
         if (event.pointerType !== 'mouse') {
+            mousePoint = undefined;
             delete root.dataset.canvasPointer;
             return unlock();
         }
@@ -141,6 +179,7 @@ export function initCanvasWheel() {
             // shortcut: native autoscroll state is unavailable; replace click/Escape suspension when browsers expose it.
             root.dataset.canvasWheel = 'suspended';
             middleReleasePending = true;
+            hideHint();
         } else {
             unlock();
         }
@@ -178,6 +217,7 @@ export function initCanvasWheel() {
             const canvas = document.scrollingElement;
             if (canvas.scrollWidth <= canvas.clientWidth + 1 || !canStart(event.target)) return;
             root.dataset.canvasWheel = 'locked';
+            updateHint();
         }
         event.preventDefault();
         const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE
@@ -193,7 +233,21 @@ export function initCanvasWheel() {
         }, 180);
     }, { passive: false });
 
-    window.addEventListener('pointercancel', unlock);
+    root.addEventListener('pointerleave', () => {
+        mousePoint = undefined;
+        root.removeAttribute('data-canvas-wheel-gap');
+        hideHint();
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) return;
+        mousePoint = undefined;
+        root.removeAttribute('data-canvas-wheel-gap');
+        hideHint();
+    });
+    window.addEventListener('pointercancel', () => {
+        mousePoint = undefined;
+        unlock();
+    });
     window.addEventListener('keydown', event => {
         clearTimeout(snapTimer);
         touchScroll = undefined;
@@ -201,6 +255,7 @@ export function initCanvasWheel() {
     });
     for (const name of ['blur', 'pagehide']) window.addEventListener(name, () => {
         touchScroll = undefined;
+        mousePoint = undefined;
         delete root.dataset.canvasPointer;
         unlock();
     });
