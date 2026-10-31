@@ -11,8 +11,8 @@ other = "ترتيب {field} تنازليًا"
 
 [products_col_price]
 other = "السعر"
-[products_col_value]
-other = "الفائدة"
+[products_col_version]
+other = "الإصدار"
 
 [products_free]
 other = "مجاني"

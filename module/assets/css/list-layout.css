@@ -1,8 +1,6 @@
 :root {
     --item-date-inline: 5.6rem;
-    --item-count-inline: 3.3rem;
-    --item-price-inline: 6rem;
-    --item-value-inline: 18rem;
+    --item-count-inline: 3.8rem;
     --item-field-gap: 0.6rem;
 }
 
@@ -19,16 +17,11 @@
 
 .item-list--directory,
 .item-list--all,
-.slot-main--collection:has(.item-list--directory, .item-list--all) {
-    --item-field-gap: 0.5rem;
+.item-list--products,
+.slot-main--collection:has(.item-list--directory, .item-list--all, .item-list--products) {
+    --item-field-gap: 0.25rem;
     --list-field-tracks: var(--navigation-column-inline) var(--item-date-inline) var(--item-count-inline);
     --list-inline-size: calc(var(--navigation-column-inline) + var(--item-date-inline) + var(--item-count-inline) + 2 * var(--item-field-gap));
-}
-
-.item-list--products,
-.slot-main--collection:has(.item-list--products) {
-    --list-field-tracks: var(--navigation-column-inline) var(--item-price-inline) var(--item-value-inline);
-    --list-inline-size: calc(var(--navigation-column-inline) + var(--item-price-inline) + var(--item-value-inline) + 2 * var(--item-field-gap));
 }
 
 .list-item {
@@ -50,11 +43,12 @@
     font-size: small;
 }
 
-.list-item:not(.list-header) > :is(.item-field--date, .item-field--count, .item-field--price, .item-field--value) {
+.list-item:not(.list-header) > :is(.item-field--date, .item-field--count, .item-field--version, .item-field--price) {
     color: var(--muted);
 }
 
-.item-field--count {
+.item-field--count,
+.item-field--price {
     text-align: end;
 }
 

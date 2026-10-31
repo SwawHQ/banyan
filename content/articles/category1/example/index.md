@@ -29,11 +29,11 @@ params:
 
   # Product-list values; they do not control directory membership.
   offer:
+    version: "1.0.0"
     amount: 0
     currency: "$"
-    value: Publish one article in different list views.
 ---
 
 This article belongs to the articles section. The products directory references it with `_map.toml`.
 
-The article lists show article metadata. The product lists use `offer` for the price and value statement. Both link to this page.
+The article lists show article metadata. The product lists use `offer` for the version and price. Both link to this page.

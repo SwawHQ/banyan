@@ -13,5 +13,8 @@
   {{- $price = printf "%s%s" $currency $amount -}}
   {{- if gt (len (findRE `^0+(?:\.0+)?$` $amount)) 0 -}}{{- $price = i18n "products_free" -}}{{- end -}}
 {{- end -}}
-{{- $value := trim (printf "%v" ($offer.value | default "")) " " -}}
-{{- return (dict "sort_price" $amount "price_text" $price "sort_value" $value "value_text" $value) -}}
+{{- if and (isset $offer "version") (ne (printf "%T" $offer.version) "string") -}}
+  {{- errorf "offer.version on %s must be a string." $page.RelPermalink -}}
+{{- end -}}
+{{- $version := trim ($offer.version | default "") " " -}}
+{{- return (dict "sort_version" $version "version_text" ($version | default "—") "sort_price" $amount "price_text" $price) -}}

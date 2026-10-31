@@ -43,7 +43,7 @@ before(()=>{
   let body='Leading article text to exercise native scrolling.\n\n';
   for(let i=0;i<24;i++)body+='## Chapter '+i+'\n\n'+('A paragraph with enough words to exercise independent columns and history restoration.\n\n'.repeat(8));
   for(const name of ['canvas-first','canvas-next'])write(path.join(content,'d',name+'.md'),
-    `---\ntitle: ${name}\nurl: /d/${name}/\ndate: "2026-01-01T00:00:00+08:00"\nlastmod: "2026-01-02T00:00:00+08:00"\nparams:\n  offer:\n    amount: ${name==='canvas-first'?20:10}\n    currency: "$"\n    value: Fixture product\n---\n\n${body}`);
+    `---\ntitle: ${name}\nurl: /d/${name}/\ndate: "2026-01-01T00:00:00+08:00"\nlastmod: "2026-01-02T00:00:00+08:00"\nparams:\n  offer:\n    version: "${name==='canvas-first'?'2.10':'2.9'}"\n    amount: ${name==='canvas-first'?20:10}\n    currency: "$"\n---\n\n${body}`);
   write(path.join(content,'d/root-only.md'),'---\ntitle: Root-only fixture\nurl: d/root-only/\nparams:\n  slots: []\n---\nRoot navigation without path columns.');
   for(const suffix of ['','.zh']) {
     write(path.join(content,'d/opening','_index'+suffix+'.md'),'---\ntitle: Nested Opening Fixture\n---\n');
@@ -193,7 +193,7 @@ test(name+' opens nested directories and product categories with retained lineag
     ['/d/opening/#sort=name-desc','/d/opening/one/','/d/','name-desc'],
     ['/zh/d/opening/#sort=name-desc','/zh/d/opening/one/','/zh/d/','name-desc'],
     ['/products/fixture-alpha/#sort=price-desc','/d/canvas-first/','/products/','price-desc'],
-    ['/products-all/#sort=price-desc','/d/canvas-first/','/products-all/','price-desc']
+    ['/products-all/#sort=version-desc','/d/canvas-first/','/products-all/','version-desc']
   ]) {
     const result=cli('open'+suffix,['--from',from,'--page',page,'--widths','1440','--out',path.join(work,'lineage-reports')]);
     assert.equal(result.status,0,from+'\n'+result.stdout+result.stderr);

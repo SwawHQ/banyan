@@ -65,7 +65,7 @@ test('collection options declare pages, comparisons, settings and widths',()=>{
   assert.match(helpFor(style,'en'),/--choices <path>/);assert.match(helpFor(style,'en'),/default: \/appearance\//);
 });
 
-test('layout checks directory, flat and reference lists at narrow and wide widths',{timeout:20000},()=>{
+test('layout checks directory, flat, reference and product lists at narrow and wide widths',{timeout:20000},()=>{
   const directories=[];
   for(const route of ['/d/collection-fixture/','/discover/tooling/','/discover/tooling/devtools/']) {
     const state=report(cli('layout',['--page',route,'--widths','390,1440','--out',path.join(work,'reports')]));
@@ -82,19 +82,28 @@ test('layout checks directory, flat and reference lists at narrow and wide width
       Math.abs(fields.find(cell=>cell.field===field).width-aggregate.find(cell=>cell.field===comparison).width)<=.1,
       'Directory and aggregate layouts must share the '+field+' field width.');
   }
+  const products=report(cli('layout',['--page','/products-all/','--widths','390,1440','--out',path.join(work,'reports')]));
+  for(const result of products.details.cases) {
+    const fields=result.main.heading.fields,aggregate=state.details.cases.find(item=>item.width===result.width).main.heading.fields;
+    assert.deepEqual(result.main.fields,['name','version','price']);
+    assert.ok(fields.at(-1).x+fields.at(-1).width-fields[0].x<=390,'Product fields must fit the same 390 CSS px row budget.');
+    assert.deepEqual(fields.map(({x,width})=>({x,width})),aggregate.map(({x,width})=>({x,width})),
+      'Products and aggregate lists must share every column width and gap.');
+  }
   assert.equal(fs.existsSync(path.join(work,'node_modules')),false);
 });
 
-test('directory and aggregate headers fit their shared fixed columns in all languages',{timeout:20000},async()=>{
+test('directory, aggregate and product headers fit their shared fixed columns in all languages',{timeout:30000},async()=>{
   const server=await createStaticSiteServer(output);let browser;
   try {
     await server.start();const type=loadChromium();browser=await type.launch({headless:true,executablePath:type.executablePath()});
     const context=await browser.newContext({viewport:{width:390,height:900},serviceWorkers:'block'}),page=await context.newPage();
-    for(const prefix of ['','/zh','/zh-tw'])for(const route of ['/d/','/all/']) {
-      for(const field of ['date',route==='/all/'?'size':'count']) {
+    for(const prefix of ['','/zh','/zh-tw'])for(const route of ['/d/','/all/','/products-all/']) {
+      for(const field of route==='/products-all/'?['version','price']:['date',route==='/all/'?'size':'count']) {
         await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:prefix+route+'#sort='+field+'-desc',widths:'390,1440'}});
       }
     }
+    for(const field of ['version','price'])await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:'/ar/products-all/#sort='+field+'-desc',widths:'390,1440'}});
   } finally {try{if(browser)await browser.close();}finally{await server.stop();}}
 });
 
@@ -103,7 +112,7 @@ for(const [name,loadBrowser] of [['chromium',loadChromium],['webkit',loadWebkit]
   try {
     await server.start();const type=loadBrowser();browser=await type.launch({headless:true,executablePath:type.executablePath()});
     const context=await browser.newContext({viewport:{width:390,height:900},serviceWorkers:'block'}),page=await context.newPage();
-    for(const route of ['/d/collection-fixture/','/zh/all/']) {
+    for(const route of ['/d/collection-fixture/','/zh/all/','/products-all/']) {
       await checkFirstPaint({page,baseUrl:server.getBaseUrl(),options:{page:route,widths:'390,1440'}});
       for(const font of ['system-ui','monospace']) {
         const state=await page.locator('.slot-main [data-list-header]').evaluate((header,font)=>{

@@ -91,7 +91,7 @@ function directoryDefaults(output,{prefix='',suffix=''}={}) {
   assert.ok(products.includes('<title>Products - All'+suffix));
   assert.match(products,/data-sort-variant="?products\b/);
   assert.equal([...products.matchAll(/data-sort-price=/g)].length,1,'Repeated references produce one product row.');
-  assert.ok(products.includes('An example product.'));
+  assert.ok(products.includes('<bdi>1.0.0</bdi>'));
   assert.ok(products.includes('/'+prefix+'p/alpha/'));
   const category=fs.readFileSync(path.join(output,prefix,'products/free/index.html'),'utf8');
   assert.match(category,/data-sort-variant="?products\b/);

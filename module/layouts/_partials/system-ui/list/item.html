@@ -1,5 +1,5 @@
 {{- $control := .control | default "link" -}}
-<div class="list-item" data-list-item{{ range $name, $value := .rowDataAttrs | default dict }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}>
+<div class="list-item" data-list-item{{ range $name, $value := .rowDataAttrs | default dict }} {{ printf "data-%s" $name | safeHTMLAttr }}="{{ $value }}"{{ end }}>
   {{- if eq $control "link" -}}
     {{- partial "./item-link.html" . -}}
   {{- else if eq $control "button" -}}

@@ -4,7 +4,7 @@
 {{- $rows := .rows -}}
 {{- $fields := slice "kind" "href" "text" "icon" "sort_name" -}}
 {{- if eq $config.view "products" -}}
-  {{- $fields = $fields | append "sort_price" "sort_value" -}}
+  {{- $fields = $fields | append "sort_version" "sort_price" -}}
 {{- else if eq $config.view "all" -}}
   {{- $fields = $fields | append "sort_date" "sort_size" -}}
 {{- else if eq $config.view "directory" -}}

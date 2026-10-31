@@ -37,8 +37,8 @@ export const SORT_VARIANTS = Object.freeze({
         tieBreakField: 'name',
         fields: {
             name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
-            price: { dataKey: 'sortPrice', type: 'number', defaultOrder: 'desc', missingLast: true },
-            value: { dataKey: 'sortValue', type: 'string', defaultOrder: 'asc' }
+            version: { dataKey: 'sortVersion', type: 'string', defaultOrder: 'asc' },
+            price: { dataKey: 'sortPrice', type: 'number', defaultOrder: 'desc', missingLast: true }
         }
     }
 });

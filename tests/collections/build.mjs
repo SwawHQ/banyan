@@ -40,11 +40,11 @@ try {
     const assetImage = {image: `/site/favicon.link.${logoHash}.svg`};
     const monochromeAsset = {...assetImage, monochrome: true};
     const cases = [
-        ['priced', 'lastmod: 2026-08-01\nparams:\n  icon: appearance-dark\n  offer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
-        ['missing', 'lastmod: 2026-08-02\nparams:\n  offer: {value: "Value without a price"}'],
+        ['priced', 'lastmod: 2026-08-01\nparams:\n  icon: appearance-dark\n  offer: {version: " 2.9 ", amount: 25, currency: "$"}'],
+        ['missing', 'lastmod: 2026-08-02\nparams:\n  offer: {version: "2.10"}'],
         ['zero', 'params:\n  icon: {text: "<b>EN</b>"}\n  offer: {amount: 0, currency: "$"}'],
         ['no-offer', 'params:\n  icon: {image: "badge.webp"}'],
-        ['unclassified', 'params:\n  icon: {image: "site/favicon.link.svg", monochrome: true}\n  offer: {amount: 99, currency: "$", value: "Not a product"}'],
+        ['unclassified', 'params:\n  icon: {image: "site/favicon.link.svg", monochrome: true}\n  offer: {version: "1.0", amount: 99, currency: "$"}'],
         ['ref-branches', ''],
         ['empty', ''],
         ['blank', '']
@@ -115,14 +115,14 @@ try {
     for(const [directory,articles] of Object.entries(memberships))
         write(path.join(overlay,directory,'_map.toml'),'refs = '+JSON.stringify(articles.map(name=>'/d/contract-'+name))+'\n');
     const hugo = toolExecutable('hugo');
-    function build(view) {
+    function build(view, name = view) {
         for (const lang of langs) {
             const layouts={directory:'page-collection-directory',all:'page-collection-directory-all',products:'page-collection-products',name:'page-collection-directory-name-only'};
             const source = directoryPage('Content','','icon: info'+(view==='all'?'\naggregate: /d':''))
                 .replace('layout: page-collection-directory\n','layout: '+layouts[view]+'\n');
             write(path.join(overlay, `d/_index${lang}.md`), view==='all'?source:source.replace('    layout: page-collection-directory','    layout: '+layouts[view]));
         }
-        const output = path.join(work, view);
+        const output = path.join(work, name);
         const result = spawnSync(hugo, ['--noBuildLock','--config', `hugo.toml,${rel(config)}`, '--minify', '--destination', rel(output)],
             { cwd: root, env: fixtureEnvironment(work), encoding: 'utf8', windowsHide: true });
         assert.equal(result.status, 0, result.stdout + result.stderr);
@@ -291,10 +291,13 @@ try {
             const displayedFree = displayedRows(output, lang, 'products/free');
             assert.equal(displayedFree.find(row => row.href.includes('contract-priced')).fields.price, '$25', 'category labels do not validate prices');
             assert.equal(displayedFree.find(row => row.href.includes('contract-missing')).fields.price, '—');
-            assert.equal(displayedFree.find(row => row.href.includes('contract-priced')).fields.value, 'Paid and free are opaque labels');
-            assert.equal(displayedFree.find(row => row.href.includes('contract-missing')).fields.value, 'Value without a price');
+            assert.equal(displayedFree.find(row => row.href.includes('contract-priced')).fields.version, '2.9');
+            assert.equal(displayedFree.find(row => row.href.includes('contract-missing')).fields.version, '2.10');
+            assert.equal(displayedFree.find(row => row.href.includes('contract-zero')).fields.version, '—');
+            assert.equal(displayedFree.find(row => row.href.includes('contract-no-offer')).fields.version, '—');
             assert.equal(free.rows.find(row => row.href.includes('contract-priced')).sort_price, '25');
-            assert.equal(free.rows.find(row => row.href.includes('contract-priced')).sort_value, 'Paid and free are opaque labels');
+            assert.equal(free.rows.find(row => row.href.includes('contract-priced')).sort_version, '2.9');
+            assert.equal(free.rows.find(row => row.href.includes('contract-zero')).sort_version, '');
             assert.equal(free.rows.find(row => row.href.includes('contract-zero')).sort_price, '0');
             const categories = payload(output, lang, 'products');
             assert.equal(categories.sv, 'section');
@@ -327,6 +330,45 @@ try {
     await server.start();
     const baseUrl = server.getBaseUrl();
     try {
+        const versions = new Map([['priced', '2.0 "tag" &copy; \\ release'], ['missing', '2.0 (preview)']]);
+        const originals = [...versions].map(([name, version]) => {
+            const file = path.join(overlay, `d/contract-${name}/index.md`), text = fs.readFileSync(file, 'utf8');
+            write(file, text.replace(/version: "[^"]*"/, () => 'version: '+JSON.stringify(version)));
+            return {file, text};
+        });
+        const versionContext = await browser.newContext({viewport:{width:1440,height:960},serviceWorkers:'block'});
+        try {
+            const output = build('products', 'version-attributes');
+            payloadCache.clear();
+            await server.setRoot(output);
+            const rows = payload(output, 'en', 'products/paid').rows;
+            const expected = Object.fromEntries([...versions].map(([name, version]) => [`/p/contract-${name}/`, version]));
+            assert.deepEqual(Object.fromEntries(rows.map(row => [row.href, row.sort_version])), expected, 'JSON preserves literal versions.');
+            const versionPage = await versionContext.newPage();
+            for (const direction of ['asc', 'desc']) {
+                await gotoAndWait(versionPage, `${baseUrl}/products/paid/#sort=version-${direction}`);
+                const main = await versionPage.locator('.slot-main [data-list-item]').evaluateAll(rows => rows.map(row => {
+                    const cell = row.querySelector('[data-item-field="version"]');
+                    return {href:new URL(row.querySelector('[data-list-entry]').href).pathname,
+                        version:row.dataset.sortVersion, text:cell.textContent, title:cell.title};
+                }));
+                for (const row of main) assert.deepEqual([row.version, row.text, row.title], Array(3).fill(expected[row.href]),
+                    'DOM sort data, display and tooltip must preserve quotes, entities and backslashes.');
+                const order = [...versions.keys()].map(name => `/p/contract-${name}/`);
+                if (direction === 'desc') order.reverse();
+                assert.deepEqual(main.map(row => row.href), order, 'Literal version strings determine the main sort.');
+                await versionPage.locator('.slot-main [data-list-entry]').first().click();
+                await waitForBrowse(versionPage);
+                const pathOrder = await versionPage.locator('[data-breadcrumb-collection-href="/products/paid/"] [data-list-entry]')
+                    .evaluateAll(links => links.map(link => new URL(link.href).pathname));
+                assert.deepEqual(pathOrder, order, 'Special-character version sort stays unchanged in the article path.');
+            }
+        } finally {
+            for (const {file, text} of originals) write(file, text);
+            await versionContext.close();
+            await server.setRoot(builds.directory);
+        }
+        console.log('PASS literal version attributes and main/path sort order');
         const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, serviceWorkers: 'block' });
         const page = await context.newPage();
         for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
@@ -365,6 +407,21 @@ try {
         }
         console.log('PASS Lastmod ascending/descending display and article path order');
         for (const direction of ['asc', 'desc']) {
+            await gotoAndWait(page, `${baseUrl}/products/free/#sort=version-${direction}`);
+            assert.equal(await page.locator('.slot-main [data-sort-field="version"]').getAttribute('aria-label'),
+                'Sort by Version '+(direction==='asc'?'descending':'ascending'));
+            const ordered = await page.locator('.slot-main .item-list--products .item-control').evaluateAll(links => links.map(link => ({
+                href: new URL(link.href).pathname,
+                version: link.closest('[data-list-item]').dataset.sortVersion ?? ''
+            })));
+            assert.deepEqual(ordered.map(row => row.version), direction==='asc' ? ['','','2.9','2.10'] : ['2.10','2.9','',''],
+                'Versions use the existing string sort, including numeric comparison and empty strings.');
+            await page.locator('.slot-main a[href*="/p/contract-missing/#"]').click();
+            await waitForBrowse(page);
+            const items = await page.locator('[data-breadcrumb-collection-href="/products/free/"] [data-list-entry]').evaluateAll(links => links.map(a => new URL(a.href).pathname));
+            assert.deepEqual(items, ordered.map(row => row.href), 'Version sort survives entry into the article path column.');
+        }
+        for (const direction of ['asc', 'desc']) {
             await gotoAndWait(page, `${baseUrl}/products/free/#sort=price-${direction}`);
             assert.equal(await page.locator('.slot-main [data-sort-field="price"]').getAttribute('aria-label'),
                 'Sort by Price '+(direction==='asc'?'descending':'ascending'));
@@ -393,7 +450,7 @@ try {
         await waitForBrowse(page);
         assert.equal(await page.locator('[data-root-href].is-current').getAttribute('data-root-href'), '/products/');
         await context.close();
-        console.log('PASS missing-price order, shared path rows, Directory reference article entry');
+        console.log('PASS version and missing-price order, shared path rows, Directory reference article entry');
 
         // The paid-source icon is absent from the canonical rows, but its symbol
         // must already be available when first-paint/runtime rebuild those rows.
@@ -578,12 +635,14 @@ try {
         await browser.close();
         await server.stop();
     }
-    // Price metadata is optional, but a supplied amount must be usable for display/sort.
+    // Product metadata is optional; supplied versions and amounts must have usable types.
     const invalidFile = path.join(overlay, 'd/contract-priced/index.md');
     const validContent = fs.readFileSync(invalidFile, 'utf8');
     for (const [name, content, message] of [
-        ['currency', validContent.replace('currency: "$", ', ''), 'requires offer.currency'],
+        ['currency', validContent.replace(', currency: "$"', ''), 'requires offer.currency'],
         ['amount', validContent.replace('amount: 25', 'amount: -1'), 'Invalid offer.amount'],
+        ['version-number', validContent.replace('version: " 2.9 "', 'version: 2.9'), 'offer.version'],
+        ['version-boolean', validContent.replace('version: " 2.9 "', 'version: false'), 'offer.version'],
         ['icon', validContent.replace('icon: appearance-dark', 'icon: no-such-icon'), 'undefined icon'],
         ['article-default', validContent.replace('icon: appearance-dark', 'icon: appearance-dark\n  list_icon_file: product'), 'only supported on list pages'],
         ['text-empty', validContent.replace('icon: appearance-dark', 'icon: {text: " "}'), 'text must be a non-empty string'],
@@ -607,7 +666,7 @@ try {
         assert.notEqual(result.status, 0, `invalid ${name} must fail the build`);
         assert((result.stdout + result.stderr).includes(message));
     }
-    console.log('PASS supplied price and icon declaration validation');
+    console.log('PASS supplied version, price and icon declaration validation');
     console.log(`Collection contract checks passed.`);
 } finally {
     fs.rmSync(work,{recursive:true,force:true});

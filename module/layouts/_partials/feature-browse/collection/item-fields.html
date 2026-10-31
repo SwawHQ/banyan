@@ -1,8 +1,8 @@
 {{- $row := .row -}}
 {{- $view := .view -}}
 {{- if eq $view "products" -}}
+  <span class="item-field item-field--version" data-item-field="version" title="{{ $row.version_text }}"><bdi>{{ $row.version_text }}</bdi></span>
   <span class="item-field item-field--price" data-item-field="price" title="{{ $row.price_text }}"><bdi>{{ $row.price_text }}</bdi></span>
-  <span class="item-field item-field--value" data-item-field="value" title="{{ $row.value_text }}"><bdi>{{ $row.value_text }}</bdi></span>
 {{- else if ne $view "name" -}}
   <span class="item-field item-field--date" data-item-field="date" title="{{ $row.date_text }}"><bdi dir="ltr">{{ $row.date_text }}</bdi></span>
   {{- $count := $row.count_text -}}{{- $unit := $row.count_unit -}}

@@ -11,8 +11,8 @@ other = "按{field}降冪排序"
 
 [products_col_price]
 other = "價格"
-[products_col_value]
-other = "價值點"
+[products_col_version]
+other = "版本"
 
 [products_free]
 other = "免費"
