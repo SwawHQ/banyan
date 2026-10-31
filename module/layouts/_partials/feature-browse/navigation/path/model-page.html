@@ -6,6 +6,7 @@
     "text" ($page.LinkTitle | default $page.Title)
     "title" $page.Title
     "href" $page.RelPermalink
+    "kind" (cond $page.IsPage "page" "section")
     "current" (eq $page $ctx)
   -}}
   {{- $owner := false -}}

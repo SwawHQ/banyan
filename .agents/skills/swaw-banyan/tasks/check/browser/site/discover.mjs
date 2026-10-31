@@ -24,16 +24,16 @@ function inspect(page) {
   const text=page.text,body=extractStartTags(text,'body')[0]??'',canonical=extractCanonicalHref(text);
   const anchors=extractStartTags(text,'a').map(tag=>({tag,href:localPath(attr(tag,'href'),route,canonical)}));
   const roots=anchors.filter(({tag,href})=>href&&has(tag,'data-root-href')).map(({href})=>href);
-  const rawSource=attr(body,'data-page-collection-source'),source=rawSource?JSON.parse(rawSource):null;
-  const rawModels=attr(body,'data-entry-breadcrumb-sources'),models=rawModels?JSON.parse(rawModels):[];
-  const rootHref=models.find(model=>model.logicalPath===source?.logicalPath)?.rootItem?.href;
+  const logicalPath=attr(body,'data-collection-path'),rawNavigation=attr(body,'data-navigation');
+  const navigation=rawNavigation?JSON.parse(rawNavigation):null;
+  const rootHref=logicalPath&&navigation?.home?navigation.home+logicalPath.replace(/^\/+/, '').split('/')[0]+'/':'';
   const names=extractStartTags(text,'div').filter(tag=>has(tag,'data-list-item'))
     .map(tag=>({name:attr(tag,'data-sort-name'),group:attr(tag,'data-sort-group')||'0'})).filter(row=>row.name);
   // This leaf checks selected visible roots; hidden collections are valid sites.
-  const sortable=Boolean(source?.logicalPath&&rootHref&&roots.includes(localPath(rootHref,route,canonical))&&has(text,'data-sortable')&&
+  const sortable=Boolean(logicalPath&&rootHref&&roots.includes(localPath(rootHref,route,canonical))&&has(text,'data-sortable')&&
     names.some((row,i)=>names.some((other,j)=>i!==j&&row.group===other.group&&row.name!==other.name))&&
     anchors.some(({href})=>href&&[...new URLSearchParams(new URL(href,'https://swban.invalid').hash.slice(1)).values()]
-      .some(value=>clean(value)===clean(source.logicalPath))));
+      .some(value=>clean(value)===clean(logicalPath))));
   const payload=json(text,'site-prefetch-data'),rules=json(text,'site-prefetch-rules'),native=json(text,'site-speculation-rules');
   const candidates=anchors.filter(({tag,href})=>href&&href!==route&&!has(tag,'download')&&
     (!attr(tag,'target')||attr(tag,'target').toLowerCase()==='_self'));

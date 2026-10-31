@@ -14,6 +14,7 @@ import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/
 import {extractTagAttribute,extractMetaContent,decodeHtmlAttribute,extractExternalScriptSrcs} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {inspect as inspectScripts} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/inspect.mjs';
 import {extractBlocks,stripRawText} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
+import {readBreadcrumbData} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {gotoAndWait} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/page.mjs';
@@ -34,9 +35,8 @@ function build(directory=source,destination=output) {
 function passed(result) {assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);}
 function read(route,file='index.html',directory=output) {return fs.readFileSync(path.join(directory,route,file),'utf8');}
 function debug(prefix='') {return JSON.parse(read(prefix,'directory.json'));}
-function sources(html) {
-  const tag=html.match(/<body\b[^>]*>/i)?.[0]||'';
-  return JSON.parse(decodeHtmlAttribute(extractTagAttribute(tag,'data-entry-breadcrumb-sources')||'[]'));
+function sources(html,directory=output) {
+  const data=readBreadcrumbData(html,{directory});assert.equal(data.error,'');return data.sources;
 }
 before(()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));
@@ -58,13 +58,13 @@ before(()=>{
     '{{- $items = $items | append (dict "path" .Path "url" .RelPermalink) -}}{{- end -}}'+
     '{{- $groups = merge $groups (dict $key $items) -}}{{- end -}}{{- $out = merge $out (dict $kind $groups) -}}{{- end -}}{{ $out | jsonify }}');
   for(const [suffix] of locales) {
-    write(path.join(source,'content/_index'+suffix+'.md'),article('Home','layout: page-article-norss'));
+    write(path.join(source,'content/_index'+suffix+'.md'),article('Home','layout: page-article-norss').replace(/^url:.*\n/m,''));
     write(path.join(source,'content/library/_index'+suffix+'.md'),directoryPage('Library'));
     for(const section of ['original','references','references/nested','second'])
       write(path.join(source,'content/library',section,'_index'+suffix+'.md'),directoryPage(section));
     write(path.join(source,'content/library/original/item/index'+suffix+'.md'),article('Shared '+suffix,'url: p/'+(suffix==='.zh'?'translated-item':'item')+'/'));
     write(path.join(source,'content/library/original/second/index'+suffix+'.md'),article('Second '+suffix));
-    write(path.join(source,'content/all/index'+suffix+'.md'),article('All','layout: page-collection-directory-all\nparams:\n  aggregate: /library\n  slots: [breadcrumb]'));
+    write(path.join(source,'content/all/_index'+suffix+'.md'),article('All','layout: page-collection-directory-all\nparams:\n  aggregate: /library\n  slots: [breadcrumb]').replace(/^url:.*\n/m,''));
   }
   write(path.join(source,'content/library/references/_map.toml'),refs(['/library/original/item/']));
   write(path.join(source,'content/library/references/nested/_map.toml'),refs(['/library/original/item','/library/original/second']));
@@ -72,7 +72,7 @@ before(()=>{
 });
 after(()=>{if(work){assert.equal(path.dirname(fs.realpathSync(work)),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
-test('regular pages require an explicit URL and the site article archetype supplies one',()=>{
+test('articles require an explicit URL and the site article archetype supplies one',()=>{
   const file=path.join(source,'content/library/url-contract.md');
   try {
     for(const fields of ['', 'slug: legacy-only', 'url: ""', 'url: "   "']) {
@@ -106,7 +106,7 @@ test('collection layouts bind their sources and reject conflicting front matter'
       ['page-collection-products-all','aggregate: ["/library"]',/needs aggregate with an absolute section path/],
       ['page-collection-directory-all','aggregate: /missing',/cannot resolve aggregate/],
       ['page-collection-products-all','aggregate: /library/original/item',/must reference an ordinary section/],
-      ...['page-collection','page-collection-directory','page-collection-products','page-collection-language','page-collection-appearance']
+      ...['page-collection-directory-name-only','page-collection-directory','page-collection-products','page-collection-language','page-collection-appearance']
         .map(layout=>[layout,'aggregate: /library',/does not accept aggregate/]),
       ['page-collection-directory','list: directory',/remove params\.list/],
       ['page-collection-language','',/needs outputs: \[HTML\]/,''],
@@ -179,12 +179,40 @@ test('meta controls article metadata, chapters and schema independently of path 
       if(breadcrumb) {
         expectedNavigation??=navigation[0].html;
         assert.equal(navigation[0].html,expectedNavigation,'Slot order and metadata visibility must not change path columns.');
+        assert.equal(extractBlocks(navigation[0].html,'a').length,0,'Path entries load from JSON rather than repeat in article HTML.');
+        const defaults=readBreadcrumbData(html,{directory:destination});assert.equal(defaults.error,'');
+        assert.ok(defaults.defaultColumns.length>0,'The physical path has selected-item metadata.');
+        assert.ok(defaults.defaultColumns.every(column=>column.selected?.href&&column.payload), 'Every physical path column has shared data.');
       }
       assert.equal(schemas(html,'BreadcrumbList').length,breadcrumb?1:0,'The breadcrumb slot must control breadcrumb schema.');
       for(const route of ['language','appearance','powered-by','_res/offline'])
         assert.deepEqual(schemas(read(route,'index.html',destination)),[],route+' must not emit BlogPosting.');
     }
   } finally {write(file,original);}
+});
+
+test('non-sortable ancestors publish shared path rows without inline sibling lists',()=>{
+  const directory=path.join(source,'content/library/plain'),destination=path.join(work,'plain-path');
+  try {
+    write(path.join(directory,'_index.md'),'---\ntitle: Plain directory\nlayout: page-article-norss\nparams:\n  slots: [breadcrumb]\n---\nA plain directory page.');
+    for(const name of ['first','second'])write(path.join(directory,name,'index.md'),article('Plain '+name,
+      'url: p/plain-'+name+'/\nlayout: page-article-rss\nparams:\n  slots: [breadcrumb]'));
+    passed(build(source,destination));
+    const html=read('p/plain-first','index.html',destination),data=readBreadcrumbData(html,{directory:destination});
+    assert.equal(data.error,'');
+    const column=data.defaultColumns.find(column=>column.source?.logicalPath==='/library/plain/');
+    assert.ok(column,'A non-sortable ancestor remains in the default route.');
+    assert.equal(column.selected.href,'/p/plain-first/');assert.equal(column.selected.kind,'page');
+    assert.equal(column.payload.sv,'');assert.equal(column.payload.rv.length/column.payload.f.length,2);
+    const navigation=extractBlocks(html,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb')[0];
+    assert.equal(extractBlocks(navigation.html,'a').length,0);
+    const manifest=JSON.parse(extractTagAttribute(html.match(/<body\b[^>]*>/)[0],'data-navigation'));
+    assert.equal(manifest.default,'/library/plain/');
+    assert.ok(!['routes','from','paths'].some(key=>Object.hasOwn(manifest,key)));
+  } finally {
+    assert.equal(path.dirname(directory),path.join(source,'content/library'));
+    fs.rmSync(directory,{recursive:true,force:true});
+  }
 });
 
 test('shortcodes load their scripts once on a plain article and each retry reloads its current URL',async()=>{
@@ -206,7 +234,7 @@ test('shortcodes load their scripts once on a plain article and each retry reloa
     const chromium=loadChromium();browser=await chromium.launch({headless:true,executablePath:chromium.executablePath()});
     const page=await browser.newPage({serviceWorkers:'block'}),url=server.getBaseUrl()+'/p/shortcodes/?retry=1';
     await gotoAndWait(page,url);
-    await page.waitForFunction(()=>document.querySelector('[data-site-update-panel]')?.dataset.siteUpdateState==='unavailable');
+    await page.waitForFunction(()=>['unavailable','failed'].includes(document.querySelector('[data-site-update-panel]')?.dataset.siteUpdateState));
     for(const index of [0,1]) {
       await Promise.all([page.waitForEvent('load'),page.locator('[data-page-action="reload"]').nth(index).click()]);
       assert.equal(page.url(),url,'Retry must reload the current URL, including its query.');
@@ -279,7 +307,7 @@ test('all RSS channels accept only opted-in articles while plain articles retain
           const feed=read(route,'index.xml',destination);
           assert.equal(feed.includes('<guid>https://example.test'+url+'</guid>'),layout==='page-article-rss',route+' must follow article RSS eligibility.');
           assert.ok(!feed.includes('<guid>https://example.test'+prefix+'/p/rss-settings/</guid>'),route+' must omit functional pages.');
-          assert.ok(!feed.includes('<guid>https://example.test'+prefix+'/p/all/</guid>'),route+' must omit collection pages.');
+          assert.ok(!feed.includes('<guid>https://example.test'+prefix+'/all/</guid>'),route+' must omit collection pages.');
           const guids=[...feed.matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]);
           assert.equal(guids.length,new Set(guids).size,route+' must not duplicate referenced articles.');
         }
@@ -289,7 +317,7 @@ test('all RSS channels accept only opted-in articles while plain articles retain
         assert.match(html,/"@type"\s*:\s*"BlogPosting"/,'Both article layouts retain article schema.');
         assert.match(html,/class=["']?document-toc/,'Both article layouts retain the chapter list.');
         assert.match(html,/id=["']?document-aside-toggle/,'Both article layouts retain the collapsible aside.');
-        for(const route of [prefix+'/library/original/',prefix+'/library/references/',prefix+'/p/all/'])
+        for(const route of [prefix+'/library/original/',prefix+'/library/references/',prefix+'/all/'])
           assert.ok(read(route,'index.html',destination).includes(url),'Plain articles must remain in directory and aggregate lists.');
         assert.ok(read(prefix||'/en','sitemap.xml',destination).includes('https://example.test'+url),'Plain articles must remain in sitemap.');
         assert.ok(read(prefix,'llms.txt',destination).includes('https://example.test'+url),'Plain articles must remain in llms.txt.');
@@ -422,7 +450,7 @@ test('local sections retain refs and map resources require a visible ordinary di
       assert.deepEqual(index.direct['/library/local'].map(item=>item.path),['/library/original/item']);
       assert.equal(fs.existsSync(path.join(work,'local',prefix,'library/local/_map.toml')),false);
       const html=read(prefix+'/p/'+(prefix==='/zh'?'translated-item':'item')+'/','index.html',path.join(work,'local'));
-      assert.ok(sources(html).some(item=>item.logicalPath==='/library/local/'),'A local directory remains an available article source.');
+      assert.ok(sources(html,path.join(work,'local')).some(item=>item.logicalPath==='/library/local/'),'A local directory remains an available article source.');
       assert.ok(html.includes('data-directory-reference="/library/local"')||html.includes('data-directory-reference=/library/local'),'A local directory remains in article metadata.');
     }
     const server=await createStaticSiteServer(path.join(work,'local')),chromium=loadChromium();let browser;
@@ -501,7 +529,7 @@ test('non-rendered reference directories do not become article metadata or navig
     const destination=path.join(work,'owners');passed(build(source,destination));
     for(const [,prefix] of locales) {
       const html=read(prefix+'/p/'+(prefix==='/zh'?'translated-item':'item')+'/','index.html',destination);
-      const paths=sources(html).map(item=>item.logicalPath);
+      const paths=sources(html,destination).map(item=>item.logicalPath);
       for(const name of Object.keys(owners)) {
         assert.ok(!paths.includes('/library/owner-'+name+'/'),'Hidden owners must not appear as navigation sources.');
         assert.ok(!html.includes('data-directory-reference="/library/owner-'+name+'"')&&!html.includes('data-directory-reference=/library/owner-'+name+'>'),'Hidden owners must not appear in article metadata.');
@@ -597,30 +625,44 @@ test('aggregate feeds share unique articles and hidden-directory fallbacks omit 
 
 test('dotted and Unicode references retain encoded source URLs on a site subpath',()=>{
   const config=path.join(source,'hugo.toml'),original=fs.readFileSync(config,'utf8');
-  const directory=path.join(source,'content/library/special');
+  const directory=path.join(source,'content/library/A&B');
   try {
     write(config,original.replace('https://example.test/','https://example.test/base/'));
     write(path.join(source,'content/library/node.js/index.md'),article('Dotted node','url: p/dotted-node/'));
     write(path.join(source,'content/library/中文/index.md'),article('Unicode article','url: p/unicode-article/'));
-    write(path.join(directory,'_index.md'),directoryPage('Special','url: /topics/A&B/'));
+    write(path.join(source,'content/library/中文+目录/_index.md'),directoryPage('Unicode directory'));
+    write(path.join(source,'content/library/中文+目录/_map.toml'),refs(['/library/中文']));
+    write(path.join(source,'content/library/普通+目录/_index.md'),'---\ntitle: Plain Unicode directory\nlayout: page-article-norss\nparams:\n  slots: [breadcrumb]\n---\n');
+    write(path.join(source,'content/library/普通+目录/child/index.md'),article('Unicode fallback','url: p/unicode-fallback/'));
+    write(path.join(directory,'_index.md'),directoryPage('Special'));
     write(path.join(directory,'_map.toml'),refs(['/library/node.js','/library/中文']));
     const destination=path.join(work,'special-paths');passed(build(source,destination));
-    const html=extractBlocks(stripRawText(read('/topics/A&B/','index.html',destination)),'main')[0].inner;
+    const html=extractBlocks(stripRawText(read('/library/ab/','index.html',destination)),'main')[0].inner;
     const links=[...html.matchAll(/<a\b[^>]*>/g)].map(match=>decodeHtmlAttribute(extractTagAttribute(match[0],'href'))).filter(href=>href.includes('#from='));
     assert.equal(links.length,2);
-    for(const href of links){assert.ok(href.startsWith('/base/'));assert.equal(readFieldValue(new URL(href,'https://example.test'),'from'),'topics/A&B');}
+    for(const href of links){assert.ok(href.startsWith('/base/'));assert.equal(readFieldValue(new URL(href,'https://example.test'),'from'),'library/ab');}
+    for(const [route,name] of [['p/unicode-article','中文+目录'],['p/unicode-fallback','普通+目录']]) {
+      const data=readBreadcrumbData(read(route,'index.html',destination),{directory:destination});assert.equal(data.error,'');
+      const logicalPath=Object.keys(data.columnURLs).find(value=>decodeURIComponent(value)==='/library/'+name+'/');
+      assert.ok(logicalPath,'Unicode ordinary and fallback columns publish resource URLs.');
+      const url=data.columnURLs[logicalPath],relative=decodeURIComponent(new URL(url,'https://example.test').pathname).slice('/base/'.length);
+      assert.match(relative,/^site\/navigation\/[a-f0-9]{64}\.json$/,'Unicode columns use the same flat content-addressed namespace.');
+      assert.doesNotMatch(url,/%/,'Resource paths do not contain encoded language or column names.');
+      const payload=JSON.parse(fs.readFileSync(path.join(destination,relative),'utf8'));
+      assert.equal(payload.lp,logicalPath,'Decoded URL paths name the actual JSON file.');
+    }
     write(path.join(directory,'_map.toml'),refs(['/library/node.js/index.md']));
     const invalid=build(source,path.join(work,'file-reference'));
     assert.notEqual(invalid.status,0);assert.match(invalid.stdout+invalid.stderr,/logical content path|cannot resolve/i);
   } finally {
     write(config,original);
-    for(const name of ['special','node.js','中文'])fs.rmSync(path.join(source,'content/library',name),{recursive:true,force:true});
+    for(const name of ['A&B','node.js','中文','中文+目录','普通+目录'])fs.rmSync(path.join(source,'content/library',name),{recursive:true,force:true});
   }
 });
 
 test('reference directories follow resource publishing and identify unlisted ancestors consistently',()=>{
   const directory=path.join(source,'content/library/resource-policy'),hidden=path.join(source,'content/library/hidden-parent'),
-    resourceOnly=path.join(source,'content/library/resource-only');
+    otherHidden=path.join(source,'content/library/other-hidden-parent'),resourceOnly=path.join(source,'content/library/resource-only');
   try {
     write(path.join(directory,'_map.toml'),refs(['/library/original/item']));
     write(path.join(directory,'attachment.txt'),'Ordinary bundle resource.');
@@ -658,11 +700,15 @@ test('reference directories follow resource publishing and identify unlisted anc
     write(path.join(hidden,'_index.md'),directoryPage('Local parent','build: {list: local, publishResources: false}'));
     passed(build(source,path.join(work,'local-parent')));
     write(path.join(hidden,'_index.md'),directoryPage('Unrendered parent','build: {list: local, render: never, publishResources: false}'));
-    const unrendered=path.join(work,'unrendered-parent');passed(build(source,unrendered));
-    const members=JSON.parse(read('','directory.json',unrendered));
-    assert.deepEqual(members.direct['/library/hidden-parent/local'].map(page=>page.path),['/library/original/item']);
+    const unrendered=build(source,path.join(work,'unrendered-parent'));
+    assert.notEqual(unrendered.status,0);assert.match(unrendered.stdout+unrendered.stderr,/Public navigation:[\s\S]*requires an HTML page/);
+    write(path.join(otherHidden,'_index.md'),directoryPage('Other unrendered parent','build: {list: local, render: never, publishResources: false}'));
+    write(path.join(otherHidden,'local/_index.md'),directoryPage('Other local child','build: {list: local, publishResources: false}'));
+    write(path.join(otherHidden,'local/_map.toml'),refs(['/library/original/item']));
+    const both=build(source,path.join(work,'two-unrendered-parents'));
+    assert.notEqual(both.status,0);assert.match(both.stdout+both.stderr,/Public navigation:[\s\S]*requires an HTML page/);
   } finally {
-    for(const folder of [directory,hidden,resourceOnly])fs.rmSync(folder,{recursive:true,force:true});
+    for(const folder of [directory,hidden,otherHidden,resourceOnly])fs.rmSync(folder,{recursive:true,force:true});
   }
 });
 

@@ -1,0 +1,37 @@
+{{- $ctx := .ctx -}}
+{{- $hasBreadcrumb := .has_breadcrumb -}}
+{{- $pageSource := .page_collection_source | default dict -}}
+{{- $entries := slice -}}
+{{- $default := "" -}}
+{{- if $hasBreadcrumb -}}
+  {{- $entries = .default_columns | default slice -}}
+  {{- with last 1 $entries -}}{{- $default = (index . 0).source.logicalPath -}}{{- end -}}
+{{- end -}}
+{{- range $source := .sources -}}
+  {{- if eq $source.logicalPath ($pageSource.logicalPath | default "") -}}{{- continue -}}{{- end -}}
+  {{- if $hasBreadcrumb -}}
+    {{- range $source.columns -}}{{- $entries = $entries | append . -}}{{- end -}}
+  {{- end -}}
+  {{- $entries = $entries | append $source.currentColumn -}}
+{{- end -}}
+{{- $columns := dict -}}
+{{- $resources := "" -}}
+{{- range $column := $entries -}}
+  {{- $logicalPath := $column.source.logicalPath | default "" -}}
+  {{- $resource := findRESubmatch `^(.*/)([a-f0-9]{64})\.json$` ($column.payloadUrl | default "") 1 -}}
+  {{- if or (not $logicalPath) (ne (len $resource) 1) -}}
+    {{- errorf "Build failed: navigation for %q has an invalid column %q or resource %q." $ctx.RelPermalink $logicalPath ($column.payloadUrl | default "") -}}
+    {{- continue -}}
+  {{- end -}}
+  {{- $base := index (index $resource 0) 1 -}}
+  {{- $hash := index (index $resource 0) 2 -}}
+  {{- if and $resources (ne $resources $base) -}}
+    {{- errorf "Build failed: navigation resources for %q use different directories." $ctx.RelPermalink -}}
+  {{- end -}}
+  {{- if and (isset $columns $logicalPath) (ne (index $columns $logicalPath) $hash) -}}
+    {{- errorf "Build failed: navigation column %q uses different resources on %q." $logicalPath $ctx.RelPermalink -}}
+  {{- end -}}
+  {{- $resources = $base -}}
+  {{- $columns = merge $columns (dict $logicalPath $hash) -}}
+{{- end -}}
+{{- return (dict "home" $ctx.Site.Home.RelPermalink "resources" $resources "columns" $columns "default" $default "error" (i18n "navigation_load_failed")) -}}

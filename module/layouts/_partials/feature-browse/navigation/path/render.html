@@ -1,9 +1,0 @@
-{{- $ctx := .ctx | default . -}}
-{{- $columns := .columns | default slice -}}
-{{- if gt (len $columns) 0 -}}
-<nav class="slot path-navigation" data-slot="breadcrumb" aria-label="Breadcrumb">
-  {{- range $column := $columns -}}
-    {{ partial "./column.html" (dict "ctx" $ctx "column" $column) }}
-  {{- end -}}
-</nav>
-{{- end -}}

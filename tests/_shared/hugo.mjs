@@ -60,8 +60,8 @@ export function fixtureContentDirectory(content) {
   for(const suffix of ['','.zh','.zh-tw']) {
     fs.mkdirSync(path.join(content,'d'),{recursive:true});
     fs.writeFileSync(path.join(content,'d','_index'+suffix+'.md'),directoryPage('Content'));
-    const all=path.join(content,'all','index'+suffix+'.md');
+    const all=path.join(content,'all','_index'+suffix+'.md');
     fs.mkdirSync(path.dirname(all),{recursive:true});
-    fs.writeFileSync(all,'---\ntitle: Discover - All\nurl: all/\nlayout: page-collection-directory-all\nparams:\n  aggregate: /d\n  slots: [ breadcrumb ]\n---\n');
+    fs.writeFileSync(all,'---\ntitle: Discover - All\nlayout: page-collection-directory-all\nparams:\n  aggregate: /d\n  slots: [ breadcrumb ]\n---\n');
   }
 }

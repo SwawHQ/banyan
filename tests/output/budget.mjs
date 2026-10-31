@@ -21,7 +21,7 @@ const productionGuardrails = [
         maxRawBytes: 21_000,
         // Restoring the cloud/moon theme sprite adds about 180 B gzip.
         maxGzipBytes: 7_200,
-        maxBreadcrumbPayloadBytes: 16,
+        maxBreadcrumbPayloadBytes: 256,
         maxBreadcrumbSourceCount: 0
     },
     ...['articles-all','products-all'].map(name=>({
@@ -134,7 +134,7 @@ function buildGuardrailIssues(rowsByPath) {
 
 export async function inspectHtmlBudget(directory) {
   const {pages} = await readPages(directory);
-  const rows = breadcrumbRows(pages).map(row => ({...row,rawBytes:row.buffer.length,gzipBytes:gzipBytes(row.buffer),
+  const rows = breadcrumbRows(pages,{directory}).map(row => ({...row,rawBytes:row.buffer.length,gzipBytes:gzipBytes(row.buffer),
     htmlLang:extractTagAttribute(extractStartTags(row.text,'html')[0] ?? '','lang')}));
   return {issues:buildGuardrailIssues(new Map(rows.map(row => [row.relativePath,row])))};
 }

@@ -2,15 +2,11 @@
 {{- $config := .config -}}
 {{- if not $config -}}{{- $config = partial "./config.html" (dict "page" $page) -}}{{- end -}}
 {{- $rows := slice -}}
-{{- if and (eq $config.provider "aggregate") (or (not $config.time_tree) (ne $page.Kind "section")) -}}
+{{- if and (eq $config.provider "aggregate") (not $config.time_tree) -}}
   {{- $members := partialCached "./members.html" $page $page.Language.Lang $page.Path -}}
   {{- range $members.direct -}}{{- $rows = $rows | append (partial "feature-browse/collection/rows/page.html" (dict "page" .)) -}}{{- end -}}
 {{- else -}}
-  {{- if eq $page.Kind "section" -}}
-    {{- $rows = partial "feature-browse/collection/rows/section.html" (dict "page" $page) -}}
-  {{- else -}}
-    {{- errorf "Collection page %s needs an ordinary section for its direct children." $page.RelPermalink -}}
-  {{- end -}}
+  {{- $rows = partial "feature-browse/collection/rows/section.html" (dict "page" $page) -}}
 {{- end -}}
 {{- $decorated := slice -}}
 {{- $iconDefaults := partial "system-ui/list/icon-defaults.html" (dict "page" $page) -}}

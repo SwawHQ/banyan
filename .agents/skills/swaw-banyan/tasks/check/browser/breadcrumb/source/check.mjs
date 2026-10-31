@@ -19,10 +19,22 @@ export async function check({page,baseUrl,options}) {
   try {
     const staticPage=await context.newPage(),response=await staticPage.goto(baseUrl+options.page,{waitUntil:'load'});
     assert.ok(response?.ok(),'Static page must return a successful response.');
-    const column=await selectColumn(staticPage,options.column);raw=sourceLink(column,options.article,baseUrl);
-    const rawHref=await columnLocator(staticPage,options.column).locator('[data-list-entry]').evaluateAll((nodes,target)=>nodes.find(node=>node.href===target)?.getAttribute('href'),raw);
-    await columnLocator(staticPage,options.column).locator('[data-list-entry][href='+JSON.stringify(rawHref)+']').click();
+    assert.ok(await staticPage.locator('[data-root-navigation] a[data-root-href][href]').count(),
+      'Root navigation must retain native links without JavaScript.');
+    assert.ok((await staticPage.locator('main').textContent()).trim(),'The main content must remain available without JavaScript.');
+    assert.equal(await staticPage.locator('[data-slot=breadcrumb] [data-list-entry]').count(),0,
+      'Path rows must come from JSON, not static HTML.');
+    const sourceResponse=await staticPage.goto(baseUrl+options.column,{waitUntil:'load'});
+    assert.ok(sourceResponse?.ok(),'The source collection must remain a native page.');
+    const column=await staticPage.evaluate(()=>({
+      href:location.pathname,source:{logicalPath:document.body.dataset.collectionPath},
+      rows:[...document.querySelectorAll('main [data-list-entry]')].map(link=>({key:new URL(link.href).pathname,href:link.href,text:link.textContent.trim()}))
+    }));
+    raw=sourceLink(column,options.article,baseUrl);
+    const rawHref=await staticPage.locator('main [data-list-entry]').evaluateAll((nodes,target)=>nodes.find(node=>node.href===target)?.getAttribute('href'),raw);
+    await staticPage.locator('main [data-list-entry][href='+JSON.stringify(rawHref)+']').click();
     await staticPage.waitForURL(raw);
+    assert.ok((await staticPage.locator('main').textContent()).trim(),'Opening the article must retain its body without JavaScript.');
   } finally {await context.close();}
   await openPage(page,baseUrl+options.page);
   const column=await selectColumn(page,options.column),target=sourceLink(column,options.article,baseUrl);
@@ -61,16 +73,16 @@ export async function check({page,baseUrl,options}) {
   page.on('request',record);
   try {
     for(const hash of ['from=swban-missing-source','']) {
-      await page.evaluate(hash=>{location.hash=hash;},hash);await page.waitForURL(url=>url.hash===(hash?'#'+hash:''));await afterPaint(page);
+      await page.evaluate(hash=>{location.hash=hash;},hash);await page.waitForURL(url=>url.hash===(hash?'#'+hash:''));await waitForBrowse(page);await afterPaint(page);
       const defaultTarget=page.url();
       assert.deepEqual(await snapshot(page),defaults,'Missing or invalid source state must restore default links, selections and accessibility.');
       assert.equal(await page.evaluate(()=>document.querySelector('[data-slot=breadcrumb]')===window.__swbanFragmentNavigation),true,
         'Fragment changes must retain the navigation node.');
-      await page.goBack();await page.waitForURL(target);await afterPaint(page);
+      await page.goBack();await page.waitForURL(target);await waitForBrowse(page);await afterPaint(page);
       assert.deepEqual(await snapshot(page),original,'Back must restore source columns, root and sorting in the same document.');
-      await page.goForward();await page.waitForURL(defaultTarget);await afterPaint(page);
+      await page.goForward();await page.waitForURL(defaultTarget);await waitForBrowse(page);await afterPaint(page);
       assert.deepEqual(await snapshot(page),defaults,'Forward must restore the default navigation view.');
-      await page.goBack();await page.waitForURL(target);await afterPaint(page);
+      await page.goBack();await page.waitForURL(target);await waitForBrowse(page);await afterPaint(page);
     }
     assert.equal(await page.evaluate(()=>window.__swbanFragmentDocument),marker,'Fragment history must retain the document.');
     assert.deepEqual(requests,[],'Fragment navigation must not request another document.');

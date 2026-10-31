@@ -42,7 +42,7 @@ Front matter 中，`title`、`url`、`layout` 等 Hugo 原生字段保留在顶�
 自定义页面字段放在 `params` 下，继承默认值放在 `cascade.params` 下。
 `page-article-rss` 可作为 RSS 条目，`page-article-norss` 用于其他 Markdown 页面。
 `meta` 区域统一启用文章元信息、章节目录和 BlogPosting。
-集合布局直接决定字段和行为：`page-collection` 只显示名称，
+集合布局直接决定字段和行为：`page-collection-directory-name-only` 只显示名称，
 `page-collection-directory` 显示目录信息，`page-collection-products` 显示产品信息。
 后两者的 `-all` 布局通过 `params.aggregate` 指定汇总来源栏目。
 栏目默认输出 HTML 和 RSS；不需要订阅源时设置 `outputs: [HTML]`。

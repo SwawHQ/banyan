@@ -4,21 +4,11 @@ other = "名称"
 other = "更新时间"
 [list_col_size]
 other = "大小"
-[list_sort_name_asc]
-other = "按名称升序排序"
-[list_sort_name_desc]
-other = "按名称降序排序"
-[list_sort_date_asc]
-other = "按更新时间升序排序"
-[list_sort_date_desc]
-other = "按更新时间降序排序"
-[list_sort_size_asc]
-other = "按大小升序排序"
-[list_sort_size_desc]
-other = "按大小降序排序"
+[list_sort_asc]
+other = "按{field}升序排序"
+[list_sort_desc]
+other = "按{field}降序排序"
 
-[products_col_name]
-other = "名称"
 [products_col_price]
 other = "价格"
 [products_col_value]
@@ -26,18 +16,6 @@ other = "价值点"
 
 [products_free]
 other = "免费"
-[products_sort_name_asc]
-other = "按名称升序排序"
-[products_sort_name_desc]
-other = "按名称降序排序"
-[products_sort_price_asc]
-other = "按价格升序排序"
-[products_sort_price_desc]
-other = "按价格降序排序"
-[products_sort_value_asc]
-other = "按价值点升序排序"
-[products_sort_value_desc]
-other = "按价值点降序排序"
 
 [label_published]
 other = "发布于"
@@ -53,6 +31,9 @@ other = "目录"
 
 [language_return_missing]
 other = "本页尚无{lang}版本，继续显示原内容。"
+
+[navigation_load_failed]
+other = "导航加载失败。"
 
 [notFoundTitle]
 other = "页面不存在"

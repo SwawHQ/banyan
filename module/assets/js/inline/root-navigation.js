@@ -1,4 +1,4 @@
 import { refreshRootSelection } from '../browse/root-navigation.js';
 
-// Runs just after the root list is parsed, before deferred bundles or the first paint.
+// Select the parsed root list before deferred bundles or the first paint.
 refreshRootSelection();

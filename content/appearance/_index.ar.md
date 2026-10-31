@@ -1,6 +1,5 @@
 ---
 title: المظهر
-url: appearance/
 layout: page-collection-appearance
 outputs: [HTML]
 weight: 80

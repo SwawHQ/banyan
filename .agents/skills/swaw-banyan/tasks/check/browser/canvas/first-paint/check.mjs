@@ -7,6 +7,8 @@ export function checkReservedColumns(first,final) {
   assert.ok(first.parsed.columns>0,'Source columns must already exist when main is parsed.');
   assert.equal(first.parsed.columns,final.columns.length,'Parsed markup must reserve the final source column count.');
   assert.equal(first.columns.length,final.columns.length,'Startup must retain the reserved source column count.');
+  assert.ok(first.pathContent.every(column=>column.rows.length===0),'Reserved path columns must not inline list rows.');
+  assert.ok(final.pathContent.every(column=>column.rows.length>0),'Loaded path columns must contain navigation rows.');
   assert.ok(final.reservedColumnsRetained,'Startup must reuse its reserved navigation and column nodes.');
   assert.ok(final.pathAccessible,'Settled source navigation must be visible to accessibility tools.');
 }
@@ -25,24 +27,9 @@ export function checkInitialLayout(first,final,expectedX) {
 }
 
 function checkStaticColumns(first,final) {
-  assert.equal(first.parsed?.columns,final.columns.length,'Parsed markup must reserve the final static column count.');
-  assert.equal(first.columns.length,final.columns.length,'Startup must retain the static column count.');
-  if(first.columns.length) {
-    assert.ok(final.reservedColumnsRetained,'Startup must reuse its reserved navigation and column nodes.');
-    assert.ok(final.pathAccessible,'Settled static navigation must be visible to accessibility tools.');
-  }
-  for(const [index,column] of first.pathContent.entries()) {
-    const settled=final.pathContent[index];
-    assert.equal(settled.href,column.href,'Static startup must retain each column source.');
-    assert.ok(column.rows.length>0,'Static columns must contain SSR rows.');
-    if(!first.sortPending)assert.deepEqual(settled.rows,column.rows,'Static startup must retain SSR row order and labels.');
-    if(column.header) {
-      assert.ok(settled.header,'Static startup must retain its sortable header.');
-      assert.equal(settled.header.label,column.header.label,'Static startup must retain its column label.');
-      for(const gap of ['labelToSeparator','separatorToSort'])assert.ok(Math.abs(column.header[gap]-settled.header[gap])<=.1,
-        'Static startup must retain header spacing.');
-    }
-  }
+  assert.equal(first.parsed?.columns,0,'Pages without pending path data must not reserve path columns.');
+  assert.equal(first.columns.length,0,'Pages without pending path data must not contain path columns.');
+  assert.equal(final.columns.length,0,'A page without a path must not gain columns after startup.');
 }
 
 export async function check({page,baseUrl,options}) {

@@ -20,10 +20,9 @@ export async function openPage(page,url) {
 }
 
 export const readColumns=page=>page.evaluate(selector=>{
-  const sources=JSON.parse(document.body.dataset.entryBreadcrumbSources||'[]');
-  const registry=sources.flatMap(source=>[source.currentColumn?.source,...(source.columns||[]).map(column=>column.source)]).filter(Boolean);
   return [...document.querySelectorAll(selector)].map(column=>{
-    const href=column.dataset.breadcrumbCollectionHref,source=registry.find(source=>source.href===href);
+    const href=column.dataset.breadcrumbCollectionHref,source={href,logicalPath:column.dataset.navigationColumn,
+      sortVariant:column.dataset.sortVariant,defaultSort:column.dataset.defaultSort};
     const toggle=column.querySelector('[data-collection-sort-toggle]');
     return {href,source,toggle:toggle?.href,indicator:toggle?.querySelector('[data-sort-indicator]')?.textContent.trim(),
       field:toggle?.querySelector('.path-sort-label')?.textContent.trim(),y:column.scrollTop,
@@ -41,7 +40,7 @@ export async function selectColumn(page,wanted) {
   return selected;
 }
 
-// Capture SSR nodes before the external controller can sort or rebuild them.
+// Capture reserved column nodes before the external controller fills them.
 export async function observeColumns(page,url) {
   await page.goto('about:blank');
   await page.addInitScript(selector=>{

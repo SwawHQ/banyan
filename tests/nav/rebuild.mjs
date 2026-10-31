@@ -6,12 +6,14 @@ import os from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
-import {extractElementText} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {extractElementText,extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 import {fixtureEnvironment,fixtureSiteMounts,directoryPage} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
-const work = await fs.mkdtemp(path.join(os.tmpdir(), 'banyan-path-rebuild-'));
+const temporaryRoot=path.join(os.tmpdir(),'swaw/banyan/nav-rebuild');
+await fs.mkdir(temporaryRoot,{recursive:true});
+const work = await fs.mkdtemp(path.join(temporaryRoot, 'run-'));
 
 try {
     const relative = (value) => path.relative(root, value).replaceAll('\\', '/');
@@ -69,16 +71,22 @@ try {
         const link = row?.match(/<a\b[^>]*href="(?:\/zh|\/zh-tw)?\/d\/"[^>]*>[\s\S]*?<\/a>/)?.[0] || '';
         return extractElementText(link, 'a');
     }
+    async function columnLabel(document) {
+        const body=extractStartTags(document,'body')[0],navigation=JSON.parse(extractTagAttribute(body,'data-navigation'));
+        return JSON.parse(await html(navigation.resources+navigation.columns['/d/']+'.json')).label;
+    }
     try {
         await until(async () => (await html('/zh/d/')).includes('Before rename'));
         for (const [, prefix] of locales) {
-            assert.equal(directoryLabel(await html(`${prefix}/d/banyan-path-rebuild-probe/`)), 'Before rename');
+            const document=await html(`${prefix}/d/banyan-path-rebuild-probe/`);
+            assert.equal(directoryLabel(document), 'Before rename');
+            assert.equal(await columnLabel(document), 'Before rename');
         }
         for (const [suffix] of locales) {
             await fs.writeFile(path.join(overlay, `d/_index${suffix}.md`), originals.get(suffix).replace(/^title:.*$/m, 'title: After rename'));
         }
         for (const [, prefix] of locales) {
-            await until(async () => (await html(`${prefix}/d/`)).includes('data-current-page-title="After rename"'));
+            await until(async () => await columnLabel(await html(`${prefix}/d/banyan-path-rebuild-probe/`)) === 'After rename');
             await until(async () => directoryLabel(await html(`${prefix}/d/banyan-path-rebuild-probe/`)) === 'After rename');
         }
         console.log('PASS ancestor title changes reach document metadata during incremental rebuilds in all three languages.');

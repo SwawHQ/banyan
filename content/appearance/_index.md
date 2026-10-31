@@ -1,6 +1,5 @@
 ---
 title: Appearance
-url: appearance/ #Keep this route when renaming the content directory.
 layout: page-collection-appearance
 outputs: [HTML] #Disable this section's RSS feed.
 weight: 80

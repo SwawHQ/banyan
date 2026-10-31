@@ -1,0 +1,17 @@
+{{- $page := . -}}
+{{- $rows := partial "feature-browse/collection/rows/section.html" (dict "page" $page) -}}
+{{- $defaults := partial "system-ui/list/icon-defaults.html" (dict "page" $page) -}}
+{{- $decorated := slice -}}
+{{- range $row := $rows -}}
+  {{- $icon := partial "system-ui/list/item-icon.html" (dict "page" $row.node "defaults" $defaults "kind" (cond (eq $row.kind "page") "file" "folder")) -}}
+  {{- $decorated = $decorated | append (merge $row (dict "icon" $icon)) -}}
+{{- end -}}
+{{- $logicalPath := partial "feature-browse/collection/logical-path.html" (dict "ctx" $page "href" $page.RelPermalink) -}}
+{{- $source := dict "provider" "collection"
+  "logicalPath" $logicalPath
+  "href" $page.RelPermalink "label" ($page.LinkTitle | default $page.Title)
+  "sortVariant" "" "defaultSort" "" -}}
+{{- $config := dict "view" "name" "sort_variant" "" "default_sort" "" -}}
+{{- $payload := partial "feature-browse/collection/items/payload.html" (dict "source" $source "config" $config "rows" $decorated) -}}
+{{- $payloadUrl := partial "./publish.html" $payload -}}
+{{- return (dict "source" $source "payload" $payload "payloadUrl" $payloadUrl "rows" $decorated) -}}

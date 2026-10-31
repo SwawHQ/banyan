@@ -12,9 +12,11 @@ import {createStaticSiteServer} from '../../.agents/skills/swaw-banyan/tasks/che
 import {gotoAndWait} from '../../.agents/skills/swaw-banyan/tasks/check/browser/_shared/page.mjs';
 import {waitForBrowse} from '../../.agents/skills/swaw-banyan/tasks/check/browser/_shared/viewport.mjs';
 import {extractBlocks} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
-import {extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {readBreadcrumbData} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {decodeHtmlAttribute,extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 import {fixtureEnvironment,fixtureSiteMounts,directoryPage,fixtureContentDirectory} from '../_shared/hugo.mjs';
+import {collectionPayload} from '../_shared/navigation.mjs';
 
 const root = process.cwd();
 const temporaryRoot = path.join(os.tmpdir(), 'swaw/banyan/collections');
@@ -55,10 +57,10 @@ try {
         }
         write(path.join(overlay, `products/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\nparams:\n  icon: rss\n---\n');
         write(path.join(overlay, `products/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlayout: page-collection-directory\n---\n');
-        write(path.join(overlay, `products/contract-name/_index${lang}.md`), '---\ntitle: Names only\nlayout: page-collection\n---\n');
-        write(path.join(overlay, `contract-name-reference/_index${lang}.md`), '---\ntitle: Referenced names\nlayout: page-collection\nparams:\n  slots: [ breadcrumb ]\n---\n');
+        write(path.join(overlay, `products/contract-name/_index${lang}.md`), '---\ntitle: Names only\nlayout: page-collection-directory-name-only\n---\n');
+        write(path.join(overlay, `contract-name-reference/_index${lang}.md`), '---\ntitle: Referenced names\nlayout: page-collection-directory-name-only\nparams:\n  slots: [ breadcrumb ]\n---\n');
         for (const list of ['local', 'never']) {
-            write(path.join(overlay, `contract-all-${list}/index${lang}.md`), `---\ntitle: ${list} articles\nurl: contract-all-${list}/\nlayout: page-collection-directory-all\nbuild: { list: ${list} }\nparams:\n  aggregate: /d\n---\n`);
+            write(path.join(overlay, `contract-all-${list}/_index${lang}.md`), `---\ntitle: ${list} articles\nlayout: page-collection-directory-all\nbuild: { list: ${list} }\nparams:\n  aggregate: /d\n---\n`);
         }
         for (const term of [
             'contract-dates',
@@ -115,7 +117,7 @@ try {
     const hugo = toolExecutable('hugo');
     function build(view) {
         for (const lang of langs) {
-            const layouts={directory:'page-collection-directory',all:'page-collection-directory-all',products:'page-collection-products',name:'page-collection'};
+            const layouts={directory:'page-collection-directory',all:'page-collection-directory-all',products:'page-collection-products',name:'page-collection-directory-name-only'};
             const source = directoryPage('Content','','icon: info'+(view==='all'?'\naggregate: /d':''))
                 .replace('layout: page-collection-directory\n','layout: '+layouts[view]+'\n');
             write(path.join(overlay, `d/_index${lang}.md`), view==='all'?source:source.replace('    layout: page-collection-directory','    layout: '+layouts[view]));
@@ -131,25 +133,14 @@ try {
 
     const payloadCache = new Map();
 
-    function decodeHtmlAttribute(value) {
-        return value
-            .replace(/&quot;|&#34;/g, '"')
-            .replace(/&#39;/g, '\'')
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>');
-    }
-
-    function readInlineSources(output, lang, logical) {
+    function readSources(output, lang, logical) {
         const languageDir = lang === 'en' ? '' : lang;
         const logicalParts = decodeURI(logical).split('/').filter(Boolean);
         const htmlPath = path.join(output, languageDir, ...logicalParts, 'index.html');
         const html = fs.readFileSync(htmlPath, 'utf8');
-        const match = html.match(/\bdata-entry-breadcrumb-sources=(?:"([^"]*)"|'([^']*)')/i);
-        assert(match, `${logical} publishes data-entry-breadcrumb-sources`);
-        const sources = JSON.parse(decodeHtmlAttribute(match[1] ?? match[2] ?? ''));
-        assert(Array.isArray(sources), `${logical} breadcrumb sources are an array`);
-        return sources;
+        const data = readBreadcrumbData(html, {directory:output});
+        assert.equal(data.error, '', `${logical} publishes valid breadcrumb data`);
+        return data.sources;
     }
 
     function payload(output, lang, logical) {
@@ -157,11 +148,12 @@ try {
         if (payloadCache.has(cacheKey)) return payloadCache.get(cacheKey);
 
         const logicalPath = `/${logical.replace(/^\/+|\/+$/g, '')}/`;
-        const source = readInlineSources(output, lang, logical)
-            .find((entry) => entry?.logicalPath === logicalPath);
-        assert(source, `${logical} publishes its collection source inline`);
-        const data = source.currentColumn?.payload;
-        assert(data && typeof data === 'object', `${logical} publishes its collection rows inline`);
+        const data = collectionPayload(output,logicalPath,prefixes[['en','zh','zh-tw'].indexOf(lang)]+logicalPath);
+        assert(data && typeof data === 'object', `${logical} publishes its collection rows as shared JSON`);
+        assert([...data.f, ...Object.keys(data.c || {})].every(field => !field.endsWith('_text') && !['size_unit', 'count_unit'].includes(field)),
+            `${logical} navigation payload omits display-only fields`);
+        assert(!data.f.includes('key') && !data.f.includes('sort_group'),
+            `${logical} navigation payload omits URL duplicates and derived groups`);
         const rows = [];
         for (let offset = 0; offset < data.rv.length; offset += data.f.length) {
             rows.push({ ...data.c, ...Object.fromEntries(data.f.map((key, i) => [key, data.rv[offset + i]])) });
@@ -169,6 +161,23 @@ try {
         const result = { ...data, rows };
         payloadCache.set(cacheKey, result);
         return result;
+    }
+    const displayedRowsCache = new Map();
+    function displayedRows(output, lang, logical) {
+        const cacheKey = `${output}|${lang}|${logical}`;
+        if (displayedRowsCache.has(cacheKey)) return displayedRowsCache.get(cacheKey);
+        const html = fs.readFileSync(path.join(output, lang === 'en' ? '' : lang, ...decodeURI(logical).split('/').filter(Boolean), 'index.html'), 'utf8');
+        const main = extractBlocks(html, 'main')[0];
+        assert(main, `${logical} renders its main list`);
+        const rows = extractBlocks(main.inner, 'div', tag => /\bdata-list-item(?:\s|=|>)/.test(tag)).map(block => {
+            const link = extractStartTags(block.inner, 'a').find(tag => /\bdata-list-entry(?:\s|=|>)/.test(tag));
+            assert(link, `${logical} list row links to its entry`);
+            const fields = Object.fromEntries(extractBlocks(block.inner, 'span', tag => /\bdata-item-field(?:\s|=|>)/.test(tag))
+                .map(field => [extractTagAttribute(field.open, 'data-item-field'), decodeHtmlAttribute(field.inner.replace(/<[^>]*>/g, '')).trim()]));
+            return {href: new URL(extractTagAttribute(link, 'href'), 'https://example.test').pathname, fields};
+        });
+        displayedRowsCache.set(cacheKey, rows);
+        return rows;
     }
     const builds = {};
     const directoryMembers = new Map();
@@ -190,9 +199,7 @@ try {
                 const logicalPath = `/contract-all-${list}/`;
                 const html = fs.readFileSync(path.join(output, prefixes[index].slice(1), logicalPath, 'index.html'), 'utf8');
                 const body = extractStartTags(html, 'body')[0];
-                const source = JSON.parse(extractTagAttribute(body, 'data-page-collection-source') || 'null');
-                assert.deepEqual({logicalPath: source?.logicalPath, sortVariant: source?.sortVariant, defaultSort: source?.defaultSort},
-                    {logicalPath, sortVariant: 'all', defaultSort: 'date-desc'}, `build.list: ${list} must publish its main collection source`);
+                assert.equal(extractTagAttribute(body, 'data-collection-path'),logicalPath,`build.list: ${list} must publish its main collection path`);
                 const main = extractBlocks(html, 'main')[0];
                 assert.ok(main, `build.list: ${list} must render its main column`);
                 const rows = extractStartTags(main.inner, 'a').filter(tag => /\bdata-list-entry(?:\s|=|>)/.test(tag))
@@ -203,14 +210,17 @@ try {
             const assertUpdated = (list, href, text, key) => {
                 const row = payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`);
                 assert(row, `${list} contains ${href}`);
-                assert.equal(row.date_text, text, `${list}: display uses Lastmod`);
+                const displayed = displayedRows(output, lang, list).find(row => row.href === `${prefixes[index]}${href}`);
+                assert.equal(displayed?.fields.date, text, `${list}: display uses Lastmod`);
                 assert.equal(row.sort_date, key, `${list}: sorting uses the displayed time`);
             };
             for (const list of ['all', 'products/contract-dates', ...(['products', 'name'].includes(view) ? [] : ['d'])]) {
                 assertUpdated(list, '/p/contract-priced/', '2026-08-01', '20260801000000');
                 assertUpdated(list, '/p/contract-missing/', '2026-08-02', '20260802000000');
                 const dated = payload(output, lang, list).rows.filter(row => /\/p\/contract-(priced|missing)\//.test(row.href));
-                assert.deepEqual(dated.map(row => row.date_text), ['2026-08-02', '2026-08-01'], 'default order uses Lastmod, not publication date or name');
+                assert.deepEqual(dated.map(row => row.sort_date), ['20260802000000', '20260801000000'], 'default order uses Lastmod, not publication date or name');
+                const displayed = displayedRows(output, lang, list).filter(row => /\/p\/contract-(priced|missing)\//.test(row.href));
+                assert.deepEqual(displayed.map(row => row.fields.date), ['2026-08-02', '2026-08-01'], 'SSR date order agrees with the navigation order');
             }
             assertUpdated('all', '/p/contract-no-offer/', '2026-01-01', '20260101000000'); // Explicit date fallback when lastmod is absent.
             assertUpdated('all', '/p/contract-direct/', '2026-08-03', '20260803000000'); // No publication date.
@@ -231,10 +241,11 @@ try {
             for(const directory of ['contract-tree','contract-tree/shallow','contract-tree/deep/leaf'])
                 assert(referenceRows.some(row=>row.includes(`${prefixes[index]}/topics/${directory}/`)),'Metadata retains each reference path.');
             const ancestor=payload(output,lang,'topics').rows.find(row=>row.href===`${prefixes[index]}/topics/contract-tree/`);
-            assert.equal(ancestor.count_text,'1','An ancestor counts one canonical article across overlapping references.');
+            assert.equal(ancestor.sort_count,'1','An ancestor counts one canonical article across overlapping references.');
+            assert.equal(displayedRows(output,lang,'topics').find(row=>row.href===ancestor.href)?.fields.count,'1','The ancestor displays its unique article count.');
             const unfiled=payload(output,lang,'topics/unfiled').rows.find(row=>row.href===`${prefixes[index]}/p/contract-unclassified/`);
             assert(unfiled,'An explicit directory reference lists an otherwise unfiled article.');
-            assert.equal(unfiled.key,unfiled.href,'Referenced articles use their published URL as the stable collection key.');
+            assert.equal('key' in unfiled,false,'Referenced articles use href without a duplicate serialized key.');
             const iconFor = (list, href) => payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`)?.icon;
             for (const list of ['d', 'all', 'products/free', 'products-all']) {
                 assert.deepEqual(iconFor(list, '/p/contract-no-offer/'), ownImage, 'own image resolves against its article bundle in every list');
@@ -277,12 +288,18 @@ try {
             const free = payload(output, lang, 'products/free');
             assert.equal(free.sv, 'products');
             assert.equal(free.rows.filter(row => /\/p\/contract-/.test(row.href)).length, 4);
-            assert.equal(free.rows.find(row => row.href.includes('contract-priced')).price_text, '$25', 'category labels do not validate prices');
-            assert.equal(free.rows.find(row => row.href.includes('contract-missing')).price_text, '—');
+            const displayedFree = displayedRows(output, lang, 'products/free');
+            assert.equal(displayedFree.find(row => row.href.includes('contract-priced')).fields.price, '$25', 'category labels do not validate prices');
+            assert.equal(displayedFree.find(row => row.href.includes('contract-missing')).fields.price, '—');
+            assert.equal(displayedFree.find(row => row.href.includes('contract-priced')).fields.value, 'Paid and free are opaque labels');
+            assert.equal(displayedFree.find(row => row.href.includes('contract-missing')).fields.value, 'Value without a price');
+            assert.equal(free.rows.find(row => row.href.includes('contract-priced')).sort_price, '25');
+            assert.equal(free.rows.find(row => row.href.includes('contract-priced')).sort_value, 'Paid and free are opaque labels');
             assert.equal(free.rows.find(row => row.href.includes('contract-zero')).sort_price, '0');
             const categories = payload(output, lang, 'products');
             assert.equal(categories.sv, 'section');
-            assert(categories.rows.some(row => row.href === `${prefixes[index]}/products/contract-empty/` && row.count_text === '0'));
+            assert(categories.rows.some(row => row.href === `${prefixes[index]}/products/contract-empty/` && row.sort_count === '0'));
+            assert.equal(displayedRows(output,lang,'products').find(row=>row.href===`${prefixes[index]}/products/contract-empty/`)?.fields.count,'0','Empty directories display their zero count.');
             for (const label of ['Special Products', '$5~$50']) {
                 const term = categories.rows.find(row => row.text === label);
                 assert(term, `Explicit directory ${label}`);
@@ -337,6 +354,8 @@ try {
                     .map(node => node.closest('[data-list-item]').querySelector('[data-item-field="date"]').textContent.trim()));
                 assert.deepEqual(dates, direction === 'asc' ? ['2026-08-01', '2026-08-02'] : ['2026-08-02', '2026-08-01']);
                 assert.match(await page.locator('.slot-main [data-sort-field="date"]').textContent(), /Updated/);
+                assert.equal(await page.locator('.slot-main [data-sort-field="date"]').getAttribute('aria-label'),
+                    'Sort by Updated '+(direction==='asc'?'descending':'ascending'));
                 const ordered = await page.locator(links).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
                 await page.locator(`${links}[href*="/p/contract-missing/#"]`).click();
                 await waitForBrowse(page);
@@ -347,6 +366,8 @@ try {
         console.log('PASS Lastmod ascending/descending display and article path order');
         for (const direction of ['asc', 'desc']) {
             await gotoAndWait(page, `${baseUrl}/products/free/#sort=price-${direction}`);
+            assert.equal(await page.locator('.slot-main [data-sort-field="price"]').getAttribute('aria-label'),
+                'Sort by Price '+(direction==='asc'?'descending':'ascending'));
             const ordered = await page.locator('.slot-main .item-list--products .item-control').evaluateAll(links => links.map(link => ({
                 href: new URL(link.href).pathname,
                 price: link.closest('[data-list-item]').dataset.sortPrice ?? ''
@@ -378,24 +399,25 @@ try {
         // must already be available when first-paint/runtime rebuild those rows.
         const noJs = await browser.newContext({ javaScriptEnabled: false, serviceWorkers: 'block' });
         const staticPage = await noJs.newPage();
+        const defaultItems = async () => readBreadcrumbData(await staticPage.content(),{directory:builds.directory}).defaultColumns.map(column=>column.selected);
         await staticPage.goto(`${baseUrl}/p/contract-missing/`);
+        assert.equal(await staticPage.locator('[data-slot=breadcrumb] [data-list-entry]').count(), 0, 'Path rows are not repeated in article HTML.');
+        assert.ok(await staticPage.locator('[data-root-navigation] a').count(), 'Root navigation stays available without JavaScript.');
         assert.equal(await staticPage.locator('use[href="#icon-appearance-light"]').count(), 0);
-        assert.equal(await staticPage.locator('symbol#icon-appearance-light').count(), 1, 'source-only SVG is packed without relying on SSR rows');
+        assert.equal(await staticPage.locator('symbol#icon-appearance-light').count(), 1, 'source-only SVG is packed without relying on path HTML rows');
         await staticPage.goto(`${baseUrl}/d/contract-override/child/`);
-        assert.equal(await staticPage.locator('[data-slot=breadcrumb] a[href*="/d/contract-override/child/"] use').getAttribute('href'), '#icon-rss', 'SSR column projection preserves inherited icons');
+        assert.equal((await defaultItems()).find(item => item.href.includes('/d/contract-override/child/')).icon, 'rss', 'Default metadata preserves inherited icons.');
         await staticPage.goto(`${baseUrl}/p/contract-text/`);
-        assert.equal(await staticPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
+        assert.deepEqual((await defaultItems()).find(item => item.href.includes('/p/contract-text/')).icon, {text:'EN'});
         await staticPage.goto(`${baseUrl}/products/free/`);
         assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-no-offer/"] img.icon--image').getAttribute('src'), ownImage.image);
         assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-no-offer/"] .icon--monochrome').count(), 0, 'ordinary images retain their colors');
         assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-zero/"] .icon--text').textContent(), '<b>EN</b>');
         assert.equal(await staticPage.locator('.icon--text b').count(), 0, 'text icons are escaped during SSR');
         await staticPage.goto(`${baseUrl}/p/contract-image-child/`);
-        assert.equal(await staticPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-image-child/"] img.icon--image').getAttribute('src'), inheritedImage.image);
-        assert.equal(await staticPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-image-child/"] .icon--monochrome').count(), 1, 'SSR preserves inherited monochrome');
+        assert.deepEqual((await defaultItems()).find(item => item.href.includes('/p/contract-image-child/')).icon, inheritedImage, 'Default metadata preserves inherited monochrome images.');
         await staticPage.goto(`${baseUrl}/p/contract-unclassified/`);
-        assert.equal(await staticPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-unclassified/"] img.icon--image').getAttribute('src'), assetImage.image);
-        assert.equal(await staticPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-unclassified/"] .icon--monochrome').count(), 1, 'SSR preserves own monochrome');
+        assert.deepEqual((await defaultItems()).find(item => item.href.includes('/p/contract-unclassified/')).icon, {...assetImage,monochrome:true}, 'Default metadata preserves own monochrome images.');
         await noJs.close();
 
         const iconsContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 960 } });
@@ -467,7 +489,7 @@ try {
             assert.equal(await iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
         }
         await iconsContext.close();
-        console.log('PASS inherited/own icons, source-only SVGs, SSR columns, reload and history');
+        console.log('PASS inherited/own icons, source-only SVGs, JSON path columns, reload and history');
 
         await server.setRoot(builds.name);
         const namesContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1024, height: 700 } });
@@ -477,6 +499,8 @@ try {
         const mainLinks = `${nameGrid} .item-control`;
         for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
             const prefix = prefixes[index];
+            const ascendingAction = {en:'Sort by Name ascending',zh:'按名称升序排序','zh-tw':'按名稱升冪排序'}[lang];
+            const descendingAction = {en:'Sort by Name descending',zh:'按名称降序排序','zh-tw':'按名稱降冪排序'}[lang];
             for (const list of ['d', 'd/contract-inherit', 'products/contract-name', 'contract-name-reference']) {
                 const address = `${baseUrl}${prefix}/${list}/`;
                 await gotoAndWait(namesPage, address);
@@ -487,14 +511,18 @@ try {
                     const grid = doc.querySelector('.slot-main [data-sortable]');
                     return { fields: [...grid.querySelectorAll('[data-sort-field]')].map(node => node.dataset.sortField),
                         items: [...grid.querySelectorAll('.item-control')].map(node => new URL(node.getAttribute('href'), location.href).pathname),
-                        nonNameCells: grid.querySelectorAll('[data-item-field]:not([data-item-field="name"])').length };
+                        nonNameCells: grid.querySelectorAll('[data-item-field]:not([data-item-field="name"])').length,
+                        action: grid.querySelector('[data-sort-field="name"]').getAttribute('aria-label'),
+                        oldCopy: grid.querySelector('[data-sort-title-asc],[data-sort-title-desc]')!==null };
                 }, address);
-                assert.deepEqual(staticRows, {fields: ['name'], items: expected, nonNameCells: 0}, 'SSR renders only name cells and canonical name order');
+                assert.deepEqual(staticRows, {fields: ['name'], items: expected, nonNameCells: 0, action: descendingAction, oldCopy: false}, 'SSR renders name cells, canonical order and the shared action without per-control copy');
                 assert.deepEqual(await paths(mainLinks), expected, 'Hydration preserves SSR order');
                 assert.equal(await namesPage.locator(nameGrid).getAttribute('data-sort-columns'), null);
                 assert.ok(await namesPage.locator(nameGrid).evaluate(grid => [...grid.children].every(row=>getComputedStyle(row).display==='grid'&&getComputedStyle(row).gridTemplateColumns==='225px')));
                 await namesPage.locator(`${nameGrid} [data-sort-field="name"]`).click();
                 await namesPage.waitForURL(url => new URLSearchParams(url.hash.slice(1)).get('sort') === 'name-desc');
+                assert.equal(await namesPage.locator(`${nameGrid} [data-sort-field="name"]`).getAttribute('aria-label'), ascendingAction);
+                assert.equal(await namesPage.locator(`${nameGrid} [data-sort-field="name"]`).getAttribute('title'), ascendingAction);
                 const descending = [...expected].reverse();
                 assert.deepEqual(await paths(mainLinks), descending, 'Single-column sorting reverses all names');
                 const collectionUrl = namesPage.url();
@@ -508,6 +536,8 @@ try {
                     assert.deepEqual(await paths(`${column} .item-control`), descending, 'Article path uses the same name list order');
                     assert.deepEqual(await paths(`${column} .item-control.is-current`), [articlePath]);
                     assert.match(await namesPage.locator(`${column} .path-column-sort`).textContent(), /↓/);
+                    assert.equal(await namesPage.locator(`${column} .path-column-sort`).getAttribute('aria-label'), ascendingAction);
+                    assert.equal(await namesPage.locator(`${column} .path-column-sort`).getAttribute('title'), ascendingAction);
                 };
                 await assertNameColumn();
                 await namesPage.reload();
@@ -523,8 +553,21 @@ try {
                 await namesPage.locator(`${column} .path-column-sort`).click();
                 await namesPage.waitForFunction(selector => document.querySelector(selector)?.textContent.includes('↑'), `${column} .path-column-sort`);
                 assert.deepEqual(await paths(`${column} .item-control`), expected, 'Path-column toggle uses name sorting too');
+                assert.equal(await namesPage.locator(`${column} .path-column-sort`).getAttribute('aria-label'), descendingAction);
+                assert.equal(await namesPage.locator(`${column} .path-column-sort`).getAttribute('title'), descendingAction);
             }
         }
+        await namesPage.evaluate(() => {
+            const copy = JSON.parse(document.body.dataset.collectionSortCopy);
+            copy.fields.name = 'Literal <b>$& {field}</b>';
+            document.body.dataset.collectionSortCopy = JSON.stringify(copy);
+        });
+        const literalSort = namesPage.locator('[data-slot=breadcrumb] [data-breadcrumb-collection-href="/zh-tw/contract-name-reference/"] .path-column-sort');
+        await literalSort.click();
+        await namesPage.waitForFunction(() => document.querySelector('[data-breadcrumb-collection-href="/zh-tw/contract-name-reference/"] [data-sort-indicator]')?.textContent === '↓');
+        assert.equal(await literalSort.getAttribute('aria-label'), '按Literal <b>$& {field}</b>升冪排序');
+        assert.equal(await literalSort.locator('.path-sort-label').textContent(), 'Literal <b>$& {field}</b>');
+        assert.equal(await literalSort.locator('b').count(), 0, 'Field names must remain literal text.');
         await gotoAndWait(namesPage, `${baseUrl}/zh/d/`);
         await namesPage.screenshot({path: path.join(work, 'name-list-zh.png')});
         await gotoAndWait(namesPage, `${baseUrl}/zh/p/contract-missing/#from=products/contract-name&sort=name-desc`);

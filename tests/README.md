@@ -45,9 +45,12 @@ local wheel fixtures. Without these inputs, integration cases are skipped.
 | `responsive-images.test.mjs` | Image processing, browser selection, original links and build-cache reuse |
 | `home-art.test.mjs` | Hidden home-art bundles, translated shortcode content, host navigation, resource isolation and preview rebuilds |
 | `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
+| `browser-nav-json-offline.test.mjs` | Shared column loading, slow responses, source races, failure retries and visited-path offline reload |
 | `output.test.mjs` | Repository budgets and retired-output faults |
 | `sitemap.test.mjs` | Sitemap/LLMS parity, native exclusions, language routing and rebuilds |
 | `directory-references.test.mjs` | TOML references, native taxonomy configuration, multilingual membership, feeds, canonical outputs and rebuilds |
+| `column-urls.test.mjs` | Directory-based column URLs, rejected overrides, article URLs and multilingual normalization |
+| `collection-structure.test.mjs` | Section-only collection layouts, rejected regular pages and preview validation |
 | `aggregate-time-ranges.test.mjs` | Manual aggregate ranges, exclusive tree membership, validation, feeds, source navigation and preview rebuilds |
 | `reference-site.test.mjs` | Minimal reference-site ownership, production discovery and build metadata |
 

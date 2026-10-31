@@ -2,8 +2,8 @@ import path from 'node:path';
 import {filesUnder,relativeName} from '../../../_shared/output.mjs';
 import {classify} from './policy.mjs';
 
-// Hugo fingerprints entry points; esbuild hashes their file-loader dependencies.
-const fingerprint=/(?:\.[a-f0-9]{64}|-[A-Z2-7]{8})\.[^.]+$/;
+// Recognize content-addressed resources, Hugo fingerprints and esbuild dependencies.
+const fingerprint=/(?:(?:^|\.)[a-f0-9]{64}|-[A-Z2-7]{8})\.[^.]+$/;
 
 export async function inspectFiles(outputs,basePath) {
   const issues=[],warnings=[],counts={files:0,fingerprinted:0,missingFingerprint:0,outsideFingerprint:0,

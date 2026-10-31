@@ -51,6 +51,17 @@ test('delivery recognizes native esbuild file dependencies and rejects malformed
   assert.equal((await inspect(root)).summary.outsideFingerprint,1);
 }));
 
+test('delivery recognizes full content-addressed resource names without a prefix',()=>fixture(async({root,write})=>{
+  await write('_headers',headers);await write('_redirects','');
+  await write('assets/'+digest+'.json','{}');
+  const valid=await inspect(root);
+  assert.deepEqual(valid.issues,[]);assert.equal(valid.summary.fingerprinted,1);
+  for(const name of ['a'.repeat(63)+'.json','a'.repeat(65)+'.json','x'+digest+'.json'])await write('assets/'+name,'{}');
+  await write('elsewhere/'+digest+'.json','{}');
+  const invalid=await inspect(root);
+  assert.equal(invalid.summary.missingFingerprint,3);assert.equal(invalid.summary.outsideFingerprint,1);
+}));
+
 test('classification honors SW priority, CF unset, encoded paths and HTML aliases',()=>fixture(async({root,write})=>{
   await write('_headers',headers+'/assets/live.json\n  ! Cache-Control\n  Cache-Control: no-cache\n'+
     '/%E4%B8%AD/*\n  ! Cache-Control\n  Cache-Control: immutable\n'+

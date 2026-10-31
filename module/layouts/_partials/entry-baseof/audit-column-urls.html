@@ -1,0 +1,10 @@
+{{- $site := . -}}
+{{- $pages := slice -}}
+{{- range $site.Pages -}}
+  {{- $pages = $pages | append . -}}
+  {{- range .Ancestors -}}{{- $pages = $pages | append . -}}{{- end -}}
+{{- end -}}
+{{- range $page := uniq $pages -}}
+  {{- partialCached "feature-browse/collection/assert-url.html" $page $site.Language.Lang $page.Path -}}
+  {{- partialCached "feature-browse/navigation/assert-structure.html" $page $site.Language.Lang $page.Path -}}
+{{- end -}}

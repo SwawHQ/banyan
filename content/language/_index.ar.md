@@ -1,6 +1,5 @@
 ---
 title: اللغة
-url: language/
 layout: page-collection-language
 outputs: [HTML]
 weight: 70

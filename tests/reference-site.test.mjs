@@ -74,9 +74,34 @@ test('the reference site owns its delivery data, icons and interface translation
   for(const language of languages) {
     const dictionary=parseToml(fs.readFileSync(path.join(root,'assets/i18n',language+'.toml'),'utf8'));
     assert.deepEqual(Object.keys(dictionary).sort(),Object.keys(english).sort(),language+' has every interface key');
+    assert.ok(Object.keys(dictionary).every(key=>!/^((list|products)_sort_.+_(asc|desc)|products_col_name)$/.test(key)),
+      'Sort fields share the two action templates and one name label.');
     for(const [key,value] of Object.entries(dictionary)) {
       assert.ok(value.other?.trim(),language+': '+key+' has display text');
       if(language==='ar')assert.match(value.other,/[\u0600-\u06ff]/,key+' has Arabic display text');
+    }
+    const html=fs.readFileSync(path.join(output,prefixes[languages.indexOf(language)],'p/example-product/index.html'),'utf8');
+    const body=extractStartTags(html,'body')[0],copy=JSON.parse(extractTagAttribute(body,'data-collection-sort-copy'));
+    assert.deepEqual(Object.keys(copy.actions).sort(),['asc','desc'],'Sort actions use two translated templates.');
+    for(const order of ['asc','desc']) {
+      assert.equal(copy.actions[order],dictionary['list_sort_'+order].other);
+      assert.ok(copy.actions[order].includes('{field}'),'Sort templates must retain their field placeholder.');
+    }
+    for(const route of ['articles','articles/category1','articles-all','products/examples','products-all']) {
+      const page=fs.readFileSync(path.join(output,prefixes[languages.indexOf(language)],route,'index.html'),'utf8');
+      const shared=JSON.parse(extractTagAttribute(extractStartTags(page,'body')[0],'data-collection-sort-copy'));
+      assert.deepEqual(shared,copy,'Main and path columns share one translated copy, including root collections.');
+      const controls=extractStartTags(page,'a').filter(tag=>extractTagAttribute(tag,'data-sort-control')==='true');
+      assert.equal(controls.length,3);
+      for(const tag of controls) {
+        const field=extractTagAttribute(tag,'data-sort-field'),initial=extractTagAttribute(tag,'data-sort-default-order');
+        const order=extractTagAttribute(tag,'data-sort-active')==='true'?(initial==='asc'?'desc':'asc'):initial;
+        const expected=shared.actions[order].replaceAll('{field}',()=>shared.fields[field]);
+        assert.equal(extractTagAttribute(tag,'title'),expected,'SSR keeps the current translated action tooltip.');
+        assert.equal(extractTagAttribute(tag,'aria-label'),expected,'SSR keeps the current translated accessible action.');
+        assert.equal(extractTagAttribute(tag,'data-sort-title-asc'),'');
+        assert.equal(extractTagAttribute(tag,'data-sort-title-desc'),'');
+      }
     }
   }
 });
@@ -165,8 +190,8 @@ test('settings sections use choice controls without article collection capabilit
     assert.ok(extractStartTags(main,'div').some(tag=>extractTagAttribute(tag,'data-list-view')==='choice'));
     assert.doesNotMatch(main,/\bdata-sortable\b/,'Choices keep their declared order.');
     assert.doesNotMatch(html,/\/js\/browse\/collection-sort\./,'Choices do not load article sorting.');
-    assert.deepEqual(JSON.parse(extractTagAttribute(body,'data-page-collection-source')),{});
-    assert.deepEqual(JSON.parse(extractTagAttribute(body,'data-entry-breadcrumb-sources')),[]);
+    assert.equal(extractTagAttribute(body,'data-collection-path'),'');
+    assert.deepEqual(JSON.parse(extractTagAttribute(body,'data-navigation')).columns,{});
     const schemas=extractBlocks(html,'script',tag=>extractTagAttribute(tag,'type')==='application/ld+json').map(block=>JSON.parse(block.inner));
     assert.ok(schemas.every(schema=>!['ItemList','BlogPosting'].includes(schema['@type'])),'Choices do not publish article collection schema.');
     const links=extractStartTags(main,'a'),back=links.filter(tag=>extractTagAttribute(tag,'data-page-action')==='back');

@@ -1,0 +1,3 @@
+{{- $content := . | jsonify -}}
+{{- $target := printf "site/navigation/%s.json" (sha256 $content) -}}
+{{- return (resources.FromString $target $content).RelPermalink -}}

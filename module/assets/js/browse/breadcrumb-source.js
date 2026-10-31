@@ -1,116 +1,71 @@
-import { normalizeCollectionSource } from './collection-source.js';
 import { decodeItemsPayload } from './collection-items.js';
-import { normalizePathname } from './navigation-state.js';
-import { parseEntrySources } from './entry-source.js';
-import { normalizeIcon } from './icon-value.js';
+import { normalizeFromPath } from './navigation-state.js';
+import { readNavigation, readActiveNavigationRoute } from './entry-source.js';
 
-function normalizeLinkItem(item) {
-    if (!item || typeof item !== 'object') {
-        return null;
-    }
+const loadedColumns = new Map();
+const loadingColumns = new Map();
 
-    const text = typeof item.text === 'string' ? item.text.trim() : '';
-    const href = typeof item.href === 'string' ? item.href.trim() : '';
-    if (!text || !href) {
-        return null;
+function isLocalLink(href, allowEmpty = false) {
+    if (allowEmpty && href === '') return true;
+    if (typeof href !== 'string' || !href.trim()) return false;
+    try {
+        const url = new URL(href, window.location.href);
+        return /^https?:$/.test(url.protocol) && url.origin === window.location.origin;
+    } catch (_) {
+        return false;
     }
-
-    const normalized = { text, href };
-    if (typeof item.title === 'string' && item.title.trim() !== '') {
-        normalized.title = item.title.trim();
-    }
-    if (typeof item.current === 'boolean') {
-        normalized.current = item.current;
-    }
-    const icon = normalizeIcon(item.icon);
-    if (icon) normalized.icon = icon;
-    if (typeof item.kind === 'string' && item.kind.trim() !== '') {
-        normalized.kind = item.kind.trim();
-    }
-    return normalized;
 }
 
-function decodeColumn(column) {
-    return {
-        source: normalizeCollectionSource(column?.source),
-        payload: decodeItemsPayload(column?.payload),
-        items: Array.isArray(column?.items) ? column.items.map(normalizeLinkItem).filter(Boolean) : [],
-    };
+export function readBreadcrumbColumn(logicalPath) {
+    const key = normalizeFromPath(logicalPath);
+    const navigation = readNavigation();
+    const hash = navigation?.columns[key]?.hash;
+    const url = typeof hash === 'string' && /^[a-f0-9]{64}$/.test(hash)
+        ? `${navigation.resources}${hash}.json` : '';
+    const cached = loadedColumns.get(url);
+    const payload = cached?.logicalPath === key ? cached : null;
+    return { key, url, payload, source: payload };
 }
 
-export function parseEntryBreadcrumbSources(rawValue) {
-    return parseEntrySources(rawValue).map(source => ({
-        logicalPath: source.logicalPath,
-        rootItem: normalizeLinkItem(source.rootItem),
-        columns: (Array.isArray(source.columns) ? source.columns : []).flatMap(column => {
-            const selected = normalizeLinkItem(column?.selected);
-            return selected ? [{ ...decodeColumn(column), selected }] : [];
-        }),
-        currentColumn: decodeColumn(source.currentColumn),
+export function readBreadcrumbColumns() {
+    return readActiveNavigationRoute().columns.map(column => ({
+        ...readBreadcrumbColumn(column.column),
+        selected: column.selected || window.location.pathname,
     }));
 }
 
-let cachedValue;
-let cachedSources = [];
-
-export function readEntryBreadcrumbSources() {
-    const value = document.body?.dataset.entryBreadcrumbSources || '';
-    if (value !== cachedValue) {
-        cachedSources = parseEntryBreadcrumbSources(value);
-        cachedValue = value;
+async function loadColumn(column) {
+    const key = column.url;
+    if (!key) throw new Error('Missing navigation resource');
+    if (loadedColumns.get(key)?.logicalPath === column.key) return;
+    const url = new URL(key, window.location.href);
+    if (!/^https?:$/.test(url.protocol) || url.origin !== window.location.origin) throw new Error('Navigation data must be same-origin');
+    if (!loadingColumns.has(key)) {
+        const task = (async () => {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 8000);
+            try {
+                const response = await fetch(url.href, { signal: controller.signal, credentials: 'same-origin' });
+                if (!response.ok) throw new Error('Navigation data request failed');
+                const raw = await response.json();
+                const payload = decodeItemsPayload(raw);
+                if (raw?.v !== 1 || !payload || payload.provider !== 'collection' || payload.logicalPath !== column.key
+                    || typeof raw.label !== 'string' || !raw.label.trim() || !isLocalLink(raw.href, true)
+                    || payload.rows.some(row => !isLocalLink(row.href))) {
+                    throw new Error('Navigation data does not match its column');
+                }
+                loadedColumns.set(key, payload);
+            } finally {
+                clearTimeout(timer);
+                loadingColumns.delete(key);
+            }
+        })();
+        loadingColumns.set(key, task);
     }
-    return cachedSources;
+    await loadingColumns.get(key);
 }
 
-function normalizeCollectionHref(href) {
-    const rawHref = typeof href === 'string' ? href.trim() : '';
-    if (!rawHref) {
-        return '';
-    }
-
-    try {
-        return normalizePathname(new URL(rawHref, window.location.origin).pathname);
-    } catch (error) {
-        return '';
-    }
-}
-
-function addCollectionSourceToIndex(index, source, payload = null) {
-    const hrefKey = normalizeCollectionHref(source?.href || '');
-    if (hrefKey) {
-        index.set(hrefKey, {
-            source,
-            payload: payload && typeof payload === 'object' ? payload : null,
-        });
-    }
-}
-
-export function createCollectionSourceIndex(sources) {
-    const index = new Map();
-
-    (Array.isArray(sources) ? sources : []).forEach((source) => {
-        [source.currentColumn, ...(source.columns || [])].forEach(column => {
-            addCollectionSourceToIndex(index, column?.source, column?.payload);
-        });
-    });
-
-    return index;
-}
-
-export function pickCollectionSourceByHref(index, href) {
-    if (!(index instanceof Map)) {
-        return null;
-    }
-
-    const hrefKey = normalizeCollectionHref(href);
-    return hrefKey ? index.get(hrefKey)?.source || null : null;
-}
-
-export function pickCollectionItemsByHref(index, href) {
-    if (!(index instanceof Map)) {
-        return null;
-    }
-
-    const hrefKey = normalizeCollectionHref(href);
-    return hrefKey ? index.get(hrefKey)?.payload || null : null;
+export function loadBreadcrumbColumns(columns) {
+    // Keep successful columns available when another column fails or needs a retry.
+    return Promise.allSettled(columns.map(loadColumn));
 }

@@ -11,7 +11,7 @@ export async function check({page,baseUrl,options}) {
   const currentRoot = page.locator('[data-root-navigation] [data-root-href].is-current');
   assert.equal(await currentRoot.count(),1,'Collection must have one active root entry.');
   const rootHref = await currentRoot.getAttribute('data-root-href');
-  const source = await page.evaluate(()=>JSON.parse(document.body.dataset.pageCollectionSource||'null'));
+  const source = await page.evaluate(()=>({logicalPath:document.body.dataset.collectionPath}));
   assert.ok(source?.logicalPath,'Collection source metadata is required.');
   const readRows = () => grid.evaluate(node=>{
     const fields=[...node.querySelector(':scope > [data-list-header]').children].map(cell=>cell.dataset.itemField);

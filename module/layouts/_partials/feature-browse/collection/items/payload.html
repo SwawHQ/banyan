@@ -2,13 +2,19 @@
 {{- $source := .source -}}
 {{- $config := .config -}}
 {{- $rows := .rows -}}
-{{- $fields := slice "key" "kind" "href" "text" "icon" "sort_group" "sort_name" -}}
+{{- $fields := slice "kind" "href" "text" "icon" "sort_name" -}}
 {{- if eq $config.view "products" -}}
-  {{- $fields = $fields | append "sort_price" "sort_value" "price_text" "value_text" -}}
+  {{- $fields = $fields | append "sort_price" "sort_value" -}}
 {{- else if eq $config.view "all" -}}
-  {{- $fields = $fields | append "sort_date" "sort_size" "date_text" "size_text" "size_unit" -}}
+  {{- $fields = $fields | append "sort_date" "sort_size" -}}
 {{- else if eq $config.view "directory" -}}
-  {{- $fields = $fields | append "sort_date" "sort_count" "date_text" "count_text" "count_unit" -}}
+  {{- $fields = $fields | append "sort_date" "sort_count" -}}
+{{- end -}}
+{{- range $row := $rows -}}
+  {{- if and $row.title (ne $row.title $row.text) -}}
+    {{- $fields = $fields | append "title" -}}
+    {{- break -}}
+  {{- end -}}
 {{- end -}}
 {{- $logicalPath := trim (printf "%v" ($source.logicalPath | default "")) " " -}}
 {{- $rowVector := slice -}}
@@ -26,8 +32,12 @@
   {{- $seenKeys = merge $seenKeys (dict $key $href) -}}
   {{- range $field := $fields -}}
     {{- $value := "" -}}
-    {{- with index $row $field -}}
-      {{- if eq $field "icon" -}}{{- $value = . -}}{{- else -}}{{- $value = printf "%v" . -}}{{- end -}}
+    {{- if eq $field "title" -}}
+      {{- if ne $row.title $row.text -}}{{- $value = $row.title | default "" -}}{{- end -}}
+    {{- else -}}
+      {{- with index $row $field -}}
+        {{- if eq $field "icon" -}}{{- $value = . -}}{{- else -}}{{- $value = printf "%v" . -}}{{- end -}}
+      {{- end -}}
     {{- end -}}
     {{- $rowVector = $rowVector | append $value -}}
   {{- end -}}
@@ -36,6 +46,8 @@
   "v" 1
   "p" "collection"
   "lp" $logicalPath
+  "label" ($source.label | default "")
+  "href" ($source.href | default "")
   "sv" $config.sort_variant
   "ds" $config.default_sort
   "f" $fields

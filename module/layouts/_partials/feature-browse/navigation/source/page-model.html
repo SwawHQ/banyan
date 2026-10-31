@@ -9,16 +9,11 @@
 {{- if eq $logicalPath "" -}}
   {{- errorf "Build failed: entry source page %q is missing logicalPath." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
 {{- end -}}
-{{- $pathModel := partial "feature-browse/navigation/path/model.html" (dict "ctx" $page) -}}
-{{- $rootItem := $pathModel.root_item | default dict -}}
-{{- if or (not $rootItem.text) (not $rootItem.href) -}}
-  {{- errorf "Build failed: entry source page %q has a root item missing text or href." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
-{{- end -}}
 {{- $payload := partial "feature-browse/collection/items/payload.html" (dict "page" $page "source" $source "config" $config "rows" $rows) -}}
+{{- $payloadUrl := partial "./publish.html" $payload -}}
 {{- return (dict
   "logicalPath" $logicalPath
-  "rootItem" $rootItem
-  "nodes" $pathModel.nodes
-  "currentColumn" (dict "source" $source "payload" $payload "config" $config "rows" $rows)
+  "page" $page
+  "currentColumn" (dict "source" $source "payload" $payload "payloadUrl" $payloadUrl "config" $config "rows" $rows)
   "entryHrefs" (partial "feature-browse/collection/items/page-hrefs.html" (dict "payload" $payload))
 ) -}}

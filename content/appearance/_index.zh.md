@@ -1,6 +1,5 @@
 ---
 title: 外观
-url: appearance/ #重命名内容目录时保留此网址。
 layout: page-collection-appearance
 outputs: [HTML] #不生成此栏目的 RSS 订阅源。
 weight: 80

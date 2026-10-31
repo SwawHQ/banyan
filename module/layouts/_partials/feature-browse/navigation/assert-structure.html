@@ -1,0 +1,25 @@
+{{- $page := . -}}
+{{- if partial "feature-browse/is-rendered-html.html" $page -}}
+  {{- $config := partial "feature-browse/collection/config.html" (dict "page" $page) -}}
+  {{- $slots := partial "system-ui/page-slots.html" (dict "ctx" $page) -}}
+  {{- if or $config.sortable (index $slots "breadcrumb") -}}
+    {{- $name := $page.Path -}}
+    {{- with $page.File -}}{{- $name = .Path -}}{{- end -}}
+    {{- $nodes := where $page.Ancestors.Reverse "Kind" "section" | append $page -}}
+    {{- range $node := $nodes -}}
+      {{- if eq $node.Kind "section" -}}
+        {{- if not $node.File -}}
+          {{- errorf "Public navigation: %s requires _index.md for section %q." $name $node.Path -}}
+        {{- end -}}
+        {{- if not (partial "feature-browse/is-rendered-html.html" $node) -}}
+          {{- errorf "Public navigation: %s requires an HTML page for section %q; hidden intermediate sections are not supported." $name $node.Path -}}
+        {{- end -}}
+      {{- end -}}
+      {{- $parentPath := "/" -}}
+      {{- with $node.Parent -}}{{- $parentPath = .Path -}}{{- end -}}
+      {{- if ne (path.Dir $node.Path) $parentPath -}}
+        {{- errorf "Public navigation: %s skips a section between %q and %q; add _index.md to each directory." $name $parentPath $node.Path -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

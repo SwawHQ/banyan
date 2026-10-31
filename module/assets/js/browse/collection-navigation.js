@@ -15,6 +15,7 @@ import {
     readEffectiveSortsTokens,
 } from './navigation-state.js';
 import { readPageCollectionSource } from './collection-source.js';
+import { readCollectionSortCopy, formatSortAction } from './collection-sort-copy.js';
 import {
     ENTRY_LINEAGE_FIELD,
     hasFieldValue,
@@ -102,6 +103,7 @@ function updateCollectionSortControls(list, variantName, currentToken) {
     const variant = SORT_VARIANTS[variantName];
     const current = parseSortToken(currentToken);
     if (!variant || !current) return;
+    const copy = readCollectionSortCopy();
 
     list.querySelectorAll('a[data-sort-control="true"]').forEach((control) => {
         const field = (control.dataset.sortField || '').toLowerCase();
@@ -110,9 +112,7 @@ function updateCollectionSortControls(list, variantName, currentToken) {
         const nextOrder = active ? toggleSortOrder(current.order) : defaultOrder;
         const nextToken = `${field}-${nextOrder}`;
         const indicator = control.querySelector('[data-sort-indicator]');
-        const actionLabel = nextOrder === 'asc'
-            ? control.dataset.sortTitleAsc || ''
-            : control.dataset.sortTitleDesc || '';
+        const actionLabel = formatSortAction(copy, field, nextOrder);
 
         control.href = buildSortHref(nextToken, variant.defaultToken);
         control.dataset.sortActive = active ? 'true' : 'false';

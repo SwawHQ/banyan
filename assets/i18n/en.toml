@@ -4,21 +4,11 @@ other = "Name"
 other = "Updated"
 [list_col_size]
 other = "Size"
-[list_sort_name_asc]
-other = "Sort by name ascending"
-[list_sort_name_desc]
-other = "Sort by name descending"
-[list_sort_date_asc]
-other = "Sort by update time ascending"
-[list_sort_date_desc]
-other = "Sort by update time descending"
-[list_sort_size_asc]
-other = "Sort by size ascending"
-[list_sort_size_desc]
-other = "Sort by size descending"
+[list_sort_asc]
+other = "Sort by {field} ascending"
+[list_sort_desc]
+other = "Sort by {field} descending"
 
-[products_col_name]
-other = "Name"
 [products_col_price]
 other = "Price"
 [products_col_value]
@@ -26,18 +16,6 @@ other = "Value"
 
 [products_free]
 other = "Free"
-[products_sort_name_asc]
-other = "Sort by name ascending"
-[products_sort_name_desc]
-other = "Sort by name descending"
-[products_sort_price_asc]
-other = "Sort by price ascending"
-[products_sort_price_desc]
-other = "Sort by price descending"
-[products_sort_value_asc]
-other = "Sort by value ascending"
-[products_sort_value_desc]
-other = "Sort by value descending"
 
 [label_published]
 other = "Published"
@@ -53,6 +31,9 @@ other = "Directory"
 
 [language_return_missing]
 other = "This page has no {lang} version. Showing the original content."
+
+[navigation_load_failed]
+other = "Navigation could not load."
 
 [notFoundTitle]
 other = "Page not found"

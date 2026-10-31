@@ -18,7 +18,7 @@ import {command as languageCommand} from '../.agents/skills/swaw-banyan/tasks/ch
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan');
-const parent=fs.realpathSync.native(os.tmpdir()),panel='/prefs/update/',from='/reader-start/',language='/prefs/locale/';
+const parent=path.join(fs.realpathSync.native(os.tmpdir()),'swaw/banyan/browser-update-tests'),panel='/prefs/update/',from='/reader-start/',language='/prefs/locale/';
 const versions=['v20261010000001','v20261010000002'];
 let work,skill,old,next,off;
 const faults={};
@@ -38,6 +38,7 @@ function languageCLI(page=language,to='zh',directory=old){
   assert.ifError(result.error);return result;
 }
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-update-'));skill=path.join(work,'skill');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const runtime='node';
@@ -49,10 +50,12 @@ before(()=>{
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
   for(const lang of ['en','zh','zh-tw']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
+    write(path.join(content,'prefs','_index'+suffix+'.md'),'---\ntitle: Preferences\nlayout: page-collection-directory-name-only\n---\n');
     for(const [name,url] of [['powered-by',panel],['language',language]]) {
       const filename=(name==='language'?'_index':'index')+suffix+'.md';
-      const text=fs.readFileSync(path.join(root,'content',name,filename),'utf8').replace(/^url:.*$/m,'url: '+prefix+url+'\n');
-      write(path.join(content,name,filename),text);
+      const text=fs.readFileSync(path.join(root,'content',name,filename),'utf8');
+      if(name==='language')write(path.join(content,url,filename),text.replace(/^url:.*\r?\n/m,''));
+      else write(path.join(content,name,filename),text.replace(/^url:.*$/m,'url: '+prefix+url+'\n'));
     }
     write(path.join(content,'reader-start/index'+suffix+'.md'),`---\ntitle: Independent update source\nurl: ${prefix}${from}\nlayout: page-article-norss\nweight: 87\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nIndependent update source.`);
   }

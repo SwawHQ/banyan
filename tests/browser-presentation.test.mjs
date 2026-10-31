@@ -84,7 +84,7 @@ test('Chromium keeps a long header visible before and after a native sort click'
 test('Chromium rejects clipped controls, missing titles and spacing changed by sorting',{timeout:30000},()=>{
   const clipped=fixture('clipped');inject(clipped,'d/presentation/child','css','.path-column-label{min-width:600px!important}');
   const clip=cli('breadcrumb/header',['--page',collection,'--widths','390'],clipped);assert.equal(clip.status,1);assert.match(clip.stderr,/clip the sort control/);
-  const title=fixture('title');inject(title,'d/presentation/child','js',"document.querySelector('.path-column-label').removeAttribute('title');");
+  const title=fixture('title');inject(title,'d/presentation/child','js',"function removeTitle(){const label=document.querySelector('.path-column-label');if(label)label.removeAttribute('title');else requestAnimationFrame(removeTitle);}removeTitle();");
   const missing=cli('breadcrumb/header',['--page',collection,'--widths','390'],title);assert.equal(missing.status,1);assert.match(missing.stderr,/full title/);
   const gap=fixture('sort-gap');inject(gap,'d/presentation/child','js',"document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelector('.path-column-separator').style.marginInline='12px';});");
   const changed=cli('breadcrumb/header',['--page',collection,'--widths','390'],gap);assert.equal(changed.status,1);assert.match(changed.stderr,/retain header spacing/);

@@ -1,6 +1,5 @@
 ---
 title: Language
-url: language/ #Keep this route when renaming the content directory.
 layout: page-collection-language
 outputs: [HTML] #Disable this section's RSS feed.
 weight: 70

@@ -6,6 +6,7 @@ import {
 import { normalizeCollectionSource } from './collection-source.js';
 import { normalizeIcon } from './icon-value.js';
 import { initAutoScrollbar } from './auto-scrollbar.js';
+import { readCollectionSortCopy, formatSortAction } from './collection-sort-copy.js';
 
 function normalizeBreadcrumbItemKind(item) {
     const kind = item && typeof item.kind === 'string' ? item.kind.trim().toLowerCase() : '';
@@ -59,23 +60,6 @@ function buildCollectionItemContent(item) {
     title.appendChild(text);
     fragment.append(icon, title);
     return fragment;
-}
-
-function readCollectionSortCopy() {
-    const rawCopy = document.body?.dataset.collectionSortCopy || '';
-    if (!rawCopy) {
-        return { fields: {}, actions: {} };
-    }
-
-    try {
-        const copy = JSON.parse(rawCopy);
-        return {
-            fields: copy?.fields && typeof copy.fields === 'object' ? copy.fields : {},
-            actions: copy?.actions && typeof copy.actions === 'object' ? copy.actions : {},
-        };
-    } catch (error) {
-        return { fields: {}, actions: {} };
-    }
 }
 
 function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
@@ -132,10 +116,11 @@ export function updateCollectionColumnHeader(header, source, state, lineageLogic
     );
     const toggle = header.querySelector('[data-collection-sort-toggle]');
     toggle.href = buildCollectionSortToggleHref(source, window.location.href, lineageLogicalPath);
-    const actionLabel = copy.actions[state.nextToken] || state.nextToken;
+    const fieldLabel = copy.fields[state.field] || state.field;
+    const actionLabel = formatSortAction(copy, state.field, state.order === 'asc' ? 'desc' : 'asc');
     toggle.title = actionLabel;
     toggle.setAttribute('aria-label', actionLabel);
-    toggle.querySelector('.path-sort-label').textContent = copy.fields[state.field] || state.field;
+    toggle.querySelector('.path-sort-label').textContent = fieldLabel;
     toggle.querySelector('[data-sort-indicator]').textContent = state.order === 'asc' ? '↑' : '↓';
 }
 
@@ -182,23 +167,35 @@ export function renderPathColumn(
         return;
     }
 
+    column.removeAttribute('data-navigation-failed');
+    column.dataset.navigationColumn = collectionSource?.logicalPath || '';
+    column.dataset.sortVariant = collectionSource?.sortVariant || '';
+    column.dataset.defaultSort = collectionSource?.defaultSort || '';
+    if (collectionSource?.href) column.dataset.breadcrumbCollectionHref = collectionSource.href;
+    else delete column.dataset.breadcrumbCollectionHref;
     initAutoScrollbar(column);
     column.replaceChildren(buildCollectionColumnList(items, collectionSource, options));
 }
 
-function fillPathColumn(column, model) {
-    const collectionHref = model.source?.href || '';
-    if (collectionHref) {
-        column.dataset.breadcrumbCollectionHref = collectionHref;
-    } else {
+function fillPathColumn(column, model, error) {
+    column.dataset.navigationColumn = model.key;
+    column.toggleAttribute('data-navigation-failed', model.failed === true);
+    if (model.failed) {
         delete column.dataset.breadcrumbCollectionHref;
+        delete column.dataset.sortVariant;
+        delete column.dataset.defaultSort;
+        const message = document.createElement('p');
+        message.setAttribute('role', 'status');
+        message.textContent = error;
+        column.replaceChildren(message);
+        return;
     }
     renderPathColumn(column, model.items, model.source);
 }
 
-export function renderPathColumns(models) {
+export function renderPathColumns(models, error = '') {
     const nav = document.querySelector('[data-slot="breadcrumb"]');
-    if (!nav || !Array.isArray(models) || models.length === 0) {
+    if (!nav || !Array.isArray(models)) {
         return false;
     }
 
@@ -213,7 +210,7 @@ export function renderPathColumns(models) {
             column.dataset.collectionColumn = 'true';
             nav.appendChild(column);
         }
-        fillPathColumn(column, model);
+        fillPathColumn(column, model, error);
     });
     columns.slice(models.length).forEach(column => column.remove());
 

@@ -1,121 +1,66 @@
-import {
-    buildPathColumnItems,
-    buildSelectedPathColumn,
-} from './breadcrumb-items.js';
-import { normalizeFromPath, normalizePathname, readCurrentFromPath } from './navigation-state.js';
-import {
-    pickSourceByLogicalPath,
-    parseEntrySelection,
-} from './entry-source.js';
-import { readEntryBreadcrumbSources } from './breadcrumb-source.js';
-import { readPageCollectionSource } from './collection-source.js';
+import { buildPathColumnItems } from './breadcrumb-items.js';
+import { normalizeFromPath, normalizePathname, applyFromPathToUrl, readCurrentFromPath } from './navigation-state.js';
+import { loadBreadcrumbColumns, readBreadcrumbColumns, readBreadcrumbColumn } from './breadcrumb-source.js';
+import { readNavigation, readActiveNavigationRoute } from './entry-source.js';
 import { renderPathColumns } from './path-render.js';
 import { refreshBreadcrumbCollectionColumns } from './breadcrumb-column-sort.js';
+import { refreshRootSelection } from './root-navigation.js';
+import { refreshMainCollectionNavigation } from './collection-navigation.js';
 
-const ENTRY_BREADCRUMB_PENDING_ATTR = 'data-entry-breadcrumb-pending';
-const BREADCRUMB_SORT_PENDING_ATTR = 'data-breadcrumb-sort-pending';
-
-function buildAncestorColumns(source) {
-    return (source?.columns || []).map(column => {
-        let selectedPathname = '';
-        try {
-            selectedPathname = normalizePathname(new URL(column.selected.href, window.location.origin).pathname);
-        } catch (error) { }
-        const items = column.payload
-            ? buildPathColumnItems(column.payload, column.source, { selectedPathname })
-            : column.items;
-        return {
-            source: column.source,
-            items: items.length ? items : [{ ...column.selected, current: false }],
-        };
-    });
-}
-
-export function buildCurrentPathColumn(source, currentText, currentTitle, currentHref) {
+export function buildPathColumn(column) {
     let selectedPathname = '';
     try {
-        selectedPathname = normalizePathname(new URL(currentHref, window.location.origin).pathname);
-    } catch (error) { }
-
-    const selectedColumn = buildSelectedPathColumn(source, selectedPathname, currentTitle);
-    if (selectedColumn) {
-        return selectedColumn;
-    }
-    if (!currentText || !currentHref) {
-        return null;
-    }
-
+        selectedPathname = normalizePathname(new URL(column.selected, window.location.origin).pathname);
+    } catch (_) { }
     return {
-        source: null,
-        items: [{ text: currentText, title: currentTitle, href: currentHref, current: true }],
+        key: column.key, source: column.source, failed: !column.payload,
+        items: column.payload ? buildPathColumnItems(column.payload, column.source, { selectedPathname }) : [],
     };
 }
 
-function buildEntryColumns(source) {
-    const columns = buildAncestorColumns(source);
-    const body = document.body;
-    const currentColumn = buildCurrentPathColumn(
-        source,
-        body?.dataset.currentPageText || document.title || '',
-        body?.dataset.currentPageTitle || document.title || '',
-        `${window.location.pathname}${window.location.search}${window.location.hash}`
-    );
-    if (currentColumn) {
-        columns.push(currentColumn);
-    }
-    return columns;
-}
+let initialization = 0;
 
-function buildCollectionPathColumns(sources, requiredAncestorPath = '') {
-    const pageCollectionSource = readPageCollectionSource();
-    const requiredAncestor = normalizeFromPath(requiredAncestorPath);
-    if (
-        requiredAncestor
-        && !pageCollectionSource?.logicalPath?.startsWith(requiredAncestor)
-    ) {
-        return [];
-    }
-    const source = pageCollectionSource
-        ? pickSourceByLogicalPath(sources, pageCollectionSource.logicalPath)
-        : null;
-    return source ? buildAncestorColumns(source) : [];
-}
-
-function clearPending(name) {
-    document.documentElement?.removeAttribute(name);
-}
-
-export function initializeBreadcrumb() {
+export async function initializeBreadcrumb() {
+    const request = ++initialization;
     const html = document.documentElement;
-    const entryPending = html.getAttribute(ENTRY_BREADCRUMB_PENDING_ATTR) === 'true';
-    const sortPending = html.getAttribute(BREADCRUMB_SORT_PENDING_ATTR) === 'true';
+    const entryPending = html.getAttribute('data-entry-breadcrumb-pending') === 'true';
+    const sortPending = html.getAttribute('data-breadcrumb-sort-pending') === 'true';
     const result = { entryRendered: false, sortRendered: false };
-    if (!entryPending && !sortPending) {
-        return result;
-    }
-
     try {
-        const sources = readEntryBreadcrumbSources();
-        if (entryPending) {
-            const fromPath = readCurrentFromPath();
-            const selection = parseEntrySelection(sources, fromPath);
-            // A collection URL may name its ancestor in `from` while its source model is
-            // keyed by the current collection. In that case only its ancestor columns
-            // belong in the path; the current collection is already the main column.
-            const columns = selection
-                ? buildEntryColumns(selection.source)
-                : buildCollectionPathColumns(sources, fromPath);
-            result.entryRendered = renderPathColumns(columns);
+        if (!document.querySelector('[data-slot="breadcrumb"]')) return result;
+        const route = readActiveNavigationRoute();
+        const requested = readCurrentFromPath();
+        if (requested && !route.from && requested !== normalizeFromPath(document.body?.dataset.collectionPath)) {
+            const url = new URL(window.location.href);
+            applyFromPathToUrl(url, '');
+            window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
         }
-
-        if (sortPending) {
-            refreshBreadcrumbCollectionColumns();
-            result.sortRendered = true;
+        await loadBreadcrumbColumns(readBreadcrumbColumns());
+        // A later source selection owns the DOM, even if this request finishes last.
+        if (request !== initialization) return { ...result, stale: true };
+        const terminal = route.from ? readBreadcrumbColumn(route.from).payload : null;
+        const pathname = normalizePathname(window.location.pathname);
+        const invalid = terminal && !terminal.rows.some(row => row.kind === 'page'
+            && normalizePathname(new URL(row.href, window.location.origin).pathname) === pathname);
+        if (invalid && readCurrentFromPath() === route.from) {
+            const url = new URL(window.location.href);
+            applyFromPathToUrl(url, '');
+            window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+            await loadBreadcrumbColumns(readBreadcrumbColumns());
+            if (request !== initialization) return { ...result, stale: true };
+            refreshRootSelection();
         }
+        if (entryPending || invalid) {
+            result.entryRendered = renderPathColumns(readBreadcrumbColumns().map(buildPathColumn), readNavigation()?.error || '');
+        }
+        refreshBreadcrumbCollectionColumns();
+        refreshMainCollectionNavigation();
+        result.sortRendered = sortPending;
     } finally {
-        if (entryPending) clearPending(ENTRY_BREADCRUMB_PENDING_ATTR);
-        if (sortPending) clearPending(BREADCRUMB_SORT_PENDING_ATTR);
+        if (request === initialization) {
+            if (entryPending) html.removeAttribute('data-entry-breadcrumb-pending');
+            if (sortPending) html.removeAttribute('data-breadcrumb-sort-pending');
+        }
     }
-
     return result;
 }

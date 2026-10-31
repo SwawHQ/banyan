@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict';
 
+export const readLanguageHome=page=>page.locator('[data-root-navigation] [data-root-href]').evaluateAll(nodes=>{
+  const paths=[...new Set(nodes.map(node=>new URL(node.dataset.rootHref,location.href))
+    .filter(url=>url.origin===location.origin).map(url=>url.pathname))];
+  return paths.find(path=>paths.every(other=>other.startsWith(path)))||'';
+});
+
 export async function assertRootLinks(page) {
   const links=await page.locator('[data-root-href]').evaluateAll(nodes=>nodes.map(node=>({
     tag:node.tagName,href:node.href,root:node.dataset.rootHref,target:node.getAttribute('target'),download:node.hasAttribute('download')

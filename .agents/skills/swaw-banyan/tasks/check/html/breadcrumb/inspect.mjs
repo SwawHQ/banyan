@@ -1,6 +1,7 @@
 import {readPages} from '../../../_shared/html/read.mjs';
-import {decodeHtmlAttribute,extractAttribute,extractTagAttribute,extractStartTags} from '../../../_shared/html/markup.mjs';
+import {extractTagAttribute,extractStartTags} from '../../../_shared/html/markup.mjs';
 import {extractBlocks} from '../../../_shared/html/blocks.mjs';
+import {readBreadcrumbData} from '../../../_shared/html/breadcrumb.mjs';
 
 function inspectBreadcrumbPrefetchContract(text) {
     const issues = [];
@@ -45,26 +46,19 @@ function countCompactBreadcrumbItems(value) {
 }
 
 
-export function breadcrumbRows(pages) {
+export function breadcrumbRows(pages,{directory}={}) {
+  const cache=new Map();
   return pages.map(page => {
-    const source = decodeHtmlAttribute(extractAttribute(page.text,'data-entry-breadcrumb-sources'));
-    let breadcrumbParseError = '', sources = [];
-    if (source) {
-      try {
-        const value = JSON.parse(source);
-        if (!Array.isArray(value)) breadcrumbParseError = 'data-entry-breadcrumb-sources is not a JSON array';
-        else sources = value;
-      } catch (error) { breadcrumbParseError = error.message; }
-    }
-    return {...page,breadcrumbParseError,breadcrumbPayloadBytes:Buffer.byteLength(source),
-      breadcrumbSourceCount:sources.length,breadcrumbItemCount:countCompactBreadcrumbItems(sources),
+    const {sources,columns,navigationText,error}=readBreadcrumbData(page.text,{directory,pagePath:page.relativePath,cache});
+    return {...page,breadcrumbParseError:error,breadcrumbPayloadBytes:Buffer.byteLength(navigationText),
+      breadcrumbSourceCount:sources.length,breadcrumbItemCount:countCompactBreadcrumbItems(columns),
       breadcrumbSourcePaths:sources.map(value => value?.logicalPath).filter(value => typeof value === 'string'),
       ...inspectBreadcrumbPrefetchContract(page.text)};
   });
 }
 export async function inspect(directory) {
   const {pages} = await readPages(directory), issues = [];
-  for (const row of breadcrumbRows(pages)) {
+  for (const row of breadcrumbRows(pages,{directory})) {
     if (row.breadcrumbParseError) issues.push(`Invalid breadcrumb payload on ${row.relativePath}: ${row.breadcrumbParseError}`);
     if (/\sdata-breadcrumb-collection-source\s*=/i.test(row.text)) {
       issues.push('Breadcrumb collection source JSON must come from the page registry: ' + row.relativePath);

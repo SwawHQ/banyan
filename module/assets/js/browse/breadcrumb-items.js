@@ -165,7 +165,7 @@ export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
     }
 }
 
-function buildPathColumnItemsFromDecodedRows(decoded, collectionSource, { selectedKey = '', selectedPathname = '' } = {}) {
+function buildPathColumnItemsFromDecodedRows(decoded, collectionSource, { selectedPathname = '' } = {}) {
     if (!decoded || !collectionSource?.logicalPath) {
         return [];
     }
@@ -188,9 +188,7 @@ function buildPathColumnItemsFromDecodedRows(decoded, collectionSource, { select
             }
 
             let current = false;
-            if (selectedKey && row?.key === selectedKey) {
-                current = true;
-            } else if (selectedPathname) {
+            if (selectedPathname) {
                 try {
                     current = normalizePathname(new URL(row.href, window.location.origin).pathname) === selectedPathname;
                 } catch (error) {
@@ -199,10 +197,11 @@ function buildPathColumnItemsFromDecodedRows(decoded, collectionSource, { select
             }
 
             const item = {
-                text: typeof row.text === 'string' && row.text !== '' ? row.text : row.key,
+                text: typeof row.text === 'string' && row.text !== '' ? row.text : row.href,
                 href,
                 current,
             };
+            if (typeof row.title === 'string' && row.title) item.title = row.title;
             const icon = normalizeIcon(row.icon);
             if (icon) item.icon = icon;
             const kind = normalizeBreadcrumbItemKind(row.kind);
@@ -221,64 +220,4 @@ export function buildPathColumnItems(decoded, collectionSource, selection = {}) 
     }
 
     return buildPathColumnItemsFromDecodedRows(decoded, collectionSource, selection);
-}
-
-function findSelectedRow(rows, selectedPathname = '') {
-    if (!Array.isArray(rows) || rows.length === 0) {
-        return null;
-    }
-
-    const rawSelectedPathname = typeof selectedPathname === 'string' ? selectedPathname.trim() : '';
-    if (!rawSelectedPathname) {
-        return null;
-    }
-    const normalizedSelectedPathname = normalizePathname(rawSelectedPathname);
-
-    return rows.find((row) => {
-        if (!row?.href) {
-            return false;
-        }
-
-        try {
-            return normalizePathname(new URL(row.href, window.location.origin).pathname) === normalizedSelectedPathname;
-        } catch (error) {
-            return false;
-        }
-    }) || null;
-}
-
-export function buildSelectedPathColumn(source, selectedPathname = '', selectedTitle = '') {
-    const normalizedSelectedPathname = typeof selectedPathname === 'string' ? selectedPathname.trim() : '';
-    const normalizedSelectedTitle = typeof selectedTitle === 'string' ? selectedTitle.trim() : '';
-    if (!source || !normalizedSelectedPathname) {
-        return null;
-    }
-
-    const collectionSource = normalizeCollectionSource(source.currentColumn?.source);
-    if (!collectionSource || !supportsItemsPayloadProvider(collectionSource.provider)) {
-        return null;
-    }
-
-    const decoded = source.currentColumn?.payload;
-    if (!decoded) {
-        return null;
-    }
-
-    const selectedRow = findSelectedRow(decoded.rows, normalizedSelectedPathname);
-    if (!selectedRow) {
-        return null;
-    }
-
-    const selectedKey = selectedRow.key || '';
-    const columnItems = buildPathColumnItemsFromDecodedRows(decoded, collectionSource, {
-        selectedKey,
-        selectedPathname: normalizedSelectedPathname,
-    });
-    if (normalizedSelectedTitle) {
-        const selectedColumnItem = columnItems.find((columnItem) => columnItem.current === true);
-        if (selectedColumnItem) {
-            selectedColumnItem.title = normalizedSelectedTitle;
-        }
-    }
-    return { source: collectionSource, items: columnItems };
 }

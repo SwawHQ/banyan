@@ -50,7 +50,9 @@ export function decodeItemsPayload(payload) {
     const provider = typeof payload.p === 'string' ? payload.p.trim().toLowerCase() : '';
     const logicalPath = typeof payload.lp === 'string' ? normalizeFromPath(payload.lp) : '';
 
-    return { provider, logicalPath, sortVariant, defaultSort, rows };
+    const label = typeof payload.label === 'string' ? payload.label : '';
+    const href = typeof payload.href === 'string' ? payload.href : '';
+    return { provider, logicalPath, sortVariant, defaultSort, label, href, rows };
 }
 
 function readItemsRowValue(row, fieldConfig) {
@@ -62,11 +64,11 @@ function readItemsRowValue(row, fieldConfig) {
 }
 
 function readItemsRowGroup(row) {
-    return row?.sort_group ?? 0;
+    return row?.kind === 'page' ? 1 : 0;
 }
 
 function readItemsRowStableKey(row) {
-    return row?.href || row?.key || (row?._originalIndex ?? '');
+    return row?.href || (row?._originalIndex ?? '');
 }
 
 export function readRequestedSortToken(sortVariant, logicalPath = '', defaultSort = '') {

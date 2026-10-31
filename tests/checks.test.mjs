@@ -371,7 +371,7 @@ test('sitemap checks cross-file indexing and robots validates declared Sitemap U
 });
 test('breadcrumb and prefetch payload checks keep parsing failures and runtime pairing separate',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
-  const breadcrumb = output('bad breadcrumb',html.replace('<body>','<body><nav data-slot=breadcrumb data-entry-breadcrumb-sources="{"><a href=/other/>Other</a></nav>'));
+  const breadcrumb = output('bad breadcrumb',html.replace('<body>','<body data-navigation="{"><nav data-slot=breadcrumb><a href=/other/>Other</a></nav>'));
   checked('check/html/breadcrumb',breadcrumb,/Invalid breadcrumb payload/);
   assert.equal(cli('check/prefetch/payload',[breadcrumb]).status,0);
   const prefetch = output('bad prefetch',html.replace('</body>','<script type=application/json id=site-prefetch-data>{broken}</script></body>'));

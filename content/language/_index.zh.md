@@ -1,6 +1,5 @@
 ---
 title: 语言
-url: language/ #重命名内容目录时保留此网址。
 layout: page-collection-language
 outputs: [HTML] #不生成此栏目的 RSS 订阅源。
 weight: 70

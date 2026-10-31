@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
+import {readLanguageHome} from '../../nav/_shared/links.mjs';
 
 export async function checkEmptyHistory(page,source,pages) {
   const cases=[];
@@ -17,7 +18,7 @@ export async function checkEmptyHistory(page,source,pages) {
       const back=visit.locator('a[data-page-action="back"]'),count=await back.count();
       if(!count)continue;
       assert.equal(count,1,'A settings page must have one Back link.');
-      const home=await visit.locator('body').getAttribute('data-site-root');assert.ok(home,'Settings must declare their language home.');
+      const home=await readLanguageHome(visit);assert.ok(home,'Settings must link to their language home.');
       const expected=new URL(home,source.origin).href,language=await visit.locator('html').getAttribute('lang');
       assert.equal(new URL(await back.getAttribute('href'),visit.url()).href,expected,'Back without history must link to the current language home.');
       await back.click();await visit.waitForURL(expected,{waitUntil:'load'});await waitForBrowse(visit);await afterPaint(visit);

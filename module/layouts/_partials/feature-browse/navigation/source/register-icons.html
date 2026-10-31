@@ -1,28 +1,20 @@
 {{- /* Cached models do not register dependencies on the rendering page. */ -}}
 {{- $page := .page -}}
+{{- $columns := .default_columns | default slice -}}
 {{- range .sources -}}
-  {{- $payloads := slice .currentColumn.payload -}}
-  {{- $items := slice -}}
-  {{- range .columns -}}
-    {{- $payloads = $payloads | append (.payload | default dict) -}}
-    {{- $items = $items | append .selected -}}
-    {{- range .items | default slice -}}{{- $items = $items | append . -}}{{- end -}}
-  {{- end -}}
-  {{- range $payloads -}}
-    {{- with .c.icon -}}{{- if not (reflect.IsMap .) -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}{{- end -}}
-    {{- $fields := .f | default slice -}}
-    {{- $values := .rv | default slice -}}
-    {{- range $column, $field := $fields -}}
-      {{- if eq $field "icon" -}}
-        {{- range $offset, $value := $values -}}
-          {{- if and (eq (mod $offset (len $fields)) $column) $value (not (reflect.IsMap $value)) -}}
-            {{- $page.Store.SetInMap "used_icons" $value true -}}
-          {{- end -}}
+  {{- range .columns -}}{{- $columns = $columns | append . -}}{{- end -}}
+  {{- $columns = $columns | append .currentColumn -}}
+{{- end -}}
+{{- range $columns -}}
+  {{- $fields := .payload.f | default slice -}}
+  {{- $values := .payload.rv | default slice -}}
+  {{- range $column, $field := $fields -}}
+    {{- if eq $field "icon" -}}
+      {{- range $offset, $value := $values -}}
+        {{- if and (eq (mod $offset (len $fields)) $column) $value (not (reflect.IsMap $value)) -}}
+          {{- $page.Store.SetInMap "used_icons" $value true -}}
         {{- end -}}
       {{- end -}}
     {{- end -}}
-  {{- end -}}
-  {{- range $items -}}
-    {{- with .icon -}}{{- if not (reflect.IsMap .) -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}{{- end -}}
   {{- end -}}
 {{- end -}}

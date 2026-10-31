@@ -18,7 +18,7 @@ import {runtimeState} from '../.agents/skills/swaw-banyan/tasks/check/browser/pr
 import {recordRuntime} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/overlap/check.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),skill=path.join(root,'.agents/skills/swaw-banyan');
-const parent=fs.realpathSync(os.tmpdir()),probePage='/prefetch-probe/',debugPage='/diagnostics/prefetch/';
+const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-prefetch-tests'),probePage='/prefetch-probe/',debugPage='/diagnostics/prefetch/';
 let work,full,off,duplicate,prerenderFilter,columns,splitColumns,rawLinks;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(name,directory=full,args=[]) {
@@ -71,6 +71,7 @@ function noNative() {
   HTMLScriptElement.supports=value=>value==='speculationrules'?false:supports(value);
 }
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-prefetch-'));
   const content=path.join(work,'content'),layouts=path.join(work,'layouts'),config=path.join(work,'fixture.toml');
   fixtureContentDirectory(content);
@@ -95,7 +96,7 @@ before(()=>{
   for(const render of ['link','never'])write(path.join(content,'unpublished-'+render+'/index.md'),
     '---\ntitle: Unpublished '+render+'\nurl: /000-unpublished-'+render+'/\nlayout: page-article-norss\nbuild:\n  render: '+render+'\n---\n');
   for(const route of ['d/prefetch-scopes','d/prefetch-scopes/child','d/prefetch-scopes/sibling'])
-    write(path.join(content,route,'_index.md'),'---\ntitle: Scope collection\nurl: /'+route+'/\n---\n');
+    write(path.join(content,route,'_index.md'),'---\ntitle: Scope collection\n---\n');
   for(const [index,name] of ['one','two'].entries())write(path.join(content,'d/prefetch-scopes/child',name+'.md'),
     '---\ntitle: '+name+'\nurl: /d/prefetch-scopes/child/'+name+'/\nlayout: page-article-norss\ndate: 2026-01-0'+(index+1)+'\n---\nScope article.');
   const mount=(directory,target)=>'[[module.mounts]]\nsource = '+JSON.stringify(directory.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n';

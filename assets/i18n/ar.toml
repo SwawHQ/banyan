@@ -4,21 +4,11 @@ other = "الاسم"
 other = "آخر تحديث"
 [list_col_size]
 other = "حجم"
-[list_sort_name_asc]
-other = "ترتيب الاسم تصاعديًا"
-[list_sort_name_desc]
-other = "ترتيب الاسم تنازليًا"
-[list_sort_date_asc]
-other = "ترتيب وقت التحديث تصاعديًا"
-[list_sort_date_desc]
-other = "ترتيب وقت التحديث تنازليًا"
-[list_sort_size_asc]
-other = "ترتيب الحجم تصاعديًا"
-[list_sort_size_desc]
-other = "ترتيب الحجم تنازليًا"
+[list_sort_asc]
+other = "ترتيب {field} تصاعديًا"
+[list_sort_desc]
+other = "ترتيب {field} تنازليًا"
 
-[products_col_name]
-other = "الاسم"
 [products_col_price]
 other = "السعر"
 [products_col_value]
@@ -26,18 +16,6 @@ other = "الفائدة"
 
 [products_free]
 other = "مجاني"
-[products_sort_name_asc]
-other = "ترتيب الاسم تصاعديًا"
-[products_sort_name_desc]
-other = "ترتيب الاسم تنازليًا"
-[products_sort_price_asc]
-other = "ترتيب السعر تصاعديًا"
-[products_sort_price_desc]
-other = "ترتيب السعر تنازليًا"
-[products_sort_value_asc]
-other = "ترتيب الفائدة تصاعديًا"
-[products_sort_value_desc]
-other = "ترتيب الفائدة تنازليًا"
 
 [label_published]
 other = "تاريخ النشر"
@@ -53,6 +31,9 @@ other = "التصنيف"
 
 [language_return_missing]
 other = "لا تتوفر نسخة من هذه الصفحة باللغة {lang}. يُعرض المحتوى الأصلي."
+
+[navigation_load_failed]
+other = "تعذر تحميل التنقل."
 
 [notFoundTitle]
 other = "الصفحة غير موجودة"

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {assertChoices,chooseLanguage} from '../choices/check.mjs';
+import {readLanguageHome} from '../../nav/_shared/links.mjs';
 
 export async function checkNewTabReturn(page,source,settings,code) {
   const visit=await page.context().newPage();let opened;
@@ -20,7 +21,7 @@ export async function checkNewTabReturn(page,source,settings,code) {
       assert.equal(await opened.evaluate(()=>history.length),1,'Language choices must not add a previous page to a new tab.');
     }
     const back=opened.locator('a[data-page-action="back"]');assert.equal(await back.count(),1,'Language settings must have one Back link.');
-    const home=await opened.locator('body').getAttribute('data-site-root');assert.ok(home,'Settings must declare their language home.');
+    const home=await readLanguageHome(opened);assert.ok(home,'Settings must link to their language home.');
     const expected=new URL(home,source.origin).href;
     assert.equal(new URL(await back.getAttribute('href'),opened.url()).href,expected,'A new language tab must link Back to its selected language home.');
     await back.click();await opened.waitForURL(expected,{waitUntil:'load'});await waitForBrowse(opened);await afterPaint(opened);

@@ -1,6 +1,5 @@
 ---
 title: 外觀
-url: appearance/ #重新命名內容目錄時，保留此網址。
 layout: page-collection-appearance
 outputs: [HTML] #不產生此欄目的 RSS 訂閱來源。
 weight: 80

@@ -405,6 +405,55 @@ test('bucket caching preserves query keys, validates versioned responses and war
     'A resource failure must not return offline HTML.');
 });
 
+test('visited navigation JSON stays offline without warming unused source columns',async()=>{
+  const output=contentOutput??=passed(build('content-version'));
+  const urls={
+    '/articles/':'/site/navigation/'+'0'.repeat(64)+'.json',
+    '/articles/tools/':'/site/navigation/'+'1'.repeat(64)+'.json',
+    '/articles-all/':'/site/navigation/'+'2'.repeat(64)+'.json',
+  };
+  const encoded=JSON.stringify({home:'/',resources:'/site/navigation/',columns:Object.fromEntries(Object.keys(urls).map((key,index)=>[key,String(index).repeat(64)])),
+    default:'/articles/tools/'}).replaceAll('"','&quot;');
+  const html='<html><body data-navigation="'+encoded+'">'+
+    '<script src="/js/shared.hash.js"></script><p>Article</p></body></html>';
+  let offline=false;
+  const runtime=cachedWorker(output,request=>{
+    if(offline)throw new TypeError('Network unavailable');
+    const pathname=new URL(request.url).pathname;
+    if(pathname==='/article/')return new Response(html,{headers:{'Content-Type':'text/html'}});
+    if(pathname==='/js/shared.hash.js')return new Response('/* script */',{headers:{'Content-Type':'text/javascript'}});
+    const logicalPath=Object.keys(urls).find(key=>urls[key]===pathname);
+    if(logicalPath)return Response.json({lp:logicalPath,f:['text'],rv:['Entry']});
+    throw new Error('Unexpected request '+request.url);
+  });
+  await runtime.probe.warmNavigationUrl('https://example.test/article/#from=articles/tools');
+  assert.deepEqual(runtime.requests.map(request=>new URL(request.url).pathname).sort(),
+    ['/article/','/js/shared.hash.js'],'HTML warming must not fetch every candidate source JSON.');
+  const selected=['/articles/','/articles/tools/'];
+  await Promise.all(selected.map(async logicalPath=>{
+    const response=await dispatch(runtime.listeners,requestFor(urls[logicalPath]));
+    assert.equal((await response.json()).lp,logicalPath);
+  }));
+  const assetCache=runtime.stores.get(runtime.probe.getCacheNameForRoute(runtime.probe.getMatchingRoute(urls['/articles/'])));
+  assert.ok(assetCache.has('https://example.test'+urls['/articles/']));
+  assert.ok(assetCache.has('https://example.test'+urls['/articles/tools/']));
+  assert.equal(assetCache.has('https://example.test'+urls['/articles-all/']),false);
+  const count=runtime.requests.length;
+  offline=true;
+  assert.equal(await (await dispatch(runtime.listeners,requestFor('/article/',true))).text(),html);
+  for(const logicalPath of selected)
+    assert.equal((await (await dispatch(runtime.listeners,requestFor(urls[logicalPath]))).json()).lp,logicalPath);
+  assert.equal(runtime.requests.length,count,'Offline reload must reuse both the page and its loaded column JSON.');
+  await assert.rejects(dispatch(runtime.listeners,requestFor(urls['/articles-all/'])),/Network unavailable/,
+    'An unvisited source must remain uncached.');
+  runtime.stores.get('sw-content-state').set('https://example.test/sw-version.json',
+    Response.json({version:'v-next',lastAttemptAt:Date.now()}));
+  const reopened=cachedWorker(output,()=>{throw new TypeError('Network unavailable');},{},runtime.stores);
+  for(const logicalPath of selected)
+    assert.equal((await (await dispatch(reopened.listeners,requestFor(urls[logicalPath]))).json()).lp,logicalPath);
+  assert.equal(reopened.requests.length,0,'Content version changes must keep unchanged fingerprinted column JSON.');
+});
+
 test('off rules also exclude offline-page installation and fallback',async()=>{
   const policy='[[routes]]\npath = "/*"\nsw.bucket = "versioned"\n'+
     '[[routes]]\npath = "/*offline/"\nsw.bucket = "off"\n';

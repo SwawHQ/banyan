@@ -18,9 +18,8 @@
   {{- end -}}
   {{- $browserSources = $browserSources | append (dict
     "logicalPath" $model.logicalPath
-    "rootItem" $model.rootItem
     "columns" $model.columns
-    "currentColumn" (dict "source" $current.source "payload" $current.payload)
+    "currentColumn" (dict "source" $current.source "payload" $current.payload "payloadUrl" $current.payloadUrl)
   ) -}}
 {{- end -}}
 {{- return $browserSources -}}

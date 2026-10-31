@@ -1,16 +1,12 @@
 {{- $columnsByHref := .columns_by_href | default dict -}}
 {{- $columns := slice -}}
 {{- range $node := .model.nodes | default slice -}}
-  {{- $collection := dict -}}
-  {{- with $node.owner -}}{{- $collection = index $columnsByHref .RelPermalink | default dict -}}{{- end -}}
-  {{- $column := dict -}}
-  {{- if gt (len $collection) 0 -}}
-    {{- $items := partial "./items-from-rows.html" (dict "entries" $collection.rows "selected_href" $node.item.href) -}}
-    {{- if eq (len $items) 0 -}}{{- $items = slice $node.item -}}{{- end -}}
-    {{- $column = dict "source" $collection.source "items" $items -}}
-  {{- else -}}
-    {{- $column = partial "./fallback-column.html" (dict "node" $node) -}}
+  {{- with $owner := $node.owner -}}
+    {{- $column := index $columnsByHref $owner.RelPermalink | default dict -}}
+    {{- if not $column -}}
+      {{- $column = partialCached "feature-browse/navigation/source/fallback-model.html" $owner $owner.Language.Lang $owner.Path -}}
+    {{- end -}}
+    {{- $columns = $columns | append $column -}}
   {{- end -}}
-  {{- $columns = $columns | append $column -}}
 {{- end -}}
 {{- return $columns -}}

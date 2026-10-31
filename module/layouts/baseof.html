@@ -23,23 +23,40 @@
 {{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" $delivery) "prefetch" -}}
 {{- $isPrefetchDebug := or (.HasShortcode "prefetch-debug-controls") (and $homeArt ($homeArt.HasShortcode "prefetch-debug-controls")) -}}
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
+{{- partialCached "entry-baseof/audit-column-urls.html" .Site .Site.Language.Lang -}}
 {{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $buildVersion := partial "system-build/version.html" $primarySite.Home -}}
 {{- $swRoutes := $delivery.sw_routes -}}
 {{- $inlineScripts := partialCached "entry-baseof/inline-scripts.html" site (printf "runtime-inline-scripts:%t" hugo.IsServer) -}}
 {{- $themeBootInline := index $inlineScripts "theme_boot" | default "" -}}
 {{- $breadcrumbPendingInline := index $inlineScripts "breadcrumb_pending" | default "" -}}
-{{- $breadcrumbSkeletonInline := index $inlineScripts "breadcrumb_skeleton" | default "" -}}
+{{- $navigationStartupInline := index $inlineScripts "navigation_startup" | default "" -}}
 {{- $slotFlags := partial "system-ui/page-slots.html" (dict "ctx" .) -}}
 {{- $hasBreadcrumbCapability := eq (index $slotFlags "breadcrumb") true -}}
 {{- $collectionConfig := partial "feature-browse/collection/config.html" (dict "page" .) -}}
+{{- /* Unlisted pages are absent from the global audit but still render here. */ -}}
+{{- partialCached "feature-browse/collection/assert-url.html" . .Site.Language.Lang .Path -}}
+{{- partialCached "feature-browse/navigation/assert-structure.html" . .Site.Language.Lang .Path -}}
 {{- $hasSortableCollection := $collectionConfig.sortable -}}
 {{- /* Root selection consumes the same valid sources even when path columns are hidden. */ -}}
 {{- $navigationSources := partial "feature-browse/navigation/source/context.html" (dict "ctx" .) -}}
 {{- $pageCollectionSource := index $navigationSources "page_collection_source" -}}
 {{- $browserNavigationSources := index $navigationSources "browser_sources" -}}
 {{- $collectionColumnsByHref := index $navigationSources "columns_by_href" -}}
-{{- partial "feature-browse/navigation/source/register-icons.html" (dict "page" . "sources" $browserNavigationSources) -}}
+{{- $breadcrumbModel := dict -}}
+{{- $pathColumns := slice -}}
+{{- if $hasBreadcrumbCapability -}}
+  {{- $breadcrumbModel = partial "feature-browse/navigation/path/model.html" (dict "ctx" .) -}}
+  {{- $pathColumns = partial "feature-browse/navigation/path/columns.html" (dict "model" $breadcrumbModel "columns_by_href" $collectionColumnsByHref) -}}
+{{- end -}}
+{{- $browserNavigationData := partial "feature-browse/navigation/source/pack.html" (dict
+  "ctx" . "has_breadcrumb" $hasBreadcrumbCapability "page_collection_source" $pageCollectionSource
+  "sources" $browserNavigationSources "default_columns" $pathColumns
+) -}}
+{{- $hasPathColumns := and $hasBreadcrumbCapability (gt (len $browserNavigationData.columns) 0) -}}
+{{- if $hasPathColumns -}}
+  {{- partial "feature-browse/navigation/source/register-icons.html" (dict "page" . "sources" $browserNavigationSources "default_columns" $pathColumns) -}}
+{{- end -}}
 {{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
     {{- partial "system-delivery/deployment/publish.html" (dict
       "routes" $delivery.routes
@@ -52,7 +69,7 @@
 <html lang="{{ .Site.Language.Lang }}" dir="{{ .Site.Language.Direction | default "ltr" }}"
     {{- if .Sitemap.Disable }} data-sitemap-disabled="true"{{ end }}
     {{- if $hasBreadcrumbCapability }}
-    data-can-sort-collection-breadcrumb="{{ if and (gt (len $pageCollectionSource) 0) (ne .Kind "page") }}true{{ else }}false{{ end }}"
+    data-has-breadcrumb-columns="{{ $hasPathColumns }}"
     {{- end }}>
 
 <head>
@@ -89,9 +106,8 @@
     {{- end }}
     {{/* 首屏同步主题，避免浅色与深色切换时闪烁。 */}}
     <script>{{ $themeBootInline | safeJS }}</script>
-    {{/* URL 片段带 from= 时先隐藏默认 breadcrumb，待运行时恢复来源路径；
-         article meta 始终保留 Hugo 的静态输出。 */}}
-    {{- if $hasBreadcrumbCapability }}
+    {{/* Keep path columns hidden until their shared data is ready. */}}
+    {{- if $hasPathColumns }}
     <script>{{ $breadcrumbPendingInline | safeJS }}</script>
     {{- end }}
     {{- partial "system-ui/page-styles.html" . -}}
@@ -111,7 +127,7 @@
     {{- $js := resources.Get "js/main.js" | js.Build (dict "minify" (not hugo.IsServer)) -}}
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
-    {{- if $hasBreadcrumbCapability -}}
+    {{- if $hasPathColumns -}}
         {{- $breadcrumbRuntime := resources.Get "js/browse/path-entry.js" | js.Build (dict "minify" (not hugo.IsServer)) -}}
         {{- $breadcrumbRuntime = $breadcrumbRuntime | fingerprint -}}
     <script src="{{ $breadcrumbRuntime.RelPermalink }}" integrity="{{ $breadcrumbRuntime.Data.Integrity }}" defer></script>
@@ -125,33 +141,25 @@
       "is_offline_page" $isOfflinePage
     ) -}}
 </head>
-<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }} data-language-return-missing="{{ i18n "language_return_missing" }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}"{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
+<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }} data-language-return-missing="{{ i18n "language_return_missing" }}" data-navigation="{{ $browserNavigationData | jsonify }}"{{ with $pageCollectionSource.logicalPath }} data-collection-path="{{ . }}"{{ end }}{{ if or $hasPathColumns $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
     {{- if and .IsPage (eq (trim (printf "%v" (.Params.url | default "")) " \r\n\t") "") -}}
 {{- errorf "Build failed: page %q (title: %q) requires a non-empty url field, for example url: p/article-name/." .File.Path .Title -}}
     {{- end -}}
     <div class="page">
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        {{- $breadcrumbModel := dict -}}
-        {{- $pathColumns := slice -}}
-        {{- $hasPathColumns := false -}}
-        {{- if $hasBreadcrumbCapability -}}
-          {{- $breadcrumbModel = partial "feature-browse/navigation/path/model.html" (dict "ctx" $) -}}
-          {{- $pathColumns = partial "feature-browse/navigation/path/columns.html" (dict "model" $breadcrumbModel "columns_by_href" $collectionColumnsByHref) -}}
-          {{- $hasPathColumns = gt (len $pathColumns) 0 -}}
-        {{- end -}}
         <div class="page-shell">
             {{- if $showHomeNavigation -}}
             <div class="page-column page-rail">
                 {{- partial "feature-browse/navigation/root/render.html" . -}}
-                {{- if gt (len $browserNavigationSources) 0 -}}
+                {{- if and (not $hasPathColumns) (gt (len $browserNavigationSources) 0) -}}
                 <script>{{ index $inlineScripts "root_navigation" | safeJS }}</script>
                 {{- end -}}
             </div>
             {{- end -}}
             {{- if $hasPathColumns -}}
-            {{- partial "feature-browse/navigation/path/render.html" (dict "ctx" $ "columns" $pathColumns) -}}
+            <nav class="slot path-navigation" data-slot="breadcrumb" aria-label="Breadcrumb" aria-hidden="true"></nav>
             {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
-            <script>{{ $breadcrumbSkeletonInline | safeJS }}</script>
+            <script>{{ $navigationStartupInline | safeJS }}</script>
             {{- end -}}
             <div class="reading-group">
                 <div class="page-column page-content">

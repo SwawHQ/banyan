@@ -79,17 +79,19 @@ export async function check({page,baseUrl,options}) {
   await page.setViewportSize({width:1440,height:130});
   const initial=await observeColumns(page,baseUrl+options.page),selected=await selectColumn(page,options.column);
   const prefetch=await checkPrefetchSelectors(page);
-  const parsed=initial.columns.find(column=>column.href===selected.href);
   const slots=(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('sorts')||'').split(',');
   const depth=selected.source.logicalPath.split('/').filter(Boolean).length;
   const requested=slots[Math.min(depth,slots.length)-1];
   assert.equal(columnSort(selected),requested&&requested!=='_'?requested:selected.source.defaultSort,
     'Initial breadcrumb sort must reflect the requested slot or declared default.');
-  // A requested source can replace SSR row contents; pure sorting must reuse them.
-  if(!initial.sourcePending)assert.ok(await page.evaluate(href=>{
-    const record=window.__swbanParsedColumns.find(column=>column.href===href);
-    return record&&record.column.isConnected&&record.nodes.length>0&&record.nodes.every(node=>node.isConnected&&record.column.contains(node));
-  },selected.href),'Initial sorting must retain server-rendered rows, icons and headers.');
+  assert.ok(initial.sourcePending,'Path columns must wait for their JSON data.');
+  assert.ok(initial.columns.length>0&&initial.columns.every(column=>column.rows.length===0),
+    'Reserved path columns must not inline list rows.');
+  assert.ok(await page.evaluate(()=>{
+    const columns=[...document.querySelectorAll('[data-slot=breadcrumb] [data-collection-column]')];
+    return window.__swbanParsedColumns.length===columns.length
+      &&window.__swbanParsedColumns.every((record,index)=>record.column===columns[index]&&record.column.isConnected);
+  }),'Initial loading must retain reserved column nodes.');
   const column=columnLocator(page,selected.href);
   const probe=await column.evaluate(node=>{
     const links=[...node.querySelectorAll('[data-list-entry]')].map(link=>{
@@ -126,5 +128,6 @@ export async function check({page,baseUrl,options}) {
     assert.equal(await page.evaluate(()=>window.__swbanColumnSort?.marker),cases[1].continuity.marker,
       'Fragment history must retain the document.');
   }
-  return {page:options.page,column:selected.href,sourceRebuilt:initial.sourcePending,ssrRows:parsed?.rows.length??0,prefetch,cases};
+  return {page:options.page,column:selected.href,sourceRebuilt:initial.sourcePending,
+    reservedColumns:initial.columns.length,initialRows:initial.columns.reduce((total,column)=>total+column.rows.length,0),prefetch,cases};
 }

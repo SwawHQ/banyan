@@ -1,11 +1,8 @@
 {{- $ctx := .ctx | default . -}}
 {{- $entries := slice -}}
 {{- $columnsByHref := dict -}}
-{{- $pages := slice -}}
-{{- range $ctx.Site.Pages -}}{{- $pages = $pages | append . -}}{{- end -}}
 {{- $directory := partialCached "feature-browse/directory/index.html" $ctx.Site $ctx.Language.Lang -}}
-{{- range $directory.sections -}}{{- $pages = $pages | append . -}}{{- end -}}
-{{- range $page := sort (uniq $pages) "RelPermalink" -}}
+{{- range $page := sort $directory.sections "RelPermalink" -}}
   {{- if partial "feature-browse/is-rendered-html.html" $page -}}
     {{- $config := partial "feature-browse/collection/config.html" (dict "page" $page) -}}
     {{- if not $config.sortable -}}{{- continue -}}{{- end -}}
@@ -17,20 +14,15 @@
 {{- $models := slice -}}
 {{- range $model := $entries -}}
   {{- $columns := slice -}}
-  {{- range $node := $model.nodes -}}
-    {{- $collection := dict -}}
-    {{- with $node.owner -}}{{- $collection = index $columnsByHref .RelPermalink | default dict -}}{{- end -}}
-    {{- $column := dict "selected" $node.item -}}
-    {{- if gt (len $collection) 0 -}}
-      {{- $column = merge $column (dict "source" $collection.source "payload" $collection.payload) -}}
-    {{- else -}}
-      {{- $column = merge $column (partial "feature-browse/navigation/path/fallback-column.html" (dict "node" $node)) -}}
+  {{- range $ancestor := where $model.page.Ancestors.Reverse "Kind" "section" -}}
+    {{- $column := index $columnsByHref $ancestor.RelPermalink | default dict -}}
+    {{- if not $column -}}
+      {{- $column = partialCached "./fallback-model.html" $ancestor $ancestor.Language.Lang $ancestor.Path -}}
     {{- end -}}
     {{- $columns = $columns | append $column -}}
   {{- end -}}
   {{- $models = $models | append (dict
     "logicalPath" $model.logicalPath
-    "rootItem" $model.rootItem
     "columns" $columns
     "currentColumn" $model.currentColumn
     "entryHrefs" $model.entryHrefs

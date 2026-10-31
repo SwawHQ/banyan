@@ -22,6 +22,11 @@ function cli(command,args=[],directory=output){
 }
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
 function script(directory,route,text){write(path.join(directory,'probe.js'),text);fs.appendFileSync(path.join(directory,route,'index.html'),'<script defer src="/probe.js"></script>');}
+function settledScript(directory,route,text){script(directory,route,`const fail=()=>{${text}};const html=document.documentElement;
+  const pending=()=>html.hasAttribute('data-entry-breadcrumb-pending')||html.hasAttribute('data-breadcrumb-sort-pending');
+  if(pending()){const observer=new MutationObserver(()=>{if(!pending()){observer.disconnect();fail();}});
+    observer.observe(html,{attributes:true,attributeFilter:['data-entry-breadcrumb-pending','data-breadcrumb-sort-pending']});
+  }else fail();`);}
 before(()=>{
   fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-breadcrumb-'));skill=path.join(work,'skill');output=path.join(work,'public');
@@ -61,12 +66,13 @@ test('breadcrumb options require explicit paths and generate complete help',{tim
   assert.match(helpFor(spec,'en'),/--column <path>/);assert.match(helpFor(spec,'en'),/--article <path>/);
 });
 
-test('sort reuses SSR nodes and restores row order with source, query and fragment intact',{timeout:45000},()=>{
+test('JSON loading retains reserved columns and sorting retains rows, source, query and fragment',{timeout:45000},()=>{
   const result=cli('sort',['--page',collection+'child/#sorts=date-desc,date-asc','--column',collection,'--trace','--out',path.join(work,'reports')]);
   assert.equal(result.status,0,result.stdout+result.stderr);
   const folder=result.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
   assert.equal(report.browser,'chromium');assert.ok(report.browserVersion);assert.equal(report.details.cases.length,2);
-  assert.equal(report.details.ssrRows,7);assert.equal(report.details.sourceRebuilt,false);assert.ok(fs.statSync(path.join(folder,'trace.zip')).size>0);
+  assert.equal(report.details.initialRows,0);assert.ok(report.details.reservedColumns>0);
+  assert.equal(report.details.sourceRebuilt,true);assert.ok(fs.statSync(path.join(folder,'trace.zip')).size>0);
   assert.ok(report.details.prefetch.entries>=7);
   assert.ok(report.details.cases.every(result=>result.prefetch.invalid.length===0));
 });
@@ -78,12 +84,12 @@ test('sort checks in-place reuse after an explicit source rebuild',{timeout:2000
 });
 
 test('isolation covers ancestors and main collections, including sort previews without from',{timeout:45000},()=>{
-  for(const route of [article+'#from=d/breadcrumb-fixture',collection+'#from=d&sort=date-asc&sorts=date-asc',collection+'#sort=date-asc&sorts=date-asc,date-asc']) {
+  for(const route of [article+'#from=d/breadcrumb-fixture',collection+'#from=d/breadcrumb-fixture&sort=date-asc&sorts=date-asc,date-asc',collection+'#sort=date-asc&sorts=date-asc,date-asc']) {
     const result=cli('isolation',['--page',route]);assert.equal(result.status,0,route+'\n'+result.stdout+result.stderr);
   }
 });
 
-test('source works without JavaScript and retains runtime sorting through click and reload',{timeout:45000},()=>{
+test('native collections and articles work without JavaScript while JSON paths retain source sorting',{timeout:45000},()=>{
   for(const query of ['','#from=discover/tooling','#sorts=date-desc,date-asc']) {
     const result=cli('source',['--page','/discover/tooling/devtools/'+query,'--column','/discover/tooling/','--article',article]);
     assert.equal(result.status,0,query+'\n'+result.stdout+result.stderr);
@@ -91,8 +97,8 @@ test('source works without JavaScript and retains runtime sorting through click 
 });
 
 test('sort rejects initial node replacement and click-time loss of focus or query data',{timeout:45000},()=>{
-  const replaced=fixture('replaced');script(replaced,article,`const column=document.querySelector('[data-breadcrumb-collection-href="${collection}"]');column.replaceWith(column.cloneNode(true));`);
-  const initial=cli('sort',['--page',article,'--column',collection],replaced);assert.equal(initial.status,1);assert.match(initial.stderr,/retain server-rendered/);
+  const replaced=fixture('replaced');script(replaced,article,`const column=document.querySelector('[data-slot=breadcrumb] .path-column:last-child');column.replaceWith(column.cloneNode(true));`);
+  const initial=cli('sort',['--page',article,'--column',collection],replaced);assert.equal(initial.status,1);assert.match(initial.stderr,/retain reserved column nodes/);
   for(const [name,change,message] of [
     ['focus','document.activeElement.blur()','retain toggle focus'],
     ['query',`node.querySelectorAll('[data-list-entry]').forEach(link=>{const url=new URL(link.href);url.searchParams.delete('swban-probe');link.href=url.href;})`,'preserve unrelated link query'],
@@ -124,11 +130,11 @@ test('isolation rejects changed siblings and stale main-entry sort slots',{timeo
   const stale=cli('isolation',['--page',collection+'#sort=date-asc&sorts=date-asc'],links);assert.equal(stale.status,1);assert.match(stale.stderr,/reflect each ancestor sort/);
 });
 
-test('source rejects wrong static and runtime lineage, missing links and malformed pages',{timeout:45000},()=>{
-  const runtime=fixture('runtime-source');script(runtime,'discover/tooling/devtools',`document.querySelectorAll('[data-slot=breadcrumb] [data-list-entry]').forEach(link=>{const url=new URL(link.href);if(url.pathname===${JSON.stringify(article)}){const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','wrong');url.hash=fields.toString();link.href=url.href;}});`);
+test('source rejects wrong native and runtime lineage, missing links and malformed pages',{timeout:45000},()=>{
+  const runtime=fixture('runtime-source');settledScript(runtime,'discover/tooling/devtools',`document.querySelectorAll('[data-slot=breadcrumb] [data-list-entry]').forEach(link=>{const url=new URL(link.href);if(url.pathname===${JSON.stringify(article)}){const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','wrong');url.hash=fields.toString();link.href=url.href;}});`);
   const args=['--page','/discover/tooling/devtools/','--column','/discover/tooling/','--article',article];
   const result=cli('source',args,runtime);assert.equal(result.status,1);assert.match(result.stderr,/declared column source/);
-  const raw=fixture('static-source'),file=path.join(raw,'discover/tooling/devtools/index.html');
+  const raw=fixture('static-source'),file=path.join(raw,'discover/tooling/index.html');
   const text=fs.readFileSync(file,'utf8'),changed=text.replaceAll(article+'#from=discover/tooling',article+'#from=wrong');
   assert.notEqual(changed,text);fs.writeFileSync(file,changed);
   const staticResult=cli('source',args,raw);assert.equal(staticResult.status,1);assert.match(staticResult.stderr,/declared column source/);

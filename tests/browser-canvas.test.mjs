@@ -39,7 +39,7 @@ before(()=>{
   for(let i=0;i<24;i++)body+='## Chapter '+i+'\n\n'+('A paragraph with enough words to exercise independent columns and history restoration.\n\n'.repeat(8));
   for(const name of ['canvas-first','canvas-next'])write(path.join(content,'d',name+'.md'),
     '---\ntitle: '+name+'\nurl: /d/'+name+'/\ndate: "2026-01-01T00:00:00+08:00"\nlastmod: "2026-01-02T00:00:00+08:00"\n---\n\n'+body);
-  write(path.join(content,'d/canvas-names/_index.md'),'---\ntitle: Canvas names\nlayout: page-collection\n---\n\n'+
+  write(path.join(content,'d/canvas-names/_index.md'),'---\ntitle: Canvas names\nlayout: page-collection-directory-name-only\n---\n\n'+
     'Collection introduction with enough words to wrap inside the declared list width. '.repeat(16)+'\n');
   for(let index=0;index<20;index++)write(path.join(content,'d/canvas-names',index+'.md'),`---\ntitle: Name ${index}\nurl: d/canvas-names/canvas-name-${index}/\n---\nName fixture.\n`);
   write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);

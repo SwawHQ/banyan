@@ -4,21 +4,11 @@ other = "名稱"
 other = "更新時間"
 [list_col_size]
 other = "大小"
-[list_sort_name_asc]
-other = "按名稱升冪排序"
-[list_sort_name_desc]
-other = "按名稱降冪排序"
-[list_sort_date_asc]
-other = "按更新時間升冪排序"
-[list_sort_date_desc]
-other = "按更新時間降冪排序"
-[list_sort_size_asc]
-other = "按大小升冪排序"
-[list_sort_size_desc]
-other = "按大小降冪排序"
+[list_sort_asc]
+other = "按{field}升冪排序"
+[list_sort_desc]
+other = "按{field}降冪排序"
 
-[products_col_name]
-other = "名稱"
 [products_col_price]
 other = "價格"
 [products_col_value]
@@ -26,18 +16,6 @@ other = "價值點"
 
 [products_free]
 other = "免費"
-[products_sort_name_asc]
-other = "按名稱升冪排序"
-[products_sort_name_desc]
-other = "按名稱降冪排序"
-[products_sort_price_asc]
-other = "按價格升冪排序"
-[products_sort_price_desc]
-other = "按價格降冪排序"
-[products_sort_value_asc]
-other = "按價值點升冪排序"
-[products_sort_value_desc]
-other = "按價值點降冪排序"
 
 [label_published]
 other = "發布於"
@@ -53,6 +31,9 @@ other = "目錄"
 
 [language_return_missing]
 other = "本頁尚無{lang}版本，繼續顯示原內容。"
+
+[navigation_load_failed]
+other = "導覽載入失敗。"
 
 [notFoundTitle]
 other = "頁面不存在"

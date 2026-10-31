@@ -244,7 +244,7 @@ palette = "css/theme.css"
 
 ```
 
-`disableJS` preserves the inline bytes used for CSP hashes. Preserve each page's
+`disableJS` preserves the inline bytes used for CSP hashes. Preserve each article's
 published address in its front matter `url` field. Each enabled language declares
 its native `label` and `locale`; `languages.<code>.params.icon` sets its icon.
 This starter enables English.
@@ -356,7 +356,7 @@ Collection layouts bind their fields, sorting and controls. Use:
 
 | Layout | Lists |
 | --- | --- |
-| `page-collection` | Direct entries, names only |
+| `page-collection-directory-name-only` | Direct entries, names only |
 | `page-collection-directory` | Direct entries with date and count |
 | `page-collection-directory-all` | Articles under `params.aggregate`, with date and size; optional time ranges form a directory tree |
 | `page-collection-products` | Direct entries with price and value |
@@ -433,9 +433,9 @@ Independent article content.
 ```
 
 Keep the article's `url` when moving its source. Use a language-relative path
-without a leading slash; Hugo adds the current language prefix. Information and
-settings pages use their own paths, such as `url: language/`. Directory pages
-keep their content paths. No per-section permalink rule is needed.
+without a leading slash; Hugo adds the current language prefix. Information
+pages keep their own URLs. Collections and settings use `_index.md` and their
+content directory paths; omit `url` and `slug`.
 
 To list the article in another directory, create `content/articles/related/_index.md`
 with its title and description. Put one shared `_map.toml` beside it:

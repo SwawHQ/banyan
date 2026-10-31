@@ -1,6 +1,5 @@
 ---
 title: 語言
-url: language/ #重新命名內容目錄時，保留此網址。
 layout: page-collection-language
 outputs: [HTML] #不產生此欄目的 RSS 訂閱來源。
 weight: 70

@@ -32,9 +32,11 @@ Wrangler 项目使用原生 `--cwd <绝对项目路径>`。
 所有页面由站点根 `content/` 维护；Module 只提供布局、脚本和样式。
 Front matter 自定义字段统一放在 `params` 中；Hugo 原生字段保留顶层，继承默认值使用 `cascade.params`。模板仍通过 `.Params.<字段>` 读取自定义值。
 `params.slots` 中，`breadcrumb` 启用路径导航；`meta` 统一启用文章元信息、章节目录和正文页的 BlogPosting；`[]` 全部关闭。
+路径列由浏览器加载共享 JSON；根导航、栏目主列表和正文保留 HTML。
 Powered by 和离线页使用 `page-article-norss`；公共模板按 `site-update` 和 `page-actions` 短代码在每页加载一次所需脚本。
 `page-article-rss` 可作为 RSS 条目；`page-article-norss` 保留相同正文功能，不作为 RSS 条目。栏目默认输出 HTML 和 RSS；`outputs: [HTML]` 仅关闭该栏目的订阅源。
-集合布局直接绑定字段和行为：`page-collection` 只显示名称，`page-collection-directory` 显示目录信息，`page-collection-products` 显示产品信息。后两者的 `-all` 布局通过 `params.aggregate` 指定来源栏目。
+集合布局使用 `_index.md`：`page-collection-directory-name-only` 只显示名称，`page-collection-directory` 显示目录信息，`page-collection-products` 显示产品信息。后两者的 `-all` 布局通过 `params.aggregate` 指定来源栏目。
+公共导航路径的每级栏目都使用 `_index.md`，并输出 HTML。
 `page-collection-directory-all` 的 `params.time_range` 按 Hugo `Lastmod` 筛选文章；手动子栏目接收各自时间范围内的文章，剩余文章留在父栏目，配置示例见 [安装说明](references/install.md)。
 语言和外观设置使用 `_index.md`，布局分别为 `page-collection-language`、`page-collection-appearance`，并设置 `outputs: [HTML]`。
 各语言的默认描述由对应首页的 `description` 提供；页面可用自己的 `description` 覆盖。

@@ -3,16 +3,19 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import net from 'node:net';
 import {fileURLToPath} from 'node:url';
 import {spawn,spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
 import {fixtureEnvironment,fixtureSiteMounts,fixtureSiteFiles,fixtureSitePages,directoryPage} from './_shared/hugo.mjs';
+import {collectionPayload} from './_shared/navigation.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
-import {decodeHtmlAttribute,extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {readBreadcrumbData} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {decodeHtmlAttribute,extractStartTags,extractTagAttribute,extractCanonicalHref} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
-import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {createStaticSiteServer,listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {gotoAndWait} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/page.mjs';
 import {afterPaint,waitForBrowse} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/viewport.mjs';
 import {check as checkSource} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/source/check.mjs';
@@ -48,17 +51,20 @@ function build(destination=output){
 }
 function passed(result){assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);}
 function read(route,prefix='',directory=output,file='index.html'){return fs.readFileSync(path.join(directory,prefix,route,file),'utf8');}
-function sources(html){
-  return JSON.parse(decodeHtmlAttribute(extractTagAttribute(extractStartTags(html,'body')[0],'data-entry-breadcrumb-sources')||'[]'));
+function sources(html,directory=output){
+  const data=readBreadcrumbData(html,{directory});assert.equal(data.error,'');return data.sources;
 }
-function collectionRows(html,route){
-  const current=sources(html).find(source=>source.logicalPath==='/'+route+'/');
-  assert.ok(current,route+' publishes its current collection source.');
-  const data=current.currentColumn.payload;
-  return {source:current.currentColumn.source,rows:Array.from({length:data.rv.length/data.f.length},(_,row)=>
-    ({...data.c,...Object.fromEntries(data.f.map((name,index)=>[name,data.rv[row*data.f.length+index]]))}))};
+function payloadRows(data){
+  return Array.from({length:data.rv.length/data.f.length},(_,row)=>
+    ({...data.c,...Object.fromEntries(data.f.map((name,index)=>[name,data.rv[row*data.f.length+index]]))}));
 }
-function rows(route,prefix='',directory=output){return collectionRows(read(route,prefix,directory),route);}
+function collectionRows(html,route,directory=output){
+  const logicalPath=extractTagAttribute(extractStartTags(html,'body')[0],'data-collection-path');
+  assert.equal(logicalPath,'/'+route+'/');
+  const data=collectionPayload(directory,logicalPath,new URL(extractCanonicalHref(html)).pathname);
+  return {source:{logicalPath:data.lp,sortVariant:data.sv,defaultSort:data.ds,href:data.href,label:data.label},rows:payloadRows(data)};
+}
+function rows(route,prefix='',directory=output){return collectionRows(read(route,prefix,directory),route,directory);}
 function mainRows(route,prefix='',directory=output){
   const html=extractBlocks(read(route,prefix,directory),'main')[0].html;
   return extractBlocks(html,'div',tag=>/\bdata-list-item(?:\s|=|>)/.test(tag)).flatMap(block=>{
@@ -100,7 +106,7 @@ before(()=>{
       write(path.join(source,'content/archive',name,'_index'+suffix+'.md'),collection('Range '+name,range(start,end)));
     write(path.join(source,'content/flat/_index'+suffix+'.md'),collection('Flat','aggregate: /d'));
     write(path.join(source,'content/window/_index'+suffix+'.md'),collection('Window','aggregate: /d\n  '+range('2000-01-01','2002-01-01')));
-    write(path.join(source,'content/leaf/index'+suffix+'.md'),collection('Leaf','aggregate: /d\n  '+range('2000-01-01','2002-01-01'),'url: leaf/\n'));
+    write(path.join(source,'content/leaf/_index'+suffix+'.md'),collection('Leaf','aggregate: /d\n  '+range('2000-01-01','2002-01-01')));
   }
   write(path.join(source,'content/d/refs/_map.toml'),'refs = ["/d/start"]\n');
   passed(build());
@@ -119,6 +125,40 @@ test('manual time trees partition Lastmod once, retain remainder articles and em
       .flatMap(route=>rows(route,prefix).rows.filter(row=>row.kind==='page').map(row=>row.href));
     assert.deepEqual(direct.sort(),articleHrefs(articles.map(([name])=>name),prefix),'Each source article belongs to exactly one direct list.');
     assert.equal(new Set(direct).size,direct.length);
+  }
+});
+
+test('navigation columns publish flat shared JSON with stable content fingerprints',()=>{
+  const repeated=path.join(work,'same-content');passed(build(repeated));
+  const languageURLs=[];
+  for(const [,prefix] of locales){
+    const article=readBreadcrumbData(read('p/range-start',prefix),{directory:output});
+    const second=readBreadcrumbData(read('p/range-fallback',prefix),{directory:output});
+    const rebuilt=readBreadcrumbData(read('p/range-start',prefix,repeated),{directory:repeated});
+    assert.equal(article.error,'');assert.equal(second.error,'');assert.equal(rebuilt.error,'');
+    assert.deepEqual(rebuilt.columnURLs,article.columnURLs,'Unchanged content keeps the same resource URLs.');
+    for(const [logicalPath,url] of Object.entries(article.columnURLs)){
+      assert.equal(typeof url,'string');
+      if(second.columnURLs[logicalPath])assert.equal(second.columnURLs[logicalPath],url,'Articles reuse each column resource.');
+      const text=fs.readFileSync(path.join(output,new URL(url,'https://example.test').pathname),'utf8');
+      assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.json');
+      assert.equal(JSON.parse(text).lp,logicalPath);assert.ok(!Object.hasOwn(JSON.parse(text),'selected'));
+      assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.json$/,'Navigation resources use a flat content-addressed namespace.');
+    }
+    languageURLs.push(new Set(Object.values(article.columnURLs)));
+  }
+  assert.equal(new Set(languageURLs.flatMap(urls=>[...urls])).size,languageURLs.reduce((count,urls)=>count+urls.size,0),
+    'Languages must not overwrite each other’s column resources.');
+  const emptyPayloads=locales.map(([,prefix])=>collectionPayload(output,'/archive/empty/',prefix+'/archive/empty/'));
+  assert.ok(emptyPayloads.every(payload=>payload.rv.length===0),'Empty collections publish their shared payload.');
+  assert.equal(new Set(emptyPayloads.map(payload=>createHash('sha256').update(JSON.stringify(payload)).digest('hex'))).size,locales.length,
+    'Language-specific header links remain part of the content fingerprint.');
+  const resources=fs.readdirSync(path.join(output,'site/navigation'),{withFileTypes:true});
+  assert.ok(resources.every(entry=>entry.isFile()&&/^[a-f0-9]{64}\.json$/.test(entry.name)),
+    'Navigation resources contain no language, column path or items prefix.');
+  for(const entry of resources){
+    const content=fs.readFileSync(path.join(output,'site/navigation',entry.name));
+    assert.equal(entry.name,createHash('sha256').update(content).digest('hex')+'.json');
   }
 });
 
@@ -144,7 +184,28 @@ test('time-tree rows share directory counts, navigation and ItemList without des
       if(current.rows.length)assert.equal(itemList.itemListElement.length,current.rows.length,'Schema follows direct rows.');
       else assert.ok(!itemList||itemList.itemListElement.length===0);
     }
-    const articleSources=sources(read('p/range-start',prefix)),paths=articleSources.map(source=>source.logicalPath);
+    const articleHtml=read('p/range-start',prefix),articleSources=sources(articleHtml),paths=articleSources.map(source=>source.logicalPath);
+    const body=extractStartTags(articleHtml,'body')[0];
+    const manifest=JSON.parse(extractTagAttribute(body,'data-navigation'));
+    assert.equal(typeof manifest.default,'string');
+    assert.ok(manifest.default,'The physical path retains its terminal owner.');
+    assert.ok(!['routes','from','paths'].some(key=>Object.hasOwn(manifest,key)));
+    const navigation=extractBlocks(articleHtml,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb');
+    assert.equal(navigation.length,1);assert.equal(extractStartTags(navigation[0].html,'a').length,0,'Article path rows load from shared JSON.');
+    const decoded=readBreadcrumbData(articleHtml,{directory:output});
+    assert.ok(decoded.defaultColumns.length>0,'Default prefixes are derived from one terminal owner.');
+    assert.ok(decoded.sources.some(source=>source.columns.some(column=>column.payload===decoded.defaultColumns[0].payload)),
+      'Sources share the same ancestor payload.');
+    for(const [logicalPath,url] of Object.entries(decoded.columnURLs)){
+      assert.match(manifest.columns[logicalPath],/^[a-f0-9]{64}$/,'Inline columns contain only content hashes.');
+      assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.json$/);
+      const data=decoded.columns[logicalPath];
+      assert.deepEqual(data,collectionPayload(output,logicalPath,prefix+logicalPath),'Navigation and collection use one shared payload.');
+      assert.equal(data.lp,logicalPath);assert.equal(typeof data.label,'string');assert.equal(typeof data.href,'string');
+      assert.ok(!data.f.includes('key')&&!data.f.includes('sort_group'),'Navigation rows omit derived values.');
+      assert.ok([...data.f,...Object.keys(data.c||{})].every(field=>!field.endsWith('_text')&&!['size_unit','count_unit'].includes(field)),
+        'Navigation columns omit display-only fields.');
+    }
     assert.ok(paths.includes('/archive/a/b/'));assert.ok(!paths.includes('/archive/a/'));assert.ok(!paths.includes('/archive/'));
     const selected=articleSources.find(source=>source.logicalPath==='/archive/a/b/');
     assert.ok(selected.columns.some(column=>column.source?.logicalPath==='/archive/'));
@@ -168,7 +229,7 @@ test('flat aggregates, original directories and scoped feeds keep their existing
   }
 });
 
-test('a regular page can provide a filtered aggregate leaf without a section tree',()=>{
+test('a section can provide a filtered aggregate without child sections',()=>{
   for(const [,prefix] of locales){
     assert.deepEqual(hrefs('leaf',prefix),articleHrefs(['start','fallback','override','offset'],prefix));
     assert.equal(rows('leaf',prefix).source.sortVariant,'section');
@@ -271,7 +332,7 @@ test('a Lastmod edit removes the old source and an old from value restores the d
   let server,browser;
   try{
     write(file,original.replace('2001-07-01T00:00:00+08:00','2003-07-01T00:00:00+08:00'));passed(build(destination));
-    const paths=sources(read('p/range-override','',destination)).map(source=>source.logicalPath);
+    const paths=sources(read('p/range-override','',destination),destination).map(source=>source.logicalPath);
     assert.ok(paths.includes('/archive/a/'));assert.ok(!paths.includes('/archive/a/b/'));
     server=await createStaticSiteServer(destination);await server.start();
     const type=loadChromium();browser=await type.launch({headless:true,executablePath:type.executablePath()});
@@ -308,7 +369,7 @@ test('ordinary ancestors include a nested time tree in counts and feeds without 
       }
       assert.deepEqual(hrefs('physical-probe',prefix,destination),articleHrefs(['start'],prefix),
         'An aggregate source still reads physical descendants and map references, not child aggregate views.');
-      const entry=sources(read('p/range-start',prefix,destination))
+      const entry=sources(read('p/range-start',prefix,destination),destination)
         .find(entry=>entry.logicalPath==='/top/hub/archive/a/b/');
       assert.ok(entry,'An article registers the complete nested time-tree entry path.');
       for(const route of ['/top/','/top/hub/','/top/hub/archive/','/top/hub/archive/a/'])
@@ -326,7 +387,7 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
   const articleFile=path.join(source,'content/d/override.md'),articleOriginal=fs.readFileSync(articleFile,'utf8');
   const rangeFile=path.join(source,'content/archive/a/b/_index.md'),rangeOriginal=fs.readFileSync(rangeFile,'utf8');
   const added=path.join(source,'content/archive/a/new-range');
-  const probe=net.createServer();await new Promise((resolve,reject)=>{probe.once('error',reject);probe.listen(0,'127.0.0.1',resolve);});
+  const probe=net.createServer();await listenOnLoopback(probe);
   const port=probe.address().port;await new Promise((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
   const base='http://127.0.0.1:'+port;
   const server=spawn(toolExecutable('hugo'),['server','--noBuildLock','--bind','127.0.0.1','--port',String(port),
@@ -338,7 +399,15 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
     const response=await fetch(base+'/'+route,{signal:AbortSignal.timeout(2000),headers:{Connection:'close'}});
     assert.equal(response.status,200,route);return response.text();
   }
-  async function liveRows(route){return collectionRows(await html(route+'/'),route).rows;}
+  async function liveRows(route){
+    await html(route+'/');
+    const data=readBreadcrumbData(await html('p/range-start/'));assert.equal(data.error,'');
+    const url=data.columnURLs['/'+route+'/'];assert.equal(typeof url,'string');
+    const text=await html(url.replace(/^\//,''));
+    assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.json',
+      'Preview HTML references the current JSON content fingerprint.');
+    const payload=JSON.parse(text);assert.equal(payload.lp,'/'+route+'/');return payloadRows(payload);
+  }
   async function until(check){
     const deadline=Date.now()+20000;let last;
     while(Date.now()<deadline){
@@ -352,7 +421,11 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
     assert.equal(parentRows.find(row=>row.href==='/archive/a/b/').sort_count,String(count));
     assert.equal(parentRows.some(row=>row.href==='/p/range-override/'),direct);
     assert.equal(childRows.some(row=>row.href==='/p/range-override/'),leaf==='archive/a/b');
-    const paths=sources(await html('p/range-override/')).map(entry=>entry.logicalPath);
+    const articleHTML=await html('p/range-override/'),navigation=readBreadcrumbData(articleHTML);
+    const paths=(await Promise.all(Object.entries(navigation.columnURLs).map(async([logicalPath,url])=>{
+      const payload=JSON.parse(await html(url.replace(/^\//,'')));
+      return payloadRows(payload).some(row=>row.href==='/p/range-override/')?logicalPath:null;
+    }))).filter(Boolean);
     assert.ok(paths.includes('/'+leaf+'/'));assert.ok(!paths.includes('/'+(leaf==='archive/a'?'archive/a/b':'archive/a')+'/'));
     assert.equal(((await html('archive/a/b/index.xml')).match(/<item>/g)||[]).length,count);
     assert.equal(((await html('archive/a/index.xml')).match(/<item>/g)||[]).length,5);

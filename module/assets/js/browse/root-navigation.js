@@ -1,13 +1,9 @@
-import {
-    parseEntrySelection,
-    readEntrySources,
-} from './entry-source.js';
-import { readCurrentFromPath } from './navigation-state.js';
+import { readActiveNavigationRoute } from './entry-source.js';
 
-export function renderRootSelection(rootItem) {
+export function renderRootSelection(rootHref) {
     const navigation = document.querySelector('[data-root-navigation]');
     if (!navigation) return;
-    const href = rootItem?.href || navigation.dataset.defaultRootHref || '';
+    const href = rootHref || navigation.dataset.defaultRootHref || '';
     navigation.querySelectorAll('[data-root-href]').forEach((link) => {
         const current = link.dataset.rootHref === href;
         link.classList.toggle('is-current', current);
@@ -17,9 +13,7 @@ export function renderRootSelection(rootItem) {
 }
 
 export function refreshRootSelection() {
-    const sources = readEntrySources();
-    const source = parseEntrySelection(sources, readCurrentFromPath())?.source;
-    renderRootSelection(source?.rootItem);
+    renderRootSelection(readActiveNavigationRoute().root);
 }
 
 export function initRootNavigation() {

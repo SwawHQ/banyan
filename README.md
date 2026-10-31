@@ -41,7 +41,7 @@ matter. Put custom page fields under `params`, and inherited defaults under
 `cascade.params`.
 Use `page-article-rss` for RSS article items, and `page-article-norss` for other Markdown
 pages. The `meta` slot enables article metadata, chapters and BlogPosting.
-Collection layouts select their fields and behavior: `page-collection`
+Collection layouts select their fields and behavior: `page-collection-directory-name-only`
 shows names, `page-collection-directory` shows directory metadata, and
 `page-collection-products` shows product values. The directory and product
 `-all` layouts require `params.aggregate` with a source section path. Sections

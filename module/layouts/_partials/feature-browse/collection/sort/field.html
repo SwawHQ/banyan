@@ -5,14 +5,12 @@
 {{ $defaultOrder := lower (printf "%v" (.defaultOrder | default "asc")) }}
 {{ $currentField := printf "%v" (.currentField | default "") }}
 {{ $currentOrder := lower (printf "%v" (.currentOrder | default $defaultOrder)) }}
-{{ $titleAsc := printf "%v" (.titleAsc | default "") }}
-{{ $titleDesc := printf "%v" (.titleDesc | default "") }}
 {{ $isActive := eq $field $currentField }}
 {{ $nextOrder := $defaultOrder }}
 {{ if $isActive }}{{ $nextOrder = cond (eq $currentOrder "asc") "desc" "asc" }}{{ end }}
 {{ $indicator := "↨" }}
 {{ if $isActive }}{{ $indicator = cond (eq $currentOrder "asc") "↑" "↓" }}{{ end }}
-{{ $actionLabel := cond (eq $nextOrder "asc") $titleAsc $titleDesc }}
+{{ $actionLabel := replace (index .actions $nextOrder) "{field}" $label }}
 {{ $href := partial "./url.html" (dict "ctx" $ctx "baseHref" .baseHref "sort" (printf "%s-%s" $field $nextOrder) "fragment" .fragment) }}
 <span class="item-field {{ $class }}" data-item-field="{{ $field }}">
   <a
@@ -22,8 +20,6 @@
     data-sort-control="true"
     data-sort-field="{{ $field }}"
     data-sort-default-order="{{ $defaultOrder }}"
-    data-sort-title-asc="{{ $titleAsc }}"
-    data-sort-title-desc="{{ $titleDesc }}"
     data-sort-active="{{ cond $isActive "true" "false" }}">
     {{ $label }}&nbsp;<span class="list-sort-indicator" data-sort-indicator aria-hidden="true">{{ $indicator }}</span>
   </a>

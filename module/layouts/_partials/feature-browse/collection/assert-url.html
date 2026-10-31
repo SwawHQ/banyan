@@ -1,0 +1,28 @@
+{{- $page := . -}}
+{{- if ne $page.Kind "page" -}}
+  {{- $name := $page.Path -}}
+  {{- with $page.File -}}{{- $name = .Path -}}{{- end -}}
+  {{- range $field := slice "url" "slug" -}}
+    {{- if ne (trim (printf "%v" (index $page.Params $field | default "")) " \r\n\t") "" -}}
+      {{- errorf "Column URL: %s must not set %s; column addresses follow their directory." $name $field -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if partial "feature-browse/is-rendered-html.html" $page -}}
+    {{- $path := trim (urlize $page.Path) "/" -}}
+    {{- $expected := $page.Site.Home.RelPermalink -}}
+    {{- if $path -}}{{- $expected = printf "%s%s/" $expected $path -}}{{- end -}}
+    {{- $actualPath := (urls.Parse $page.RelPermalink).Path -}}
+    {{- $expectedPath := (urls.Parse $expected).Path -}}
+    {{- /* Path is normalized to lowercase even when published URLs retain directory case. */ -}}
+    {{- if ne (lower $actualPath) (lower $expectedPath) -}}
+      {{- errorf "Column URL: %s must follow its directory; expected %q, got %q. Remove permalink overrides for columns." $name $expected $page.RelPermalink -}}
+    {{- end -}}
+    {{- range $page.Ancestors -}}
+      {{- if partial "feature-browse/is-rendered-html.html" . -}}
+        {{- if not (hasPrefix $actualPath (urls.Parse .RelPermalink).Path) -}}
+          {{- errorf "Column URL: %s must keep its directory ancestors; %q is outside %q." $name $page.RelPermalink .RelPermalink -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

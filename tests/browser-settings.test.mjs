@@ -13,7 +13,7 @@ import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_share
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-settings-tests');
 const article='/d/settings-fixture/#from=all&sorts=name-asc&anchor=details';
-const pages=['/prefs/one/','/prefs/appearance/','/prefs/plain/','/prefs/language/'];
+const pages=['/prefs/one/','/prefs-appearance/','/prefs/plain/','/prefs-language/'];
 let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
@@ -50,7 +50,8 @@ before(()=>{
     for(const [name,route] of [['my','one'],['appearance','appearance'],['language','language']]) {
       const filename=(name==='my'?'index':'_index')+suffix+'.md';
       const text=fs.readFileSync(path.join(root,'content',name,filename),'utf8');
-      write(path.join(content,name,filename),text.replace(/^url:.*$/m,'url: '+prefix+'/prefs/'+route+'/\n'));
+      if(name==='my')write(path.join(content,name,filename),text.replace(/^url:.*$/m,'url: '+prefix+'/prefs/'+route+'/\n'));
+      else write(path.join(content,'prefs-'+route,filename),text.replace(/^url:.*\r?\n/m,''));
     }
     write(path.join(content,'settings-plain/index'+suffix+'.md'),
       `---\ntitle: Independent plain settings\nlayout: page-article-norss\nurl: ${prefix}/prefs/plain/\nweight: 85\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nPlain settings have browser Back and no custom Back link.`);
@@ -73,7 +74,7 @@ test('settings declarations expose source fragments, page order and detailed hel
 });
 
 test('settings URL checks retain unknown query, fragment and state through visits and reloads',{timeout:20000},()=>{
-  for(const route of ['/prefs/language/','/prefs/appearance/','/prefs/one/','/prefs/plain/']) {
+  for(const route of ['/prefs-language/','/prefs-appearance/','/prefs/one/','/prefs/plain/']) {
     const state=report(cli('url',['--page',route,'--out',path.join(work,'reports')]));
     assert.equal(state.details.cases.length,4);
     assert.deepEqual(state.details.cases.map(item=>item.phase),['visit','reload','visit','reload']);
@@ -95,8 +96,8 @@ test('URL checks detect stripped queries, fragments and caller history state',{t
     ['stripped-fragment','history.replaceState(history.state,"",location.pathname+location.search);',/unused query and fragment/],
     ['stripped-state','history.replaceState(null,"",location.href);',/caller history state/]
   ]) {
-    const broken=fixture(name);probe(broken,name,code,['prefs/appearance']);
-    const result=cli('url',['--page','/prefs/appearance/'],broken);
+    const broken=fixture(name);probe(broken,name,code,['prefs-appearance']);
+    const result=cli('url',['--page','/prefs-appearance/'],broken);
     assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,message);
   }
 });
@@ -114,7 +115,7 @@ test('history checks reject rewritten root links and duplicated visits',{timeout
 
 test('history checks detect wrong Back, lost source state and broken no-history fallback',{timeout:20000},()=>{
   for(const [name,code,routes,message] of [
-    ['wrong-back','document.addEventListener("click",event=>{if(event.target.closest("[data-page-action=back]")){event.preventDefault();event.stopImmediatePropagation();location.assign("/");}},true);',['prefs/language'],/Timeout/],
+    ['wrong-back','document.addEventListener("click",event=>{if(event.target.closest("[data-page-action=back]")){event.preventDefault();event.stopImmediatePropagation();location.assign("/");}},true);',['prefs-language'],/Timeout/],
     ['lost-source-state','if(performance.getEntriesByType("navigation")[0]?.type==="back_forward")history.replaceState(null,"",location.href);',['d/settings-fixture'],/restore caller history state/],
     ['broken-empty-back','document.addEventListener("click",event=>{if(history.length===1&&event.target.closest("[data-page-action=back]")){event.preventDefault();event.stopImmediatePropagation();}},true);',['prefs/one'],/Timeout/]
   ]) {

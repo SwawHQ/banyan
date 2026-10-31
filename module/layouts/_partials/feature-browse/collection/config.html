@@ -1,6 +1,6 @@
 {{- $page := .page -}}
 {{- $views := dict
-  "page-collection" "name"
+  "page-collection-directory-name-only" "name"
   "page-collection-directory" "directory"
   "page-collection-directory-all" "all"
   "page-collection-products" "products"
@@ -9,6 +9,9 @@
   "page-collection-appearance" "choice"
 -}}
 {{- $view := index $views $page.Layout | default "" -}}
+{{- if and $view (ne $page.Kind "section") -}}
+  {{- errorf "Collection page %s uses %q and requires an ordinary section _index.md; regular pages cannot use collection layouts." ($page.File.Path | default $page.Path) $page.Layout -}}
+{{- end -}}
 {{- $provider := "" -}}
 {{- $script := "" -}}
 {{- $timeTree := false -}}

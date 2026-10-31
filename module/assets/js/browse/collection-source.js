@@ -31,14 +31,6 @@ export function normalizeCollectionSource(source) {
 }
 
 export function readPageCollectionSource() {
-    const serializedSource = document.body?.dataset.pageCollectionSource || '';
-    if (!serializedSource) {
-        return null;
-    }
-
-    try {
-        return normalizeCollectionSource(JSON.parse(serializedSource));
-    } catch (error) {
-        return null;
-    }
+    const logicalPath = normalizeFromPath(document.body?.dataset.collectionPath || '');
+    return logicalPath ? { logicalPath } : null;
 }

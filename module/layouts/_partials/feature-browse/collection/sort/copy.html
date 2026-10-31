@@ -7,17 +7,7 @@
   "value" (i18n "products_col_value")
 -}}
 {{- $actions := dict
-  "name-asc" (i18n "list_sort_name_asc")
-  "name-desc" (i18n "list_sort_name_desc")
-  "date-asc" (i18n "list_sort_date_asc")
-  "date-desc" (i18n "list_sort_date_desc")
-  "count-asc" (i18n "list_sort_size_asc")
-  "count-desc" (i18n "list_sort_size_desc")
-  "size-asc" (i18n "list_sort_size_asc")
-  "size-desc" (i18n "list_sort_size_desc")
-  "price-asc" (i18n "products_sort_price_asc")
-  "price-desc" (i18n "products_sort_price_desc")
-  "value-asc" (i18n "products_sort_value_asc")
-  "value-desc" (i18n "products_sort_value_desc")
+  "asc" (i18n "list_sort_asc")
+  "desc" (i18n "list_sort_desc")
 -}}
 {{- return (dict "fields" $fields "actions" $actions) -}}
