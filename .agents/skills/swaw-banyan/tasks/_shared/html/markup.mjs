@@ -1,13 +1,8 @@
 export function decodeHtmlAttribute(value) {
-    return value
-        .replace(/&#(?:x([0-9a-f]+)|(\d+));/gi, (_, hex, decimal) =>
-            String.fromCodePoint(parseInt(hex || decimal, hex ? 16 : 10)))
-        .replace(/&quot;/g, '"')
-        .replace(/&#34;/g, '"')
-        .replace(/&#39;/g, '\'')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>');
+    return value.replace(/&(?:#(?:[xX]([0-9a-fA-F]+)|(\d+))|(quot|amp|lt|gt));/g,
+        (_, hex, decimal, named) => named
+            ? { quot: '"', amp: '&', lt: '<', gt: '>' }[named]
+            : String.fromCodePoint(parseInt(hex || decimal, hex ? 16 : 10)));
 }
 
 export function extractAttribute(text, attributeName) {
