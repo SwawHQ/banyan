@@ -17,10 +17,6 @@ export function readFieldValue(hash, field) {
     return readFragment(hash).get(field) || '';
 }
 
-export function hasFieldValue(hash, field) {
-    return readFragment(hash).has(field);
-}
-
 export function writeFragment(url, fields) {
     // Keep plain chapter links native when there is no other fragment state.
     if (fields.size === 1 && fields.has('anchor')) {

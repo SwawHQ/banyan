@@ -31,8 +31,11 @@ export function renderPathColumn(column, payload, { selectedPathname = '', linea
     const elements = [...list.querySelectorAll('[data-list-item]')];
     const state = getCollectionSortState(payload);
     const linkState = state || readRequestedSortState(payload, '', '');
-    const { rows } = sortItemsRows(payload.rows, payload.sortVariant, payload.logicalPath, payload.defaultSort);
-    const ordered = document.createDocumentFragment();
+    // Hugo has already ordered the fragment for its default sort.
+    const reordered = state && state.sortToken !== payload.defaultSort;
+    const rows = reordered
+        ? sortItemsRows(payload.rows, payload.sortVariant, payload.logicalPath, payload.defaultSort).rows : payload.rows;
+    const ordered = reordered ? document.createDocumentFragment() : null;
     for (const row of rows) {
         const element = elements[row._originalIndex];
         const link = element.querySelector('a[data-list-entry]');
@@ -41,9 +44,9 @@ export function renderPathColumn(column, payload, { selectedPathname = '', linea
         link.classList.toggle('is-current', !!current);
         if (current) link.setAttribute('aria-current', 'page');
         else link.removeAttribute('aria-current');
-        ordered.appendChild(element);
+        ordered?.appendChild(element);
     }
-    list.appendChild(ordered);
+    if (ordered) list.appendChild(ordered);
     if (state) updateCollectionColumnHeader(list.querySelector('[data-list-header]'), payload, state, lineageLogicalPath);
     column.removeAttribute('data-navigation-failed');
     column.dataset.navigationColumn = payload.logicalPath;
@@ -54,10 +57,10 @@ export function renderPathColumn(column, payload, { selectedPathname = '', linea
     column.replaceChildren(list);
 }
 
-function fillPathColumn(column, model, error) {
+export function fillPathColumn(column, model, error = '', lineageLogicalPath = '') {
     column.dataset.navigationColumn = model.key;
-    column.toggleAttribute('data-navigation-failed', model.failed === true);
-    if (model.failed) {
+    column.toggleAttribute('data-navigation-failed', !model.payload);
+    if (!model.payload) {
         delete column.dataset.breadcrumbCollectionHref;
         delete column.dataset.sortVariant;
         delete column.dataset.defaultSort;
@@ -67,12 +70,13 @@ function fillPathColumn(column, model, error) {
         column.replaceChildren(message);
         return;
     }
-    renderPathColumn(column, model.payload, { selectedPathname: model.selectedPathname });
+    const selectedPathname = normalizePathname(new URL(model.selected, window.location.origin).pathname);
+    renderPathColumn(column, model.payload, { selectedPathname, lineageLogicalPath });
 }
 
-export function renderPathColumns(models, error = '') {
+export function preparePathColumns(models) {
     const nav = document.querySelector('[data-slot="breadcrumb"]');
-    if (!nav || !Array.isArray(models)) return false;
+    if (!nav) return [];
     // Keep the reserved scroll containers attached. Replacing them resets the
     // horizontal canvas in WebKit even when the new columns have identical sizes.
     const columns = Array.from(nav.children);
@@ -84,10 +88,17 @@ export function renderPathColumns(models, error = '') {
             column.dataset.collectionColumn = 'true';
             nav.appendChild(column);
         }
-        fillPathColumn(column, model, error);
+        if (column.dataset.navigationColumn !== model.key) {
+            column.replaceChildren();
+            column.removeAttribute('data-navigation-failed');
+            delete column.dataset.breadcrumbCollectionHref;
+            delete column.dataset.sortVariant;
+            delete column.dataset.defaultSort;
+            column.dataset.navigationColumn = model.key;
+        }
     });
     columns.slice(models.length).forEach(column => column.remove());
     nav.setAttribute('aria-label', 'Breadcrumb');
     nav.removeAttribute('aria-hidden');
-    return true;
+    return [...nav.children];
 }

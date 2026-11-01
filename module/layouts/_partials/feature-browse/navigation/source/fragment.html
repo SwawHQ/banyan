@@ -45,6 +45,7 @@
         {{- $attrs = merge $attrs (dict (printf "sort-%s" $field) (index $row $key)) -}}
       {{- end -}}
     {{- end -}}
+    {{- $href = partial "feature-browse/collection/entry-href.html" (dict "row" $row "source" $source) -}}
     {{- partial "system-ui/list/item.html" (dict "href" $href "text" $text "title" $row.title "icon" $row.icon "rowDataAttrs" $attrs) -}}
   {{- end -}}
 </div>

@@ -8,7 +8,7 @@ const readMain=page=>page.evaluate(()=>{
   const control=grid.querySelector('[data-sort-active="true"]');
   return {source:{logicalPath:document.body.dataset.collectionPath,defaultSort:['name','products'].includes(grid.dataset.sortVariant)?'name-asc':'date-desc'},
     field:control?.dataset.sortField,indicator:control?.querySelector('[data-sort-indicator]')?.textContent.trim(),
-    rows:[...grid.querySelectorAll('[data-list-entry]')].map(link=>({key:new URL(link.href).pathname,href:link.href,text:link.textContent.trim()}))};
+    rows:[...grid.querySelectorAll('[data-list-entry]')].map(link=>({kind:link.parentElement.dataset.kind,key:new URL(link.href).pathname,href:link.href,text:link.textContent.trim()}))};
 });
 const order=column=>({href:column.href,field:column.field,indicator:column.indicator,rows:column.rows.map(({key,text})=>({key,text}))});
 
@@ -30,8 +30,8 @@ function checkMainLinks(main,columns) {
   assert.ok(main.source?.logicalPath,'Main collection must declare its source.');
   const defaults=main.source.defaultSort,depth=main.source.logicalPath.split('/').filter(Boolean).length;
   const active=main.field+'-'+(main.indicator==='↑'?'asc':'desc');
-  const links=main.rows.filter(row=>new URLSearchParams(new URL(row.href).hash.slice(1)).has('from'));
-  assert.ok(links.length>0,'Main collection must contain an article with source context.');
+  const links=main.rows.filter(row=>row.kind==='page');
+  assert.ok(links.length>0,'Main collection must contain an article.');
   for(const row of links) {
     const url=new URL(row.href),slots=(new URLSearchParams(url.hash.slice(1)).get('sorts')||'').split(',');
     const effective=[...Array(Math.max(0,depth-slots.length)).fill('_'),...slots];

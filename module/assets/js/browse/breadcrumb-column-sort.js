@@ -2,6 +2,7 @@ import {
     applyBreadcrumbRowSort,
     buildCollectionSortToggleHref,
     getCollectionSortState,
+    readRequestedSortState,
 } from './breadcrumb-items.js';
 import { readBreadcrumbColumns, readBreadcrumbColumn } from './breadcrumb-source.js';
 import { readActiveNavigationRoute } from './entry-source.js';
@@ -36,32 +37,41 @@ export function refreshBreadcrumbCollectionColumns(changedLogicalPath = '') {
             let selectedPathname = '';
             try { selectedPathname = normalizePathname(new URL(column.selected, window.location.origin).pathname); } catch (_) { }
             renderPathColumn(wrapper, decoded, { selectedPathname, lineageLogicalPath });
+            return;
         }
         const state = getCollectionSortState(source);
+        const linkState = state || readRequestedSortState(source, '', '');
         const header = wrapper.querySelector('[data-list-header]');
-        if (!state || !header?.querySelector('[data-collection-sort-toggle]')) return;
+        if (!header) return;
         const links = [...wrapper.querySelectorAll('[data-list-item] > a[data-list-entry][href]')];
         const pathname = href => normalizePathname(new URL(href, window.location.origin).pathname);
         const elementsByPath = new Map(links.map(link => [pathname(link.href), link.parentElement]));
-        const { rows } = sortItemsRows(decoded.rows, state.sortVariant, source.logicalPath, state.defaultSort);
+        const rows = state && state.sortToken !== source.defaultSort
+            ? sortItemsRows(decoded.rows, state.sortVariant, source.logicalPath, state.defaultSort).rows : decoded.rows;
         const rowElements = rows.map(row => elementsByPath.get(pathname(row.href)));
         if (rowElements.length !== links.length || rowElements.some(row => !row)) return;
         rows.forEach((row, i) => {
             const link = rowElements[i].querySelector('a[data-list-entry]');
             const url = new URL(link.href);
             // Preserve the existing from, fragment and unrelated query fields.
-            applyBreadcrumbRowSort(url, row, source, state);
+            applyBreadcrumbRowSort(url, row, source, linkState);
             const href = `${url.pathname}${url.search}${url.hash}`;
             if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+            const current = pathname(row.href) === pathname(column.selected);
+            link.classList.toggle('is-current', current);
+            if (current) link.setAttribute('aria-current', 'page');
+            else link.removeAttribute('aria-current');
         });
         if (rowElements.some((row, i) => row !== links[i].parentElement)) {
             const scrollTop = wrapper.scrollTop;
+            const focused = wrapper.contains(document.activeElement) ? document.activeElement : null;
             const fragment = document.createDocumentFragment();
             rowElements.forEach(row => fragment.appendChild(row));
             header.parentElement.appendChild(fragment);
+            focused?.focus({ preventScroll: true });
             wrapper.scrollTop = scrollTop;
         }
-        updateCollectionColumnHeader(header, source, state, lineageLogicalPath);
+        if (state) updateCollectionColumnHeader(header, source, state, lineageLogicalPath);
     });
 }
 

@@ -16,10 +16,6 @@ import {
 } from './navigation-state.js';
 import { readPageCollectionSource } from './collection-source.js';
 import { readCollectionSortCopy, formatSortAction } from './collection-sort-copy.js';
-import {
-    ENTRY_LINEAGE_FIELD,
-    hasFieldValue,
-} from './navigation-state.contract.js';
 
 function buildSortHref(token, defaultToken) {
     const url = new URL(window.location.href);
@@ -88,7 +84,7 @@ function updateCollectionEntryLinks(list, variantName, currentToken, pageCollect
 
         applySortTokenToUrl(url, currentToken, variant.defaultToken);
         if (pageCollectionSource?.logicalPath) {
-            const isEntryLink = hasFieldValue(url.hash, ENTRY_LINEAGE_FIELD);
+            const isEntryLink = link.parentElement.dataset.kind === 'page';
             applySortsTokensToUrl(
                 url,
                 isEntryLink ? currentSorts : descendantSorts,

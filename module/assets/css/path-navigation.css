@@ -1,10 +1,4 @@
 /* Path columns use the same layout at every width; the document scrolls horizontally. */
-html[data-entry-breadcrumb-pending="true"] .path-column,
-html[data-breadcrumb-sort-pending="true"] .path-column {
-    opacity: 0;
-    pointer-events: none;
-}
-
 .path-navigation {
     display: contents;
 }

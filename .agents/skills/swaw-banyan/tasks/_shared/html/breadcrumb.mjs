@@ -111,6 +111,11 @@ function readColumn(href,logicalPath,{directory,pagePath,cache}) {
   return payload;
 }
 
+export function normalizeLogicalPath(value) {
+  try {value=decodeURIComponent(value);} catch {}
+  const parts=value.split('/').filter(Boolean);return parts.length?'/'+parts.join('/')+'/':'';
+}
+
 export function readBreadcrumbData(text,{directory,pagePath,cache=new Map()}={}) {
   const body=extractStartTags(text,'body')[0]||'',navigationText=extractTagAttribute(body,'data-navigation');
   let sources=[],defaultColumns=[],columns={},columnURLs={},routes=[],navigation=null,error='';
@@ -126,16 +131,12 @@ export function readBreadcrumbData(text,{directory,pagePath,cache=new Map()}={})
       &&(navigation.resources!==''||Object.keys(navigation.columns).length>0)))
       throw new Error('Navigation resources directory is missing');
     if(typeof navigation.default!=='string')throw new Error('Navigation default is not a column path');
-    const normalize=value=>{
-      try {value=decodeURIComponent(value);} catch {}
-      const parts=value.split('/').filter(Boolean);return parts.length?'/'+parts.join('/')+'/':'';
-    };
     const keys=new Map();
     for(const [logicalPath,hash] of Object.entries(navigation.columns)) {
       if(typeof hash!=='string'||!/^[a-f0-9]{64}$/.test(hash))throw new Error('Invalid breadcrumb column hash for '+logicalPath);
       const href=navigation.resources+hash+'.txt';columnURLs[logicalPath]=href;
       if(directory)columns[logicalPath]=readColumn(href,logicalPath,{directory,pagePath,cache});
-      keys.set(normalize(logicalPath),logicalPath);
+      keys.set(normalizeLogicalPath(logicalPath),logicalPath);
     }
     const canonical=extractCanonicalHref(text),currentPath=canonical?new URL(canonical).pathname:'/'+(pagePath||'').replace(/index\.html$/,'');
     const hydrate=column=>{
@@ -147,26 +148,26 @@ export function readBreadcrumbData(text,{directory,pagePath,cache=new Map()}={})
       if(payload)Object.assign(source,{provider:payload.provider,href:payload.href,label:payload.label,sortVariant:payload.sortVariant,defaultSort:payload.defaultSort});
       let selected={href};
       if(payload)for(const row of payload.rows) {
-        if(row.href===href){selected={...row,current:true};break;}
+        if(new URL(row.href,'https://output.invalid').pathname===new URL(href,'https://output.invalid').pathname){selected={...row,current:true};break;}
       }
       return {source,selected,payload};
     };
     const hrefFor=key=>navigation.home+key.replace(/^\/+/,''),routeFor=logicalPath=>{
-      const raw=keys.get(normalize(logicalPath)),parts=normalize(raw||'').split('/').filter(Boolean);
+      const raw=keys.get(normalizeLogicalPath(logicalPath)),parts=normalizeLogicalPath(raw||'').split('/').filter(Boolean);
       const path=parts.map((_,index)=>keys.get('/'+parts.slice(0,index+1).join('/')+'/')).filter(Boolean);
       return {root:raw?navigation.home+raw.replace(/^\/+/, '').split('/')[0]+'/':'',columns:path.map((column,index)=>
         hydrate({column,...(index+1<path.length?{selected:hrefFor(path[index+1])}:{})}))};
     };
-    if(navigation.default&&!keys.has(normalize(navigation.default)))throw new Error('Missing breadcrumb column URL for '+navigation.default);
+    if(navigation.default&&!keys.has(normalizeLogicalPath(navigation.default)))throw new Error('Missing breadcrumb column URL for '+navigation.default);
     defaultColumns=navigation.default?routeFor(navigation.default).columns:[];
-    const currentCollection=normalize(extractTagAttribute(body,'data-collection-path'));
+    const currentCollection=normalizeLogicalPath(extractTagAttribute(body,'data-collection-path'));
     // Sources are inspection data, recovered from terminal rows rather than an inline whitelist.
     for(const [logicalPath,payload] of Object.entries(columns)) {
       let contains=false;
       for(const row of payload.rows) {
         if(row.href&&new URL(row.href,'https://output.invalid').pathname===currentPath){contains=true;break;}
       }
-      if(!contains||normalize(logicalPath)===currentCollection)continue;
+      if(!contains||normalizeLogicalPath(logicalPath)===currentCollection)continue;
       const route=routeFor(logicalPath);routes.push(route);
       sources.push({logicalPath,rootItem:{href:route.root},columns:navigation.default?route.columns.slice(0,-1):[],
         currentColumn:hydrate({column:logicalPath})});

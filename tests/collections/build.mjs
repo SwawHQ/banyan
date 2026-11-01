@@ -154,8 +154,10 @@ try {
             `${logical} navigation payload omits display-only fields`);
         assert(data.rows.every(row => !Object.hasOwn(row, 'key') && !Object.hasOwn(row, 'sort_group')),
             `${logical} navigation payload omits URL duplicates and derived groups`);
-        payloadCache.set(cacheKey, data);
-        return data;
+        const canonical = {...data, rows: data.rows.map(row => ({...row,
+            href: new URL(row.href, 'https://example.test').pathname}))};
+        payloadCache.set(cacheKey, canonical);
+        return canonical;
     }
     const displayedRowsCache = new Map();
     function displayedRows(output, lang, logical) {
@@ -394,7 +396,7 @@ try {
                 assert.equal(await page.locator('.slot-main [data-sort-field="date"]').getAttribute('aria-label'),
                     'Sort by Updated '+(direction==='asc'?'descending':'ascending'));
                 const ordered = await page.locator(links).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
-                await page.locator(`${links}[href*="/p/contract-missing/#"]`).click();
+                await page.locator(`${links}[href*="/p/contract-missing/"]`).click();
                 await waitForBrowse(page);
                 const pathOrder = await page.locator('[data-slot=breadcrumb] .item-control[href*="/p/contract-"]').evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
                 assert.deepEqual(pathOrder, ordered, 'Lastmod sort survives entry into the article path column');
@@ -411,7 +413,7 @@ try {
             })));
             assert.deepEqual(ordered.map(row => row.version), direction==='asc' ? ['','','2.9','2.10'] : ['2.10','2.9','',''],
                 'Versions use the existing string sort, including numeric comparison and empty strings.');
-            await page.locator('.slot-main a[href*="/p/contract-missing/#"]').click();
+            await page.locator('.slot-main a[href*="/p/contract-missing/"]').click();
             await waitForBrowse(page);
             const items = await page.locator('[data-breadcrumb-collection-href="/products/free/"] [data-list-entry]').evaluateAll(links => links.map(a => new URL(a.href).pathname));
             assert.deepEqual(items, ordered.map(row => row.href), 'Version sort survives entry into the article path column.');
@@ -430,7 +432,7 @@ try {
             assert(ordered.slice(firstMissing).every(row => row.price === ''), `unpriced last on price-${direction}`);
             const amounts = ordered.slice(0, firstMissing).map(row => Number(row.price));
             assert.deepEqual(amounts, [...amounts].sort((a, b) => direction === 'asc' ? a - b : b - a));
-            const clicked = page.locator('.slot-main a[href*="/p/contract-missing/#"]');
+            const clicked = page.locator('.slot-main a[href*="/p/contract-missing/"]');
             await clicked.click();
             await waitForBrowse(page);
             const selected = await page.locator('[data-root-href].is-current').getAttribute('data-root-href');
@@ -441,7 +443,7 @@ try {
         // Explicit directories must support article entry, not just compile a page.
         await gotoAndWait(page, `${baseUrl}/products/`);
         await page.locator('.slot-main a').filter({ hasText: '$5~$50' }).click();
-        await page.locator('.slot-main a[href*="/p/contract-priced/#"]').click();
+        await page.locator('.slot-main a[href*="/p/contract-priced/"]').click();
         await waitForBrowse(page);
         assert.equal(await page.locator('[data-root-href].is-current').getAttribute('data-root-href'), '/products/');
         await context.close();
@@ -476,7 +478,7 @@ try {
         const iconsPage = await iconsContext.newPage();
         const selectedIcon = () => iconsPage.locator('[data-slot=breadcrumb] a.is-current[href*="/p/contract-missing/"] use').getAttribute('href');
         await gotoAndWait(iconsPage, `${baseUrl}/products/free/#sort=name-desc`);
-        await iconsPage.locator('.slot-main a[href*="/p/contract-missing/#"]').click();
+        await iconsPage.locator('.slot-main a[href*="/p/contract-missing/"]').click();
         await waitForBrowse(iconsPage);
         assert.equal(await selectedIcon(), '#icon-product');
         await gotoAndWait(iconsPage, `${baseUrl}/p/contract-missing/#from=products/paid&sort=name-asc`);
@@ -492,7 +494,7 @@ try {
         assert.equal(await selectedIcon(), '#icon-appearance-light');
         for (const prefix of prefixes) {
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/all/#sort=name-asc`);
-            await iconsPage.locator('.slot-main a[href*="/p/contract-unclassified/#"]').click();
+            await iconsPage.locator('.slot-main a[href*="/p/contract-unclassified/"]').click();
             const selectedAsset = () => iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-unclassified/"] img.icon--image.icon--monochrome');
             await waitForBrowse(iconsPage);
             assert.equal(await selectedAsset().getAttribute('src'), assetImage.image);
@@ -505,7 +507,7 @@ try {
             await waitForBrowse(iconsPage);
             assert.equal(await selectedAsset().getAttribute('src'), assetImage.image);
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/#sort=name-asc`);
-            await iconsPage.locator('.slot-main a[href*="/p/contract-no-offer/#"]').click();
+            await iconsPage.locator('.slot-main a[href*="/p/contract-no-offer/"]').click();
             const selectedImage = () => iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-no-offer/"] img.icon--image');
             await waitForBrowse(iconsPage);
             assert.equal(await selectedImage().getAttribute('src'), ownImage.image);
@@ -518,11 +520,11 @@ try {
             await waitForBrowse(iconsPage);
             assert.equal(await selectedImage().getAttribute('src'), ownImage.image);
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/d/contract-image/child/`);
-            await iconsPage.locator('.slot-main a[href*="/p/contract-image-child/#"]').click();
+            await iconsPage.locator('.slot-main a[href*="/p/contract-image-child/"]').click();
             await waitForBrowse(iconsPage);
             assert.equal(await iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-image-child/"] img.icon--image.icon--monochrome').getAttribute('src'), inheritedImage.image);
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/#sort=name-asc`);
-            await iconsPage.locator('.slot-main a[href*="/p/contract-zero/#"]').click();
+            await iconsPage.locator('.slot-main a[href*="/p/contract-zero/"]').click();
             const selectedText = () => iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-zero/"] .icon--text').textContent();
             await waitForBrowse(iconsPage);
             assert.equal(await selectedText(), '<b>EN</b>');
@@ -536,7 +538,7 @@ try {
             await waitForBrowse(iconsPage);
             assert.equal(await selectedText(), '<b>EN</b>');
             await gotoAndWait(iconsPage, `${baseUrl}${prefix}/d/contract-text/`);
-            await iconsPage.locator('.slot-main a[href*="/p/contract-text/#"]').click();
+            await iconsPage.locator('.slot-main a[href*="/p/contract-text/"]').click();
             await waitForBrowse(iconsPage);
             assert.equal(await iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
         }
@@ -584,7 +586,8 @@ try {
                 await waitForBrowse(namesPage);
                 const column = `[data-slot=breadcrumb] [data-breadcrumb-collection-href="${prefix}/${list}/"]`;
                 const assertNameColumn = async () => {
-                    assert.equal(new URLSearchParams(new URL(namesPage.url()).hash.slice(1)).get('from'), list);
+                    assert.equal(new URLSearchParams(new URL(namesPage.url()).hash.slice(1)).get('from'),
+                        ['d', 'd/contract-inherit'].includes(list) ? null : list, 'Only reference lists need an explicit source.');
                     assert.deepEqual(await paths(`${column} .item-control`), descending, 'Article path uses the same name list order');
                     assert.deepEqual(await paths(`${column} .item-control.is-current`), [articlePath]);
                     assert.match(await namesPage.locator(`${column} .path-column-sort`).textContent(), /↓/);

@@ -85,7 +85,7 @@ export function readBreadcrumbColumns() {
     }));
 }
 
-async function loadColumn(column) {
+export async function loadBreadcrumbColumn(column) {
     const key = column.url;
     if (!key) throw new Error('Missing navigation resource');
     if (loadedColumns.get(key)?.logicalPath === column.key) return;
@@ -108,9 +108,4 @@ async function loadColumn(column) {
         loadingColumns.set(key, task);
     }
     await loadingColumns.get(key);
-}
-
-export function loadBreadcrumbColumns(columns) {
-    // Keep successful columns available when another column fails or needs a retry.
-    return Promise.allSettled(columns.map(loadColumn));
 }

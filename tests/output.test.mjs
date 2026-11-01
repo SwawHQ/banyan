@@ -11,6 +11,9 @@ import {verifyRetiredOutput} from './output/retired.mjs';
 import {inspect as inspectShareImage} from '../.agents/skills/swaw-banyan/tasks/check/img/share/inspect.mjs';
 import {breadcrumbRows,inspect as inspectBreadcrumb} from '../.agents/skills/swaw-banyan/tasks/check/html/breadcrumb/inspect.mjs';
 import {readBreadcrumbData,readNavigationFragment} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
+import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
 
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/output-tests'),budget=fileURLToPath(new URL('./output/budget.mjs',import.meta.url));
 let work,count=0;
@@ -38,6 +41,52 @@ test('repository HTML budgets keep raw and gzip failures outside published check
   for(const [directory,status] of [[small,0],[raw,1]]) {
     const result=spawnSync(process.execPath,[budget,directory],{cwd:work,encoding:'utf8',timeout:10000});
     assert.ifError(result.error);assert.equal(result.status,status,result.stdout+result.stderr);
+  }
+});
+
+test('collection heads prefetch their own shared column without adding a visible path',{timeout:60000},()=>{
+  const root=fileURLToPath(new URL('../',import.meta.url)),content=path.join(work,'prefetch-content'),output=path.join(work,'prefetch-build');
+  const languages=[['',''],['.zh','zh/'],['.zh-tw','zh-tw/'],['.ar','ar/']];
+  for(const [suffix,prefix] of languages) {
+    write(content,'prefetch-name/_index'+suffix+'.md','---\ntitle: Name collection\nlayout: page-collection-directory-name-only\nparams:\n  slots: [breadcrumb]\n---\n');
+    write(content,'prefetch-name/article'+suffix+'.md','---\ntitle: Name article\nlayout: page-article-norss\nurl: /'+prefix+'p/prefetch-name/\nparams:\n  slots: [breadcrumb]\n---\n');
+    write(content,'prefetch-unlisted/_index'+suffix+'.md','---\ntitle: Unlisted aggregate\nlayout: page-collection-directory-all\nbuild: {list: never}\nparams:\n  aggregate: /articles\n  slots: []\n---\n');
+  }
+  const mount=(source,target)=>'\n[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = '+JSON.stringify(target)+'\n';
+  const config=path.join(work,'prefetch.toml');
+  fs.writeFileSync(config,mount(content,'content')+mount('content','content')+fixtureSiteMounts);
+  const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],
+    {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
+  assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
+  const prefetches=html=>extractStartTags(html,'link').filter(tag=>extractTagAttribute(tag,'rel').split(/\s+/).includes('prefetch'));
+  const read=(prefix,route)=>fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');
+  for(const [,prefix] of languages) {
+    const urls={};
+    for(const route of ['articles','articles/category1','articles-all','products','products/examples','products-all','prefetch-name','prefetch-unlisted']) {
+      const html=read(prefix,route),links=prefetches(html),logicalPath='/'+route+'/';
+      assert.equal(links.length,1,prefix+route+' prefetches exactly one current column.');
+      const href=extractTagAttribute(links[0],'href');
+      assert.match(href,/^\/site\/navigation\/[a-f0-9]{64}\.txt$/);
+      assert.ok(html.indexOf(links[0])<html.indexOf('<body'),'The browser sees the hint in the head.');
+      const payload=readNavigationFragment(fs.readFileSync(path.join(output,href.slice(1)),'utf8'));
+      assert.equal(payload.logicalPath,logicalPath);
+      const body=extractStartTags(html,'body')[0],navigation=JSON.parse(extractTagAttribute(body,'data-navigation'));
+      assert.equal(navigation.columns[logicalPath],undefined,'Prefetch does not add the current column to the path manifest.');
+      if(route==='prefetch-name') {
+        assert.equal(navigation.default,'');
+        assert.equal(extractTagAttribute(extractStartTags(html,'html')[0],'data-has-breadcrumb-columns'),'false');
+      }
+      if(route==='prefetch-unlisted')assert.equal(navigation.default,'','Disabled slots keep their empty default path.');
+      urls[logicalPath]=href;
+    }
+    for(const route of ['','language','appearance','p/example-product','p/prefetch-name']) {
+      const html=read(prefix,route);
+      assert.deepEqual(prefetches(html),[],prefix+route+' is not a sortable collection.');
+      if(!route.startsWith('p/'))continue;
+      const navigation=JSON.parse(extractTagAttribute(extractStartTags(html,'body')[0],'data-navigation'));
+      for(const [logicalPath,hash] of Object.entries(navigation.columns))if(urls[logicalPath])
+        assert.equal(urls[logicalPath],navigation.resources+hash+'.txt','The next page reuses the prefetched hash.');
+    }
   }
 });
 

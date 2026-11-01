@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {normalizeLogicalPath} from '../../../../_shared/html/breadcrumb.mjs';
 import {waitForBrowse,afterPaint} from '../../_shared/viewport.mjs';
 import {readColumns,selectColumn,columnLocator,openPage,columnSort} from '../_shared/page.mjs';
 
@@ -7,8 +8,17 @@ function sourceLink(column,article,origin) {
   assert.equal(rows.length,1,'Source column '+column.href+' must link to the requested article exactly once: '+article);
   const url=new URL(rows[0].href);
   assert.equal(url.origin,origin,'Source article must stay within the local site.');
-  assert.equal(new URLSearchParams(url.hash.slice(1)).get('from'),column.source.logicalPath.replace(/^\/+|\/+$/g,''),'Article link must retain its declared column source.');
+  const from=new URLSearchParams(url.hash.slice(1)).get('from');
+  if(from!==null)assert.equal(normalizeLogicalPath(from),normalizeLogicalPath(column.source.logicalPath),'Article link must retain its declared column source.');
   return url.href;
+}
+
+async function assertEffectiveSource(page,logicalPath) {
+  const effective=await page.evaluate(()=>{
+    const from=new URLSearchParams(location.hash.slice(1)).get('from');
+    return from||JSON.parse(document.body.dataset.navigation).default;
+  });
+  assert.equal(normalizeLogicalPath(effective),normalizeLogicalPath(logicalPath),'Article link must retain its declared column source.');
 }
 
 export async function check({page,baseUrl,options}) {
@@ -34,6 +44,7 @@ export async function check({page,baseUrl,options}) {
     const rawHref=await staticPage.locator('main [data-list-entry]').evaluateAll((nodes,target)=>nodes.find(node=>node.href===target)?.getAttribute('href'),raw);
     await staticPage.locator('main [data-list-entry][href='+JSON.stringify(rawHref)+']').click();
     await staticPage.waitForURL(raw);
+    await assertEffectiveSource(staticPage,column.source.logicalPath);
     assert.ok((await staticPage.locator('main').textContent()).trim(),'Opening the article must retain its body without JavaScript.');
   } finally {await context.close();}
   await openPage(page,baseUrl+options.page);
@@ -45,6 +56,7 @@ export async function check({page,baseUrl,options}) {
   await columnLocator(page,options.column).locator('[data-list-entry][href='+JSON.stringify(href)+']').click();await page.waitForURL(target);
   await waitForBrowse(page);await afterPaint(page);
   assert.equal(page.url(),target,'Clicking must preserve the complete source link URL and sorting state.');
+  await assertEffectiveSource(page,column.source.logicalPath);
   const selected=await readColumns(page);
   assert.ok(selected.some(column=>column.href===options.column),'The opened article must retain its source column.');
   const current=columnLocator(page,options.column).locator('[data-list-entry][aria-current="page"]');
@@ -52,6 +64,7 @@ export async function check({page,baseUrl,options}) {
   assert.equal(await current.evaluate(node=>new URL(node.href).pathname),options.article,'Current source row must identify the opened article.');
   await page.reload();await waitForBrowse(page);await afterPaint(page);
   assert.equal(page.url(),target,'Reload must preserve the source and sorting URL.');
+  await assertEffectiveSource(page,column.source.logicalPath);
   assert.ok((await readColumns(page)).some(column=>column.href===options.column),'Reload must retain the source column.');
   assert.equal(await current.evaluate(node=>new URL(node.href).pathname),options.article,'Reload must retain the current article selection.');
   const snapshot=async document=>({
@@ -73,6 +86,7 @@ export async function check({page,baseUrl,options}) {
   page.on('request',record);
   try {
     for(const hash of ['from=swban-missing-source','']) {
+      if(new URL(page.url()).hash===(hash?'#'+hash:''))continue;
       await page.evaluate(hash=>{location.hash=hash;},hash);await page.waitForURL(url=>url.hash===(hash?'#'+hash:''));await waitForBrowse(page);await afterPaint(page);
       const defaultTarget=page.url();
       assert.deepEqual(await snapshot(page),defaults,'Missing or invalid source state must restore default links, selections and accessibility.');

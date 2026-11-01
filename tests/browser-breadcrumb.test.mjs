@@ -45,6 +45,10 @@ before(()=>{
   write(path.join(content,'d/breadcrumb-fixture/child/nested.md'),'---\ntitle: Nested\nurl: d/breadcrumb-fixture/child/nested/\ndate: 2026-01-01\n---\nNested content.');
   for(const [index,name] of ['one','two','three','four','five','six'].entries())write(path.join(content,'d/breadcrumb-fixture',name+'.md'),
     `---\ntitle: ${name}\nurl: ${collection+name}/\ndate: "2026-01-0${index+1}T00:00:00+08:00"\n---\n\n## Chapter\n\n`+'Text for the source-column fixture.\n\n'.repeat(20));
+  for(const name of ['中文','引用'])write(path.join(content,'d',name,'_index.md'),directoryPage(name));
+  for(const name of ['one','two'])write(path.join(content,'d/中文',name+'.md'),
+    `---\ntitle: Unicode ${name}\nurl: /p/unicode-${name}/\ndate: 2026-01-01\n---\nUnicode source article.`);
+  write(path.join(content,'d/引用/_map.toml'),'refs = ["/d/中文/one", "/d/中文/two"]\n');
   for(const suffix of ['','.zh','.zh-tw']) {
     write(path.join(content,'discover','_index'+suffix+'.md'),directoryPage('Sources'));
     write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
@@ -96,8 +100,23 @@ test('native collections and articles work without JavaScript while fragment pat
   }
 });
 
+test('default article sources use clean native links and retain their effective path',{timeout:30000},()=>{
+  for(const query of ['','#sorts=date-desc,date-asc']) {
+    const result=cli('source',['--page',collection+'child/'+query,'--column',collection,'--article',article]);
+    assert.equal(result.status,0,query+'\n'+result.stdout+result.stderr);
+  }
+});
+
+test('Unicode default and explicit sources compare decoded and encoded paths equally',{timeout:30000},()=>{
+  for(const [name,explicit] of [['中文',false],['中文',true],['引用',true]]) {
+    const column='/d/'+encodeURIComponent(name)+'/',query=explicit?'#from=d/'+encodeURIComponent(name):'';
+    const result=cli('source',['--page','/p/unicode-two/'+query,'--column',column,'--article','/p/unicode-one/']);
+    assert.equal(result.status,0,name+query+'\n'+result.stdout+result.stderr);
+  }
+});
+
 test('sort rejects initial node replacement and click-time loss of focus or query data',{timeout:45000},()=>{
-  const replaced=fixture('replaced');script(replaced,article,`const column=document.querySelector('[data-slot=breadcrumb] .path-column:last-child');column.replaceWith(column.cloneNode(true));`);
+  const replaced=fixture('replaced');settledScript(replaced,article,`const column=document.querySelector('[data-slot=breadcrumb] .path-column:last-child');column.replaceWith(column.cloneNode(true));`);
   const initial=cli('sort',['--page',article,'--column',collection],replaced);assert.equal(initial.status,1);assert.match(initial.stderr,/retain reserved column nodes/);
   for(const [name,change,message] of [
     ['focus','document.activeElement.blur()','retain toggle focus'],
@@ -138,6 +157,11 @@ test('source rejects wrong native and runtime lineage, missing links and malform
   const text=fs.readFileSync(file,'utf8'),changed=text.replaceAll(article+'#from=discover/tooling',article+'#from=wrong');
   assert.notEqual(changed,text);fs.writeFileSync(file,changed);
   const staticResult=cli('source',args,raw);assert.equal(staticResult.status,1);assert.match(staticResult.stderr,/declared column source/);
+  const omitted=fixture('omitted-source'),omittedFile=path.join(omitted,'discover/tooling/index.html');
+  fs.writeFileSync(omittedFile,fs.readFileSync(omittedFile,'utf8').replaceAll(article+'#from=discover/tooling',article));
+  const omittedResult=cli('source',args,omitted);assert.equal(omittedResult.status,1);assert.match(omittedResult.stderr,/declared column source/);
+  const omittedRuntime=fixture('omitted-runtime-source');settledScript(omittedRuntime,'discover/tooling/devtools',`document.querySelectorAll('[data-slot=breadcrumb] [data-list-entry]').forEach(link=>{const url=new URL(link.href);if(url.pathname===${JSON.stringify(article)}){const fields=new URLSearchParams(url.hash.slice(1));fields.delete('from');url.hash=fields.toString();link.href=url.href;}});`);
+  const omittedRuntimeResult=cli('source',args,omittedRuntime);assert.equal(omittedRuntimeResult.status,1);assert.match(omittedRuntimeResult.stderr,/preserve the static article source/);
   const missing=cli('source',[...args.slice(0,-1),'/missing/']);assert.equal(missing.status,1);assert.match(missing.stderr,/requested article exactly once/);
   const noColumns=cli('isolation',['--page','/about/']);assert.equal(noColumns.status,1);assert.match(noColumns.stderr,/Choose two sortable/);
 });

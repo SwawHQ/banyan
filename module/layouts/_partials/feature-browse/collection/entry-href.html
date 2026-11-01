@@ -1,0 +1,15 @@
+{{- $row := .row -}}
+{{- $href := $row.href -}}
+{{- if and (eq $row.kind "page") .source.logicalPath -}}
+  {{- $default := "" -}}
+  {{- with $row.node.Parent -}}
+    {{- if eq .Kind "section" -}}
+      {{- $default = partial "./logical-path.html" (dict "ctx" . "href" .RelPermalink) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if ne .source.logicalPath $default -}}
+    {{- $from := partial "feature-browse/routing/lineage-value.html" (dict "logical_path" .source.logicalPath) -}}
+    {{- $href = printf "%s#from=%s" $href $from -}}
+  {{- end -}}
+{{- end -}}
+{{- return $href -}}

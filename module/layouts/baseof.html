@@ -101,6 +101,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">
     <link rel="canonical" href="{{ .Permalink }}">
+    {{- if $hasSortableCollection -}}
+      {{- $column := index $collectionColumnsByHref .RelPermalink | default dict -}}
+      {{- if not $column -}}
+        {{- $column = (partial "feature-browse/navigation/source/page-model.html" (dict "page" .)).currentColumn -}}
+      {{- end -}}
+    <link rel="prefetch" href="{{ $column.payloadUrl }}">
+    {{- end -}}
     {{- with .Params.robots }}
     <meta name="robots" content="{{ . }}">
     {{- end }}

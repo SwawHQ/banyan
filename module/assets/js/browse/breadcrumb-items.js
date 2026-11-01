@@ -1,4 +1,5 @@
 import { normalizeCollectionSource } from './collection-source.js';
+import { readNavigation } from './entry-source.js';
 import {
     SORT_VARIANTS,
     applySortTokenToUrl,
@@ -92,12 +93,14 @@ export function buildCollectionSortToggleHref(
     try {
         const url = new URL(baseHref, window.location.origin);
         const currentLineagePath = readCurrentFromPath();
+        const defaultLineagePath = readNavigation()?.default || '';
         const targetLogicalPath = state.collectionSource.logicalPath;
         const lineageLogicalPath = normalizeFromPath(lineagePathOverride)
             || currentLineagePath
+            || defaultLineagePath
             || targetLogicalPath;
 
-        if (!currentLineagePath) {
+        if (!currentLineagePath && lineageLogicalPath !== defaultLineagePath) {
             applyFromPathToUrl(url, lineageLogicalPath);
         }
         applySortsTokensToUrl(
@@ -149,7 +152,6 @@ export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
 
     try {
         const url = new URL(row.href, window.location.origin);
-        if (!isCollectionRowKind(row.kind)) applyFromPathToUrl(url, collectionSource.logicalPath);
         applyBreadcrumbRowSort(url, row, collectionSource, sortState);
         return toRelativeHref(url);
     } catch (error) {

@@ -145,6 +145,7 @@ try {
 
     console.log('Navigation state checks passed.');
 
+    globalThis.document = { body: { dataset: {} } };
     globalThis.window = {
         addEventListener() {},
         location: {
@@ -436,13 +437,22 @@ try {
 
     assert.equal(
         breadcrumbItems.buildBreadcrumbRowHref(
-            { kind: 'page', href: '/zh/p/contract-beta/', text: '紧凑标题' },
+            { kind: 'page', href: '/zh/p/contract-beta/#from=discover/windows', text: '紧凑标题' },
             { logicalPath: '/discover/windows/', provider: 'collection' },
             { sortToken: '', defaultSort: 'date-desc', sortsTokens: [],
                 defaultSortsTokens: ['date-desc', 'date-desc'] }
         ),
         '/zh/p/contract-beta/#from=discover/windows',
-        'entry hrefs should write collection-only from values'
+        'entry hrefs should preserve the non-default source supplied by the fragment'
+    );
+    assert.equal(
+        breadcrumbItems.buildBreadcrumbRowHref(
+            { kind: 'page', href: '/zh/p/contract-beta/', text: 'Beta' },
+            { logicalPath: '/discover/windows/', provider: 'collection' },
+            {}
+        ),
+        '/zh/p/contract-beta/',
+        'entry hrefs must not add a source to a clean default link'
     );
 
     const hashes = { discover: 'a'.repeat(64), windows: 'b'.repeat(64), unicode: 'c'.repeat(64), updated: 'd'.repeat(64), notes: 'f'.repeat(64) };
@@ -531,6 +541,7 @@ try {
                 message + ': ' + JSON.stringify(actual));
             const imported = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
             const { source, entry, render, sort, root, metadata, fragment } = await import(imported);
+            const loadColumns = columns => Promise.allSettled(columns.map(source.loadBreadcrumbColumn));
             URL.revokeObjectURL(imported);
             const esc = value => String(value).replace(/[&<>"]/g, character =>
                 ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[character]));
@@ -553,9 +564,9 @@ try {
                     { kind: 'section', href: '/zh/discover/windows/', text: 'Windows', title: 'Windows development' },
                 ]),
                 windows: columnHTML('/discover/windows/', 'Windows', '/zh/discover/windows/', [
-                    { href: '/zh/p/contract-alpha/', text: 'Alpha' },
-                    { href: '/zh/p/contract-beta/', text: 'Beta', title: 'Beta detailed article title', rank: '2',
+                    { href: '/zh/p/contract-beta/#from=discover/windows', text: 'Beta', title: 'Beta detailed article title', rank: '2',
                         icon: '<span class="item-icon item-icon--text" aria-hidden="true"><span class="icon icon--text" aria-hidden="true">β</span></span>' },
+                    { href: '/zh/p/contract-alpha/#from=discover/windows', text: 'Alpha' },
                 ]),
                 notes: columnHTML('/notes/', 'Notes', '/zh/notes/', [{ href: '/zh/p/contract-beta/', text: 'Beta' }]),
             };
@@ -582,17 +593,31 @@ try {
             const cached = metadata.readNavigation(), columns = source.readBreadcrumbColumns();
             check(metadata.readNavigation() === cached, 'Unchanged manifests must remain cached.');
             same(columns.map(column => column.selected), ['/zh/discover/windows/', '/zh/p/contract-beta/'], 'Selection derives from path and URL.');
-            check(columns[1].payload === null && entry.buildPathColumn(columns[1]).failed, 'Missing resources must retain failed-column state.');
+            check(columns[1].payload === null, 'Missing resources must retain unloaded-column state.');
             check(source.readBreadcrumbColumn('/discover/工具/').url === manifest.resources + hashes.unicode + '.txt', 'Unicode keys must resolve text resources.');
-            const first = source.loadBreadcrumbColumns(columns), duplicate = source.loadBreadcrumbColumns([...columns].reverse());
+            const first = loadColumns(columns), duplicate = loadColumns([...columns].reverse());
             check(requests.length === 2, 'Concurrent columns load in parallel and duplicate requests are shared.');
             release();await Promise.all([first, duplicate]);
             const loaded = source.readBreadcrumbColumns();
             check(loaded[1].source === loaded[1].payload && loaded[1].source.label === 'Windows', 'Fragment metadata supplies the source.');
             check(loaded[1].payload.rows.length === 2 && columns[1].payload === null, 'New data must not mutate previous column snapshots.');
-            await source.loadBreadcrumbColumns(loaded);check(requests.length === 2, 'Successful fragments remain cached.');
+            await loadColumns(loaded);check(requests.length === 2, 'Successful fragments remain cached.');
             const nav = document.querySelector('[data-slot=breadcrumb]'), reserved = [...nav.children];
-            render.renderPathColumns(loaded.map(entry.buildPathColumn), manifest.error);
+            const slots = render.preparePathColumns(loaded);
+            const nativeAppend = Node.prototype.appendChild;
+            let movedRows = 0;
+            Node.prototype.appendChild = function(node) {
+                if (node instanceof Element && node.matches('[data-list-item]')) movedRows++;
+                return nativeAppend.call(this, node);
+            };
+            try {
+                loaded.forEach((column, index) => render.fillPathColumn(slots[index], column, manifest.error, '/discover/windows/'));
+            } finally { Node.prototype.appendChild = nativeAppend; }
+            same([...nav.children[1].querySelectorAll('.item-title > bdi')].map(node => node.textContent), ['Beta', 'Alpha'],
+                'Default ordering must retain the compiled fragment order.');
+            check(movedRows === 0, 'Default rendering must not move already ordered row elements.');
+            check(fragment.readFieldValue(nav.children[0].querySelector('[data-collection-sort-toggle]').hash, 'sorts') === 'date-asc,_',
+                'The first render must build header links for the full lineage.');
             check(reserved.every((node, index) => node === nav.children[index]), 'Rendering must retain outer scrolling containers.');
             const selected = nav.children[1].querySelector('[aria-current=page]');
             check(selected.title === 'Beta detailed article title' && selected.querySelector('.icon--text').textContent === 'β',
@@ -600,10 +625,11 @@ try {
             check(nav.children[0].querySelector('[aria-current=page]').title === 'Windows development', 'Ancestor selection retains its title.');
             const oldLinks = [...nav.children[1].querySelectorAll('[data-list-entry]')];
             oldLinks[0].focus();const focused = document.activeElement;
-            setLocation('/zh/p/contract-beta/?keep=%2f+value#from=discover/windows&sorts=_,name-desc&anchor=chapter');
+            setLocation('/zh/p/contract-beta/?keep=%2f+value#from=discover/windows&sorts=_,name-asc&anchor=chapter');
             sort.refreshBreadcrumbCollectionColumns('/discover/windows/');
-            check(document.activeElement === focused && oldLinks.every(link => link.isConnected), 'Sorting must retain live nodes and focus.');
-            check(nav.children[1].querySelector('[data-list-entry]').title === 'Beta detailed article title', 'Sorting reorders cloned row elements.');
+            check(oldLinks.every(link => link.isConnected), 'Sorting must retain live nodes.');
+            check(document.activeElement === focused, 'Sorting must retain focus when rows move.');
+            check(nav.children[1].querySelector('[data-list-entry]').title === 'Alpha', 'Sorting reorders cloned row elements.');
             check(selected.hash.includes('from=discover/windows'), 'Row links inherit source state.');
 
             const updated = structuredClone(manifest);updated.columns['/discover/windows/'] = hashes.updated;
@@ -630,19 +656,19 @@ try {
             ];
             for (const html of badFragments) {
                 window.fetch = async () => response(html);
-                check((await source.loadBreadcrumbColumns([unloaded]))[0].status === 'rejected', 'Malformed or active HTML must not enter the cache.');
+                check((await loadColumns([unloaded]))[0].status === 'rejected', 'Malformed or active HTML must not enter the cache.');
                 check(source.readBreadcrumbColumn('/discover/windows/').payload === null, 'Failed fragments remain retryable.');
             }
             window.fetch = async () => ({ ok: false });
-            check((await source.loadBreadcrumbColumns([unloaded]))[0].status === 'rejected', 'HTTP failures remain retryable.');
+            check((await loadColumns([unloaded]))[0].status === 'rejected', 'HTTP failures remain retryable.');
             window.fetch = async () => response(fragments.windows.replace('>Beta<', '>Updated Beta<'));
-            check((await source.loadBreadcrumbColumns([unloaded]))[0].status === 'fulfilled', 'A failed fragment can be retried.');
+            check((await loadColumns([unloaded]))[0].status === 'fulfilled', 'A failed fragment can be retried.');
             check(source.readBreadcrumbColumn('/discover/windows/').payload.template.content.textContent.includes('Updated Beta'), 'Retry uses the new HTML.');
             check(!loaded[1].payload.template.content.textContent.includes('Updated Beta'), 'The old cached snapshot remains unchanged.');
 
             let invalidRequests = 0;window.fetch = async () => { invalidRequests++;throw new Error('Unexpected request'); };
             for (const url of ['https://outside.test/column.txt', 'blob:https://example.test/resource', '']) {
-                check((await source.loadBreadcrumbColumns([{ key: '/missing/', url }]))[0].status === 'rejected', 'Invalid resource URLs fail before fetch.');
+                check((await loadColumns([{ key: '/missing/', url }]))[0].status === 'rejected', 'Invalid resource URLs fail before fetch.');
             }
             check(invalidRequests === 0, 'Cross-origin and missing resources must not be fetched.');
             const invalidHash = structuredClone(manifest);invalidHash.columns['/discover/windows/'] = 'not-a-hash';
@@ -654,7 +680,7 @@ try {
             window.clearTimeout = () => { cleared = true; };
             window.fetch = (_, { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('Aborted')), { once: true }));
             try {
-                const timed = source.loadBreadcrumbColumns([{ key: '/timeout/', url: manifest.resources + 'e'.repeat(64) + '.txt' }]);
+                const timed = loadColumns([{ key: '/timeout/', url: manifest.resources + 'e'.repeat(64) + '.txt' }]);
                 abort();check((await timed)[0].status === 'rejected' && cleared, 'A stalled request must abort and clear its timer.');
             } finally {window.setTimeout = nativeTimeout;window.clearTimeout = nativeClear;}
 

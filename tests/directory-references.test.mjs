@@ -346,6 +346,15 @@ test('ordinary directories share translated references, counts, metadata, source
     const html=read(url);
     assert.ok(html.includes(prefix+'/library/references/'),'Article metadata must link an incoming reference.');
     assert.ok(sources(html).some(item=>item.logicalPath==='/library/references/'),'Source models must expose a referring directory.');
+    const navigation=readBreadcrumbData(html,{directory:output});
+    const rowHref=logicalPath=>navigation.columns[logicalPath].rows.find(row=>new URL(row.href,'https://example.test').pathname===url).href;
+    assert.equal(rowHref('/library/original/'),url,'The default fragment links directly to the canonical article URL.');
+    assert.equal(rowHref('/library/references/'),url+'#from=library/references','A referenced fragment retains its source.');
+    assert.equal(rowHref('/all/'),url+'#from=all','An aggregate fragment retains its source.');
+    const main=extractBlocks(stripRawText(read(prefix+'/library/original/')),'main')[0].inner;
+    const ownLinks=[...main.matchAll(/<a\b[^>]*>/g)].map(match=>extractTagAttribute(match[0],'href'));
+    assert.ok(ownLinks.includes(url),'The default SSR list links directly to the canonical article URL.');
+    assert.ok(!ownLinks.includes(url+'#from=library/original'));
     const rss=read(prefix+'/library/references/','index.xml');
     assert.equal([...rss.matchAll(new RegExp('<guid>https://example\\.test'+url+'</guid>','g'))].length,1,'RSS must list the canonical article once.');
     const sitemap=read(prefix||'/en','sitemap.xml'),llms=read(prefix,'llms.txt');

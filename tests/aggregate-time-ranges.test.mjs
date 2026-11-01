@@ -58,7 +58,8 @@ function collectionRows(html,route,directory=output){
   const logicalPath=extractTagAttribute(extractStartTags(html,'body')[0],'data-collection-path');
   assert.equal(logicalPath,'/'+route+'/');
   const data=collectionPayload(directory,logicalPath,new URL(extractCanonicalHref(html)).pathname);
-  return {source:{logicalPath:data.logicalPath,sortVariant:data.sortVariant,defaultSort:data.defaultSort,href:data.href,label:data.label},rows:data.rows};
+  return {source:{logicalPath:data.logicalPath,sortVariant:data.sortVariant,defaultSort:data.defaultSort,href:data.href,label:data.label},
+    rows:data.rows.map(row=>({...row,href:new URL(row.href,'https://example.test').pathname}))};
 }
 function rows(route,prefix='',directory=output){return collectionRows(read(route,prefix,directory),route,directory);}
 function mainRows(route,prefix='',directory=output){
@@ -138,8 +139,12 @@ test('navigation columns publish flat shared HTML fragments with stable content 
       if(second.columnURLs[logicalPath])assert.equal(second.columnURLs[logicalPath],url,'Articles reuse each column resource.');
       const text=fs.readFileSync(path.join(output,new URL(url,'https://example.test').pathname),'utf8');
       assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.txt');
-      assert.equal(readNavigationFragment(text).logicalPath,logicalPath);
-      assert.doesNotMatch(text,/aria-current=|#from=|<script\b/,'Shared fragments omit per-page selection, lineage and embedded JSON.');
+      const fragment=readNavigationFragment(text);
+      assert.equal(fragment.logicalPath,logicalPath);
+      assert.doesNotMatch(text,/aria-current=|<script\b/,'Shared fragments omit per-page selection and embedded JSON.');
+      for(const row of fragment.rows.filter(row=>row.kind==='page'))
+        assert.equal(new URLSearchParams(new URL(row.href,'https://example.test').hash.slice(1)).get('from'),
+          logicalPath==='/d/'?null:logicalPath.slice(1,-1),'Only non-default article sources carry from.');
       assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.txt$/,'Navigation resources use a flat content-addressed namespace.');
     }
     languageURLs.push(new Set(Object.values(article.columnURLs)));
@@ -208,7 +213,7 @@ test('time-tree rows share directory counts, navigation and ItemList without des
     assert.ok(selected.columns.some(column=>column.source?.logicalPath==='/archive/'));
     assert.ok(selected.columns.some(column=>column.source?.logicalPath==='/archive/a/'));
     for(const column of selected.columns.filter(column=>column.payload)){
-      const values=column.payload.rows.map(row=>row.href);
+      const values=column.payload.rows.map(row=>new URL(row.href,'https://example.test').pathname);
       if(column.source.logicalPath==='/archive/')assert.ok(!values.includes(prefix+'/p/range-start/'),'Root payload must not repeat a descendant article.');
     }
   }
@@ -402,7 +407,8 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
     const text=await html(url.replace(/^\//,''));
     assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.txt',
       'Preview HTML references the current fragment content fingerprint.');
-    const payload=readNavigationFragment(text);assert.equal(payload.logicalPath,'/'+route+'/');return payload.rows;
+    const payload=readNavigationFragment(text);assert.equal(payload.logicalPath,'/'+route+'/');
+    return payload.rows.map(row=>({...row,href:new URL(row.href,base).pathname}));
   }
   async function until(check){
     const deadline=Date.now()+20000;let last;
@@ -420,7 +426,7 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
     const articleHTML=await html('p/range-override/'),navigation=readBreadcrumbData(articleHTML);
     const paths=(await Promise.all(Object.entries(navigation.columnURLs).map(async([logicalPath,url])=>{
       const payload=readNavigationFragment(await html(url.replace(/^\//,'')));
-      return payload.rows.some(row=>row.href==='/p/range-override/')?logicalPath:null;
+      return payload.rows.some(row=>new URL(row.href,base).pathname==='/p/range-override/')?logicalPath:null;
     }))).filter(Boolean);
     assert.ok(paths.includes('/'+leaf+'/'));assert.ok(!paths.includes('/'+(leaf==='archive/a'?'archive/a/b':'archive/a')+'/'));
     assert.equal(((await html('archive/a/b/index.xml')).match(/<item>/g)||[]).length,count);
