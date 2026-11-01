@@ -12,7 +12,7 @@ import {fixtureEnvironment,fixtureSiteMounts,fixtureSiteFiles,fixtureSitePages,d
 import {collectionPayload} from './_shared/navigation.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
-import {readBreadcrumbData} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {readBreadcrumbData,readNavigationFragment} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {decodeHtmlAttribute,extractStartTags,extractTagAttribute,extractCanonicalHref} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer,listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
@@ -54,15 +54,11 @@ function read(route,prefix='',directory=output,file='index.html'){return fs.read
 function sources(html,directory=output){
   const data=readBreadcrumbData(html,{directory});assert.equal(data.error,'');return data.sources;
 }
-function payloadRows(data){
-  return Array.from({length:data.rv.length/data.f.length},(_,row)=>
-    ({...data.c,...Object.fromEntries(data.f.map((name,index)=>[name,data.rv[row*data.f.length+index]]))}));
-}
 function collectionRows(html,route,directory=output){
   const logicalPath=extractTagAttribute(extractStartTags(html,'body')[0],'data-collection-path');
   assert.equal(logicalPath,'/'+route+'/');
   const data=collectionPayload(directory,logicalPath,new URL(extractCanonicalHref(html)).pathname);
-  return {source:{logicalPath:data.lp,sortVariant:data.sv,defaultSort:data.ds,href:data.href,label:data.label},rows:payloadRows(data)};
+  return {source:{logicalPath:data.logicalPath,sortVariant:data.sortVariant,defaultSort:data.defaultSort,href:data.href,label:data.label},rows:data.rows};
 }
 function rows(route,prefix='',directory=output){return collectionRows(read(route,prefix,directory),route,directory);}
 function mainRows(route,prefix='',directory=output){
@@ -128,7 +124,7 @@ test('manual time trees partition Lastmod once, retain remainder articles and em
   }
 });
 
-test('navigation columns publish flat shared JSON with stable content fingerprints',()=>{
+test('navigation columns publish flat shared HTML fragments with stable content fingerprints',()=>{
   const repeated=path.join(work,'same-content');passed(build(repeated));
   const languageURLs=[];
   for(const [,prefix] of locales){
@@ -141,24 +137,25 @@ test('navigation columns publish flat shared JSON with stable content fingerprin
       assert.equal(typeof url,'string');
       if(second.columnURLs[logicalPath])assert.equal(second.columnURLs[logicalPath],url,'Articles reuse each column resource.');
       const text=fs.readFileSync(path.join(output,new URL(url,'https://example.test').pathname),'utf8');
-      assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.json');
-      assert.equal(JSON.parse(text).lp,logicalPath);assert.ok(!Object.hasOwn(JSON.parse(text),'selected'));
-      assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.json$/,'Navigation resources use a flat content-addressed namespace.');
+      assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.txt');
+      assert.equal(readNavigationFragment(text).logicalPath,logicalPath);
+      assert.doesNotMatch(text,/aria-current=|#from=|<script\b/,'Shared fragments omit per-page selection, lineage and embedded JSON.');
+      assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.txt$/,'Navigation resources use a flat content-addressed namespace.');
     }
     languageURLs.push(new Set(Object.values(article.columnURLs)));
   }
   assert.equal(new Set(languageURLs.flatMap(urls=>[...urls])).size,languageURLs.reduce((count,urls)=>count+urls.size,0),
     'Languages must not overwrite each other’s column resources.');
   const emptyPayloads=locales.map(([,prefix])=>collectionPayload(output,'/archive/empty/',prefix+'/archive/empty/'));
-  assert.ok(emptyPayloads.every(payload=>payload.rv.length===0),'Empty collections publish their shared payload.');
+  assert.ok(emptyPayloads.every(payload=>payload.rows.length===0),'Empty collections publish their shared fragment.');
   assert.equal(new Set(emptyPayloads.map(payload=>createHash('sha256').update(JSON.stringify(payload)).digest('hex'))).size,locales.length,
     'Language-specific header links remain part of the content fingerprint.');
   const resources=fs.readdirSync(path.join(output,'site/navigation'),{withFileTypes:true});
-  assert.ok(resources.every(entry=>entry.isFile()&&/^[a-f0-9]{64}\.json$/.test(entry.name)),
+  assert.ok(resources.every(entry=>entry.isFile()&&/^[a-f0-9]{64}\.txt$/.test(entry.name)),
     'Navigation resources contain no language, column path or items prefix.');
   for(const entry of resources){
     const content=fs.readFileSync(path.join(output,'site/navigation',entry.name));
-    assert.equal(entry.name,createHash('sha256').update(content).digest('hex')+'.json');
+    assert.equal(entry.name,createHash('sha256').update(content).digest('hex')+'.txt');
   }
 });
 
@@ -191,19 +188,19 @@ test('time-tree rows share directory counts, navigation and ItemList without des
     assert.ok(manifest.default,'The physical path retains its terminal owner.');
     assert.ok(!['routes','from','paths'].some(key=>Object.hasOwn(manifest,key)));
     const navigation=extractBlocks(articleHtml,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb');
-    assert.equal(navigation.length,1);assert.equal(extractStartTags(navigation[0].html,'a').length,0,'Article path rows load from shared JSON.');
+    assert.equal(navigation.length,1);assert.equal(extractStartTags(navigation[0].html,'a').length,0,'Article path rows load from shared HTML fragments.');
     const decoded=readBreadcrumbData(articleHtml,{directory:output});
     assert.ok(decoded.defaultColumns.length>0,'Default prefixes are derived from one terminal owner.');
     assert.ok(decoded.sources.some(source=>source.columns.some(column=>column.payload===decoded.defaultColumns[0].payload)),
       'Sources share the same ancestor payload.');
     for(const [logicalPath,url] of Object.entries(decoded.columnURLs)){
       assert.match(manifest.columns[logicalPath],/^[a-f0-9]{64}$/,'Inline columns contain only content hashes.');
-      assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.json$/);
+      assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.txt$/);
       const data=decoded.columns[logicalPath];
       assert.deepEqual(data,collectionPayload(output,logicalPath,prefix+logicalPath),'Navigation and collection use one shared payload.');
-      assert.equal(data.lp,logicalPath);assert.equal(typeof data.label,'string');assert.equal(typeof data.href,'string');
-      assert.ok(!data.f.includes('key')&&!data.f.includes('sort_group'),'Navigation rows omit derived values.');
-      assert.ok([...data.f,...Object.keys(data.c||{})].every(field=>!field.endsWith('_text')&&!['size_unit','count_unit'].includes(field)),
+      assert.equal(data.logicalPath,logicalPath);assert.equal(typeof data.label,'string');assert.equal(typeof data.href,'string');
+      assert.ok(data.rows.every(row=>!Object.hasOwn(row,'key')&&!Object.hasOwn(row,'sort_group')),'Navigation rows omit derived values.');
+      assert.ok(data.rows.flatMap(row=>Object.keys(row)).every(field=>!field.endsWith('_text')&&!['size_unit','count_unit'].includes(field)),
         'Navigation columns omit display-only fields.');
     }
     assert.ok(paths.includes('/archive/a/b/'));assert.ok(!paths.includes('/archive/a/'));assert.ok(!paths.includes('/archive/'));
@@ -211,8 +208,7 @@ test('time-tree rows share directory counts, navigation and ItemList without des
     assert.ok(selected.columns.some(column=>column.source?.logicalPath==='/archive/'));
     assert.ok(selected.columns.some(column=>column.source?.logicalPath==='/archive/a/'));
     for(const column of selected.columns.filter(column=>column.payload)){
-      const data=column.payload,hrefIndex=data.f.indexOf('href');
-      const values=Array.from({length:data.rv.length/data.f.length},(_,index)=>data.rv[index*data.f.length+hrefIndex]);
+      const values=column.payload.rows.map(row=>row.href);
       if(column.source.logicalPath==='/archive/')assert.ok(!values.includes(prefix+'/p/range-start/'),'Root payload must not repeat a descendant article.');
     }
   }
@@ -404,9 +400,9 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
     const data=readBreadcrumbData(await html('p/range-start/'));assert.equal(data.error,'');
     const url=data.columnURLs['/'+route+'/'];assert.equal(typeof url,'string');
     const text=await html(url.replace(/^\//,''));
-    assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.json',
-      'Preview HTML references the current JSON content fingerprint.');
-    const payload=JSON.parse(text);assert.equal(payload.lp,'/'+route+'/');return payloadRows(payload);
+    assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.txt',
+      'Preview HTML references the current fragment content fingerprint.');
+    const payload=readNavigationFragment(text);assert.equal(payload.logicalPath,'/'+route+'/');return payload.rows;
   }
   async function until(check){
     const deadline=Date.now()+20000;let last;
@@ -423,8 +419,8 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
     assert.equal(childRows.some(row=>row.href==='/p/range-override/'),leaf==='archive/a/b');
     const articleHTML=await html('p/range-override/'),navigation=readBreadcrumbData(articleHTML);
     const paths=(await Promise.all(Object.entries(navigation.columnURLs).map(async([logicalPath,url])=>{
-      const payload=JSON.parse(await html(url.replace(/^\//,'')));
-      return payloadRows(payload).some(row=>row.href==='/p/range-override/')?logicalPath:null;
+      const payload=readNavigationFragment(await html(url.replace(/^\//,'')));
+      return payload.rows.some(row=>row.href==='/p/range-override/')?logicalPath:null;
     }))).filter(Boolean);
     assert.ok(paths.includes('/'+leaf+'/'));assert.ok(!paths.includes('/'+(leaf==='archive/a'?'archive/a/b':'archive/a')+'/'));
     assert.equal(((await html('archive/a/b/index.xml')).match(/<item>/g)||[]).length,count);

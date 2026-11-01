@@ -14,7 +14,7 @@ import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/
 import {extractTagAttribute,extractMetaContent,decodeHtmlAttribute,extractExternalScriptSrcs} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {inspect as inspectScripts} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/inspect.mjs';
 import {extractBlocks,stripRawText} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
-import {readBreadcrumbData} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {readBreadcrumbData,readNavigationFragment} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {gotoAndWait} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/page.mjs';
@@ -179,7 +179,7 @@ test('meta controls article metadata, chapters and schema independently of path 
       if(breadcrumb) {
         expectedNavigation??=navigation[0].html;
         assert.equal(navigation[0].html,expectedNavigation,'Slot order and metadata visibility must not change path columns.');
-        assert.equal(extractBlocks(navigation[0].html,'a').length,0,'Path entries load from JSON rather than repeat in article HTML.');
+        assert.equal(extractBlocks(navigation[0].html,'a').length,0,'Path entries load from shared HTML fragments rather than repeat in article HTML.');
         const defaults=readBreadcrumbData(html,{directory:destination});assert.equal(defaults.error,'');
         assert.ok(defaults.defaultColumns.length>0,'The physical path has selected-item metadata.');
         assert.ok(defaults.defaultColumns.every(column=>column.selected?.href&&column.payload), 'Every physical path column has shared data.');
@@ -203,7 +203,7 @@ test('non-sortable ancestors publish shared path rows without inline sibling lis
     const column=data.defaultColumns.find(column=>column.source?.logicalPath==='/library/plain/');
     assert.ok(column,'A non-sortable ancestor remains in the default route.');
     assert.equal(column.selected.href,'/p/plain-first/');assert.equal(column.selected.kind,'page');
-    assert.equal(column.payload.sv,'');assert.equal(column.payload.rv.length/column.payload.f.length,2);
+    assert.equal(column.payload.sortVariant,'');assert.equal(column.payload.rows.length,2);
     const navigation=extractBlocks(html,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb')[0];
     assert.equal(extractBlocks(navigation.html,'a').length,0);
     const manifest=JSON.parse(extractTagAttribute(html.match(/<body\b[^>]*>/)[0],'data-navigation'));
@@ -646,10 +646,10 @@ test('dotted and Unicode references retain encoded source URLs on a site subpath
       const logicalPath=Object.keys(data.columnURLs).find(value=>decodeURIComponent(value)==='/library/'+name+'/');
       assert.ok(logicalPath,'Unicode ordinary and fallback columns publish resource URLs.');
       const url=data.columnURLs[logicalPath],relative=decodeURIComponent(new URL(url,'https://example.test').pathname).slice('/base/'.length);
-      assert.match(relative,/^site\/navigation\/[a-f0-9]{64}\.json$/,'Unicode columns use the same flat content-addressed namespace.');
+      assert.match(relative,/^site\/navigation\/[a-f0-9]{64}\.txt$/,'Unicode columns use the same flat content-addressed namespace.');
       assert.doesNotMatch(url,/%/,'Resource paths do not contain encoded language or column names.');
-      const payload=JSON.parse(fs.readFileSync(path.join(destination,relative),'utf8'));
-      assert.equal(payload.lp,logicalPath,'Decoded URL paths name the actual JSON file.');
+      const payload=readNavigationFragment(fs.readFileSync(path.join(destination,relative),'utf8'));
+      assert.equal(payload.logicalPath,logicalPath,'Decoded URL paths name the actual fragment file.');
     }
     write(path.join(directory,'_map.toml'),refs(['/library/node.js/index.md']));
     const invalid=build(source,path.join(work,'file-reference'));

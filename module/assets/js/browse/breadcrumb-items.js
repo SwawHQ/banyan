@@ -1,4 +1,3 @@
-import { normalizeIcon } from './icon-value.js';
 import { normalizeCollectionSource } from './collection-source.js';
 import {
     SORT_VARIANTS,
@@ -10,8 +9,6 @@ import {
 import {
     isCollectionRowKind,
     readRequestedSortToken,
-    sortItemsRows,
-    supportsItemsPayloadProvider,
 } from './collection-items.js';
 import {
     applyFromPathToUrl,
@@ -21,7 +18,6 @@ import {
     buildDescendantSortsTokens,
     buildLineageSortsTokensForPath,
     normalizeFromPath,
-    normalizePathname,
     readCurrentFromPath,
 } from './navigation-state.js';
 
@@ -35,11 +31,7 @@ function toRelativeHref(url) {
         : url.toString();
 }
 
-function normalizeBreadcrumbItemKind(kind) {
-    return typeof kind === 'string' ? kind.trim().toLowerCase() : '';
-}
-
-function readRequestedSortState(source, sortVariant, defaultSort = '') {
+export function readRequestedSortState(source, sortVariant, defaultSort = '') {
     const fallbackToken = defaultSort || SORT_VARIANTS[sortVariant]?.defaultToken || '';
     const sortToken = sortVariant ? readRequestedSortToken(sortVariant, source?.logicalPath || '', fallbackToken) : '';
     const sortsTokens = source?.logicalPath
@@ -163,61 +155,4 @@ export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
     } catch (error) {
         return row.href;
     }
-}
-
-function buildPathColumnItemsFromDecodedRows(decoded, collectionSource, { selectedPathname = '' } = {}) {
-    if (!decoded || !collectionSource?.logicalPath) {
-        return [];
-    }
-
-    const sortVariant = decoded.sortVariant || collectionSource.sortVariant || '';
-    const defaultSort = decoded.defaultSort || collectionSource.defaultSort || SORT_VARIANTS[sortVariant]?.defaultToken || '';
-    const sortState = readRequestedSortState(collectionSource, sortVariant, defaultSort);
-    const { rows } = sortItemsRows(
-        decoded.rows,
-        sortVariant,
-        collectionSource.logicalPath,
-        sortState.defaultSort
-    );
-
-    return rows
-        .map((row) => {
-            const href = buildBreadcrumbRowHref(row, collectionSource, sortState);
-            if (!href) {
-                return null;
-            }
-
-            let current = false;
-            if (selectedPathname) {
-                try {
-                    current = normalizePathname(new URL(row.href, window.location.origin).pathname) === selectedPathname;
-                } catch (error) {
-                    current = false;
-                }
-            }
-
-            const item = {
-                text: typeof row.text === 'string' && row.text !== '' ? row.text : row.href,
-                href,
-                current,
-            };
-            if (typeof row.title === 'string' && row.title) item.title = row.title;
-            const icon = normalizeIcon(row.icon);
-            if (icon) item.icon = icon;
-            const kind = normalizeBreadcrumbItemKind(row.kind);
-            if (kind) {
-                item.kind = kind;
-            }
-
-            return item;
-        })
-        .filter(Boolean);
-}
-
-export function buildPathColumnItems(decoded, collectionSource, selection = {}) {
-    if (!collectionSource?.logicalPath || !supportsItemsPayloadProvider(collectionSource.provider)) {
-        return [];
-    }
-
-    return buildPathColumnItemsFromDecodedRows(decoded, collectionSource, selection);
 }

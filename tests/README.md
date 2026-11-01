@@ -45,7 +45,7 @@ local wheel fixtures. Without these inputs, integration cases are skipped.
 | `responsive-images.test.mjs` | Image processing, browser selection, original links and build-cache reuse |
 | `home-art.test.mjs` | Hidden home-art bundles, translated shortcode content, host navigation, resource isolation and preview rebuilds |
 | `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
-| `browser-nav-json-offline.test.mjs` | Shared column loading, slow responses, source races, failure retries and visited-path offline reload |
+| `browser-nav-fragments.test.mjs` | Shared column loading, slow responses, source races, failure retries and visited-path offline reload |
 | `output.test.mjs` | Repository budgets and retired-output faults |
 | `sitemap.test.mjs` | Sitemap/LLMS parity, native exclusions, language routing and rebuilds |
 | `directory-references.test.mjs` | TOML references, native taxonomy configuration, multilingual membership, feeds, canonical outputs and rebuilds |
@@ -61,7 +61,7 @@ are tested separately with matching, mismatched and missing source-site fixtures
 It also owns shared HTML extraction, date-row ordering and static page-control
 faults. Site-specific article samples and copy stay in consumer tests.
 
-Run source-domain scripts separately:
+Run source-domain scripts separately. Navigation state checks also need Chromium:
 
 ```text
 swban base/node tests/csp/build.mjs              #Inline hashes and minification

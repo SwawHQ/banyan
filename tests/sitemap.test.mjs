@@ -12,6 +12,7 @@ import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
 import {inspect} from '../.agents/skills/swaw-banyan/tasks/check/sitemap/inspect.mjs';
 import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/llms/inspect.mjs';
 import {decodeHtmlAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)), parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/llms-sitemap-tests');
 const languages=[['',''],['.zh','/zh'],['.zh-tw','/zh-tw'],['.ar','/ar']];
@@ -22,7 +23,7 @@ const cases={local:'build: {list: local}\naliases: [/sitemap-alias/]',
   text:'outputs: [TEXT]',draft:'draft: true'};
 let work,content,config;
 function write(file,text) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
-function page(name,fields='',url='sitemap-'+name+'/') {return `---\ntitle: Sitemap ${name}\nurl: ${url}\nlayout: page-article-norss\n${fields}\n---\nSitemap fixture.\n`;}
+function page(name,fields='',url='sitemap-'+name+'/') {return `---\ntitle: Sitemap ${name}\n${url?'url: '+url+'\n':''}layout: page-article-norss\n${fields}\n---\nSitemap fixture.\n`;}
 function urls(xml) {return [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(match=>decodeHtmlAttribute(match[1]));}
 function llmsUrls(text) {
   return [...text.matchAll(/\]\(<([^>\r\n]+)>\)/g)].map(match=>decodeHtmlAttribute(match[1]))
@@ -46,11 +47,11 @@ before(()=>{
     for(const [name,fields] of Object.entries(cases)) write(path.join(content,`sitemap-${name}/index${suffix}.md`),page(name,fields));
     const mixed=suffix==='.zh'?'sitemap: {disable: true}':suffix?'params: {robots: noindex}':'';
     write(path.join(content,`sitemap-mixed/index${suffix}.md`),page('mixed',mixed));
-    write(path.join(content,`sitemap-cascade/_index${suffix}.md`),page('cascade','cascade: {sitemap: {disable: true}}'));
+    write(path.join(content,`sitemap-cascade/_index${suffix}.md`),page('cascade','cascade: {sitemap: {disable: true}}',''));
     write(path.join(content,`sitemap-cascade/child${suffix}.md`),page('child','','sitemap-cascade/sitemap-child/'));
-    write(path.join(content,`sitemap-tree/_index${suffix}.md`),page('tree'));
+    write(path.join(content,`sitemap-tree/_index${suffix}.md`),page('tree','',''));
     write(path.join(content,`sitemap-tree/leaf${suffix}.md`),page('leaf','','sitemap-tree/sitemap-leaf/'));
-    write(path.join(content,`sitemap-parent/_index${suffix}.md`),page('parent','sitemap: {disable: true}'));
+    write(path.join(content,`sitemap-parent/_index${suffix}.md`),page('parent','sitemap: {disable: true}',''));
     write(path.join(content,`sitemap-parent/child${suffix}.md`),page('parent-child','','sitemap-parent/sitemap-parent-child/'));
     write(path.join(content,`d/_index${suffix}.md`),'---\ntitle: LLMS Group\nlayout: page-collection-directory\ncascade: [ { target: { kind: page }, layout: page-article-norss } ]\n---\n');
     write(path.join(content,`d/llms-special/index${suffix}.md`),'---\n'+
@@ -128,7 +129,7 @@ test('sitemap and grouped LLMS share rendered HTML pages, exclusions and metadat
 
 test('full preview rebuilds remove disabled, unrendered, renamed and deleted pages without losing unchanged pages',async()=>{
   const probe=net.createServer();
-  await new Promise(resolve=>probe.listen(0,'127.0.0.1',resolve));
+  await listenOnLoopback(probe);
   const port=probe.address().port;await new Promise(resolve=>probe.close(resolve));
   const base=`http://127.0.0.1:${port}`, target=path.join(content,'sitemap-local/index.md');
   const server=spawn(toolExecutable('hugo'),['server',...args(path.join(work,'preview')),
@@ -169,9 +170,9 @@ test('full preview rebuilds remove disabled, unrendered, renamed and deleted pag
     fs.unlinkSync(target);await waitFor(['/sitemap-never-list/'],['/sitemap-local/','/sitemap-renamed/']);
     const branch=path.join(content,'sitemap-tree/_index.md'), leaf='/sitemap-tree/sitemap-leaf/';
     await waitFor([leaf],[]);
-    write(branch,page('tree','cascade: {build: {render: link}}'));
+    write(branch,page('tree','cascade: {build: {render: link}}',''));
     await waitFor(['/sitemap-never-list/'],[leaf]);
-    write(branch,page('tree'));
+    write(branch,page('tree','',''));
     await waitFor([leaf],[]);
     const chinese=path.join(content,'sitemap-local/index.zh.md');
     await waitFor(['/zh/sitemap-local/'],[],'zh');

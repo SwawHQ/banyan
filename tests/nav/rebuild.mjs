@@ -7,6 +7,8 @@ import { spawn, spawnSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {extractElementText,extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {readNavigationFragment} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {listenOnLoopback} from '../../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 
 import {fixtureEnvironment,fixtureSiteMounts,directoryPage} from '../_shared/hugo.mjs';
 
@@ -31,10 +33,7 @@ try {
     const config = path.join(work, 'overlay.toml');
     await fs.writeFile(config, `[[module.mounts]]\nsource = "${relative(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);
     const portProbe = net.createServer();
-    await new Promise((resolve, reject) => {
-        portProbe.once('error', reject);
-        portProbe.listen(0, '127.0.0.1', resolve);
-    });
+    await listenOnLoopback(portProbe);
     const port = portProbe.address().port;
     await new Promise((resolve, reject) => portProbe.close((error) => error ? reject(error) : resolve()));
     const base = `http://127.0.0.1:${port}`;
@@ -73,7 +72,7 @@ try {
     }
     async function columnLabel(document) {
         const body=extractStartTags(document,'body')[0],navigation=JSON.parse(extractTagAttribute(body,'data-navigation'));
-        return JSON.parse(await html(navigation.resources+navigation.columns['/d/']+'.json')).label;
+        return readNavigationFragment(await html(navigation.resources+navigation.columns['/d/']+'.txt')).label;
     }
     try {
         await until(async () => (await html('/zh/d/')).includes('Before rename'));

@@ -6,20 +6,18 @@
     {{- continue -}}
   {{- end -}}
   {{- $current := $model.currentColumn -}}
-  {{- if or (not $current.source) (not $current.payload) (ne $current.payload.lp $model.logicalPath) -}}
-    {{- errorf "Build failed: browser navigation source %q requires matching current collection data; payload path is %q." $model.logicalPath ($current.payload.lp | default "") -}}
+  {{- if or (not $current.payloadUrl) (ne $current.source.logicalPath $model.logicalPath) -}}
+    {{- errorf "Build failed: browser navigation source %q requires matching current collection data; column path is %q." $model.logicalPath ($current.source.logicalPath | default "") -}}
   {{- end -}}
   {{- range $column := $model.columns -}}
-    {{- if $column.payload -}}
-      {{- if or (not $column.source.logicalPath) (ne $column.payload.lp $column.source.logicalPath) -}}
-        {{- errorf "Build failed: browser navigation column %q requires matching collection data; payload path is %q." ($column.source.logicalPath | default "") ($column.payload.lp | default "") -}}
-      {{- end -}}
+    {{- if or (not $column.source.logicalPath) (not $column.payloadUrl) -}}
+      {{- errorf "Build failed: browser navigation column %q requires a source path and shared fragment." ($column.source.logicalPath | default "") -}}
     {{- end -}}
   {{- end -}}
   {{- $browserSources = $browserSources | append (dict
     "logicalPath" $model.logicalPath
     "columns" $model.columns
-    "currentColumn" (dict "source" $current.source "payload" $current.payload "payloadUrl" $current.payloadUrl)
+    "currentColumn" $current
   ) -}}
 {{- end -}}
 {{- return $browserSources -}}

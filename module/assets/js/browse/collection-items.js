@@ -9,50 +9,10 @@ import {
     readSortTokenForPath,
 } from './navigation-state.js';
 
-export function supportsItemsPayloadProvider(provider) {
-    return `${provider ?? ''}`.trim().toLowerCase() === 'collection';
-}
-
 function toRowSortKey(dataKey) {
     return String(dataKey || '')
         .replace(/([A-Z])/g, '_$1')
         .toLowerCase();
-}
-
-export function decodeItemsPayload(payload) {
-    if (!payload || typeof payload !== 'object') {
-        return null;
-    }
-
-    const fields = Array.isArray(payload.f)
-        ? payload.f.filter((field) => typeof field === 'string' && field.trim() !== '')
-        : [];
-    const rowVector = Array.isArray(payload.rv) ? payload.rv : [];
-    if (fields.length === 0 || rowVector.length % fields.length !== 0) {
-        return null;
-    }
-
-    const constants = payload.c && typeof payload.c === 'object' ? payload.c : {};
-    const rows = [];
-
-    for (let offset = 0, index = 0; offset < rowVector.length; offset += fields.length, index += 1) {
-        const row = { ...constants, _originalIndex: index };
-        for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex += 1) {
-            const field = fields[fieldIndex];
-            const rawValue = rowVector[offset + fieldIndex];
-            row[field] = field === 'icon' ? rawValue : (typeof rawValue === 'string' ? rawValue : `${rawValue ?? ''}`);
-        }
-        rows.push(row);
-    }
-
-    const sortVariant = typeof payload.sv === 'string' ? payload.sv.trim().toLowerCase() : '';
-    const defaultSort = typeof payload.ds === 'string' ? payload.ds.trim().toLowerCase() : '';
-    const provider = typeof payload.p === 'string' ? payload.p.trim().toLowerCase() : '';
-    const logicalPath = typeof payload.lp === 'string' ? normalizeFromPath(payload.lp) : '';
-
-    const label = typeof payload.label === 'string' ? payload.label : '';
-    const href = typeof payload.href === 'string' ? payload.href : '';
-    return { provider, logicalPath, sortVariant, defaultSort, label, href, rows };
 }
 
 function readItemsRowValue(row, fieldConfig) {

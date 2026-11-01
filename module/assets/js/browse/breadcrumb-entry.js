@@ -1,4 +1,3 @@
-import { buildPathColumnItems } from './breadcrumb-items.js';
 import { normalizeFromPath, normalizePathname, applyFromPathToUrl, readCurrentFromPath } from './navigation-state.js';
 import { loadBreadcrumbColumns, readBreadcrumbColumns, readBreadcrumbColumn } from './breadcrumb-source.js';
 import { readNavigation, readActiveNavigationRoute } from './entry-source.js';
@@ -13,8 +12,7 @@ export function buildPathColumn(column) {
         selectedPathname = normalizePathname(new URL(column.selected, window.location.origin).pathname);
     } catch (_) { }
     return {
-        key: column.key, source: column.source, failed: !column.payload,
-        items: column.payload ? buildPathColumnItems(column.payload, column.source, { selectedPathname }) : [],
+        key: column.key, payload: column.payload, selectedPathname, failed: !column.payload,
     };
 }
 

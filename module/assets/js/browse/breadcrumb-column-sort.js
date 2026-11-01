@@ -1,7 +1,6 @@
 import {
     applyBreadcrumbRowSort,
     buildCollectionSortToggleHref,
-    buildPathColumnItems,
     getCollectionSortState,
 } from './breadcrumb-items.js';
 import { readBreadcrumbColumns, readBreadcrumbColumn } from './breadcrumb-source.js';
@@ -36,7 +35,7 @@ export function refreshBreadcrumbCollectionColumns(changedLogicalPath = '') {
         if (wrapper.hasAttribute('data-navigation-failed')) {
             let selectedPathname = '';
             try { selectedPathname = normalizePathname(new URL(column.selected, window.location.origin).pathname); } catch (_) { }
-            renderPathColumn(wrapper, buildPathColumnItems(decoded, source, { selectedPathname }), source, { lineageLogicalPath });
+            renderPathColumn(wrapper, decoded, { selectedPathname, lineageLogicalPath });
         }
         const state = getCollectionSortState(source);
         const header = wrapper.querySelector('[data-list-header]');

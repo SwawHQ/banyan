@@ -18,7 +18,7 @@
 {{- $resources := "" -}}
 {{- range $column := $entries -}}
   {{- $logicalPath := $column.source.logicalPath | default "" -}}
-  {{- $resource := findRESubmatch `^(.*/)([a-f0-9]{64})\.json$` ($column.payloadUrl | default "") 1 -}}
+  {{- $resource := findRESubmatch `^(.*/)([a-f0-9]{64})\.txt$` ($column.payloadUrl | default "") 1 -}}
   {{- if or (not $logicalPath) (ne (len $resource) 1) -}}
     {{- errorf "Build failed: navigation for %q has an invalid column %q or resource %q." $ctx.RelPermalink $logicalPath ($column.payloadUrl | default "") -}}
     {{- continue -}}

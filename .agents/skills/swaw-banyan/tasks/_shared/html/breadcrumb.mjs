@@ -1,7 +1,81 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {insideOutput,localReference} from '../output.mjs';
-import {extractCanonicalHref,extractStartTags,extractTagAttribute,isRedirectPage} from './markup.mjs';
+import {decodeHtmlAttribute,extractCanonicalHref,extractStartTags,extractTagAttribute,hasClassToken,isRedirectPage} from './markup.mjs';
+import {extractBlocks} from './blocks.mjs';
+
+const textContent=html=>decodeHtmlAttribute(html.replace(/<[^>]*>/g,'')).trim();
+const localLink=(href,siteURL)=>{
+  if(!href)return false;
+  try {const url=new URL(href,siteURL);return ['http:','https:'].includes(url.protocol)&&url.origin===new URL(siteURL).origin;}
+  catch{return false;}
+};
+
+export function readNavigationFragment(text,{siteURL='https://output.invalid/'}={}) {
+  const roots=extractBlocks(text,'div',tag=>/\sdata-navigation-column(?:\s|=|>)/i.test(tag));
+  if(roots.length!==1||roots[0].html.trim()!==text.trim()
+    ||!hasClassToken(roots[0].open,'item-list')||!hasClassToken(roots[0].open,'item-list--path-column'))
+    throw new Error('Expected one navigation fragment root');
+  const root=roots[0],logicalPath=extractTagAttribute(root.open,'data-navigation-column');
+  const sortVariant=extractTagAttribute(root.open,'data-sort-variant'),defaultSort=extractTagAttribute(root.open,'data-default-sort');
+  const sortFields={name:['name'],section:['name','date','count'],all:['name','date','size'],products:['name','version','price']};
+  if(!/^\/(?!\/).+\/$/.test(logicalPath)
+    ||(sortVariant?(!sortFields[sortVariant]?.includes(defaultSort.split('-')[0])
+      ||!/^[a-z]+-(?:asc|desc)$/.test(defaultSort)):defaultSort!==''))
+    throw new Error('Invalid navigation fragment metadata');
+  for(const match of text.matchAll(/<([a-z][\w:-]*)\b(?:"[^"]*"|'[^']*'|[^'">])*>/gi)) {
+    const nodeName=match[1].toLowerCase();
+    if(!['div','span','a','bdi','svg','use','img'].includes(nodeName))
+      throw new Error('Unexpected navigation fragment element: '+match[1]);
+    const attributes=match[0].replace(/^<[\w:-]+/,'').replace(/\/?\s*>$/,'');
+    for(const attribute of attributes.matchAll(/([^\s"'<>\/=]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>\x60]+))?/g)) {
+      const name=attribute[1].toLowerCase();
+      if(!/^(?:class|title|href|src|alt|width|height|decoding|focusable|role|aria-[\w-]+|data-[\w-]+)$/.test(name))
+        throw new Error('Unexpected navigation fragment attribute: '+name);
+    }
+    for(const name of ['href','src']) {
+      if(!new RegExp('\\s'+name+'(?:\\s|=|>)','i').test(match[0]))continue;
+      const href=extractTagAttribute(match[0],name);
+      if(!localLink(href,siteURL)||(name==='href'&&(!['a','use'].includes(nodeName)||(nodeName==='use'&&!href.startsWith('#'))))
+        ||(name==='src'&&(nodeName!=='img'||!/^\/(?!\/)/.test(href))))
+        throw new Error('Invalid or cross-origin navigation fragment link');
+    }
+  }
+  const header=extractBlocks(root.inner,'div')[0];
+  if(!header||root.inner.slice(0,header.index).trim()||!/\sdata-list-header(?:\s|=|>)/i.test(header.open))
+    throw new Error('Navigation fragment needs its header first');
+  const labels=extractBlocks(header.inner,'a',tag=>hasClassToken(tag,'path-column-label'));
+  if(sortVariant) {
+    const controls=extractBlocks(header.inner,'a',tag=>/\sdata-collection-sort-toggle(?:\s|=|>)/i.test(tag));
+    if(controls.length!==1||!hasClassToken(controls[0].inner,'path-sort-label')
+      ||!extractStartTags(controls[0].inner,'span').some(tag=>/\sdata-sort-indicator(?:\s|=|>)/i.test(tag)))
+      throw new Error('Navigation fragment needs a complete sort control');
+  }
+  if(labels.length!==1)throw new Error('Navigation fragment needs one column label');
+  const href=extractTagAttribute(labels[0].open,'href'),label=textContent(labels[0].inner);
+  if(!label||!localLink(href,siteURL))throw new Error('Invalid navigation fragment label');
+  const seen=new Set();
+  const rows=extractBlocks(root.inner,'div',tag=>/\sdata-list-item(?:\s|=|>)/i.test(tag)).map(block=>{
+    const links=extractBlocks(block.inner,'a',tag=>/\sdata-list-entry(?:\s|=|>)/i.test(tag));
+    const titles=extractBlocks(block.inner,'span',tag=>hasClassToken(tag,'item-title'));
+    const kind=extractTagAttribute(block.open,'data-kind');
+    if(links.length!==1||titles.length!==1||!kind)throw new Error('Invalid navigation fragment row');
+    const href=extractTagAttribute(links[0].open,'href'),text=textContent(titles[0].inner);
+    if(!text||!localLink(href,siteURL)||seen.has(href))throw new Error('Invalid or duplicate navigation fragment row link');
+    seen.add(href);
+    const row={kind,href,text};
+    for(const field of ['name','date','count','size','price','version'])
+      if(new RegExp('\\sdata-sort-'+field+'(?:\\s|=|>)', 'i').test(block.open))row['sort_'+field]=extractTagAttribute(block.open,'data-sort-'+field);
+    const title=extractTagAttribute(links[0].open,'title');if(title&&title!==text)row.title=title;
+    const icons=extractBlocks(block.inner,'span',tag=>hasClassToken(tag,'icon--text'));
+    const image=extractStartTags(block.inner,'img')[0],use=extractStartTags(block.inner,'use')[0];
+    if(icons.length)row.icon={text:textContent(icons[0].inner)};
+    else if(image)row.icon={image:extractTagAttribute(image,'src'),...(hasClassToken(image,'icon--monochrome')?{monochrome:true}:{})};
+    else if(use){const icon=extractTagAttribute(use,'href');if(icon.startsWith('#icon-'))row.icon=icon.slice(6);}
+    return row;
+  });
+  return {provider:'collection',logicalPath,href,label,sortVariant,defaultSort,rows};
+}
 
 function readColumn(href,logicalPath,{directory,pagePath,cache}) {
   const root=path.resolve(directory),siteKey='site:'+root;
@@ -28,16 +102,12 @@ function readColumn(href,logicalPath,{directory,pagePath,cache}) {
     const remainder=path.relative(fs.realpathSync(root),real);
     if(remainder==='..'||remainder.startsWith('..'+path.sep)||path.isAbsolute(remainder))
       throw new Error('Breadcrumb column URL leaves the output directory: '+href);
-    try {cache.set(file,JSON.parse(fs.readFileSync(real,'utf8')));} catch(cause) {
-      throw new Error('Invalid breadcrumb column JSON '+href+': '+cause.message);
+    try {cache.set(file,readNavigationFragment(fs.readFileSync(real,'utf8'),{siteURL}));} catch(cause) {
+      throw new Error('Invalid breadcrumb column fragment '+href+': '+cause.message);
     }
   }
   const payload=cache.get(file);
-  if(!payload||typeof payload!=='object'||Array.isArray(payload)||payload.v!==1||payload.p!=='collection'
-    ||payload.lp!==logicalPath||typeof payload.label!=='string'||typeof payload.href!=='string'
-    ||!Array.isArray(payload.f)||!payload.f.length||!payload.f.every(field=>typeof field==='string')
-    ||!Array.isArray(payload.rv)||payload.rv.length%payload.f.length!==0)
-    throw new Error('Invalid breadcrumb column payload for '+logicalPath+': '+href);
+  if(payload.logicalPath!==logicalPath)throw new Error('Invalid breadcrumb column fragment for '+logicalPath+': '+href);
   return payload;
 }
 
@@ -63,7 +133,7 @@ export function readBreadcrumbData(text,{directory,pagePath,cache=new Map()}={})
     const keys=new Map();
     for(const [logicalPath,hash] of Object.entries(navigation.columns)) {
       if(typeof hash!=='string'||!/^[a-f0-9]{64}$/.test(hash))throw new Error('Invalid breadcrumb column hash for '+logicalPath);
-      const href=navigation.resources+hash+'.json';columnURLs[logicalPath]=href;
+      const href=navigation.resources+hash+'.txt';columnURLs[logicalPath]=href;
       if(directory)columns[logicalPath]=readColumn(href,logicalPath,{directory,pagePath,cache});
       keys.set(normalize(logicalPath),logicalPath);
     }
@@ -74,10 +144,9 @@ export function readBreadcrumbData(text,{directory,pagePath,cache=new Map()}={})
         throw new Error('Missing breadcrumb column URL for '+logicalPath);
       if(column.selected!==undefined&&typeof column.selected!=='string')throw new Error('Invalid selected breadcrumb URL for '+logicalPath);
       const payload=columns[logicalPath],source={logicalPath},href=column.selected||currentPath;
-      if(payload)Object.assign(source,{provider:payload.p,href:payload.href,label:payload.label,sortVariant:payload.sv,defaultSort:payload.ds});
+      if(payload)Object.assign(source,{provider:payload.provider,href:payload.href,label:payload.label,sortVariant:payload.sortVariant,defaultSort:payload.defaultSort});
       let selected={href};
-      if(payload)for(let index=0;index<payload.rv.length;index+=payload.f.length) {
-        const row={...payload.c,...Object.fromEntries(payload.f.map((field,offset)=>[field,payload.rv[index+offset]]))};
+      if(payload)for(const row of payload.rows) {
         if(row.href===href){selected={...row,current:true};break;}
       }
       return {source,selected,payload};
@@ -94,8 +163,7 @@ export function readBreadcrumbData(text,{directory,pagePath,cache=new Map()}={})
     // Sources are inspection data, recovered from terminal rows rather than an inline whitelist.
     for(const [logicalPath,payload] of Object.entries(columns)) {
       let contains=false;
-      for(let index=0;index<payload.rv.length;index+=payload.f.length) {
-        const row={...payload.c,...Object.fromEntries(payload.f.map((field,offset)=>[field,payload.rv[index+offset]]))};
+      for(const row of payload.rows) {
         if(row.href&&new URL(row.href,'https://output.invalid').pathname===currentPath){contains=true;break;}
       }
       if(!contains||normalize(logicalPath)===currentCollection)continue;

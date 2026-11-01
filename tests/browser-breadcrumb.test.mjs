@@ -66,7 +66,7 @@ test('breadcrumb options require explicit paths and generate complete help',{tim
   assert.match(helpFor(spec,'en'),/--column <path>/);assert.match(helpFor(spec,'en'),/--article <path>/);
 });
 
-test('JSON loading retains reserved columns and sorting retains rows, source, query and fragment',{timeout:45000},()=>{
+test('Fragment loading retains reserved columns and sorting retains rows, source, query and fragment',{timeout:45000},()=>{
   const result=cli('sort',['--page',collection+'child/#sorts=date-desc,date-asc','--column',collection,'--trace','--out',path.join(work,'reports')]);
   assert.equal(result.status,0,result.stdout+result.stderr);
   const folder=result.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
@@ -89,7 +89,7 @@ test('isolation covers ancestors and main collections, including sort previews w
   }
 });
 
-test('native collections and articles work without JavaScript while JSON paths retain source sorting',{timeout:45000},()=>{
+test('native collections and articles work without JavaScript while fragment paths retain source sorting',{timeout:45000},()=>{
   for(const query of ['','#from=discover/tooling','#sorts=date-desc,date-asc']) {
     const result=cli('source',['--page','/discover/tooling/devtools/'+query,'--column','/discover/tooling/','--article',article]);
     assert.equal(result.status,0,query+'\n'+result.stdout+result.stderr);

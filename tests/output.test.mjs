@@ -10,7 +10,7 @@ import {inspectHtmlBudget,inspectShareImageBudget,maxShareImageBytes} from './ou
 import {verifyRetiredOutput} from './output/retired.mjs';
 import {inspect as inspectShareImage} from '../.agents/skills/swaw-banyan/tasks/check/img/share/inspect.mjs';
 import {breadcrumbRows,inspect as inspectBreadcrumb} from '../.agents/skills/swaw-banyan/tasks/check/html/breadcrumb/inspect.mjs';
-import {readBreadcrumbData} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {readBreadcrumbData,readNavigationFragment} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/output-tests'),budget=fileURLToPath(new URL('./output/budget.mjs',import.meta.url));
 let work,count=0;
@@ -43,10 +43,21 @@ test('repository HTML budgets keep raw and gzip failures outside published check
 
 const encodeNavigation=value=>JSON.stringify(value).replaceAll('&','&amp;').replaceAll('"','&quot;');
 const columnHash='a'.repeat(64);
+const escape=value=>String(value).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 function fixtureNavigation(resources='/site/navigation/') {
   return {home:'/',resources,columns:{'/shared/':columnHash},default:'/shared/'};
 }
 const navigationHtml=value=>'<html lang=en><link rel=canonical href="https://example.test/article/"><body data-navigation="'+encodeNavigation(value)+'"></body></html>';
+function fragment({logicalPath='/shared/',href='/shared/',label='Shared',sortVariant='section',defaultSort='date-desc',rows=[]}={}) {
+  return '<div class="item-list item-list--path-column" data-navigation-column="'+escape(logicalPath)+'" data-sort-variant="'+sortVariant+'" data-default-sort="'+defaultSort+'">'+
+    '<div class="list-item list-header list-header--path" data-list-header><a class="path-column-label" href="'+escape(href)+'"><bdi>'+escape(label)+'</bdi></a>'+
+    (sortVariant?'<a class="path-column-sort" data-collection-sort-toggle="true" href="'+escape(href)+'"><span class="path-sort-label">Date</span><span data-sort-indicator>↓</span></a>':'')+'</div>'+
+    rows.map(row=>'<div class="list-item" data-list-item data-kind="'+escape(row.kind||'page')+'"'+
+      Object.entries(row).filter(([key])=>key.startsWith('sort_')).map(([key,value])=>' data-'+key.replaceAll('_','-')+'="'+escape(value)+'"').join('')+'>'+
+      '<a class="item-control item-field item-field--name" data-list-entry href="'+escape(row.href)+'"'+(row.title?' title="'+escape(row.title)+'"':'')+'>'+
+      (row.icon?row.icon:'<span class="item-icon"><svg class="icon icon-file"><use href="#icon-file"></use></svg></span>')+
+      '<span class="item-title"><bdi>'+escape(row.text)+'</bdi></span></a></div>').join('')+'</div>';
+}
 
 test('empty navigation needs no resource directory while referenced columns still do',async()=>{
   const navigation={home:'/',resources:'',columns:{},default:''},html=navigationHtml(navigation),directory=fixture();
@@ -61,10 +72,10 @@ test('empty navigation needs no resource directory while referenced columns stil
     assert.match(readBreadcrumbData(navigationHtml({...navigation,resources})).error,/Navigation resources directory is missing/);
 });
 
-test('breadcrumb payload and collection source budgets remain repository contracts',async()=>{
+test('breadcrumb index and collection source budgets remain repository contracts',async()=>{
   const directory=fixture(),navigation={home:'/',resources:'/site/navigation/',columns:{'/one/':columnHash,'/two/':'b'.repeat(64)},default:''};
-  for(const [logicalPath,hash] of Object.entries(navigation.columns))write(directory,'site/navigation/'+hash+'.json',JSON.stringify({
-    v:1,p:'collection',lp:logicalPath,label:'Source',href:logicalPath,f:['href','text'],rv:['/article/','Article']}));
+  for(const [logicalPath,hash] of Object.entries(navigation.columns))write(directory,'site/navigation/'+hash+'.txt',fragment({
+    logicalPath,href:logicalPath,label:'Source',rows:[{href:'/article/',text:'Article'}]}));
   for(const name of ['articles-all','articles','products-all','products']) {
     write(directory,name+'/index.html',navigationHtml(navigation));
     assert.match((await inspectHtmlBudget(directory)).issues.join('\n'),/source count exceeded budget/);
@@ -74,21 +85,21 @@ test('breadcrumb payload and collection source budgets remain repository contrac
 });
 
 test('breadcrumb references count inline bytes and shared external items once',async()=>{
-  const navigation=fixtureNavigation(),url=navigation.resources+columnHash+'.json';
-  const payload={v:1,p:'collection',lp:'/shared/',label:'Shared',href:'/shared/',f:['href','text'],rv:['/article/','Article','/two/','Literal &quot;quote&quot;']};
-  const html=navigationHtml(navigation),directory=fixture();write(directory,url.slice(1),JSON.stringify(payload));
+  const navigation=fixtureNavigation(),url=navigation.resources+columnHash+'.txt';
+  const content=fragment({rows:[{href:'/article/',text:'Article'},{href:'/two/',text:'Literal &quot;quote&quot;'}]});
+  const html=navigationHtml(navigation),directory=fixture();write(directory,url.slice(1),content);
   const [row]=breadcrumbRows([{text:html,relativePath:'article/index.html'}],{directory});
   assert.equal(row.breadcrumbParseError,'');assert.equal(row.breadcrumbSourceCount,1);assert.equal(row.breadcrumbItemCount,2);
   assert.equal(row.breadcrumbPayloadBytes,Buffer.byteLength(JSON.stringify(navigation)));
   const parsed=readBreadcrumbData(html,{directory});
-  assert.equal(parsed.columns['/shared/'].rv[3],'Literal &quot;quote&quot;','JSON strings are not HTML-decoded.');
+  assert.equal(parsed.columns['/shared/'].rows[1].text,'Literal &quot;quote&quot;','Fragment entities are decoded once.');
   assert.deepEqual(parsed.columnURLs,{'/shared/':url});
-  assert.equal(parsed.defaultColumns[0].payload,parsed.sources[0].currentColumn.payload,'Default and alternate paths share one payload.');
+  assert.equal(parsed.defaultColumns[0].payload,parsed.sources[0].currentColumn.payload,'Default and alternate paths share one parsed fragment.');
   const rootOnly=readBreadcrumbData(navigationHtml({...navigation,default:''}),{directory});
   assert.deepEqual(rootOnly.defaultColumns,[]);assert.deepEqual(rootOnly.sources[0].columns,[],'Root-only references do not describe a complete path.');
   assert.deepEqual(readBreadcrumbData(html).columns,{},'Metadata can be inspected without reading resources.');
-  write(directory,url.slice(1),JSON.stringify({...payload,rv:['/one/','x'.repeat(65536)]}));write(directory,'article/index.html',html);
-  assert.doesNotMatch((await inspectHtmlBudget(directory)).issues.join('\n'),/site-wide limit/,'External JSON is excluded from inline budgets.');
+  write(directory,url.slice(1),fragment({rows:[{href:'/one/',text:'x'.repeat(65536)}]}));write(directory,'article/index.html',html);
+  assert.doesNotMatch((await inspectHtmlBudget(directory)).issues.join('\n'),/site-wide limit/,'External fragments are excluded from inline budgets.');
   write(directory,'article/index.html',navigationHtml({...navigation,resources:'/site/'+ 'x'.repeat(65536)+'/'}));
   assert.match((await inspectHtmlBudget(directory)).issues.join('\n'),/site-wide limit/,'Resource references count toward inline budgets.');
   write(directory,'article/index.html',navigationHtml({...navigation,columns:[]}));
@@ -97,13 +108,13 @@ test('breadcrumb references count inline bytes and shared external items once',a
   assert.match((await inspectBreadcrumb(directory)).issues.join('\n'),/Navigation default is not a column path/);
 });
 
-test('breadcrumb readers validate external JSON, site paths and base URL prefixes',async()=>{
-  const directory=fixture(),payload={v:1,p:'collection',lp:'/shared/',label:'Shared',href:'/base/shared/',f:['href','text'],rv:['/one/','One']};
+test('breadcrumb readers validate external fragments, site paths and base URL prefixes',async()=>{
+  const directory=fixture(),content=fragment({href:'/base/shared/',rows:[{href:'/one/',text:'One'}]});
   write(directory,'index.html','<link rel=canonical href="https://example.test/base/">');
-  write(directory,'site/navigation/'+columnHash+'.json',JSON.stringify(payload));
+  write(directory,'site/navigation/'+columnHash+'.txt',content);
   const navigation=fixtureNavigation('/base/site/navigation/'),html=value=>navigationHtml({...navigation,resources:value});
   const resource='/base/site/navigation/',parsed=readBreadcrumbData(html(resource),{directory});
-  assert.equal(parsed.error,'');assert.deepEqual(parsed.columns['/shared/'],payload,'The URL prefix is not a physical output directory.');
+  assert.equal(parsed.error,'');assert.deepEqual(parsed.columns['/shared/'],readNavigationFragment(content),'The URL prefix is not a physical output directory.');
   const cache=new Map(),first=readBreadcrumbData(html(resource),{directory,cache}),second=readBreadcrumbData(html(resource),{directory,cache});
   assert.equal(first.columns['/shared/'],second.columns['/shared/'],'Inspections reuse loaded column objects.');
   const rows=breadcrumbRows([{text:html(resource),relativePath:'zh/one/index.html'},{text:html(resource),relativePath:'zh/two/index.html'}],{directory});
@@ -115,16 +126,59 @@ test('breadcrumb readers validate external JSON, site paths and base URL prefixe
     ['/base/%2e%2e/outside/',/leaves the published site/],
     ['/base/site/%2e%2e%5coutside/',/Invalid output reference/],
   ])assert.match(readBreadcrumbData(html(reference),{directory}).error,expected);
-  const file='site/navigation/'+columnHash+'.json';write(directory,file,'{broken');
-  assert.match(readBreadcrumbData(html(resource),{directory}).error,/Invalid breadcrumb column JSON/);
-  write(directory,file,JSON.stringify({...payload,lp:'/different/'}));
-  assert.match(readBreadcrumbData(html(resource),{directory}).error,/Invalid breadcrumb column payload for \/shared\//);
-  write(directory,file,JSON.stringify(payload));write(directory,'article/index.html',html(resource));
+  const file='site/navigation/'+columnHash+'.txt';write(directory,file,'{broken');
+  assert.match(readBreadcrumbData(html(resource),{directory}).error,/Invalid breadcrumb column fragment/);
+  write(directory,file,fragment({logicalPath:'/different/'}));
+  assert.match(readBreadcrumbData(html(resource),{directory}).error,/Invalid breadcrumb column fragment for \/shared\//);
+  write(directory,file,content);write(directory,'article/index.html',html(resource));
   assert.deepEqual((await inspectBreadcrumb(directory)).issues,[]);
   assert.match(readBreadcrumbData(navigationHtml({...navigation,columns:{}}),{directory}).error,/Missing breadcrumb column URL/);
-  assert.match(readBreadcrumbData(navigationHtml({...navigation,columns:{'/shared/':payload}})).error,/Invalid breadcrumb column hash/);
+  assert.match(readBreadcrumbData(navigationHtml({...navigation,columns:{'/shared/':{}}})).error,/Invalid breadcrumb column hash/);
   const literal=fixtureNavigation();literal.error='Literal &quot;quote&quot;';
-  assert.equal(readBreadcrumbData(navigationHtml(literal)).navigation.error,'Literal &quot;quote&quot;','HTML entities are decoded once.');
+  assert.equal(readBreadcrumbData(navigationHtml(literal)).navigation.error,'Literal &quot;quote&quot;','Index entities are decoded once.');
+});
+
+test('navigation fragments retain names, sorting fields and all supported icons',()=>{
+  const content=fragment({logicalPath:'/书签/',label:'A & B <C>',rows:[
+    {kind:'section',href:'/a/',text:'A & B <C>',sort_name:'1',sort_count:'0',sort_date:'2026-10-01'},
+    {href:'/b/',text:'Literal &quot;quote&quot;',title:'Full & exact',sort_name:'2',sort_version:'1.2.3',sort_price:'0',icon:'<span class="item-icon item-icon--text"><span class="icon icon--text">💡 &amp; ✨</span></span>'},
+    {href:'/c/',text:'Image',icon:'<span class="item-icon"><img class="icon icon--image icon--monochrome" src="/media/icon.hash.svg" alt="" width="16" height="16" decoding="async"></span>'}
+  ]});
+  const data=readNavigationFragment(content);
+  assert.equal(data.logicalPath,'/书签/');assert.equal(data.label,'A & B <C>');assert.equal(data.rows[0].text,'A & B <C>');
+  assert.deepEqual(data.rows[0],{kind:'section',href:'/a/',text:'A & B <C>',sort_name:'1',sort_date:'2026-10-01',sort_count:'0',icon:'file'});
+  assert.equal(data.rows[1].text,'Literal &quot;quote&quot;');assert.equal(data.rows[1].title,'Full & exact');
+  assert.equal(data.rows[1].sort_version,'1.2.3');assert.equal(data.rows[1].sort_price,'0');assert.deepEqual(data.rows[1].icon,{text:'💡 & ✨'});
+  assert.deepEqual(data.rows[2].icon,{image:'/media/icon.hash.svg',monochrome:true});
+  assert.deepEqual(readNavigationFragment(fragment({sortVariant:'',defaultSort:''})).rows,[],'Read-only empty columns are valid.');
+  const empty=fragment({rows:[{href:'/empty/',text:'Empty',sort_date:'',sort_price:''}]}).replace('data-sort-date=""','data-sort-date').replace('data-sort-price=""','data-sort-price');
+  const emptyRow=readNavigationFragment(empty).rows[0];assert.equal(emptyRow.sort_date,'');assert.equal(emptyRow.sort_price,'','Minified empty sort attributes retain empty values.');
+});
+
+test('navigation fragments preserve literal entities in labels, rows, icons and attributes',()=>{
+  const literal='Literal &lt;tag&gt; &amp; &#60; &#x3e;';
+  const href='/p/&lt;tag&gt;/',title=literal+' full';
+  const data=readNavigationFragment(fragment({label:literal,href:'/shared/&lt;tag&gt;/',rows:[{
+    href,text:literal,title,
+    icon:'<span class="item-icon item-icon--text"><span class="icon icon--text">'+escape(literal)+'</span></span>'
+  }]}));
+  assert.equal(data.label,literal);assert.equal(data.href,'/shared/&lt;tag&gt;/');
+  assert.equal(data.rows[0].text,literal);assert.equal(data.rows[0].title,title);assert.equal(data.rows[0].href,href);
+  assert.deepEqual(data.rows[0].icon,{text:literal});
+});
+
+test('navigation fragments reject malformed roots, active markup and unsafe links',()=>{
+  const valid=fragment({rows:[{href:'/one/',text:'One'}]});
+  for(const content of [valid+valid,'<!DOCTYPE html><html>'+valid+'</html>',valid.replace('data-sort-variant="section"','data-sort-variant="unknown"'),
+    valid.replace('data-default-sort="date-desc"','data-default-sort="price-desc"'),valid.replace('data-list-header',''),
+    valid.replace('<span class="path-sort-label">Date</span>',''),valid.replace('data-sort-indicator',''),
+    valid.replace('href="#icon-file"','href="/same-origin.svg#file"'),
+    valid.replace('data-kind="page"',''),valid.replace('<bdi>One</bdi>',''),
+    valid.replace('<bdi>One</bdi>','<script>alert(1)</script><bdi>One</bdi>'),valid.replace('<a class="item-control','<a onclick="alert(1)" class="item-control'),
+    valid.replace('href="/one/"','href="javascript:alert(1)"'),valid.replace('href="/one/"','href="https://outside.test/"')])
+    assert.throws(()=>readNavigationFragment(content));
+  assert.throws(()=>readNavigationFragment(fragment({rows:[{href:'/one/',text:'One'},{href:'/one/',text:'Again'}]})),/duplicate/);
+  assert.throws(()=>readNavigationFragment(valid.replace('</div>','')),/Unclosed|Unexpected/);
 });
 
 test('breadcrumb readers resolve the published root behind Hugo language redirects',async()=>{
@@ -133,12 +187,12 @@ test('breadcrumb readers resolve the published root behind Hugo language redirec
     '<title>https://example.test/base/en/</title>\n<link rel="canonical" href="https://example.test/base/en/">\n'+
     '<meta charset="utf-8">\n<meta http-equiv="refresh" content="0; url=https://example.test/base/en/">\n</head>\n</html>');
   for(const lang of ['en','zh']) {
-    const hash=(lang==='en'?'a':'b').repeat(64),payload={v:1,p:'collection',lp:'/shared/',label:'Shared',href:'/base/'+lang+'/shared/',f:['href','text'],rv:['/base/'+lang+'/one/',lang==='en'?'One':'一']};
-    write(directory,'site/navigation/'+hash+'.json',JSON.stringify(payload));
+    const hash=(lang==='en'?'a':'b').repeat(64),content=fragment({href:'/base/'+lang+'/shared/',rows:[{href:'/base/'+lang+'/one/',text:lang==='en'?'One':'一'}]});
+    write(directory,'site/navigation/'+hash+'.txt',content);
     const navigation=fixtureNavigation('/base/site/navigation/');navigation.columns['/shared/']=hash;
     const html='<html lang="'+lang+'"><head><link rel="canonical" href="https://example.test/base/'+lang+'/article/"></head>'+navigationHtml(navigation).split('<body')[1].replace(/^/, '<body');
     write(directory,lang+'/article/index.html',html);
-    const data=readBreadcrumbData(html,{directory});assert.equal(data.error,'');assert.deepEqual(data.columns['/shared/'],payload);
+    const data=readBreadcrumbData(html,{directory});assert.equal(data.error,'');assert.deepEqual(data.columns['/shared/'],readNavigationFragment(content));
     assert.match(readBreadcrumbData(html.replace('/base/site/navigation/','/outside/'),{directory}).error,/leaves the published site/);
   }
   assert.deepEqual((await inspectBreadcrumb(directory)).issues,[]);

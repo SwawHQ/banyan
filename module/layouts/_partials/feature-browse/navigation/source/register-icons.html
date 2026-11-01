@@ -6,15 +6,9 @@
   {{- $columns = $columns | append .currentColumn -}}
 {{- end -}}
 {{- range $columns -}}
-  {{- $fields := .payload.f | default slice -}}
-  {{- $values := .payload.rv | default slice -}}
-  {{- range $column, $field := $fields -}}
-    {{- if eq $field "icon" -}}
-      {{- range $offset, $value := $values -}}
-        {{- if and (eq (mod $offset (len $fields)) $column) $value (not (reflect.IsMap $value)) -}}
-          {{- $page.Store.SetInMap "used_icons" $value true -}}
-        {{- end -}}
-      {{- end -}}
+  {{- range .rows -}}
+    {{- if and .icon (not (reflect.IsMap .icon)) -}}
+      {{- $page.Store.SetInMap "used_icons" .icon true -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}

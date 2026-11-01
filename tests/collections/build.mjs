@@ -149,18 +149,13 @@ try {
 
         const logicalPath = `/${logical.replace(/^\/+|\/+$/g, '')}/`;
         const data = collectionPayload(output,logicalPath,prefixes[['en','zh','zh-tw'].indexOf(lang)]+logicalPath);
-        assert(data && typeof data === 'object', `${logical} publishes its collection rows as shared JSON`);
-        assert([...data.f, ...Object.keys(data.c || {})].every(field => !field.endsWith('_text') && !['size_unit', 'count_unit'].includes(field)),
+        assert(data && typeof data === 'object', `${logical} publishes its collection rows as shared HTML fragments`);
+        assert(data.rows.flatMap(row => Object.keys(row)).every(field => !field.endsWith('_text') && !['size_unit', 'count_unit'].includes(field)),
             `${logical} navigation payload omits display-only fields`);
-        assert(!data.f.includes('key') && !data.f.includes('sort_group'),
+        assert(data.rows.every(row => !Object.hasOwn(row, 'key') && !Object.hasOwn(row, 'sort_group')),
             `${logical} navigation payload omits URL duplicates and derived groups`);
-        const rows = [];
-        for (let offset = 0; offset < data.rv.length; offset += data.f.length) {
-            rows.push({ ...data.c, ...Object.fromEntries(data.f.map((key, i) => [key, data.rv[offset + i]])) });
-        }
-        const result = { ...data, rows };
-        payloadCache.set(cacheKey, result);
-        return result;
+        payloadCache.set(cacheKey, data);
+        return data;
     }
     const displayedRowsCache = new Map();
     function displayedRows(output, lang, logical) {
@@ -189,12 +184,12 @@ try {
             if (view === 'directory') directoryMembers.set(lang, hrefs);
             else if(view==='all')assert.deepEqual(hrefs,payload(output,lang,'all').rows.map(row=>row.href).sort(),'The -all preset reads the same recursive members as its aggregate.');
             else assert.deepEqual(hrefs, directoryMembers.get(lang), `${view} must not filter native directory members`);
-            assert.equal(current.sv, view === 'directory' ? 'section' : view);
+            assert.equal(current.sortVariant, view === 'directory' ? 'section' : view);
             const aggregate = payload(output, lang, 'all');
             assert(aggregate.rows.every(row => !('sort_path' in row) && !('path_text' in row) && !('path_href' in row)), 'aggregate rows omit the removed Path column');
-            assert.equal(payload(output, lang, 'd/contract-inherit').sv, view==='all'?'section':current.sv, 'undeclared sections inherit the native cascade layout');
-            assert.equal(payload(output, lang, 'd/contract-override').sv, 'section');
-            assert.equal(payload(output, lang, 'd/contract-override/child').sv, 'section', 'nearest cascade wins');
+            assert.equal(payload(output, lang, 'd/contract-inherit').sortVariant, view==='all'?'section':current.sortVariant, 'undeclared sections inherit the native cascade layout');
+            assert.equal(payload(output, lang, 'd/contract-override').sortVariant, 'section');
+            assert.equal(payload(output, lang, 'd/contract-override/child').sortVariant, 'section', 'nearest cascade wins');
             for (const list of ['local', 'never']) {
                 const logicalPath = `/contract-all-${list}/`;
                 const html = fs.readFileSync(path.join(output, prefixes[index].slice(1), logicalPath, 'index.html'), 'utf8');
@@ -286,7 +281,7 @@ try {
             assert.equal(new Set(all.rows.map(row => row.href)).size, all.rows.length);
             assert(!all.rows.some(row => /\/p\/contract-(unclassified|empty|blank)\//.test(row.href)));
             const free = payload(output, lang, 'products/free');
-            assert.equal(free.sv, 'products');
+            assert.equal(free.sortVariant, 'products');
             assert.equal(free.rows.filter(row => /\/p\/contract-/.test(row.href)).length, 4);
             const displayedFree = displayedRows(output, lang, 'products/free');
             assert.equal(displayedFree.find(row => row.href.includes('contract-priced')).fields.price, '$25', 'category labels do not validate prices');
@@ -300,7 +295,7 @@ try {
             assert.equal(free.rows.find(row => row.href.includes('contract-zero')).sort_version, '');
             assert.equal(free.rows.find(row => row.href.includes('contract-zero')).sort_price, '0');
             const categories = payload(output, lang, 'products');
-            assert.equal(categories.sv, 'section');
+            assert.equal(categories.sortVariant, 'section');
             assert(categories.rows.some(row => row.href === `${prefixes[index]}/products/contract-empty/` && row.sort_count === '0'));
             assert.equal(displayedRows(output,lang,'products').find(row=>row.href===`${prefixes[index]}/products/contract-empty/`)?.fields.count,'0','Empty directories display their zero count.');
             for (const label of ['Special Products', '$5~$50']) {
@@ -313,8 +308,8 @@ try {
             assert(!/data-sortable=(?:"true"|true)/.test(html), 'the section cascade keeps article layouts separate');
             for (const list of ['products/contract-name', 'contract-name-reference', ...(view === 'name' ? ['d', 'd/contract-inherit'] : [])]) {
                 const names = payload(output, lang, list);
-                assert.equal(names.sv, 'name');
-                assert.equal(names.ds, 'name-asc');
+                assert.equal(names.sortVariant, 'name');
+                assert.equal(names.defaultSort, 'name-asc');
                 assert(names.rows.length > 0);
                 assert(names.rows.every(row => !('sort_date' in row) && !('date_text' in row) && !('count_text' in row) && !('price_text' in row)), 'name payloads only contain name and shared navigation fields');
                 const ranks = names.rows.map(row => Number(row.sort_name));
@@ -343,7 +338,7 @@ try {
             await server.setRoot(output);
             const rows = payload(output, 'en', 'products/paid').rows;
             const expected = Object.fromEntries([...versions].map(([name, version]) => [`/p/contract-${name}/`, version]));
-            assert.deepEqual(Object.fromEntries(rows.map(row => [row.href, row.sort_version])), expected, 'JSON preserves literal versions.');
+            assert.deepEqual(Object.fromEntries(rows.map(row => [row.href, row.sort_version])), expected, 'HTML fragment attributes preserve literal versions.');
             const versionPage = await versionContext.newPage();
             for (const direction of ['asc', 'desc']) {
                 await gotoAndWait(versionPage, `${baseUrl}/products/paid/#sort=version-${direction}`);
@@ -546,7 +541,7 @@ try {
             assert.equal(await iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
         }
         await iconsContext.close();
-        console.log('PASS inherited/own icons, source-only SVGs, JSON path columns, reload and history');
+        console.log('PASS inherited/own icons, source-only SVGs, HTML fragment path columns, reload and history');
 
         await server.setRoot(builds.name);
         const namesContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1024, height: 700 } });

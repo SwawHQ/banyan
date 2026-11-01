@@ -405,12 +405,12 @@ test('bucket caching preserves query keys, validates versioned responses and war
     'A resource failure must not return offline HTML.');
 });
 
-test('visited navigation JSON stays offline without warming unused source columns',async()=>{
+test('visited navigation fragments stays offline without warming unused source columns',async()=>{
   const output=contentOutput??=passed(build('content-version'));
   const urls={
-    '/articles/':'/site/navigation/'+'0'.repeat(64)+'.json',
-    '/articles/tools/':'/site/navigation/'+'1'.repeat(64)+'.json',
-    '/articles-all/':'/site/navigation/'+'2'.repeat(64)+'.json',
+    '/articles/':'/site/navigation/'+'0'.repeat(64)+'.txt',
+    '/articles/tools/':'/site/navigation/'+'1'.repeat(64)+'.txt',
+    '/articles-all/':'/site/navigation/'+'2'.repeat(64)+'.txt',
   };
   const encoded=JSON.stringify({home:'/',resources:'/site/navigation/',columns:Object.fromEntries(Object.keys(urls).map((key,index)=>[key,String(index).repeat(64)])),
     default:'/articles/tools/'}).replaceAll('"','&quot;');
@@ -423,16 +423,16 @@ test('visited navigation JSON stays offline without warming unused source column
     if(pathname==='/article/')return new Response(html,{headers:{'Content-Type':'text/html'}});
     if(pathname==='/js/shared.hash.js')return new Response('/* script */',{headers:{'Content-Type':'text/javascript'}});
     const logicalPath=Object.keys(urls).find(key=>urls[key]===pathname);
-    if(logicalPath)return Response.json({lp:logicalPath,f:['text'],rv:['Entry']});
+    if(logicalPath)return new Response('<div data-navigation-column="'+logicalPath+'">Entry</div>',{headers:{'Content-Type':'text/plain; charset=utf-8'}});
     throw new Error('Unexpected request '+request.url);
   });
   await runtime.probe.warmNavigationUrl('https://example.test/article/#from=articles/tools');
   assert.deepEqual(runtime.requests.map(request=>new URL(request.url).pathname).sort(),
-    ['/article/','/js/shared.hash.js'],'HTML warming must not fetch every candidate source JSON.');
+    ['/article/','/js/shared.hash.js'],'HTML warming must not fetch every candidate source fragments.');
   const selected=['/articles/','/articles/tools/'];
   await Promise.all(selected.map(async logicalPath=>{
     const response=await dispatch(runtime.listeners,requestFor(urls[logicalPath]));
-    assert.equal((await response.json()).lp,logicalPath);
+    assert.ok((await response.text()).includes('data-navigation-column="'+logicalPath+'"'));
   }));
   const assetCache=runtime.stores.get(runtime.probe.getCacheNameForRoute(runtime.probe.getMatchingRoute(urls['/articles/'])));
   assert.ok(assetCache.has('https://example.test'+urls['/articles/']));
@@ -442,16 +442,16 @@ test('visited navigation JSON stays offline without warming unused source column
   offline=true;
   assert.equal(await (await dispatch(runtime.listeners,requestFor('/article/',true))).text(),html);
   for(const logicalPath of selected)
-    assert.equal((await (await dispatch(runtime.listeners,requestFor(urls[logicalPath]))).json()).lp,logicalPath);
-  assert.equal(runtime.requests.length,count,'Offline reload must reuse both the page and its loaded column JSON.');
+    assert.ok((await (await dispatch(runtime.listeners,requestFor(urls[logicalPath]))).text()).includes('data-navigation-column="'+logicalPath+'"'));
+  assert.equal(runtime.requests.length,count,'Offline reload must reuse both the page and its loaded column fragments.');
   await assert.rejects(dispatch(runtime.listeners,requestFor(urls['/articles-all/'])),/Network unavailable/,
     'An unvisited source must remain uncached.');
   runtime.stores.get('sw-content-state').set('https://example.test/sw-version.json',
     Response.json({version:'v-next',lastAttemptAt:Date.now()}));
   const reopened=cachedWorker(output,()=>{throw new TypeError('Network unavailable');},{},runtime.stores);
   for(const logicalPath of selected)
-    assert.equal((await (await dispatch(reopened.listeners,requestFor(urls[logicalPath]))).json()).lp,logicalPath);
-  assert.equal(reopened.requests.length,0,'Content version changes must keep unchanged fingerprinted column JSON.');
+    assert.ok((await (await dispatch(reopened.listeners,requestFor(urls[logicalPath]))).text()).includes('data-navigation-column="'+logicalPath+'"'));
+  assert.equal(reopened.requests.length,0,'Content version changes must keep unchanged fingerprinted column fragments.');
 });
 
 test('off rules also exclude offline-page installation and fallback',async()=>{

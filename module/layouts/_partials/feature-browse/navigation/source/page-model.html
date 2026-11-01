@@ -9,11 +9,12 @@
 {{- if eq $logicalPath "" -}}
   {{- errorf "Build failed: entry source page %q is missing logicalPath." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
 {{- end -}}
-{{- $payload := partial "feature-browse/collection/items/payload.html" (dict "page" $page "source" $source "config" $config "rows" $rows) -}}
-{{- $payloadUrl := partial "./publish.html" $payload -}}
+{{- $payloadUrl := partial "./publish.html" (dict "page" $page "source" $source "config" $config "rows" $rows) -}}
+{{- $entryHrefs := slice -}}
+{{- range where $rows "kind" "page" -}}{{- $entryHrefs = $entryHrefs | append .href -}}{{- end -}}
 {{- return (dict
   "logicalPath" $logicalPath
   "page" $page
-  "currentColumn" (dict "source" $source "payload" $payload "payloadUrl" $payloadUrl "config" $config "rows" $rows)
-  "entryHrefs" (partial "feature-browse/collection/items/page-hrefs.html" (dict "payload" $payload))
+  "currentColumn" (dict "source" $source "payloadUrl" $payloadUrl "config" $config "rows" $rows)
+  "entryHrefs" (uniq $entryHrefs)
 ) -}}

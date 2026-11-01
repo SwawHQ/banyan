@@ -4,6 +4,7 @@ import os from 'node:os';
 import { pathToFileURL } from 'node:url';
 import assert from 'node:assert/strict';
 import {buildJavaScript} from '../../.agents/skills/swaw-banyan/tasks/_shared/hugo-js.mjs';
+import {loadChromium} from '../../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 
 const siteRoot = process.cwd();
 const browseRoot = path.join(siteRoot, 'module/assets/js/browse');
@@ -270,13 +271,12 @@ try {
         'descending publication date sorting should reverse the complete precise-date tuple'
     );
 
-    const grouped = collectionItems.decodeItemsPayload({v:1,p:'collection',lp:'/groups/',sv:'section',ds:'date-desc',
-        f:['kind','href','text','sort_name','sort_date','sort_count'],rv:[
-            'page','/p/page-a/','A','1','20261030120000','4',
-            'section','/groups/folder-c/','C','3','20261010120000','3',
-            'page','/p/page-d/','D','4','20261031120000','2',
-            'section','/groups/folder-b/','B','2','20261020120000','1',
-        ]});
+    const grouped = { rows: [
+        { kind: 'page', href: '/p/page-a/', sort_name: '1', sort_date: '20261030120000', sort_count: '4' },
+        { kind: 'section', href: '/groups/folder-c/', sort_name: '3', sort_date: '20261010120000', sort_count: '3' },
+        { kind: 'page', href: '/p/page-d/', sort_name: '4', sort_date: '20261031120000', sort_count: '2' },
+        { kind: 'section', href: '/groups/folder-b/', sort_name: '2', sort_date: '20261020120000', sort_count: '1' },
+    ] };
     assert.ok(grouped.rows.every(row => !('key' in row) && !('sort_group' in row)),
         'Decoded rows do not need duplicate URL keys or serialized groups.');
     assert.deepEqual(readCompositeOrder('name-asc',grouped.rows,'section'),['folder-b','folder-c','page-a','page-d'],
@@ -458,27 +458,6 @@ try {
         default: '/notes/',
         error: 'Navigation could not load.',
     };
-    const payloads = {
-        discover: {
-            v: 1, p: 'collection', lp: '/discover/', label: 'Discover', href: '/zh/discover/',
-            sv: 'section', ds: 'date-desc',
-            f: ['kind', 'href', 'text', 'icon', 'sort_name', 'sort_date', 'sort_count', 'title'],
-            rv: ['section', '/zh/discover/windows/', 'Windows', 'folder', '1', '20260626000000', '2', 'Windows development'],
-        },
-        windows: {
-            v: 1, p: 'collection', lp: '/discover/windows/', label: 'Windows', href: '/zh/discover/windows/',
-            sv: 'section', ds: 'date-desc',
-            f: ['kind', 'href', 'text', 'icon', 'sort_name', 'sort_date', 'sort_count', 'title'],
-            rv: [
-                'page', '/zh/p/contract-alpha/', 'Alpha', 'file', '1', '20260626000000', '6402', '',
-                'page', '/zh/p/contract-beta/', 'Beta', { text: 'β' }, '2', '20260624000000', '1341', 'Beta detailed article title',
-            ],
-        },
-        notes: {
-            v: 1, p: 'collection', lp: '/notes/', label: 'Notes', href: '/zh/notes/', sv: 'section', ds: 'date-desc',
-            f: ['kind', 'href', 'text', 'sort_name'], rv: ['page', '/zh/p/contract-beta/', 'Beta', '1'],
-        },
-    };
     const parsed = entrySource.parseNavigation(JSON.stringify(manifest));
     const defaultRoute = { root: '/zh/notes/', columns: [{ column: '/notes/' }], lineage: '/notes/', from: '' };
     assert.deepEqual(parsed.columns['/discover/windows/'], { hash: hashes.windows, href: '/zh/discover/windows/' });
@@ -508,297 +487,233 @@ try {
     }
 
     const previousDocument = globalThis.document;
-    const previousFetch = globalThis.fetch;
-    globalThis.document = { body: { dataset: { navigation: JSON.stringify(manifest) } } };
-    for (const raw of ['', '{', 'null', '{}']) {
-        document.body.dataset.collectionSortCopy = raw;
-        assert.deepEqual(sortCopy.readCollectionSortCopy(), { fields: {}, actions: {} }, 'Missing or malformed copy remains usable.');
-    }
-    document.body.dataset.collectionSortCopy = JSON.stringify(literalCopy);
-    assert.deepEqual(sortCopy.readCollectionSortCopy(), literalCopy);
-    document.body.dataset.collectionSortCopy = JSON.stringify({ ...literalCopy, fields: { name: 'Changed' } });
-    assert.equal(sortCopy.readCollectionSortCopy().fields.name, 'Changed', 'Header refresh reads the current shared copy.');
-    window.location.href = 'https://example.test/zh/p/contract-beta/#from=discover/windows';
-    window.location.pathname = '/zh/p/contract-beta/';
-    window.location.hash = '#from=discover/windows';
-    const requests = [];
-    let release;
-    const gate = new Promise(resolve => { release = resolve; });
-    globalThis.fetch = async (url, options) => {
-        requests.push(url);
-        assert.equal(options.credentials, 'same-origin');
-        assert.ok(options.signal instanceof AbortSignal);
-        await gate;
-        return { ok: true, json: async () => url.includes(hashes.discover) ? payloads.discover : payloads.windows };
-    };
     try {
-        const cached = entrySource.readNavigation();
-        assert.equal(entrySource.readNavigation(), cached, 'unchanged inline data must reuse its parsed manifest');
-        const columns = breadcrumbSource.readBreadcrumbColumns();
-        assert.equal(columns.length, 2);
-        assert.equal(columns[0].selected, '/zh/discover/windows/');
-        assert.equal(columns[1].selected, window.location.pathname,
-            'the current row must use the current URL when selected is omitted');
-        assert.equal(columns[1].payload, null, 'HTML must not contain column rows');
-        assert.equal(breadcrumbSource.readBreadcrumbColumn('/discover/工具/').url,
-            manifest.resources + hashes.unicode + '.json', 'encoded and decoded column keys must resolve the same resource');
-        const failed = breadcrumbPath.buildPathColumn(columns[1]);
-        assert.deepEqual(failed.items, [], 'a missing resource must not synthesize a selected row');
-        assert.equal(failed.failed, true);
-
-        const firstLoad = breadcrumbSource.loadBreadcrumbColumns(columns);
-        const duplicateLoad = breadcrumbSource.loadBreadcrumbColumns([columns[1], columns[0]]);
-        assert.equal(requests.length, 2, 'different columns must start in parallel and duplicate references must share requests');
-        release();
-        await Promise.all([firstLoad, duplicateLoad]);
-        assert.equal(entrySource.readNavigation(), cached, 'loaded rows must not invalidate inline route metadata');
-        const loaded = breadcrumbSource.readBreadcrumbColumns();
-        assert.equal(loaded[1].source, loaded[1].payload, 'the shared JSON also supplies the collection source');
-        assert.equal(loaded[1].source.label, 'Windows');
-        assert.equal(loaded[1].source.href, '/zh/discover/windows/');
-        assert.equal(columns[1].payload, null, 'loading rows must not mutate previous column objects');
-        assert.equal(breadcrumbSource.readBreadcrumbColumn('/discover/windows/').payload, loaded[1].payload);
-        await breadcrumbSource.loadBreadcrumbColumns(loaded);
-        assert.equal(requests.length, 2, 'completed requests must remain cached');
-
-        const model = breadcrumbPath.buildPathColumn(loaded[1]);
-        assert.equal(model.failed, false);
-        assert.equal(model.items.filter(item => item.current).length, 1);
-        const current = model.items.find(item => item.current);
-        assert.equal(current.text, 'Beta');
-        assert.equal(current.title, 'Beta detailed article title', 'the normal selected tooltip must come from shared JSON');
-        assert.deepEqual(current.icon, { text: 'β' }, 'shared row icons must survive path rendering');
-        assert.ok(model.items.every(item => !('column_items' in item) && !('collection_source' in item)));
-        const ancestor = breadcrumbPath.buildPathColumn(loaded[0]).items.find(item => item.current);
-        assert.equal(ancestor.text, 'Windows');
-        assert.equal(ancestor.title, 'Windows development', 'ancestor tooltips must also come from their JSON rows');
-
-        const updatedManifest = structuredClone(manifest);
-        updatedManifest.columns['/discover/windows/'] = hashes.updated;
-        document.body.dataset.navigation = JSON.stringify(updatedManifest);
-        assert.notEqual(entrySource.readNavigation(), cached, 'a changed manifest must invalidate its parsed cache');
-        assert.equal(cached.columns['/discover/windows/'].hash, hashes.windows);
-        const unloaded = breadcrumbSource.readBreadcrumbColumn('/discover/windows/');
-        assert.equal(unloaded.payload, null, 'a new content hash must not reuse old rows');
-        for (const response of [
-            { ok: false },
-            { ok: true, json: async () => { throw new SyntaxError('bad JSON'); } },
-            { ok: true, json: async () => ({ v: 1 }) },
-            { ok: true, json: async () => payloads.discover },
-            ...[
-                { v: 2 }, { p: 'other' }, { label: '' }, { href: null },
-                { href: 'javascript:alert(1)' }, { href: 'https://outside.test/column/' },
-            ].map(change => ({ ok: true, json: async () => ({ ...payloads.windows, ...change }) })),
-            ...['javascript:void(0)', 'https://outside.test/article/'].map(href => ({
-                ok: true, json: async () => ({ ...payloads.windows,
-                    rv: payloads.windows.rv.map(value => value === '/zh/p/contract-beta/' ? href : value) }),
-            })),
-        ]) {
-            globalThis.fetch = async () => response;
-            assert.equal((await breadcrumbSource.loadBreadcrumbColumns([unloaded]))[0].status, 'rejected');
-            assert.equal(breadcrumbSource.readBreadcrumbColumn('/discover/windows/').payload, null);
+        globalThis.document = { body: { dataset: {} } };
+        for (const raw of ['', '{', 'null', '{}']) {
+            document.body.dataset.collectionSortCopy = raw;
+            assert.deepEqual(sortCopy.readCollectionSortCopy(), { fields: {}, actions: {} });
         }
-        window.location.hash = '#from=discover/windows&sorts=name-asc,date-desc';
-        globalThis.fetch = async () => ({ ok: true, json: async () => ({
-            ...payloads.windows, rv: payloads.windows.rv.map(value => value === 'Beta' ? 'Updated Beta' : value),
-        }) });
-        assert.equal((await breadcrumbSource.loadBreadcrumbColumns(breadcrumbSource.readBreadcrumbColumns()))[1].status, 'fulfilled',
-            'a new fragment state must permit a failed resource to retry');
-        assert.equal(breadcrumbSource.readBreadcrumbColumn('/discover/windows/').payload.rows[1].text, 'Updated Beta');
-        assert.equal(loaded[1].payload.rows[1].text, 'Beta', 'new resource data must not overwrite an older decoded payload');
-
-        let unexpectedRequests = 0;
-        globalThis.fetch = async () => { unexpectedRequests++; throw new Error('Unexpected request'); };
-        for (const url of ['https://outside.test/column.json', 'blob:https://example.test/resource']) {
-            assert.equal((await breadcrumbSource.loadBreadcrumbColumns([{ ...unloaded, url }]))[0].status, 'rejected');
-        }
-        assert.equal((await breadcrumbSource.loadBreadcrumbColumns([{ key: '/missing/', url: '' }]))[0].status, 'rejected');
-        assert.equal(unexpectedRequests, 0, 'invalid and cross-origin references must fail before fetching');
-        const invalidHash = structuredClone(manifest);
-        invalidHash.columns['/discover/windows/'] = 'not-a-hash';
-        document.body.dataset.navigation = JSON.stringify(invalidHash);
-        assert.equal(breadcrumbSource.readBreadcrumbColumn('/discover/windows/').url, '');
-
-        const previousSetTimeout = globalThis.setTimeout;
-        const previousClearTimeout = globalThis.clearTimeout;
-        let abortRequest, cleared = false;
-        globalThis.setTimeout = (callback, delay) => {
-            assert.equal(delay, 8000, 'a navigation request must have a bounded wait');
-            abortRequest = callback;
-            return 1;
-        };
-        globalThis.clearTimeout = () => { cleared = true; };
-        globalThis.fetch = (_, { signal }) => new Promise((_, reject) => {
-            signal.addEventListener('abort', () => reject(new Error('Aborted')), { once: true });
-        });
-        try {
-            const timed = breadcrumbSource.loadBreadcrumbColumns([{ key: '/timeout/',
-                url: manifest.resources + 'e'.repeat(64) + '.json' }]);
-            abortRequest();
-            assert.equal((await timed)[0].status, 'rejected', 'a stalled request must abort instead of hanging navigation');
-            assert.equal(cleared, true);
-        } finally {
-            globalThis.setTimeout = previousSetTimeout;
-            globalThis.clearTimeout = previousClearTimeout;
-        }
-        globalThis.fetch = async () => { unexpectedRequests++; throw new Error('Unexpected request'); };
-
-        const roots = ['/zh/notes/', '/zh/discover/', '/zh/all/'].map(href => {
-            const link = { dataset: { rootHref: href }, attributes: {}, current: false };
-            link.classList = { toggle: (_, current) => { link.current = current; } };
-            link.setAttribute = (name, value) => { link.attributes[name] = value; };
-            link.removeAttribute = name => { delete link.attributes[name]; };
-            return link;
-        });
-        document.querySelector = () => ({ dataset: { defaultRootHref: '/zh/notes/' }, querySelectorAll: () => roots });
-        window.location.hash = '#from=discover/windows';
-        rootController.refreshRootSelection();
-        assert.deepEqual(roots.filter(root => root.current).map(root => root.dataset.rootHref), ['/zh/discover/']);
-        assert.equal(roots.find(root => root.current).attributes['aria-current'], 'page');
-        window.location.hash = '#from=unregistered';
-        rootController.refreshRootSelection();
-        assert.deepEqual(roots.filter(root => root.current).map(root => root.dataset.rootHref), ['/zh/notes/']);
-        rootController.renderRootSelection('/zh/all/');
-        assert.deepEqual(roots.filter(root => root.current).map(root => root.dataset.rootHref), ['/zh/all/']);
-        assert.equal(unexpectedRequests, 0, 'root selection must work without requesting or decoding row data');
-
-        const pending = new Map([['data-entry-breadcrumb-pending', 'true'], ['data-breadcrumb-sort-pending', 'true']]);
-        document.documentElement = { getAttribute: name => pending.get(name), removeAttribute: name => pending.delete(name) };
-        document.querySelector = () => null;
-        await breadcrumbPath.initializeBreadcrumb();
-        assert.equal(pending.size, 0, 'a page without a path container must clear pending flags');
+        document.body.dataset.collectionSortCopy = JSON.stringify(literalCopy);
+        assert.deepEqual(sortCopy.readCollectionSortCopy(), literalCopy);
+        document.body.dataset.collectionSortCopy = JSON.stringify({ ...literalCopy, fields: { name: 'Changed' } });
+        assert.equal(sortCopy.readCollectionSortCopy().fields.name, 'Changed');
     } finally {
-        globalThis.fetch = previousFetch;
         if (previousDocument === undefined) delete globalThis.document;
         else globalThis.document = previousDocument;
     }
 
-    const logicSources = path.join(tempRoot, 'entry-logic-sources');
-    await fs.cp(jsRoot, logicSources, { recursive: true });
-    await fs.writeFile(path.join(logicSources, 'browse/path-render.js'),
-        'export function renderPathColumns(models){globalThis.navigationEntryTest.renders.push(models);return true;}');
-    await fs.writeFile(path.join(logicSources, 'browse/breadcrumb-column-sort.js'),
-        'export function refreshBreadcrumbCollectionColumns(){}');
-    await fs.writeFile(path.join(logicSources, 'browse/collection-navigation.js'),
-        'export function refreshMainCollectionNavigation(){globalThis.navigationEntryTest.mainRefreshes++;}');
-    const logicBundles = await buildJavaScript({ jsRoot: logicSources, work: path.join(tempRoot, 'entry-logic'),
-        entries: ['browse/breadcrumb-entry.js'] });
-    const entryLogic = await import(pathToFileURL(logicBundles.get('browse/breadcrumb-entry.js').file).href);
-    const savedLocation = window.location;
-    const savedHistory = window.history;
-    const pending = new Map();
-    const writes = [];
-    const setLocation = href => {
-        const url = new URL(href, window.location.origin);
-        window.location = { href: url.href, origin: url.origin, pathname: url.pathname, search: url.search, hash: url.hash };
-    };
-    const startPending = () => pending.set('data-entry-breadcrumb-pending', 'true');
-    globalThis.navigationEntryTest = { renders: [], mainRefreshes: 0 };
-    globalThis.document = {
-        body: { dataset: { navigation: JSON.stringify(manifest) } },
-        documentElement: { getAttribute: name => pending.get(name), removeAttribute: name => pending.delete(name) },
-        querySelector: selector => selector === '[data-slot="breadcrumb"]' ? {} : null,
-    };
-    window.history = { state: {}, replaceState: (_, __, href) => { writes.push(href); setLocation(href); } };
+    const nativeSources = path.join(tempRoot, 'native-sources');
+    await fs.cp(jsRoot, nativeSources, { recursive: true });
+    await fs.writeFile(path.join(nativeSources, 'navigation-test.js'), [
+        "export * as source from './browse/breadcrumb-source.js';",
+        "export * as entry from './browse/breadcrumb-entry.js';",
+        "export * as render from './browse/path-render.js';",
+        "export * as sort from './browse/breadcrumb-column-sort.js';",
+        "export * as root from './browse/root-navigation.js';",
+        "export * as metadata from './browse/entry-source.js';",
+        "export * as fragment from './browse/navigation-state.contract.js';",
+    ].join('\n'));
+    const nativeBundles = await buildJavaScript({ jsRoot: nativeSources, work: path.join(tempRoot, 'native'),
+        entries: ['navigation-test.js'] });
+    const code = await fs.readFile(nativeBundles.get('navigation-test.js').file, 'utf8');
+    const engine = loadChromium();
+    const browser = await engine.launch({ headless: true, executablePath: engine.executablePath() });
     try {
-        const requests = [];
-        globalThis.fetch = async url => {
-            requests.push(url);
-            return { ok: true, json: async () => url.includes(hashes.notes) ? payloads.notes : payloads.discover };
-        };
-        setLocation('https://example.test/zh/p/contract-beta/?keep=%2f+value#from=discover&sort=name-desc&sorts=date-asc&anchor=chapter');
-        startPending();
-        await entryLogic.initializeBreadcrumb();
-        assert.equal(fragment.readFieldValue(window.location.hash, 'from'), '',
-            'a loaded terminal column without the current article must clear only the invalid source');
-        assert.equal(window.location.search, '?keep=%2f+value');
-        assert.equal(fragment.readFieldValue(window.location.hash, 'sort'), 'name-desc');
-        assert.equal(fragment.readFieldValue(window.location.hash, 'sorts'), 'date-asc');
-        assert.equal(fragment.readAnchor(window.location.hash), 'chapter');
-        assert.deepEqual(navigationEntryTest.renders.at(-1).map(model => model.key), ['/notes/']);
-        assert.equal(navigationEntryTest.mainRefreshes, 1, 'clearing invalid from must refresh main-list navigation');
-        assert.equal(requests.length, 2, 'invalid membership must load the default columns after verification');
-        assert.equal(pending.size, 0);
+        const context = await browser.newContext({ serviceWorkers: 'block' });
+        await context.route('https://example.test/**', route => route.fulfill({
+            contentType: 'text/html', body: '<!doctype html><html><body></body></html>',
+        }));
+        const page = await context.newPage();
+        await page.goto('https://example.test/zh/p/contract-beta/');
+        const result = await page.evaluate(async ({ code, manifest, hashes }) => {
+            const check = (value, message) => { if (!value) throw new Error(message); };
+            const same = (actual, expected, message) => check(JSON.stringify(actual) === JSON.stringify(expected),
+                message + ': ' + JSON.stringify(actual));
+            const imported = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
+            const { source, entry, render, sort, root, metadata, fragment } = await import(imported);
+            URL.revokeObjectURL(imported);
+            const esc = value => String(value).replace(/[&<>"]/g, character =>
+                ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[character]));
+            const rowHTML = row => '<div class="list-item" data-list-item data-kind="' + esc(row.kind || 'page')
+                + '" data-sort-name="' + esc(row.rank || '1') + '" data-sort-date="20261001000000" data-sort-count="1">'
+                + '<a class="item-control item-field item-field--name" data-item-field="name" data-list-entry href="'
+                + esc(row.href) + '" title="' + esc(row.title || row.text) + '">'
+                + (row.icon || '<span class="item-icon"><svg class="icon icon-file" aria-hidden="true" focusable="false"><use href="#icon-file"></use></svg></span>')
+                + '<span class="item-title"><bdi>' + esc(row.text) + '</bdi></span></a></div>';
+            const columnHTML = (logicalPath, label, href, rows, sortable = true) =>
+                '<div class="item-list item-list--path-column" data-navigation-column="' + esc(logicalPath)
+                + '" data-sort-variant="' + (sortable ? 'section' : '') + '" data-default-sort="' + (sortable ? 'date-desc' : '') + '">'
+                + '<div class="list-item list-header list-header--path" data-list-header><span class="item-field item-field--name" data-item-field="name">'
+                + '<a class="path-column-label" href="' + esc(href) + '" title="' + esc(label) + '"><bdi>' + esc(label) + '</bdi></a>'
+                + (sortable ? '<span class="path-column-separator" aria-hidden="true">·</span><a class="path-column-sort" data-collection-sort-toggle="true" href="'
+                    + esc(href) + '"><span class="path-sort-label">Date</span><span class="list-sort-indicator" data-sort-indicator aria-hidden="true">↓</span></a>' : '')
+                + '</span></div>' + rows.map(rowHTML).join('') + '</div>';
+            const fragments = {
+                discover: columnHTML('/discover/', 'Discover', '/zh/discover/', [
+                    { kind: 'section', href: '/zh/discover/windows/', text: 'Windows', title: 'Windows development' },
+                ]),
+                windows: columnHTML('/discover/windows/', 'Windows', '/zh/discover/windows/', [
+                    { href: '/zh/p/contract-alpha/', text: 'Alpha' },
+                    { href: '/zh/p/contract-beta/', text: 'Beta', title: 'Beta detailed article title', rank: '2',
+                        icon: '<span class="item-icon item-icon--text" aria-hidden="true"><span class="icon icon--text" aria-hidden="true">β</span></span>' },
+                ]),
+                notes: columnHTML('/notes/', 'Notes', '/zh/notes/', [{ href: '/zh/p/contract-beta/', text: 'Beta' }]),
+            };
+            document.body.innerHTML = '<nav data-root-navigation data-default-root-href="/zh/notes/">'
+                + ['/zh/notes/', '/zh/discover/', '/zh/all/'].map(href => '<a data-root-href="' + href + '" href="' + href + '">Root</a>').join('')
+                + '</nav><nav data-slot="breadcrumb"><div class="page-column path-column" data-collection-column="true"></div>'
+                + '<div class="page-column path-column" data-collection-column="true"></div></nav>';
+            document.body.dataset.navigation = JSON.stringify(manifest);
+            document.body.dataset.collectionSortCopy = JSON.stringify({
+                fields: { name: 'Name', date: 'Updated', count: 'Count' }, actions: { asc: 'Sort {field} ascending', desc: 'Sort {field} descending' },
+            });
+            const setLocation = href => history.replaceState(history.state, '', href);
+            setLocation('/zh/p/contract-beta/#from=discover/windows');
+            const response = text => ({ ok: true, text: async () => text });
+            let release;
+            const gate = new Promise(resolve => { release = resolve; }), requests = [];
+            window.fetch = async (url, options) => {
+                requests.push(url);
+                check(options.credentials === 'same-origin' && options.signal instanceof AbortSignal, 'Loader must retain same-origin cancellation.');
+                check(!options.headers, 'Text fragments must not request full HTML document negotiation.');
+                await gate;
+                return response(url.includes(hashes.discover) ? fragments.discover : fragments.windows);
+            };
+            const cached = metadata.readNavigation(), columns = source.readBreadcrumbColumns();
+            check(metadata.readNavigation() === cached, 'Unchanged manifests must remain cached.');
+            same(columns.map(column => column.selected), ['/zh/discover/windows/', '/zh/p/contract-beta/'], 'Selection derives from path and URL.');
+            check(columns[1].payload === null && entry.buildPathColumn(columns[1]).failed, 'Missing resources must retain failed-column state.');
+            check(source.readBreadcrumbColumn('/discover/工具/').url === manifest.resources + hashes.unicode + '.txt', 'Unicode keys must resolve text resources.');
+            const first = source.loadBreadcrumbColumns(columns), duplicate = source.loadBreadcrumbColumns([...columns].reverse());
+            check(requests.length === 2, 'Concurrent columns load in parallel and duplicate requests are shared.');
+            release();await Promise.all([first, duplicate]);
+            const loaded = source.readBreadcrumbColumns();
+            check(loaded[1].source === loaded[1].payload && loaded[1].source.label === 'Windows', 'Fragment metadata supplies the source.');
+            check(loaded[1].payload.rows.length === 2 && columns[1].payload === null, 'New data must not mutate previous column snapshots.');
+            await source.loadBreadcrumbColumns(loaded);check(requests.length === 2, 'Successful fragments remain cached.');
+            const nav = document.querySelector('[data-slot=breadcrumb]'), reserved = [...nav.children];
+            render.renderPathColumns(loaded.map(entry.buildPathColumn), manifest.error);
+            check(reserved.every((node, index) => node === nav.children[index]), 'Rendering must retain outer scrolling containers.');
+            const selected = nav.children[1].querySelector('[aria-current=page]');
+            check(selected.title === 'Beta detailed article title' && selected.querySelector('.icon--text').textContent === 'β',
+                'Native fragment cloning must retain tooltip and text-icon markup.');
+            check(nav.children[0].querySelector('[aria-current=page]').title === 'Windows development', 'Ancestor selection retains its title.');
+            const oldLinks = [...nav.children[1].querySelectorAll('[data-list-entry]')];
+            oldLinks[0].focus();const focused = document.activeElement;
+            setLocation('/zh/p/contract-beta/?keep=%2f+value#from=discover/windows&sorts=_,name-desc&anchor=chapter');
+            sort.refreshBreadcrumbCollectionColumns('/discover/windows/');
+            check(document.activeElement === focused && oldLinks.every(link => link.isConnected), 'Sorting must retain live nodes and focus.');
+            check(nav.children[1].querySelector('[data-list-entry]').title === 'Beta detailed article title', 'Sorting reorders cloned row elements.');
+            check(selected.hash.includes('from=discover/windows'), 'Row links inherit source state.');
 
-        setLocation('https://example.test/zh/p/contract-beta/#from=missing&anchor=chapter');
-        startPending();
-        await entryLogic.initializeBreadcrumb();
-        assert.equal(fragment.readFieldValue(window.location.hash, 'from'), '',
-            'a missing terminal hash must also clear the invalid source');
-        assert.equal(fragment.readAnchor(window.location.hash), 'chapter');
+            const updated = structuredClone(manifest);updated.columns['/discover/windows/'] = hashes.updated;
+            document.body.dataset.navigation = JSON.stringify(updated);
+            check(metadata.readNavigation() !== cached, 'A changed manifest invalidates only its parsed metadata.');
+            const unloaded = source.readBreadcrumbColumn('/discover/windows/');
+            check(unloaded.payload === null, 'A changed hash must not reuse the old template.');
+            const badFragments = [
+                '', '<p>Not a column</p>', fragments.discover,
+                fragments.windows + fragments.notes, fragments.windows + 'unexpected text',
+                fragments.windows.replace('<div class=', '<script></script><div class='),
+                fragments.windows.replace('data-kind="page"', 'onpointerenter="alert(1)" data-kind="page"'),
+                fragments.windows.replace('data-kind="page"', 'style="position:fixed" data-kind="page"'),
+                fragments.windows.replace('/zh/p/contract-beta/', 'javascript:void(0)'),
+                fragments.windows.replace('/zh/p/contract-beta/', 'https://outside.test/article/'),
+                fragments.windows.replace('/zh/discover/windows/', 'https://outside.test/column/'),
+                fragments.windows.replace('<use href="#icon-file">', '<use href="https://outside.test/icon.svg#file">'),
+                fragments.windows.replace('<span class="icon icon--text" aria-hidden="true">β</span>',
+                    '<img src="https://outside.test/icon.png" alt="">'),
+                fragments.windows.replace('<span class="icon icon--text" aria-hidden="true">β</span>', '<iframe src="/frame/"></iframe>'),
+                fragments.windows.replace('<span class="path-sort-label">Date</span>', ''),
+                fragments.windows.replace('data-default-sort="date-desc"', 'data-default-sort="date-desc-extra"'),
+                fragments.windows.replace('<bdi>Alpha</bdi>', '<div data-list-item>Extra marker</div><bdi>Alpha</bdi>'),
+            ];
+            for (const html of badFragments) {
+                window.fetch = async () => response(html);
+                check((await source.loadBreadcrumbColumns([unloaded]))[0].status === 'rejected', 'Malformed or active HTML must not enter the cache.');
+                check(source.readBreadcrumbColumn('/discover/windows/').payload === null, 'Failed fragments remain retryable.');
+            }
+            window.fetch = async () => ({ ok: false });
+            check((await source.loadBreadcrumbColumns([unloaded]))[0].status === 'rejected', 'HTTP failures remain retryable.');
+            window.fetch = async () => response(fragments.windows.replace('>Beta<', '>Updated Beta<'));
+            check((await source.loadBreadcrumbColumns([unloaded]))[0].status === 'fulfilled', 'A failed fragment can be retried.');
+            check(source.readBreadcrumbColumn('/discover/windows/').payload.template.content.textContent.includes('Updated Beta'), 'Retry uses the new HTML.');
+            check(!loaded[1].payload.template.content.textContent.includes('Updated Beta'), 'The old cached snapshot remains unchanged.');
 
-        const unavailable = structuredClone(manifest);
-        unavailable.columns['/discover/'] = '1'.repeat(64);
-        document.body.dataset.navigation = JSON.stringify(unavailable);
-        const beforeFailure = writes.length;
-        globalThis.fetch = async () => ({ ok: false });
-        setLocation('https://example.test/zh/p/contract-beta/#from=discover');
-        startPending();
-        await entryLogic.initializeBreadcrumb();
-        assert.equal(writes.length, beforeFailure, 'a network failure must not be treated as invalid membership');
-        assert.equal(fragment.readFieldValue(window.location.hash, 'from'), 'discover');
-        assert.equal(navigationEntryTest.renders.at(-1)[0].failed, true);
-        assert.equal(pending.size, 0);
+            let invalidRequests = 0;window.fetch = async () => { invalidRequests++;throw new Error('Unexpected request'); };
+            for (const url of ['https://outside.test/column.txt', 'blob:https://example.test/resource', '']) {
+                check((await source.loadBreadcrumbColumns([{ key: '/missing/', url }]))[0].status === 'rejected', 'Invalid resource URLs fail before fetch.');
+            }
+            check(invalidRequests === 0, 'Cross-origin and missing resources must not be fetched.');
+            const invalidHash = structuredClone(manifest);invalidHash.columns['/discover/windows/'] = 'not-a-hash';
+            document.body.dataset.navigation = JSON.stringify(invalidHash);
+            check(source.readBreadcrumbColumn('/discover/windows/').url === '', 'Only content-hash resource names are accepted.');
+            const nativeTimeout = window.setTimeout, nativeClear = window.clearTimeout;
+            let abort, cleared = false;
+            window.setTimeout = (callback, delay) => { check(delay === 8000, 'Requests must keep the eight-second bound.');abort = callback;return 1; };
+            window.clearTimeout = () => { cleared = true; };
+            window.fetch = (_, { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('Aborted')), { once: true }));
+            try {
+                const timed = source.loadBreadcrumbColumns([{ key: '/timeout/', url: manifest.resources + 'e'.repeat(64) + '.txt' }]);
+                abort();check((await timed)[0].status === 'rejected' && cleared, 'A stalled request must abort and clear its timer.');
+            } finally {window.setTimeout = nativeTimeout;window.clearTimeout = nativeClear;}
 
-        const own = structuredClone(manifest);
-        own.default = '/discover/';
-        delete own.columns['/discover/windows/'];
-        document.body.dataset.navigation = JSON.stringify(own);
-        document.body.dataset.collectionPath = '/discover/windows/';
-        const beforeOwn = writes.length;
-        globalThis.fetch = async () => { throw new Error('Own main list must not require its missing resource'); };
-        setLocation('https://example.test/zh/discover/windows/#from=discover/windows');
-        startPending();
-        await entryLogic.initializeBreadcrumb();
-        assert.equal(writes.length, beforeOwn, 'a collection own entry must not require membership in its own rows');
-        assert.deepEqual(navigationEntryTest.renders.at(-1).map(model => model.key), ['/discover/']);
+            document.body.dataset.navigation = JSON.stringify(manifest);
+            window.fetch = async url => response(url.includes(hashes.notes) ? fragments.notes : fragments.discover);
+            const startPending = () => document.documentElement.setAttribute('data-entry-breadcrumb-pending', 'true');
+            setLocation('/zh/p/contract-beta/?keep=%2f+value#from=discover&sort=name-desc&sorts=date-asc&anchor=chapter');
+            startPending();await entry.initializeBreadcrumb();
+            check(fragment.readFieldValue(location.hash, 'from') === '', 'A loaded terminal without the current article clears invalid from.');
+            check(location.search === '?keep=%2f+value' && fragment.readFieldValue(location.hash, 'sort') === 'name-desc'
+                && fragment.readFieldValue(location.hash, 'sorts') === 'date-asc' && fragment.readAnchor(location.hash) === 'chapter',
+                'Invalid source cleanup must retain queries, independent sorting and anchors.');
+            same([...nav.children].map(node => node.dataset.navigationColumn), ['/notes/'], 'Invalid membership restores the default columns.');
+            check(!document.documentElement.hasAttribute('data-entry-breadcrumb-pending'), 'Initialization clears pending flags.');
+            setLocation('/zh/p/contract-beta/#from=missing&anchor=chapter');startPending();await entry.initializeBreadcrumb();
+            check(fragment.readFieldValue(location.hash, 'from') === '' && fragment.readAnchor(location.hash) === 'chapter', 'Missing terminal references preserve anchors.');
 
-        delete own.columns['/discover/%E5%B7%A5%E5%85%B7/'];
-        document.body.dataset.navigation = JSON.stringify(own);
-        document.body.dataset.collectionPath = '/discover/%E5%B7%A5%E5%85%B7/';
-        const beforeUnicodeOwn = writes.length;
-        setLocation('https://example.test/zh/discover/%E5%B7%A5%E5%85%B7/#from=discover/%E5%B7%A5%E5%85%B7');
-        startPending();
-        await entryLogic.initializeBreadcrumb();
-        assert.equal(writes.length, beforeUnicodeOwn, 'encoded Unicode own-entry paths must not be cleared');
+            const unavailable = structuredClone(manifest);unavailable.columns['/discover/'] = '1'.repeat(64);
+            document.body.dataset.navigation = JSON.stringify(unavailable);window.fetch = async () => ({ ok: false });
+            setLocation('/zh/p/contract-beta/#from=discover');startPending();await entry.initializeBreadcrumb();
+            check(fragment.readFieldValue(location.hash, 'from') === 'discover' && nav.firstElementChild.hasAttribute('data-navigation-failed'),
+                'Network failure must preserve the requested path and error column.');
+            const own = structuredClone(manifest);own.default = '/discover/';delete own.columns['/discover/windows/'];
+            document.body.dataset.navigation = JSON.stringify(own);document.body.dataset.collectionPath = '/discover/windows/';
+            window.fetch = async () => { throw new Error('Own main list must not require its missing resource'); };
+            setLocation('/zh/discover/windows/#from=discover/windows');startPending();await entry.initializeBreadcrumb();
+            check(fragment.readFieldValue(location.hash, 'from') === 'discover/windows', 'Own collection sources do not require self-membership.');
+            same([...nav.children].map(node => node.dataset.navigationColumn), ['/discover/'], 'Own collection uses only ancestor columns.');
+            delete own.columns['/discover/%E5%B7%A5%E5%85%B7/'];document.body.dataset.navigation = JSON.stringify(own);
+            document.body.dataset.collectionPath = '/discover/%E5%B7%A5%E5%85%B7/';
+            setLocation('/zh/discover/%E5%B7%A5%E5%85%B7/#from=discover/%E5%B7%A5%E5%85%B7');startPending();await entry.initializeBreadcrumb();
+            check(fragment.readFieldValue(location.hash, 'from') === 'discover/工具', 'Encoded own-entry paths remain valid.');
 
-        const race = structuredClone(manifest);
-        race.columns['/discover/'] = '3'.repeat(64);
-        race.columns['/discover/windows/'] = '2'.repeat(64);
-        document.body.dataset.navigation = JSON.stringify(race);
-        delete document.body.dataset.collectionPath;
-        let releaseRace;
-        const raceGate = new Promise(resolve => { releaseRace = resolve; });
-        globalThis.fetch = async url => {
-            if (url.includes('2'.repeat(64))) await raceGate;
-            return { ok: true, json: async () => url.includes('2'.repeat(64)) ? payloads.windows : payloads.discover };
-        };
-        setLocation('https://example.test/zh/p/contract-beta/#from=discover/windows');
-        startPending();
-        const oldRequest = entryLogic.initializeBreadcrumb();
-        try {
-            setLocation('https://example.test/zh/p/contract-beta/#from=notes');
-            startPending();
-            await entryLogic.initializeBreadcrumb();
-            assert.deepEqual(navigationEntryTest.renders.at(-1).map(model => model.key), ['/notes/']);
-        } finally {
-            releaseRace();
-        }
-        const renders = navigationEntryTest.renders.length;
-        assert.equal((await oldRequest).stale, true, 'an older request must not validate or render a newer source');
-        assert.equal(navigationEntryTest.renders.length, renders);
-        assert.equal(fragment.readFieldValue(window.location.hash, 'from'), 'notes');
-        assert.equal(pending.size, 0);
-    } finally {
-        globalThis.fetch = previousFetch;
-        if (previousDocument === undefined) delete globalThis.document;
-        else globalThis.document = previousDocument;
-        window.location = savedLocation;
-        window.history = savedHistory;
-        delete globalThis.navigationEntryTest;
-    }
+            const race = structuredClone(manifest);race.columns['/discover/'] = '3'.repeat(64);race.columns['/discover/windows/'] = '2'.repeat(64);
+            document.body.dataset.navigation = JSON.stringify(race);delete document.body.dataset.collectionPath;
+            let releaseRace;const raceGate = new Promise(resolve => { releaseRace = resolve; });
+            window.fetch = async url => { if (url.includes('2'.repeat(64))) await raceGate;
+                return response(url.includes('2'.repeat(64)) ? fragments.windows : fragments.discover); };
+            setLocation('/zh/p/contract-beta/#from=discover/windows');startPending();const older = entry.initializeBreadcrumb();
+            setLocation('/zh/p/contract-beta/#from=notes');startPending();await entry.initializeBreadcrumb();
+            const currentNodes = [...nav.children];releaseRace();
+            check((await older).stale && currentNodes.every((node, index) => node === nav.children[index]), 'An older request must not overwrite the current DOM.');
+            check(fragment.readFieldValue(location.hash, 'from') === 'notes', 'An older request must not clear a newer source.');
 
-    console.log('Entry route checks passed.');
+            window.fetch = async () => { invalidRequests++;throw new Error('Root navigation must not fetch'); };
+            setLocation('/zh/p/contract-beta/#from=discover/windows');root.refreshRootSelection();
+            check(document.querySelector('[data-root-navigation] [aria-current=page]').dataset.rootHref === '/zh/discover/', 'Root selection uses metadata alone.');
+            setLocation('/zh/p/contract-beta/#from=unregistered');root.refreshRootSelection();
+            check(document.querySelector('[data-root-navigation] [aria-current=page]').dataset.rootHref === '/zh/notes/', 'Invalid roots retain the default selection.');
+            check(invalidRequests === 0, 'Root selection requires no resources.');
+            nav.remove();startPending();document.documentElement.setAttribute('data-breadcrumb-sort-pending', 'true');
+            await entry.initializeBreadcrumb();
+            check(!document.documentElement.hasAttribute('data-entry-breadcrumb-pending')
+                && !document.documentElement.hasAttribute('data-breadcrumb-sort-pending'), 'Pages without a path host clear pending state.');
+            return { malformedFragments: badFragments.length, requests: 2, nativeDOM: true };
+        }, { code, manifest, hashes });
+        console.log('Native browser fragment and entry checks passed: ' + JSON.stringify(result));
+        await context.close();
+    } finally {await browser.close();}
 } finally {
     await fs.rm(tempRoot,{recursive:true,force:true});
 }

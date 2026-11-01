@@ -23,7 +23,7 @@ export async function check({page,baseUrl,options}) {
       'Root navigation must retain native links without JavaScript.');
     assert.ok((await staticPage.locator('main').textContent()).trim(),'The main content must remain available without JavaScript.');
     assert.equal(await staticPage.locator('[data-slot=breadcrumb] [data-list-entry]').count(),0,
-      'Path rows must come from JSON, not static HTML.');
+      'Path rows must load from shared fragments.');
     const sourceResponse=await staticPage.goto(baseUrl+options.column,{waitUntil:'load'});
     assert.ok(sourceResponse?.ok(),'The source collection must remain a native page.');
     const column=await staticPage.evaluate(()=>({
