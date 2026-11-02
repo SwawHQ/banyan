@@ -54,6 +54,10 @@
   "sources" $browserNavigationSources "default_columns" $pathColumns
 ) -}}
 {{- $hasPathColumns := and $hasBreadcrumbCapability (gt (len $browserNavigationData.columns) 0) -}}
+{{- $breadcrumbRuntime := dict -}}
+{{- if or $hasPathColumns $hasSortableCollection -}}
+  {{- $breadcrumbRuntime = resources.Get "js/browse/path-entry.js" | js.Build (dict "minify" (not hugo.IsServer)) | fingerprint -}}
+{{- end -}}
 {{- if $hasPathColumns -}}
   {{- partial "feature-browse/navigation/source/register-icons.html" (dict "page" . "sources" $browserNavigationSources "default_columns" $pathColumns) -}}
 {{- end -}}
@@ -107,13 +111,16 @@
         {{- $column = (partial "feature-browse/navigation/source/page-model.html" (dict "page" .)).currentColumn -}}
       {{- end -}}
     <link rel="prefetch" href="{{ $column.payloadUrl }}">
+      {{- if not $hasPathColumns -}}
+    <link rel="prefetch" as="script" href="{{ $breadcrumbRuntime.RelPermalink }}">
+      {{- end -}}
     {{- end -}}
     {{- with .Params.robots }}
     <meta name="robots" content="{{ . }}">
     {{- end }}
     {{/* 首屏同步主题，避免浅色与深色切换时闪烁。 */}}
     <script>{{ $themeBootInline | safeJS }}</script>
-    {{/* Keep path columns hidden until their shared data is ready. */}}
+    {{/* Mark path loading before parsing the page. */}}
     {{- if $hasPathColumns }}
     <script>{{ $breadcrumbPendingInline | safeJS }}</script>
     {{- end }}
@@ -135,8 +142,6 @@
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
     {{- if $hasPathColumns -}}
-        {{- $breadcrumbRuntime := resources.Get "js/browse/path-entry.js" | js.Build (dict "minify" (not hugo.IsServer)) -}}
-        {{- $breadcrumbRuntime = $breadcrumbRuntime | fingerprint -}}
     <script src="{{ $breadcrumbRuntime.RelPermalink }}" integrity="{{ $breadcrumbRuntime.Data.Integrity }}" defer></script>
     {{- end -}}
     {{- partial "system-delivery/pwa/service-worker.html" (dict

@@ -526,6 +526,57 @@ test('external navigation handles slow, stale, failed and offline column request
     assert.equal(timing.transferSize,0,'The warmed fragment must not be downloaded again.');
     return {worker,...timing};
   }});
+  for(const worker of [false,true])for(const source of ['/articles-all/','/products/'])scenarios.push({
+    id:'cold-column-runtime-prefetch-'+(source==='/products/'?'products':'all')+'-'+(worker?'sw':'http'),
+    kind:'single',serviceWorkers:worker?'allow':'block',async run({page,context,baseUrl}){
+    const runtimeReady=page.waitForResponse(response=>new URL(response.url()).pathname.includes('/browse/path-entry.'));
+    const columnReady=page.waitForResponse(response=>fragmentLogicalPath(response.request())===source);
+    await page.goto(baseUrl+source,{waitUntil:'load'});await waitForBrowse(page);
+    const warmed=await Promise.all([runtimeReady,columnReady]);
+    for(const response of warmed){assert.ok(response.ok());await response.finished();}
+    const urls=warmed.map(response=>response.url()),runtime=urls[0];
+    assert.equal(await page.locator('.path-column').count(),0,'The first page must not already need the path controller.');
+    assert.equal(await page.locator('script[src]').evaluateAll((nodes,runtime)=>nodes.filter(node=>node.src===runtime).length,runtime),0,
+      'The first collection must only prefetch the runtime, without executing it.');
+    assert.equal(await page.locator('head link[rel=prefetch][as=script]').getAttribute('href'),new URL(runtime).pathname);
+    assert.equal(await page.evaluate(runtime=>performance.getEntriesByName(runtime)[0]?.initiatorType,runtime),'link');
+    if(worker)await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
+    const active=worker?context.serviceWorkers()[0]:null;
+    const since=active?await active.evaluate(()=>performance.now()):0;
+    const network=[];
+    const record=request=>{if(request.serviceWorker()&&urls.includes(request.url()))network.push(request.url());};
+    context.on('request',record);
+    const target=source==='/products/'?'/products/examples/':routeFor(source);
+    await page.locator('main [data-list-entry]').evaluateAll((nodes,target)=>{
+      const link=nodes.find(node=>new URL(node.href).pathname===target.split('#')[0]);
+      if(!link)throw new Error('The first collection must link to '+target);
+      link.click();
+    },target);
+    await page.waitForURL(baseUrl+target);await page.waitForLoadState('load');await waitForBrowse(page);await afterPaint(page);
+    context.off('request',record);
+    assert.equal(await page.locator('script[src]').evaluateAll((nodes,runtime)=>nodes.filter(node=>node.src===runtime).length,runtime),1,
+      'The target must execute the exact prefetched runtime.');
+    const timings=await page.evaluate(urls=>urls.map(url=>{
+      const entry=performance.getEntriesByName(url).find(entry=>entry.initiatorType==='script'||entry.initiatorType==='fetch');
+      return entry?{url,transferSize:entry.transferSize,decodedBodySize:entry.decodedBodySize}:null;
+    }),urls);
+    for(const timing of timings){
+      assert.ok(timing?.decodedBodySize>0,'The target must consume both prefetched resources.');
+      assert.equal(timing.transferSize,0,'The prefetched resource must reuse cache.');
+    }
+    const workerTimings=active?await active.evaluate(({urls,since})=>performance.getEntriesByType('resource')
+      .filter(entry=>urls.includes(entry.name)&&entry.startTime>=since)
+      .map(entry=>({url:entry.name,transferSize:entry.transferSize,decodedBodySize:entry.decodedBodySize})),{urls,since}):[];
+    for(const url of network){
+      assert.ok(workerTimings.some(entry=>entry.url===url&&entry.decodedBodySize>0),
+        'A worker fetch must expose its inner HTTP-cache timing.');
+      assert.ok(workerTimings.filter(entry=>entry.url===url).every(entry=>entry.transferSize===0),
+        'A Service Worker response alone must not hide another network download.');
+    }
+    assert.equal(await page.locator('[data-navigation-failed]').count(),0);
+    assert.equal(await page.locator('.path-column [aria-current=page]').count(),1);
+    return {worker,source,timings,workerTimings};
+  }});
   scenarios.push({id:'visited-path-offline-reload',kind:'single',async run({page,context,baseUrl}){
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     await visit(page,baseUrl+'/');

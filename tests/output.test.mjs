@@ -44,7 +44,7 @@ test('repository HTML budgets keep raw and gzip failures outside published check
   }
 });
 
-test('collection heads prefetch their own shared column without adding a visible path',{timeout:60000},()=>{
+test('collection heads prefetch their own column and missing path runtime without adding a visible path',{timeout:60000},()=>{
   const root=fileURLToPath(new URL('../',import.meta.url)),content=path.join(work,'prefetch-content'),output=path.join(work,'prefetch-build');
   const languages=[['',''],['.zh','zh/'],['.zh-tw','zh-tw/'],['.ar','ar/']];
   for(const [suffix,prefix] of languages) {
@@ -62,12 +62,28 @@ test('collection heads prefetch their own shared column without adding a visible
   const read=(prefix,route)=>fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');
   for(const [,prefix] of languages) {
     const urls={};
+    const runtime=extractStartTags(read(prefix,'p/example-product'),'script').find(tag=>extractTagAttribute(tag,'src').includes('/browse/path-entry.'));
+    assert.ok(runtime,'The target article must load the path runtime.');
+    const runtimeUrl=extractTagAttribute(runtime,'src'),runtimeIntegrity=extractTagAttribute(runtime,'integrity');
+    assert.match(runtimeUrl,/^\/js\/browse\/path-entry\.[a-f0-9]{64}\.js$/);
+    assert.equal(runtimeIntegrity,'sha256-'+createHash('sha256').update(fs.readFileSync(path.join(output,runtimeUrl.slice(1)))).digest('base64'));
     for(const route of ['articles','articles/category1','articles-all','products','products/examples','products-all','prefetch-name','prefetch-unlisted']) {
       const html=read(prefix,route),links=prefetches(html),logicalPath='/'+route+'/';
-      assert.equal(links.length,1,prefix+route+' prefetches exactly one current column.');
-      const href=extractTagAttribute(links[0],'href');
+      const hasPath=['articles/category1','products/examples'].includes(route);
+      const fragments=links.filter(tag=>extractTagAttribute(tag,'href').startsWith('/site/navigation/'));
+      const scripts=links.filter(tag=>extractTagAttribute(tag,'as')==='script');
+      const executing=extractStartTags(html,'script').filter(tag=>extractTagAttribute(tag,'src').includes('/browse/path-entry.'));
+      assert.equal(fragments.length,1,prefix+route+' prefetches exactly one current column.');
+      assert.equal(scripts.length,hasPath?0:1,prefix+route+' only prefetches the runtime when it is not executing.');
+      assert.equal(links.length,fragments.length+scripts.length);
+      assert.equal(executing.length,hasPath?1:0,'Prefetch must not execute the runtime on collections without path columns.');
+      if(hasPath) {
+        assert.equal(extractTagAttribute(executing[0],'src'),runtimeUrl);
+        assert.equal(extractTagAttribute(executing[0],'integrity'),runtimeIntegrity);
+      } else assert.equal(extractTagAttribute(scripts[0],'href'),runtimeUrl,'The next page uses the same fingerprinted runtime.');
+      const href=extractTagAttribute(fragments[0],'href');
       assert.match(href,/^\/site\/navigation\/[a-f0-9]{64}\.txt$/);
-      assert.ok(html.indexOf(links[0])<html.indexOf('<body'),'The browser sees the hint in the head.');
+      assert.ok(links.every(tag=>html.indexOf(tag)<html.indexOf('<body')),'The browser sees each hint in the head.');
       const payload=readNavigationFragment(fs.readFileSync(path.join(output,href.slice(1)),'utf8'));
       assert.equal(payload.logicalPath,logicalPath);
       const body=extractStartTags(html,'body')[0],navigation=JSON.parse(extractTagAttribute(body,'data-navigation'));
