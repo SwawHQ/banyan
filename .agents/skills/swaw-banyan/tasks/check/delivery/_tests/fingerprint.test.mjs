@@ -28,7 +28,7 @@ async function fixture(run) {
 test('delivery checks policy fingerprints while permitting ordinary attachment formats',()=>fixture(async({root,write})=>{
   await write('_headers',headers);await write('_redirects','# no redirects');
   await write('sw-policy.json',JSON.stringify(routes));
-  await write('index.html');await write('sw.js');await write('sw-version.json','{}');
+  await write('index.html');await write('sw.js');await write('sw-version.json','"v-fixture"');
   await write('assets/'+image,'These bytes intentionally do not match the filename hash.');
   for(const file of ['section/_map.toml','download.zip','downloads/manual.pdf','api/feed.json',
     'photos/raw.png','downloads/README','downloads/data.bin'])await write(file);

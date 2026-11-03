@@ -10,16 +10,25 @@ params:
   slots: [breadcrumb]
   site_update:
     labels:
-      check: "تحقق من التحديثات"
       checking: "جارٍ التحقق…"
       installing: "جارٍ تثبيت الإصدار الجديد…"
       check_failed: "تعذر التحقق"
       unavailable: "تحديثات Service Worker غير متاحة في هذه البيئة."
-      status: "حالة التحديث"
       status_current: "لا يوجد تحديث ينتظر التفعيل"
       status_ready: "البرنامج الجديد جاهز. يفعّله المتصفح بعد إغلاق الصفحات التي تستخدم البرنامج القديم."
       status_offline: "غير متصل"
       status_click_retry: "حاول التحقق مرة أخرى"
+      content_current: "إصدار الصفحة يطابق الإصدار المنشور"
+      content_failed: "تعذر التحقق من الإصدار؛ حاول مرة أخرى"
+      mode_off: "إدارة Service Worker غير مفعّلة لهذا الموقع."
+      mode_disable: "يطلب هذا الموقع إلغاء تسجيل Service Worker ومسح ذاكرته المؤقتة."
+      status_controlled: "ما زال Service Worker مثبّت يتحكم في هذه الصفحة."
+      cache_disabled: "التخزين المؤقت معطّل"
+      content_checking: "جارٍ مقارنة الإصدار…"
+      content_current_icon: "✅"
+      refresh_icon: "↻"
+      content_refresh: "تحديث إصدار الخادم"
+      status_refresh: "التحقق من تحديث برنامج SW"
   prefetch_debug:
     labels:
       backend: "وسيلة التحميل المسبق"
@@ -35,35 +44,19 @@ params:
       article: "مقال"
 ---
 
-## Banyan {#banyan}
+**{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Swaw Banyan{{< /new-tab >}}**: {{< new-tab href="https://swaw.com/d/banyan/changelog/" >}}{{< theme-version local="تطوير محلي" >}}{{< /new-tab >}}
 
-قالب Hugo الذي يستخدمه هذا الموقع، مع التصفح بالأعمدة والصفحات متعددة اللغات والعمل دون اتصال.
+### ملحق: معلومات ذاكرة PWA المؤقتة
 
-{{< theme-version label="إصدار القالب" local="تطوير محلي" >}}
+**محلي**: {{< site-update "version" >}}  
+**الخادم**: {{< site-update "content" >}}  
+**بدء المزامنة**: {{< site-update "interval" "عند الانتقال إلى صفحة وفاصل زمني ≥ %d دقائق" >}}  
+**سياسة SW**: {{< site-update "policy" >}}  
+**حالة SW**: {{< site-update "status" >}}
 
-{{< new-tab href="https://github.com/SwawHQ/banyan" >}}المصدر{{< /new-tab >}} · {{< new-tab href="https://swaw.com/d/banyan/changelog/" >}}سجل التغييرات{{< /new-tab >}}
+{{< details-start summary="**مزيد من معلومات التشخيص**" >}}
 
-## Hugo {#hugo}
-
-مولّد المواقع الثابتة المستخدم لبناء هذا الموقع.
-
-الإصدار: {{< hugo-version >}}
-
-{{< new-tab href="https://gohugo.io/" >}}الموقع{{< /new-tab >}} · {{< new-tab href="https://gohugo.io/news/" >}}الإصدارات{{< /new-tab >}}
-
-## بناء الموقع {#build}
-
-{{< site-build >}}
-
-## PWA {#pwa}
-
-الوصول دون اتصال. يدير المتصفح تحديثات برنامج Service Worker.
-
-{{< site-update >}}
-
-## تشخيص التحميل المسبق {#diagnostics}
-
-{{< details-start summary="اعرض معلومات التشخيص" >}}
+Hugo: {{< new-tab href="https://gohugo.io/news/" >}}{{< hugo-version >}}{{< /new-tab >}}
 
 يخص هذا الفحص الصفحة الحالية. اختر وسيلة التحميل المسبق، ثم طبّق الاختيار وأعد التحميل.
 

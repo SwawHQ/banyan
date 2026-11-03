@@ -28,8 +28,8 @@ const security = {
   'Referrer-Policy':'strict-origin-when-cross-origin'
 };
 const rules = JSON.stringify({prefetch:[{source:'document',where:{and:[{selector_matches:'html[data-prefetch-native-ready] a'},{selector_matches:'html[data-prefetch-ready] a:has(> .item-icon > svg.icon-folder)'},{href_matches:'/*',relative_to:'document'}]},eagerness:'eager'}]});
-const updatePanel='<div data-site-update-panel><p data-site-update-status role=status aria-live=polite></p></div>';
-const updateAction='<button type=button data-site-update-action=check><span data-site-update-action-label>Check</span></button>';
+const updatePanel='<span data-site-update-panel data-site-update-status role=status aria-live=polite></span>';
+const updateAction='<button type=button data-site-update-action=check aria-label="Refresh SW status">↻</button>';
 const dateRow=value=>'<div class=document-meta__row><span><svg><use href=#icon-clock></use></svg></span><time datetime="'+value+'">'+value+'</time></div>';
 const metadata=inner=>'<div class=document-meta>'+inner+'</div>';
 const asideScript='<script src=/js/document/aside.fixture.js></script>';
@@ -339,13 +339,12 @@ test('shared controls distinguish metadata-only and chapter-only asides',()=>{
 });
 
 test('shared update controls accept a disabled worker and reject broken static controls',()=>{
-  const enabled=updatePanel.replace('</div>',updateAction+'</div>');
+  const enabled=updatePanel+updateAction;
   for(const html of [updatePanel,enabled])assert.deepEqual(inspectDocumentControls(html),[]);
   assert.match(inspectDocumentControls(enabled.replace('type=button','type=submit'))[0],/native button/);
-  assert.match(inspectDocumentControls(enabled.replace('data-site-update-action-label','data-removed-label'))[0],/one label/);
+  assert.match(inspectDocumentControls(enabled.replace('aria-label','data-removed-label'))[0],/accessible label/);
   assert.match(inspectDocumentControls(enabled.replace('aria-live=polite','aria-live=off'))[0],/polite announcements/);
-  assert.match(inspectDocumentControls(enabled.replace('</div>',updateAction+'</div>'))[0],/at most one action/);
-  assert.match(inspectDocumentControls(enabled.replace('</div>','<time>Build</time></div>'))[0],/outside the update panel/);
+  assert.match(inspectDocumentControls(enabled+updateAction)[0],/at most one action/);
   assert.match(inspectDocumentControls(updatePanel+updatePanel)[0],/at most once/);
 });
 
@@ -415,20 +414,22 @@ test('build version checks compare the rendered version with the content-version
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
   const directory = output('version',html.replace('</body>','<time data-site-update-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>v20261008120000</time></body>'));
   write(directory,'sw.js','const versionURL = "/sw-version.json";');
-  write(directory,'sw-version.json',JSON.stringify({version:'v20261008120000'}));
+  write(directory,'sw-version.json',JSON.stringify('v20261008120000'));
   assert.equal(cli('check/build-version',[directory]).status,0);
-  write(directory,'sw-version.json',JSON.stringify({version:'v20261008130000'}));
+  write(directory,'sw-version.json',JSON.stringify('v20261008130000'));
   checked('check/build-version',directory,/sw-version\.json.*does not match/);
   write(directory,'sw-version.json','{broken');
   checked('check/build-version',directory,/Invalid sw-version\.json/);
-  write(directory,'sw-version.json','{}');
-  checked('check/build-version',directory,/version undefined does not match/);
+  for(const value of [{version:'v20261008120000'},['v20261008120000'],null,1,true,'',' v20261008120000','v\ninvalid','v'.repeat(129)]) {
+    write(directory,'sw-version.json',JSON.stringify(value));
+    checked('check/build-version',directory,/Invalid sw-version\.json/);
+  }
   fs.unlinkSync(path.join(directory,'sw-version.json'));
   assert.equal(cli('check/build-version',[directory]).status,0,'Disabled service workers do not publish a content version.');
   const index=path.join(directory,'index.html');
   fs.writeFileSync(index,fs.readFileSync(index,'utf8').replace('</body>','<script src="/js/sw-manager.enable.fixture.js"></script></body>'));
   checked('check/build-version',directory,/sw-version\.json must be published/);
-  write(directory,'sw-version.json',JSON.stringify({version:'v20261008120000'}));
+  write(directory,'sw-version.json',JSON.stringify('v20261008120000'));
   assert.equal(cli('check/build-version',[directory]).status,0);
   fs.writeFileSync(index,fs.readFileSync(index,'utf8').replace('>v20261008120000</time>','>v-wrong</time>'));
   checked('check/build-version',directory,/displayed version.*does not match/);

@@ -10,16 +10,25 @@ params:
   slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
   site_update: #Text for the site-update shortcode below.
     labels: #Translate values for this language; keep the keys.
-      check: "Check for updates"
       checking: "Checking…"
       installing: "Installing the new version…"
       check_failed: "Check failed"
       unavailable: "Service Worker updates are unavailable in this environment."
-      status: "Update status"
       status_current: "No update waiting to activate"
       status_ready: "New program ready; the browser will activate it after pages using the old program are closed."
       status_offline: "Offline"
       status_click_retry: "try checking again"
+      content_current: "Page version matches the published version"
+      content_failed: "Version check failed; try again"
+      mode_off: "Service Worker management is off for this site."
+      mode_disable: "This site requests Service Worker removal and cache cleanup."
+      status_controlled: "An installed Service Worker still controls this page."
+      cache_disabled: "Caching is disabled"
+      content_checking: "Checking version…"
+      content_current_icon: "✅"
+      refresh_icon: "↻"
+      content_refresh: "Refresh server version"
+      status_refresh: "Check for SW program updates"
   prefetch_debug:
     labels:
       backend: "Prefetch transport"
@@ -35,35 +44,19 @@ params:
       article: "Article"
 ---
 
-## Banyan {#banyan}
+**{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Swaw Banyan{{< /new-tab >}}**: {{< new-tab href="https://swaw.com/d/banyan/changelog/" >}}{{< theme-version local="Local development" >}}{{< /new-tab >}}
 
-The Hugo theme behind this site, with column browsing, multilingual pages and offline access.
+### Appendix: PWA cache information
 
-{{< theme-version label="Theme version" local="Local development" >}}
+**Local**: {{< site-update "version" >}}  
+**Server**: {{< site-update "content" >}}  
+**Sync trigger**: {{< site-update "interval" "On page navigation and interval ≥ %d minutes" >}}  
+**SW policy**: {{< site-update "policy" >}}  
+**SW status**: {{< site-update "status" >}}
 
-{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Source{{< /new-tab >}} · {{< new-tab href="https://swaw.com/d/banyan/changelog/" >}}Change log{{< /new-tab >}}
+{{< details-start summary="**More diagnostics**" >}}
 
-## Hugo {#hugo}
-
-The static site generator used to build this site.
-
-Version: {{< hugo-version >}}
-
-{{< new-tab href="https://gohugo.io/" >}}Website{{< /new-tab >}} · {{< new-tab href="https://gohugo.io/news/" >}}Releases{{< /new-tab >}}
-
-## Site build {#build}
-
-{{< site-build >}}
-
-## PWA {#pwa}
-
-Offline access. The browser manages Service Worker program updates.
-
-{{< site-update >}}
-
-## Prefetch diagnostics {#diagnostics}
-
-{{< details-start summary="View diagnostics" >}}
+Hugo: {{< new-tab href="https://gohugo.io/news/" >}}{{< hugo-version >}}{{< /new-tab >}}
 
 This test applies to this page. Choose a transport, then apply and reload.
 

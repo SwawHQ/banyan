@@ -10,16 +10,25 @@ params:
   slots: [breadcrumb] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
   site_update: #下方 site-update 短代码使用的文字。
     labels: #按当前语言翻译值；保留键名。
-      check: "检查更新"
       checking: "检查中…"
       installing: "正在安装新版…"
       check_failed: "检查失败"
-      unavailable: "当前环境未启用或不支持 Service Worker 更新。"
-      status: "更新状态"
+      unavailable: "当前环境不支持 Service Worker 更新。"
       status_current: "暂无等待启用的新版"
       status_ready: "新版程序已准备好，浏览器将在使用旧程序的页面关闭后启用。"
       status_offline: "离线"
       status_click_retry: "请重新检查"
+      content_current: "页面版本与发布版本一致"
+      content_failed: "版本检查失败，请重试"
+      mode_off: "本站未启用 Service Worker 管理。"
+      mode_disable: "本站已配置注销 Service Worker 并清理缓存。"
+      status_controlled: "此页面仍由已安装的 Service Worker 控制。"
+      cache_disabled: "缓存机制已关闭"
+      content_checking: "正在比对版本…"
+      content_current_icon: "✅"
+      refresh_icon: "↻"
+      content_refresh: "刷新服务器版本"
+      status_refresh: "检查 SW 程序更新"
   prefetch_debug:
     labels:
       backend: "预取方式"
@@ -35,35 +44,19 @@ params:
       article: "文章"
 ---
 
-## Banyan {#banyan}
+**{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Swaw Banyan{{< /new-tab >}}**：{{< new-tab href="https://swaw.com/zh/d/banyan/changelog/" >}}{{< theme-version local="本地开发版" >}}{{< /new-tab >}}
 
-本站使用的 Hugo 主题，提供多列浏览、多语言页面与离线访问等能力。
+### 附：PWA 缓存信息
 
-{{< theme-version label="主题版本" local="本地开发版" >}}
+**本地**：{{< site-update "version" >}}  
+**服务器**：{{< site-update "content" >}}  
+**触发同步**：{{< site-update "interval" "页面加载时 且 间隔 ≥ %d 分钟" >}}  
+**sw-策略**：{{< site-update "policy" >}}  
+**sw-状态**：{{< site-update "status" >}}
 
-{{< new-tab href="https://github.com/SwawHQ/banyan" >}}源码{{< /new-tab >}} · {{< new-tab href="https://swaw.com/zh/d/banyan/changelog/" >}}变更记录{{< /new-tab >}}
+{{< details-start summary="**更多诊断信息**" >}}
 
-## Hugo {#hugo}
-
-用于生成本站的静态站点生成器。
-
-版本：{{< hugo-version >}}
-
-{{< new-tab href="https://gohugo.io/" >}}官网{{< /new-tab >}} · {{< new-tab href="https://gohugo.io/news/" >}}发布记录{{< /new-tab >}}
-
-## 本站构建 {#build}
-
-{{< site-build >}}
-
-## PWA {#pwa}
-
-支持离线访问；Service Worker 程序更新由浏览器管理。
-
-{{< site-update >}}
-
-## 预取诊断 {#diagnostics}
-
-{{< details-start summary="查看诊断信息" >}}
+Hugo：{{< new-tab href="https://gohugo.io/news/" >}}{{< hugo-version >}}{{< /new-tab >}}
 
 此处的选择只影响本页。选择预取方式后，应用并重新加载。
 

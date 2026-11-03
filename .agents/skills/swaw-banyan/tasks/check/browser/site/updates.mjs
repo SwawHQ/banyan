@@ -9,7 +9,7 @@ import {builds} from '../pwa/_shared/update.mjs';
 export async function buildNext(site,old,work) {
   const next=path.join(work,'next'),timestamp=new Date();
   const version=()=> 'v'+timestamp.toISOString().replace(/\D/g,'').slice(0,14);
-  const oldVersion=JSON.parse(await fs.readFile(path.join(old,'sw-version.json'),'utf8')).version;
+  const oldVersion=JSON.parse(await fs.readFile(path.join(old,'sw-version.json'),'utf8'));
   while(oldVersion===version())timestamp.setUTCSeconds(timestamp.getUTCSeconds()+1);
   await prepareHugo();
   const env=hugoEnvironment({...process.env,HUGO_CACHEDIR:path.join(work,'cache'),HUGO_RESOURCEDIR:path.join(work,'resources'),

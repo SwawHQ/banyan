@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import {setTimeout} from 'node:timers/promises';
 import {waitForState,waiting} from '../_shared/state.mjs';
 import {visit,update,version,observe,quiet} from '../_shared/update.mjs';
 import {pageResources,missingResources} from '../_shared/resources.mjs';
@@ -15,8 +14,8 @@ async function contentBuilds(options) {
     assert.ok((await fs.stat(path.join(directory,'index.html'))).isFile(),'Both builds must contain index.html.');
     scripts.push(await fs.readFile(path.join(directory,'sw.js')));
     const value=JSON.parse(await fs.readFile(path.join(directory,'sw-version.json'),'utf8'));
-    assert.ok(typeof value.version==='string'&&value.version.trim(),'Both builds must identify their content version.');
-    versions.push(value.version);
+    assert.ok(typeof value==='string'&&value.trim(),'Both builds must identify their content version.');
+    versions.push(value);
   }
   assert.ok(scripts[0].equals(scripts[1]),'Content updates must retain identical sw.js bytes.');
   assert.notEqual(versions[0],versions[1],'Content updates need different sw-version.json versions.');
@@ -40,8 +39,11 @@ export async function check({page,context=page.context(),server,baseUrl,options}
   const pair=await contentBuilds(options),target=new URL(options.page,baseUrl).href,from=new URL(options.from,baseUrl).href;
   assert.notEqual(from,target,'Content checks need two different page paths.');
   const timeout=options.timeout??15000,events=observe(page),extra=[];
-  let readerEvents,requests=0,programDirectory;
-  const onRequest=request=>{if(new URL(request.url()).pathname==='/sw-version.json')requests++;};
+  let readerEvents,requests=0,programDirectory,releaseVersion;
+  const versionGate=new Promise(resolve=>{releaseVersion=resolve;});
+  const holdVersion=async route=>{await versionGate;await route.continue();};
+  const temporaryParent=path.join(os.tmpdir(),'swaw/banyan/content-check');
+  const onRequest=request=>{if(request.serviceWorker()&&new URL(request.url()).pathname==='/sw-version.json')requests++;};
   try {
     await server.setRoot(pair.old);await visit(page,target,timeout);
     const before=await version(page);assert.equal(before,pair.versions[0],'The panel must show the initial content version.');
@@ -60,25 +62,29 @@ export async function check({page,context=page.context(),server,baseUrl,options}
     },timeout,'The old content and resources must enter their configured caches.');
     const burst=await Promise.all([context.newPage(),context.newPage()]);extra.push(...burst);
     const workers=context.serviceWorkers();assert.equal(workers.length,1,'Content checks need one active SW program.');
-    programDirectory=await fs.mkdtemp(path.join(os.tmpdir(),'swban-content-program-'));
+    await fs.mkdir(temporaryParent,{recursive:true});
+    programDirectory=await fs.mkdtemp(path.join(temporaryParent,'program-'));
     await fs.cp(pair.next,programDirectory,{recursive:true});
     await fs.appendFile(path.join(programDirectory,'sw.js'),'\n// Waiting program probe\n');
     await server.setRoot(programDirectory);await update(page,timeout);
     await workers[0].evaluate(()=>{
-      const now=Date.now.bind(Date);Date.now=()=>now()+6*60*1000;
+      // Clock rollback makes one check eligible without guessing the configured interval.
+      const now=Date.now.bind(Date);Date.now=()=>now()-24*60*60*1000;
     });
+    await context.route('**/sw-version.json',holdVersion);
     events.loads=0;readerEvents.loads=0;context.on('request',onRequest);
-    const started=performance.now();
-    await Promise.all([visit(page,from,timeout),...burst.map(tab=>visit(tab,target,timeout))]);
-    for(const tab of burst)assert.equal(await version(tab),before,'Pending content checks must retain the cached page.');
-    await setTimeout(Math.max(0,14000-(performance.now()-started)));
-    assert.equal(requests,0,'Content JSON must not be requested before the 15-second delay.');
+    await Promise.all([visit(page,from,timeout),visit(burst[0],target,timeout),visit(burst[1],target+'?swban-content-miss=1',timeout)]);
+    assert.equal(await version(burst[0]),before,'Pending content checks must retain the cached page.');
+    assert.equal(await version(burst[1]),pair.versions[1],'An uncached page must load from the network while the version request is pending.');
+    await waitForState(()=>requests>0,Math.min(timeout,5000),'Navigation must start a content check without the former 15-second delay.');
+    assert.equal(requests,1,'Navigations must finish while one shared version request remains pending.');
+    releaseVersion();
     const cachesAfter=await waitForState(async()=>{
       const value=await cacheState(page,[target,from]),current=pair.versions[1];
       return value.keys.includes('nav-html-'+current)&&value.keys.includes('asset-versioned-'+current)
         &&value.keys.filter(key=>key.startsWith('nav-html-')||key.startsWith('asset-versioned-'))
           .every(key=>key==='nav-html-'+current||key==='asset-versioned-'+current)?value:null;
-    },timeout+15000,'The content check must switch both cache groups and delete old versions.');
+    },timeout,'The content check must switch both cache groups and delete old versions.');
     assert.equal(requests,1,'Concurrent navigations must issue only one content-version request.');
     if(cachesBefore.fingerprints.length)assert.ok(cachesAfter.keys.includes('asset-fingerprint'),'Content changes must preserve the fingerprint cache.');
     for(const url of cachesBefore.fingerprints)assert.ok(cachesAfter.fingerprints.includes(url),'Content changes must retain cached fingerprinted resources.');
@@ -99,11 +105,12 @@ export async function check({page,context=page.context(),server,baseUrl,options}
     return {page:options.page,from:options.from,before,after,requests,cachesBefore:cachesBefore.keys,cachesAfter:cachesAfter.keys,
       fingerprintedResources:cachesBefore.fingerprints.length,readerPreserved:true,controllerPreserved:true,waitingProgramContentUpdated:true};
   }finally{
+    releaseVersion();await context.unroute('**/sw-version.json',holdVersion);
     context.off('request',onRequest);events.stop();readerEvents?.stop();
     await Promise.all(extra.map(tab=>tab.close()));
     if(programDirectory){
-      assert.equal(path.dirname(programDirectory),os.tmpdir());
-      assert.ok(path.basename(programDirectory).startsWith('swban-content-program-'));
+      assert.equal(path.dirname(programDirectory),temporaryParent);
+      assert.ok(path.basename(programDirectory).startsWith('program-'));
       await fs.rm(programDirectory,{recursive:true,force:true});
     }
   }

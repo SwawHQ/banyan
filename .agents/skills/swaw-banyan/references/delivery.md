@@ -43,8 +43,13 @@ site-owned table. SW `enable` also generates `sw-policy.json`, an exact copy
 of its path/bucket array in matching order. SW `off` and `disable` omit that copy;
 `disable` still generates the cleanup worker.
 SW `enable` requires a published HTML page at `sw.offline_notice_path`
-for each enabled language. The reference site's `content/_res/offline/` supplies
-these pages. SW `off` and `disable` allow them to be absent.
+for each enabled language at build time. The reference site's
+`content/_res/offline/` supplies these pages; SW `off` and `disable` allow them to
+be absent. First installation requires the default-language offline HTML and
+its `fingerprinted` assets selected for warmup. Later SW and content updates
+tolerate unavailable offline pages.
+At runtime, unavailable pages fall back to the default language, then to a
+built-in HTTP 503 HTML notice with no external resources.
 
 ## Checked output
 

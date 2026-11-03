@@ -1,9 +1,18 @@
-.updates-panel {
-    margin-block-start: 1rem;
-}
-
 .updates-status {
-    font-size: small;
     color: var(--muted);
     line-height: 1.55;
+}
+
+.updates-refresh {
+    border: 0;
+    padding: 0 .25em;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.updates-refresh:disabled {
+    opacity: .45;
+    cursor: default;
 }

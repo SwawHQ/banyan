@@ -10,7 +10,7 @@
     {{- $swScriptTemplatePath := "js/pwa/worker-enable.js.tmpl" -}}
     {{- $swScriptTemplate := resources.Get $swScriptTemplatePath -}}
     {{- $swUrl := "sw.js" | relURL -}}
-    {{- $publishVersion := resources.FromString "sw-version.json" (dict "version" $buildVersion | jsonify) | resources.Publish -}}
+    {{- $publishVersion := resources.FromString "sw-version.json" ($buildVersion | jsonify) | resources.Publish -}}
     {{- if not $swScriptTemplate -}}
       {{- errorf "Build failed: missing resource %q." $swScriptTemplatePath -}}
     {{- else -}}
@@ -18,6 +18,7 @@
         "content_check_interval_ms" .content_check_interval_ms
         "version_url" ("sw-version.json" | relURL)
         "offline_fallbacks" $offlineFallbacks
+        "default_offline_fallback" .default_offline_fallback
         "sw_routes" $swRoutes
       -}}
       {{- $swScriptEntry := $swScriptTemplate | resources.ExecuteAsTemplate "js/sw.enable.entry.js" $swScriptContext -}}

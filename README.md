@@ -70,7 +70,11 @@ resources, published as fingerprinted external files. The wind bundle uses the
 Keep internal pages in `content/_res/`; its shared `_index.md` hides this branch
 from navigation and discovery. Its Offline and prefetch diagnostic
 pages publish under `_res/`. Delete optional pages you do not need. SW `enable`
-requires a published HTML offline page for each enabled language.
+requires a published HTML offline page for each enabled language at build time.
+First installation requires the default-language offline HTML and its
+`fingerprinted` assets selected for warmup.
+Later SW and content updates tolerate unavailable offline pages: use the default
+language, then a built-in offline notice.
 Run in PowerShell from the site root (Windows x64):
 
 ```powershell

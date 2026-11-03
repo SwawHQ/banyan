@@ -27,21 +27,21 @@ export function inspectDocumentControls(html) {
       const count=scripts.filter(ref=>new RegExp('/js/document/'+family+'(?:\\.min)?\\.[^/]+\\.js$').test(ref)).length;
       assert.equal(count,expected?1:0,'Document '+family+' controller follows its rendered controls.');
     }
-    const panels=extractBlocks(source,'div',tag=>has(tag,'site-update-panel'));
+    const panels=extractStartTags(source,'span').filter(tag=>has(tag,'site-update-panel'));
     assert.ok(panels.length<=1,'Update panel must occur at most once.');
     for(const panel of panels) {
-      const status=extractStartTags(panel.inner,'p').filter(tag=>has(tag,'site-update-status'));
+      const status=extractStartTags(source,'span').filter(tag=>has(tag,'site-update-status'));
       assert.equal(status.length,1,'Update panel has one live status.');
+      assert.equal(status[0],panel,'Update configuration belongs to the program status.');
       assert.equal(attr(status[0],'role'),'status','Update status exposes its role.');
       assert.equal(attr(status[0],'aria-live'),'polite','Update status uses polite announcements.');
-      const actions=extractBlocks(panel.inner,'button',tag=>has(tag,'site-update-action'));
+      const actions=extractBlocks(source,'button',tag=>has(tag,'site-update-action'));
       assert.ok(actions.length<=1,'Update panel has at most one action.');
       for(const action of actions) {
         assert.equal(attr(action.open,'type'),'button','Update action uses a native button.');
         assert.equal(attr(action.open,'data-site-update-action'),'check','Update action checks for updates.');
-        assert.equal(extractStartTags(action.inner,'span').filter(tag=>has(tag,'site-update-action-label')).length,1,'Update action has one label.');
+        assert.ok(attr(action.open,'aria-label').trim(),'Update action has an accessible label.');
       }
-      assert.equal(extractStartTags(panel.inner,'time').length,0,'Build time stays outside the update panel.');
     }
     return [];
   } catch(error) {return [error.message];}

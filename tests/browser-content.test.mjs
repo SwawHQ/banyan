@@ -48,10 +48,10 @@ before(()=>{
     verifyCspOutput(destination);return destination;
   };
   old=build('old',versions[0]);next=build('next',versions[1]);
-  const policy=fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8')
-    .replace('mode = "off"','mode = "enable"').replaceAll('sw.bucket = "fingerprinted"','sw.bucket = "versioned"');
+  const policy=fixtureDelivery(serviceWorkerPolicy('enable'))
+    .replaceAll('bucket = "fingerprinted"','bucket = "versioned"');
   versionedOld=build('versioned-old',versions[0],policy);versionedNext=build('versioned-next',versions[1],policy);
-  versionedDisabled=build('versioned-disabled',versions[1],policy.replace('mode = "enable"','mode = "disable"'));
+  versionedDisabled=build('versioned-disabled',versions[1],fixtureDelivery(policy,serviceWorkerPolicy('disable')));
   uncached=build('uncached',versions[0],policy+'\n[[routes]]\npath = "/css/*"\nsw.bucket = "off"\n'+
     '\n[[routes]]\npath = "/js/*"\nsw.bucket = "off"\n');
 },{timeout:60000});

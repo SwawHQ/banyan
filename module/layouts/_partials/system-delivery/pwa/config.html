@@ -36,5 +36,6 @@
   "sw_mode" $swMode
   "content_check_interval_ms" (mul $contentCheckInterval 60000)
   "offline_fallbacks" $offlineFallbacks
+  "default_offline_fallback" (printf "%s%s/" hugo.Sites.Default.Home.RelPermalink $offlinePath)
   "is_offline_page" (in $offlineRelPermalinks (lower $ctx.RelPermalink))
 ) -}}

@@ -11,8 +11,12 @@ import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/
 import {panelCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/panel/options.mjs';
 import {offlineCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/offline/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
+import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
+import {active} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/state.mjs';
+import {update,naturallyActivate} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
 
-const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=fs.realpathSync(os.tmpdir());
+const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan');
+const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-pwa-tests');
 const panel='/prefs/status/',from='/fixture-start/';
 let work,skill,output,enabled;
 const variants={};
@@ -36,6 +40,7 @@ function probe(directory,name,code){
   write(file,html.replace('</head>','<script defer src="/'+name+'.js"></script></head>'));
 }
 before(()=>{
+  fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-pwa-'));skill=path.join(work,'skill');output=path.join(work,'public');enabled=path.join(work,'enabled');
   fs.cpSync(source,skill,{recursive:true,filter:file=>!path.relative(source,file).split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const runtime='node';
@@ -116,7 +121,7 @@ test('unavailable panels render localized copy across visits, reloads and native
     const state=report(cli(['--page',prefix+panel,'--from',prefix+from,'--out',path.join(work,'reports')]));
     assert.equal(state.details.cases.length,8);
     assert.deepEqual(state.details.cases.map(value=>value.phase),['visit','reload','back','entry','visit','reload','back','entry']);
-    assert.ok(state.details.cases.every(value=>value.state==='unavailable'&&!value.action));
+    assert.ok(state.details.cases.every(value=>value.state==='off'&&value.action));
     assert.deepEqual([...new Set(state.details.cases.map(value=>value.width))],[390,1024]);
   }
 });
@@ -131,10 +136,10 @@ test('panel checks detect missing controllers and incorrect localized state',{ti
   const html=fs.readFileSync(file,'utf8'),changed=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,script=>script.includes('/js/updates/page.')?'':script);
   assert.ok(changed!==html,'The missing-controller fixture must remove the page asset.');write(file,changed);
   const absent=cli(['--page',panel,'--from',from,'--widths','1024','--timeout','1500'],missing);
-  assert.equal(absent.status,1,absent.stdout+absent.stderr);assert.match(absent.stderr,/update panel must be visible/);
+  assert.equal(absent.status,1,absent.stdout+absent.stderr);assert.match(absent.stderr,/Timeout/);
   for(const [name,code,message] of [
-    ['wrong-locale','document.querySelector("[data-site-update-status]").textContent="wrong locale";',/localized label/],
-    ['wrong-state','document.querySelector("[data-site-update-panel]").dataset.siteUpdateState="ready";',/show unavailable/],
+    ['wrong-locale','document.querySelector("[data-site-update-status]").textContent="wrong locale";',/localized message/],
+    ['wrong-state','document.querySelector("[data-site-update-panel]").dataset.siteUpdateState="ready";',/configured mode/],
     ['missing-status','document.querySelector("[data-site-update-status]").textContent="";',/update panel must be visible/]
   ]) {
     const broken=fixture(name);probe(broken,name,'document.addEventListener("DOMContentLoaded",()=>{'+code+'});');
@@ -147,10 +152,9 @@ test('panel checks detect inaccessible announcements and incorrect check control
   for(const [name,code,message] of [
     ['wrong-role','document.querySelector("[data-site-update-status]").setAttribute("role","alert");',/status role/],
     ['wrong-live','document.querySelector("[data-site-update-status]").setAttribute("aria-live","off");',/politely/],
-    ['missing-action','document.querySelector("[data-site-update-action]")?.remove();',/without a check button/],
     ['wrong-action','document.querySelector("[data-site-update-action]").disabled=true;',/whether checking is available/],
     ['wrong-pressed','document.querySelector("[data-site-update-action]").setAttribute("aria-pressed","false");',/must not expose a pressed state/],
-    ['wrong-label','document.querySelector("[data-site-update-action-label]").textContent="wrong label";',/current localized label/]
+    ['empty-label','document.querySelector("[data-site-update-action]").setAttribute("aria-label","");',/localized label/]
   ]) {
     // Registration failure publishes after load. Keep the fault after each render,
     // observing only the state attribute so corrupting the control cannot loop.
@@ -162,7 +166,7 @@ test('panel checks detect inaccessible announcements and incorrect check control
 
 test('panel checks detect history-only failures and hidden narrow panels',{timeout:15000},()=>{
   for(const [name,code,width,message] of [
-    ['broken-back','if(performance.getEntriesByType("navigation")[0]?.type==="back_forward")document.querySelector("[data-site-update-status]").textContent="broken back";','1024',/localized label/],
+    ['broken-back','if(performance.getEntriesByType("navigation")[0]?.type==="back_forward")document.querySelector("[data-site-update-status]").textContent="broken back";','1024',/localized message/],
     ['hidden-mobile','if(innerWidth<500)document.querySelector("[data-site-update-panel]").hidden=true;','390',/must be visible/]
   ]) {
     const broken=fixture(name);probe(broken,name,'document.addEventListener("DOMContentLoaded",()=>{'+code+'});');
@@ -188,6 +192,72 @@ test('real workers cache a controlled navigation and its assets before an offlin
     assert.equal(state.details.registration.updateViaCache,'none');assert.equal(state.details.registration.preload.enabled,false);
     if(page!=='/')for(const type of ['css','js'])assert.ok(state.details.assets.some(url=>url.includes('/'+type+'/offline-fixture.')));
   }
+});
+
+test('first installation rejects a missing default offline page and succeeds after it is restored',{timeout:20000},async()=>{
+  const result=await runScenarioSuite({primaryBuildDir:enabled,outputDir:path.join(work,'first-install-reports'),timeout:15000,
+    scenarios:[{id:'first-install-default-required',kind:'single',async run({page,server,baseUrl}){
+      const directory=fixture('first-install-default-missing',enabled);
+      fs.unlinkSync(path.join(directory,'_res/offline/index.html'));
+      await server.setRoot(directory);
+      const response=await page.goto(baseUrl+'/zh'+from,{waitUntil:'load'});
+      assert.equal(response.status(),200);assert.equal(response.fromServiceWorker(),false);
+      const state=await page.evaluate(async()=>{
+        const registration=await navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'});
+        const worker=registration.installing||registration.waiting||registration.active;
+        if(!worker)return 'absent';
+        return new Promise(resolve=>{
+          const check=()=>{if(['redundant','installed','activated'].includes(worker.state))resolve(worker.state);};
+          worker.addEventListener('statechange',check);check();
+        });
+      });
+      assert.equal(state,'redundant');
+      assert.equal(await page.evaluate(()=>Boolean(navigator.serviceWorker.controller)),false);
+      assert.deepEqual(await page.evaluate(async()=>(await caches.keys()).filter(name=>/^(nav-html-|asset-versioned-)/.test(name))),[]);
+      await server.setRoot(enabled);
+      await page.evaluate(()=>navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}));
+      await active(page);
+      return {initialPageStatus:response.status(),failedInstallState:state,retryActivated:true};
+    }}]});
+  assert.equal(result.totals.failed,0,result.scenarios.map(value=>value.message).join('\n'));
+});
+
+test('missing translated offline pages allow installation and missing all pages allow program updates',{timeout:30000},async()=>{
+  const cases=[['translated',[],200,'zh'],['default',['zh'],200,'en'],['built-in',['','zh','zh-tw','ar'],503,'en']];
+  const scenarios=cases.map(([id,missing,status,language])=>({id:'offline-fallback-'+id,kind:'single',async run({page,context,baseUrl,server}){
+    const directory=fixture('offline-fallback-'+id,enabled);
+    for(const prefix of missing)fs.unlinkSync(path.join(directory,prefix,'_res/offline/index.html'));
+    await server.setRoot(status===503?enabled:directory);
+    await page.goto(baseUrl+'/zh'+from,{waitUntil:'load'});
+    await active(page);
+    if(status===503) {
+      // Simulate cached offline pages being evicted before a deployment omits every language.
+      await page.evaluate(async()=>{
+        for(const name of await caches.keys())if(name.startsWith('nav-html-')) {
+          const cache=await caches.open(name);
+          for(const request of await cache.keys())if(new URL(request.url).pathname.endsWith('/_res/offline/'))await cache.delete(request);
+        }
+      });
+      fs.appendFileSync(path.join(directory,'sw.js'),'\n// Offline-missing program update probe.\n');
+      await server.setRoot(directory);await update(page);
+      page=await naturallyActivate(page);
+      await page.goto(baseUrl+'/zh'+from,{waitUntil:'load'});await active(page);
+    }
+    await context.setOffline(true);
+    const response=await page.goto(baseUrl+'/zh/never-cached-offline-probe/',{waitUntil:'load'});
+    assert.equal(response.status(),status);assert.equal(response.fromServiceWorker(),true);
+    assert.equal(await page.locator('html').getAttribute('lang'),language);
+    assert.equal(await page.locator('main').isVisible(),true);
+    if(status===503) {
+      assert.equal(response.headers()['cache-control'],'no-store');
+      assert.equal(await page.locator('script,link[href],img,iframe,video,audio,source').count(),0,
+        'The built-in notice must not depend on network resources.');
+    }
+    return {status,language};
+  }}));
+  const result=await runScenarioSuite({primaryBuildDir:enabled,outputDir:path.join(work,'offline-fallback-reports'),scenarios,timeout:15000});
+  assert.equal(result.totals.failed,0,result.scenarios.map(value=>value.message).join('\n'));
+  assert.equal(result.totals.passed,cases.length);
 });
 
 test('disabled and broken workers cannot pass the controlling-worker boundary',{timeout:15000},()=>{

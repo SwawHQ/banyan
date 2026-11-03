@@ -106,8 +106,8 @@ editing content. To test two actual code states, build those states separately.
 Disable prefetch in the second build when checking SW removal without prefetch hints.
 
 For `pwa/content`, supply two builds with identical `sw.js` bytes and different
-`sw-version.json` versions. The check covers the real 15-second delay, concurrent
-navigation, cache replacement, fingerprint reuse and preserved readers. Content
+`sw-version.json` versions. The check covers concurrent navigation, independent
+version requests, cache replacement, fingerprint reuse and preserved readers. Content
 checks continue while a program waits for activation. Use `--page` for the build-version panel and `--from`
-for a second cached page. The check advances only the worker's clock to cross the
-minimum check interval; it does not change the configured interval.
+for a second cached page. The check moves only the worker's clock backwards to
+trigger one check, then verifies that later navigations respect the configured interval.

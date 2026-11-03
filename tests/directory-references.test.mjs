@@ -234,7 +234,7 @@ test('shortcodes load their scripts once on a plain article and each retry reloa
     const chromium=loadChromium();browser=await chromium.launch({headless:true,executablePath:chromium.executablePath()});
     const page=await browser.newPage({serviceWorkers:'block'}),url=server.getBaseUrl()+'/p/shortcodes/?retry=1';
     await gotoAndWait(page,url);
-    await page.waitForFunction(()=>['unavailable','failed'].includes(document.querySelector('[data-site-update-panel]')?.dataset.siteUpdateState));
+    await page.waitForFunction(()=>['off','disable','unavailable','failed'].includes(document.querySelector('[data-site-update-panel]')?.dataset.siteUpdateState));
     for(const index of [0,1]) {
       await Promise.all([page.waitForEvent('load'),page.locator('[data-page-action="reload"]').nth(index).click()]);
       assert.equal(page.url(),url,'Retry must reload the current URL, including its query.');

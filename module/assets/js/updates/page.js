@@ -1,3 +1,5 @@
+import './content.js';
+
 const panel = document.querySelector('[data-site-update-panel]');
 
 function readCopy() {
@@ -9,7 +11,7 @@ function readCopy() {
     }
 }
 
-function getStatusValue(copy, status, latencyMs) {
+function getStatusValue(copy, status) {
     if (status === 'unavailable') return copy.unavailable;
     if (status === 'checking') return copy.checking;
     if (status === 'installing') return copy.installing;
@@ -17,42 +19,34 @@ function getStatusValue(copy, status, latencyMs) {
     if (status === 'offline') return `${copy.status_offline} · ${copy.status_click_retry}`;
     if (status === 'ready') return copy.status_ready;
 
-    const latency = Number.isFinite(latencyMs) && latencyMs >= 0
-        ? ` · ${Math.round(latencyMs)}ms`
-        : '';
-    return `${copy.status_current}${latency}`;
+    return copy.status_current;
 }
 
-function render(copy, status, latencyMs) {
+function render(copy, status) {
     panel.dataset.siteUpdateState = status;
-    const action = panel.querySelector('[data-site-update-action]');
-    const label = action?.querySelector('[data-site-update-action-label]');
-    if (action) action.disabled = ['checking', 'installing', 'unavailable'].includes(status);
-    if (label) label.textContent = status === 'checking' ? copy.checking : copy.check;
+    if (action) action.disabled = checking || ['checking', 'installing', 'unavailable'].includes(status);
 
-    const statusNode = panel.querySelector('[data-site-update-status]');
-    const value = getStatusValue(copy, status, latencyMs);
-    if (statusNode) statusNode.textContent = value ? `${copy.status}: ${value}` : '';
+    const value = getStatusValue(copy, status);
+    panel.textContent = value || '';
 }
 
 const copy = panel ? readCopy() : null;
-const action = panel?.querySelector('[data-site-update-action="check"]');
+const action = document.querySelector('[data-site-update-action="check"]');
 let registration = null;
 let checking = false;
-let latencyMs = null;
 
 function showStatus(status) {
-    render(copy, status, latencyMs);
+    render(copy, status);
 }
 
 function syncRegistrationStatus() {
+    if (checking) return;
     if (registration) showStatus(registration.waiting ? 'ready' : registration.installing ? 'installing' : 'current');
 }
 
 function watchInstallingWorker() {
     const installing = registration.installing;
     if (!installing) return;
-    latencyMs = null;
     showStatus('installing');
     const onStateChange = () => {
         if (!['installed', 'redundant'].includes(installing.state)) return;
@@ -80,23 +74,24 @@ async function readRegistration() {
 
 async function checkForUpdates() {
     if (checking) return;
-    latencyMs = null;
     if (navigator.onLine === false) {
         showStatus('offline');
         return;
     }
     checking = true;
     showStatus('checking');
-    const startedAt = performance.now();
+    let failed = false;
     try {
         const current = await readRegistration();
         await current.update();
-        latencyMs = Math.max(0, performance.now() - startedAt);
-        syncRegistrationStatus();
     } catch {
+        failed = true;
+    }
+    checking = false;
+    if (failed) {
         showStatus(navigator.onLine === false ? 'offline' : 'failed');
-    } finally {
-        checking = false;
+    } else {
+        syncRegistrationStatus();
     }
 }
 
@@ -110,8 +105,16 @@ async function start() {
 }
 
 if (panel && copy) {
-    if (action && 'serviceWorker' in navigator) {
-        action.addEventListener('click', (event) => {
+    if (panel.dataset.siteSwMode !== 'enable') {
+        const showMode = () => {
+            panel.dataset.siteUpdateState = panel.dataset.siteSwMode;
+            panel.textContent = copy['mode_' + panel.dataset.siteSwMode]
+                + (navigator.serviceWorker?.controller ? ' ' + copy.status_controlled : '');
+        };
+        navigator.serviceWorker?.addEventListener('controllerchange', showMode);
+        showMode();
+    } else if ('serviceWorker' in navigator) {
+        action?.addEventListener('click', (event) => {
             event.preventDefault();
             void checkForUpdates();
         });

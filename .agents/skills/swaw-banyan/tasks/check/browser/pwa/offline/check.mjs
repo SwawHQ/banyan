@@ -53,7 +53,7 @@ export async function check({page,baseUrl,options}) {
     const versionResponse=await context.request.get(new URL('/sw-version.json',baseUrl).href);
     assert.ok(versionResponse.ok(),'The content version JSON must be available.');
     assert.equal(versionResponse.headers()['cache-control'],'no-cache, max-age=0, must-revalidate','The content version JSON must revalidate on every request.');
-    const {version:contentVersion}=await versionResponse.json();
+    const contentVersion=await versionResponse.json();
     assert.ok(typeof contentVersion==='string'&&contentVersion.trim(),'The content version JSON must identify the current content.');
     const resources=await pageResources(page,baseUrl,contentVersion);
     assert.ok(resources.length>0,'The first page must load local CSS or JS.');

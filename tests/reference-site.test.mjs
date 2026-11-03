@@ -301,15 +301,18 @@ test('Powered by contains translated diagnostics and same-language test links',(
     }
     const collectionPath=new URL(extractTagAttribute(links[0],'href'),origin).pathname;
     assert.match(extractBlocks(fs.readFileSync(path.join(output,collectionPath,'index.html'),'utf8'),'main')[0].inner,/data-sortable=(?:"true"|true)/);
-    const panel=extractBlocks(html,'div',tag=>tag.includes('data-site-update-panel'))[0];
+    const panel=extractBlocks(main,'span',tag=>tag.includes('data-site-update-panel'))[0];
     assert.equal(panel.html.includes('data-pwa-controlled'),false,'Page control state belongs to diagnostics');
-    const diagnostics=extractBlocks(html,'h2',tag=>extractTagAttribute(tag,'id')==='diagnostics')[0];
-    assert.ok(diagnostics.index>=panel.index+panel.html.length,'Diagnostics follow the complete PWA panel');
+    assert.ok(disclosure[0].index>=panel.index+panel.html.length,'Diagnostics follow the update controls');
+    assert.ok(disclosure[0].html.includes('https://gohugo.io/news/'),'Hugo information belongs to collapsed diagnostics.');
+    assert.match(disclosure[0].html,/<summary><strong>[^<]+<\/strong><\/summary>/,'Diagnostic emphasis belongs inside the summary.');
+    assert.doesNotMatch(main,/<(?:p|strong)>\s*<details/,'Disclosure markup must not be wrapped in paragraph or emphasis tags.');
     assert.equal(panel.html.includes('prefetch-debug-controls'),false,'The update panel does not own diagnostics');
     if(prefix)assert.doesNotMatch(main,/Prefetch transport|Browser support|Selected backend|Loading\.\.\./,'Diagnostic copy follows the current language.');
     const external=extractStartTags(main,'a').filter(tag=>extractTagAttribute(tag,'href').startsWith('https://'));
     assert.deepEqual(external.map(tag=>extractTagAttribute(tag,'href')),['https://github.com/SwawHQ/banyan',
-      'https://swaw.com/'+(prefix==='zh/'?'zh/':'')+'d/banyan/changelog/','https://gohugo.io/','https://gohugo.io/news/']);
+      'https://swaw.com/'+(prefix==='zh/'?'zh/':'')+'d/banyan/changelog/','https://gohugo.io/news/']);
+    assert.equal(extractBlocks(main,'h2').length,0,'The compact layout keeps technology links and the update panel above collapsed diagnostics.');
     for(const link of external) {
       assert.equal(extractTagAttribute(link,'target'),'_blank');
       assert.equal(extractTagAttribute(link,'rel'),'noopener noreferrer');
@@ -319,7 +322,7 @@ test('Powered by contains translated diagnostics and same-language test links',(
   }
 });
 
-test('Powered by build section shows only the matching content version',async()=>{
+test('Powered by Markdown separates build information and update controls',async()=>{
   for(const prefix of prefixes) {
     const html=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
     const times=extractStartTags(html,'time').filter(tag=>tag.includes('data-site-update-version'));
@@ -329,11 +332,37 @@ test('Powered by build section shows only the matching content version',async()=
     assert.match(extractTagAttribute(times[0],'datetime'),/^\d{4}-\d{2}-\d{2}T/);
     const source=stripRawText(html),visible=source.replace(/<[^>]*>/g,'');
     assert.deepEqual(visible.match(/v\d{14}/g),[version]);
-    const headings=extractBlocks(source,'h2');
-    const heading=headings.find(block=>extractTagAttribute(block.open,'id')==='build');
-    const next=headings.find(block=>block.index>heading.index);
-    const section=source.slice(heading.index+heading.html.length,next.index);
-    assert.equal(section.replace(/<[^>]*>/g,'').trim(),version);
+    const panel=extractBlocks(html,'span',tag=>tag.includes('data-site-update-panel'))[0];
+    const copy=JSON.parse(extractTagAttribute(panel.open,'data-site-update-copy'));
+    for(const key of ['build','status','check'])assert.equal(key in copy,false,'Static text stays in Markdown.');
+    const rows=extractBlocks(html,'p').flatMap(row=>row.inner.split(/<br\s*\/?>/i));
+    const markers=['site-update-version','site-content-status','site-update-interval','site-sw-policy','site-update-status'];
+    const indexes=markers.map(marker=>rows.findIndex(row=>row.includes('data-'+marker)));
+    assert.ok(indexes.every(index=>index>=0));
+    assert.equal(new Set(indexes).size,5,'Each value has its own Markdown line.');
+    for(const index of indexes) {
+      assert.doesNotMatch(rows[index],/<code\b/,'Shortcodes do not add inline-code formatting.');
+      assert.match(rows[index],/^<strong>[^<]+<\/strong>/,'Each information line keeps its emphasized Markdown label.');
+    }
+    const information=extractBlocks(html,'p').find(row=>row.inner.includes('data-site-update-version'));
+    assert.ok(markers.every(marker=>information.inner.includes('data-'+marker)),'The five information lines stay adjacent.');
+    for(const action of extractBlocks(information.inner,'button'))assert.equal(action.inner,copy.refresh_icon,'Refresh controls share the configured icon.');
+    const contentRow=rows[indexes[1]],policyRow=rows[indexes[3]],statusRow=rows[indexes[4]];
+    assert.ok(contentRow.includes('data-site-content-action'),'Server refresh stays on its own line.');
+    assert.ok(statusRow.includes('data-site-update-action'),'Program refresh stays on its own line.');
+    assert.ok(!policyRow.includes('<button'),'The policy link is static.');
+    const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-update-interval'))[0];
+    const enabled=fs.existsSync(path.join(output,'sw-version.json'));
+    if(enabled)assert.ok(interval.inner.includes(String(parseToml(fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8')).sw.content_check_interval)));
+    else assert.equal(interval.inner,extractBlocks(html,'span',tag=>tag.includes('data-site-sw-policy'))[0].inner);
+    const indicator=extractStartTags(html,'span').find(tag=>tag.includes('data-site-content-status'));
+    assert.equal(extractTagAttribute(indicator,'data-site-page-version'),version);
+    assert.equal('content_current' in copy,false,'Program state does not own the version comparison.');
+    const links=extractStartTags(html,'a').map(tag=>extractTagAttribute(tag,'href'));
+    assert.ok(!links.includes('/sw-version.json'),'The fixed build version is plain text.');
+    assert.equal(links.includes('/sw-policy.json'),enabled);
+    assert.equal(Boolean(extractTagAttribute(indicator,'data-site-version-url')),enabled);
+    assert.ok(policyRow.replace(/<[^>]*>/g,'').trim(),'Policy availability is explicit.');
   }
   assert.deepEqual((await inspectBuildVersion(output)).issues,[]);
 });

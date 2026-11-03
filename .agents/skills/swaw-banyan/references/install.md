@@ -55,8 +55,12 @@ All pages belong to root `content/`. Offline and prefetch diagnostics live in
 Copy the pages you need from the reference site; deleting a page removes it
 without a Module fallback. The Module provides layouts, scripts and styles,
 without content defaults. SW `enable` requires a published HTML
-page at `sw.offline_notice_path` for every enabled language;
-`off` and `disable` allow these offline pages to be absent.
+page at `sw.offline_notice_path` for every enabled language at build time;
+`off` and `disable` allow these offline pages to be absent. First installation
+requires the default-language offline HTML and its `fingerprinted` assets
+selected for warmup. Later SW and content updates tolerate unavailable offline
+pages. At runtime, unavailable pages fall back to the default language, then to
+a built-in offline notice.
 
 The site owns `archetypes/banyan.md`, copied from the reference root.
 The Module and traditional theme directory do not supply article templates.
@@ -570,10 +574,36 @@ keep accounts, branding and legal content there too.
 
 Powered by keeps headings, prose, source and changelog links in each language's
 Markdown. Use `new-tab` for those external links. `theme-version` outputs only the
-theme version, with `label` and `local` text parameters; `hugo-version` uses
-`hugo.Version`. `site-update` outputs update status and a check button.
+theme version, with `local` text for a local build; `hugo-version` uses
+`hugo.Version`; the reference pages place it inside the diagnostic disclosure.
+Use separate `site-update` parts to arrange build information and update controls:
 
-Append diagnostics in the same Markdown. `prefetch-debug-controls` outputs the
+```text
+Local: {{< site-update "version" >}}  
+Server: {{< site-update "content" >}}  
+Sync trigger: {{< site-update "interval" "On page navigation and interval ≥ %d minutes" >}}
+
+SW policy: {{< site-update "policy" >}}  
+SW status: {{< site-update "status" >}}
+```
+
+Keep fixed labels in Markdown and changing messages in `params.site_update.labels`.
+Two trailing spaces make a line break. Shortcodes do not add code formatting.
+The local version and interval are fixed at build time; the interval comes from
+`sw.content_check_interval`. The server row reads `sw-version.json` after page load
+and on refresh. The version links to that JSON. A matching version adds
+`content_current_icon`. Its refresh button
+does not switch cache buckets. The status row checks the SW program. Each row has
+its own refresh button; use `content_refresh` and `status_refresh` for their
+accessible labels and `refresh_icon` for their shared symbol. `cache_disabled`
+provides the disabled-cache message for the server, sync trigger and policy rows.
+Unavailable rows remain visible, with disabled refresh buttons.
+The policy link is static. Program status reports the configured mode and whether
+an installed SW still controls the page. `off` leaves workers installed;
+`disable` requests unregistering and managed-cache cleanup.
+
+Append diagnostics in the same Markdown. `details-start` accepts inline Markdown
+in `summary`, for example `summary="**More diagnostics**"`. `prefetch-debug-controls` outputs the
 transport selector and status. Keep its text in `params.prefetch_debug.labels`,
 as shown in the reference pages. `prefetch-debug-links` supplies a published
 collection and article in the current language. `prefetch-debug-state` outputs

@@ -65,7 +65,10 @@ Front matter 中，`title`、`url`、`layout` 等 Hugo 原生字段保留在顶�
 风场包使用 `home-art/wind/scene` 短代码；站点可在 `layouts/_shortcodes/` 中覆写其 HTML。
 内部页面统一放在 `content/_res/`，共用的 `_index.md` 将此分支排除在导航和站点发现之外。
 其中的离线页和预取诊断页统一发布到 `_res/` 路径；可删除不需要的可选页面。
-SW 为 `enable` 时，每种已启用语言都必须发布 HTML 离线页。
+SW 为 `enable` 时，构建要求每种已启用语言都发布 HTML 离线页。
+首次安装要求默认语言离线 HTML 及需预热的 `fingerprinted` 资源可用。
+此后的 SW 和内容更新不受离线页缺失影响。
+运行时离线页不可用，先使用默认语言，再使用内置提示。
 在站点根目录用 PowerShell 执行（Windows x64）：
 
 ```powershell

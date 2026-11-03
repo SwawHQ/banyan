@@ -73,7 +73,11 @@ async function inspectBuildVersionContract(rootDir, rows) {
         issues.push('sw-version.json must be published when service workers are enabled.');
     } else if (versionText) {
         try {
-            const version = JSON.parse(versionText).version;
+            const version = JSON.parse(versionText);
+            if (typeof version !== 'string' || !version || version.length > 128
+                || version.trim() !== version || /[\u0000-\u001f\u007f]/.test(version)) {
+                throw new Error('Expected a valid version JSON string.');
+            }
             if (buildVersion && version !== buildVersion) {
                 issues.push(`sw-version.json version ${JSON.stringify(version)} does not match update-page buildVersion ${buildVersion}.`);
             }

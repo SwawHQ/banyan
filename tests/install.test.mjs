@@ -54,10 +54,10 @@ function consumer(name,{replacement='',multilingual=false}={}) {
       write(root,'content/articles/sample/'+name+'/index'+suffix+'.md',translated(markdown[3]
         .replaceAll('alpha',name).replaceAll('Alpha',title).replaceAll('2026-01-01',date)));
     write(root,'content/articles-all/_index'+suffix+'.md',translated(markdown[4]));
-    write(root,'content/products/_index'+suffix+'.md',translated(markdown[5]));
-    write(root,'content/products/free/_index'+suffix+'.md',translated(markdown[6]));
-    write(root,'content/products/featured/_index'+suffix+'.md',translated(markdown[6].replaceAll('Free','Featured')));
-    write(root,'content/products-all/_index'+suffix+'.md',translated(markdown[7]));
+    write(root,'content/products/_index'+suffix+'.md',translated(markdown[6]));
+    write(root,'content/products/free/_index'+suffix+'.md',translated(markdown[7]));
+    write(root,'content/products/featured/_index'+suffix+'.md',translated(markdown[7].replaceAll('Free','Featured')));
+    write(root,'content/products-all/_index'+suffix+'.md',translated(markdown[8]));
   }
   for(const directory of ['articles/related','products/free','products/featured'])
     write(root,'content/'+directory+'/_map.toml',toml[2]);
@@ -288,9 +288,9 @@ test('packaged Skill and versioned Module build from an isolated proxy',()=>{
     assert.ok(fs.readFileSync(path.join(output,prefix,'llms.txt'),'utf8').startsWith('# My site - '+label));
     assert.ok(fs.existsSync(path.join(output,prefix,'rss/index.html')));
     const panel=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
-    assert.ok(panel.includes('<code>'+version+'</code>'),'Powered by shows the installed Module version.');
+    assert.ok(panel.includes('>'+version+'</a>'),'Powered by shows the installed Module version as plain text.');
     assert.ok(panel.includes('https://swaw.com/'+(prefix==='zh/'?'zh/':'')+'d/banyan/changelog/'));
-    assert.ok(!panel.includes('data-site-update-action=check'),'Default SW-off panel has no check action.');
+    assert.match(panel,/<button\b[^>]*data-site-update-action=check[^>]* disabled>/,'Default SW-off panel keeps a disabled refresh action.');
   }
   assert.equal(fs.existsSync(path.join(root,'node_modules')),false);
   assert.equal(fs.existsSync(path.join(root,'themes')),false);

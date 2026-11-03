@@ -10,6 +10,7 @@
 {{- $swMode := index $pwaConfig "sw_mode" -}}
 {{- $contentCheckIntervalMs := index $pwaConfig "content_check_interval_ms" -}}
 {{- $offlineFallbacks := index $pwaConfig "offline_fallbacks" -}}
+{{- $defaultOfflineFallback := index $pwaConfig "default_offline_fallback" -}}
 {{- $isOfflinePage := index $pwaConfig "is_offline_page" -}}
 {{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" $delivery) "prefetch" -}}
 {{- $isPrefetchDebug := or (.HasShortcode "prefetch-debug-controls") (and $homeArt ($homeArt.HasShortcode "prefetch-debug-controls")) -}}
@@ -128,6 +129,7 @@
       "build_version" $buildVersion
       "content_check_interval_ms" $contentCheckIntervalMs
       "offline_fallbacks" $offlineFallbacks
+      "default_offline_fallback" $defaultOfflineFallback
       "sw_routes" $swRoutes
       "is_offline_page" $isOfflinePage
     ) -}}

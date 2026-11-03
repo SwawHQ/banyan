@@ -11,20 +11,19 @@ async function rendered(page,expected) {
   await panel.scrollIntoViewIfNeeded();
   const value=await panel.evaluate(node=>{
     const copy=JSON.parse(node.dataset.siteUpdateCopy);
-    const status=node.querySelector('[data-site-update-status]'),action=node.querySelector('[data-site-update-action="check"]');
-    return {state:node.dataset.siteUpdateState,copy,status:status?.textContent,
+    const status=node,action=document.querySelector('[data-site-update-action="check"]');
+    return {state:node.dataset.siteUpdateState,mode:node.dataset.siteSwMode,copy,status:status?.textContent,
       role:status?.getAttribute('role'),live:status?.getAttribute('aria-live'),
-      action:action?{tag:action.tagName,type:action.getAttribute('type'),pressed:action.getAttribute('aria-pressed'),disabled:action.disabled,label:action.querySelector('[data-site-update-action-label]')?.textContent}:null};
+      action:action?{tag:action.tagName,type:action.getAttribute('type'),pressed:action.getAttribute('aria-pressed'),disabled:action.disabled,label:action.getAttribute('aria-label')}:null};
   });
   const {state,copy,action}=value;
-  for(const name of ['status','unavailable'])assert.ok(typeof copy[name]==='string'&&copy[name].trim(),'Panel labels must contain '+name+'.');
-  if(!action)assert.equal(state,'unavailable','A panel without a check button must show unavailable.');
+  assert.ok(typeof copy.unavailable==='string'&&copy.unavailable.trim(),'Panel labels must contain unavailable.');
+  if(value.mode!=='enable')assert.equal(state,value.mode,'Panel status must show its configured mode.');
   assert.equal(value.role,'status','Panel status must have an accessible status role.');
   assert.equal(value.live,'polite','Panel status must announce changes politely.');
   if(state==='idle')assert.equal(value.status,'','Idle panels must have no status message.');
   else {
-    assert.ok(value.status?.startsWith(copy.status+': '),'Panel status must use its localized label.');
-    const field={unavailable:'unavailable',checking:'checking',installing:'installing',failed:'check_failed',offline:'status_offline',ready:'status_ready',current:'status_current'}[state];
+    const field={off:'mode_off',disable:'mode_disable',unavailable:'unavailable',checking:'checking',installing:'installing',failed:'check_failed',offline:'status_offline',ready:'status_ready',current:'status_current'}[state];
     assert.ok(field&&typeof copy[field]==='string'&&copy[field].trim(),'Panel state must have a localized message.');
     assert.ok(value.status.includes(copy[field]),'Panel status must contain the current localized message.');
   }
@@ -32,11 +31,10 @@ async function rendered(page,expected) {
     assert.equal(action.tag,'BUTTON','The update check must be a native button.');
     assert.equal(action.type,'button','The update check must not submit a form.');
     assert.equal(action.pressed,null,'The update check must not expose a pressed state.');
-    assert.equal(action.disabled,['checking','installing','unavailable'].includes(state),'The check button must reflect whether checking is available.');
-    const label=copy[state==='checking'?'checking':'check'];
+    assert.equal(action.disabled,['checking','installing','unavailable','off','disable'].includes(state),'The check button must reflect whether checking is available.');
+    const label=action.label;
     assert.ok(typeof label==='string'&&label.trim(),'The check button must have a localized label.');
-    assert.equal(action.label,label,'The check button must use the current localized label.');
-    assert.equal(await panel.getByRole('button',{name:label,exact:true}).count(),1,'The check button must expose its localized accessible name.');
+    assert.equal(await page.getByRole('button',{name:label,exact:true}).count(),1,'The check button must expose its localized accessible name.');
   }
   return {state,action:Boolean(action)};
 }

@@ -5,9 +5,9 @@
 # sw.js（Service Worker）应用配置；各路由的缓存策略见 sw.bucket。
 # enable：注册并启用；disable：访问页面时注销本站 SW，并清除受管缓存。
 # off：不加载 SW 管理逻辑；已安装的 SW 不会自动注销。
-mode = "enable"
-# 内容版本检查的最小间隔，单位：分钟。
-content_check_interval = 5
+mode = "disable"
+# 内容版本检查的最小间隔，单位：分钟；到期后由导航触发后台检查，不阻塞页面请求。
+content_check_interval = 8
 # 离线提示页的站内路径；启用 SW 时，每种语言均需提供对应页面。
 offline_notice_path = "_res/offline/"
 
@@ -63,7 +63,8 @@ edgeone.makers.hugoVersion = ""
 # fingerprinted：跨构建版本复用；用于 URL 含内容指纹、内容变化会换 URL 的资源。
 # off：不进入 SW 缓存，交给浏览器请求；HTTP 缓存仍可生效。
 # 两种缓存均先读 SW 缓存，命中后不按 HTTP max-age 自动过期。
-# versioned 未命中时校验 HTTP 缓存；只配置 http 不会改变已有的 SW 匹配结果。
+# versioned 未命中时用 no-cache 校验 HTTP 缓存，仍可通过 ETag/304 复用正文。
+# 只配置 http 不会改变已有的 SW 匹配结果。
 [[routes]]
 path = "/*"
 # CSP 根据实际内联脚本和原生规则正文生成；保留 minify.disableJS = true。

@@ -247,8 +247,8 @@ test('one backend is selected once; overrides apply only on diagnostic pages',{t
     return state;
   }},{id:'translated-powered-by-reloads',run:async({page,baseUrl})=>{
     for(const language of ['en','zh','zh-tw']) {
-      const prefix=language==='en'?'':'/'+language,pathname=prefix+'/powered-by/';
-      await visit(page,baseUrl,'auto',pathname+'?keep=yes#diagnostics');
+      const prefix=language==='en'?'':'/'+language,pathname=prefix+'/powered-by/',fragment='#keep-position';
+      await visit(page,baseUrl,'auto',pathname+'?keep=yes'+fragment);
       assert.equal(await page.locator('html').getAttribute('lang'),language);
       assert.equal(await page.locator('[data-site-update-panel]').count(),1);
       assert.equal(await page.locator('#prefetch-debug-controls').count(),1);
@@ -273,7 +273,7 @@ test('one backend is selected once; overrides apply only on diagnostic pages',{t
         await Promise.all([page.waitForEvent('load'),page.locator('#prefetch-debug-controls button[type=submit]').click()]);
         await page.waitForFunction(()=>window.banyanPrefetchState?.reason&&window.banyanPrefetchState.reason!=='selecting');
         const url=new URL(page.url());
-        assert.equal(url.pathname,pathname);assert.equal(url.searchParams.get('keep'),'yes');assert.equal(url.hash,'#diagnostics');
+        assert.equal(url.pathname,pathname);assert.equal(url.searchParams.get('keep'),'yes');assert.equal(url.hash,fragment);
         assert.equal(url.searchParams.get('prefetch-backend'),backend==='auto'?null:backend);
         assert.equal(await page.locator('html').getAttribute('lang'),language);
         assert.equal(await disclosure.evaluate(node=>node.open),false,'Reload starts with diagnostics collapsed.');

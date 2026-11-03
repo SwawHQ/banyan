@@ -8,18 +8,16 @@ import {
 } from './cache-names.js';
 const CONTENT_VERSION_URL = new URL({{ .version_url | jsonify }}, self.location.origin).href;
 const CONTENT_CHECK_INTERVAL_MS = {{ .content_check_interval_ms }};
-const CONTENT_CHECK_DELAY_MS = 15000;
 const CONTENT_CHECK_TIMEOUT_MS = 10000;
 const PROGRAM_OFFLINE_CACHE = PROGRAM_OFFLINE_CACHE_PREFIX + '__BANYAN_SW_PROGRAM_HASH__';
 const OFFLINE_FALLBACKS = {{ .offline_fallbacks | jsonify }};
+const DEFAULT_OFFLINE_FALLBACK = new URL({{ .default_offline_fallback | jsonify }}, self.location.origin).href;
 const SW_ROUTES = {{ .sw_routes | jsonify }};
 let currentGeneration = null;
 let generationPromise = null;
 let lastAttemptAt = 0;
 let contentCheckTask = null;
 let contentCheckController = null;
-let contentCheckTimer = null;
-let contentCheckDelayResolve = null;
 let contentCheckCancelled = false;
 const HTML_ASSET_ATTR_PATTERN = /\b(?:href|src)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s"'=<>`]+))/ig;
 
@@ -172,12 +170,13 @@ async function getCacheForRoute(route, generation, navigation = false) {
 }
 
 async function fetchCacheResponse(request, route, signal) {
-    // A fresh versioned SW cache must not be populated from an older HTTP cache.
+    // Always validate versioned misses: old HTTP bytes would otherwise persist until the next content version.
+    // no-cache preserves ETag/304 revalidation and HTTP body reuse; it does not force a full download.
     let response = await fetch(route.bucket === 'versioned'
         ? new Request(request, { cache: 'no-cache', signal })
         : signal ? new Request(request, { signal }) : request);
     if (response && response.status === 304) {
-        // Cache Storage needs a full body, including after browser prefetch validation.
+        // The browser normally merges 304 with its cached body; retry only if a bare 304 reaches the SW.
         response = await fetch(new Request(request, { cache: 'reload', signal }));
     }
     return response;
@@ -296,13 +295,13 @@ async function updateNavigationCache(request, cache, route, waitForAssetWarmup =
         const cacheKeyRequest = createNavigationCacheKeyRequest(request);
         const response = await fetchCacheResponse(request, route, signal);
         if (isCacheableHtmlResponse(response)) {
-            await cache.put(cacheKeyRequest || request, response.clone());
             const assetWarmupTask = warmAssetsFromHtmlResponse(response.clone(), response.url || request.url, signal);
             if (waitForAssetWarmup) {
                 if (!await assetWarmupTask) return null;
             } else {
                 assetWarmupTask.catch(() => { });
             }
+            await cache.put(cacheKeyRequest || request, response.clone());
         }
         return response;
     } catch (error) {
@@ -323,30 +322,34 @@ async function updateAssetCache(request, cache, route, signal) {
 }
 
 async function getOfflineFallbackResponse(pathname, generation) {
-    const offlineUrl = getOfflineFallbackUrl(pathname);
-    if (!offlineUrl) return null;
+    for (const offlineUrl of new Set([getOfflineFallbackUrl(pathname), DEFAULT_OFFLINE_FALLBACK])) {
+        if (!offlineUrl) continue;
+        const offlineRequest = new Request(offlineUrl, {
+            credentials: 'same-origin',
+            headers: { Accept: 'text/html' }
+        });
+        const route = getMatchingRoute(getRequestPathname(offlineRequest));
+        if (!shouldHandleRoute(route)) continue;
+        const cache = await getCacheForRoute(route, generation, true);
+        if (!cache) continue;
+        const cachedResponse = await cache.match(createNavigationCacheKeyRequest(offlineRequest) || offlineRequest);
+        if (isCacheableHtmlResponse(cachedResponse)) return cachedResponse;
 
-    const offlineRequest = new Request(offlineUrl, {
-        credentials: 'same-origin',
+        const networkResponse = await updateNavigationCache(offlineRequest, cache, route, true);
+        if (isCacheableHtmlResponse(networkResponse)) return networkResponse;
+    }
+
+    return new Response('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        + '<meta name="viewport" content="width=device-width, initial-scale=1"><title>Offline</title></head>'
+        + '<body><main><h1>Offline</h1><p>This page is not available offline. '
+        + 'Connect to the internet and try again.</p></main></body></html>', {
+        status: 503,
         headers: {
-            Accept: 'text/html'
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store',
+            'Content-Security-Policy': "default-src 'none'; base-uri 'none'; frame-ancestors 'none'"
         }
     });
-    const route = getMatchingRoute(getRequestPathname(offlineRequest));
-    if (!shouldHandleRoute(route)) return null;
-    const cache = await getCacheForRoute(route, generation, true);
-    if (!cache) return null;
-    const cachedResponse = await cache.match(createNavigationCacheKeyRequest(offlineRequest) || offlineRequest);
-    if (cachedResponse) {
-        return cachedResponse;
-    }
-
-    const networkResponse = await updateNavigationCache(offlineRequest, cache, route, true);
-    if (isCacheableHtmlResponse(networkResponse)) {
-        return networkResponse;
-    }
-
-    return null;
 }
 
 async function warmAssetUrl(urlValue, signal) {
@@ -437,12 +440,7 @@ async function handleNavigationRequest(request) {
         return networkResponse;
     }
 
-    const offlineFallbackResponse = await getOfflineFallbackResponse(pathname, generation);
-    if (offlineFallbackResponse) {
-        return offlineFallbackResponse;
-    }
-
-    throw new Error('Navigation request failed with no cached response.');
+    return getOfflineFallbackResponse(pathname, generation);
 }
 
 async function handleAssetRequest(request, pathname) {
@@ -474,12 +472,12 @@ async function fetchContentVersion(signal) {
         signal,
     });
     if (!response.ok) throw new Error('Content version request failed.');
-    const data = await response.json();
-    if (!isValidContentVersion(data?.version)) throw new Error('Invalid content version.');
-    return data.version;
+    const version = await response.json();
+    if (!isValidContentVersion(version)) throw new Error('Invalid content version.');
+    return version;
 }
 
-async function refreshContentVersion(signal) {
+async function refreshContentVersion(signal, requireDefaultOffline = false) {
     const generation = await getCurrentGeneration();
     if (signal.aborted) throw new Error('Content version check cancelled.');
 
@@ -492,20 +490,22 @@ async function refreshContentVersion(signal) {
     let committed = generation?.version === version;
     try {
         const candidate = committed ? { ...generation, warmupTasks: new Map() } : await openGeneration(version);
-        const offlineUrls = getOfflineFallbackUrls();
-        if (!await warmNavigationUrls(offlineUrls, candidate, signal)) {
-            throw new Error('Content offline fallback preparation failed.');
+        // Only first installation requires an offline baseline before publishing content state.
+        if (requireDefaultOffline && !await warmNavigationUrl(DEFAULT_OFFLINE_FALLBACK, candidate, signal)) {
+            throw new Error('First installation needs the default offline page and its assets.');
         }
         if (signal.aborted) throw new Error('Content version check cancelled.');
 
         if (!committed) {
-            // After preparation, publishing the generation must finish even if cancellation arrives.
+            // Publishing the generation must finish even if cancellation arrives.
             await saveContentState(candidate.version, lastAttemptAt);
             currentGeneration = candidate;
             generationPromise = Promise.resolve(candidate);
             committed = true;
         }
         await cleanupVersionedCaches(candidate);
+        // Other offline preparation must not block content or program updates.
+        await warmNavigationUrls(getOfflineFallbackUrls(), candidate, signal).catch(() => { });
     } finally {
         if (!committed) {
             await Promise.all([
@@ -519,7 +519,7 @@ async function refreshContentVersion(signal) {
 async function prepareProgramOffline(signal) {
     await caches.delete(PROGRAM_OFFLINE_CACHE);
     // Without an active program, installation can publish content state directly.
-    if (!self.registration.active) return refreshContentVersion(signal);
+    if (!self.registration.active) return refreshContentVersion(signal, true);
     try {
         const cache = await caches.open(PROGRAM_OFFLINE_CACHE);
         let state = await readContentState();
@@ -535,9 +535,7 @@ async function prepareProgramOffline(signal) {
             headers: { 'Content-Type': 'application/json' },
         }));
         const generation = { navigationCache: cache, warmupTasks: new Map() };
-        if (!await warmNavigationUrls(getOfflineFallbackUrls(), generation, signal) || signal.aborted) {
-            throw new Error('Program offline fallback preparation failed.');
-        }
+        await warmNavigationUrls(getOfflineFallbackUrls(), generation, signal).catch(() => { });
     } catch (error) {
         await caches.delete(PROGRAM_OFFLINE_CACHE).catch(() => { });
         throw error;
@@ -556,10 +554,9 @@ async function restoreProgramOffline(generation) {
         getMatchingRoute(new URL(url).pathname).bucket === 'versioned').map(async (url) => {
         const request = createNavigationCacheKeyRequest(new Request(url));
         const response = await cache.match(request);
-        if (!isCacheableHtmlResponse(response)) throw new Error('Prepared program offline fallback is missing.');
-        return { request, response };
+        return isCacheableHtmlResponse(response) ? { request, response } : null;
     }));
-    for (const { request, response } of pages) {
+    for (const { request, response } of pages.filter(Boolean)) {
         // Preserve pages refreshed while this program was waiting.
         if (generation.version !== preparedState.version
             && isCacheableHtmlResponse(await generation.navigationCache.match(request))) continue;
@@ -592,13 +589,6 @@ async function runCachePreparation(prepare) {
 
 function cancelContentVersionCheck() {
     contentCheckCancelled = true;
-    if (contentCheckTimer !== null) {
-        clearTimeout(contentCheckTimer);
-        contentCheckTimer = null;
-    }
-    const resolve = contentCheckDelayResolve;
-    contentCheckDelayResolve = null;
-    if (resolve) resolve(false);
     contentCheckController?.abort();
 }
 
@@ -613,15 +603,6 @@ function scheduleContentVersionCheck() {
         if (lastAttemptAt > 0 && elapsed >= 0 && elapsed < CONTENT_CHECK_INTERVAL_MS) return;
         if (contentCheckCancelled || self.registration.installing) return;
 
-        const delayed = await new Promise((resolve) => {
-            contentCheckDelayResolve = resolve;
-            contentCheckTimer = setTimeout(() => {
-                contentCheckTimer = null;
-                contentCheckDelayResolve = null;
-                resolve(true);
-            }, CONTENT_CHECK_DELAY_MS);
-        });
-        if (!delayed || contentCheckCancelled || self.registration.installing) return;
         await runCachePreparation(refreshContentVersion);
     })().catch(() => { }).finally(() => {
         contentCheckTask = null;
@@ -669,9 +650,8 @@ self.addEventListener('fetch', (event) => {
         const responsePromise = handleNavigationRequest(request);
         event.respondWith(responsePromise);
         if (request.mode === 'navigate') {
-            event.waitUntil(responsePromise.then((response) => {
-                if (isCacheableHtmlResponse(response)) return scheduleContentVersionCheck();
-            }).catch(() => { }));
+            // A slow or failed navigation must not delay the independent version check.
+            event.waitUntil(scheduleContentVersionCheck());
         }
         return;
     }

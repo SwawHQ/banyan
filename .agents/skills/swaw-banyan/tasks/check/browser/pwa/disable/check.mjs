@@ -58,7 +58,7 @@ export async function check({page,server,baseUrl,options}) {
     const controlled=await page.reload({waitUntil:'load'});
     assert.ok(controlled?.ok()&&controlled.fromServiceWorker(),'The enabled worker must control a navigation before cleanup.');
     await waitForBrowse(page);await afterPaint(page);
-    const {version:contentVersion}=JSON.parse(await fs.readFile(path.join(old.root,'sw-version.json'),'utf8'));
+    const contentVersion=JSON.parse(await fs.readFile(path.join(old.root,'sw-version.json'),'utf8'));
     const resources=await pageResources(page,baseUrl,contentVersion);
     await waitForState(async()=>{
       const navigation=await page.evaluate(async()=>{

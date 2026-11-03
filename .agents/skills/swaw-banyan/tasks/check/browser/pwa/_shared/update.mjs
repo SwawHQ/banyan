@@ -69,10 +69,9 @@ export async function rootLink(page,href) {
 export async function panelState(page,status) {
   await page.waitForSelector('[data-site-update-panel][data-site-update-state="'+status+'"]');
   const value=await page.locator('[data-site-update-panel]').evaluate(node=>({
-    copy:JSON.parse(node.dataset.siteUpdateCopy),status:node.querySelector('[data-site-update-status]').textContent
+    copy:JSON.parse(node.dataset.siteUpdateCopy),status:node.textContent
   }));
-  const field={unavailable:'unavailable',checking:'checking',installing:'installing',failed:'check_failed',offline:'status_offline',ready:'status_ready',current:'status_current'}[status];
-  assert.ok(value.status.startsWith(value.copy.status+': '),'Update status must use its localized label.');
+  const field={off:'mode_off',disable:'mode_disable',unavailable:'unavailable',checking:'checking',installing:'installing',failed:'check_failed',offline:'status_offline',ready:'status_ready',current:'status_current'}[status];
   assert.ok(value.copy[field]&&value.status.includes(value.copy[field]),'Update status must use its localized message.');
 }
 
