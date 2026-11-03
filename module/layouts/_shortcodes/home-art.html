@@ -1,5 +1,7 @@
 {{- if not .Page.IsHome -}}
   {{- errorf "Build failed: home-art is only supported on the homepage (%s)." .Position -}}
+{{- else if ne .Page.Layout "page-home" -}}
+  {{- errorf "Build failed: home-art requires homepage layout: page-home (%s)." .Position -}}
 {{- else if or .IsNamedParams (ne (len .Params) 1) -}}
   {{- errorf "Build failed: home-art requires one /_res/ page path (%s)." .Position -}}
 {{- else -}}

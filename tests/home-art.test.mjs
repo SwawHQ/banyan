@@ -252,6 +252,14 @@ test('Hugo preview rebuilds art params, body, scene, model and assets and clears
 });
 
 test('invalid entries and bundle resource declarations fail during build',()=>{
+  const wrongLayout=prepare('invalid-home-layout');
+  homes(wrongLayout,entry(wind));
+  const homepage=path.join(wrongLayout,'content/_index.md');
+  write(homepage,fs.readFileSync(homepage,'utf8').replace('layout: page-home','layout: page-article-norss'));
+  const layoutBuild=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',path.join(work,'invalid-home-layout-output')],
+    {cwd:wrongLayout,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000,windowsHide:true});
+  assert.ifError(layoutBuild.error);assert.notEqual(layoutBuild.status,0);
+  assert.match(layoutBuild.stdout+layoutBuild.stderr,/home-art requires homepage layout: page-home/);
   for(const [name,body] of [
     ['argument','{{< home-art >}}'],['relative',entry('_res/home-art/wind')],['outside',entry('/about/')],
     ['traversal',entry('/_res/home-art/../home-art/wind')],['missing',entry('/_res/home-art/missing')],

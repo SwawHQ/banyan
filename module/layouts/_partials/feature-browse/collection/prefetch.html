@@ -1,0 +1,8 @@
+{{- $column := index .columns_by_href .page.RelPermalink | default dict -}}
+{{- if not $column -}}
+  {{- $column = (partial "feature-browse/navigation/source/page-model.html" (dict "page" .page)).currentColumn -}}
+{{- end -}}
+<link rel="prefetch" href="{{ $column.payloadUrl }}">
+{{- if not .has_path_columns -}}
+<link rel="prefetch" as="script" href="{{ .runtime.RelPermalink }}">
+{{- end -}}

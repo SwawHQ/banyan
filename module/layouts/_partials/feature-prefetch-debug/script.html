@@ -1,0 +1,6 @@
+{{- range slice "controls" "support" "env" "actions" "runtime" "payload" -}}
+  {{- if gt (len (findRE (printf `\bid="prefetch-debug-%s"` .) $.Content 2)) 1 -}}
+    {{- errorf "Build failed: %s repeats prefetch-debug-%s." $.File.Path . -}}
+  {{- end -}}
+{{- end -}}
+{{- partial "system-assets/script.html" (dict "path" "js/prefetch/debug-page.js") -}}

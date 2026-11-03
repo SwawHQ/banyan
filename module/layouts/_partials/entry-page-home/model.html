@@ -1,0 +1,16 @@
+{{- /* Render the art before the head so its shortcode can register resources. */ -}}
+{{- if .HasShortcode "home-art" -}}{{- $content := .Content -}}{{- end -}}
+{{- $art := .Store.Get "homeArt" -}}
+{{- $assets := dict -}}
+{{- $showNavigation := true -}}
+{{- if isset .Params "show_navigation" -}}
+  {{- if ne (printf "%T" .Params.show_navigation) "bool" -}}
+    {{- errorf "Build failed: homepage %s params.show_navigation must be true or false." .File.Path -}}
+  {{- else -}}
+    {{- $showNavigation = .Params.show_navigation -}}
+  {{- end -}}
+{{- end -}}
+{{- with $art -}}
+  {{- $assets = partial "./assets.html" . -}}
+{{- end -}}
+{{- return (dict "art" $art "assets" $assets "show_navigation" $showNavigation) -}}

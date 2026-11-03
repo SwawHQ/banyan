@@ -633,6 +633,17 @@ try {
         await browser.close();
         await server.stop();
     }
+    // An unrendered translated page reaches icon validation only through the site audit.
+    const auditFile=path.join(overlay,'contract-icon-audit/index.zh-tw.md');
+    write(auditFile,'---\ntitle: Translated icon audit\nurl: contract-icon-audit/\nlayout: page-article-norss\nbuild: {render: never, list: always}\nparams:\n  icon: audit-zh-tw-missing\n---\n');
+    const auditResult=spawnSync(hugo,['--noBuildLock','--config',`hugo.toml,${rel(config)}`,'--destination',rel(path.join(work,'invalid-translated-icon'))],
+        {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true});
+    assert.ifError(auditResult.error);
+    assert.notEqual(auditResult.status,0,'A non-default language must still validate unrendered page icons.');
+    assert.match(auditResult.stdout+auditResult.stderr,/undefined icon "audit-zh-tw-missing"/);
+    fs.rmSync(auditFile);
+    console.log('PASS per-language icon audit includes unrendered translated pages');
+
     // Product metadata is optional; supplied versions and amounts must have usable types.
     const invalidFile = path.join(overlay, 'd/contract-priced/index.md');
     const validContent = fs.readFileSync(invalidFile, 'utf8');

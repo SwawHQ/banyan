@@ -1,19 +1,10 @@
 {{- partial "feature-browse/directory/assert-map-resources.html" . -}}
-{{- /* Resolve shortcode settings before emitting the head and navigation. */ -}}
-{{- if and .IsHome (.HasShortcode "home-art") -}}{{- $content := .Content -}}{{- end -}}
-{{- $homeArt := .Store.Get "homeArt" -}}
-{{- $homeAssets := dict -}}
-{{- $showHomeNavigation := true -}}
-{{- if and .IsHome (isset .Params "show_navigation") -}}
-  {{- if ne (printf "%T" .Params.show_navigation) "bool" -}}
-    {{- errorf "Build failed: homepage %s params.show_navigation must be true or false." .File.Path -}}
-  {{- else -}}
-    {{- $showHomeNavigation = .Params.show_navigation -}}
-  {{- end -}}
+{{- $home := dict "show_navigation" true -}}
+{{- if .IsHome -}}
+  {{- $home = partialCached "entry-page-home/model.html" . .RelPermalink -}}
 {{- end -}}
-{{- with $homeArt -}}
-  {{- $homeAssets = partial "entry-page-home/assets.html" . -}}
-{{- end -}}
+{{- $homeArt := $home.art -}}
+{{- $showHomeNavigation := $home.show_navigation -}}
 {{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
 {{- $pwaConfig := partial "system-delivery/pwa/config.html" (dict "ctx" . "delivery" $delivery) -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}
@@ -106,14 +97,10 @@
     <meta name="wap-font-scale" content="no">
     <link rel="canonical" href="{{ .Permalink }}">
     {{- if $hasSortableCollection -}}
-      {{- $column := index $collectionColumnsByHref .RelPermalink | default dict -}}
-      {{- if not $column -}}
-        {{- $column = (partial "feature-browse/navigation/source/page-model.html" (dict "page" .)).currentColumn -}}
-      {{- end -}}
-    <link rel="prefetch" href="{{ $column.payloadUrl }}">
-      {{- if not $hasPathColumns -}}
-    <link rel="prefetch" as="script" href="{{ $breadcrumbRuntime.RelPermalink }}">
-      {{- end -}}
+      {{- partial "feature-browse/collection/prefetch.html" (dict
+        "page" . "columns_by_href" $collectionColumnsByHref
+        "has_path_columns" $hasPathColumns "runtime" $breadcrumbRuntime
+      ) -}}
     {{- end -}}
     {{- with .Params.robots }}
     <meta name="robots" content="{{ . }}">
@@ -125,16 +112,8 @@
     <script>{{ $breadcrumbPendingInline | safeJS }}</script>
     {{- end }}
     {{- partial "system-ui/page-styles.html" . -}}
-    {{- with $homeArt -}}
-      {{- range $homeAssets.styles }}
-    <link rel="stylesheet" data-home-art="{{ $homeArt.Path }}" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
-      {{- end -}}
-      {{- range $.Store.Get "homeArtStyles" }}
-    <link rel="stylesheet" data-home-art="{{ $homeArt.Path }}" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
-      {{- end -}}
-    {{- end -}}
-    <script>{{ index $inlineScripts "canvas_position" | safeJS }}</script>
     {{- block "head-extra" . -}}{{- end -}}
+    <script>{{ index $inlineScripts "canvas_position" | safeJS }}</script>
     {{- hugo.Generator -}}
     {{- partial "system-metadata/seo/head.html" . -}}
     {{- /* 主站通用前端逻辑，defer 下载与执行，不阻塞 HTML 解析。 */ -}}
@@ -187,11 +166,6 @@
         </div>
     </div>
     {{- block "body-extra" . -}}{{- end -}}
-    {{- with $homeArt -}}
-      {{- range $homeAssets.scripts }}
-    <script data-home-art="{{ $homeArt.Path }}" src="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}" defer></script>
-      {{- end -}}
-    {{- end -}}
     {{- if or (.HasShortcode "site-update") (and $homeArt ($homeArt.HasShortcode "site-update")) -}}
       {{- partial "system-assets/script.html" (dict "path" "js/updates/page.js") -}}
     {{- end -}}
@@ -199,12 +173,7 @@
       {{- partial "system-assets/script.html" (dict "path" "js/pages/offline.js") -}}
     {{- end -}}
     {{- if $isPrefetchDebug -}}
-      {{- range slice "controls" "support" "env" "actions" "runtime" "payload" -}}
-        {{- if gt (len (findRE (printf `\bid="prefetch-debug-%s"` .) $.Content 2)) 1 -}}
-          {{- errorf "Build failed: %s repeats prefetch-debug-%s." $.File.Path . -}}
-        {{- end -}}
-      {{- end -}}
-      {{- partial "system-assets/script.html" (dict "path" "js/prefetch/debug-page.js") -}}
+      {{- partial "feature-prefetch-debug/script.html" . -}}
     {{- end -}}
     {{- if and (not $isOfflinePage) (or $prefetch.enabled $isPrefetchDebug) -}}
       {{- partial "system-delivery/prefetch/runtime/embed.html" (dict

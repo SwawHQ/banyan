@@ -115,6 +115,30 @@ test('visible read-only ancestors work and internal hidden trees need no path co
   try {passed(build());} finally {fs.rmSync(internal,{recursive:true,force:true});}
 });
 
+test('icon audit includes hidden articles in a language with only RSS and no 404 page',()=>{
+  const config=path.join(source,'hugo.toml'),home=content('_index.ar.md'),hidden=content('icon-audit/index.ar.md');
+  const valid='---\ntitle: Hidden Arabic article\nurl: p/icon-audit/\nlayout: page-article-norss\n'+
+    'build: {render: never, list: always}\nparams:\n  icon: home\n---\nHidden.\n';
+  write(config,'disableKinds=["404"]\n'+configuration+
+    '\n[languages.en]\nlabel="English"\nweight=1\n[languages.ar]\nlabel="العربية"\nweight=2\n');
+  write(home,'---\ntitle: Arabic home\ndescription: Icon audit fixture.\nlayout: page-home\noutputs: [RSS]\n---\nHome.\n');
+  write(hidden,valid);
+  try {
+    passed(build());
+    assert.ok(fs.existsSync(path.join(output,'index.html')));
+    assert.ok(fs.existsSync(path.join(output,'ar/index.xml')));
+    assert.equal(fs.existsSync(path.join(output,'ar/index.html')),false);
+    assert.equal(fs.existsSync(path.join(output,'ar/404.html')),false);
+    write(hidden,valid.replace('  icon: home','  icon: home\n  list_icon_file: product'));
+    const result=build();
+    assert.ifError(result.error);
+    assert.notEqual(result.status,0,'An RSS-only language must still validate hidden article icons.');
+    assert.match(result.stdout+result.stderr,/declares list_icon_file, which is only supported on list pages/);
+  } finally {
+    write(config,configuration);fs.rmSync(home);fs.rmSync(hidden);
+  }
+});
+
 test('preview rejects changing an article into a collection and recovers after restoring it',{timeout:60000},async()=>{
   const probe=net.createServer();
   await listenOnLoopback(probe);

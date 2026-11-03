@@ -1,3 +1,4 @@
+{{- /* A language with no HTML output never invokes baseof itself. */ -}}
 {{- range hugo.Sites -}}
   {{- range $page := .Pages -}}
     {{- $collection := partial "feature-browse/collection/config.html" (dict "page" $page) -}}

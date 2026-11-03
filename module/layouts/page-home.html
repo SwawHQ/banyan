@@ -1,3 +1,24 @@
+{{ define "head-extra" }}
+  {{- $home := partialCached "entry-page-home/model.html" . .RelPermalink -}}
+  {{- with $home.art -}}
+    {{- range $home.assets.styles }}
+<link rel="stylesheet" data-home-art="{{ $home.art.Path }}" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
+    {{- end -}}
+    {{- range $.Store.Get "homeArtStyles" }}
+<link rel="stylesheet" data-home-art="{{ $home.art.Path }}" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
+    {{- end -}}
+  {{- end -}}
+{{ end }}
+
 {{ define "main" }}
   {{ .Content }}
+{{ end }}
+
+{{ define "body-extra" }}
+  {{- $home := partialCached "entry-page-home/model.html" . .RelPermalink -}}
+  {{- with $home.art -}}
+    {{- range $home.assets.scripts }}
+<script data-home-art="{{ $home.art.Path }}" src="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}" defer></script>
+    {{- end -}}
+  {{- end -}}
 {{ end }}
