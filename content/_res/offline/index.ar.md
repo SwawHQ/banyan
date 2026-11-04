@@ -2,7 +2,7 @@
 date: "2026-03-17T00:00:00+08:00"
 title: غير متصل
 url: _res/offline/
-layout: page-article-norss
+layout: page-offline
 ---
 
 أنت غير متصل بالإنترنت حاليًا، ولم تُحفظ هذه الصفحة في ذاكرة التخزين المؤقت بعد.

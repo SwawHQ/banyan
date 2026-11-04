@@ -1,0 +1,17 @@
+{{- $page := .page -}}
+{{- $homeArt := .home_art -}}
+{{- if or ($page.HasShortcode "site-update") (and $homeArt ($homeArt.HasShortcode "site-update")) -}}
+  {{- partial "system-assets/script.html" (dict "path" "js/updates/page.js") -}}
+{{- end -}}
+{{- if or ($page.HasShortcode "page-actions") (and $homeArt ($homeArt.HasShortcode "page-actions")) -}}
+  {{- partial "system-assets/script.html" (dict "path" "js/pages/offline.js") -}}
+{{- end -}}
+{{- if .prefetch_debug -}}
+  {{- partial "feature-prefetch-debug/script.html" $page -}}
+{{- end -}}
+{{- if or .prefetch.enabled .prefetch_debug -}}
+  {{- partial "system-delivery/prefetch/runtime/embed.html" (dict
+    "config" .prefetch
+    "sw_mode" .sw_mode
+  ) -}}
+{{- end -}}

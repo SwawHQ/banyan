@@ -206,6 +206,7 @@ test('enabled workers require each published HTML offline page and accept site-o
     ['render-never','enable','never',false],
     ['render-link','enable','link',false],
     ['non-HTML','enable','rss',false],
+    ['ordinary-layout','enable','article',false],
     ['off-without-pages','off','absent',true],
     ['disable-without-pages','disable','absent',true],
     ['custom-URL','enable','custom',true],
@@ -221,21 +222,35 @@ test('enabled workers require each published HTML offline page and accept site-o
         const changed=suffix==='.zh';
         const fields=changed&&['never','link'].includes(variant)?'build: {render: '+variant+'}\n':
           variant==='unlisted'?'build: {list: never}\n':'';
-        fs.writeFileSync(file,'---\ntitle: Offline contract\nurl: '+pathname+'\nlayout: page-article-norss\noutputs: ['+
-          (changed&&variant==='rss'?'RSS':'HTML')+']\n'+fields+'---\nOffline fixture.\n');
+        fs.writeFileSync(file,'---\ntitle: Offline contract\nurl: '+pathname+'\nlayout: '+
+          (changed&&variant==='article'?'page-article-norss':'page-offline')+'\noutputs: ['+
+          (changed&&variant==='rss'?'RSS':'HTML')+']\n'+fields+'---\nOffline fixture.\n\n'+
+          '{{< icon "info" >}} {{< icon "info" >}}\n\n{{< page-actions "reload" >}}\n');
       }
     }
     const result=command(root,skill,['base/hugo','--minify','--noBuildLock']),log=result.stdout+result.stderr;
     if(!expected) {
       assert.notEqual(result.status,0,name+' must fail');
-      assert.match(log,/Service Worker requires a published HTML offline page for language/,name);
-      if(variant!=='absent')assert.match(log,/language "zh"/,name);
+      if(variant==='article')assert.match(log,/Service Worker offline page "\/zh\/_res\/offline\/" requires layout: page-offline/,name);
+      else {
+        assert.match(log,/Service Worker requires a published HTML offline page for language/,name);
+        if(variant!=='absent')assert.match(log,/language "zh"/,name);
+      }
     } else {
       assert.equal(result.status,0,name+'\n'+log);
       const output=path.join(root,'public');
       assert.equal(fs.existsSync(path.join(output,'sw.js')),mode!=='off',name);
-      if(mode==='enable')for(const prefix of ['','zh','zh-tw'])
-        assert.ok(fs.existsSync(path.join(output,prefix,pathname,'index.html')),name+' '+prefix);
+      if(mode==='enable')for(const prefix of ['','zh','zh-tw']) {
+        const file=path.join(output,prefix,pathname,'index.html');
+        assert.ok(fs.existsSync(file),name+' '+prefix);
+        const html=fs.readFileSync(file,'utf8');
+        assert.equal(extractStartTags(html,'use').filter(tag=>extractTagAttribute(tag,'href')==='#icon-info').length,2);
+        assert.equal(extractStartTags(html,'symbol').filter(tag=>extractTagAttribute(tag,'id')==='icon-info').length,1,
+          'Repeated body icons share one definition on standalone offline pages.');
+        const scripts=extractStartTags(html,'script').map(tag=>extractTagAttribute(tag,'src')).filter(Boolean);
+        assert.equal(scripts.length,1);assert.match(scripts[0],/\/js\/pages\/offline\.[^.]+\.js$/);
+        assert.equal(extractStartTags(html,'nav').length,0);
+      }
     }
   }
 });

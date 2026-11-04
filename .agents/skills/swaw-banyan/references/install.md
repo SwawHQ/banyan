@@ -395,8 +395,11 @@ Use `params.slots` to list enabled regions. The order does not change the layout
 and BlogPosting on regular article pages. Omit `params.slots` to inherit it;
 use `params.slots: []` to disable them.
 
-Powered by and offline pages use `page-article-norss`. The base template loads the
-required script once per page when it uses `site-update` or `page-actions`.
+Powered by uses `page-article-norss`. The base template loads the required script
+once per page when it uses `site-update` or `page-actions`.
+Offline pages use the standalone `page-offline` layout. It renders Markdown,
+theme styles and the `page-actions` retry script without navigation, SW management
+or prefetch scripts.
 
 Create `content/articles/sample/_index.md` for a nested directory. Its layouts come
 from the site's `articles` root:

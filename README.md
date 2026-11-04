@@ -41,6 +41,8 @@ matter. Put custom page fields under `params`, and inherited defaults under
 `cascade.params`.
 Use `page-article-rss` for RSS article items, and `page-article-norss` for other Markdown
 pages. The `meta` slot enables article metadata, chapters and BlogPosting.
+Use `page-offline` for offline fallback pages. This standalone layout keeps the
+Markdown content and retry action without navigation or SW management scripts.
 Collection layouts select their fields and behavior: `page-collection-directory-name-only`
 shows names, `page-collection-directory` shows directory metadata, and
 `page-collection-products` shows product values. The directory and product

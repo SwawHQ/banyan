@@ -6,6 +6,9 @@
   {{- range (.Store.Get "banyan.sitemap.pages") -}}
     {{- with $site.GetPage .Path -}}
       {{- if and (eq .RelPermalink $url) (partial "feature-browse/is-rendered-html.html" .) -}}
+        {{- if ne .Layout "page-offline" -}}
+          {{- errorf "Service Worker offline page %q requires layout: page-offline." $url -}}
+        {{- end -}}
         {{- $found = true -}}
         {{- break -}}
       {{- end -}}

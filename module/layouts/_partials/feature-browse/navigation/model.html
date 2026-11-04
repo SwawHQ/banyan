@@ -1,0 +1,42 @@
+{{- /* Keep this model uncached so ancestor dependencies and icons register on each page render. */ -}}
+{{- $slotFlags := partial "system-ui/page-slots.html" (dict "ctx" .) -}}
+{{- $hasBreadcrumbCapability := eq (index $slotFlags "breadcrumb") true -}}
+{{- $collectionConfig := partial "feature-browse/collection/config.html" (dict "page" .) -}}
+{{- /* Unlisted pages are absent from the global audit but still render here. */ -}}
+{{- partialCached "feature-browse/collection/assert-url.html" . .Site.Language.Lang .Path -}}
+{{- partialCached "./assert-structure.html" . .Site.Language.Lang .Path -}}
+{{- $hasSortableCollection := $collectionConfig.sortable -}}
+{{- /* Root selection consumes the same valid sources even when path columns are hidden. */ -}}
+{{- $navigationSources := partial "./source/context.html" (dict "ctx" .) -}}
+{{- $pageCollectionSource := index $navigationSources "page_collection_source" -}}
+{{- $browserNavigationSources := index $navigationSources "browser_sources" -}}
+{{- $collectionColumnsByHref := index $navigationSources "columns_by_href" -}}
+{{- $breadcrumbModel := dict -}}
+{{- $pathColumns := slice -}}
+{{- if $hasBreadcrumbCapability -}}
+  {{- $breadcrumbModel = partial "./path/model.html" (dict "ctx" .) -}}
+  {{- $pathColumns = partial "./path/columns.html" (dict "model" $breadcrumbModel "columns_by_href" $collectionColumnsByHref) -}}
+{{- end -}}
+{{- $browserNavigationData := partial "./source/pack.html" (dict
+  "ctx" . "has_breadcrumb" $hasBreadcrumbCapability "page_collection_source" $pageCollectionSource
+  "sources" $browserNavigationSources "default_columns" $pathColumns
+) -}}
+{{- $hasPathColumns := and $hasBreadcrumbCapability (gt (len $browserNavigationData.columns) 0) -}}
+{{- $breadcrumbRuntime := dict -}}
+{{- if or $hasPathColumns $hasSortableCollection -}}
+  {{- $breadcrumbRuntime = resources.Get "js/browse/path-entry.js" | js.Build (dict "minify" (not hugo.IsServer)) | fingerprint -}}
+{{- end -}}
+{{- if $hasPathColumns -}}
+  {{- partial "./source/register-icons.html" (dict "page" . "sources" $browserNavigationSources "default_columns" $pathColumns) -}}
+{{- end -}}
+{{- return (dict
+  "has_breadcrumb" $hasBreadcrumbCapability
+  "sortable" $hasSortableCollection
+  "has_path_columns" $hasPathColumns
+  "data" $browserNavigationData
+  "page_source" $pageCollectionSource
+  "has_sources" (gt (len $browserNavigationSources) 0)
+  "columns_by_href" $collectionColumnsByHref
+  "path_model" $breadcrumbModel
+  "runtime" $breadcrumbRuntime
+) -}}

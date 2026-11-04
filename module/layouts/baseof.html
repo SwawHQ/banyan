@@ -1,3 +1,6 @@
+{{- if and .IsPage (eq (trim (printf "%v" (.Params.url | default "")) " \r\n\t") "") -}}
+  {{- errorf "Build failed: page %q (title: %q) requires a non-empty url field, for example url: p/article-name/." .File.Path .Title -}}
+{{- end -}}
 {{- partial "feature-browse/directory/assert-map-resources.html" . -}}
 {{- $home := dict "show_navigation" true -}}
 {{- if .IsHome -}}
@@ -6,101 +9,48 @@
 {{- $homeArt := $home.art -}}
 {{- $showHomeNavigation := $home.show_navigation -}}
 {{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
-{{- $pwaConfig := partial "system-delivery/pwa/config.html" (dict "ctx" . "delivery" $delivery) -}}
+{{- $pwaConfig := partialCached "system-delivery/pwa/config.html" (dict "delivery" $delivery) "pwa" ($delivery.sw | jsonify) -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}
-{{- $contentCheckIntervalMs := index $pwaConfig "content_check_interval_ms" -}}
-{{- $offlineFallbacks := index $pwaConfig "offline_fallbacks" -}}
-{{- $defaultOfflineFallback := index $pwaConfig "default_offline_fallback" -}}
-{{- $isOfflinePage := index $pwaConfig "is_offline_page" -}}
 {{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" $delivery) "prefetch" -}}
 {{- $isPrefetchDebug := or (.HasShortcode "prefetch-debug-controls") (and $homeArt ($homeArt.HasShortcode "prefetch-debug-controls")) -}}
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
 {{- partialCached "entry-baseof/audit-column-urls.html" .Site .Site.Language.Lang -}}
 {{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
-{{- $buildVersion := partial "system-build/version.html" $primarySite.Home -}}
-{{- $swRoutes := $delivery.sw_routes -}}
 {{- $inlineScripts := partialCached "entry-baseof/inline-scripts.html" site (printf "runtime-inline-scripts:%t" hugo.IsServer) -}}
 {{- $themeBootInline := index $inlineScripts "theme_boot" | default "" -}}
 {{- $breadcrumbPendingInline := index $inlineScripts "breadcrumb_pending" | default "" -}}
 {{- $navigationStartupInline := index $inlineScripts "navigation_startup" | default "" -}}
-{{- $slotFlags := partial "system-ui/page-slots.html" (dict "ctx" .) -}}
-{{- $hasBreadcrumbCapability := eq (index $slotFlags "breadcrumb") true -}}
-{{- $collectionConfig := partial "feature-browse/collection/config.html" (dict "page" .) -}}
-{{- /* Unlisted pages are absent from the global audit but still render here. */ -}}
-{{- partialCached "feature-browse/collection/assert-url.html" . .Site.Language.Lang .Path -}}
-{{- partialCached "feature-browse/navigation/assert-structure.html" . .Site.Language.Lang .Path -}}
-{{- $hasSortableCollection := $collectionConfig.sortable -}}
-{{- /* Root selection consumes the same valid sources even when path columns are hidden. */ -}}
-{{- $navigationSources := partial "feature-browse/navigation/source/context.html" (dict "ctx" .) -}}
-{{- $pageCollectionSource := index $navigationSources "page_collection_source" -}}
-{{- $browserNavigationSources := index $navigationSources "browser_sources" -}}
-{{- $collectionColumnsByHref := index $navigationSources "columns_by_href" -}}
-{{- $breadcrumbModel := dict -}}
-{{- $pathColumns := slice -}}
-{{- if $hasBreadcrumbCapability -}}
-  {{- $breadcrumbModel = partial "feature-browse/navigation/path/model.html" (dict "ctx" .) -}}
-  {{- $pathColumns = partial "feature-browse/navigation/path/columns.html" (dict "model" $breadcrumbModel "columns_by_href" $collectionColumnsByHref) -}}
-{{- end -}}
-{{- $browserNavigationData := partial "feature-browse/navigation/source/pack.html" (dict
-  "ctx" . "has_breadcrumb" $hasBreadcrumbCapability "page_collection_source" $pageCollectionSource
-  "sources" $browserNavigationSources "default_columns" $pathColumns
-) -}}
-{{- $hasPathColumns := and $hasBreadcrumbCapability (gt (len $browserNavigationData.columns) 0) -}}
-{{- $breadcrumbRuntime := dict -}}
-{{- if or $hasPathColumns $hasSortableCollection -}}
-  {{- $breadcrumbRuntime = resources.Get "js/browse/path-entry.js" | js.Build (dict "minify" (not hugo.IsServer)) | fingerprint -}}
-{{- end -}}
-{{- if $hasPathColumns -}}
-  {{- partial "feature-browse/navigation/source/register-icons.html" (dict "page" . "sources" $browserNavigationSources "default_columns" $pathColumns) -}}
-{{- end -}}
-{{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
-    {{- partial "system-delivery/deployment/publish.html" (dict
-      "routes" $delivery.routes
-      "redirects" $delivery.redirects
-      "delivery" $delivery
-      "inline_scripts" $inlineScripts
-    ) -}}
+{{- $navigation := partial "feature-browse/navigation/model.html" . -}}
+{{- /* Any primary-language page can schedule publication when the homepage uses a standalone layout. */ -}}
+{{- if and $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
+  {{- $deploymentData := dict
+    "routes" $delivery.routes
+    "redirects" $delivery.redirects
+    "delivery" $delivery
+    "inline_scripts" $inlineScripts
+  -}}
+  {{- with (templates.Defer (dict "key" "banyan.deployment" "data" $deploymentData)) -}}
+    {{- partial "system-delivery/deployment/publish.html" . -}}
+  {{- end -}}
 {{- end -}}
 <!DOCTYPE html>
 <html lang="{{ .Site.Language.Lang }}" dir="{{ .Site.Language.Direction | default "ltr" }}"
     {{- if .Sitemap.Disable }} data-sitemap-disabled="true"{{ end }}
-    {{- if $hasBreadcrumbCapability }}
-    data-has-breadcrumb-columns="{{ $hasPathColumns }}"
+    {{- if $navigation.has_breadcrumb }}
+    data-has-breadcrumb-columns="{{ $navigation.has_path_columns }}"
     {{- end }}>
 
 <head>
-    {{- $favicon := partialCached "system-delivery/pwa/favicon.html" . "pwa:favicon" -}}
-    {{- $appleTouchIcon := resources.Get "site/icon-180.png" -}}
-    {{- if not $appleTouchIcon -}}
-{{- errorf "Build failed: missing resource %q." "site/icon-180.png" -}}
-    {{- else -}}
-        {{- $appleTouchIcon = $appleTouchIcon | fingerprint -}}
-    {{- end -}}
-    {{- $manifest := "" -}}
-    {{- $manifestTmpl := resources.Get "site/manifest.webmanifest.tmpl" -}}
-    {{- if $manifestTmpl -}}
-        {{- $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/site.webmanifest" $primarySite.Home | fingerprint -}}
-    {{- else -}}
-{{- errorf "Build failed: missing resource %q." "site/manifest.webmanifest.tmpl" -}}
-    {{- end -}}
     <meta charset="utf-8">
-    {{- with $favicon }}
-    <link rel="icon" href="{{ .RelPermalink }}" type="{{ .MediaType.Type }}"{{ if eq .MediaType.Type "image/svg+xml" }} sizes="any"{{ end }} fetchpriority="low">
-    {{- end }}
-    {{- with $appleTouchIcon }}
-    <link rel="apple-touch-icon" href="{{ .RelPermalink }}" fetchpriority="low">
-    {{- end }}
-    {{- with $manifest }}
-    <link rel="manifest" href="{{ .RelPermalink }}">
-    {{- end }}
+    {{- partial "system-delivery/pwa/head.html" $primarySite.Home -}}
     <title>{{ partial "system-metadata/seo/browser-title.html" . }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">
     <link rel="canonical" href="{{ .Permalink }}">
-    {{- if $hasSortableCollection -}}
+    {{- if $navigation.sortable -}}
       {{- partial "feature-browse/collection/prefetch.html" (dict
-        "page" . "columns_by_href" $collectionColumnsByHref
-        "has_path_columns" $hasPathColumns "runtime" $breadcrumbRuntime
+        "page" . "columns_by_href" $navigation.columns_by_href
+        "has_path_columns" $navigation.has_path_columns "runtime" $navigation.runtime
       ) -}}
     {{- end -}}
     {{- with .Params.robots }}
@@ -109,7 +59,7 @@
     {{/* 首屏同步主题，避免浅色与深色切换时闪烁。 */}}
     <script>{{ $themeBootInline | safeJS }}</script>
     {{/* Mark path loading before parsing the page. */}}
-    {{- if $hasPathColumns }}
+    {{- if $navigation.has_path_columns }}
     <script>{{ $breadcrumbPendingInline | safeJS }}</script>
     {{- end }}
     {{- partial "system-ui/page-styles.html" . -}}
@@ -121,45 +71,37 @@
     {{- $js := resources.Get "js/main.js" | js.Build (dict "minify" (not hugo.IsServer)) -}}
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
-    {{- if $hasPathColumns -}}
-    <script src="{{ $breadcrumbRuntime.RelPermalink }}" integrity="{{ $breadcrumbRuntime.Data.Integrity }}" defer></script>
+    {{- if $navigation.has_path_columns -}}
+    <script src="{{ $navigation.runtime.RelPermalink }}" integrity="{{ $navigation.runtime.Data.Integrity }}" defer></script>
     {{- end -}}
     {{- partial "system-delivery/pwa/service-worker.html" (dict
-      "sw_mode" $swMode
-      "build_version" $buildVersion
-      "content_check_interval_ms" $contentCheckIntervalMs
-      "offline_fallbacks" $offlineFallbacks
-      "default_offline_fallback" $defaultOfflineFallback
-      "sw_routes" $swRoutes
-      "is_offline_page" $isOfflinePage
+      "config" $pwaConfig
+      "sw_routes" $delivery.sw_routes
     ) -}}
 </head>
-<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }} data-language-return-missing="{{ i18n "language_return_missing" }}" data-navigation="{{ $browserNavigationData | jsonify }}"{{ with $pageCollectionSource.logicalPath }} data-collection-path="{{ . }}"{{ end }}{{ if or $hasPathColumns $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
-    {{- if and .IsPage (eq (trim (printf "%v" (.Params.url | default "")) " \r\n\t") "") -}}
-{{- errorf "Build failed: page %q (title: %q) requires a non-empty url field, for example url: p/article-name/." .File.Path .Title -}}
-    {{- end -}}
+<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }} data-language-return-missing="{{ i18n "language_return_missing" }}" data-navigation="{{ $navigation.data | jsonify }}"{{ with $navigation.page_source.logicalPath }} data-collection-path="{{ . }}"{{ end }}{{ if or $navigation.has_path_columns $navigation.sortable }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
     <div class="page">
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         <div class="page-shell">
             {{- if $showHomeNavigation -}}
             <div class="page-column page-rail">
                 {{- partial "feature-browse/navigation/root/render.html" . -}}
-                {{- if and (not $hasPathColumns) (gt (len $browserNavigationSources) 0) -}}
+                {{- if and (not $navigation.has_path_columns) $navigation.has_sources -}}
                 <script>{{ index $inlineScripts "root_navigation" | safeJS }}</script>
                 {{- end -}}
             </div>
             {{- end -}}
-            {{- if $hasPathColumns -}}
+            {{- if $navigation.has_path_columns -}}
             <nav class="slot path-navigation" data-slot="breadcrumb" aria-label="Breadcrumb" aria-hidden="true"></nav>
             {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
             <script>{{ $navigationStartupInline | safeJS }}</script>
             {{- end -}}
             <div class="reading-group">
                 <div class="page-column page-content">
-                <main id="main" class="slot slot-main{{ if $hasSortableCollection }} slot-main--collection{{ end }}" data-slot="main" tabindex="-1">
+                <main id="main" class="slot slot-main{{ if $navigation.sortable }} slot-main--collection{{ end }}" data-slot="main" tabindex="-1">
                     {{- block "main" . -}}{{- end -}}
-                    {{- if $hasBreadcrumbCapability -}}
-                      {{- partial "system-metadata/seo/breadcrumb.html" (dict "ctx" $ "model" $breadcrumbModel) -}}
+                    {{- if $navigation.has_breadcrumb -}}
+                      {{- partial "system-metadata/seo/breadcrumb.html" (dict "ctx" $ "model" $navigation.path_model) -}}
                     {{- end -}}
                 </main>
                 </div>
@@ -168,21 +110,13 @@
         </div>
     </div>
     {{- block "body-extra" . -}}{{- end -}}
-    {{- if or (.HasShortcode "site-update") (and $homeArt ($homeArt.HasShortcode "site-update")) -}}
-      {{- partial "system-assets/script.html" (dict "path" "js/updates/page.js") -}}
-    {{- end -}}
-    {{- if or (.HasShortcode "page-actions") (and $homeArt ($homeArt.HasShortcode "page-actions")) -}}
-      {{- partial "system-assets/script.html" (dict "path" "js/pages/offline.js") -}}
-    {{- end -}}
-    {{- if $isPrefetchDebug -}}
-      {{- partial "feature-prefetch-debug/script.html" . -}}
-    {{- end -}}
-    {{- if and (not $isOfflinePage) (or $prefetch.enabled $isPrefetchDebug) -}}
-      {{- partial "system-delivery/prefetch/runtime/embed.html" (dict
-        "config" $prefetch
-        "sw_mode" $swMode
-      ) -}}
-    {{- end -}}
+    {{- partial "entry-baseof/body-scripts.html" (dict
+      "page" .
+      "home_art" $homeArt
+      "prefetch" $prefetch
+      "prefetch_debug" $isPrefetchDebug
+      "sw_mode" $swMode
+    ) -}}
     {{- partial "system-ui/icon/sprite.html" . -}}
 </body>
 

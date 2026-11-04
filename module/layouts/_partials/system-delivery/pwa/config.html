@@ -1,4 +1,3 @@
-{{- $ctx := .ctx | default . -}}
 {{- $swConfig := .delivery.sw -}}
 {{- range $key := slice "mode" "content_check_interval" "offline_notice_path" -}}
   {{- if not (isset $swConfig $key) -}}{{- errorf "Build failed: delivery.sw requires %s." $key -}}{{- end -}}
@@ -21,11 +20,9 @@
   {{- errorf "Build failed: delivery.sw.offline_notice_path cannot be empty." -}}
 {{- end -}}
 
-{{- $offlineRelPermalinks := slice -}}
 {{- $offlineFallbacks := slice -}}
 {{- range sort hugo.Sites "Language.Weight" -}}
   {{- $offlineRelPermalink := printf "%s%s/" .Home.RelPermalink $offlinePath -}}
-  {{- $offlineRelPermalinks = $offlineRelPermalinks | append (lower $offlineRelPermalink) -}}
   {{- $offlineFallbacks = $offlineFallbacks | append (dict
     "path_prefix" (printf "%v" .Home.RelPermalink)
     "url" $offlineRelPermalink
@@ -37,5 +34,4 @@
   "content_check_interval_ms" (mul $contentCheckInterval 60000)
   "offline_fallbacks" $offlineFallbacks
   "default_offline_fallback" (printf "%s%s/" hugo.Sites.Default.Home.RelPermalink $offlinePath)
-  "is_offline_page" (in $offlineRelPermalinks (lower $ctx.RelPermalink))
 ) -}}

@@ -1,0 +1,40 @@
+{{- /* Standalone HTML keeps the offline fallback outside the navigation and SW runtime. */ -}}
+{{- if eq (trim (printf "%v" (.Params.url | default "")) " \r\n\t") "" -}}
+  {{- errorf "Build failed: page %q (title: %q) requires a non-empty url field, for example url: _res/offline/." .File.Path .Title -}}
+{{- end -}}
+{{- $inlineScripts := partialCached "entry-baseof/inline-scripts.html" site (printf "runtime-inline-scripts:%t" hugo.IsServer) -}}
+<!DOCTYPE html>
+<html lang="{{ .Site.Language.Lang }}" dir="{{ .Site.Language.Direction | default "ltr" }}"{{ if .Sitemap.Disable }} data-sitemap-disabled="true"{{ end }}>
+<head>
+    <meta charset="utf-8">
+    <title>{{ partial "system-metadata/seo/browser-title.html" . }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="wap-font-scale" content="no">
+    <link rel="canonical" href="{{ .Permalink }}">
+    {{- with .Params.robots }}
+    <meta name="robots" content="{{ . }}">
+    {{- end }}
+    {{- with partialCached "system-delivery/pwa/favicon.html" . "pwa:favicon" }}
+    <link rel="icon" href="{{ .RelPermalink }}" type="{{ .MediaType.Type }}"{{ if eq .MediaType.Type "image/svg+xml" }} sizes="any"{{ end }} fetchpriority="low">
+    {{- end }}
+    <script>{{ index $inlineScripts "theme_boot" | safeJS }}</script>
+    {{- partial "system-ui/page-styles.html" . -}}
+    {{- partial "feature-document/styles.html" . -}}
+    {{- partial "system-metadata/seo/head.html" . -}}
+</head>
+<body>
+    <div class="page">
+        <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
+        <div class="page-column page-content">
+            <main id="main" class="slot slot-main" data-slot="main" tabindex="-1">
+                {{- partial "feature-document/render-page.html" . -}}
+            </main>
+        </div>
+    </div>
+    {{- if .HasShortcode "page-actions" -}}
+      {{- partial "system-assets/script.html" (dict "path" "js/pages/offline.js") -}}
+    {{- end -}}
+    {{- partial "system-ui/icon/sprite.html" . -}}
+</body>
+</html>
+{{- .Site.Store.SetInMap "banyan.sitemap.pages" .Path . -}}

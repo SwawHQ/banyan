@@ -31,13 +31,19 @@ before(()=>{
 });
 after(()=>{if(work){assert.equal(path.basename(path.dirname(fs.realpathSync(work))),'reference-site-tests');fs.rmSync(work,{recursive:true,force:true});}});
 
-test('functional articles keep their shortcode scripts without article metadata, chapters or BlogPosting',async()=>{
+test('functional pages keep their shortcode scripts without article metadata, chapters or BlogPosting',async()=>{
   assert.deepEqual((await inspectScripts(output)).issues,[]);
   for(const prefix of prefixes)for(const [route,family] of [['powered-by','updates/page'],['_res/offline','pages/offline']]) {
     const html=fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');
     const scripts=extractStartTags(html,'script').map(tag=>extractTagAttribute(tag,'src')||'');
     assert.equal(scripts.filter(src=>src.includes('/js/'+family+'.')).length,1,prefix+route+' loads its controller once.');
     assert.doesNotMatch(html,/document-meta|document-toc|document-aside-toggle|"@type"\s*:\s*"BlogPosting"/);
+    if(route==='_res/offline') {
+      assert.deepEqual(scripts.filter(Boolean),scripts.filter(src=>src.includes('/js/pages/offline.')),
+        'The standalone offline layout loads only its retry controller.');
+      assert.doesNotMatch(html,/\bdata-navigation=|\bdata-prefetch|site-prefetch|speculationrules/);
+      assert.equal(extractBlocks(html,'nav').length,0,'The offline layout has no navigation columns.');
+    }
   }
 });
 

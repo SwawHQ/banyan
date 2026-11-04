@@ -1,0 +1,76 @@
+{{- $swMode := .config.sw_mode -}}
+{{- $swManager := "" -}}
+{{- $files := dict -}}
+{{- if ne $swMode "off" -}}
+  {{- if eq $swMode "enable" -}}
+    {{- $buildVersion := partial "system-build/version.html" site -}}
+    {{- $files = dict "sw-policy.json" (.sw_routes | jsonify) "sw-version.json" ($buildVersion | jsonify) -}}
+    {{- $swScriptTemplatePath := "js/pwa/worker-enable.js.tmpl" -}}
+    {{- $swScriptTemplate := resources.Get $swScriptTemplatePath -}}
+    {{- if not $swScriptTemplate -}}
+      {{- errorf "Build failed: missing resource %q." $swScriptTemplatePath -}}
+    {{- else -}}
+      {{- $swScriptContext := dict
+        "content_check_interval_ms" .config.content_check_interval_ms
+        "version_url" ("sw-version.json" | relURL)
+        "offline_fallbacks" .config.offline_fallbacks
+        "default_offline_fallback" .config.default_offline_fallback
+        "sw_routes" .sw_routes
+      -}}
+      {{- /* ExecuteAsTemplate caches by target path, so include the configuration in that path. */ -}}
+      {{- $swEntryPath := printf "js/sw.enable.%s.entry.js" (sha256 ($swScriptContext | jsonify)) -}}
+      {{- $swScriptEntry := $swScriptTemplate | resources.ExecuteAsTemplate $swEntryPath $swScriptContext -}}
+      {{- $swScript := $swScriptEntry | js.Build (dict
+        "targetPath" "sw.js"
+        "minify" (not hugo.IsServer)
+      ) -}}
+      {{- $swProgram := $swScript.Content -}}
+      {{- $files = merge $files (dict "sw.js" (replace $swProgram "__BANYAN_SW_PROGRAM_HASH__" (sha256 $swProgram))) -}}
+    {{- end -}}
+    {{- $swManagerEntryPath := "js/pwa/manager-entry.js.tmpl" -}}
+    {{- $swManagerEntryTemplate := resources.Get $swManagerEntryPath -}}
+    {{- if not $swManagerEntryTemplate -}}
+      {{- errorf "Build failed: missing resource %q." $swManagerEntryPath -}}
+    {{- else -}}
+      {{- $swManagerEntryCtx := dict "sw_url" ("sw.js" | relURL) -}}
+      {{- $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" $swManagerEntryCtx -}}
+      {{- $swManagerTargetPath := cond hugo.IsServer "js/sw-manager.enable.bundle.js" "js/sw-manager.enable.bundle.min.js" -}}
+      {{- $swManagerBuilt := $swManagerEntry | js.Build (dict
+        "targetPath" $swManagerTargetPath
+        "minify" (not hugo.IsServer)
+      ) -}}
+      {{- $swManager = $swManagerBuilt | fingerprint -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $swScriptPath := "js/pwa/worker-disable.js" -}}
+    {{- $swScriptSource := resources.Get $swScriptPath -}}
+    {{- if not $swScriptSource -}}
+      {{- errorf "Build failed: missing resource %q." $swScriptPath -}}
+    {{- else -}}
+      {{- $swScript := $swScriptSource | js.Build (dict
+        "targetPath" "sw.js"
+        "minify" (not hugo.IsServer)
+      ) -}}
+      {{- $files = dict "sw.js" $swScript.Content -}}
+    {{- end -}}
+    {{- $swManagerPath := "js/pwa/manager-disable.js" -}}
+    {{- $swManagerSource := resources.Get $swManagerPath -}}
+    {{- if not $swManagerSource -}}
+      {{- errorf "Build failed: missing resource %q." $swManagerPath -}}
+    {{- else -}}
+      {{- $swManagerTargetPath := cond hugo.IsServer "js/sw-manager.disable.bundle.js" "js/sw-manager.disable.bundle.min.js" -}}
+      {{- $swManagerBuilt := $swManagerSource | js.Build (dict
+        "targetPath" $swManagerTargetPath
+        "minify" (not hugo.IsServer)
+      ) -}}
+      {{- $swManager = $swManagerBuilt | fingerprint -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- /* Transformed resources republish when preview edits restore earlier content at the same path. */ -}}
+{{- range $filename, $body := $files -}}
+  {{- $source := resources.FromString (printf "__pwa/%s.%s.tmpl" $filename (sha256 $body)) "{{ . }}" -}}
+  {{- $result := resources.ExecuteAsTemplate $filename $body $source -}}
+  {{- $published := $result.RelPermalink -}}
+{{- end -}}
+{{- return $swManager -}}

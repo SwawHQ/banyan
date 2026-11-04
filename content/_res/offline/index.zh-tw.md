@@ -2,7 +2,7 @@
 date: "2026-03-17T00:00:00+08:00"
 title: "離線瀏覽"
 url: _res/offline/ #須與 assets/site/delivery.toml 的 sw.offline_notice_path 一致。
-layout: page-article-norss #顯示 Markdown 正文；page-actions 啟用離線重試。
+layout: page-offline
 ---
 
 你目前似乎處於離線狀態，而這個頁面還沒有被快取。

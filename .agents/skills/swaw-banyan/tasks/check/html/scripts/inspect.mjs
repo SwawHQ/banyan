@@ -1,5 +1,5 @@
 import {readPages,pageState,publishedURL} from '../../../_shared/html/read.mjs';
-import {extractExternalScriptSrcs} from '../../../_shared/html/markup.mjs';
+import {extractExternalScriptSrcs,extractStartTags} from '../../../_shared/html/markup.mjs';
 import {localReference,insideOutput,isFile,readOptional} from '../../../_shared/output.mjs';
 import {inspectDocumentControls} from './controls.mjs';
 
@@ -12,8 +12,10 @@ export async function inspect(directory) {
   const {root,pages} = await readPages(directory), siteURL = await publishedURL(root), issues = [], common = new Set();
   for (const page of pages.map(pageState)) {
     const references = extractExternalScriptSrcs(page.text);
-    if (!page.isRedirect && !references.some(ref => /\/js\/main(?:\.min)?\.[^"' >]+/.test(ref))) {
-      issues.push('Missing main JS bundle on non-redirect page: ' + page.relativePath);
+    if (!page.isRedirect) {
+      const expected=extractStartTags(page.text,'body').some(tag=>hasMarker(tag,'navigation'))?1:0;
+      const count=references.filter(ref=>belongsTo(ref,'main')).length;
+      if(count!==expected)issues.push(`Navigation controller main: expected ${expected}, found ${count} on ${page.relativePath}`);
     }
     const assets=[];
     for (const ref of new Set(references)) {

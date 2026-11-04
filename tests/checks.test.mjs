@@ -81,7 +81,7 @@ before(async () => {
   fs.cpSync(path.join(source,'node_modules'),path.join(skill,'node_modules'),{recursive:true});
   fixturePairing(site);
   write(site,'content/_index.md','---\ntitle: Home\nparams: {share_image: false}\n---\n');
-  write(site,'public/index.html','<html lang=en><head><title>Home</title><meta name=description content="Home description"><link rel=canonical href="https://example.test/"></head><body><h1>Home</h1><script src="/js/main.0123456789abcdef.js"></script></body></html>');
+  write(site,'public/index.html','<html lang=en><head><title>Home</title><meta name=description content="Home description"><link rel=canonical href="https://example.test/"></head><body data-navigation=\'{"columns":{},"home":"/","resources":"","default":""}\'><h1>Home</h1><script src="/js/main.0123456789abcdef.js"></script></body></html>');
   write(site,'public/js/main.0123456789abcdef.js','void 0;');
   write(site,'public/robots.txt','User-agent: *\nSitemap: https://example.test/sitemap.xml');
   write(site,'public/sitemap.xml','<urlset><url><loc>https://example.test/</loc></url></urlset>');
@@ -370,7 +370,7 @@ test('sitemap checks cross-file indexing and robots validates declared Sitemap U
 });
 test('breadcrumb and prefetch payload checks keep parsing failures and runtime pairing separate',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
-  const breadcrumb = output('bad breadcrumb',html.replace('<body>','<body data-navigation="{"><nav data-slot=breadcrumb><a href=/other/>Other</a></nav>'));
+  const breadcrumb = output('bad breadcrumb',html.replace(/<body\b[^>]*>/,'<body data-navigation="{"><nav data-slot=breadcrumb><a href=/other/>Other</a></nav>'));
   checked('check/html/breadcrumb',breadcrumb,/Invalid breadcrumb payload/);
   assert.equal(cli('check/prefetch/payload',[breadcrumb]).status,0);
   const prefetch = output('bad prefetch',html.replace('</body>','<script type=application/json id=site-prefetch-data>{broken}</script></body>'));
