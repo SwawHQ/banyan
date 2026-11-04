@@ -21,11 +21,12 @@
 {{- if not $hasGlobal -}}
   {{- $headerRoutes = (slice (dict "path" "/*" "http" (dict "headers" $generatedHeaders))) | append $headerRoutes -}}
 {{- end -}}
+{{- $files := dict -}}
 {{- if eq $platform.cloudflare.pages.enabled true -}}
-  {{- $headersBody := partial "./cloudflare-headers.txt" (dict "routes" $headerRoutes) -}}
-  {{- $publishHeaders := resources.FromString "_headers" $headersBody | resources.Publish -}}
-  {{- $redirectsBody := partial "./cloudflare-redirects.txt" (dict "redirects" $redirects) -}}
-  {{- $publishRedirects := resources.FromString "_redirects" $redirectsBody | resources.Publish -}}
+  {{- $files = merge $files (dict
+    "_headers" (partial "./cloudflare-headers.txt" (dict "routes" $headerRoutes))
+    "_redirects" (partial "./cloudflare-redirects.txt" (dict "redirects" $redirects))
+  ) -}}
 {{- end -}}
 {{- if eq $platform.edgeone.makers.enabled true -}}
 {{- $edgeoneConfig := partial "./edgeone-config.html" (dict
@@ -33,5 +34,11 @@
   "routes" $headerRoutes
   "redirects" $redirects
 ) -}}
-{{- $publishEdgeone := resources.FromString "edgeone.json" ($edgeoneConfig | jsonify (dict "indent" "  ")) | resources.Publish -}}
+{{- $files = merge $files (dict "edgeone.json" ($edgeoneConfig | jsonify (dict "indent" "  "))) -}}
+{{- end -}}
+{{- /* Transformed resources republish when preview edits restore earlier content at the same path. */ -}}
+{{- range $filename, $body := $files -}}
+  {{- $source := resources.FromString (printf "__deployment/%s.%s.tmpl" $filename (sha256 $body)) "{{ . }}" -}}
+  {{- $result := resources.ExecuteAsTemplate $filename $body $source -}}
+  {{- $published := $result.RelPermalink -}}
 {{- end -}}

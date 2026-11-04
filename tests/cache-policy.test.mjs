@@ -314,6 +314,20 @@ test('delivery redirects share platform output and reject invalid declarations',
   }
 });
 
+test('shared deployment files are published when the primary homepage uses a standalone layout',()=>{
+  const policy='[[redirects]]\nsource = "/previous/"\ndestination = "/current/"\nstatus = 301\n';
+  const baseline=passed(build('deployment-home-baseline',policy)),layouts=path.join(work,'deployment-home-layouts');
+  write(path.join(layouts,'page-home.en.html'),
+    '<!DOCTYPE html><html lang="en"><head><title>Standalone home</title></head><body data-standalone-deployment-home><a href="{{ .RelPermalink }}">Home</a></body></html>');
+  const config='\n[[module.mounts]]\nsource = '+JSON.stringify(layouts.replaceAll('\\','/'))+'\ntarget = "layouts"\n';
+  const output=passed(build('deployment-home-standalone',policy,config));
+  const html=fs.readFileSync(path.join(output,'index.html'),'utf8');
+  assert.match(html,/\bdata-standalone-deployment-home\b/);
+  assert.equal(extractTagAttribute(extractBlocks(html,'a')[0].open,'href'),'/');
+  for(const file of ['_headers','_redirects','edgeone.json'])
+    assert.deepEqual(fs.readFileSync(path.join(output,file)),fs.readFileSync(path.join(baseline,file)),file);
+});
+
 test('platform switches publish only their enabled artifacts and do not inherit omitted platforms',()=>{
   for(const cloudflare of [false,true])for(const edgeone of [false,true]) {
     const policy='[platform.cloudflare.pages]\nenabled = '+cloudflare+'\n[platform.edgeone.makers]\nenabled = '+edgeone+'\n'+
