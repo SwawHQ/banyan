@@ -46,6 +46,7 @@
       {{- end -}}
     {{- end -}}
     {{- $href = partial "feature-browse/collection/entry-href.html" (dict "row" $row "source" $source) -}}
-    {{- partial "system-ui/list/item.html" (dict "href" $href "text" $text "title" $row.title "icon" $row.icon "rowDataAttrs" $attrs) -}}
+    {{- /* Each consuming page registers these icons through source/register-icons.html. */ -}}
+    {{- partial "system-ui/list/item.html" (dict "href" $href "text" $text "title" $row.title "icon" $row.icon "rowDataAttrs" $attrs "skipIconRegistration" true) -}}
   {{- end -}}
 </div>

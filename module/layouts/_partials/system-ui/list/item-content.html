@@ -2,6 +2,6 @@
 {{- $icon := .icon | default "file" -}}
 {{- $isText := and (reflect.IsMap $icon) (isset $icon "text") -}}
 <span class="item-icon{{ if $isText }} item-icon--text{{ end }}"{{ if reflect.IsMap $icon }} aria-hidden="true"{{ end }}>
-  {{- partial "system-ui/icon/render.html" (dict "name" $icon) -}}
+  {{- partial "system-ui/icon/render.html" (dict "name" $icon "skipIconRegistration" .skipIconRegistration) -}}
 </span>
 <span class="item-title"{{ with .labelAttr }} {{ printf "data-%s" . | safeHTMLAttr }}{{ end }}><bdi>{{ $text }}</bdi></span>

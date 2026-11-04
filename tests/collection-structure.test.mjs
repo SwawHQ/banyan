@@ -9,7 +9,7 @@ import {spawn,spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
 import {fixtureEnvironment,fixtureSiteFiles,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
-import {extractCanonicalHref} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {extractCanonicalHref,extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 
 const repository=fileURLToPath(new URL('../',import.meta.url));
@@ -113,6 +113,36 @@ test('visible read-only ancestors work and internal hidden trees need no path co
   write(path.join(internal,'_index.md'),'---\ntitle: Internal\nlayout: page-article-norss\nbuild: {list: never, render: never}\nparams: {slots: []}\n---\n');
   write(path.join(internal,'nested/item.md'),article('Internal item').replace('p/probe/','_res/private-item/'));
   try {passed(build());} finally {fs.rmSync(internal,{recursive:true,force:true});}
+});
+
+test('shared navigation fragments register icons only on consuming pages',()=>{
+  const item=content('docs/item.md'),original=fs.readFileSync(item,'utf8');
+  const probe=content('icon-registration/index.md'),layout=path.join(source,'layouts/page-icon-registration.html');
+  write(item,original.replace('layout: page-article-norss','layout: page-article-norss\nparams: {icon: appearance-light}'));
+  write(probe,'---\ntitle: Icon registration\nurl: icon-registration/\nlayout: page-icon-registration\n---\n');
+  write(layout,'<!doctype html><html><body>\n'+
+    '{{ partial "system-ui/list/item.html" (dict "href" "/" "text" "Own link" "icon" "info") }}\n'+
+    '{{ partial "system-ui/list/item.html" (dict "control" "button" "text" "Own button" "icon" "theme") }}\n'+
+    // Build the shared fragment directly so this check does not depend on which page fills the cache first.
+    '{{ $model := partial "feature-browse/navigation/source/page-model.html" (dict "page" (.Site.GetPage "/docs")) }}\n'+
+    '{{ $icons := .Store.Get "used_icons" }}\n'+
+    '{{ if not (and (index $icons "info") (index $icons "theme")) }}{{ errorf "Ordinary list icons must register on their page." }}{{ end }}\n'+
+    '{{ if index $icons "appearance-light" }}{{ errorf "Shared fragments must not register icons on the building page." }}{{ end }}\n'+
+    '<a id="source-fragment" href="{{ $model.currentColumn.payloadUrl }}">Source</a>\n'+
+    '{{ partial "feature-browse/navigation/source/register-icons.html" (dict "page" . "sources" (slice $model)) }}\n'+
+    '{{ partial "system-ui/icon/sprite.html" . }}\n</body></html>');
+  try {
+    passed(build());
+    const html=fs.readFileSync(path.join(output,'icon-registration/index.html'),'utf8');
+    const symbols=extractStartTags(html,'symbol').map(tag=>extractTagAttribute(tag,'id')).sort();
+    assert.deepEqual(symbols,['icon-appearance-light','icon-info','icon-theme']);
+    const link=extractStartTags(html,'a').find(tag=>extractTagAttribute(tag,'id')==='source-fragment');
+    const payload=extractTagAttribute(link,'href').replace(/^\/base\//,'');
+    const fragment=fs.readFileSync(path.join(output,payload),'utf8');
+    assert.ok(extractStartTags(fragment,'use').some(tag=>extractTagAttribute(tag,'href')==='#icon-appearance-light'));
+  } finally {
+    write(item,original);fs.rmSync(probe);fs.rmSync(layout);
+  }
 });
 
 test('icon audit includes hidden articles in a language with only RSS and no 404 page',()=>{
