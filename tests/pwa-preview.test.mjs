@@ -26,7 +26,7 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
     const policy=(mode,interval=8)=>originalPolicy.replace(/^mode = .*$/m,'mode = "'+mode+'"').replace(/^content_check_interval = .*$/m,'content_check_interval = '+interval);
     fs.writeFileSync(policyFile,policy('enable'));
     const configFile=path.join(source,'hugo.toml'),originalConfig=fs.readFileSync(configFile,'utf8');
-    const versionConfig=version=>originalConfig.replace('build.version_prefix = "v"','build.version = "'+version+'"\nbuild.version_prefix = "v"');
+    const versionConfig=version=>originalConfig+'\n[params.build]\nversion = "'+version+'"\n';
     fs.writeFileSync(configFile,versionConfig('v-sw-preview-one'));
     const probe=net.createServer();await listenOnLoopback(probe);const port=probe.address().port;
     await new Promise(resolve=>probe.close(resolve));const base='http://127.0.0.1:'+port;

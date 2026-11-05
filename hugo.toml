@@ -1,36 +1,26 @@
 # Banyan minimal reference site.
-#
 # Sites own their complete configuration. Use this file as a reference.
-
 baseURL = "https://banyan.swaw.com/"
 title = "Banyan"
 timeZone = "Asia/Shanghai"
-
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
 # Render assets/site/robots.txt.tmpl; false disables Hugo's robots.txt output.
 enableRobotsTXT = true
-
 panicOnWarning = true
 printPathWarnings = true
-
-[build]
 # 禁止 Hugo js.Build 自动写入 assets/jsconfig.json；该文件只服务编辑器跳转，不参与站点构建。
-noJSConfigInAssets = true
-
-[minify]
+build.noJSConfigInAssets = true
 # js.Build owns JS minification; preserve inline bytes used by CSP hashes.
-disableJS = true
+minify.disableJS = true
+# Editorial update time: never derive it from repository maintenance.
+frontmatter.lastmod = ["lastmod", "date"]
 
 [[cascade]]
 # true: automatically publish page bundle resources, including unused files.
 # false: publish only resources whose Permalink, RelPermalink or Publish method is called.
 # Page HTML is controlled by build.render; static/ files are copied separately.
 build.publishResources = false
-
-[frontmatter]
-# Editorial update time: never derive it from repository maintenance.
-lastmod = ["lastmod", "date"]
 
 [taxonomies]
 # Empty table disables Hugo's default tags and categories.
@@ -50,39 +40,10 @@ LLMS.baseName = "llms"
 LLMS.isPlainText = true
 LLMS.notAlternative = true
 
-
-
-
-
-# Banyan output format and parameters.
-
-[params]
-# Complete color-role file, relative to assets/. Select at build time.
-# Built-in alternative: "css/theme-monochrome.css" (both light and dark modes).
-appearance.palette = "css/theme.css"
-
-# The largest width caps generated variants; smaller source images are not enlarged.
-media.responsive_images.widths = [768, 1200, 1600]
-
-content_source.repository = "https://github.com/SwawHQ/banyan"
-content_source.branch = "main"
-content_source.content_root = "content"
-
-# Shared version format for the Service Worker and update page.
-build.version_prefix = "v"
-build.timestamp_layout = "20060102150405"
-
-
-
-# module & languages
 [module]
 hugoVersion.min = "0.168.0"
 imports = [{ path = "github.com/SwawHQ/banyan/module" }]
-mounts = [
-  { source = "assets", target = "assets" },
-  { source = "assets/i18n", target = "i18n" },
-  { source = "layouts", target = "layouts" },
-]
+mounts = [{ source = "assets/i18n", target = "i18n" }]
 
 [languages]
 en.label = "English"
@@ -105,3 +66,13 @@ ar.locale = "ar"
 ar.direction = "rtl"
 ar.weight = 4
 ar.params.icon.text = "ع"
+
+
+# Banyan output format and parameters.
+[params]
+# Complete color-role file, relative to assets/. Select at build time.
+appearance.palette = "css/theme.css"
+# The largest width caps generated variants; smaller source images are not enlarged.
+media.responsive_images.widths = [768, 1200, 1600]
+content_source.repository = "https://github.com/SwawHQ/banyan"
+content_source.branch = "main"

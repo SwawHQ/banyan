@@ -7,14 +7,13 @@
   {{- end -}}
   {{- $repository := trim (printf "%v" (index $sourceConfig "repository" | default "")) " \r\n\t" -}}
   {{- $branch := trim (printf "%v" (index $sourceConfig "branch" | default "main")) " \r\n\t" -}}
-  {{- $contentRoot := trim (printf "%v" (index $sourceConfig "content_root" | default "content")) " \r\n\t/" -}}
   {{- $filePath := "" -}}
   {{- with $page.File -}}
     {{- $filePath = replace .Path "\\" "/" -}}
   {{- end -}}
-  {{- if and $repository $branch $contentRoot $filePath -}}
+  {{- if and $repository $branch $filePath -}}
     {{- $repository = strings.TrimSuffix ".git" (strings.TrimSuffix "/" $repository) -}}
-    {{- $url = printf "%s/blob/%s/%s/%s" $repository $branch $contentRoot (strings.TrimPrefix "/" $filePath) -}}
+    {{- $url = printf "%s/blob/%s/content/%s" $repository $branch (strings.TrimPrefix "/" $filePath) -}}
   {{- end -}}
 {{- end -}}
 {{- return $url -}}
