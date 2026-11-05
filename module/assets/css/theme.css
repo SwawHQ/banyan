@@ -1,15 +1,21 @@
-/* Color roles and their light/dark defaults. Components only consume these roles.
-   Unqualified scopes apply to both modes; dark blocks only override differences.
+/* Complete monochrome palette with light/dark defaults. Components only consume these roles.
+   Near-white and pure-black canvases use softened text. Selected navigation
+   uses the body foreground as its fill; hover stays unfilled with an outline.
+   Unqualified scopes apply to both modes; dark blocks keep explicit mode defaults.
    Keep each scope when overriding: aliases and mixes resolve before inheritance.
    A role may use a literal, an alias, or a mix without changing its consumers. */
 :root {
     color-scheme: light;
-    --bg: #FFFFFF;
-    --fg: #1B1B1B;
-    --muted: #5F5F5F;
-    --border: #838383;
+    --monochrome-light-bg: #FBFBFB;
+    --monochrome-light-fg: #262626;
+    --monochrome-dark-bg: #000000;
+    --monochrome-dark-fg: #C6C6C6;
+    --bg: var(--monochrome-light-bg);
+    --fg: var(--monochrome-light-fg);
+    --muted: #666666;
+    --border: #AAAAAA;
     --link: var(--fg);
-    --accent: #9E685F;
+    --accent: #444444;
     --accent-text: color-mix(in srgb, var(--accent) 72%, var(--fg));
     --link-hover: var(--accent-text);
     --focus-ring: var(--accent);
@@ -17,14 +23,14 @@
 
 :root[data-theme="dark"] {
     color-scheme: dark;
-    --bg: #191919;
-    --fg: #EFEFEF;
-    --muted: #D0D0D0;
-    --border: #CCCCCC;
-    --accent: #AC7B73;
+    --bg: var(--monochrome-dark-bg);
+    --fg: var(--monochrome-dark-fg);
+    --muted: #969696;
+    --border: #444444;
+    --accent: #C0C0C0;
 }
 
-/* Colored illustrations; ordinary line icons continue to use currentColor. */
+/* Grayscale illustrations; ordinary line icons continue to use currentColor. */
 .icon {
     --icon-accent: var(--accent);
     --icon-shade: color-mix(in srgb, var(--icon-accent) 80%, black);
@@ -32,12 +38,35 @@
 
 .item-control {
     --item-text: var(--link);
-    --item-hover-text: var(--link-hover);
-    --item-current-text: var(--accent-text);
-    --item-hover-bg: color-mix(in srgb, var(--accent) 8%, transparent);
-    --item-hover-ring: transparent;
-    --item-current-bg: color-mix(in srgb, var(--accent) 14%, transparent);
-    --item-current-ring: color-mix(in srgb, var(--accent) 18%, transparent);
+    --item-hover-text: var(--fg);
+    --item-hover-bg: transparent;
+    --item-hover-ring: var(--fg);
+    --item-current-text: var(--monochrome-dark-fg);
+    --item-current-bg: var(--fg);
+    --item-current-ring: transparent;
+}
+
+[data-theme="dark"] .item-control {
+    --item-current-text: var(--monochrome-light-fg);
+    --item-current-bg: var(--fg);
+}
+
+.item-control:is(.is-current, [aria-expanded="true"]) .icon {
+    --icon-accent: currentColor;
+    --icon-shade: currentColor;
+}
+
+.item-control:is(.is-current, [aria-expanded="true"]) .icon--monochrome {
+    filter: brightness(0) invert(1);
+}
+
+[data-theme="dark"] .item-control:is(.is-current, [aria-expanded="true"]) .icon--monochrome {
+    filter: brightness(0);
+}
+
+/* Keep a visible inner focus ring even when the outer outline is clipped. */
+.item-control:is(.is-current, [aria-expanded="true"]):focus-visible {
+    --item-current-ring: var(--item-current-text);
 }
 
 .list-header {
@@ -45,83 +74,83 @@
 }
 
 .prose {
-    /* Neutral surfaces move from bg toward fg; the outer mix adds accent tint.
+    /* Neutral surfaces move from bg toward fg; the outer mix adds emphasis.
        Keep one-use neutral mixes inline, and share only the input for inline
        code, table, and image borders. Output roles remain independent. */
-    --prose-border-neutral: color-mix(in srgb, var(--fg) 18%, var(--bg));
+    --prose-border-neutral: color-mix(in srgb, var(--fg) 12%, var(--bg));
 
     --prose-heading-color: var(--accent);
     --prose-heading-border: color-mix(in srgb, var(--fg) 20%, transparent);
-    --prose-rule-border: color-mix(in srgb, var(--fg) 52%, var(--bg));
+    --prose-rule-border: color-mix(in srgb, var(--fg) 24%, var(--bg));
     --prose-deleted-color: var(--muted);
     --prose-deleted-decoration: var(--accent);
 
     --code-inline-text: color-mix(in srgb, var(--accent) 55%, var(--fg));
-    --code-inline-bg: color-mix(in srgb, var(--accent) 6%, var(--bg));
-    --code-inline-border: color-mix(in srgb, var(--accent) 22%, var(--prose-border-neutral));
+    --code-inline-bg: color-mix(in srgb, var(--accent) 4%, var(--bg));
+    --code-inline-border: color-mix(in srgb, var(--accent) 6%, var(--prose-border-neutral));
 
     --quote-text: var(--fg);
-    --quote-bg: color-mix(in srgb, var(--accent) 7%, var(--bg));
-    --quote-border: color-mix(in srgb, var(--accent) 72%, var(--fg));
-    --quote-ring: color-mix(in srgb, var(--quote-border) 14%, transparent);
+    --quote-bg: color-mix(in srgb, var(--accent) 3%, var(--bg));
+    --quote-border: color-mix(in srgb, var(--accent) 30%, var(--bg));
+    --quote-ring: color-mix(in srgb, var(--quote-border) 8%, transparent);
 
-    --image-frame-bg: color-mix(in srgb, var(--accent) 3%, var(--bg));
-    --image-frame-border: color-mix(in srgb, var(--accent) 16%, var(--prose-border-neutral));
-    --image-frame-shadow: color-mix(in srgb, var(--fg) 10%, transparent);
+    --image-frame-bg: color-mix(in srgb, var(--accent) 1%, var(--bg));
+    --image-frame-border: color-mix(in srgb, var(--accent) 4%, var(--prose-border-neutral));
+    --image-frame-shadow: color-mix(in srgb, var(--fg) 3%, transparent);
 
-    --table-text: var(--muted);
-    --table-header-bg: color-mix(in srgb, var(--accent) 4%, color-mix(in srgb, var(--fg) 6%, var(--bg)));
-    --table-border: color-mix(in srgb, var(--accent) 14%, var(--prose-border-neutral));
-    --table-striped-bg: color-mix(in srgb, var(--accent) 2%, color-mix(in srgb, var(--fg) 2%, var(--bg)));
+    --table-text: var(--fg);
+    --table-header-bg: color-mix(in srgb, var(--accent) 2%, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --table-border: color-mix(in srgb, var(--accent) 5%, var(--prose-border-neutral));
+    --table-striped-bg: color-mix(in srgb, var(--accent) 1%, color-mix(in srgb, var(--fg) 1%, var(--bg)));
 
     /* Syntax colors are independent of the decorative accent.
        Check text on both the block background and highlighted lines. */
-    --code-block-text: #4F6590;
-    --code-block-bg: color-mix(in srgb, var(--accent) 3%, color-mix(in srgb, var(--fg) 3%, var(--bg)));
-    --code-block-border: color-mix(in srgb, var(--accent) 12%, color-mix(in srgb, var(--fg) 12%, var(--bg)));
-    --code-line-highlight: color-mix(in srgb, var(--accent) 5%, color-mix(in srgb, var(--fg) 7%, var(--bg)));
+    --code-block-text: #404040;
+    --code-block-bg: color-mix(in srgb, var(--accent) 2%, color-mix(in srgb, var(--fg) 2%, var(--bg)));
+    --code-block-border: color-mix(in srgb, var(--accent) 5%, color-mix(in srgb, var(--fg) 9%, var(--bg)));
+    --code-line-highlight: color-mix(in srgb, var(--accent) 3%, color-mix(in srgb, var(--fg) 4%, var(--bg)));
     --code-line-number: var(--muted);
     --code-scrollbar-track: var(--code-block-bg);
-    --code-scrollbar-thumb: color-mix(in srgb, var(--accent) 16%, var(--code-block-border));
-    --code-token-string: #7A4F8F;
+    --code-scrollbar-thumb: color-mix(in srgb, var(--accent) 22%, var(--code-block-border));
+    --code-token-string: #505050;
     --code-token-comment: var(--muted);
-    --code-token-keyword: #8F554C;
-    --code-token-type: #49673D;
+    --code-token-keyword: #363636;
+    --code-token-type: #484848;
 }
 
 [data-theme="dark"] .prose {
-    --prose-border-neutral: color-mix(in srgb, var(--fg) 15%, var(--bg));
+    --prose-border-neutral: color-mix(in srgb, var(--fg) 14%, var(--bg));
 
     --code-inline-text: color-mix(in srgb, var(--accent) 68%, var(--fg));
-    --code-inline-bg: color-mix(in srgb, var(--accent) 14%, var(--bg));
-    --code-inline-border: color-mix(in srgb, var(--accent) 36%, var(--prose-border-neutral));
+    --code-inline-bg: color-mix(in srgb, var(--accent) 7%, var(--bg));
+    --code-inline-border: color-mix(in srgb, var(--accent) 8%, var(--prose-border-neutral));
 
-    --quote-bg: color-mix(in srgb, var(--accent) 16%, var(--bg));
-    --quote-border: color-mix(in srgb, var(--accent) 76%, var(--fg));
+    --quote-bg: color-mix(in srgb, var(--accent) 5%, var(--bg));
+    --quote-border: color-mix(in srgb, var(--accent) 30%, var(--bg));
 
-    --image-frame-bg: color-mix(in srgb, var(--accent) 10%, var(--bg));
-    --image-frame-border: color-mix(in srgb, var(--accent) 34%, var(--prose-border-neutral));
+    --image-frame-bg: color-mix(in srgb, var(--accent) 2%, var(--bg));
+    --image-frame-border: color-mix(in srgb, var(--accent) 6%, var(--prose-border-neutral));
     --image-frame-shadow: color-mix(in srgb, #000000 34%, transparent);
 
-    --table-header-bg: color-mix(in srgb, var(--accent) 8%, var(--bg));
-    --table-border: color-mix(in srgb, var(--accent) 24%, var(--prose-border-neutral));
-    --table-striped-bg: color-mix(in srgb, var(--accent) 4%, var(--bg));
+    --table-header-bg: color-mix(in srgb, var(--accent) 7%, var(--bg));
+    --table-border: color-mix(in srgb, var(--accent) 8%, var(--prose-border-neutral));
+    --table-striped-bg: color-mix(in srgb, var(--accent) 3%, var(--bg));
 
-    --code-block-text: #8EA2C6;
-    --code-block-bg: color-mix(in srgb, var(--accent) 5%, color-mix(in srgb, var(--fg) 4%, var(--bg)));
-    --code-block-border: color-mix(in srgb, var(--accent) 14%, color-mix(in srgb, var(--fg) 15%, var(--bg)));
-    --code-line-highlight: color-mix(in srgb, var(--accent) 9%, color-mix(in srgb, var(--fg) 9%, var(--bg)));
+    --code-block-text: #BABABA;
+    --code-block-bg: color-mix(in srgb, var(--accent) 4%, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --code-block-border: color-mix(in srgb, var(--accent) 8%, color-mix(in srgb, var(--fg) 12%, var(--bg)));
+    --code-line-highlight: color-mix(in srgb, var(--accent) 7%, color-mix(in srgb, var(--fg) 6%, var(--bg)));
     --code-scrollbar-thumb: color-mix(in srgb, var(--accent) 24%, var(--code-block-border));
-    --code-token-string: #BE9CD0;
-    --code-token-comment: #A8A8A8;
-    --code-token-keyword: #C99E98;
-    --code-token-type: #9EC889;
+    --code-token-string: #AEAEAE;
+    --code-token-comment: #969696;
+    --code-token-keyword: #C6C6C6;
+    --code-token-type: #B6B6B6;
 }
 
 .page-home {
     --page-home-anchor-color: var(--muted);
     --page-home-horizon-color: currentColor;
-    --page-home-signal-color: color-mix(in srgb, #5F759E 84%, var(--fg));
+    --page-home-signal-color: color-mix(in srgb, #666666 84%, var(--fg));
     --page-home-signal-selected-color: var(--accent);
     --page-home-windsock-body-color: var(--accent);
     --page-home-windsock-stripe-color: var(--bg);
@@ -129,9 +158,9 @@
 }
 
 [data-theme="dark"] .page-home {
-    --page-home-anchor-color: color-mix(in srgb, var(--fg) 58%, var(--bg));
-    --page-home-horizon-color: color-mix(in srgb, var(--border) 38%, var(--bg));
-    --page-home-signal-color: color-mix(in srgb, #7388AC 78%, var(--fg));
+    --page-home-anchor-color: var(--muted);
+    --page-home-horizon-color: color-mix(in srgb, var(--border) 75%, var(--bg));
+    --page-home-signal-color: color-mix(in srgb, #AAAAAA 78%, var(--fg));
     --page-home-signal-selected-color: color-mix(in srgb, var(--accent) 82%, var(--fg));
-    --page-home-windsock-pole-color: color-mix(in srgb, var(--border) 52%, var(--bg));
+    --page-home-windsock-pole-color: var(--border);
 }

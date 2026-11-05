@@ -22,17 +22,6 @@ const work = fs.mkdtempSync(path.join(workRoot, 'contract-'));
 try {
     const rel = file => path.relative(root, file).replaceAll('\\', '/');
     const write = (file, text) => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, text); };
-    const readPalette = name => fs.readFileSync(`module/assets/css/${name}.css`, 'utf8');
-    const defaultCss = readPalette('theme');
-    const monochromeCss = readPalette('theme-monochrome');
-    const declarations = css => [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-        .flatMap(([, selector, body]) => [...body.matchAll(/(--[\w-]+)\s*:/g)]
-            .map(([, role]) => [selector.trim(), role]));
-    // A palette may add private variables and state overrides; every public role must remain.
-    const monochromeRoles = new Set(declarations(monochromeCss).map(String));
-    for (const role of declarations(defaultCss).map(String)) {
-        assert.ok(monochromeRoles.has(role), 'Monochrome palette is missing a shared color role: ' + role);
-    }
 
     const hugo = toolExecutable('hugo');
     function build(name, config = '', expectedError) {
@@ -41,6 +30,7 @@ try {
         write(configFile, config);
         const result = spawnSync(hugo, ['--noBuildLock','--config', `hugo.toml,${rel(configFile)}`, '--minify', '--destination', rel(output)],
             { cwd: root, env: fixtureEnvironment(work), encoding: 'utf8', windowsHide: true });
+        assert.ifError(result.error);
         const log = result.stdout + result.stderr;
         if (expectedError) {
             assert.notEqual(result.status, 0, `${name} must fail the build.`);
@@ -59,48 +49,55 @@ try {
         return { href, text: fs.readFileSync(path.join(output, href), 'utf8') };
     };
 
-    // The consuming site may already select another palette; keep fixtures explicit.
-    const normal = build('default', paletteConfig('"css/theme.css"'));
-    const explicit = build('explicit-default', paletteConfig('" css/theme.css "'));
+    // Let Hugo resolve the configured asset, including site and Module mounts.
+    write(path.join(work, 'content/_res/palette-source/index.md'),
+        '---\ntitle: Palette source\nurl: _res/palette-source/\nlayout: palette-source\noutputs: [HTML]\n---\n');
+    write(path.join(work, 'layouts/palette-source.html'), `
+{{ $path := strings.TrimSpace .Site.Params.appearance.palette }}
+{{ $palette := resources.Get $path }}
+{{ $source := resources.FromString "__palette-source.json" (dict "path" $path "css" $palette.Content | jsonify) }}
+{{ $source.RelPermalink }}
+`);
+    const probeMounts = `[[module.mounts]]\nsource = "${rel(path.join(work, 'content'))}"\ntarget = "content"\n`
+        + '[[module.mounts]]\nsource = "content"\ntarget = "content"\n'
+        + `[[module.mounts]]\nsource = "${rel(path.join(work, 'layouts'))}"\ntarget = "layouts"\n`+fixtureSiteMounts;
+    const normal = build('configured', probeMounts);
+    const {path:palettePath,css:paletteCss} = JSON.parse(fs.readFileSync(path.join(normal, '__palette-source.json'), 'utf8'));
+    const explicit = build('explicit', paletteConfig(JSON.stringify(` ${palettePath} `)));
     assert.deepEqual(pageCss(explicit), pageCss(normal), 'Whitespace around a palette path does not change its CSS.');
-    const monochrome = build('monochrome', paletteConfig('"css/theme-monochrome.css"'));
-    assert.notEqual(pageCss(monochrome).href, pageCss(normal).href, 'Selecting a different palette changes the CSS fingerprint.');
-    assert.equal((pageCss(monochrome).text.match(/--accent:/g) || []).length, 2, 'Only one palette supplies the light/dark defaults.');
 
     const overlay = path.join(work, 'assets');
-    write(path.join(overlay, 'css/theme.css'), defaultCss.replace(/--accent:\s*[^;]+;/, '--accent: #123456;')
+    const customPath = `__palette-test/${path.basename(work)}.css`;
+    write(path.join(overlay, palettePath), paletteCss.replace(/--accent:\s*[^;]+;/, '--accent: #123456;')
         .replace(/--prose-heading-border:\s*[^;]+;/, '--prose-heading-border: #31547a;'));
-    write(path.join(overlay, 'css/custom.css'), monochromeCss.replace(/--accent:\s*[^;]+;/, '--accent: #234567;')
+    write(path.join(overlay, customPath), paletteCss.replace(/--accent:\s*[^;]+;/, '--accent: #234567;')
         .replace(/--list-header-border:\s*[^;]+;/, '--list-header-border: #9c334f;'));
     write(path.join(overlay, 'invalid.txt'), 'This is not CSS.');
-    const mounts = `[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "assets"\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n`+fixtureSiteMounts;
-    const overridden = build('site-override', paletteConfig('"css/theme.css"') + mounts);
+    const mounts = fixtureSiteMounts+`[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "assets"\n`;
+    const overridden = build('site-override', paletteConfig(JSON.stringify(palettePath)) + mounts);
     assert.equal(pageCss(overridden).text.match(/--accent:\s*([^;}]+)/)?.[1].trim(), '#123456', 'Hugo must prefer a same-path site asset over the theme asset.');
-    const custom = build('custom', paletteConfig('"css/custom.css"') + mounts);
+    const custom = build('custom', paletteConfig(JSON.stringify(customPath)) + mounts);
     assert.equal(pageCss(custom).text.match(/--accent:\s*([^;}]+)/)?.[1].trim(), '#234567', 'A custom path resolves in the site assets filesystem.');
-    const multilingual = build('language-override', paletteConfig('"css/theme.css"')
-        + '[languages.zh.params.appearance]\npalette = "css/theme-monochrome.css"\n');
-    assert.equal(pageCss(multilingual).href, pageCss(monochrome).href);
-    assert.equal(pageCss(multilingual, 'about').href, pageCss(normal, 'about').href, 'Language palettes must not share the wrong cached CSS bundle.');
+    assert.notEqual(pageCss(custom).href, pageCss(normal).href, 'Selecting a different palette changes the CSS fingerprint.');
+    assert.equal((pageCss(custom).text.match(/--accent:/g) || []).length, (pageCss(normal).text.match(/--accent:/g) || []).length,
+        'Selecting a palette must not load the default palette as well.');
+    const multilingual = build('language-override', paletteConfig(JSON.stringify(palettePath)) + mounts
+        + '[languages.zh.params.appearance]\npalette = '+JSON.stringify(customPath)+'\n');
+    assert.equal(pageCss(multilingual).href, pageCss(custom).href);
+    assert.equal(pageCss(multilingual, 'about').href, pageCss(overridden, 'about').href, 'Language palettes must not share the wrong cached CSS bundle.');
 
     for (const [name, value, message] of [
         ['missing', '"css/missing-palette.css"', 'was not found under assets/'],
         ['empty', '"  "', 'must be a non-empty CSS asset path'],
         ['boolean', 'false', 'must be a non-empty CSS asset path'],
-        ['array', '["css/theme.css"]', 'must be a non-empty CSS asset path'],
+        ['array', JSON.stringify([palettePath]), 'must be a non-empty CSS asset path'],
         ['not-css', '"invalid.txt"', 'must reference a CSS resource']
     ]) build(`invalid-${name}`, paletteConfig(value) + mounts, message);
 
-    const scopes = new Map();
-    for (const [selector, role] of declarations(defaultCss)) {
-        const base = selector.replace(':root[data-theme="dark"]', ':root').replace('[data-theme="dark"] ', '');
-        if (!scopes.has(base)) scopes.set(base, new Set());
-        scopes.get(base).add(role);
-    }
     for (const engine of [loadChromium(), loadWebkit()]) {
         const browser = await engine.launch({executablePath:engine.executablePath()});
         try {
-            for (const [name, output] of [['default', normal], ['monochrome', monochrome], ['site-override', overridden], ['custom', custom]]) {
+            for (const [name, output] of [['configured', normal], ['site-override', overridden], ['custom', custom]]) {
                 const server = await createStaticSiteServer(output);
                 await server.start();
                 let page;
@@ -136,36 +133,6 @@ try {
                             `${engine.name()} ${name} ${mode}: the heading uses its own palette role.`);
                         assert.equal(borders.list, name === 'custom' ? 'rgb(156, 51, 79)' : borders.previous,
                             `${engine.name()} ${name} ${mode}: the list header uses its own palette role.`);
-                        if (name === 'monochrome') {
-                            const colors = await page.evaluate(scopes => {
-                                const canvas = document.createElement('canvas');
-                                canvas.width = canvas.height = 1;
-                                const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                                return scopes.flatMap(([selector, roles]) => {
-                                    let node = document.querySelector(selector);
-                                    const fixture = !node;
-                                    if (fixture) {
-                                        node = document.createElement('span');
-                                        node.className = selector.slice(1);
-                                        document.body.append(node);
-                                    }
-                                    const style = getComputedStyle(node);
-                                    const values = roles.map(role => {
-                                        const value = style.getPropertyValue(role).trim();
-                                        if (!value || !CSS.supports('color', value)) throw new Error(`Invalid color role ${selector} ${role}: ${value}`);
-                                        ctx.clearRect(0, 0, 1, 1);
-                                        ctx.fillStyle = value;
-                                        ctx.fillRect(0, 0, 1, 1);
-                                        return { selector, role, rgba: [...ctx.getImageData(0, 0, 1, 1).data] };
-                                    });
-                                    if (fixture) node.remove();
-                                    return values;
-                                });
-                            }, [...scopes].map(([selector, roles]) => [selector, [...roles]]));
-                            for (const { selector, role, rgba: [r, g, b] } of colors) {
-                                assert(Math.max(r, g, b) - Math.min(r, g, b) <= 1, `${engine.name()} ${mode}: ${selector} ${role} must be neutral.`);
-                            }
-                        }
                         await page.screenshot({ path: path.join(work, `${engine.name()}-${name}-${mode}.png`), animations: 'disabled' });
                     }
                     console.log(`[PASS] ${engine.name()}: ${name} light/dark palette styles and contrast`);
@@ -176,5 +143,6 @@ try {
 
     console.log(`Palette configuration, asset overrides, and browser checks passed.`);
 } finally {
+    assert.equal(path.dirname(fs.realpathSync.native(work)), fs.realpathSync.native(workRoot));
     fs.rmSync(work,{recursive:true,force:true});
 }
