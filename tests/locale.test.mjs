@@ -12,7 +12,7 @@ import {extractStartTags,extractTagAttribute as attr} from '../.agents/skills/sw
 
 const repository=fileURLToPath(new URL('../',import.meta.url));
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/locale-tests');
-const languages=[['en','en-US',''],['zh','zh-Hans','zh/'],['zh-tw','zh-Hant','zh-tw/'],['ar','ar','ar/']];
+const languages=[['en','en-US',''],['zh','zh-Hans','zh/'],['ar','ar','ar/']];
 const toml=loadDependency('@iarna/toml');
 let work,site,configuration,sequence=0;
 const write=(file,text)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);};
@@ -59,12 +59,12 @@ test('script locales preserve RSS tags, language keys and URLs without inventing
 });
 
 test('Open Graph uses an explicitly chosen region and normalizes its case',()=>{
-  configuration.languages.zh.locale='ZH-hans-CN';configuration.languages['zh-tw'].locale='zh-Hant-TW';
+  configuration.languages.zh.locale='ZH-hans-CN';
   const output=build();
-  for(const [prefix,expected] of [['','en_US'],['zh/','zh_CN'],['zh-tw/','zh_TW']]) {
+  for(const [prefix,expected] of [['','en_US'],['zh/','zh_CN']]) {
     const html=read(output,prefix);
     assert.deepEqual(meta(html,'og:locale'),[expected]);
-    assert.deepEqual(meta(html,'og:locale:alternate').sort(),['en_US','zh_CN','zh_TW'].filter(value=>value!==expected).sort());
+    assert.deepEqual(meta(html,'og:locale:alternate').sort(),['en_US','zh_CN'].filter(value=>value!==expected).sort());
   }
   assert.deepEqual(meta(read(output,'ar/'),'og:locale'),[]);
 });

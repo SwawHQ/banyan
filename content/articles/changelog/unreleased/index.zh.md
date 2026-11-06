@@ -11,7 +11,7 @@ lastmod: 2026-11-06
 - 默认站点由 `defaultContentLanguage` 选择；调整语言 `weight` 不再改变 PWA 清单名称、SEO 默认语言或 404 默认语言。
 - 语言选项图标改由各语言设置页的 `params.language_icon` 提供，移除 `hugo.toml` 中的语言图标配置；设置页导航图标仍使用 `params.icon`。
 - 外观设置页通过 `params.appearance_icons` 声明 `auto`、`light`、`dark` 图标，支持 SVG 名称、文字和图片。
-- 中文 `locale` 改为 `zh-Hans`、`zh-Hant`，保留原语言键和网址；RSS 使用完整标签，Open Graph 无地区时省略可选的语言标记。
+- 参考站点保留英语、简体中文和从右向左排版的阿拉伯语，移除繁体中文页面及界面字典。简体中文使用 `zh-Hans`；RSS 使用完整语言标签，Open Graph 无地区时省略可选的语言标记。
 - 最低 Hugo 版本由 Module 的 `theme.toml` 声明，站点不再重复配置 `module.hugoVersion.min`。
 - 使用指南和开发资料发布在 `https://banyan.swaw.com/articles/docs/`，版本说明发布在 `https://banyan.swaw.com/articles/changelog/`；源码由 Banyan 仓库的 `content/articles/docs/` 和 `content/articles/changelog/` 维护，与主题代码随同一版本发布。正文使用 `p/` 网址。
 - 通过 `github.com/SwawHQ/banyan/module` 发布 Hugo Module，
@@ -212,7 +212,7 @@ lastmod: 2026-11-06
   增删语言时同步修改 `hugo.toml`、界面字典和所需的内容译文。
   各站点自行维护完整 `hugo.toml`，移除 Module 默认配置。
   仓库根配置提供示例，包含 LLMS 输出定义、语言 locale 和显式配色。
-  演示站声明 `EN`、`简`、`繁`、`ع` 作为语言标记，支持阿拉伯语从右向左布局。
+  演示站声明 `EN`、`简`、`ع` 作为语言标记，支持阿拉伯语从右向左布局。
 - 构建和预览使用原生 Hugo 命令。发布使用原生 Git 和 GitHub CLI 命令。
 - 由 Hugo 构建并压缩 JavaScript，在构建阶段生成 CSP 和部署响应头。
   站点必须设置 `minify.disableJS = true`，以保持内联脚本与 CSP 哈希一致。

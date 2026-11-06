@@ -213,7 +213,7 @@ test('explicit delivery fixture tables replace complete top-level values in ever
   const output=passed(build('nested-defaults','[prefetch]\nenabled = true\ndefault = "off"\n'+
     '[prefetch.icons.folder]\nroot = "conservative"\n'));
   let targets,nativeBody;
-  for(const prefix of ['','zh/','zh-tw/','ar/']) {
+  for(const prefix of ['','zh/','ar/']) {
     const html=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
     const payload=JSON.parse(html.match(/<script id=["']?site-prefetch-data["']?[^>]*>([\s\S]*?)<\/script>/)[1]);
     assert.deepEqual(Object.keys(payload).sort(),['enabled','modes','prerender','sw']);
@@ -330,7 +330,7 @@ test('shared deployment files are published when the primary homepage uses a sta
 
 test('shared deployment files are published when the default language only outputs RSS',()=>{
   const content=path.join(work,'deployment-rss-content');
-  for(const suffix of ['','.zh','.zh-tw','.ar'])write(path.join(content,'_index'+suffix+'.md'),
+  for(const suffix of ['','.zh','.ar'])write(path.join(content,'_index'+suffix+'.md'),
     '---\ntitle: RSS deployment fixture\ndescription: Shared deployment fixture.\nlayout: page-home\n'+
     'outputs: '+(suffix?'[HTML, RSS]':'[RSS]')+'\n---\nHome.\n');
   const config='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n'+
@@ -376,7 +376,7 @@ test('disabled and off workers do not publish a policy copy, and worker tables m
     assert.equal(fs.existsSync(path.join(output,'sw.js')),mode==='disable');
     assert.equal(fs.existsSync(path.join(output,'sw-policy.json')),false);
     assert.equal(fs.existsSync(path.join(output,'sw-version.json')),false);
-    for(const prefix of ['','zh/','zh-tw/','ar/']) {
+    for(const prefix of ['','zh/','ar/']) {
       const html=fs.readFileSync(path.join(output,prefix+'powered-by/index.html'),'utf8');
       assert.equal((html.match(/<time\b[^>]*data-site-update-version/g)||[]).length,1,'Build information remains visible with SW '+mode);
       assert.doesNotMatch(html,/<a\b[^>]*href=["']?\/sw-(?:version|policy)\.json/,'Disabled SW files must not have page links.');
@@ -409,7 +409,7 @@ test('offline links retain deployment subpaths, language prefixes and custom con
   try {
     process.env.HUGO_BASEURL='https://example.test/base/';
     const output=passed(build('offline-link-subpath',undefined,'',serviceWorkerPolicy('off',5,'/custom/offline/')));
-    for(const prefix of ['','zh/','zh-tw/','ar/']) {
+    for(const prefix of ['','zh/','ar/']) {
       const html=fs.readFileSync(path.join(output,prefix+'powered-by/index.html'),'utf8');
       const offline=extractBlocks(html,'span',tag=>tag.includes('data-site-offline-page'))[0];
       assert.equal(extractTagAttribute(extractBlocks(offline.inner,'a')[0].open,'href'),'/base/'+prefix+'custom/offline/');
@@ -587,7 +587,7 @@ test('content versions change JSON without changing the worker program, and inte
 test('SW manager integrity matches published bytes in every language',()=>{
   for(const mode of ['enable','disable']) {
     const output=passed(build('manager-integrity-'+mode,undefined,'',serviceWorkerPolicy(mode)));
-    for(const prefix of ['','zh/','zh-tw/','ar/']) {
+    for(const prefix of ['','zh/','ar/']) {
       const html=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
       const tag=[...html.matchAll(/<script\b[^>]*>/gi)].map(match=>match[0])
         .find(tag=>extractTagAttribute(tag,'src')?.includes('sw-manager.'+mode+'.'));
@@ -792,7 +792,7 @@ test('program activation preserves newer content and fills missing offline pages
     let activated;restarted.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
     assert.equal(restarted.requests.length,0,'Activation must use prepared data without network requests.');
     assert.deepEqual(await restarted.probe.readContentState(),state,'Activation must retain the active program\'s final content state.');
-    for(const prefix of ['','zh-tw/','ar/']){
+    for(const prefix of ['','ar/']){
       const response=await dispatch(restarted.listeners,requestFor('/'+prefix+'uncached-after-activation/',true));
       assert.match(await response.text(),/v-three/,'Prepared pages must not replace newer offline responses.');
     }
@@ -854,7 +854,7 @@ test('reinstalling the same program replaces its stale stage without touching an
   const runtime=contentRuntime(),stage=runtime.probe.PROGRAM_OFFLINE_CACHE;
   runtime.stores.set('nav-html-v-one',new Map([['https://example.test/_res/offline/',
     new Response('Previous program offline page',{headers:{'Content-Type':'text/html'}})]]));
-  runtime.stores.set(stage,new Map(['','zh/','zh-tw/','ar/'].map(prefix=>[
+  runtime.stores.set(stage,new Map(['','zh/','ar/'].map(prefix=>[
     'https://example.test/'+prefix+'_res/offline/',new Response('Old offline page',{headers:{'Content-Type':'text/html'}})
   ])));
   runtime.stores.get(stage).set('https://example.test/sw-version.json',Response.json({version:'v-stale'}));
@@ -862,7 +862,7 @@ test('reinstalling the same program replaces its stale stage without touching an
   runtime.stores.set('sw-program-offline-another-install',another);
   const before=await runtime.probe.readContentState();
   let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
-  assert.equal(runtime.requests.filter(request=>new URL(request.url).pathname.endsWith('/offline/')).length,4);
+  assert.equal(runtime.requests.filter(request=>new URL(request.url).pathname.endsWith('/offline/')).length,3);
   assert.deepEqual(await runtime.stores.get(stage).get('https://example.test/sw-version.json').clone().json(),before);
   assert.equal(runtime.stores.get('sw-program-offline-another-install'),another);
   assert.deepEqual(await runtime.probe.readContentState(),before);
@@ -874,7 +874,7 @@ test('reinstalling the same program replaces its stale stage without touching an
 test('first installation publishes content before activation and removes a stage left after unregistering',async()=>{
   const runtime=contentRuntime(),stage=runtime.probe.PROGRAM_OFFLINE_CACHE;
   runtime.registration.active=null;
-  runtime.stores.set(stage,new Map(['','zh/','zh-tw/','ar/'].map(prefix=>[
+  runtime.stores.set(stage,new Map(['','zh/','ar/'].map(prefix=>[
     'https://example.test/'+prefix+'_res/offline/',new Response('Old offline page',{headers:{'Content-Type':'text/html'}})
   ])));
   runtime.stores.set('sw-program-offline-another-install',new Map());

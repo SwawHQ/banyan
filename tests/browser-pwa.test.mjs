@@ -50,7 +50,7 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
-  for(const lang of ['en','zh','zh-tw','ar']) {
+  for(const lang of ['en','zh','ar']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
     let text=fs.readFileSync(path.join(root,'content/powered-by/index'+suffix+'.md'),'utf8')
       .replace(/^url:.*$/m,'url: '+prefix+panel+'\n');
@@ -97,7 +97,7 @@ before(()=>{
       write(path.join(directory,name),code);
       tags.push(type==='css'?'<link rel="stylesheet" href="/'+name+'">':'<script defer src="/'+name+'"></script>');
     }
-    for(const prefix of ['','/zh','/zh-tw','/ar']) {
+    for(const prefix of ['','/zh','/ar']) {
       const file=path.join(directory,prefix+from,'index.html');
       write(file,fs.readFileSync(file,'utf8').replace('</head>',tags.join('')+'</head>'));
     }
@@ -116,7 +116,7 @@ test('panel declarations expose paths, widths and detailed help',()=>{
 });
 
 test('unavailable panels render localized copy across visits, reloads and native history',{timeout:20000},()=>{
-  for(const lang of ['en','zh','zh-tw','ar']) {
+  for(const lang of ['en','zh','ar']) {
     const prefix=lang==='en'?'':'/'+lang;
     const state=report(cli(['--page',prefix+panel,'--from',prefix+from,'--out',path.join(work,'reports')]));
     assert.equal(state.details.cases.length,8);
@@ -223,7 +223,7 @@ test('first installation rejects a missing default offline page and succeeds aft
 });
 
 test('missing translated offline pages allow installation and missing all pages allow program updates',{timeout:30000},async()=>{
-  const cases=[['translated',[],200,'zh'],['default',['zh'],200,'en'],['built-in',['','zh','zh-tw','ar'],503,'en']];
+  const cases=[['translated',[],200,'zh'],['default',['zh'],200,'en'],['built-in',['','zh','ar'],503,'en']];
   const scenarios=cases.map(([id,missing,status,language])=>({id:'offline-fallback-'+id,kind:'single',async run({page,context,baseUrl,server}){
     const directory=fixture('offline-fallback-'+id,enabled);
     for(const prefix of missing)fs.unlinkSync(path.join(directory,prefix,'_res/offline/index.html'));

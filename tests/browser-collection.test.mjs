@@ -40,9 +40,9 @@ before(()=>{
   write(path.join(content,'d/collection-fixture/_index.md'),'---\ntitle: Independent Collection\n---\n');
   for(const [index,name] of ['one','two','three','four'].entries())write(path.join(content,'d/collection-fixture',name+'.md'),
     `---\ntitle: ${name==='three'?'Long name 测试 '+('collection title '.repeat(12)):name}\nurl: /d/collection-fixture/${name}/\ndate: "2026-01-0${index+1}T00:00:00+08:00"\n---\n\n## Chapter\n\n`+'Independent collection text.\n\n'.repeat(20));
-  for(const suffix of ['.zh','.zh-tw'])for(const name of ['translated-one','translated-two'])write(path.join(content,'d',name+suffix+'.md'),
+  for(const suffix of ['.zh','.ar'])for(const name of ['translated-one','translated-two'])write(path.join(content,'d',name+suffix+'.md'),
     `---\ntitle: ${name}\nurl: d/${name}/\ndate: 2026-01-01\n---\n\n独立翻译内容。`);
-  for(const suffix of ['','.zh','.zh-tw']) {
+  for(const suffix of ['','.zh','.ar']) {
     write(path.join(content,'discover','_index'+suffix+'.md'),directoryPage('Sources'));
     write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
     write(path.join(content,'discover/tooling/devtools','_index'+suffix+'.md'),directoryPage('Devtools'));
@@ -115,7 +115,7 @@ test('directory, aggregate and product headers fit their shared fixed columns in
   try {
     await server.start();const type=loadChromium();browser=await type.launch({headless:true,executablePath:type.executablePath()});
     const context=await browser.newContext({viewport:{width:390,height:900},serviceWorkers:'block'}),page=await context.newPage();
-    for(const prefix of ['','/zh','/zh-tw'])for(const route of ['/d/','/all/','/products-all/']) {
+    for(const prefix of ['','/zh','/ar'])for(const route of ['/d/','/all/','/products-all/']) {
       for(const field of route==='/products-all/'?['version','price']:['date',route==='/all/'?'size':'count']) {
         await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:prefix+route+'#sort='+field+'-desc',widths:'390,1440'}});
       }

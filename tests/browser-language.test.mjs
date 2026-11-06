@@ -52,11 +52,11 @@ before(()=>{
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
   fixtureContentDirectory(content);
-  for(const language of ['en','zh','zh-tw'])
+  for(const language of ['en','zh','ar'])
     write(path.join(content,'d/language-fixture/_index.'+language+'.md'),directoryPage('Language fixture'));
   write(path.join(content,'language/_index.md'),fs.readFileSync(path.join(root,'content/language/_index.md'),'utf8')
     .replace(/^  language_icon:.*$/m,'  language_icon: { text: "AX" }'));
-  for(const lang of ['en','zh','zh-tw'])for(const name of ['first','second']){
+  for(const lang of ['en','zh','ar'])for(const name of ['first','second']){
     const prefix=lang==='en'?'':'/'+lang;
     write(path.join(content,'d/language-fixture',name+'.'+lang+'.md'),
       '---\ntitle: Independent '+lang+' '+name+'\nurl: '+prefix+'/d/language-fixture/'+name+'/\ndate: 2026-01-01\n---\n\n## Details\n\n'+('Independent language content.\n\n'.repeat(10)));
@@ -79,7 +79,7 @@ test('language options expose paths, target codes and source fragments',()=>{
   assert.match(helpFor(spec,'en'),/--to <code>/);
   assert.match(helpFor(choicesCommand('check/browser/language/choices'),'en'),/default: \/language\//);
   const cached=bfcacheCommand('check/browser/language/bfcache');
-  assert.equal(parseArguments(cached,['--from',article,'--to','zh','--next','zh-tw']).next,'zh-tw');
+  assert.equal(parseArguments(cached,['--from',article,'--to','zh','--next','ar']).next,'ar');
   assert.match(helpFor(cached,'en'),/Second target; default: source language/);
   assert.throws(()=>parseArguments(cached,['--from',article,'--to','zh','--next','../en']));
 });
@@ -87,8 +87,8 @@ test('language options expose paths, target codes and source fragments',()=>{
 test('choices use real native links without JS and accessible translated settings',{timeout:45000},()=>{
   const state=report(cli('choices',['--page','/zh/language/','--trace','--out',path.join(work,'reports')]));
   assert.equal(state.browser,'chromium');assert.ok(state.browserVersion);
-  assert.deepEqual(state.details.staticCases.map(state=>state.language),['en','zh','zh-tw','ar']);
-  assert.deepEqual(state.details.runtimeCases.map(state=>state.language),['en','zh','zh-tw','ar']);
+  assert.deepEqual(state.details.staticCases.map(state=>state.language),['en','zh','ar']);
+  assert.deepEqual(state.details.runtimeCases.map(state=>state.language),['en','zh','ar']);
   assert.equal(fs.existsSync(path.join(work,'node_modules')),false);
 });
 
@@ -123,8 +123,8 @@ test('missing translations retain the source with one accessible localized notic
 test('native language tabs reject intercepted middle-click, pushed choices and the wrong home',{timeout:20000},async()=>{
   for(const [name,code,routes,message] of [
     ['blocked-middle','document.addEventListener("auxclick",event=>event.preventDefault(),true);',['d/language-fixture/first'],/Timeout/],
-    ['tab-pushed-choice','document.addEventListener("click",event=>{const link=event.target.closest("a[data-language-choice]");if(!link)return;event.preventDefault();event.stopImmediatePropagation();location.assign(link.href);},true);',['language','zh/language','zh-tw/language'],/must not add a previous page/],
-    ['tab-wrong-home','document.addEventListener("DOMContentLoaded",()=>document.querySelector("[data-page-action=back]").href="/wrong-home/");',['language','zh/language','zh-tw/language'],/selected language home/]
+    ['tab-pushed-choice','document.addEventListener("click",event=>{const link=event.target.closest("a[data-language-choice]");if(!link)return;event.preventDefault();event.stopImmediatePropagation();location.assign(link.href);},true);',['language','zh/language','ar/language'],/must not add a previous page/],
+    ['tab-wrong-home','document.addEventListener("DOMContentLoaded",()=>document.querySelector("[data-page-action=back]").href="/wrong-home/");',['language','zh/language','ar/language'],/selected language home/]
   ]) {
     const broken=fixture(name);probe(broken,code,routes);
     const server=await createStaticSiteServer(broken),type=loadChromium();let browser;
@@ -155,8 +155,8 @@ test('BFCache returns require real restorations and preserve query, fragment and
   assert.equal(first.details.next,'en');assert.equal(first.details.returned,article);
   assert.deepEqual(first.details.events.filter(event=>event.persisted&&new URL(event.url).pathname.includes('language-fixture')).map(event=>new URL(event.url).pathname),
     ['/d/language-fixture/first/','/zh/d/language-fixture/first/']);
-  const third=report(cli('bfcache',['--from',article,'--to','zh','--next','zh-tw','--out',path.join(work,'reports')]));
-  assert.equal(third.details.returned,'/zh-tw'+article);
+  const third=report(cli('bfcache',['--from',article,'--to','zh','--next','ar','--out',path.join(work,'reports')]));
+  assert.equal(third.details.returned,'/ar'+article);
 });
 
 test('BFCache check rejects ordinary Back without a persisted restoration',{timeout:15000},async()=>{
@@ -197,12 +197,12 @@ test('return detects choices shared across tabs and uncaught unavailable-storage
     Storage.prototype.setItem=function(key,value){set.call(this,key,value);if(this===sessionStorage&&key.startsWith('banyan:language-return'))set.call(localStorage,key,value);};
     Storage.prototype.removeItem=function(key){remove.call(this,key);if(this===sessionStorage&&key.startsWith('banyan:language-return'))remove.call(localStorage,key);};
     addEventListener('storage',event=>{if(event.key?.startsWith('banyan:language-return')&&event.newValue)set.call(sessionStorage,event.key,event.newValue);});`,
-    ['d/language-fixture/first','zh/d/language-fixture/first','language','zh/language','zh-tw/language']);
+    ['d/language-fixture/first','zh/d/language-fixture/first','language','zh/language','ar/language']);
   const leaked=cli('return',['--from',article,'--to','zh'],shared);
   assert.equal(leaked.status,1,leaked.stdout+leaked.stderr);assert.match(leaked.stderr,/Another tab must not receive/);
   const blocked=fixture('uncaught-storage');
   probe(blocked,'try{sessionStorage;}catch{document.addEventListener("click",event=>{if(event.target.closest("[data-language-choice]"))throw new Error("Uncaught storage failure");},true);}',
-    ['language','zh/language','zh-tw/language']);
+    ['language','zh/language','ar/language']);
   const uncaught=cli('return',['--from',article,'--to','zh'],blocked);
   assert.equal(uncaught.status,1,uncaught.stdout+uncaught.stderr);assert.match(uncaught.stderr,/handle unavailable storage without uncaught errors/);
 });
@@ -210,7 +210,7 @@ test('return detects choices shared across tabs and uncaught unavailable-storage
 test('canceled choices cannot be revived by a later settings history visit',{timeout:15000},async()=>{
   const broken=fixture('revived-cancel');
   probe(broken,'if(performance.getEntriesByType("navigation")[0]?.type==="back_forward")sessionStorage.setItem("banyan:language-return","zh");',
-    ['language','zh/language','zh-tw/language']);
+    ['language','zh/language','ar/language']);
   const server=await createStaticSiteServer(broken),type=loadChromium();let browser;
   try {
     await server.start();browser=await type.launch({executablePath:type.executablePath()});
@@ -247,7 +247,7 @@ test('choices reject disabled links, wrong names and incorrect current state',{t
 test('choices reject pushed history and broken no-JS links',{timeout:30000},()=>{
   const history=fixture('pushed-history');
   probe(history,'document.addEventListener("click",event=>{const link=event.target.closest("a[data-language-choice]");if(!link)return;event.preventDefault();event.stopImmediatePropagation();location.assign(link.href);},true);',
-    ['language','zh/language','zh-tw/language']);
+    ['language','zh/language','ar/language']);
   const pushed=cli('choices',[],history);assert.equal(pushed.status,1);assert.match(pushed.stderr,/replace the settings history entry/);
   const links=fixture('wrong-link');change(links,'language',html=>html.replace('href=/zh/language/','href=/language/'));
   const wrong=cli('choices',[],links);assert.equal(wrong.status,1);assert.match(wrong.stderr,/declared language/);
@@ -277,7 +277,7 @@ test('HTML script boundaries follow page capabilities across all languages',{tim
   assert.ok((await inspect(stray)).issues.some(issue=>issue.includes('preferences/language-page')&&issue.includes('expected 0')));
   const missing=fixture('missing-controller');change(missing,'zh/language',html=>html.replace(script,''));
   assert.ok((await inspect(missing)).issues.some(issue=>issue.includes('preferences/language-page')&&issue.includes('expected 1')));
-  for(const route of ['','language','zh/language','zh-tw/language'])assert.doesNotMatch(
+  for(const route of ['','language','zh/language','ar/language'])assert.doesNotMatch(
     fs.readFileSync(path.join(output,route,'index.html'),'utf8'),/<body\b[^>]*\sdata-language-context(?:\s|=|>)/,
     'Theme output must not restore retired language context.');
   const global=fixture('global-controller'),main=fs.readFileSync(path.join(global,'index.html'),'utf8').match(/src=["']?(\/js\/main\.[^"' >]+)/)[1];

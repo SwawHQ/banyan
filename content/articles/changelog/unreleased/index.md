@@ -11,7 +11,7 @@ lastmod: 2026-11-06
 - `defaultContentLanguage` selects the default site. Changing language weights no longer changes the PWA manifest name, SEO default language or 404 default language.
 - Language option icons now come from each translated settings page's `params.language_icon`. Remove language icon settings from `hugo.toml`; the settings navigation entry still uses `params.icon`.
 - Appearance settings pages declare `auto`, `light` and `dark` icons in `params.appearance_icons`, using SVG names, text or images.
-- Chinese locales use `zh-Hans` and `zh-Hant`, with language keys and URLs unchanged. RSS keeps the full tags; Open Graph omits optional locale tags when no region is specified.
+- The reference site provides English, Simplified Chinese and right-to-left Arabic. Traditional Chinese pages and its interface dictionary are removed. Simplified Chinese uses `zh-Hans`; RSS keeps the full locale tag, and Open Graph omits optional locale tags when no region is specified.
 - The Module's `theme.toml` declares the minimum Hugo version. Sites no longer repeat `module.hugoVersion.min`.
 - Chinese guides and developer documentation at `https://banyan.swaw.com/articles/docs/`, with release notes at `https://banyan.swaw.com/articles/changelog/`. The Banyan repository maintains their source under `content/articles/docs/` and `content/articles/changelog/`, released with the theme code. Articles use `p/` URLs.
 - Hugo Module at `github.com/SwawHQ/banyan/module`, with matching
@@ -271,7 +271,7 @@ lastmod: 2026-11-06
   Each site owns its complete `hugo.toml`; remove the Module's default configuration.
   The repository root provides an example, including the LLMS output definition,
   language locales and an explicit palette.
-  The demo declares EN, 简, 繁 and ع as language markers, including right-to-left Arabic.
+  The demo declares EN, 简 and ع as language markers, including right-to-left Arabic.
 - Use native Hugo for builds and previews, and native Git and GitHub CLI
   for releases.
 - Build and minify JavaScript with Hugo, and generate CSP and deployment

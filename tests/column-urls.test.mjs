@@ -14,7 +14,7 @@ import {listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browse
 
 const repository=fileURLToPath(new URL('../',import.meta.url));
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/column-url-policy-tests');
-const suffixes=['','.zh','.zh-tw','.ar'];
+const suffixes=['','.zh','.ar'];
 let work,source,output,configuration,buildNumber=0;
 const write=(file,text)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);};
 const section=(fields='')=>'---\ntitle: Column\nlayout: page-collection-directory\nparams:\n  slots: [breadcrumb]\n'+fields+'---\n';
@@ -51,7 +51,7 @@ before(()=>{
     'defaultContentLanguage="en"\n[params.appearance]\npalette="site/theme.css"\n[minify]\ndisableJS=true\n'+
     '[taxonomies]\n[outputs]\nhome=["HTML"]\nsection=["HTML"]\npage=["HTML"]\n'+
     '[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n'+
-    '[languages.zh-tw]\nlabel="繁體"\nweight=3\n[languages.ar]\nlabel="العربية"\nweight=4\n'+
+    '[languages.ar]\nlabel="العربية"\ndirection="rtl"\nweight=3\n'+
     '[[cascade]]\n[cascade.build]\npublishResources=false\n'+fixtureSiteMounts;
   for(const suffix of suffixes) {
     write(content('_index'+suffix+'.md'),'---\ntitle: Home\ndescription: Column address policy fixture.\nlayout: page-article-norss\n---\nHome.\n');
@@ -66,7 +66,7 @@ after(()=>{if(work){assert.equal(path.dirname(fs.realpathSync(work)),parent);fs.
 
 test('directory columns keep natural URLs while articles keep independent URLs',()=>{
   passed(build());
-  for(const prefix of ['','zh/','zh-tw/','ar/']) {
+  for(const prefix of ['','zh/','ar/']) {
     for(const route of ['docs/','docs/child/','leaf/','p/stable/']) {
       const html=fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');
       assert.equal(extractCanonicalHref(html),'https://example.test/base/'+prefix+route);
@@ -79,7 +79,7 @@ test('percent signs in deployment prefixes preserve column and article paths',()
     const config='disablePathToLower=true\n'+configuration.replace('https://example.test/base/','https://example.test/'+prefix);
     changed(content('docs/Äpfel/_index.md'),section(),result=>{
       passed(result);
-      for(const language of ['','zh/','zh-tw/','ar/'])for(const route of ['docs/','docs/child/','leaf/','p/stable/']) {
+      for(const language of ['','zh/','ar/'])for(const route of ['docs/','docs/child/','leaf/','p/stable/']) {
         const html=fs.readFileSync(path.join(output,language,route,'index.html'),'utf8');
         assert.equal(decodeURIComponent(new URL(extractCanonicalHref(html)).pathname),'/'+decodeURIComponent(prefix)+language+route);
       }

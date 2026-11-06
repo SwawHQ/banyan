@@ -22,7 +22,7 @@ import {check as checkSource} from '../.agents/skills/swaw-banyan/tasks/check/br
 
 const repository=fileURLToPath(new URL('../',import.meta.url));
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/aggregate-time-ranges-tests');
-const locales=[['',''],['.zh','/zh'],['.zh-tw','/zh-tw'],['.ar','/ar']];
+const locales=[['',''],['.zh','/zh'],['.ar','/ar']];
 const articles=[
   ['before','1999-12-31T23:59:59+08:00'],
   ['start','2000-01-01T00:00:00+08:00'],
@@ -86,7 +86,7 @@ before(()=>{
     'defaultContentLanguage="en"\nenableRobotsTXT=true\nprintPathWarnings=true\npanicOnWarning=true\n'+
     '[frontmatter]\nlastmod=["lastmod","date"]\n[minify]\ndisableJS=true\n[params.appearance]\npalette="site/theme.css"\n'+
     '[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n'+
-    '[languages.zh-tw]\nlabel="繁體"\nweight=3\n[languages.ar]\nlabel="العربية"\ndirection="rtl"\nweight=4\n'+
+    '[languages.ar]\nlabel="العربية"\ndirection="rtl"\nweight=3\n'+
     '[taxonomies]\n[[cascade]]\n[cascade.build]\npublishResources=false\n'+
     '[outputs]\nhome=["HTML","RSS","LLMS"]\nsection=["HTML","RSS"]\npage=["HTML"]\n'+
     '[outputFormats.LLMS]\nmediaType="text/plain"\nbaseName="llms"\nisPlainText=true\nnotAlternative=true\n'+fixtureSiteMounts);

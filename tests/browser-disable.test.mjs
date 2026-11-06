@@ -53,7 +53,7 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
-  for(const language of ['en','zh','zh-tw']) {
+  for(const language of ['en','zh','ar']) {
     const prefix=language==='en'?'':'/'+language,suffix=language==='en'?'':'.'+language;
     write(path.join(content,'cleanup-start/index'+suffix+'.md'),'---\ntitle: Independent cleanup source\nurl: '+prefix+page+'\nlayout: page-article-norss\n---\n\nIndependent worker cleanup page.');
   }
@@ -89,7 +89,7 @@ before(()=>{
   const foreign='self.addEventListener("install",()=>self.skipWaiting());self.addEventListener("activate",event=>event.waitUntil(self.clients.claim()));';
   for(const directory of [enabled,disabled,...Object.values(faults)])write(path.join(directory,'unrelated-worker/sw.js'),foreign);
   write(path.join(enabled,'foreign-bootstrap.js'),'void navigator.serviceWorker.register("/unrelated-worker/sw.js",{scope:"/unrelated-worker/"});');
-  for(const prefix of ['','/zh','/zh-tw']) {
+  for(const prefix of ['','/zh','/ar']) {
     const file=path.join(enabled,prefix+page,'index.html');
     write(file,fs.readFileSync(file,'utf8').replace('</head>','<script defer src="/foreign-bootstrap.js"></script></head>'));
   }

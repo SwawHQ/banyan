@@ -31,7 +31,7 @@ before(()=>{
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),assets=path.join(work,'assets'),config=path.join(work,'fixture.toml');
-  for(const lang of ['en','zh','zh-tw']) {
+  for(const lang of ['en','zh','ar']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
     write(path.join(content,'powered-by/index'+suffix+'.md'),fs.readFileSync(path.join(root,'content/powered-by/index'+suffix+'.md'),'utf8')
       .replace(/^url:.*$/m,'url: '+prefix+panel+'\n'));

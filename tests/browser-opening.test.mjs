@@ -54,7 +54,7 @@ before(()=>{
     write(path.join(content,'products',name,'_index.md'),`---\ntitle: ${name}\nlayout: page-collection-products\nparams:\n  slots: [ breadcrumb ]\n---\n`);
     write(path.join(content,'products',name,'_map.toml'),"refs = [\"/d/canvas-first\",\"/d/canvas-next\"]\n");
   }
-  for(const suffix of ['','.zh','.zh-tw']) {
+  for(const suffix of ['','.zh','.ar']) {
     write(path.join(content,'discover','_index'+suffix+'.md'),directoryPage('Sources'));
     write(path.join(content,'products','_index'+suffix+'.md'),directoryPage('Products'));
     write(path.join(content,'products-all','_index'+suffix+'.md'),'---\ntitle: All products\nlayout: page-collection-products-all\nparams:\n  aggregate: /products\n  slots: [ breadcrumb ]\n---\n');

@@ -50,14 +50,10 @@ zh.label = "中文"
 zh.locale = "zh-Hans"
 zh.weight = 2
 
-zh-tw.label = "繁體"
-zh-tw.locale = "zh-Hant"
-zh-tw.weight = 3
-
 ar.label = "العربية"
 ar.locale = "ar"
 ar.direction = "rtl"
-ar.weight = 4
+ar.weight = 3
 
 
 # Banyan output format and parameters.

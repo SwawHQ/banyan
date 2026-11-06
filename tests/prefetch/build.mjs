@@ -74,7 +74,7 @@ try {
         let sharedBody;
         const csp=routes(output).find(route=>route.source==='/*').headers.find(header=>header.key==='Content-Security-Policy').value;
         assert.ok(!csp.includes("'unsafe-inline'"));
-        for(const prefix of ['','zh','zh-tw']) {
+        for(const prefix of ['','zh','ar']) {
             const regular=page(output,prefix),debug=page(output,prefix,'powered-by');
             assert.doesNotMatch(regular,/\bdata-prefetch-debug(?:\s|=|>)/);
             assert.match(debug,/\bdata-prefetch-debug(?:\s|=|>)/);
@@ -155,7 +155,7 @@ try {
 
     const subpath=build('subpath',enabledConfig,undefined,'','baseURL = "https://example.test/base/"\n');
     assert.deepEqual(JSON.parse(script(page(subpath),'site-prefetch-data')).sw,{enabled:false,url:'/base/sw.js',scope:'/base/'});
-    for(const prefix of ['','zh','zh-tw']) {
+    for(const prefix of ['','zh','ar']) {
         const html=page(subpath,prefix,'powered-by');
         assert.match(html,/\bdata-prefetch-debug(?:\s|=|>)/);
         assert.deepEqual(JSON.parse(script(html,'site-prefetch-data')).sw,{enabled:false,url:'/base/sw.js',scope:'/base/'});
@@ -165,7 +165,7 @@ try {
 
     const chinese=build('default-zh',enabledConfig,undefined,'',
         'baseURL = "https://example.test/base/"\ndefaultContentLanguage = "zh"\ndisableLanguages = ["en"]\n');
-    for(const prefix of ['','zh-tw']) {
+    for(const prefix of ['','ar']) {
         const html=page(chinese,prefix,'powered-by');
         assert.equal(extractTagAttribute(extractStartTags(html,'html')[0],'lang'),prefix||'zh');
         assert.match(html,/\bdata-prefetch-debug(?:\s|=|>)/);

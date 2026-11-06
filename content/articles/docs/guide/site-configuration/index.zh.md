@@ -81,13 +81,13 @@ target = "i18n"
 
 `defaultContentLanguage` 选择默认语言；语言 `weight` 控制显示顺序，不改变默认站点。
 `label` 设置语言名称，原生 `locale` 用于本地化、RSS 和 Open Graph。
-演示站使用 `en-US`、`zh-Hans`、`zh-Hant`；简繁按文字系统区分，语言键和 URL 保持 `zh`、`zh-tw`。
+参考站点使用英语 `en-US`、简体中文 `zh-Hans` 和阿拉伯语 `ar`；语言键为 `en`、`zh`、`ar`，阿拉伯语设置 `direction = "rtl"`。
 RSS 使用完整 `locale`。Open Graph 只输出有明确地区的语言标签，如 `en_US`；无地区时省略可选的语言标记。
 各语言设置页的 `params.language_icon` 设置语言选项图标，如 `{ text: "简" }`；未设置时使用语言图标。
 设置页的 `params.icon` 单独控制导航入口图标。
 增删语言时同步维护三处：根 `hugo.toml` 中的语言及启用设置、
 `assets/i18n/<语言代码>.toml` 界面字典，以及所需的 `content/` 译文（包括首页）。
-Banyan 根参考站点提供 `en`、`zh`、`zh-tw` 和 `ar` 字典；新增语言需补齐对应界面词条。
+Banyan 根参考站点提供 `en`、`zh` 和 `ar` 字典；新增语言需补齐对应界面词条。
 项目通过上述原生挂载读取 `assets/i18n/`，不另设字典路径参数。页面内容译文与界面字典分别维护，互不替代。
 Module 不创建内容栏目。站点自行声明栏目根、布局和 `cascade`，再按需创建下级目录；Banyan 演示中的 `articles`、`articles-all`、`products` 和 `products-all` 可作参考。
 

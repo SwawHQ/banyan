@@ -45,7 +45,7 @@ before(()=>{
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
   fixtureContentDirectory(content);
   write(path.join(content,'d/settings-fixture/index.md'),'---\ntitle: Independent settings source\nurl: /d/settings-fixture/\ndate: 2026-01-01\n---\n\n## Details\n\nIndependent source content.');
-  for(const lang of ['en','zh','zh-tw']) {
+  for(const lang of ['en','zh','ar']) {
     const prefix=lang==='en'?'':'/'+lang,suffix=lang==='en'?'':'.'+lang;
     for(const [name,route] of [['my','one'],['appearance','appearance'],['language','language']]) {
       const filename=(name==='my'?'index':'_index')+suffix+'.md';

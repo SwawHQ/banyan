@@ -46,7 +46,7 @@ before(()=>{
   for(const name of ['one','two'])write(path.join(content,'d/中文',name+'.md'),
     `---\ntitle: Unicode ${name}\nurl: /p/unicode-${name}/\ndate: 2026-01-01\n---\nUnicode source article.`);
   write(path.join(content,'d/引用/_map.toml'),'refs = ["/d/中文/one", "/d/中文/two"]\n');
-  for(const suffix of ['','.zh','.zh-tw']) {
+  for(const suffix of ['','.zh','.ar']) {
     write(path.join(content,'discover','_index'+suffix+'.md'),directoryPage('Sources'));
     write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
     write(path.join(content,'discover/tooling/devtools','_index'+suffix+'.md'),directoryPage('Devtools'));

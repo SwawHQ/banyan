@@ -28,8 +28,8 @@ try {
     const write = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, s); };
     const overlay = path.join(work, 'content');
     fixtureContentDirectory(overlay);
-    const langs = ['', '.zh', '.zh-tw'];
-    const prefixes = ['', '/zh', '/zh-tw'];
+    const langs = ['', '.zh', '.ar'];
+    const prefixes = ['', '/zh', '/ar'];
     // A self-contained 1px WebP keeps image contracts independent of site/legal assets.
     const imageBytes = Buffer.from('UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA', 'base64');
     const imageHash = createHash('sha256').update(imageBytes).digest('hex');
@@ -148,7 +148,7 @@ try {
         if (payloadCache.has(cacheKey)) return payloadCache.get(cacheKey);
 
         const logicalPath = `/${logical.replace(/^\/+|\/+$/g, '')}/`;
-        const data = collectionPayload(output,logicalPath,prefixes[['en','zh','zh-tw'].indexOf(lang)]+logicalPath);
+        const data = collectionPayload(output,logicalPath,prefixes[['en','zh','ar'].indexOf(lang)]+logicalPath);
         assert(data && typeof data === 'object', `${logical} publishes its collection rows as shared HTML fragments`);
         assert(data.rows.flatMap(row => Object.keys(row)).every(field => !field.endsWith('_text') && !['size_unit', 'count_unit'].includes(field)),
             `${logical} navigation payload omits display-only fields`);
@@ -180,7 +180,7 @@ try {
     const directoryMembers = new Map();
     for (const view of ['directory', 'all', 'products', 'name']) {
         const output = builds[view] = build(view);
-        for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
+        for (const [index, lang] of ['en', 'zh', 'ar'].entries()) {
             const current = payload(output, lang, 'd');
             const hrefs = current.rows.map(row => row.href).sort();
             if (view === 'directory') directoryMembers.set(lang, hrefs);
@@ -368,7 +368,7 @@ try {
         console.log('PASS literal version attributes and main/path sort order');
         const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, serviceWorkers: 'block' });
         const page = await context.newPage();
-        for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
+        for (const [index, lang] of ['en', 'zh', 'ar'].entries()) {
             await gotoAndWait(page, `${baseUrl}${prefixes[index]}/products/`);
             const names = await page.locator('.slot-main .item-title').allTextContents();
             assert.deepEqual(names, payload(builds.directory, lang, 'products').rows.map(row => row.text), 'default category order agrees before and after hydration');
@@ -551,10 +551,10 @@ try {
         const paths = selector => namesPage.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
         const nameGrid = '.slot-main [data-sortable="true"]';
         const mainLinks = `${nameGrid} .item-control`;
-        for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
+        for (const [index, lang] of ['en', 'zh', 'ar'].entries()) {
             const prefix = prefixes[index];
-            const ascendingAction = {en:'Sort by Name ascending',zh:'按名称升序排序','zh-tw':'按名稱升冪排序'}[lang];
-            const descendingAction = {en:'Sort by Name descending',zh:'按名称降序排序','zh-tw':'按名稱降冪排序'}[lang];
+            const ascendingAction = {en:'Sort by Name ascending',zh:'按名称升序排序',ar:'ترتيب الاسم تصاعديًا'}[lang];
+            const descendingAction = {en:'Sort by Name descending',zh:'按名称降序排序',ar:'ترتيب الاسم تنازليًا'}[lang];
             for (const list of ['d', 'd/contract-inherit', 'products/contract-name', 'contract-name-reference']) {
                 const address = `${baseUrl}${prefix}/${list}/`;
                 await gotoAndWait(namesPage, address);
@@ -617,10 +617,10 @@ try {
             copy.fields.name = 'Literal <b>$& {field}</b>';
             document.body.dataset.collectionSortCopy = JSON.stringify(copy);
         });
-        const literalSort = namesPage.locator('[data-slot=breadcrumb] [data-breadcrumb-collection-href="/zh-tw/contract-name-reference/"] .path-column-sort');
+        const literalSort = namesPage.locator('[data-slot=breadcrumb] [data-breadcrumb-collection-href="/ar/contract-name-reference/"] .path-column-sort');
         await literalSort.click();
-        await namesPage.waitForFunction(() => document.querySelector('[data-breadcrumb-collection-href="/zh-tw/contract-name-reference/"] [data-sort-indicator]')?.textContent === '↓');
-        assert.equal(await literalSort.getAttribute('aria-label'), '按Literal <b>$& {field}</b>升冪排序');
+        await namesPage.waitForFunction(() => document.querySelector('[data-breadcrumb-collection-href="/ar/contract-name-reference/"] [data-sort-indicator]')?.textContent === '↓');
+        assert.equal(await literalSort.getAttribute('aria-label'), 'ترتيب Literal <b>$& {field}</b> تصاعديًا');
         assert.equal(await literalSort.locator('.path-sort-label').textContent(), 'Literal <b>$& {field}</b>');
         assert.equal(await literalSort.locator('b').count(), 0, 'Field names must remain literal text.');
         await gotoAndWait(namesPage, `${baseUrl}/zh/d/`);
@@ -634,13 +634,13 @@ try {
         await server.stop();
     }
     // An unrendered translated page reaches icon validation only through the site audit.
-    const auditFile=path.join(overlay,'contract-icon-audit/index.zh-tw.md');
-    write(auditFile,'---\ntitle: Translated icon audit\nurl: contract-icon-audit/\nlayout: page-article-norss\nbuild: {render: never, list: always}\nparams:\n  icon: audit-zh-tw-missing\n---\n');
+    const auditFile=path.join(overlay,'contract-icon-audit/index.ar.md');
+    write(auditFile,'---\ntitle: Translated icon audit\nurl: contract-icon-audit/\nlayout: page-article-norss\nbuild: {render: never, list: always}\nparams:\n  icon: audit-ar-missing\n---\n');
     const auditResult=spawnSync(hugo,['--noBuildLock','--config',`hugo.toml,${rel(config)}`,'--destination',rel(path.join(work,'invalid-translated-icon'))],
         {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true});
     assert.ifError(auditResult.error);
     assert.notEqual(auditResult.status,0,'A non-default language must still validate unrendered page icons.');
-    assert.match(auditResult.stdout+auditResult.stderr,/undefined icon "audit-zh-tw-missing"/);
+    assert.match(auditResult.stdout+auditResult.stderr,/undefined icon "audit-ar-missing"/);
     fs.rmSync(auditFile);
     console.log('PASS per-language icon audit includes unrendered translated pages');
 

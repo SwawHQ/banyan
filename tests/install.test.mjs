@@ -36,24 +36,24 @@ function passed(root,owner,args) {
 function consumer(name,{replacement='',multilingual=false}={}) {
   const root=path.join(work,name);
   let config=toml[1]+'\n'+toml[0];
-  if(multilingual)config=config.replace('disableLanguages = ["zh", "zh-tw", "ar"]','disableLanguages = ["ar"]')+
+  if(multilingual)config=config.replace('disableLanguages = ["zh", "ar"]','disableLanguages = []')+
     '\n[languages.zh]\nlabel = "中文"\nlocale = "zh-Hans"\nweight = 2\n'+
-    '\n[languages.zh-tw]\nlabel = "繁體"\nlocale = "zh-Hant"\nweight = 3\n';
+    '\n[languages.ar]\nlabel = "العربية"\nlocale = "ar"\ndirection = "rtl"\nweight = 3\n';
   write(root,'hugo.toml',config);
   write(root,'go.mod',`module example.test/consumer\n\ngo 1.18\n\nrequire ${release.module} ${version}\n`+
     (replacement?`\nreplace ${release.module} => ${JSON.stringify(replacement.replaceAll('\\','/'))}\n`:''));
   fixtureSiteFiles(root);
   fixtureSitePages(root,['appearance','language','my','_res','rss','powered-by']);
-  for(const suffix of ['','.zh','.zh-tw','.ar']) {
+  for(const suffix of ['','.zh','.ar']) {
     for(const [directory,href] of [
-      ['_res/home-art/wind',(suffix.startsWith('.zh')?'/zh/':'/')+'articles/docs/'],
+      ['_res/home-art/wind',(suffix==='.zh'?'/zh/':'/')+'articles/docs/'],
       ['powered-by',(suffix==='.zh'?'/zh/':'/')+'articles/changelog/']
     ]) {
       const file=path.join(root,'content',directory,'index'+suffix+'.md');
       fs.writeFileSync(file,fs.readFileSync(file,'utf8').replaceAll(href,'https://banyan.swaw.com'+href));
     }
   }
-  for(const suffix of multilingual?['','.zh','.zh-tw']:['']) {
+  for(const suffix of multilingual?['','.zh','.ar']:['']) {
     const translated=value=>value.replace(/^title: (.+)$/m,'title: $1'+suffix);
     write(root,'content/_index'+suffix+'.md',markdown[0]);
     write(root,'content/articles/_index'+suffix+'.md',translated(markdown[1]));
@@ -109,7 +109,7 @@ function directoryDefaults(output,{prefix='',suffix=''}={}) {
     assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'Module must not supply site-owned '+name+'.');
   const home=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
   assert.ok(extractStartTags(home,'a').some(tag=>extractTagAttribute(tag,'href')===
-    'https://banyan.swaw.com/'+(['zh/','zh-tw/'].includes(prefix)?'zh/':'')+'articles/docs/'),'A starter without documentation links to the official guides.');
+    'https://banyan.swaw.com/'+(prefix==='zh/'?'zh/':'')+'articles/docs/'),'A starter without documentation links to the official guides.');
 }
 before(async()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'install-'));
@@ -227,7 +227,7 @@ test('enabled workers require each published HTML offline page and accept site-o
     const root=consumer('offline '+name,{replacement:moduleRoot,multilingual:true});
     const pathname=variant==='custom'?'notice/fallback/':'_res/offline/';
     write(root,'assets/site/delivery.toml',fixtureDelivery(serviceWorkerPolicy(mode,5,pathname)));
-    for(const suffix of ['','.zh','.zh-tw']) {
+    for(const suffix of ['','.zh','.ar']) {
       const file=path.join(root,'content/_res/offline/index'+suffix+'.md');
       if(variant==='absent'||variant==='missing-zh'&&suffix==='.zh')fs.unlinkSync(file);
       else {
@@ -252,7 +252,7 @@ test('enabled workers require each published HTML offline page and accept site-o
       assert.equal(result.status,0,name+'\n'+log);
       const output=path.join(root,'public');
       assert.equal(fs.existsSync(path.join(output,'sw.js')),mode!=='off',name);
-      if(mode==='enable')for(const prefix of ['','zh','zh-tw']) {
+      if(mode==='enable')for(const prefix of ['','zh','ar']) {
         const file=path.join(output,prefix,pathname,'index.html');
         assert.ok(fs.existsSync(file),name+' '+prefix);
         const html=fs.readFileSync(file,'utf8');
@@ -305,7 +305,7 @@ test('packaged Skill and versioned Module build from an isolated proxy',()=>{
   for(const [prefix,suffix,locale,label] of [
     ['','','en-US','English'],
     ['zh/','.zh','zh-Hans','中文'],
-    ['zh-tw/','.zh-tw','zh-Hant','繁體']
+    ['ar/','.ar','ar','العربية']
   ]) {
     directoryDefaults(output,{prefix,suffix});
     const home=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');

@@ -21,7 +21,7 @@ import {readPages} from '../.agents/skills/swaw-banyan/tasks/_shared/html/read.m
 import {inspectInternalLinks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/links.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),origin='https://banyan.swaw.com';
-const languages=['en','zh','zh-tw','ar'],prefixes=['','zh/','zh-tw/','ar/'],suffixes=['','.zh','.zh-tw','.ar'];
+const languages=['en','zh','ar'],prefixes=['','zh/','ar/'],suffixes=['','.zh','.ar'];
 let work,output,documentation;
 before(async()=>{
   const parent=path.join(os.tmpdir(),'swaw/banyan/reference-site-tests');
@@ -79,6 +79,8 @@ test('the reference site owns its images, manifest and robots templates',()=>{
 });
 
 test('the reference site owns its delivery data, icons and interface translations',()=>{
+  assert.deepEqual(Object.keys(parseToml(fs.readFileSync(path.join(root,'hugo.toml'),'utf8')).languages),languages);
+  assert.deepEqual(fs.readdirSync(path.join(root,'assets/i18n')).sort(),languages.map(language=>language+'.toml').sort());
   for(const relative of ['assets/site/delivery.toml','assets/site/icons.toml',...languages.map(language=>'assets/i18n/'+language+'.toml')]) {
     assert.ok(fs.existsSync(path.join(root,relative)),'Site-owned file: '+relative);
     assert.equal(fs.existsSync(path.join(root,'module',relative)),false,'Configuration stays outside the Module: '+relative);
@@ -163,7 +165,7 @@ test('the reference site owns its columns and links to its local documentation',
     assert.equal(roots.includes('/'+prefix+'github/'),false,'No standalone GitHub entry.');
     for(const name of ['notes','notes-all','discover','all','catalog','catalog-all','changelog','github'])
       assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'No retired or unconfigured column is published: '+name);
-    const docs=(['zh/','zh-tw/'].includes(prefix)?'/zh/':'/')+'articles/docs/';
+    const docs=(prefix==='zh/'?'/zh/':'/')+'articles/docs/';
     assert.ok(extractStartTags(home,'a').some(tag=>extractTagAttribute(tag,'href')===docs),'Home links to the available documentation language.');
     assert.ok(fs.existsSync(path.join(output,docs,'index.html')));
   }
@@ -440,7 +442,7 @@ test('Powered by contains translated diagnostics and same-language test links',(
     for(const link of links) {
       const href=extractTagAttribute(link,'href');
       assert.ok(href.startsWith('/'+prefix),'Diagnostic targets retain the page language: '+href);
-      if(!prefix)assert.doesNotMatch(href,/^\/(?:zh|zh-tw|ar)\//);
+      if(!prefix)assert.doesNotMatch(href,/^\/(?:zh|ar)\//);
       assert.ok(fs.existsSync(path.join(output,new URL(href,origin).pathname,'index.html')));
     }
     const collectionPath=new URL(extractTagAttribute(links[0],'href'),origin).pathname;

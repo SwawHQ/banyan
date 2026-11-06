@@ -46,7 +46,7 @@ test('repository HTML budgets keep raw and gzip failures outside published check
 
 test('collection heads prefetch their own column and missing path runtime without adding a visible path',{timeout:60000},()=>{
   const root=fileURLToPath(new URL('../',import.meta.url)),content=path.join(work,'prefetch-content'),output=path.join(work,'prefetch-build');
-  const languages=[['',''],['.zh','zh/'],['.zh-tw','zh-tw/'],['.ar','ar/']];
+  const languages=[['',''],['.zh','zh/'],['.ar','ar/']];
   for(const [suffix,prefix] of languages) {
     write(content,'prefetch-name/_index'+suffix+'.md','---\ntitle: Name collection\nlayout: page-collection-directory-name-only\nparams:\n  slots: [breadcrumb]\n---\n');
     write(content,'prefetch-name/article'+suffix+'.md','---\ntitle: Name article\nlayout: page-article-norss\nurl: /'+prefix+'p/prefetch-name/\nparams:\n  slots: [breadcrumb]\n---\n');

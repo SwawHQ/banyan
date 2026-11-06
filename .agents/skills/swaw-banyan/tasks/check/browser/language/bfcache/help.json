@@ -14,7 +14,7 @@
       "  --next <code>   Second target; default: source language",
       "",
       "swban check/browser/language/bfcache ./preview --from /article/#from=all&anchor=details --to zh",
-      "swban check/browser/language/bfcache ./preview --from /article/ --to zh --next zh-tw --trace"
+      "swban check/browser/language/bfcache ./preview --from /article/ --to zh --next ar --trace"
     ]
   },
   "zh": {
@@ -32,7 +32,7 @@
       "  --next <code>   第二个目标语言；默认：来源页面的语言",
       "",
       "swban check/browser/language/bfcache ./preview --from /article/#from=all&anchor=details --to zh",
-      "swban check/browser/language/bfcache ./preview --from /article/ --to zh --next zh-tw --trace"
+      "swban check/browser/language/bfcache ./preview --from /article/ --to zh --next ar --trace"
     ]
   }
 }

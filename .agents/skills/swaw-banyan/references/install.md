@@ -213,7 +213,7 @@ baseURL = "https://example.com/"
 taxonomies = {}
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
-disableLanguages = ["zh", "zh-tw", "ar"]
+disableLanguages = ["zh", "ar"]
 # Render assets/site/robots.txt.tmpl; false disables Hugo's robots.txt output.
 enableRobotsTXT = true
 
@@ -265,7 +265,7 @@ settings, locale, icon, `assets/i18n/<language>.toml` dictionary and required co
 translations, including the home. Adding or removing a language requires matching
 changes in `hugo.toml`, the site's `assets/i18n/` and its content translations.
 The [demo configuration](https://github.com/SwawHQ/banyan/blob/main/hugo.toml)
-shows all four languages. The mount above loads site dictionaries.
+shows all three languages. The mount above loads site dictionaries.
 For right-to-left languages, set `languages.<code>.direction = "rtl"`.
 The root reference site supplies
 translated settings and information pages, including Powered by and prefetch
@@ -320,7 +320,7 @@ The home page's `params.show_navigation` controls the first navigation column
 and defaults to `true`. It also applies to homes without a `home-art` shortcode.
 
 Copy `content/_res/home-art/wind/` from the reference site. It is a hidden Hugo
-leaf bundle with `index.md`, `index.zh.md`, `index.zh-tw.md`, `index.ar.md`, `style.css` and
+leaf bundle with `index.md`, `index.zh.md`, `index.ar.md`, `style.css` and
 `script.js`. Each home renders the selected bundle in its current language.
 The bundle has no standalone page. The home keeps its own title, description
 and published URL.

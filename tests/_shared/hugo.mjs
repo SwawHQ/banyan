@@ -57,7 +57,7 @@ export function directoryPage(title,fields='',params='') {
 }
 
 export function fixtureContentDirectory(content) {
-  for(const suffix of ['','.zh','.zh-tw']) {
+  for(const suffix of ['','.zh','.ar']) {
     fs.mkdirSync(path.join(content,'d'),{recursive:true});
     fs.writeFileSync(path.join(content,'d','_index'+suffix+'.md'),directoryPage('Content'));
     const all=path.join(content,'all','_index'+suffix+'.md');

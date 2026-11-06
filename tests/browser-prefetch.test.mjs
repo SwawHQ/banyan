@@ -80,7 +80,7 @@ before(()=>{
   const anchors='<a data-probe="plain" href="/probe-dynamic/">Plain link</a>\n'+['folder','tag','product','file'].map(name=>(name==='product'?'<div aria-hidden="true">'+
     '<p>Viewport spacer</p>'.repeat(60)+'</div>':'')+icon(name,'/probe-'+name+'/')).join('\n');
   write(path.join(layouts,'page-prefetch-probe.html'),'{{ define "main" }}<article class="article"><div class="prose"><h1>{{ .Title }}</h1>{{ .Content }}'+anchors+'</div></article>{{ end }}');
-  for(const language of ['en','zh','zh-tw']) {
+  for(const language of ['en','zh','ar']) {
     const prefix=language==='en'?'':'/'+language,suffix=language==='en'?'':'.'+language;
     write(path.join(content,'prefetch-probe/index'+suffix+'.md'),'---\ntitle: Prefetch probe\nurl: '+prefix+probePage+'\nlayout: page-prefetch-probe\n---\n');
   }
@@ -247,7 +247,7 @@ test('one backend is selected once; overrides apply only on diagnostic pages',{t
     state=await visit(page,baseUrl,'off',probePage);assert.equal(state.requested,'auto');assert.equal(state.backend,'native');
     return state;
   }},{id:'translated-powered-by-reloads',run:async({page,baseUrl})=>{
-    for(const language of ['en','zh','zh-tw']) {
+    for(const language of ['en','zh','ar']) {
       const prefix=language==='en'?'':'/'+language,pathname=prefix+'/powered-by/',fragment='#keep-position';
       await visit(page,baseUrl,'auto',pathname+'?keep=yes'+fragment);
       assert.equal(await page.locator('html').getAttribute('lang'),language);
@@ -257,17 +257,17 @@ test('one backend is selected once; overrides apply only on diagnostic pages',{t
       assert.equal(await disclosure.count(),1);assert.equal(await summary.isVisible(),true);
       assert.equal(await disclosure.evaluate(node=>node.open),false,'Diagnostics start collapsed.');
       assert.equal(await page.locator('#prefetch-debug-controls').isVisible(),false);
-      if(language!=='en')assert.match(await summary.textContent(),/[\u3400-\u9fff]/);
+      if(language!=='en')assert.match(await summary.textContent(),language==='ar'?/[\u0600-\u06ff]/:/[\u3400-\u9fff]/);
       await summary.focus();await summary.press('Enter');
       assert.equal(await disclosure.evaluate(node=>node.open),true,'Enter opens the diagnostic disclosure.');
       assert.equal(await page.locator('#prefetch-debug-controls').isVisible(),true);
       await summary.press('Space');
       assert.equal(await disclosure.evaluate(node=>node.open),false,'Space closes the diagnostic disclosure.');
       assert.equal(await page.locator('#prefetch-debug-controls').isVisible(),false);
-      if(language!=='en')assert.match(await page.locator('label[for=prefetch-debug-backend]').textContent(),/[\u3400-\u9fff]/);
+      if(language!=='en')assert.match(await page.locator('label[for=prefetch-debug-backend]').textContent(),language==='ar'?/[\u0600-\u06ff]/:/[\u3400-\u9fff]/);
       const links=await page.locator('[data-prefetch-test-link]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname));
       assert.ok(links.length>0,'Translated diagnostics retain published test links.');
-      assert.ok(links.every(href=>prefix?href.startsWith(prefix+'/'):!/^\/zh(?:-tw)?\//.test(href)),'Test links use the current language.');
+      assert.ok(links.every(href=>prefix?href.startsWith(prefix+'/'):!/^\/(?:zh|ar)\//.test(href)),'Test links use the current language.');
       for(const backend of ['off','auto']) {
         await summary.click();
         await page.locator('#prefetch-debug-backend').selectOption(backend);

@@ -21,7 +21,7 @@ try {
     const relative = (value) => path.relative(root, value).replaceAll('\\', '/');
     const overlay = path.join(work, 'content');
     await fs.mkdir(path.join(overlay, 'd'), { recursive: true });
-    const locales = [['', ''], ['.zh', '/zh'], ['.zh-tw', '/zh-tw']];
+    const locales = [['', ''], ['.zh', '/zh'], ['.ar', '/ar']];
     const originals = new Map();
     for (const [suffix] of locales) {
         const source = directoryPage('Content');
@@ -67,7 +67,7 @@ try {
     }
     function directoryLabel(document) {
         const row = document.match(/<nav class="document-meta__row document-meta__row--path"[\s\S]*?<\/nav>/)?.[0];
-        const link = row?.match(/<a\b[^>]*href="(?:\/zh|\/zh-tw)?\/d\/"[^>]*>[\s\S]*?<\/a>/)?.[0] || '';
+        const link = row?.match(/<a\b[^>]*href="(?:\/zh|\/ar)?\/d\/"[^>]*>[\s\S]*?<\/a>/)?.[0] || '';
         return extractElementText(link, 'a');
     }
     async function columnLabel(document) {

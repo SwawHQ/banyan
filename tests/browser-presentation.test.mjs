@@ -50,7 +50,7 @@ before(()=>{
     for(const [offset,name] of ['article','other'].entries())write(path.join(content,section,name+'.md'),
       `---\ntitle: ${name}\nurl: /${section}/${name}-${index}/\ndate: "2026-01-0${offset+1}T00:00:00+08:00"\n---\n\n## Chapter\n\n`+'Portable fixture content.\n\n'.repeat(20));
   }
-  for(const suffix of ['','.zh','.zh-tw']) {
+  for(const suffix of ['','.zh','.ar']) {
     write(path.join(content,'discover','_index'+suffix+'.md'),directoryPage('Sources'));
     write(path.join(content,'discover/tooling','_index'+suffix+'.md'),directoryPage('Tooling'));
     write(path.join(content,'discover/tooling/devtools','_index'+suffix+'.md'),directoryPage('Devtools'));

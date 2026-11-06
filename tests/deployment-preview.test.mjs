@@ -45,7 +45,7 @@ test('deployment preview follows configuration and inline scripts with a standal
     }
     async function state() {
       const [headers,redirects,edgeText,...pages]=await Promise.all(['/_headers','/_redirects','/edgeone.json',
-        ...['','/zh','/zh-tw','/ar'].map(prefix=>prefix+'/powered-by/')].map(get));
+        ...['','/zh','/ar'].map(prefix=>prefix+'/powered-by/')].map(get));
       const edge=JSON.parse(edgeText),csp=headerValues(parseHeaders(headers),'/*','Content-Security-Policy')[0];
       assert.equal(headerValues(edge.headers,'/*','Content-Security-Policy')[0],csp);
       const modes=[];
@@ -57,7 +57,7 @@ test('deployment preview follows configuration and inline scripts with a standal
           assert.ok(csp.includes(hash),'Each language must use inline scripts allowed by both deployment files.');
         }
       }
-      assert.equal(modes.length,4);return {headers,redirects,edge,edgeText,csp,modes,pages};
+      assert.equal(modes.length,3);return {headers,redirects,edge,edgeText,csp,modes,pages};
     }
     let initial;
     await until('initial publication',async()=>{assert.match(await get('/'),/STANDALONE_DEPLOYMENT/);initial=await state();return true;});

@@ -55,7 +55,7 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
     }
     async function managers(mode) {
       let main='';
-      for(const prefix of ['','/zh','/zh-tw','/ar']) {
+      for(const prefix of ['','/zh','/ar']) {
         const tags=extractStartTags(await get(prefix+'/'),'script').filter(tag=>extractTagAttribute(tag,'src').includes('/js/sw-manager.'));
         assert.equal(tags.length,mode==='off'?0:1);
         if(mode!=='off') {
@@ -67,7 +67,7 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
       }
       return main;
     }
-    await until('initial enable preview and four-language manager SRI',async()=>{await managers('enable');return await interval(480000);});
+    await until('initial enable preview and three-language manager SRI',async()=>{await managers('enable');return await interval(480000);});
     const initial=await state(),initialManager=await managers('enable');
     fs.writeFileSync(policyFile,policy('enable',11));
     await until('interval edits rebuild worker',async()=>await interval(660000));
@@ -85,9 +85,9 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
     await until('restored worker template reproduces the original bytes',async()=>{assert.deepEqual(await state(),configured);return true;});
     const managerFile=path.join(source,'module/assets/js/pwa/manager-entry.js.tmpl'),originalManager=fs.readFileSync(managerFile,'utf8');
     fs.appendFileSync(managerFile,'\nglobalThis.banyanPreviewManager = "manager-rebuilt";\n');
-    await until('manager template edits update four-language tags and SRI',async()=>(await managers('enable')).includes('manager-rebuilt'));
+    await until('manager template edits update three-language tags and SRI',async()=>(await managers('enable')).includes('manager-rebuilt'));
     fs.writeFileSync(managerFile,originalManager);
-    await until('restored manager template restores four-language tags and SRI',async()=>{assert.equal(await managers('enable'),initialManager);return true;});
+    await until('restored manager template restores three-language tags and SRI',async()=>{assert.equal(await managers('enable'),initialManager);return true;});
     const configOffset=logs.length;
     fs.writeFileSync(configFile,versionConfig('v-sw-preview-two'));
     await until('build version edits republish JSON',async()=>JSON.parse(await get('/sw-version.json'))==='v-sw-preview-two');
