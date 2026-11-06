@@ -180,8 +180,9 @@ lastmod: 2026-11-06
   moderate prerender. Select native rules,
   an active Banyan SW, or link automatically; optional scopes enable native
   prerender. Inline native rules use CSP hashes and wait for navigation and
-  sorting. Initialize custom prefetch once, keep page URL deduplication and
-  remove session gates. The diagnostic page provides per-page backend
+  sorting. Initialize custom prefetch once after asynchronous navigation and
+  sorting finish, so slow loads do not omit path-column links. Keep page URL
+  deduplication and remove session gates. The diagnostic page provides per-page backend
   selection, reload testing and dispatch status. The reference page uses English;
   sites maintain its interface copy in `params.prefetch_debug.labels`.
   Unconfigured icons use the default.

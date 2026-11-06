@@ -50,7 +50,8 @@ after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recu
 
 test('site discovery uses actual translated paths, source links and sort data',async()=>{
   const found=await discoverSite(build);
-  assert.equal(found.panel,'/prefs/update/');assert.equal(found.collection,'/d/');
+  assert.equal(found.panel,'/prefs/update/');
+  assert.equal(found.collection,'/all/','The sorting check needs article links with an explicit source.');
   assert.equal(found.offline,'/');assert.ok(found.prose);assert.equal(found.from,'/');
   const tiny=path.join(work,'tiny');
   write(tiny,'index.html','<html lang=en><body><main class=slot-main>Home</main></body></html>');

@@ -11,6 +11,7 @@ import {sortCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/bre
 import {isolationCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/isolation/options.mjs';
 import {sourceCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/source/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
+import {afterBrowseScript} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/_tests/fixtures.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-breadcrumb');
 const article='/d/breadcrumb-fixture/one/',collection='/d/breadcrumb-fixture/';
@@ -22,11 +23,7 @@ function cli(command,args=[],directory=output){
 }
 function fixture(name){const directory=path.join(work,name);fs.cpSync(output,directory,{recursive:true});return directory;}
 function script(directory,route,text){write(path.join(directory,'probe.js'),text);fs.appendFileSync(path.join(directory,route,'index.html'),'<script defer src="/probe.js"></script>');}
-function settledScript(directory,route,text){script(directory,route,`const fail=()=>{${text}};const html=document.documentElement;
-  const pending=()=>html.hasAttribute('data-entry-breadcrumb-pending')||html.hasAttribute('data-breadcrumb-sort-pending');
-  if(pending()){const observer=new MutationObserver(()=>{if(!pending()){observer.disconnect();fail();}});
-    observer.observe(html,{attributes:true,attributeFilter:['data-entry-breadcrumb-pending','data-breadcrumb-sort-pending']});
-  }else fail();`);}
+function settledScript(directory,route,text){script(directory,route,afterBrowseScript(text));}
 before(()=>{
   fs.mkdirSync(parent,{recursive:true});
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-breadcrumb-'));skill=path.join(work,'skill');output=path.join(work,'public');

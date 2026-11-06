@@ -11,6 +11,7 @@ import {headerCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/b
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 import {loadChromium,loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {afterBrowseScript} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/_tests/fixtures.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-presentation');
 const collection='/d/presentation/child/',deep='/d/presentation/child/two/three/four/article-4/#from=d/presentation/child/two/three/four';
@@ -143,11 +144,11 @@ test(name+' checks collection startup, sort previews and deep canvas geometry',{
   for(const result of state.details.cases)assert.ok(result.columns.length>=5&&result.scrollWidth>result.clientWidth);
 });
 
-test(name+' rejects late collection reordering, changed header spacing and column replacement',{timeout:30000},()=>{
-  const order=fixture('order-'+name);inject(order,'d/presentation/child','js',"const list=document.querySelector('.item-list--path-column');list.append(list.querySelector('[data-list-item]'));");
-  const reordered=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],order);assert.equal(reordered.status,1);assert.match(reordered.stderr,/retain SSR row order/);
-  const gap=fixture('gap-'+name);inject(gap,'d/presentation/child','js',"document.querySelector('.path-column-separator').style.marginInline='12px';");
-  const changed=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],gap);assert.equal(changed.status,1);assert.match(changed.stderr,/retain header spacing/);
+test(name+' rejects empty loaded columns, shifted geometry and column replacement',{timeout:30000},()=>{
+  const empty=fixture('empty-'+name);inject(empty,'d/presentation/child','js',afterBrowseScript("document.querySelector('[data-slot=breadcrumb] [data-collection-column]').replaceChildren();"));
+  const missing=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],empty);assert.equal(missing.status,1);assert.match(missing.stderr,/Loaded path columns must contain navigation rows/);
+  const shifted=fixture('shifted-'+name);inject(shifted,'d/presentation/child','js',"document.querySelector('[data-slot=breadcrumb] [data-collection-column]').style.transform='translateX(12px)';");
+  const changed=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],shifted);assert.equal(changed.status,1);assert.match(changed.stderr,/retain their initial geometry/);
   const nodes=fixture('nodes-'+name);inject(nodes,'d/presentation/child','js',"const nav=document.querySelector('[data-slot=breadcrumb]');nav.replaceWith(nav.cloneNode(true));");
   const replaced=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],nodes);assert.equal(replaced.status,1);assert.match(replaced.stderr,/reuse its reserved/);
 });

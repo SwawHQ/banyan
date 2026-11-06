@@ -16,6 +16,7 @@ import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_share
 import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
 import {runtimeState} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/_shared/page.mjs';
 import {recordRuntime} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/overlap/check.mjs';
+import {waitForBrowse} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/viewport.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),skill=path.join(root,'.agents/skills/swaw-banyan');
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-prefetch-tests'),probePage='/prefetch-probe/',debugPage='/diagnostics/prefetch/';
@@ -503,7 +504,7 @@ test('DCL and restored from/sort paths gate every shared candidate',{timeout:300
         assert.deepEqual(before,{ready:false,matches:0,recorded:{links:[],messages:[]}});
         assert.deepEqual(requests,[]);assert.deepEqual(attempts,[]);
         release();await page.waitForLoadState('load');await page.unroute('**/prefetch-blocker.js');
-        await page.waitForFunction(()=>window.banyanPrefetchState?.reason!=='selecting');
+        await page.waitForFunction(()=>window.banyanPrefetchState&&window.banyanPrefetchState.reason!=='selecting');
         assert.equal((await runtimeState(page)).ready,true);
         assert.equal(await page.evaluate(()=>document.documentElement.hasAttribute('data-entry-breadcrumb-pending')||
           document.documentElement.hasAttribute('data-breadcrumb-sort-pending')),false);
@@ -517,6 +518,34 @@ test('DCL and restored from/sort paths gate every shared candidate',{timeout:300
       }
     }finally{await session.detach();}
   }}]);
+});
+
+test('custom startup waits for navigation and recovers after a fragment failure',{timeout:20000},async()=>{
+  const slow=output('slow-navigation'),article='/d/prefetch-scopes/child/one/';
+  const file=path.join(slow,article,'index.html');
+  write(file,fs.readFileSync(file,'utf8').replace('<body','<body data-prefetch-debug'));
+  await scenarios('slow-navigation',slow,[false,true].map(failed=>({id:failed?'failed-fragments':'held-fragments',serviceWorkers:'block',run:async({page,baseUrl})=>{
+    await page.addInitScript(recordRuntime);
+    let release;const gate=new Promise(resolve=>{release=resolve;});
+    const handler=async route=>{await gate;await (failed?route.abort('failed'):route.continue());};
+    await page.route('**/site/navigation/*.txt',handler);
+    const requested=page.waitForRequest('**/site/navigation/*.txt');
+    try {
+      await page.goto(baseUrl+article+'?prefetch-backend=link#from=d/prefetch-scopes/child&sorts=name-desc,date-asc',{waitUntil:'load'});
+      await requested;
+      const pending=await runtimeState(page);
+      assert.equal(pending.candidates.length,0,'Pending columns must not expose prefetch candidates.');
+      assert.deepEqual(await page.evaluate(()=>window.__swbanPrefetchTrace),{links:[],messages:[]});
+      release();await waitForBrowse(page);
+      await page.waitForFunction(()=>window.banyanPrefetchState?.backend==='link');
+      const state=await runtimeState(page);assert.equal(state.ready,true);
+      const warmed=await page.evaluate(()=>window.__swbanPrefetchTrace.links);
+      assert.equal(warmed.filter(href=>new URL(href).pathname==='/d/prefetch-scopes/child/two/').length,failed?0:1,
+        'Startup must capture links after navigation loads, once per URL.');
+      await page.evaluate(()=>{const root=document.documentElement;root.setAttribute('data-entry-breadcrumb-pending','true');root.removeAttribute('data-entry-breadcrumb-pending');});
+      assert.deepEqual(await page.evaluate(()=>window.__swbanPrefetchTrace.links),warmed,'Later navigation state changes must not restart prefetch.');
+    }finally{release();await page.unroute('**/site/navigation/*.txt',handler);}
+  }})));
 });
 
 test('two-ended scopes resolve columns and prerender independently',{timeout:30000},async()=>{

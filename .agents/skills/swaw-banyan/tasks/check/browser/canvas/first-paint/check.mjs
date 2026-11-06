@@ -8,8 +8,8 @@ export function checkReservedColumns(first,final) {
   assert.equal(first.parsed.columns,final.columns.length,'Parsed markup must reserve the final source column count.');
   assert.equal(first.columns.length,final.columns.length,'Startup must retain the reserved source column count.');
   assert.ok(first.pathContent.every(column=>column.rows.length===0),'Reserved path columns must not inline list rows.');
-  assert.ok(final.pathContent.every(column=>column.rows.length>0),'Loaded path columns must contain navigation rows.');
   assert.ok(final.reservedColumnsRetained,'Startup must reuse its reserved navigation and column nodes.');
+  assert.ok(final.pathContent.every(column=>column.rows.length>0),'Loaded path columns must contain navigation rows.');
   assert.ok(final.pathAccessible,'Settled source navigation must be visible to accessibility tools.');
 }
 

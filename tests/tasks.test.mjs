@@ -86,12 +86,12 @@ before(async () => {
   write(site,'public/edgeone.json',JSON.stringify({headers:headers.map(([source,value]) => ({
     source,headers:[{key:'Content-Security-Policy',value}]
   }))}));
-  write(site,'public/js/main.0123456789abcdef.js',external);
+  write(site,'public/js/updates/page.0123456789abcdef.js',external);
   write(site,'public/css/page.0123456789abcdef.css','body{color:black}');
   write(site,'public/sitemap.xml','<urlset><url><loc>https://example.test/</loc></url></urlset>');
   write(site,'public/robots.txt','User-agent: *\nSitemap: https://example.test/sitemap.xml');
   write(site,'public/llms.txt','# Fixture\nCanonical site: https://example.test/\nSitemap: https://example.test/sitemap.xml\n## Pages\n- [Home](<https://example.test/>)');
-  write(site,'public/index.html',`<!doctype html><html lang=en><head><title>Fixture</title><meta name=description content="Fixture home"><link rel=canonical href="https://example.test/"><link rel=stylesheet href="/css/page.0123456789abcdef.css"></head><body><h1>Fixture</h1><time data-site-update-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>v20261008120000</time><script>${inline}</script><script src="/js/main.0123456789abcdef.js" integrity="sha256-${hash(external)}"></script></body></html>`);
+  write(site,'public/index.html',`<!doctype html><html lang=en><head><title>Fixture</title><meta name=description content="Fixture home"><link rel=canonical href="https://example.test/"><link rel=stylesheet href="/css/page.0123456789abcdef.css"></head><body><h1>Fixture</h1><time data-site-update-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>v20261008120000</time><script>${inline}</script><script src="/js/updates/page.0123456789abcdef.js" integrity="sha256-${hash(external)}"></script></body></html>`);
   write(site,'assets/site/external-resources.yaml','resources: []');
   server = createServer((request,response) => {
     requests++;
@@ -176,7 +176,7 @@ test('CSP and SRI reject their own defects independently',() => {
   assert.equal(result.status,1);
   assert.match(result.stderr,/CSP does not allow final inline script/);
   const assetOutput = output('asset changed');
-  write(assetOutput,'js/main.0123456789abcdef.js','changed();');
+  write(assetOutput,'js/updates/page.0123456789abcdef.js','changed();');
   assert.equal(cli('check/csp',[assetOutput]).status,0);
   const assetResult = cli('check/sri',[assetOutput]);
   assert.equal(assetResult.status,1);
