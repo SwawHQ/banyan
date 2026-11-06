@@ -95,7 +95,9 @@ the language. With no argument, show the common commands from the help task's
 `tasks/help/help.json`, beside its `entry.mjs`. Its `en.details` and `zh.details`
 supply the shared home page for all three help commands. Keep each command and
 description on one line, with `#` markers aligned within each group.
-Topic guides stay in `references/`.
+Help topics such as `upgrade/git` use only `tasks/<topic>/help.json`, with usage
+`swban help <topic>`. They are read by explicit path and excluded from command lists.
+Detailed Agent guidance stays in `references/`.
 
 A depth lists commands and categories, including all shallower levels.
 A path followed by a depth lists descendants below that path, keeping full

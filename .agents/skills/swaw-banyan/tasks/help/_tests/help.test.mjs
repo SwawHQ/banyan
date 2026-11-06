@@ -7,15 +7,16 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {catalog,help,taskHelp,systemLanguage} from '../run.mjs';
 
-const parent=fs.realpathSync.native(os.tmpdir());
+const parent=path.join(fs.realpathSync.native(os.tmpdir()),'swaw','banyan','help');
+fs.mkdirSync(parent,{recursive:true});
 let work,root;
-function document(command,{entry=false,en=command,zh='中文 '+command}={}) {
+function document(command,{entry=false,en=command,zh='中文 '+command,usage='swban '+command}={}) {
   const dir=path.join(root,command);
   fs.mkdirSync(dir,{recursive:true});
   if (entry) fs.writeFileSync(path.join(dir,'entry.mjs'),'throw new Error("Help must not execute entries");');
   fs.writeFileSync(path.join(dir,'help.json'),JSON.stringify({
-    en:{summary:en,usage:'swban '+command,details:['English details']},
-    zh:{summary:zh,usage:'swban '+command,details:['完整中文说明']}
+    en:{summary:en,usage,details:['English details']},
+    zh:{summary:zh,usage,details:['完整中文说明']}
   }));
 }
 const names=text=>text.split('\n').map(line=>line.split(/\s+#/)[0].trim());
@@ -44,6 +45,7 @@ beforeEach(()=>{
   document('alpha');document('alpha/first',{entry:true});
   document('alpha/nested');document('alpha/nested/deep',{entry:true});
   document('help',{entry:true});document('solo',{entry:true});
+  document('upgrade/git',{usage:'swban help upgrade/git'});
   fs.mkdirSync(path.join(root,'_shared'),{recursive:true});
   fs.writeFileSync(path.join(root,'_shared/helper.mjs'),'throw new Error("Support module must not load");');
   fs.mkdirSync(path.join(root,'unused/entry.mjs'),{recursive:true});
@@ -111,6 +113,18 @@ test('detailed help reads the requested language and category children without r
   assert.doesNotMatch(group,/alpha\/nested\/deep/);
   assert.match(help(['--help'],'zh',root),/swban help/);
   assert.match(taskHelp('solo','en',root),/English details/);
+});
+
+test('help-only topics render by path and stay out of executable command lists',()=>{
+  for(const language of ['en','zh']) {
+    const topic=help(['upgrade/git'],language,root);
+    assert.ok(topic.startsWith('swban help upgrade/git  #'));
+    assert.ok(topic.includes(language==='zh'?'完整中文说明':'English details'));
+    assert.equal(help(['upgrade/git/'],language,root),topic);
+    assert.doesNotMatch(help(['9'],language,root),/upgrade/);
+    assert.throws(()=>help(['upgrade/git','1'],language,root),/unknown_help:upgrade\/git/);
+  }
+  assert.equal(fs.existsSync(path.join(root,'upgrade/git/entry.mjs')),false);
 });
 
 test('bad arguments and missing help files fail explicitly',()=>{
@@ -191,12 +205,12 @@ test('language entry points accept scoped depth and only translate a single help
 test('PowerShell cold help matches JS with no runtime on PATH',{skip:process.platform!=='win32',timeout:30000},()=>{
   for(const language of ['en','zh'])for(const args of [[],['1'],['2'],['3'],['alpha'],['alpha/first'],['--help'],
     ['alpha','1'],['alpha','2'],['alpha/nested','3'],['solo','2'],
-    ['alpha/'],['alpha/first/'],['alpha/','1'],['alpha/nested/','3']]) {
+    ['alpha/'],['alpha/first/'],['alpha/','1'],['alpha/nested/','3'],['upgrade/git'],['upgrade/git/']]) {
     const result=coldHelp(args,language);assert.equal(result.status,0,result.stderr);
     assert.equal(result.stdout,help(args,language,root)+'\n');
   }
   for(const args of [['0'],['9007199254740992'],['1','2'],['../outside'],['alpha','0'],['alpha','two'],
-    ['alpha','2','3'],['--help','2'],['../outside','2'],['absent','2'],['alpha//','2']]) {
+    ['alpha','2','3'],['--help','2'],['../outside','2'],['absent','2'],['alpha//','2'],['upgrade/git','1']]) {
     assert.equal(coldHelp(args,'en').status,1);
   }
   assert.equal(fs.existsSync(path.join(work,'.tools')),false);

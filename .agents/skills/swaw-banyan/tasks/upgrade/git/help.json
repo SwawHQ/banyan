@@ -1,0 +1,52 @@
+{
+  "en": {
+    "summary": "Compare official versions before a theme upgrade",
+    "usage": "swban help upgrade/git",
+    "details": [
+      "Use native Git through base/git to compare versions and check upgrade changes.",
+      "<old>/<new>: tags or commit SHAs; <path>: a file or directory in the official repository.",
+      "",
+      "Prepare the official checkout (PowerShell):",
+      "$banyanRef = \"$env:TEMP/swaw/banyan/upgrade/official\"                   #Official checkout directory",
+      "swban base/git clone https://github.com/SwawHQ/banyan.git \"$banyanRef\"  #Clone the official repository once",
+      "swban base/git -C \"$banyanRef\" fetch origin --tags                      #Update branches and tags of an existing copy",
+      "",
+      "Select versions:",
+      "swban base/git -C \"$banyanRef\" tag -l \"v*\" --sort=-version:refname          #List official versions",
+      "swban base/git -C \"$banyanRef\" rev-parse \"<old>^{commit}\" \"<new>^{commit}\"  #Resolve both commits",
+      "",
+      "Inspect changes:",
+      "swban base/git -C \"$banyanRef\" diff --name-status <old> <new>  #List changed files",
+      "swban base/git -C \"$banyanRef\" log --oneline <old>..<new>      #List added commits",
+      "swban base/git -C \"$banyanRef\" diff <old> <new> -- <path>      #Read file or directory changes",
+      "",
+      "Tags can include prereleases. Read content/articles/changelog/ at the target version.",
+      "Update the theme and Skill, then review affected site files; see references/install.md: Change the version."
+    ]
+  },
+  "zh": {
+    "summary": "比对官方版本，检查主题升级变动",
+    "usage": "swban help upgrade/git",
+    "details": [
+      "通过 base/git 使用原生 Git 比对版本，辅助主题升级。",
+      "<old>/<new>：标签或提交 SHA；<path>：官方仓库内的文件或目录。",
+      "",
+      "准备官方副本（PowerShell）：",
+      "$banyanRef = \"$env:TEMP/swaw/banyan/upgrade/official\"                   #官方副本目录",
+      "swban base/git clone https://github.com/SwawHQ/banyan.git \"$banyanRef\"  #首次获取官方仓库",
+      "swban base/git -C \"$banyanRef\" fetch origin --tags                      #已有副本时更新分支和标签",
+      "",
+      "选择版本：",
+      "swban base/git -C \"$banyanRef\" tag -l \"v*\" --sort=-version:refname          #查看官方版本",
+      "swban base/git -C \"$banyanRef\" rev-parse \"<old>^{commit}\" \"<new>^{commit}\"  #确认两个版本的提交",
+      "",
+      "检查变动：",
+      "swban base/git -C \"$banyanRef\" diff --name-status <old> <new>  #列出变动文件",
+      "swban base/git -C \"$banyanRef\" log --oneline <old>..<new>      #列出新增提交",
+      "swban base/git -C \"$banyanRef\" diff <old> <new> -- <path>      #查看文件或目录差异",
+      "",
+      "标签可能包含预发布版。版本说明见目标版本的 content/articles/changelog/。",
+      "更新主题与 Skill，再检查受影响的站点文件；步骤见 references/install.md 的 Change the version。"
+    ]
+  }
+}

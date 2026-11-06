@@ -74,8 +74,7 @@ export function taskHelp(command,language=systemLanguage(),root=tasksRoot) {
   const lines=[document.usage+'  #'+document.summary,...(document.details.length?['',...document.details]:[])];
   if (!hasEntry(directory(command,root))) {
     const children=catalog(root,language).filter(item=>item.path.startsWith(command+'/')&&item.path.split('/').length===command.split('/').length+1);
-    if (!children.length) throw new Error('unknown_help:'+command);
-    lines.push('',rows(children,language));
+    if (children.length) lines.push('',rows(children,language));
   }
   return lines.join('\n');
 }

@@ -74,9 +74,10 @@ try {
             $items = New-Object 'Collections.Generic.Dictionary[string,object]' ([StringComparer]::Ordinal)
             [void](Visit-HelpDirectory $tasksRoot '' $items)
             [string[]]$names = @($items.Keys | Where-Object { $_.StartsWith($query + '/',[StringComparison]::Ordinal) -and $_.Split('/').Count -eq $query.Split('/').Count + 1 })
-            if (-not $names.Count) { throw "unknown_help:$query" }
-            [Array]::Sort($names,[StringComparer]::Ordinal)
-            $lines += @('',(Help-Rows $names $items))
+            if ($names.Count) {
+                [Array]::Sort($names,[StringComparer]::Ordinal)
+                $lines += @('',(Help-Rows $names $items))
+            }
         }
         [Console]::Write(($lines -join "`n") + "`n")
     } else {
