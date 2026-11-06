@@ -2,7 +2,7 @@
 # Show this direct child of Home in root navigation; weight sets its order.
 title: Products - All
 description: All referenced products in one list.
-weight: 30
+weight: 50
 layout: page-collection-products-all
 
 params:

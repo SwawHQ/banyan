@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-export const stripRawText=html=>html.replace(/<!--[\s\S]*?-->/g,'').replace(/(<(?:script|style)\b[^>]*>)[\s\S]*?(<\/(?:script|style)>)/gi,'$1$2');
+export const stripRawText=html=>html.replace(/<!--[\s\S]*?-->/g,'').replace(/(<(script|style)\b(?:"[^"]*"|'[^']*'|[^'">])*>)[\s\S]*?(<\/\2\s*>)/gi,'$1$3');
 
 // shortcut: only explicitly closed Hugo elements; use a DOM parser for arbitrary HTML.
 export function extractBlocks(html,name,predicate=()=>true) {

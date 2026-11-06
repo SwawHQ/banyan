@@ -28,13 +28,14 @@
 {{- end -}}
 {{- $pages = sort (uniq $entries) "Date" "desc" -}}
 {{- $limit := .Site.Config.Services.RSS.Limit -}}
+{{- $siteTitle := partial "system-metadata/site/title.html" .Site -}}
 {{- if ge $limit 1 -}}{{- $pages = first $limit $pages -}}{{- end -}}
 {{- printf "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" | safeHTML }}
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>{{ if eq .Title .Site.Title }}{{ .Site.Title }}{{ else }}{{ with .Title }}{{ . }} on {{ end }}{{ .Site.Title }}{{ end }}</title>
+    <title>{{ if eq .Title $siteTitle }}{{ $siteTitle }}{{ else }}{{ with .Title }}{{ . }} on {{ end }}{{ $siteTitle }}{{ end }}</title>
     <link>{{ .Permalink }}</link>
-    <description>Recent content {{ if ne .Title .Site.Title }}{{ with .Title }}in {{ . }} {{ end }}{{ end }}on {{ .Site.Title }}</description>
+    <description>Recent content {{ if ne .Title $siteTitle }}{{ with .Title }}in {{ . }} {{ end }}{{ end }}on {{ $siteTitle }}</description>
     <generator>Hugo</generator>
     <language>{{ .Site.Language.Locale }}</language>
     {{- with $authorEmail }}

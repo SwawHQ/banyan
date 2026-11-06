@@ -2,7 +2,7 @@
 # 在第一列导航中显示此首页直属子栏目；weight 决定顺序。
 title: 文章 - 全部
 description: 在一个列表中浏览全部文章。
-weight: 10
+weight: 30
 layout: page-collection-directory-all
 
 params:

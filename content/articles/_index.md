@@ -2,7 +2,7 @@
 # Show this direct child of Home in root navigation; weight sets its order.
 title: Articles - Categories
 description: Browse articles by category.
-weight: 20
+weight: 40
 layout: page-collection-directory
 
 params:

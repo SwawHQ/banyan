@@ -9,5 +9,6 @@ params:
     back: "Back"
     missing_translation: "This page does not yet have a [{lang}] version.\nGo to the [{lang}] homepage?" #Keep {lang}; it is replaced with the selected language name.
   icon: language
+  language_icon: { text: "EN" }
   robots: noindex, follow #Use as <meta name="robots" content="…">; noindex or none excludes this page from sitemap.xml and llms.txt.
 ---

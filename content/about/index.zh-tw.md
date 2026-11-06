@@ -4,12 +4,12 @@ title: "關於"
 # linkTitle: "關於" #只替換導覽名稱。
 description: "了解 Banyan 如何為 Hugo 站點組織內容目錄和導航。"
 url: about/ #重新命名內容目錄時，保留此網址。
-weight: 95
+weight: 110
 layout: page-article-norss #渲染 Markdown 正文，不加入 RSS 項目。
 
 params:
   # browser_title: "關於本站" #替換瀏覽器分頁中、網站名稱前的標題。
-  icon: {image: "site/favicon.link.svg"}
+  icon: { text: "©" }
   # share_image: false #此頁面不繼承社群預覽圖片。
   slots: [breadcrumb] #breadcrumb：路徑導覽欄；meta：文章中繼資料、章節目錄和 BlogPosting；[]：全部關閉。
 ---

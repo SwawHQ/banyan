@@ -21,7 +21,7 @@ params:
     - name: Products - Categories
       url: /products/
     - name: Documentation
-      url: https://swaw.com/d/banyan/docs/
+      url: /articles/docs/
     - name: GitHub
       url: https://github.com/SwawHQ/banyan
 ---

@@ -46,8 +46,8 @@ before(()=>{
   fs.mkdirSync(path.join(source,'themes'),{recursive:true});
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
   fs.cpSync(path.join(repository,'archetypes'),path.join(source,'archetypes'),{recursive:true});
-  write(path.join(source,'hugo.toml'),'theme="banyan"\nbaseURL="https://example.test/"\ntitle="Reference fixture"\ndefaultContentLanguage="en"\nenableRobotsTXT=true\nprintPathWarnings=true\npanicOnWarning=true\n'+
-    '[minify]\ndisableJS=true\n[params.appearance]\npalette="css/theme.css"\n[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n[languages.zh-tw]\nlabel="繁體"\nweight=3\n[languages.ar]\nlabel="العربية"\ndirection="rtl"\nweight=4\n'+
+  write(path.join(source,'hugo.toml'),'theme="banyan"\nbaseURL="https://example.test/"\ndefaultContentLanguage="en"\nenableRobotsTXT=true\nprintPathWarnings=true\npanicOnWarning=true\n'+
+    '[minify]\ndisableJS=true\n[params.appearance]\npalette="site/theme.css"\n[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n[languages.zh-tw]\nlabel="繁體"\nweight=3\n[languages.ar]\nlabel="العربية"\ndirection="rtl"\nweight=4\n'+
     '[taxonomies]\n[[cascade]]\n[cascade.build]\npublishResources=false\n[outputs]\nhome=["HTML","RSS","LLMS","DIRECTORY"]\nsection=["HTML","RSS"]\npage=["HTML"]\n'+
     '[outputFormats.LLMS]\nmediaType="text/plain"\nbaseName="llms"\nisPlainText=true\nnotAlternative=true\n'+
     '[outputFormats.DIRECTORY]\nmediaType="application/json"\nbaseName="directory"\nisPlainText=true\nnotAlternative=true\n'+fixtureSiteMounts);
@@ -276,7 +276,7 @@ test('params retain cascade defaults, local overrides and the declaring share-im
     write(path.join(directory,'overridden/index.md'),article('Overridden params','params:\n  slots: []\n  share_image: false\n  icon: {text: Own}'));
     const destination=path.join(work,'params-contract');passed(build(source,destination));
     const inherited=read('p/inherited','index.html',destination),overridden=read('p/overridden','index.html',destination);
-    for(const html of [inherited,overridden])assert.ok(html.includes('<title>Inherited browser title - Reference fixture</title>'),'A local params map must retain unrelated cascade fields.');
+    for(const html of [inherited,overridden])assert.ok(html.includes('<title>Inherited browser title - Home</title>'),'A local params map must retain unrelated cascade fields.');
     assert.match(inherited,/<meta property=["']?og:image["']? content=["']?https:\/\/example\.test\/media\/content\/library\/params\/shared\.[a-f0-9]{64}\.svg/,'Relative images must resolve from the ancestor that declares them.');
     assert.doesNotMatch(overridden,/<meta property=["']?og:image/,'An explicit false value must stop share-image fallback.');
     assert.equal(extractBlocks(inherited,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb').length,1);

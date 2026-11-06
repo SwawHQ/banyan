@@ -7,10 +7,11 @@
 {{- $icon512 := resources.Get "site/icon-512.png" -}}
 {{- if not $icon512 }}{{ errorf "Build failed: missing resource %q." "site/icon-512.png" }}{{ end -}}
 {{- $icon512 = $icon512 | fingerprint -}}
+{{- $siteTitle := partial "system-metadata/site/title.html" .Site -}}
 {{- dict
   "id" "/"
-  "name" .Site.Title
-  "short_name" .Site.Title
+  "name" $siteTitle
+  "short_name" $siteTitle
   "start_url" "/"
   "scope" "/"
   "display" "standalone"

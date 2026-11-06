@@ -1,1 +1,8 @@
-{{- return (replace .Site.Language.Locale "-" "_") -}}
+{{- $locale := .Site.Language.Locale -}}
+{{- $result := "" -}}
+{{- /* Open Graph accepts language_TERRITORY, not script-only BCP 47 tags. */ -}}
+{{- if findRE "(?i)^[a-z]{2,3}(-[a-z]{4})?-[a-z]{2}$" $locale -}}
+  {{- $parts := split $locale "-" -}}
+  {{- $result = printf "%s_%s" (lower (index $parts 0)) (upper (index $parts (sub (len $parts) 1))) -}}
+{{- end -}}
+{{- return $result -}}

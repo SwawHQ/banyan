@@ -3,7 +3,7 @@ title: Powered by
 description: "The technology behind this site, build information, PWA and prefetch status."
 url: powered-by/ #Keep this route when renaming the content directory.
 layout: page-article-norss #Render Markdown; shortcodes enable interactive controls.
-weight: 96
+weight: 100
 
 params:
   icon: code
@@ -44,7 +44,7 @@ params:
       article: "Article"
 ---
 
-**{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Swaw Banyan{{< /new-tab >}}**: {{< new-tab href="https://swaw.com/d/banyan/changelog/" >}}{{< theme-version local="Local development" >}}{{< /new-tab >}}
+**{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Swaw Banyan{{< /new-tab >}}**: {{< new-tab href="/articles/changelog/" >}}{{< theme-version local="Local development" >}}{{< /new-tab >}}
 
 ### Appendix: PWA cache information
 
@@ -52,6 +52,7 @@ params:
 **Server**: {{< site-update "content" >}}  
 **Sync trigger**: {{< site-update "interval" "On page navigation and interval ≥ %d minutes" >}}  
 **SW policy**: {{< site-update "policy" >}}  
+**Offline page**: {{< site-update "offline" >}}  
 **SW status**: {{< site-update "status" >}}
 
 {{< details-start summary="**More diagnostics**" >}}

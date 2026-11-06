@@ -4,12 +4,12 @@ title: "About"
 # linkTitle: "About" #Replace the navigation label only.
 description: "Learn how Banyan organizes content directories and navigation for Hugo sites."
 url: about/ #Keep this route when renaming the content directory.
-weight: 95
+weight: 110
 layout: page-article-norss #Render Markdown without RSS inclusion.
 
 params:
   # browser_title: "About this site" #Replace the title before the site name in browser tabs.
-  icon: {image: "site/favicon.link.svg"}
+  icon: { text: "©" }
   # share_image: false #Stop inherited social preview images for this page.
   slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---

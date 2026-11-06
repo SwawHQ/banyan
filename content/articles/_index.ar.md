@@ -1,7 +1,7 @@
 ---
 title: تصنيفات المقالات
 description: تصفح المقالات حسب التصنيف.
-weight: 20
+weight: 40
 layout: page-collection-directory
 
 params:

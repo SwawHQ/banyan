@@ -4,7 +4,7 @@ description: 使用 RSS 閱讀器訂閱文章更新。
 date: 2026-09-08
 url: rss/ #重新命名內容目錄時，保留此網址。
 layout: page-article-norss #渲染 Markdown 正文，不加入 RSS 項目。
-weight: 100
+weight: 90
 
 params:
   icon: rss

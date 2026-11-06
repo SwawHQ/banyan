@@ -1,0 +1,45 @@
+{{- $page := .page -}}
+{{- /* Goldmark accepts bare percent signs; retain escapes that are already valid. */ -}}
+{{- $href := replaceRE `%25([0-9A-Fa-f]{2})` `%$1` (replace .href "%" "%25") -}}
+{{- $url := urls.Parse $href -}}
+{{- if or (not $href) $url.IsAbs $url.Host -}}{{- return $href -}}{{- end -}}
+{{- if not $url.Path -}}{{- return $href -}}{{- end -}}
+{{- $path := strings.TrimPrefix "./" $url.Path -}}
+{{- $target := or ($page.GetPage $path) ($page.Resources.Get $path) (resources.Get $path) -}}
+{{- $basePath := (urls.Parse $page.Site.BaseURL).Path -}}
+{{- $needsPrefix := and (hasPrefix $path "/") (not (hasPrefix $path $basePath)) -}}
+{{- if and (not $target) (hasPrefix $path "/") -}}
+  {{- $site := hugo.Sites.Default -}}
+  {{- $lookup := $path -}}
+  {{- range hugo.Sites -}}
+    {{- $prefix := printf "/%s/" .Language.Lang -}}
+    {{- if hasPrefix $path $prefix -}}
+      {{- $site = . -}}
+      {{- $lookup = strings.TrimPrefix $prefix $path -}}
+      {{- break -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $target = $site.GetPage $lookup -}}
+{{- end -}}
+{{- if $target -}}
+  {{- if eq $target.ResourceType "page" -}}
+    {{- $href = $target.RelPermalink -}}
+  {{- else -}}
+    {{- $published := $target | resources.Publish -}}
+    {{- $link := try $published.RelPermalink -}}
+    {{- if $link.Err -}}
+      {{- /* Hugo cannot form some percent resource URLs; publish a copy with a safe name. */ -}}
+      {{- $copyPath := printf "site/links/attachment.%s.%s" (sha256 $target.Content) ($target.MediaType.FirstSuffix.Suffix | default "bin") -}}
+      {{- $href = ($target | resources.Copy $copyPath).RelPermalink -}}
+    {{- else -}}
+      {{- $href = $link.Value -}}
+    {{- end -}}
+  {{- end -}}
+{{- else if $needsPrefix -}}
+  {{- $href = strings.TrimPrefix "/" $url.EscapedPath | relURL -}}
+{{- else -}}
+  {{- return $href -}}
+{{- end -}}
+{{- if or $url.RawQuery $url.ForceQuery -}}{{- $href = printf "%s?%s" $href $url.RawQuery -}}{{- end -}}
+{{- if in .href "#" -}}{{- $href = printf "%s#%s" $href $url.EscapedFragment -}}{{- end -}}
+{{- return $href -}}

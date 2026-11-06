@@ -328,6 +328,26 @@ test('shared deployment files are published when the primary homepage uses a sta
     assert.deepEqual(fs.readFileSync(path.join(output,file)),fs.readFileSync(path.join(baseline,file)),file);
 });
 
+test('shared deployment files are published when the default language only outputs RSS',()=>{
+  const content=path.join(work,'deployment-rss-content');
+  for(const suffix of ['','.zh','.zh-tw','.ar'])write(path.join(content,'_index'+suffix+'.md'),
+    '---\ntitle: RSS deployment fixture\ndescription: Shared deployment fixture.\nlayout: page-home\n'+
+    'outputs: '+(suffix?'[HTML, RSS]':'[RSS]')+'\n---\nHome.\n');
+  const config='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n'+
+    '[languages.en]\nweight=2\n[languages.zh]\nweight=1\n';
+  const previous=process.env.HUGO_DISABLEKINDS;
+  try {
+    process.env.HUGO_DISABLEKINDS='404';
+    const output=passed(build('deployment-rss-only',undefined,config,serviceWorkerPolicy('off')));
+    assert.equal(fs.existsSync(path.join(output,'index.html')),false);
+    assert.equal(fs.existsSync(path.join(output,'404.html')),false);
+    assert.ok(fs.existsSync(path.join(output,'index.xml')));
+    assert.ok(fs.existsSync(path.join(output,'zh/index.html')));
+    for(const file of ['_headers','_redirects','edgeone.json'])
+      assert.ok(fs.existsSync(path.join(output,file)),'Other languages must publish '+file+'.');
+  } finally {if(previous===undefined)delete process.env.HUGO_DISABLEKINDS;else process.env.HUGO_DISABLEKINDS=previous;}
+});
+
 test('platform switches publish only their enabled artifacts and do not inherit omitted platforms',()=>{
   for(const cloudflare of [false,true])for(const edgeone of [false,true]) {
     const policy='[platform.cloudflare.pages]\nenabled = '+cloudflare+'\n[platform.edgeone.makers]\nenabled = '+edgeone+'\n'+
@@ -363,6 +383,8 @@ test('disabled and off workers do not publish a policy copy, and worker tables m
       const unavailable=extractBlocks(html,'span',tag=>tag.includes('data-site-content-status'))[0].inner;
       for(const marker of ['data-site-update-interval','data-site-sw-policy'])
         assert.equal(extractBlocks(html,'span',tag=>tag.includes(marker))[0].inner,unavailable,'Disabled rows use the same localized message.');
+      const offline=extractBlocks(html,'span',tag=>tag.includes('data-site-offline-page'))[0];
+      assert.equal(extractTagAttribute(extractBlocks(offline.inner,'a')[0].open,'href'),'/'+prefix+'_res/offline/','The offline link remains available with SW '+mode);
       if(prefix==='zh/')assert.equal(unavailable,'缓存机制已关闭');
     }
   }
@@ -378,6 +400,21 @@ test('sync hints show the configured interval without an enabled-mode prefix',()
   const html=fs.readFileSync(path.join(output,'zh/powered-by/index.html'),'utf8');
   const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-update-interval'))[0];
   assert.equal(decodeHtmlAttribute(interval.inner),'页面加载时 且 间隔 ≥ 11 分钟');
+  const offline=extractBlocks(html,'span',tag=>tag.includes('data-site-offline-page'))[0];
+  assert.equal(extractTagAttribute(extractBlocks(offline.inner,'a')[0].open,'href'),'/zh/_res/offline/');
+});
+
+test('offline links retain deployment subpaths, language prefixes and custom configured paths',()=>{
+  const previous=process.env.HUGO_BASEURL;
+  try {
+    process.env.HUGO_BASEURL='https://example.test/base/';
+    const output=passed(build('offline-link-subpath',undefined,'',serviceWorkerPolicy('off',5,'/custom/offline/')));
+    for(const prefix of ['','zh/','zh-tw/','ar/']) {
+      const html=fs.readFileSync(path.join(output,prefix+'powered-by/index.html'),'utf8');
+      const offline=extractBlocks(html,'span',tag=>tag.includes('data-site-offline-page'))[0];
+      assert.equal(extractTagAttribute(extractBlocks(offline.inner,'a')[0].open,'href'),'/base/'+prefix+'custom/offline/');
+    }
+  } finally {if(previous===undefined)delete process.env.HUGO_BASEURL;else process.env.HUGO_BASEURL=previous;}
 });
 
 test('bucket caching preserves query keys, validates versioned responses and warms only fingerprinted resources',async()=>{

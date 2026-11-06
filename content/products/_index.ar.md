@@ -1,7 +1,7 @@
 ---
 title: تصنيفات المنتجات
 description: تصفح المنتجات حسب التصنيف.
-weight: 40
+weight: 60
 layout: page-collection-directory
 
 params:

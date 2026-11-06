@@ -1,6 +1,6 @@
 {{- $ctx := . -}}
 {{- $pageTitle := trim (printf "%v" ($ctx.Params.browser_title | default $ctx.Title | default "")) " \r\n\t" -}}
-{{- $siteTitle := trim (printf "%v" ($ctx.Site.Title | default "")) " \r\n\t" -}}
+{{- $siteTitle := partial "system-metadata/site/title.html" $ctx.Site -}}
 {{- $browserTitle := $siteTitle -}}
 {{- if $ctx.IsHome -}}
   {{- if ne $pageTitle "" -}}
@@ -8,7 +8,7 @@
   {{- end -}}
 {{- else if eq $pageTitle "" -}}
   {{- $browserTitle = $siteTitle -}}
-{{- else if or (eq $siteTitle "") (eq (lower $pageTitle) (lower $siteTitle)) -}}
+{{- else if eq (lower $pageTitle) (lower $siteTitle) -}}
   {{- $browserTitle = $pageTitle -}}
 {{- else -}}
   {{- $browserTitle = printf "%s - %s" $pageTitle $siteTitle -}}

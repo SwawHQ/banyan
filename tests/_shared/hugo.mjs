@@ -15,7 +15,7 @@ export function fixtureSiteFiles(directory) {
   fs.copyFileSync(new URL('../../content/_res/_index.md',import.meta.url),path.join(directory,'content/_res/_index.md'));
   const siteAssets=path.join(directory,'assets/site');
   fs.mkdirSync(siteAssets,{recursive:true});
-  for(const file of ['icons.toml','delivery.toml','favicon.ico','favicon.link.svg','icon-180.png','icon-192.png','icon-256.png','icon-512.png','manifest.webmanifest.tmpl','robots.txt.tmpl'])
+  for(const file of ['icons.toml','delivery.toml','favicon.ico','favicon.link.svg','icon-180.png','icon-192.png','icon-256.png','icon-512.png','manifest.webmanifest.tmpl','robots.txt.tmpl','theme.css','theme.high-contrast.css'])
     fs.copyFileSync(new URL('../../assets/site/'+file,import.meta.url),path.join(siteAssets,file));
 }
 

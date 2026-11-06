@@ -202,6 +202,9 @@ test(name+' opens nested directories and product categories with retained lineag
     assert.equal(state.source.root,root);assert.equal(state.lineage.sort,sort);
     assert.deepEqual(state.history.lineage.reload,state.lineage);assert.deepEqual(state.history.lineage.forward,state.lineage);
     assert.equal(state.lineage.columns.at(-1),new URL(from,'http://fixture').pathname);
+    if(new URL(from,'http://fixture').pathname.endsWith('/d/opening/'))
+      assert.equal(new URLSearchParams(new URL(state.target,'http://fixture').hash.slice(1)).get('from'),null,
+        'The article must omit its default directory source.');
   }
 });
 

@@ -42,6 +42,9 @@ local wheel fixtures. Without these inputs, integration cases are skipped.
 | `browser.test.mjs`, `browser-site.test.mjs` | Engines, CSP, discovery, reports, isolation and cleanup |
 | `browser-{aside,breadcrumb,canvas,collection,nav,opening,presentation,wheel}.test.mjs` | Navigation, geometry, native input and first paint |
 | `browser-{language,settings,ui}.test.mjs` | Translation, history, preferences and palette |
+| `language-icon.test.mjs` | Target-language option icons, independent entry icons and bundle images |
+| `appearance-icons.test.mjs` | Page-owned appearance icons, bundle images and required icon values |
+| `locale.test.mjs` | Script locales, RSS language tags and region-only Open Graph metadata |
 | `responsive-images.test.mjs` | Image processing, browser selection, original links and build-cache reuse |
 | `home-art.test.mjs` | Hidden home-art bundles, translated shortcode content, host navigation, resource isolation and preview rebuilds |
 | `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
@@ -52,7 +55,8 @@ local wheel fixtures. Without these inputs, integration cases are skipped.
 | `column-urls.test.mjs` | Directory-based column URLs, rejected overrides, article URLs and multilingual normalization |
 | `collection-structure.test.mjs` | Section-only collection layouts, rejected regular pages and preview validation |
 | `aggregate-time-ranges.test.mjs` | Manual aggregate ranges, exclusive tree membership, validation, feeds, source navigation and preview rebuilds |
-| `reference-site.test.mjs` | Minimal reference-site ownership, production discovery and build metadata |
+| `site-title.test.mjs` | Localized homepage names, metadata, shared PWA manifest and required titles |
+| `reference-site.test.mjs` | Reference-site ownership, documentation links and sources, feeds, production discovery and build metadata |
 
 Each suite keeps its successful cases and fault fixtures. Domain suites own
 argument semantics; `checks.test.mjs` owns common help/unknown-option checks.

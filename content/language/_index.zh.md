@@ -9,5 +9,6 @@ params:
     back: "返回"
     missing_translation: "本页尚未提供 [{lang}] 版本。\n前往该语言首页吗？" #保留 {lang}；它会替换为所选语言名称。
   icon: language
+  language_icon: { text: "简" }
   robots: noindex, follow #原样填入 <meta name="robots" content="…">；含 noindex 或 none 时，从 sitemap.xml 和 llms.txt 排除此页。
 ---

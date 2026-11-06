@@ -3,11 +3,11 @@ date: "2025-10-11T20:10:44+08:00"
 title: عن الموقع
 description: تعرّف على تنظيم المحتوى والتنقل في مواقع Hugo باستخدام Banyan.
 url: about/
-weight: 95
+weight: 110
 layout: page-article-norss
 
 params:
-  icon: {image: "site/favicon.link.svg"}
+  icon: { text: "©" }
   slots: [breadcrumb]
 ---
 

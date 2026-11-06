@@ -16,18 +16,22 @@ export function extractAttribute(text, attributeName) {
 }
 
 export function extractTagAttribute(tagText, attributeName) {
-    const escapedName = attributeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const pattern = new RegExp(`(?:^|\\s)${escapedName}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'<>]+))`, 'i');
-    const match = tagText.match(pattern);
-    if (!match) {
-        return '';
+    const name = attributeName.toLowerCase();
+    for (const match of tagText.matchAll(/(?:^|\s)([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>]+)))?/g)) {
+        if (match[1].toLowerCase() === name) {
+            return decodeHtmlAttribute(match[2] ?? match[3] ?? match[4] ?? '');
+        }
     }
-    return decodeHtmlAttribute(match[1] ?? match[2] ?? match[3] ?? '');
+    return '';
 }
 
 export function extractStartTags(text, tagName) {
-    const escapedTagName = tagName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return [...text.matchAll(new RegExp(`<${escapedTagName}\\b[^>]*>`, 'gi'))].map((match) => match[0]);
+    const expected = tagName?.toLowerCase(), tags = [];
+    // Scan whole tags first; quoted values may contain > or another tag.
+    for (const match of text.matchAll(/<([a-z][a-z0-9:-]*)(?=[\s/>])(?:"[^"]*"|'[^']*'|[^'">])*>/gi)) {
+        if (!expected || match[1].toLowerCase() === expected) tags.push(match[0]);
+    }
+    return tags;
 }
 
 export function extractStylesheetHrefs(text) {

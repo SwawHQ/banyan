@@ -13,7 +13,7 @@
         {{- range hugo.Sites -}}
             {{- $siteLangs = $siteLangs | append .Language.Lang -}}
         {{- end -}}
-        {{- $defaultLang := (index (sort hugo.Sites "Language.Weight") 0).Language.Lang -}}
+        {{- $defaultLang := hugo.Sites.Default.Language.Lang -}}
         {{- $langHomes := dict -}}
         {{- range sort hugo.Sites "Language.Weight" -}}
             {{- $langHomes = merge $langHomes (dict .Language.Lang .Home.RelPermalink) -}}

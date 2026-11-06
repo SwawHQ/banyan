@@ -2,7 +2,7 @@
 # 在第一欄導覽顯示此首頁直屬頁面；weight 控制順序。
 title: 產品 - 分類
 description: 按分類瀏覽產品。
-weight: 40
+weight: 60
 layout: page-collection-directory
 
 params:

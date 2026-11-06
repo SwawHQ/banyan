@@ -93,6 +93,23 @@ test('layout checks directory, flat, reference and product lists at narrow and w
   assert.equal(fs.existsSync(path.join(work,'node_modules')),false);
 });
 
+test('navigation lists fit native scrollbar space while main fields keep their widths',{timeout:15000},async()=>{
+  const directory=fixture('native-gutters');
+  css(directory,'d/collection-fixture/one','.page-rail,.path-column{block-size:60px}');
+  const server=await createStaticSiteServer(directory);let browser;
+  try {
+    await server.start();const type=loadChromium();
+    browser=await type.launch({headless:true,executablePath:type.executablePath(),ignoreDefaultArgs:['--hide-scrollbars']});
+    const context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage();
+    const result=await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:'/all/',article,widths:'390,1440'}});
+    for(const {main,path} of result.cases) {
+      assert.equal(main.nameWidth,main.declaredWidth);
+      assert.ok(path.pathScrollbar>0,'The fixture must reserve a native scrollbar.');
+      assert.ok(path.nameWidth<main.nameWidth,'Path names must fit the remaining scroll-column space.');
+    }
+  } finally {try{if(browser)await browser.close();}finally{await server.stop();}}
+});
+
 test('directory, aggregate and product headers fit their shared fixed columns in all languages',{timeout:30000},async()=>{
   const server=await createStaticSiteServer(output);let browser;
   try {

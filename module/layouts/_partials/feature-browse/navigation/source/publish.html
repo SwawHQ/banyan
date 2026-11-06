@@ -1,4 +1,4 @@
 {{- $html := partial "./fragment.html" . -}}
 {{- $content := (resources.FromString (printf "navigation/%s.html" (sha256 $html)) $html | minify).Content -}}
 {{- $target := printf "site/navigation/%s.txt" (sha256 $content) -}}
-{{- return (resources.FromString $target $content).RelPermalink -}}
+{{- return (urls.Parse (resources.FromString $target $content).Permalink).EscapedPath -}}

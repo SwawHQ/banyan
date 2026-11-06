@@ -48,7 +48,7 @@ export function localReference(href,{siteURL = '',page = 'index.html'} = {}) {
   const url = new URL(href,base);
   if (!['http:','https:'].includes(url.protocol) || url.origin !== base.origin) return null;
   let pathname = decodeURIComponent(url.pathname);
-  const prefix = siteURL ? new URL(siteURL).pathname : '/';
+  const prefix = siteURL ? decodeURIComponent(new URL(siteURL).pathname) : '/';
   if (prefix !== '/' && pathname.startsWith(prefix)) pathname = pathname.slice(prefix.length);
   const relative = pathname.replace(/^\/+/, '');
   return relative.endsWith('/') || !relative ? relative + 'index.html' : relative;

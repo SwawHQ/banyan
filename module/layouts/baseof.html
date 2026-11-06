@@ -15,23 +15,21 @@
 {{- $isPrefetchDebug := or (.HasShortcode "prefetch-debug-controls") (and $homeArt ($homeArt.HasShortcode "prefetch-debug-controls")) -}}
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
 {{- partialCached "entry-baseof/audit-column-urls.html" .Site .Site.Language.Lang -}}
-{{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
+{{- $defaultSite := hugo.Sites.Default -}}
 {{- $inlineScripts := partialCached "entry-baseof/inline-scripts.html" site (printf "runtime-inline-scripts:%t" hugo.IsServer) -}}
 {{- $themeBootInline := index $inlineScripts "theme_boot" | default "" -}}
 {{- $breadcrumbPendingInline := index $inlineScripts "breadcrumb_pending" | default "" -}}
 {{- $navigationStartupInline := index $inlineScripts "navigation_startup" | default "" -}}
 {{- $navigation := partial "feature-browse/navigation/model.html" . -}}
-{{- /* Any primary-language page can schedule publication when the homepage uses a standalone layout. */ -}}
-{{- if and $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
-  {{- $deploymentData := dict
-    "routes" $delivery.routes
-    "redirects" $delivery.redirects
-    "delivery" $delivery
-    "inline_scripts" $inlineScripts
-  -}}
-  {{- with (templates.Defer (dict "key" "banyan.deployment" "data" $deploymentData)) -}}
-    {{- partial "system-delivery/deployment/publish.html" . -}}
-  {{- end -}}
+{{- /* Any HTML page can schedule shared publication; the fixed key runs it once. */ -}}
+{{- $deploymentData := dict
+  "routes" $delivery.routes
+  "redirects" $delivery.redirects
+  "delivery" $delivery
+  "inline_scripts" $inlineScripts
+-}}
+{{- with (templates.Defer (dict "key" "banyan.deployment" "data" $deploymentData)) -}}
+  {{- partial "system-delivery/deployment/publish.html" . -}}
 {{- end -}}
 <!DOCTYPE html>
 <html lang="{{ .Site.Language.Lang }}" dir="{{ .Site.Language.Direction | default "ltr" }}"
@@ -42,7 +40,7 @@
 
 <head>
     <meta charset="utf-8">
-    {{- partial "system-delivery/pwa/head.html" $primarySite.Home -}}
+    {{- partial "system-delivery/pwa/head.html" $defaultSite.Home -}}
     <title>{{ partial "system-metadata/seo/browser-title.html" . }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">

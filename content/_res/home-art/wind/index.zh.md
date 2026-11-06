@@ -21,7 +21,7 @@ params:
     - name: 产品 - 分类
       url: /zh/products/
     - name: 使用文档
-      url: https://swaw.com/zh/d/banyan/docs/
+      url: /zh/articles/docs/
     - name: GitHub
       url: https://github.com/SwawHQ/banyan
 ---

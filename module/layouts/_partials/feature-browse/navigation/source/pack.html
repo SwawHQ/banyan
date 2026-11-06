@@ -34,4 +34,4 @@
   {{- $resources = $base -}}
   {{- $columns = merge $columns (dict $logicalPath $hash) -}}
 {{- end -}}
-{{- return (dict "home" $ctx.Site.Home.RelPermalink "resources" $resources "columns" $columns "default" $default "error" (i18n "navigation_load_failed")) -}}
+{{- return (dict "home" (urls.Parse $ctx.Site.Home.Permalink).EscapedPath "resources" $resources "columns" $columns "default" $default "error" (i18n "navigation_load_failed")) -}}

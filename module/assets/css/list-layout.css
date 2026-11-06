@@ -15,6 +15,12 @@
     line-height: var(--column-line-height);
 }
 
+.page-rail .item-list,
+.path-column .item-list {
+    --list-field-tracks: 100%;
+    inline-size: 100%;
+}
+
 .item-list--directory,
 .item-list--all,
 .item-list--products,

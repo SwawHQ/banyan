@@ -29,6 +29,7 @@ An existing site must supply these files in its own root:
 | `assets/site/robots.txt.tmpl` | Crawler rules and sitemap URL; used when `enableRobotsTXT` is true |
 | `assets/site/delivery.toml` | Complete site delivery policy |
 | `assets/site/icons.toml` | Named SVG icons |
+| `assets/site/theme.css` | Complete site palette, selected by `params.appearance.palette` |
 | `assets/i18n/<language>.toml` | Interface dictionary for each enabled language |
 | `content/_res/home-art/<theme>/` | Hidden home art bundle: translated pages, CSS, JS and images |
 
@@ -74,8 +75,10 @@ swban base/hugo new content --kind banyan articles/my-post/index.md  #Create an 
 Additional brand media in `assets/site/` is optional. The site maintains the
 complete manifest template; the Module reads and executes it to publish
 `/site/site.<hash>.webmanifest`. Images publish with fingerprinted URLs under
-`/site/*`. The Module retains built-in palettes. To customize a palette, place
-a file at the same path in the site's `assets/` directory.
+`/site/*`. Complete palettes also belong to the site. The reference root provides
+`assets/site/theme.css` and `assets/site/theme.high-contrast.css`; select a file with
+`params.appearance.palette`, using its path relative to `assets/`. The Module
+does not supply a default palette. Maintain the selected palette when upgrading.
 The homepage windsock is inline SVG in the `home-art/wind/scene` shortcode,
 without a separate image request. To change its shape, override
 `layouts/_shortcodes/home-art/wind/scene.html` in the site;
@@ -145,10 +148,20 @@ If upgrading a vendored site, regenerate its vendor tree with
 
 ## Change the version
 
-Choose the target release first. Upgrades and downgrades use the same steps.
-Open [project releases](https://github.com/SwawHQ/banyan/releases), select the
-target version and download **Source code (zip)**. A tag's ZIP is also available
-at `https://github.com/SwawHQ/banyan/archive/refs/tags/vX.Y.Z.zip`.
+Choose the starting and target versions. Upgrades and downgrades use the same steps.
+Run `swban help upgrade/git` for official tags, commit history and file differences.
+Keep the official checkout in a separate temporary directory under `swaw/banyan/`.
+The site's reference starting version can differ from its installed Module version;
+if the starting version is unknown, report it as unknown.
+
+Compare the two official versions, then inspect the affected files in the user's site.
+Review configuration, interface dictionaries, functional pages and template overrides;
+preserve site content and branding. Read `content/articles/docs/` and
+`content/articles/changelog/` as guidance; copying them into the site is optional.
+If omitting them, change Home's documentation link and Powered by's changelog link
+to their corresponding pages on `https://banyan.swaw.com/`.
+Report affected site files and required edits. Obtain the target files from the checkout
+or **Source code (zip)** on [project releases](https://github.com/SwawHQ/banyan/releases).
 
 - **Skill:** obtain `.agents/skills/swaw-banyan/` from project tag `vX.Y.Z`.
   Update the complete Skill source, not just `metadata.version`.
@@ -197,7 +210,7 @@ existing site after supplying its identity files:
 
 ```toml
 baseURL = "https://example.com/"
-title = "My site"
+taxonomies = {}
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
 disableLanguages = ["zh", "zh-tw", "ar"]
@@ -217,8 +230,6 @@ disableJS = true
 # Page HTML is controlled by build.render; static/ files are copied separately.
 publishResources = false
 
-[taxonomies]
-
 [outputs]
 home = ["HTML", "RSS", "LLMS"]
 
@@ -226,10 +237,6 @@ home = ["HTML", "RSS", "LLMS"]
 label = "English"
 locale = "en-US"
 weight = 1
-params.icon = { text = "EN" }
-
-[module.hugoVersion]
-min = "0.168.0"
 
 [[module.mounts]]
 source = "assets/i18n"
@@ -244,13 +251,14 @@ isPlainText = true
 notAlternative = true
 
 [params.appearance]
-palette = "css/theme.css"
+palette = "site/theme.css"
 
 ```
 
 `disableJS` preserves the inline bytes used for CSP hashes. Preserve each article's
 published address in its front matter `url` field. Each enabled language declares
-its native `label` and `locale`; `languages.<code>.params.icon` sets its icon.
+its native `label` and `locale`. Its settings page's `params.language_icon`
+sets the language option icon, for example `{ text: "EN" }`.
 This starter enables English.
 To enable Chinese, remove it from `disableLanguages`, then add its language
 settings, locale, icon, `assets/i18n/<language>.toml` dictionary and required content
@@ -341,6 +349,8 @@ the bundle page's `.Page.Params` and `.Page.Resources`. The wind example uses
 `layouts/_partials/entry-page-home/wind/model.html`, supplied by the Module.
 Put a file at the same path in the site to override it.
 
+Set each language's site name in its home page's `title`, not in `hugo.toml`.
+The shared PWA manifest uses the default language set by `defaultContentLanguage`.
 Set each language's default description in its home page. Page SEO uses the
 page's own `description`, then the home page's `description` for that language.
 `llms.txt` uses the home description for its introduction and each page's own
@@ -567,6 +577,8 @@ Language and appearance settings use `content/language/_index.md` with
 `layout: page-collection-language` and `content/appearance/_index.md` with
 `layout: page-collection-appearance`. Both use `outputs: [HTML]`. Keep translated
 labels in `params.labels`; the layouts supply their choices and controls.
+Appearance pages define `params.appearance_icons.auto`, `.light` and `.dark`
+using SVG names, text or images; `params.icon` remains the navigation entry icon.
 Language links work without JavaScript. JavaScript keeps the selected language
 when returning to the previous page, and applies and saves appearance choices.
 

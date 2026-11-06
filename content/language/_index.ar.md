@@ -9,5 +9,6 @@ params:
     back: "رجوع"
     missing_translation: "لا تتوفر نسخة من هذه الصفحة باللغة [{lang}].\nهل تريد الانتقال إلى الصفحة الرئيسية بهذه اللغة؟"
   icon: language
+  language_icon: { text: "ع" }
   robots: noindex, follow
 ---

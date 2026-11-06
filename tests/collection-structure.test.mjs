@@ -21,6 +21,7 @@ const write=(file,text)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.w
 const content=relative=>path.join(source,'content',relative);
 const collection=(layout,fields='')=>'---\ntitle: Collection\nlayout: '+layout+'\noutputs: [HTML]\n'+fields+
   'params:\n  slots: []\n  labels: {back: Back, auto: Auto, light: Light, dark: Dark, missing_translation: Missing}\n'+
+  (layout==='page-collection-appearance'?'  appearance_icons: {auto: appearance-auto, light: appearance-light, dark: appearance-dark}\n':'')+
   (layout.endsWith('-all')?'  aggregate: /docs\n':'')+'---\n';
 const article=title=>'---\ntitle: '+title+'\nurl: p/probe/\nlayout: page-article-norss\nparams: {slots: []}\n---\nArticle.\n';
 
@@ -45,8 +46,8 @@ before(()=>{
   fixtureSiteFiles(source);fs.mkdirSync(path.join(source,'themes'),{recursive:true});
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
   write(path.join(source,'assets/site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy('disable')));
-  configuration='theme="banyan"\nbaseURL="https://example.test/base/"\ntitle="Structure fixture"\n'+
-    '[params.appearance]\npalette="css/theme.css"\n[minify]\ndisableJS=true\n[taxonomies]\n'+
+  configuration='theme="banyan"\nbaseURL="https://example.test/base/"\n'+
+    '[params.appearance]\npalette="site/theme.css"\n[minify]\ndisableJS=true\n[taxonomies]\n'+
     '[outputs]\nhome=["HTML"]\nsection=["HTML"]\npage=["HTML"]\n'+
     '[[cascade]]\n[cascade.build]\npublishResources=false\n'+fixtureSiteMounts;
   write(path.join(source,'hugo.toml'),configuration);
@@ -192,7 +193,7 @@ test('preview rejects changing an article into a collection and recovers after r
   }
   async function current(title) {
     const response=await fetch(base+'/p/probe/',{signal:AbortSignal.timeout(1500),headers:{Connection:'close'}});
-    return response.status===200&&(await response.text()).includes('<title>'+title+' - Structure fixture</title>');
+    return response.status===200&&(await response.text()).includes('<title>'+title+' - Home</title>');
   }
   try {
     await until(()=>current('Article'));const offset=logs.length;

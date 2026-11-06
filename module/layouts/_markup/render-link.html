@@ -1,0 +1,6 @@
+{{- $href := partial "system-ui/content-href.html" (dict "page" .PageInner "href" .Destination) -}}
+{{- if hasPrefix .Destination "#" -}}
+  {{- $href = printf "%s%s" .PageInner.RelPermalink $href -}}
+{{- end -}}
+<a href="{{ $href }}"{{ with .Title }} title="{{ . }}"{{ end }}>{{ .Text }}</a>
+{{- /* Keep adjacent inline text joined. */ -}}

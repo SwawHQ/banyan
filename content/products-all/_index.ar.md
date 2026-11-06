@@ -1,7 +1,7 @@
 ---
 title: جميع المنتجات
 description: جميع المنتجات المشار إليها في قائمة واحدة.
-weight: 30
+weight: 50
 layout: page-collection-products-all
 
 params:

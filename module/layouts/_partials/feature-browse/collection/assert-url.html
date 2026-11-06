@@ -1,4 +1,10 @@
 {{- $page := . -}}
+{{- $basePath := (urls.Parse $page.Site.BaseURL).Path -}}
+{{- /* shortcut: reject literal %HH directories until Hugo preserves their escaping in RelPermalink. */ -}}
+{{- if findRE `(?i)%[0-9a-f]{2}` $basePath -}}
+  {{- errorf "Build failed: baseURL path %q contains a literal percent sign followed by two hexadecimal digits; choose a different deployment path." $basePath -}}
+  {{- return -}}
+{{- end -}}
 {{- if ne $page.Kind "page" -}}
   {{- $name := $page.Path -}}
   {{- with $page.File -}}{{- $name = .Path -}}{{- end -}}
@@ -9,17 +15,17 @@
   {{- end -}}
   {{- if partial "feature-browse/is-rendered-html.html" $page -}}
     {{- $path := trim (urlize $page.Path) "/" -}}
-    {{- $expected := $page.Site.Home.RelPermalink -}}
+    {{- $expected := $page.Site.Home.Permalink -}}
     {{- if $path -}}{{- $expected = printf "%s%s/" $expected $path -}}{{- end -}}
-    {{- $actualPath := (urls.Parse $page.RelPermalink).Path -}}
+    {{- $actualPath := (urls.Parse $page.Permalink).Path -}}
     {{- $expectedPath := (urls.Parse $expected).Path -}}
     {{- /* Path is normalized to lowercase even when published URLs retain directory case. */ -}}
     {{- if ne (lower $actualPath) (lower $expectedPath) -}}
-      {{- errorf "Column URL: %s must follow its directory; expected %q, got %q. Remove permalink overrides for columns." $name $expected $page.RelPermalink -}}
+      {{- errorf "Column URL: %s must follow its directory; expected %q, got %q. Remove permalink overrides for columns." $name $expected $page.Permalink -}}
     {{- end -}}
     {{- range $page.Ancestors -}}
       {{- if partial "feature-browse/is-rendered-html.html" . -}}
-        {{- if not (hasPrefix $actualPath (urls.Parse .RelPermalink).Path) -}}
+        {{- if not (hasPrefix $actualPath (urls.Parse .Permalink).Path) -}}
           {{- errorf "Column URL: %s must keep its directory ancestors; %q is outside %q." $name $page.RelPermalink .RelPermalink -}}
         {{- end -}}
       {{- end -}}

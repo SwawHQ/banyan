@@ -3,7 +3,7 @@ title: Powered by
 description: "了解本站使用的技术、构建信息、PWA 与预取状态。"
 url: powered-by/ #重命名内容目录时保留此网址。
 layout: page-article-norss #显示 Markdown 正文；短代码启用交互控件。
-weight: 96
+weight: 100
 
 params:
   icon: code
@@ -44,14 +44,15 @@ params:
       article: "文章"
 ---
 
-**{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Swaw Banyan{{< /new-tab >}}**：{{< new-tab href="https://swaw.com/zh/d/banyan/changelog/" >}}{{< theme-version local="本地开发版" >}}{{< /new-tab >}}
+**{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Swaw Banyan{{< /new-tab >}}**：{{< new-tab href="/zh/articles/changelog/" >}}{{< theme-version local="本地开发版" >}}{{< /new-tab >}}
 
-### 附：PWA 缓存信息
+### PWA 缓存信息：
 
 **本地**：{{< site-update "version" >}}  
 **服务器**：{{< site-update "content" >}}  
 **触发同步**：{{< site-update "interval" "页面加载时 且 间隔 ≥ %d 分钟" >}}  
 **sw-策略**：{{< site-update "policy" >}}  
+**离线页**：{{< site-update "offline" >}}  
 **sw-状态**：{{< site-update "status" >}}
 
 {{< details-start summary="**更多诊断信息**" >}}

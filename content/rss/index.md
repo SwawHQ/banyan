@@ -4,7 +4,7 @@ description: Subscribe to new articles with an RSS reader.
 date: 2026-09-08
 url: rss/ #Keep this route when renaming the content directory.
 layout: page-article-norss #Render Markdown without RSS inclusion.
-weight: 100
+weight: 90
 
 params:
   icon: rss

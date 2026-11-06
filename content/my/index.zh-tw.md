@@ -2,7 +2,7 @@
 title: 我的
 url: my/ #重新命名內容目錄時，保留此網址。
 layout: page-my #渲染 Markdown 正文，並支援返回按鈕。
-weight: 90
+weight: 20
 
 params:
   icon: my

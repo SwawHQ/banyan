@@ -6,7 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
 import {verifyCspOutput} from '../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 import {inspect as inspectSitemap} from '../.agents/skills/swaw-banyan/tasks/check/sitemap/inspect.mjs';
 import {inspect as inspectBuildVersion} from '../.agents/skills/swaw-banyan/tasks/check/build-version/inspect.mjs';
@@ -15,19 +15,31 @@ import {inspect as inspectDelivery} from '../.agents/skills/swaw-banyan/tasks/ch
 import {inspect as inspectScripts} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/inspect.mjs';
 import {extractStartTags,extractTagAttribute,extractCanonicalHref} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {extractBlocks,stripRawText} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
-import {filesUnder} from '../.agents/skills/swaw-banyan/tasks/_shared/output.mjs';
-import {parseToml} from '../.agents/skills/swaw-banyan/tasks/_shared/parsers.mjs';
+import {filesUnder,localReference} from '../.agents/skills/swaw-banyan/tasks/_shared/output.mjs';
+import {parseToml,parseYaml} from '../.agents/skills/swaw-banyan/tasks/_shared/parsers.mjs';
+import {readPages} from '../.agents/skills/swaw-banyan/tasks/_shared/html/read.mjs';
+import {inspectInternalLinks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/links.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),origin='https://banyan.swaw.com';
 const languages=['en','zh','zh-tw','ar'],prefixes=['','zh/','zh-tw/','ar/'],suffixes=['','.zh','.zh-tw','.ar'];
-let work,output;
-before(()=>{
+let work,output,documentation;
+before(async()=>{
   const parent=path.join(os.tmpdir(),'swaw/banyan/reference-site-tests');
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));
   output=path.join(work,'build');
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',output],
     {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
+  documentation=[];
+  for(const branch of ['docs','changelog'])for(const file of await filesUnder(path.join(root,'content/articles',branch))) {
+    if(!file.endsWith('.md'))continue;
+    const source=path.relative(root,file).replaceAll('\\','/'),section=path.basename(file).startsWith('_index');
+    const fields=parseYaml(fs.readFileSync(file,'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)[1]);
+    const language=file.endsWith('.zh.md')?'zh':'en';
+    const route=section?path.posix.dirname(source).slice('content/'.length)+'/':fields.url;
+    assert.ok(route,'Documentation articles declare their public URL: '+source);
+    documentation.push({source,branch,section,language,href:'/'+(language==='zh'?'zh/':'')+route});
+  }
 });
 after(()=>{if(work){assert.equal(path.basename(path.dirname(fs.realpathSync(work))),'reference-site-tests');fs.rmSync(work,{recursive:true,force:true});}});
 
@@ -112,7 +124,7 @@ test('the reference site owns its delivery data, icons and interface translation
   }
 });
 
-test('the reference site owns its columns and keeps documentation on Swaw',async()=>{
+test('the reference site owns its columns and links to its local documentation',async()=>{
   assert.equal(fs.existsSync(path.join(root,'module/content')),false,'All site content stays outside the Module');
   for(const name of ['my','_res/offline','rss','powered-by'])for(const suffix of suffixes)
     assert.ok(fs.existsSync(path.join(root,'content',name,'index'+suffix+'.md')),'Reference page: '+name+suffix);
@@ -151,7 +163,9 @@ test('the reference site owns its columns and keeps documentation on Swaw',async
     assert.equal(roots.includes('/'+prefix+'github/'),false,'No standalone GitHub entry.');
     for(const name of ['notes','notes-all','discover','all','catalog','catalog-all','changelog','github'])
       assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'No retired or unconfigured column is published: '+name);
-    assert.ok(extractStartTags(home,'a').some(tag=>extractTagAttribute(tag,'href').startsWith('https://swaw.com/')&&extractTagAttribute(tag,'href').includes('/d/banyan/docs/')));
+    const docs=(['zh/','zh-tw/'].includes(prefix)?'/zh/':'/')+'articles/docs/';
+    assert.ok(extractStartTags(home,'a').some(tag=>extractTagAttribute(tag,'href')===docs),'Home links to the available documentation language.');
+    assert.ok(fs.existsSync(path.join(output,docs,'index.html')));
   }
   assert.deepEqual((await inspectSitemap(output)).issues,[]);
   assert.deepEqual((await inspectLlms(output)).issues,[]);
@@ -159,10 +173,130 @@ test('the reference site owns its columns and keeps documentation on Swaw',async
   verifyCspOutput(output);
 });
 
+test('documentation keeps its published routes, languages and Banyan source links',()=>{
+  assert.ok(documentation.some(page=>page.href==='/zh/p/getting-started/'));
+  assert.ok(documentation.some(page=>page.href==='/p/unreleased/'));
+  assert.deepEqual([...new Set(documentation.map(page=>page.language))].sort(),['en','zh']);
+  for(const page of documentation) {
+    const html=fs.readFileSync(path.join(output,page.href,'index.html'),'utf8');
+    assert.equal(extractCanonicalHref(html),origin+page.href,page.source);
+    assert.equal(extractTagAttribute(extractStartTags(html,'html')[0],'lang'),page.language,page.source);
+    if(page.section||page.branch!=='docs')continue;
+    const resources=extractBlocks(html,'nav',tag=>extractTagAttribute(tag,'class').split(/\s+/).includes('document-meta__row--resources'));
+    assert.equal(resources.length,1,page.source+' has article source information.');
+    const links=extractStartTags(resources[0].html,'a').map(tag=>extractTagAttribute(tag,'href'));
+    assert.ok(links.includes('https://github.com/SwawHQ/banyan/blob/main/'+page.source),page.source+' links to its actual Banyan source.');
+  }
+  for(const prefix of prefixes) {
+    const language=prefix?prefix.slice(0,-1):'en';
+    const feed=fs.readFileSync(path.join(output,prefix,'index.xml'),'utf8');
+    const expected=['/'+prefix+'p/example-product/',...documentation.filter(page=>
+      !page.section&&page.branch==='docs'&&page.language===language).map(page=>page.href)];
+    assert.deepEqual([...feed.matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]).sort(),
+      expected.map(href=>origin+href).sort(),'Root RSS includes eligible documentation and excludes release notes.');
+    assert.equal(fs.existsSync(path.join(output,prefix,'articles/changelog/index.xml')),false,'Release notes do not publish a feed.');
+    assert.equal(fs.existsSync(path.join(output,prefix,'articles/docs/index.html')),['en','zh'].includes(language),'Documentation exists only in its available languages.');
+  }
+});
+
+test('published internal links and anchors resolve without retired Swaw documentation URLs',async()=>{
+  const {pages}=await readPages(output),files=(await filesUnder(output)).map(file=>path.relative(output,file).replaceAll('\\','/'));
+  assert.deepEqual(inspectInternalLinks(pages,{siteURL:origin+'/',files}),[]);
+  for(const page of pages)for(const tag of extractStartTags(stripRawText(page.text),'a'))
+    assert.doesNotMatch(extractTagAttribute(tag,'href'),/^https:\/\/swaw\.com\/(?:zh\/)?d\/banyan\/(?:docs|changelog)\//,page.relativePath);
+});
+
+test('content links resolve pages and attachments across deployment and language prefixes',async()=>{
+  const content=path.join(work,'link-content'),assets=path.join(work,'link-assets'),config=path.join(work,'links.toml');
+  fs.mkdirSync(path.join(content,'link-probe'),{recursive:true});fs.mkdirSync(assets,{recursive:true});
+  fs.writeFileSync(path.join(content,'link-target.md'),'---\ntitle: Link target\nurl: p/link-target/\nlayout: page-article-norss\n---\nTarget.');
+  fs.writeFileSync(path.join(content,'link-probe/manual.pdf'),'Bundle attachment.');
+  fs.writeFileSync(path.join(content,'link-probe/100%.pdf'),'Percent attachment.');
+  fs.writeFileSync(path.join(assets,'link-global.txt'),'Global attachment.');
+  fs.writeFileSync(path.join(assets,'global100%.txt'),'Global percent attachment.');
+  for(const [index,basePath] of ['','base/','a%20b/','a%25b/'].entries())for(const inSubdir of [false,true]) {
+    const siteURL='https://example.test/'+basePath,baseHref='/'+basePath,defaultPrefix=inSubdir?'en/':'';
+    const pageHref=baseHref+defaultPrefix+'p/link-probe/',build=path.join(work,'links-build-'+index+'-'+inSubdir);
+    const cases=[
+      ['root','/zh/p/getting-started/?a=1&b=2#安装前',baseHref+'zh/p/getting-started/?a=1&b=2#安装前'],
+      ['prefixed',baseHref+'zh/p/getting-started/'],['home','/',baseHref+defaultPrefix],
+      ['encoded','/zh/p/a%20b/',baseHref+'zh/p/a%20b/'],['unsafe','javascript:alert(1)','#ZgotmplZ'],
+      ['encoded-delimiters','/zh/p/a%23b%3Fc/?a=1#local',baseHref+'zh/p/a%23b%3Fc/?a=1#local'],
+      ['https','https://example.org/guide/?a=1&b=2#local'],['network','//example.org/link-target/'],
+      ['percent-https','https://example.org/100%.pdf','https://example.org/100%25.pdf'],
+      ['mail','mailto:user@example.org'],['anchor','#local',pageHref+'#local'],['query','?a=1&b=2'],
+      ['relative','../getting-started/#安装前'],['page','../link-target.md?a=1&b=2#target',baseHref+defaultPrefix+'p/link-target/?a=1&b=2#target'],
+      ['empty-query','../link-target.md?',baseHref+defaultPrefix+'p/link-target/?'],['empty-anchor','../link-target.md#',baseHref+defaultPrefix+'p/link-target/#'],
+      ['encoded-anchor','#a%3Db',pageHref+'#a%3Db'],['state','#from=products%26tools&anchor=a%3Db',pageHref+'#from=products%26tools&anchor=a%3Db'],
+      ['percent-anchor','#100%',pageHref+'#100%25'],['percent-query','?value=100%','?value=100%25'],
+      ['percent-page','../link-target.md#100%',baseHref+defaultPrefix+'p/link-target/#100%25'],
+      ['page-state','../link-target.md#from=products%26tools&anchor=a%3Db',baseHref+defaultPrefix+'p/link-target/#from=products%26tools&anchor=a%3Db'],
+      ['bundle','manual.pdf',pageHref+'manual.pdf'],['global','link-global.txt',baseHref+'link-global.txt']
+    ];
+    const attachments=[
+      ['percent-bundle','100%.pdf','Percent attachment.'],
+      ['encoded-percent-bundle','100%25.pdf','Percent attachment.'],
+      ['percent-alias','percent-download','Percent attachment.'],
+      ['percent-global','global100%.txt','Global percent attachment.']
+    ];
+    fs.writeFileSync(path.join(content,'link-probe/index.md'),
+      '---\ntitle: Link probe\nurl: p/link-probe/\nlayout: page-article-norss\n'+
+      'build: {publishResources: false}\nresources:\n  - src: "100%.pdf"\n    name: percent-download\n---\n\n## Local\n\n'+
+      [...cases,...attachments].map(([name,href])=>'[**MD '+name+'**]('+href+' "A & B")\n\n'+
+        '{{< new-tab href='+JSON.stringify(href)+' >}}Tab '+name+'{{< /new-tab >}}').join('\n\n')+
+      '\n\n[MD empty]()\n\nBefore[Word](../link-target.md)After.');
+    fs.writeFileSync(config,'defaultContentLanguageInSubdir = '+inSubdir+'\n[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+
+      '\ntarget = "assets"\n'+fixtureSiteMounts+'\n[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+
+      '\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n');
+    const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,
+      '--baseURL',siteURL,'--destination',build],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
+    assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
+    const {pages}=await readPages(build),files=(await filesUnder(build)).map(file=>path.relative(build,file).replaceAll('\\','/'));
+    if(!basePath)assert.deepEqual((await inspectDelivery(build)).issues,[]);
+    const targets=new Set([...prefixes.flatMap(prefix=>[(prefix||defaultPrefix)+'index.html',(prefix||defaultPrefix)+'powered-by/index.html']),
+      ...documentation.map(page=>(page.language==='en'?defaultPrefix:'')+page.href.slice(1)+'index.html')]);
+    assert.deepEqual(inspectInternalLinks(pages.filter(page=>targets.has(page.relativePath)),{siteURL,files}),[]);
+    for(const page of pages.filter(page=>targets.has(page.relativePath))) {
+      const navigation=JSON.parse(extractTagAttribute(extractStartTags(page.text,'body')[0],'data-navigation'));
+      for(const href of [navigation.home,navigation.resources].filter(Boolean))
+        assert.ok(new URL(href,siteURL).pathname.startsWith(new URL(siteURL).pathname),'Navigation data must retain the encoded deployment prefix: '+href);
+      for(const tag of extractStartTags(page.text,'a').filter(tag=>extractTagAttribute(tag,'data-root-href')))
+        assert.equal(new URL(extractTagAttribute(tag,'data-root-href'),siteURL).pathname,
+          new URL(extractTagAttribute(tag,'href'),siteURL).pathname,'Root selection data must match its native link.');
+    }
+    assert.equal(fs.readFileSync(path.join(build,defaultPrefix,'p/link-probe/manual.pdf'),'utf8'),'Bundle attachment.');
+    assert.equal(fs.readFileSync(path.join(build,defaultPrefix,'p/link-probe/100%.pdf'),'utf8'),'Percent attachment.');
+    assert.equal(fs.readFileSync(path.join(build,'link-global.txt'),'utf8'),'Global attachment.');
+    const probe=fs.readFileSync(path.join(build,defaultPrefix,'p/link-probe/index.html'),'utf8');
+    assert.match(probe,/Before<a\b[^>]*>Word<\/a>After\./,'Inline links must not insert whitespace into the text.');
+    const links=new Map(extractBlocks(probe,'a').map(block=>[block.inner.replace(/<[^>]*>/g,'').trim(),block]));
+    assert.ok(links.has('MD empty'),'An empty href retains its visible link text.');
+    assert.equal(extractTagAttribute(links.get('MD empty').open,'href'),'');
+    for(const [name,href,expected=href] of cases) {
+      const markdown=links.get('MD '+name),tab=links.get('Tab '+name);
+      for(const [link,value] of [[markdown,expected],[tab,href.startsWith('#')?expected.slice(pageHref.length):expected]])
+        assert.equal(decodeURI(extractTagAttribute(link.open,'href')),decodeURI(value),name);
+      assert.equal(extractTagAttribute(markdown.open,'title'),'A & B');
+      assert.ok(markdown.inner.includes('<strong>'),'Markdown link emphasis is retained.');
+      assert.equal(extractTagAttribute(tab.open,'target'),'_blank');
+      assert.equal(extractTagAttribute(tab.open,'rel'),'noopener noreferrer');
+    }
+    for(const [name,,text] of attachments)for(const kind of ['MD','Tab']) {
+      const href=extractTagAttribute(links.get(kind+' '+name).open,'href');
+      assert.equal(fs.readFileSync(path.join(build,localReference(href,{siteURL})),'utf8'),text,
+        kind+' '+name+' links to its published attachment.');
+    }
+  }
+});
+
 test('Arabic pages use RTL and demonstrate mixed text without losing translations',async()=>{
   const contentFiles=await filesUnder(path.join(root,'content'));
-  const english=contentFiles.filter(file=>/(?:^|[\\/])(?:_index|index)\.md$/.test(file)
-    &&!['content/_res/_index.md','content/_res/home-art/_index.md'].includes(path.relative(root,file).replaceAll('\\','/')));
+  const english=contentFiles.filter(file=>{
+    const source=path.relative(root,file).replaceAll('\\','/');
+    return /(?:^|[\\/])(?:_index|index)\.md$/.test(file)
+      &&!['content/_res/_index.md','content/_res/home-art/_index.md'].includes(source)
+      &&!/^content\/articles\/(?:docs|changelog)\//.test(source);
+  });
   for(const file of english)assert.ok(fs.existsSync(file.replace(/\.md$/,'.ar.md')),'Arabic counterpart: '+file);
   for(const [index,prefix] of prefixes.entries())for(const route of ['', 'language/', 'appearance/', 'articles-all/', 'p/example-product/', '_res/offline/', '404.html']) {
     const html=fs.readFileSync(path.join(output,prefix,route.endsWith('.html')?route:route+'index.html'),'utf8');
@@ -216,7 +350,7 @@ test('settings sections use choice controls without article collection capabilit
   }
 });
 
-test('one translated article supplies the article and product lists through one shared reference',async()=>{
+test('the translated example supplies products while article lists also include documentation',async()=>{
   const files=await filesUnder(path.join(root,'content'));
   const maps=files.filter(file=>path.basename(file)==='_map.toml');
   assert.deepEqual(maps.map(file=>path.relative(root,file).replaceAll('\\','/')),['content/products/examples/_map.toml']);
@@ -224,15 +358,18 @@ test('one translated article supplies the article and product lists through one 
   const articleFiles=files.filter(file=>file.startsWith(path.join(root,'content/articles')+path.sep)
     &&/\.md$/.test(file)&&!/^_index(?:\.|$)/.test(path.basename(file)));
   assert.deepEqual(articleFiles.map(file=>path.relative(root,file).replaceAll('\\','/')).sort(),
-    suffixes.map(suffix=>'content/articles/category1/example/index'+suffix+'.md').sort());
+    [...suffixes.map(suffix=>'content/articles/category1/example/index'+suffix+'.md'),
+      ...documentation.filter(page=>!page.section).map(page=>page.source)].sort());
   for(const prefix of prefixes) {
     const href='/'+prefix+'p/example-product/';
+    const language=prefix?prefix.slice(0,-1):'en';
+    const articles=documentation.filter(page=>!page.section&&page.language===language);
     for(const [directory,variant] of [['articles/category1','section'],['articles-all','all'],['products/examples','products'],['products-all','products']]) {
       const html=fs.readFileSync(path.join(output,prefix,directory,'index.html'),'utf8');
       const main=extractBlocks(html,'main')[0].inner;
       const entries=extractStartTags(main,'a').filter(tag=>/\bdata-list-entry(?:\s|=|>)/.test(tag));
-      assert.equal(entries.length,1,directory+' has one article');
-      assert.equal(extractTagAttribute(entries[0],'href').split('#')[0],href);
+      const expected=directory==='articles-all'?[href,...articles.map(page=>page.href)]:[href];
+      assert.deepEqual(entries.map(tag=>extractTagAttribute(tag,'href').split('#')[0]).sort(),expected.sort(),directory+' keeps its own membership.');
       assert.match(main,new RegExp('data-sort-variant=["\']?'+variant+'\\b'));
     }
     const article=fs.readFileSync(path.join(output,prefix,'p/example-product/index.html'),'utf8');
@@ -247,8 +384,9 @@ test('one translated article supplies the article and product lists through one 
     }
     for(const directory of ['articles','articles-all','products','products-all']) {
       const feed=fs.readFileSync(path.join(output,prefix,directory,'index.xml'),'utf8');
-      assert.equal((feed.match(/<item>/g)||[]).length,1,directory+' RSS has one article');
-      assert.ok(feed.includes(origin+href));
+      const expected=[href,...(directory.startsWith('articles')?articles.filter(page=>page.branch==='docs').map(page=>page.href):[])];
+      assert.deepEqual([...feed.matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]).sort(),
+        expected.map(href=>origin+href).sort(),directory+' RSS keeps eligible articles and omits release notes.');
     }
     assert.equal(fs.existsSync(path.join(output,prefix,'p/example-note')),false);
     assert.equal(fs.existsSync(path.join(output,prefix,'products/examples/_map.toml')),false);
@@ -316,8 +454,10 @@ test('Powered by contains translated diagnostics and same-language test links',(
     assert.equal(panel.html.includes('prefetch-debug-controls'),false,'The update panel does not own diagnostics');
     if(prefix)assert.doesNotMatch(main,/Prefetch transport|Browser support|Selected backend|Loading\.\.\./,'Diagnostic copy follows the current language.');
     const external=extractStartTags(main,'a').filter(tag=>extractTagAttribute(tag,'href').startsWith('https://'));
-    assert.deepEqual(external.map(tag=>extractTagAttribute(tag,'href')),['https://github.com/SwawHQ/banyan',
-      'https://swaw.com/'+(prefix==='zh/'?'zh/':'')+'d/banyan/changelog/','https://gohugo.io/news/']);
+    assert.deepEqual(external.map(tag=>extractTagAttribute(tag,'href')),['https://github.com/SwawHQ/banyan','https://gohugo.io/news/']);
+    const changelog=(prefix==='zh/'?'/zh/':'/')+'articles/changelog/';
+    assert.ok(extractStartTags(main,'a').some(tag=>extractTagAttribute(tag,'href')===changelog),'Theme version links to the local release notes.');
+    assert.ok(fs.existsSync(path.join(output,changelog,'index.html')));
     assert.equal(extractBlocks(main,'h2').length,0,'The compact layout keeps technology links and the update panel above collapsed diagnostics.');
     for(const link of external) {
       assert.equal(extractTagAttribute(link,'target'),'_blank');
@@ -342,21 +482,25 @@ test('Powered by Markdown separates build information and update controls',async
     const copy=JSON.parse(extractTagAttribute(panel.open,'data-site-update-copy'));
     for(const key of ['build','status','check'])assert.equal(key in copy,false,'Static text stays in Markdown.');
     const rows=extractBlocks(html,'p').flatMap(row=>row.inner.split(/<br\s*\/?>/i));
-    const markers=['site-update-version','site-content-status','site-update-interval','site-sw-policy','site-update-status'];
+    const markers=['site-update-version','site-content-status','site-update-interval','site-sw-policy','site-offline-page','site-update-status'];
     const indexes=markers.map(marker=>rows.findIndex(row=>row.includes('data-'+marker)));
     assert.ok(indexes.every(index=>index>=0));
-    assert.equal(new Set(indexes).size,5,'Each value has its own Markdown line.');
+    assert.equal(new Set(indexes).size,6,'Each value has its own Markdown line.');
     for(const index of indexes) {
       assert.doesNotMatch(rows[index],/<code\b/,'Shortcodes do not add inline-code formatting.');
       assert.match(rows[index],/^<strong>[^<]+<\/strong>/,'Each information line keeps its emphasized Markdown label.');
     }
     const information=extractBlocks(html,'p').find(row=>row.inner.includes('data-site-update-version'));
-    assert.ok(markers.every(marker=>information.inner.includes('data-'+marker)),'The five information lines stay adjacent.');
+    assert.ok(markers.every(marker=>information.inner.includes('data-'+marker)),'The six information lines stay adjacent.');
     for(const action of extractBlocks(information.inner,'button'))assert.equal(action.inner,copy.refresh_icon,'Refresh controls share the configured icon.');
-    const contentRow=rows[indexes[1]],policyRow=rows[indexes[3]],statusRow=rows[indexes[4]];
+    const contentRow=rows[indexes[1]],policyRow=rows[indexes[3]],offlineRow=rows[indexes[4]],statusRow=rows[indexes[5]];
     assert.ok(contentRow.includes('data-site-content-action'),'Server refresh stays on its own line.');
     assert.ok(statusRow.includes('data-site-update-action'),'Program refresh stays on its own line.');
     assert.ok(!policyRow.includes('<button'),'The policy link is static.');
+    const offlineLink=extractStartTags(offlineRow,'a')[0],offlineUrl='/'+prefix+parseToml(fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8')).sw.offline_notice_path.replace(/^\/+|\/+$/g,'')+'/';
+    assert.equal(extractTagAttribute(offlineLink,'href'),offlineUrl,'The offline link follows the language and delivery configuration.');
+    assert.ok(fs.existsSync(path.join(output,offlineUrl,'index.html')),'The offline link targets a published page.');
+    assert.ok(!offlineRow.includes('<button'),'The offline link is static.');
     const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-update-interval'))[0];
     const enabled=fs.existsSync(path.join(output,'sw-version.json'));
     if(enabled)assert.ok(interval.inner.includes(String(parseToml(fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8')).sw.content_check_interval)));

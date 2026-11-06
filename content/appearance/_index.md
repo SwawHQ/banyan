@@ -11,5 +11,9 @@ params:
     light: "Light"
     dark: "Dark"
   icon: theme
+  appearance_icons:
+    auto: appearance-auto
+    light: appearance-light
+    dark: appearance-dark
   robots: noindex, follow #Use as <meta name="robots" content="…">; noindex or none excludes this page from sitemap.xml and llms.txt.
 ---

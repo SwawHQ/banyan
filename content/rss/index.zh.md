@@ -4,7 +4,7 @@ description: 使用 RSS 阅读器订阅文章更新。
 date: 2026-09-08
 url: rss/ #重命名内容目录时保留此网址。
 layout: page-article-norss #显示 Markdown 正文，不作为 RSS 条目。
-weight: 100
+weight: 90
 
 params:
   icon: rss

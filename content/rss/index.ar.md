@@ -4,7 +4,7 @@ description: اشترك في المقالات الجديدة باستخدام ق
 date: 2026-09-08
 url: rss/
 layout: page-article-norss
-weight: 100
+weight: 90
 
 params:
   icon: rss

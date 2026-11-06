@@ -2,7 +2,7 @@
 # 在第一欄導覽顯示此首頁直屬頁面；weight 控制順序。
 title: 文章 - 全部
 description: 在一個清單中瀏覽全部文章。
-weight: 10
+weight: 30
 layout: page-collection-directory-all
 
 params:

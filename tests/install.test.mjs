@@ -37,13 +37,22 @@ function consumer(name,{replacement='',multilingual=false}={}) {
   const root=path.join(work,name);
   let config=toml[1]+'\n'+toml[0];
   if(multilingual)config=config.replace('disableLanguages = ["zh", "zh-tw", "ar"]','disableLanguages = ["ar"]')+
-    '\n[languages.zh]\nlabel = "中文"\nlocale = "zh-CN"\nweight = 2\nparams.icon = { text = "简" }\n'+
-    '\n[languages.zh-tw]\nlabel = "繁體"\nlocale = "zh-TW"\nweight = 3\nparams.icon = { text = "繁" }\n';
+    '\n[languages.zh]\nlabel = "中文"\nlocale = "zh-Hans"\nweight = 2\n'+
+    '\n[languages.zh-tw]\nlabel = "繁體"\nlocale = "zh-Hant"\nweight = 3\n';
   write(root,'hugo.toml',config);
   write(root,'go.mod',`module example.test/consumer\n\ngo 1.18\n\nrequire ${release.module} ${version}\n`+
     (replacement?`\nreplace ${release.module} => ${JSON.stringify(replacement.replaceAll('\\','/'))}\n`:''));
   fixtureSiteFiles(root);
   fixtureSitePages(root,['appearance','language','my','_res','rss','powered-by']);
+  for(const suffix of ['','.zh','.zh-tw','.ar']) {
+    for(const [directory,href] of [
+      ['_res/home-art/wind',(suffix.startsWith('.zh')?'/zh/':'/')+'articles/docs/'],
+      ['powered-by',(suffix==='.zh'?'/zh/':'/')+'articles/changelog/']
+    ]) {
+      const file=path.join(root,'content',directory,'index'+suffix+'.md');
+      fs.writeFileSync(file,fs.readFileSync(file,'utf8').replaceAll(href,'https://banyan.swaw.com'+href));
+    }
+  }
   for(const suffix of multilingual?['','.zh','.zh-tw']:['']) {
     const translated=value=>value.replace(/^title: (.+)$/m,'title: $1'+suffix);
     write(root,'content/_index'+suffix+'.md',markdown[0]);
@@ -96,8 +105,11 @@ function directoryDefaults(output,{prefix='',suffix=''}={}) {
   const category=fs.readFileSync(path.join(output,prefix,'products/free/index.html'),'utf8');
   assert.match(category,/data-sort-variant="?products\b/);
   assert.ok(category.includes('/'+prefix+'p/alpha/#from=products/free'));
-  for(const name of ['discover','all','catalog','catalog-all','about','github'])
+  for(const name of ['discover','all','catalog','catalog-all','about','github','articles/docs','articles/changelog'])
     assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'Module must not supply site-owned '+name+'.');
+  const home=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
+  assert.ok(extractStartTags(home,'a').some(tag=>extractTagAttribute(tag,'href')===
+    'https://banyan.swaw.com/'+(['zh/','zh-tw/'].includes(prefix)?'zh/':'')+'articles/docs/'),'A starter without documentation links to the official guides.');
 }
 before(async()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'install-'));
@@ -173,7 +185,7 @@ test('site-owned robots templates follow the native switch and render site conte
     write(root,'hugo.toml',variant==='disabled'?config.replace('enableRobotsTXT = true','enableRobotsTXT = false'):config);
     if(variant==='disabled'||variant==='missing')fs.unlinkSync(path.join(root,template));
     else write(root,template,variant==='invalid'?'{{ if }}':
-      '# {{ .Site.Title }}\nUser-agent: ExampleBot\nDisallow: /private/\nSitemap: {{ absURL "sitemap.xml" }}\n');
+      '# {{ .Site.Home.Title }}\nUser-agent: ExampleBot\nDisallow: /private/\nSitemap: {{ absURL "sitemap.xml" }}\n');
     const result=command(root,skill,['base/hugo','--minify','--noBuildLock']),log=result.stdout+result.stderr;
     if(variant==='missing'||variant==='invalid') {
       assert.notEqual(result.status,0,variant+' robots template must fail');
@@ -292,19 +304,20 @@ test('packaged Skill and versioned Module build from an isolated proxy',()=>{
   const output=build(root,installed);checks(root,installed,output);
   for(const [prefix,suffix,locale,label] of [
     ['','','en-US','English'],
-    ['zh/','.zh','zh-CN','中文'],
-    ['zh-tw/','.zh-tw','zh-TW','繁體']
+    ['zh/','.zh','zh-Hans','中文'],
+    ['zh-tw/','.zh-tw','zh-Hant','繁體']
   ]) {
     directoryDefaults(output,{prefix,suffix});
     const home=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
     const localeTag=[...home.matchAll(/<meta\b[^>]*>/g)].find(([tag])=>extractTagAttribute(tag,'property')==='og:locale')?.[0];
-    assert.equal(extractTagAttribute(localeTag||'','content'),locale.replaceAll('-','_'));
+    assert.equal(extractTagAttribute(localeTag||'','content'),locale==='en-US'?'en_US':'');
     assert.ok(fs.readFileSync(path.join(output,prefix,'index.xml'),'utf8').includes('<language>'+locale+'</language>'));
     assert.ok(fs.readFileSync(path.join(output,prefix,'llms.txt'),'utf8').startsWith('# My site - '+label));
     assert.ok(fs.existsSync(path.join(output,prefix,'rss/index.html')));
     const panel=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
     assert.ok(panel.includes('>'+version+'</a>'),'Powered by shows the installed Module version as plain text.');
-    assert.ok(panel.includes('https://swaw.com/'+(prefix==='zh/'?'zh/':'')+'d/banyan/changelog/'));
+    assert.ok(extractStartTags(panel,'a').some(tag=>extractTagAttribute(tag,'href')===
+      'https://banyan.swaw.com/'+(prefix==='zh/'?'zh/':'')+'articles/changelog/'));
     assert.match(panel,/<button\b[^>]*data-site-update-action=check[^>]* disabled>/,'Default SW-off panel keeps a disabled refresh action.');
   }
   assert.equal(fs.existsSync(path.join(root,'node_modules')),false);
@@ -334,7 +347,7 @@ test('the release module directory also installs and builds as a local Hugo them
 test('site content, palette, translations and delivery data drive a fresh install',()=>{
   const root=consumer('overridden consumer',{multilingual:true});
   write(root,'content/rss/index.zh.md','---\ntitle: 本站订阅\nurl: rss/\ndescription: 本站订阅地址。\nlayout: page-article-norss\noutputs: [HTML]\n---\n\n{{< rss-link >}}\n');
-  write(root,'assets/css/theme.css',fs.readFileSync(path.join(moduleRoot,'assets/css/theme.css'),'utf8')+'\n:root{--consumer-palette-marker:1}\n');
+  write(root,'assets/site/theme.css',fs.readFileSync(path.join(repository,'assets/site/theme.css'),'utf8')+'\n:root{--consumer-palette-marker:1}\n');
   write(root,'assets/i18n/zh.toml',fs.readFileSync(path.join(repository,'assets/i18n/zh.toml'),'utf8').replace('other = "名称"','other = "本站名称"'));
   const template='assets/site/manifest.webmanifest.tmpl';
   write(root,template,fs.readFileSync(path.join(root,template),'utf8')

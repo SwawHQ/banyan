@@ -57,6 +57,7 @@
 {{- $signalClasses := slice "page-home__signal" -}}
 {{- if $signalIsPrimary -}}{{- $signalClasses = $signalClasses | append "is-primary" -}}{{- end -}}
 {{- if gt $guideChance $guideBucket -}}{{- $signalClasses = $signalClasses | append "is-guided" -}}{{- end -}}
+{{- $signalURL = partial "system-ui/content-href.html" (dict "page" $.Site.Home "href" $signalURL) -}}
 {{- $isExternalSignalURL := or (hasPrefix $signalURL "http://") (hasPrefix $signalURL "https://") (hasPrefix $signalURL "//") -}}
 {{- $items = $items | append (dict "name" $signalName "url" $signalURL "isExternalURL" $isExternalSignalURL "classes" (delimit $signalClasses " ")) -}}
 {{- $rules = $rules | append (printf ".page-home__signal:nth-child(%d){--signal-lift:%s;--signal-duration:%ds;--signal-delay:-%ds}" (add $index 1) $signalLift $signalDuration $delay) -}}

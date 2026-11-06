@@ -47,8 +47,8 @@ before(()=>{
   fs.mkdirSync(path.join(source,'themes'),{recursive:true});
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
   write(path.join(source,'assets/site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy('disable')));
-  configuration='theme="banyan"\nbaseURL="https://example.test/base/"\ntitle="Column URL fixture"\n'+
-    'defaultContentLanguage="en"\n[params.appearance]\npalette="css/theme.css"\n[minify]\ndisableJS=true\n'+
+  configuration='theme="banyan"\nbaseURL="https://example.test/base/"\n'+
+    'defaultContentLanguage="en"\n[params.appearance]\npalette="site/theme.css"\n[minify]\ndisableJS=true\n'+
     '[taxonomies]\n[outputs]\nhome=["HTML"]\nsection=["HTML"]\npage=["HTML"]\n'+
     '[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n'+
     '[languages.zh-tw]\nlabel="繁體"\nweight=3\n[languages.ar]\nlabel="العربية"\nweight=4\n'+
@@ -71,6 +71,30 @@ test('directory columns keep natural URLs while articles keep independent URLs',
       const html=fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');
       assert.equal(extractCanonicalHref(html),'https://example.test/base/'+prefix+route);
     }
+  }
+});
+
+test('percent signs in deployment prefixes preserve column and article paths',()=>{
+  for(const prefix of ['a%25b/','100%25/']) {
+    const config='disablePathToLower=true\n'+configuration.replace('https://example.test/base/','https://example.test/'+prefix);
+    changed(content('docs/Äpfel/_index.md'),section(),result=>{
+      passed(result);
+      for(const language of ['','zh/','zh-tw/','ar/'])for(const route of ['docs/','docs/child/','leaf/','p/stable/']) {
+        const html=fs.readFileSync(path.join(output,language,route,'index.html'),'utf8');
+        assert.equal(decodeURIComponent(new URL(extractCanonicalHref(html)).pathname),'/'+decodeURIComponent(prefix)+language+route);
+      }
+      const unicode=fs.readFileSync(path.join(output,'docs/Äpfel/index.html'),'utf8');
+      assert.equal(decodeURIComponent(new URL(extractCanonicalHref(unicode)).pathname),'/'+decodeURIComponent(prefix)+'docs/Äpfel/');
+    },config);
+    changed(content('docs/child/_index.md'),section('url: changed/\n'),result=>rejected(result,/url/),config);
+  }
+});
+
+test('ambiguous percent escapes in a literal deployment directory fail explicitly',()=>{
+  for(const prefix of ['a%2520b/','a%252Fb/']) {
+    const result=build(configuration.replace('https://example.test/base/','https://example.test/'+prefix));
+    assert.ifError(result.error);assert.notEqual(result.status,0);
+    assert.match(result.stdout+result.stderr,/baseURL path .*literal percent sign followed by two hexadecimal digits/);
   }
 });
 
@@ -180,7 +204,7 @@ test('preview edits invalidate cached URL checks and recover after removing the 
   }
   async function current(title) {
     const response=await fetch(base+'/docs/child/',{signal:AbortSignal.timeout(1500),headers:{Connection:'close'}});
-    return response.status===200&&(await response.text()).includes('<title>'+title+' - Column URL fixture</title>');
+    return response.status===200&&(await response.text()).includes('<title>'+title+' - Home</title>');
   }
   try {
     await until(()=>current('Column'));

@@ -11,5 +11,9 @@ params:
     light: "فاتح"
     dark: "داكن"
   icon: theme
+  appearance_icons:
+    auto: appearance-auto
+    light: appearance-light
+    dark: appearance-dark
   robots: noindex, follow
 ---

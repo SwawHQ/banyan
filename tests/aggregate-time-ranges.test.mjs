@@ -82,9 +82,9 @@ before(()=>{
   fs.mkdirSync(path.join(source,'themes'),{recursive:true});
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
   config=path.join(source,'hugo.toml');
-  write(config,'theme="banyan"\nbaseURL="https://example.test/"\ntitle="Range fixture"\ntimeZone="Asia/Shanghai"\n'+
+  write(config,'theme="banyan"\nbaseURL="https://example.test/"\ntimeZone="Asia/Shanghai"\n'+
     'defaultContentLanguage="en"\nenableRobotsTXT=true\nprintPathWarnings=true\npanicOnWarning=true\n'+
-    '[frontmatter]\nlastmod=["lastmod","date"]\n[minify]\ndisableJS=true\n[params.appearance]\npalette="css/theme.css"\n'+
+    '[frontmatter]\nlastmod=["lastmod","date"]\n[minify]\ndisableJS=true\n[params.appearance]\npalette="site/theme.css"\n'+
     '[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n'+
     '[languages.zh-tw]\nlabel="繁體"\nweight=3\n[languages.ar]\nlabel="العربية"\ndirection="rtl"\nweight=4\n'+
     '[taxonomies]\n[[cascade]]\n[cascade.build]\npublishResources=false\n'+

@@ -16,7 +16,7 @@ params:
     - name: تصنيفات المنتجات
       url: /ar/products/
     - name: التوثيق
-      url: https://swaw.com/d/banyan/docs/
+      url: /articles/docs/
     - name: GitHub
       url: https://github.com/SwawHQ/banyan
 ---

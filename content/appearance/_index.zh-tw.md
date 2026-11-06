@@ -11,5 +11,9 @@ params:
     light: "淺色"
     dark: "深色"
   icon: theme
+  appearance_icons:
+    auto: appearance-auto
+    light: appearance-light
+    dark: appearance-dark
   robots: noindex, follow #原樣填入 <meta name="robots" content="…">；含 noindex 或 none 時，從 sitemap.xml 和 llms.txt 排除此頁。
 ---

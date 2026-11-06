@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {choicesCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/choices/options.mjs';
 import {returnCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/return/options.mjs';
@@ -52,6 +52,10 @@ before(()=>{
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const content=path.join(work,'content'),config=path.join(work,'fixture.toml');
   fixtureContentDirectory(content);
+  for(const language of ['en','zh','zh-tw'])
+    write(path.join(content,'d/language-fixture/_index.'+language+'.md'),directoryPage('Language fixture'));
+  write(path.join(content,'language/_index.md'),fs.readFileSync(path.join(root,'content/language/_index.md'),'utf8')
+    .replace(/^  language_icon:.*$/m,'  language_icon: { text: "AX" }'));
   for(const lang of ['en','zh','zh-tw'])for(const name of ['first','second']){
     const prefix=lang==='en'?'':'/'+lang;
     write(path.join(content,'d/language-fixture',name+'.'+lang+'.md'),
@@ -59,7 +63,7 @@ before(()=>{
   }
   write(path.join(content,'d/language-fixture/untranslated.en.md'),
     '---\ntitle: Independent untranslated page\nurl: /d/language-fixture/untranslated/\ndate: 2026-01-01\n---\n\n## Details\n\nUntranslated fixture content.');
-  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n[languages.en.params.icon]\ntext = "AX"\n[languages.zh]\nlabel = "Independent target language"\n[languages.zh-tw.params.icon]\ntext = "繁"\n'+fixtureSiteMounts);
+  write(config,'[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n[languages.zh]\nlabel = "Independent target language"\n'+fixtureSiteMounts);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
 });
@@ -219,7 +223,7 @@ test('canceled choices cannot be revived by a later settings history visit',{tim
 test('explicit visits reject locale redirects, prompts, wrong reload language and unconsumed state',{timeout:45000},()=>{
   const routes=['d/language-fixture/first','zh/d/language-fixture/first'];
   for(const [name,code,message] of [
-    ['locale-redirect','document.addEventListener("DOMContentLoaded",()=>{if(navigator.language==="zh-CN"&&document.documentElement.lang==="en")requestAnimationFrame(()=>location.replace("/zh/d/language-fixture/first/"));});',/Explicit visits|Execution context was destroyed/],
+    ['locale-redirect','document.addEventListener("DOMContentLoaded",()=>{if(window.__swbanLanguageVisit&&navigator.language==="zh-CN"&&document.documentElement.lang==="en")requestAnimationFrame(()=>location.replace("/zh/d/language-fixture/first/"));});',/Explicit visits|Execution context was destroyed/],
     ['locale-prompt','document.addEventListener("DOMContentLoaded",()=>{if(navigator.language==="zh-CN")confirm("Change language?");});',/must not prompt/],
     ['reload-language','if(navigator.language==="zh-CN"&&performance.getEntriesByType("navigation")[0]?.type==="reload")document.documentElement.lang="zh";',/declared page language/],
     ['explicit-pending','const remove=Storage.prototype.removeItem;Storage.prototype.removeItem=function(key){if(key.startsWith("banyan:language-return"))return;return remove.call(this,key);};',/Explicit visits must consume/]

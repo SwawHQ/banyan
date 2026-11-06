@@ -49,7 +49,7 @@ try {
         return { href, text: fs.readFileSync(path.join(output, href), 'utf8') };
     };
 
-    // Let Hugo resolve the configured asset, including site and Module mounts.
+    // Let Hugo resolve the configured site asset through its mounts.
     write(path.join(work, 'content/_res/palette-source/index.md'),
         '---\ntitle: Palette source\nurl: _res/palette-source/\nlayout: palette-source\noutputs: [HTML]\n---\n');
     write(path.join(work, 'layouts/palette-source.html'), `
@@ -65,6 +65,8 @@ try {
     const {path:palettePath,css:paletteCss} = JSON.parse(fs.readFileSync(path.join(normal, '__palette-source.json'), 'utf8'));
     const explicit = build('explicit', paletteConfig(JSON.stringify(` ${palettePath} `)));
     assert.deepEqual(pageCss(explicit), pageCss(normal), 'Whitespace around a palette path does not change its CSS.');
+    const highContrast = build('high-contrast', paletteConfig('"site/theme.high-contrast.css"'));
+    assert.notEqual(pageCss(highContrast).href, pageCss(normal).href, 'Site-owned high-contrast and default palettes produce separate CSS bundles.');
 
     const overlay = path.join(work, 'assets');
     const customPath = `__palette-test/${path.basename(work)}.css`;
@@ -75,7 +77,7 @@ try {
     write(path.join(overlay, 'invalid.txt'), 'This is not CSS.');
     const mounts = fixtureSiteMounts+`[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "assets"\n`;
     const overridden = build('site-override', paletteConfig(JSON.stringify(palettePath)) + mounts);
-    assert.equal(pageCss(overridden).text.match(/--accent:\s*([^;}]+)/)?.[1].trim(), '#123456', 'Hugo must prefer a same-path site asset over the theme asset.');
+    assert.equal(pageCss(overridden).text.match(/--accent:\s*([^;}]+)/)?.[1].trim(), '#123456', 'An overlay must replace the configured site palette at the same asset path.');
     const custom = build('custom', paletteConfig(JSON.stringify(customPath)) + mounts);
     assert.equal(pageCss(custom).text.match(/--accent:\s*([^;}]+)/)?.[1].trim(), '#234567', 'A custom path resolves in the site assets filesystem.');
     assert.notEqual(pageCss(custom).href, pageCss(normal).href, 'Selecting a different palette changes the CSS fingerprint.');
@@ -97,7 +99,7 @@ try {
     for (const engine of [loadChromium(), loadWebkit()]) {
         const browser = await engine.launch({executablePath:engine.executablePath()});
         try {
-            for (const [name, output] of [['configured', normal], ['site-override', overridden], ['custom', custom]]) {
+            for (const [name, output] of [['configured', normal], ['high-contrast', highContrast], ['site-override', overridden], ['custom', custom]]) {
                 const server = await createStaticSiteServer(output);
                 await server.start();
                 let page;

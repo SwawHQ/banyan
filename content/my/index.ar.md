@@ -2,7 +2,7 @@
 title: مساحتي
 url: my/
 layout: page-my
-weight: 90
+weight: 20
 
 params:
   icon: my

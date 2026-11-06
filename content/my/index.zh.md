@@ -2,7 +2,7 @@
 title: 我的
 url: my/ #重命名内容目录时保留此网址。
 layout: page-my #显示 Markdown 正文，并提供返回操作。
-weight: 90
+weight: 20
 
 params:
   icon: my

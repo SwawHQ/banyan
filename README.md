@@ -6,8 +6,8 @@ A website template (Hugo theme) for browsing resources and articles by category,
 with Miller column navigation.
 
 [Demo](https://banyan.swaw.com/) ·
-[Documentation](https://swaw.com/d/banyan/docs/) ·
-[Changelog](https://swaw.com/d/banyan/changelog/)
+[Documentation](https://banyan.swaw.com/articles/docs/) ·
+[Changelog](https://banyan.swaw.com/articles/changelog/)
 
 **1.** Miller column navigation
 
@@ -28,9 +28,10 @@ with Miller column navigation.
 **9.** RSS, social metadata, sitemap, robots.txt, and llms.txt
 
 The repository root owns article (`articles`, `articles-all`) and product (`products`, `products-all`) examples.
-They share one article. The root also owns optional settings and information
-pages, including Powered by and prefetch diagnostics. The Module supplies reusable
-layouts, scripts and styles; it contains no site content.
+The sample article in `content/articles/category1/example/` is also referenced by the product examples.
+Documentation and release notes are maintained in `content/articles/docs/` and `content/articles/changelog/`.
+The root also owns optional settings and information pages, including Powered by and prefetch diagnostics.
+The Module supplies reusable layouts, scripts and styles; it contains no site content.
 
 ## Get started
 
@@ -96,22 +97,22 @@ uv/Python preparation. See [Tencent Cloud tools](.agents/skills/swaw-banyan/refe
 Open <http://127.0.0.1:13241/>.
 
 To add Banyan to an existing site or update its theme separately, see
-[Getting started](https://swaw.com/zh/p/getting-started/).
+[Getting started](https://banyan.swaw.com/zh/p/getting-started/).
 For builds and checks, see
-[Local development](https://swaw.com/zh/p/local-development/).
+[Local development](https://banyan.swaw.com/zh/p/local-development/).
 
 ## Documentation
 
 The guides are currently in Chinese.
 
-- [Site configuration](https://swaw.com/zh/p/site-configuration/)
-- [Lists and products](https://swaw.com/zh/p/collection-lists/)
-- [Layout slots](https://swaw.com/zh/p/layout-slots/)
-- [Delivery and caching](https://swaw.com/zh/p/delivery/)
-- [Security and CSP](https://swaw.com/zh/p/security-csp/)
-- [Discovery and source links](https://swaw.com/zh/p/discovery/)
-- [Web app manifest and icons](https://swaw.com/zh/p/web-app/)
-- [Development and release guides](https://swaw.com/zh/d/banyan/docs/development/)
+- [Site configuration](https://banyan.swaw.com/zh/p/site-configuration/)
+- [Lists and products](https://banyan.swaw.com/zh/p/collection-lists/)
+- [Layout slots](https://banyan.swaw.com/zh/p/layout-slots/)
+- [Delivery and caching](https://banyan.swaw.com/zh/p/delivery/)
+- [Security and CSP](https://banyan.swaw.com/zh/p/security-csp/)
+- [Discovery and source links](https://banyan.swaw.com/zh/p/discovery/)
+- [Web app manifest and icons](https://banyan.swaw.com/zh/p/web-app/)
+- [Development and release guides](https://banyan.swaw.com/zh/articles/docs/development/)
 
 ## License
 

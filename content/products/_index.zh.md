@@ -2,7 +2,7 @@
 # 在第一列导航中显示此首页直属子栏目；weight 决定顺序。
 title: 产品 - 分类
 description: 按分类浏览产品。
-weight: 40
+weight: 60
 layout: page-collection-directory
 
 params:

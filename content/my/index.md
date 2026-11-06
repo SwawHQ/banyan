@@ -2,7 +2,7 @@
 title: My
 url: my/ #Keep this route when renaming the content directory.
 layout: page-my #Render the Markdown body with back-button behavior.
-weight: 90
+weight: 20
 
 params:
   icon: my

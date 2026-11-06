@@ -1,7 +1,6 @@
 # Banyan minimal reference site.
 # Sites own their complete configuration. Use this file as a reference.
 baseURL = "https://banyan.swaw.com/"
-title = "Banyan"
 timeZone = "Asia/Shanghai"
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
@@ -15,15 +14,13 @@ build.noJSConfigInAssets = true
 minify.disableJS = true
 # Editorial update time: never derive it from repository maintenance.
 frontmatter.lastmod = ["lastmod", "date"]
+taxonomies = {} # Disable Hugo's default tags and categories.
 
 [[cascade]]
 # true: automatically publish page bundle resources, including unused files.
 # false: publish only resources whose Permalink, RelPermalink or Publish method is called.
 # Page HTML is controlled by build.render; static/ files are copied separately.
 build.publishResources = false
-
-[taxonomies]
-# Empty table disables Hugo's default tags and categories.
 
 [markup]
 highlight.noClasses = false
@@ -41,7 +38,6 @@ LLMS.isPlainText = true
 LLMS.notAlternative = true
 
 [module]
-hugoVersion.min = "0.168.0"
 imports = [{ path = "github.com/SwawHQ/banyan/module" }]
 mounts = [{ source = "assets/i18n", target = "i18n" }]
 
@@ -49,29 +45,25 @@ mounts = [{ source = "assets/i18n", target = "i18n" }]
 en.label = "English"
 en.locale = "en-US"
 en.weight = 1
-en.params.icon.text = "EN"
 
 zh.label = "中文"
-zh.locale = "zh-CN"
+zh.locale = "zh-Hans"
 zh.weight = 2
-zh.params.icon.text = "简"
 
 zh-tw.label = "繁體"
-zh-tw.locale = "zh-TW"
+zh-tw.locale = "zh-Hant"
 zh-tw.weight = 3
-zh-tw.params.icon.text = "繁"
 
 ar.label = "العربية"
 ar.locale = "ar"
 ar.direction = "rtl"
 ar.weight = 4
-ar.params.icon.text = "ع"
 
 
 # Banyan output format and parameters.
 [params]
 # Complete color-role file, relative to assets/. Select at build time.
-appearance.palette = "css/theme.css"
+appearance.palette = "site/theme.css"
 # The largest width caps generated variants; smaller source images are not enlarged.
 media.responsive_images.widths = [768, 1200, 1600]
 content_source.repository = "https://github.com/SwawHQ/banyan"

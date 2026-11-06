@@ -2,7 +2,7 @@
 # Show this direct child of Home in root navigation; weight sets its order.
 title: Articles - All
 description: All articles in one list.
-weight: 10
+weight: 30
 layout: page-collection-directory-all
 
 params:

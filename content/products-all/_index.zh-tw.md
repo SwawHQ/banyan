@@ -2,7 +2,7 @@
 # 在第一欄導覽顯示此首頁直屬頁面；weight 控制順序。
 title: 產品 - 全部
 description: 在一個清單中瀏覽全部產品引用。
-weight: 30
+weight: 50
 layout: page-collection-products-all
 
 params:

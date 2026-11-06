@@ -1,6 +1,6 @@
 {{- $part := .Get 0 -}}
-{{- if not (in (slice "version" "interval" "policy" "status" "content") $part) -}}
-  {{- errorf "Build failed: %s site-update requires version, interval, policy, status or content." .Page.File.Path -}}
+{{- if not (in (slice "version" "interval" "policy" "offline" "status" "content") $part) -}}
+  {{- errorf "Build failed: %s site-update requires version, interval, policy, offline, status or content." .Page.File.Path -}}
 {{- end -}}
 {{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
 {{- $swEnabled := eq $delivery.sw.mode "enable" -}}
@@ -23,6 +23,9 @@
     {{- $labels := partial "feature-updates/labels.html" (dict "ctx" .Page "keys" (slice "cache_disabled")) -}}
     {{- $labels.cache_disabled -}}
   {{- end -}}</span>
+{{- else if eq $part "offline" -}}
+  {{- $url := printf "%s%s/" .Page.Site.Home.RelPermalink (trim $delivery.sw.offline_notice_path "/") -}}
+  <span data-site-offline-page><a href="{{ $url }}">{{ $url }}</a></span>
 {{- else if eq $part "status" -}}
   {{- $labels := partial "feature-updates/labels.html" (dict "ctx" .Page "keys" (slice "checking" "check_failed" "unavailable" "status_current" "status_ready" "status_offline" "installing" "status_click_retry" "mode_off" "mode_disable" "status_controlled" "status_refresh" "refresh_icon")) -}}
   <span class="updates-status" data-site-update-panel data-site-update-status data-site-sw-mode="{{ $delivery.sw.mode }}" data-site-sw-url="{{ "sw.js" | relURL }}" data-site-update-copy='{{ $labels | jsonify }}' role="status" aria-live="polite">{{ if $swEnabled }}{{ $labels.checking }}{{ else }}{{ index $labels (printf "mode_%s" $delivery.sw.mode) }}{{ end }}</span>

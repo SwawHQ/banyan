@@ -6,8 +6,8 @@
 
 
 [演示](https://banyan.swaw.com/) ·
-[文档](https://swaw.com/zh/d/banyan/docs/) ·
-[变更记录](https://swaw.com/d/banyan/changelog/)
+[文档](https://banyan.swaw.com/zh/articles/docs/) ·
+[变更记录](https://banyan.swaw.com/zh/articles/changelog/)
 
 
 **1.** 米勒列导航
@@ -31,7 +31,8 @@
 
 
 
-仓库根目录维护文章（`articles`、`articles-all`）和产品（`products`、`products-all`）四个示例入口，共用一篇文章，并提供可选的设置和说明页面。
+仓库根目录维护文章（`articles`、`articles-all`）和产品（`products`、`products-all`）四个示例入口。产品示例引用 `content/articles/category1/example/` 中的示例文章。
+使用与开发文档在 `content/articles/docs/` 维护，变更记录在 `content/articles/changelog/` 维护。根目录还提供可选的设置和说明页面。
 Powered by 和预取诊断页面也由站点根 `content/` 维护。Module 只提供布局、脚本和样式，不提供站点内容。
 
 ## 开始使用
@@ -86,22 +87,22 @@ GitHub CLI 在使用 `base/gh` 时准备。
 `swban deploy/auth/setup` 打开 Cloudflare 和腾讯云共用的授权页。
 打开 <http://127.0.0.1:13241/> 查看站点。
 
-已有站点接入或单独升级主题，见[开始使用](https://swaw.com/zh/p/getting-started/)；
-构建和检查，见[本地开发](https://swaw.com/zh/p/local-development/)。
+已有站点接入或单独升级主题，见[开始使用](https://banyan.swaw.com/zh/p/getting-started/)；
+构建和检查，见[本地开发](https://banyan.swaw.com/zh/p/local-development/)。
 
 
 ## 文档
 
 指南目前以中文提供。
 
-- [站点配置](https://swaw.com/zh/p/site-configuration/)
-- [列表与产品](https://swaw.com/zh/p/collection-lists/)
-- [页面区域](https://swaw.com/zh/p/layout-slots/)
-- [交付与缓存](https://swaw.com/zh/p/delivery/)
-- [安全策略与 CSP](https://swaw.com/zh/p/security-csp/)
-- [站点发现与来源链接](https://swaw.com/zh/p/discovery/)
-- [Web App Manifest 与图标](https://swaw.com/zh/p/web-app/)
-- [开发与发布指南](https://swaw.com/zh/d/banyan/docs/development/)
+- [站点配置](https://banyan.swaw.com/zh/p/site-configuration/)
+- [列表与产品](https://banyan.swaw.com/zh/p/collection-lists/)
+- [页面区域](https://banyan.swaw.com/zh/p/layout-slots/)
+- [交付与缓存](https://banyan.swaw.com/zh/p/delivery/)
+- [安全策略与 CSP](https://banyan.swaw.com/zh/p/security-csp/)
+- [站点发现与来源链接](https://banyan.swaw.com/zh/p/discovery/)
+- [Web App Manifest 与图标](https://banyan.swaw.com/zh/p/web-app/)
+- [开发与发布指南](https://banyan.swaw.com/zh/articles/docs/development/)
 
 ## 许可证
 

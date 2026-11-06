@@ -23,15 +23,16 @@ export async function readOpeningSource(page,canvas) {
 
 export async function checkOpeningSource(page,source) {
   const url=new URL(page.url()),from=source.logicalPath.replace(/^\/+|\/+$/g,'');
-  assert.equal(new URLSearchParams(url.hash.slice(1)).get('from'),from,'The article must retain its declared collection source.');
   const state=await page.evaluate(logicalPath=>({
     source:(()=>{const navigation=JSON.parse(document.body.dataset.navigation);return Object.hasOwn(navigation.columns,logicalPath)
-      ?{root:navigation.home+logicalPath.replace(/^\/+/, '').split('/')[0]+'/'}:null;})(),
+      ?{root:navigation.home+logicalPath.replace(/^\/+/, '').split('/')[0]+'/',default:navigation.default}:null;})(),
     selections:[...document.querySelectorAll('[data-slot=breadcrumb] [data-collection-column]')].map(column=>({
       selected:[...column.querySelectorAll('[data-list-entry].is-current')].map(link=>new URL(link.href).pathname),
       current:[...column.querySelectorAll('[data-list-entry][aria-current="page"]')].map(link=>new URL(link.href).pathname)
     }))
   }),source.logicalPath);
+  assert.equal(new URLSearchParams(url.hash.slice(1)).get('from')||state.source?.default?.replace(/^\/+|\/+$/g,''),from,
+    'The article must retain its declared collection source.');
   assert.equal(state.source?.root,source.rootHref,'The article must retain its declared source root.');
   await checkRootSelection(page,source.root,source.roots);
   const columns=await readColumns(page);

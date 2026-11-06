@@ -24,7 +24,8 @@ async function readList(list) {
     const separator=getComputedStyle(heading);
     const probe=document.createElement('span');probe.style.cssText='position:absolute;visibility:hidden;inline-size:var(--navigation-column-inline)';
     node.append(probe);const declaredWidth=probe.getBoundingClientRect().width;probe.remove();
-    const root=document.querySelector('[data-root-navigation] .item-control').getBoundingClientRect();
+    const rootLink=document.querySelector('[data-root-navigation] .item-control'),root=rootLink.getBoundingClientRect();
+    const pathColumn=node.closest('.path-column'),rail=rootLink.closest('.page-rail');
     const children=[...node.children],fields=[...heading.children].map(cell=>cell.dataset.itemField);
     const readFields=row=>({display:getComputedStyle(row).display,columns:getComputedStyle(row).gridTemplateColumns,
       template:getComputedStyle(row).getPropertyValue('--list-field-tracks'),
@@ -37,7 +38,8 @@ async function readList(list) {
       separatorY:heading.getBoundingClientRect().bottom-box.top,separatorWidth:Number.parseFloat(separator.borderBottomWidth),
       paddingStart:Number.parseFloat(getComputedStyle(link).paddingInlineStart),
       rows:rows.map(row=>({x:row.getBoundingClientRect().left-box.left,width:row.getBoundingClientRect().width,height:row.getBoundingClientRect().height})),
-      rootWidth:root.width,rootHeight:root.height,
+      rootWidth:root.width,rootHeight:root.height,rootScrollbar:rail.offsetWidth-rail.clientWidth,
+      pathScrollbar:pathColumn?pathColumn.offsetWidth-pathColumn.clientWidth:0,
       completeRows:children.length===items.length+1&&children.every(child=>child===heading||child.hasAttribute('data-list-item')),
       pathGrid:node.matches('.item-list.item-list--path-column'),
       nameOnly:fields.length===1&&fields[0]==='name'&&items.every(item=>item.children.length===1&&item.firstElementChild.dataset.itemField==='name'),
@@ -49,7 +51,8 @@ function checkList(state) {
   assert.ok(state,'Choose a nonempty collection with a name header, row icons and titles.');
   assert.ok(state.completeRows&&state.items.length>0&&state.fields[0]==='name'&&state.fields.every(Boolean),
     'Collection headers and complete rows must be direct list children.');
-  assert.ok(state.declaredWidth>0&&Math.abs(state.nameWidth-state.declaredWidth)<=1,'Name column must match --navigation-column-inline.');
+  assert.ok(state.declaredWidth>0&&Math.abs(state.nameWidth+state.pathScrollbar-state.declaredWidth)<=1,
+    'Name column must match --navigation-column-inline after scrollbar space.');
   for(const row of [state.heading,...state.items]) {
     assert.ok(row.display==='grid'&&!row.columns.includes('subgrid'),'Each collection row must use an independent Grid.');
     assert.ok(row.template.trim()&&!/max-content|min-content|subgrid|\bauto\b|[\d.]fr\b/.test(row.template),'Collection field tracks must have determined widths.');
@@ -59,7 +62,8 @@ function checkList(state) {
   }
   assert.ok(state.heading.fields.every(cell=>cell.field==='name'||cell.contentWidth<=cell.width+1),
     'Metadata headers and sort indicators must fit their fixed field width: '+JSON.stringify(state.heading.fields));
-  assert.ok(Math.abs(state.rootWidth-state.nameWidth)<=1&&Math.abs(state.rootHeight-state.rowHeight)<=.1,'Collection rows must share root navigation dimensions.');
+  assert.ok(Math.abs(state.rootWidth+state.rootScrollbar-state.nameWidth-state.pathScrollbar)<=1
+    &&Math.abs(state.rootHeight-state.rowHeight)<=.1,'Collection rows must share root navigation dimensions after scrollbar space.');
   assert.ok(state.rows.every(row=>Math.abs(row.width-state.nameWidth)<=1&&Math.abs(row.height-state.rowHeight)<=.1&&Math.abs(row.x-state.headerX)<=.1),
     'Name rows must share width, height and column start.');
   assert.ok(state.separatorWidth>0&&state.rowY>=state.separatorY-.1,'Rows must start below the header separator.');

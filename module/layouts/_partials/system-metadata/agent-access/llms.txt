@@ -1,7 +1,7 @@
 {{- $site := . -}}
 {{- $multilingual := gt (len hugo.Sites) 1 -}}
 {{- $description := partial "./text.txt" $site.Home.Description -}}
-# {{ partial "./text.txt" $site.Title }} - {{ partial "./text.txt" ($site.Language.Label | default $site.Language.Lang) }}
+# {{ partial "./text.txt" (partial "system-metadata/site/title.html" $site) }} - {{ partial "./text.txt" ($site.Language.Label | default $site.Language.Lang) }}
 {{ with $description }}
 > {{ . }}
 {{ end }}

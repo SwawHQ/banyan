@@ -1,12 +1,12 @@
 ---
 title: Banyan
-weight: 110
+weight: 10
 description: موقع مرجعي بسيط لقالب Banyan المبني على Hugo، مع عرض للغة العربية.
 layout: page-home
 
 params:
   show_navigation: true
-  icon: home
+  icon: {image: "site/favicon.link.svg"}
   browser_title: Banyan — قالب بسيط للنشر باستخدام Hugo
 ---
 

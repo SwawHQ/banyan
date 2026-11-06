@@ -10,11 +10,22 @@
       ) -}}
     {{- end -}}
   {{- else if eq .provider "appearance" -}}
-    {{- range slice "auto" "light" "dark" -}}
-      {{- $items = $items | append (dict
-        "control" "button" "text" (index $page.Params.labels .) "icon" (printf "appearance-%s" .)
-        "dataAttrs" (dict "theme-choice" .)
-      ) -}}
+    {{- $icons := $page.Params.appearance_icons -}}
+    {{- if not (reflect.IsMap $icons) -}}
+      {{- errorf "Build failed: %s requires params.appearance_icons with auto, light and dark." $page.RelPermalink -}}
+    {{- else -}}
+      {{- range slice "auto" "light" "dark" -}}
+        {{- if not (isset $icons .) -}}
+          {{- errorf "Build failed: %s requires params.appearance_icons.%s." $page.RelPermalink . -}}
+        {{- else -}}
+          {{- $icon := partial "system-ui/icon/page-value.html" (dict "value" (index $icons .) "page" $page "context" (printf "params.appearance_icons.%s" .)) -}}
+          {{- if not $icon -}}{{- errorf "Build failed: params.appearance_icons.%s must define a non-empty icon." . -}}{{- end -}}
+          {{- $items = $items | append (dict
+            "control" "button" "text" (index $page.Params.labels .) "icon" $icon
+            "dataAttrs" (dict "theme-choice" .)
+          ) -}}
+        {{- end -}}
+      {{- end -}}
     {{- end -}}
   {{- end -}}
   {{- $items = $items | append (dict
