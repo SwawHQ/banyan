@@ -38,7 +38,7 @@ before(async()=>{
     const language=file.endsWith('.zh.md')?'zh':'en';
     const route=section?path.posix.dirname(source).slice('content/'.length)+'/':fields.url;
     assert.ok(route,'Documentation articles declare their public URL: '+source);
-    documentation.push({source,branch,section,language,href:'/'+(language==='zh'?'zh/':'')+route});
+    documentation.push({source,section,language,fields,href:'/'+(language==='zh'?'zh/':'')+route});
   }
 });
 after(()=>{if(work){assert.equal(path.basename(path.dirname(fs.realpathSync(work))),'reference-site-tests');fs.rmSync(work,{recursive:true,force:true});}});
@@ -175,7 +175,7 @@ test('the reference site owns its columns and links to its local documentation',
   verifyCspOutput(output);
 });
 
-test('documentation keeps its published routes, languages and Banyan source links',()=>{
+test('documentation and release notes publish article dates, sources and feeds',()=>{
   assert.ok(documentation.some(page=>page.href==='/zh/p/getting-started/'));
   assert.ok(documentation.some(page=>page.href==='/p/unreleased/'));
   assert.deepEqual([...new Set(documentation.map(page=>page.language))].sort(),['en','zh']);
@@ -183,7 +183,26 @@ test('documentation keeps its published routes, languages and Banyan source link
     const html=fs.readFileSync(path.join(output,page.href,'index.html'),'utf8');
     assert.equal(extractCanonicalHref(html),origin+page.href,page.source);
     assert.equal(extractTagAttribute(extractStartTags(html,'html')[0],'lang'),page.language,page.source);
-    if(page.section||page.branch!=='docs')continue;
+    if(page.section) {
+      const feed=fs.readFileSync(path.join(output,page.href,'index.xml'),'utf8');
+      const sourceDirectory=path.posix.dirname(page.source)+'/';
+      const expected=documentation.filter(article=>!article.section&&article.language===page.language
+        &&article.source.startsWith(sourceDirectory)).map(article=>origin+article.href).sort();
+      assert.deepEqual([...feed.matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]).sort(),expected,page.source+' publishes its article feed.');
+      continue;
+    }
+    assert.ok(page.fields.date&&page.fields.lastmod,page.source+' declares publication and update dates.');
+    const dates=extractStartTags(html,'time').map(tag=>extractTagAttribute(tag,'datetime'));
+    assert.equal(dates.length,2,page.source+' displays both article dates.');
+    assert.deepEqual(dates.map(value=>value.slice(0,10)),[page.fields.lastmod,page.fields.date].map(value=>String(value).slice(0,10)),page.source);
+    const hasHeadings=extractStartTags(extractBlocks(html,'main')[0].inner).some(tag=>/^<h[23]\b/.test(tag));
+    assert.equal(extractStartTags(html,'nav').some(tag=>extractTagAttribute(tag,'class').split(/\s+/).includes('document-toc')),hasHeadings,page.source+' shows chapters for its headings.');
+    assert.match(html,/"@type"\s*:\s*"BlogPosting"/,page.source);
+    assert.equal(html.match(/"dateModified"\s*:\s*"([^"]+)"/)?.[1],dates[0],page.source);
+    assert.equal(html.match(/"datePublished"\s*:\s*"([^"]+)"/)?.[1],dates[1],page.source);
+    const sitemap=fs.readFileSync(path.join(output,page.language,'sitemap.xml'),'utf8');
+    const entry=sitemap.match(/<url>[\s\S]*?<\/url>/g).find(value=>value.includes('<loc>'+origin+page.href+'</loc>'));
+    assert.equal(Date.parse(entry?.match(/<lastmod>([^<]+)<\/lastmod>/)?.[1]),Date.parse(dates[0]),page.source+' publishes its update date in the sitemap.');
     const resources=extractBlocks(html,'nav',tag=>extractTagAttribute(tag,'class').split(/\s+/).includes('document-meta__row--resources'));
     assert.equal(resources.length,1,page.source+' has article source information.');
     const links=extractStartTags(resources[0].html,'a').map(tag=>extractTagAttribute(tag,'href'));
@@ -193,10 +212,12 @@ test('documentation keeps its published routes, languages and Banyan source link
     const language=prefix?prefix.slice(0,-1):'en';
     const feed=fs.readFileSync(path.join(output,prefix,'index.xml'),'utf8');
     const expected=['/'+prefix+'p/example-product/',...documentation.filter(page=>
-      !page.section&&page.branch==='docs'&&page.language===language).map(page=>page.href)];
+      !page.section&&page.language===language).map(page=>page.href)];
     assert.deepEqual([...feed.matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]).sort(),
-      expected.map(href=>origin+href).sort(),'Root RSS includes eligible documentation and excludes release notes.');
-    assert.equal(fs.existsSync(path.join(output,prefix,'articles/changelog/index.xml')),false,'Release notes do not publish a feed.');
+      expected.map(href=>origin+href).sort(),'Root RSS includes documentation and release notes.');
+    for(const item of feed.matchAll(/<item>([\s\S]*?)<\/item>/g))
+      assert.ok(Number.isFinite(Date.parse(item[1].match(/<pubDate>([^<]+)<\/pubDate>/)?.[1])),'Every RSS article has a valid publication date.');
+    assert.equal(fs.existsSync(path.join(output,prefix,'articles/changelog/index.xml')),['en','zh'].includes(language),'Release notes publish a feed in each available language.');
     assert.equal(fs.existsSync(path.join(output,prefix,'articles/docs/index.html')),['en','zh'].includes(language),'Documentation exists only in its available languages.');
   }
 });
@@ -386,9 +407,9 @@ test('the translated example supplies products while article lists also include 
     }
     for(const directory of ['articles','articles-all','products','products-all']) {
       const feed=fs.readFileSync(path.join(output,prefix,directory,'index.xml'),'utf8');
-      const expected=[href,...(directory.startsWith('articles')?articles.filter(page=>page.branch==='docs').map(page=>page.href):[])];
+      const expected=[href,...(directory.startsWith('articles')?articles.map(page=>page.href):[])];
       assert.deepEqual([...feed.matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]).sort(),
-        expected.map(href=>origin+href).sort(),directory+' RSS keeps eligible articles and omits release notes.');
+        expected.map(href=>origin+href).sort(),directory+' RSS keeps its article membership.');
     }
     assert.equal(fs.existsSync(path.join(output,prefix,'p/example-note')),false);
     assert.equal(fs.existsSync(path.join(output,prefix,'products/examples/_map.toml')),false);

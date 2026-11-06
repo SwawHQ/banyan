@@ -1,5 +1,7 @@
 ---
 title: Service Worker 回归检查
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/service-worker-regression-checklist/
 description: 检查注册、缓存、浏览器激活、内容版本和停用行为。
 ---

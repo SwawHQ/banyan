@@ -2,6 +2,7 @@
 title: 未发布
 url: p/unreleased/
 description: Banyan 主题和 Skill 的未发布变更。
+date: 2026-11-06
 lastmod: 2026-11-06
 ---
 
@@ -13,7 +14,7 @@ lastmod: 2026-11-06
 - 外观设置页通过 `params.appearance_icons` 声明 `auto`、`light`、`dark` 图标，支持 SVG 名称、文字和图片。
 - 参考站点保留英语、简体中文和从右向左排版的阿拉伯语，移除繁体中文页面及界面字典。简体中文使用 `zh-Hans`；RSS 使用完整语言标签，Open Graph 无地区时省略可选的语言标记。
 - 最低 Hugo 版本由 Module 的 `theme.toml` 声明，站点不再重复配置 `module.hugoVersion.min`。
-- 使用指南和开发资料发布在 `https://banyan.swaw.com/articles/docs/`，版本说明发布在 `https://banyan.swaw.com/articles/changelog/`；源码由 Banyan 仓库的 `content/articles/docs/` 和 `content/articles/changelog/` 维护，与主题代码随同一版本发布。正文使用 `p/` 网址。
+- 使用指南和开发资料发布在 `https://banyan.swaw.com/articles/docs/`，版本说明发布在 `https://banyan.swaw.com/articles/changelog/`；源码由 Banyan 仓库的 `content/articles/docs/` 和 `content/articles/changelog/` 维护，与主题代码随同一版本发布。两者均按普通文章发布，使用 `p/` 网址，提供日期、来源链接、章节目录和 RSS。
 - 通过 `github.com/SwawHQ/banyan/module` 发布 Hugo Module，
   `swaw-banyan` Skill 使用对应版本。`doctor [目录]` 检查 Module 和
   主题目录的版本配对、vendor 依赖及本地开发状态。

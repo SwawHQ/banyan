@@ -1,5 +1,7 @@
 ---
 title: 交付与缓存
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/delivery/
 description: 配置部署平台、HTTP 响应头、Service Worker 缓存和重定向。
 ---

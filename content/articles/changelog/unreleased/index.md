@@ -2,6 +2,7 @@
 title: Unreleased
 url: p/unreleased/
 description: Unreleased changes to the Banyan theme and Skill.
+date: 2026-11-06
 lastmod: 2026-11-06
 ---
 
@@ -13,7 +14,7 @@ lastmod: 2026-11-06
 - Appearance settings pages declare `auto`, `light` and `dark` icons in `params.appearance_icons`, using SVG names, text or images.
 - The reference site provides English, Simplified Chinese and right-to-left Arabic. Traditional Chinese pages and its interface dictionary are removed. Simplified Chinese uses `zh-Hans`; RSS keeps the full locale tag, and Open Graph omits optional locale tags when no region is specified.
 - The Module's `theme.toml` declares the minimum Hugo version. Sites no longer repeat `module.hugoVersion.min`.
-- Chinese guides and developer documentation at `https://banyan.swaw.com/articles/docs/`, with release notes at `https://banyan.swaw.com/articles/changelog/`. The Banyan repository maintains their source under `content/articles/docs/` and `content/articles/changelog/`, released with the theme code. Articles use `p/` URLs.
+- Chinese guides and developer documentation at `https://banyan.swaw.com/articles/docs/`, with release notes at `https://banyan.swaw.com/articles/changelog/`. The Banyan repository maintains their source under `content/articles/docs/` and `content/articles/changelog/`, released with the theme code. Both use ordinary article pages with `p/` URLs, dates, source links, chapters and RSS.
 - Hugo Module at `github.com/SwawHQ/banyan/module`, with matching
   `swaw-banyan` Skill versions. `doctor [directory]` checks Module and
   theme-directory versions, vendored dependencies and local development.

@@ -1,5 +1,7 @@
 ---
 title: 浏览器检查
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/browser-regression/
 description: 使用 Skill 对已完成的站点构建运行代表页面和专项检查。
 ---

@@ -1,5 +1,7 @@
 ---
 title: 路径导航模型
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/breadcrumb-models/
 description: 说明根导航、来源列和文章进入路径的构建及呈现模型。
 ---

@@ -1,5 +1,7 @@
 ---
 title: 安全策略与 CSP
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/security-csp/
 description: 配置发布响应头，管理内联脚本与原生规则的 CSP 哈希。
 ---

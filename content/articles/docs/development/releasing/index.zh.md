@@ -1,5 +1,7 @@
 ---
 title: 发布版本
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/releasing/
 description: 整理版本说明，为同一源码提交创建项目和 Go Module 标签，并发布 GitHub Release。
 ---
@@ -13,7 +15,7 @@ description: 整理版本说明，为同一源码提交创建项目和 Go Module
 发布时将该 bundle 移至 Banyan 仓库的
 `content/articles/changelog/vX.Y.Z/`，把 `title` 设为 `vX.Y.Z`、
 `url` 设为 `p/vX.Y.Z/`，把 `date` 和 `lastmod` 设为发布日期。
-新建 unreleased bundle。集合布局会自动列出版本页面。
+新建 unreleased bundle，将 `date` 和 `lastmod` 设为新页面的首次发布日期；“未发布”指软件版本状态。集合布局会自动列出版本页面。
 版本说明发布在 `https://banyan.swaw.com/p/vX.Y.Z/`，中文在
 `https://banyan.swaw.com/zh/p/vX.Y.Z/`；内容目录移动不改变这些正文网址。
 

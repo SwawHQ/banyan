@@ -1,5 +1,7 @@
 ---
 title: Web App Manifest 与图标
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/web-app/
 description: 设置站点应用清单、favicon 和 PWA 图标。
 ---

@@ -1,5 +1,7 @@
 ---
 title: 布局与 partial 架构
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/partial-architecture/
 description: 说明页面入口、功能模板与系统机制的所有权和依赖方向。
 ---

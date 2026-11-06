@@ -1,5 +1,7 @@
 ---
 title: 列表与产品声明
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/collection-lists/
 description: 配置目录、引用、条目图标和产品列表。
 ---
@@ -44,13 +46,13 @@ layout: page-collection-products
 
 新增普通列表目录时使用 `_index.<lang>.md`，声明 `layout: page-collection-directory` 和需要的 `params.slots: [breadcrumb]`；位于已有目录下时可继承布局和区域声明。正文只写介绍，列表自动在介绍后出现。单篇文章使用 `name/index.<lang>.md` 叶子包。
 
-`params.aggregate` 只用于名称以 `-all` 结尾的汇总布局，指向一个普通 section 根。它不从父目录继承。普通目录页无需写 `aggregate`。所有页面直接在站点根 `content/` 维护；各语言保留各自的完整 front matter。
+`params.aggregate` 只用于名称以 `-all` 结尾的汇总布局，指向一个普通 section 根。它不从父目录继承。普通目录页无需写 `aggregate`。所有页面直接在站点根 `content/` 维护；各语言维护各自的页面字段。
 
 Powered by 由站点根 `content/powered-by/index*.md` 维护，使用 `page-article-norss` 展示技术总览，通过 `weight` 排序，并声明 `params.icon: code`。标题、说明、源码和变更记录链接在各语言 Markdown 正文维护；外链复用 `new-tab`。
 
 `theme-version` 只输出来自 `hugo.Deps` 的主题版本，接受 `label`、`local` 文案参数；`hugo-version` 读取 `hugo.Version`。`site-update "version"` 显示当前页面构建时的内容版本；启用 SW 时，`sw-version.json` 使用同一版本。`site-update "interval" "每 %d 分钟检查"` 显示检查间隔，`site-update "policy"` 提供缓存策略链接，`site-update "offline"` 按交付配置生成当前语言的离线页链接，保留部署子路径。
 
-版本列表使用 `page-collection-directory`。记录在 Banyan 仓库维护：开发期间写入 `content/articles/changelog/unreleased/index.md`，发布时归档为 `content/articles/changelog/v版本号/index.md`。
+文档和版本说明均继承 `articles` 的 `cascade`：栏目使用 `page-collection-directory`，正文使用 `page-article-rss` 和 `params.slots: [breadcrumb, meta]`，提供日期、来源链接、章节目录和 RSS。开发期间在 `content/articles/changelog/unreleased/index.md` 记录变化，发布时归档为 `content/articles/changelog/v版本号/index.md`。
 
 PWA 段落中的 `site-update "status"` 显示程序更新状态和检查按钮；`site-update "content"` 显示当前页面的内容版本状态；`params.site_update.labels` 与技术说明同存于 `content/powered-by/index*.md`。参考站和 Swaw 的各语言 Powered by 将预取诊断放在折叠区中，使用 `prefetch-debug-controls`、`prefetch-debug-links` 和 `prefetch-debug-state` 短代码；其 `serviceWorker.controlled` 只表示该诊断页是否受控，不代表其他标签页。
 

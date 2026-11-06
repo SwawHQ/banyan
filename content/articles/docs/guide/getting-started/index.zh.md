@@ -1,5 +1,7 @@
 ---
 title: 开始使用
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/getting-started/
 description: 安装配套的 Banyan Hugo Module 和 Agent Skill。
 weight: 1

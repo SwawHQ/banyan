@@ -1,5 +1,7 @@
 ---
 title: 站点发现与来源链接
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/discovery/
 description: 控制 sitemap 收录，了解 llms.txt，并添加文章来源和外部发布链接。
 ---

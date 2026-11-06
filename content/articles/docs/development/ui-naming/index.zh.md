@@ -1,5 +1,7 @@
 ---
 title: UI 命名与职责
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/ui-naming/
 description: 约定页面列、列表、条目、样式类与行为标记的命名。
 ---

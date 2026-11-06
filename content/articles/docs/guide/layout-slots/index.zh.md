@@ -1,5 +1,7 @@
 ---
 title: 页面区域与布局
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/layout-slots/
 description: 配置根导航入口、路径区域和文章元信息。
 ---

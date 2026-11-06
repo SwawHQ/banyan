@@ -1,5 +1,7 @@
 ---
 title: 导航状态协议
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/navigation-state/
 description: 说明来源、排序、章节与浏览器历史之间的边界。
 ---

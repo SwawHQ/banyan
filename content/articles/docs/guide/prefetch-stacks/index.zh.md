@@ -1,5 +1,7 @@
 ---
 title: 预取配置
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/prefetch-stacks/
 description: 按图标和列范围设置预取强度，并检查所选预取机制。
 ---

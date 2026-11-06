@@ -1,5 +1,7 @@
 ---
 title: 站点配置
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/site-configuration/
 description: 设置根配置、语言、站点说明和主题覆盖文件。
 weight: 2

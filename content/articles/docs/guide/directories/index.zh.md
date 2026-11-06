@@ -1,5 +1,7 @@
 ---
 title: 目录与引用
+date: 2026-11-06
+lastmod: 2026-11-06
 url: p/directories/
 description: 用真实目录组织正文，用共享引用将文章加入其他栏目。
 ---
