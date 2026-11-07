@@ -20,6 +20,7 @@
     {{- $dateValue = (index . 0).Lastmod -}}
   {{- end -}}
   {{- $text := $section.LinkTitle | default $section.Title -}}
+  {{- $config := partial "feature-browse/collection/config.html" (dict "page" $section) -}}
   {{- $sectionRows = $sectionRows | append (dict
     "node" $section
     "key" (partial "./page-key.html" (dict "ctx" $section))
@@ -27,6 +28,8 @@
     "href" $section.RelPermalink
     "title" $section.Title
     "text" $text
+    "sort_variant" (cond $config.sortable $config.sort_variant "")
+    "default_sort" (cond $config.sortable $config.default_sort "")
     "sort_group" "0"
     "sort_name" $text
     "sort_date" (cond $dateValue.IsZero "" ($dateValue.Format "20060102150405"))

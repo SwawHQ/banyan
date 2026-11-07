@@ -5,6 +5,7 @@ import {
     applyFragmentField,
     readFieldValue,
 } from './navigation-state.contract.js';
+import { getNormalizedSortToken } from './sort-policy.js';
 
 export { SORTS_PLACEHOLDER };
 
@@ -129,10 +130,11 @@ export function buildLineageSortsTokensForPath(lineageLogicalPath, targetLogical
     return slots;
 }
 
-export function buildDescendantSortsTokens(logicalPath, currentToken = '', defaultToken = '') {
+export function buildDescendantSortsTokens(logicalPath, currentToken, defaultToken, descendantVariant, descendantDefault) {
     const normalizedCurrent = normalizeSortSlot(currentToken);
     const currentSlots = buildCurrentPageSortsTokens(logicalPath, normalizedCurrent, defaultToken);
-    return [...currentSlots, normalizedCurrent];
+    const inherited = getNormalizedSortToken(normalizedCurrent, descendantVariant, descendantDefault);
+    return [...currentSlots, inherited === descendantDefault ? '' : inherited];
 }
 
 export function applyFromPathToUrl(url, fromPath) {
@@ -141,10 +143,8 @@ export function applyFromPathToUrl(url, fromPath) {
 
 export function applySortsTokensToUrl(url, tokens) {
     const normalizedTokens = normalizeSortSlots(tokens);
-    if (
-        normalizedTokens.length === 0
-        || normalizedTokens.every((token) => token === '')
-    ) {
+    while (normalizedTokens.at(-1) === '') normalizedTokens.pop();
+    if (normalizedTokens.length === 0) {
         return applyFragmentField(url, LINEAGE_SORTS_FIELD, '');
     }
 

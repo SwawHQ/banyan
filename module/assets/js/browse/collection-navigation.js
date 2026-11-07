@@ -34,9 +34,6 @@ function updateCollectionEntryLinks(list, variantName, currentToken, pageCollect
     const currentSorts = pageCollectionSource?.logicalPath
         ? buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, currentToken, variant.defaultToken)
         : [];
-    const descendantSorts = pageCollectionSource?.logicalPath
-        ? buildDescendantSortsTokens(pageCollectionSource.logicalPath, currentToken, variant.defaultToken)
-        : [];
 
     list.querySelectorAll('[data-list-item] > [data-list-entry][href]').forEach((link) => {
         const rawHref = link.getAttribute('href') || '';
@@ -51,10 +48,12 @@ function updateCollectionEntryLinks(list, variantName, currentToken, pageCollect
         if (url.origin !== window.location.origin) return;
 
         if (pageCollectionSource?.logicalPath) {
-            const isEntryLink = link.parentElement.dataset.kind === 'page';
+            const row = link.parentElement.dataset;
             applySortsTokensToUrl(
                 url,
-                isEntryLink ? currentSorts : descendantSorts
+                row.kind === 'page' ? currentSorts : buildDescendantSortsTokens(
+                    pageCollectionSource.logicalPath, currentToken, variant.defaultToken, row.sortVariant, row.defaultSort
+                )
             );
         }
         link.href = buildRelativeHref(url);

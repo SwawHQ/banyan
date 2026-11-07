@@ -35,7 +35,10 @@ function checkMainLinks(main,columns) {
   assert.ok(links.length>0,'Main collection must contain an article.');
   for(const row of links) {
     const url=new URL(row.href),slots=(new URLSearchParams(url.hash.slice(1)).get('sorts')||'').split(',');
-    if(new URLSearchParams(url.hash.slice(1)).has('sorts'))assert.equal(slots.length,depth,'Article links must retain every source sort slot.');
+    if(new URLSearchParams(url.hash.slice(1)).has('sorts')) {
+      assert.ok(slots.length<=depth,'Article links must not add sort slots beyond their source.');
+      assert.notEqual(slots.at(-1),'_','Article links must omit trailing default sort slots.');
+    }
     const effective=[...slots,...Array(Math.max(0,depth-slots.length)).fill('_')];
     const tokenAt=(index,fallback)=>effective[index]&&effective[index]!=='_'?effective[index]:fallback;
     assert.equal(tokenAt(depth-1,defaults),active,'Main article links must retain the active collection sort.');

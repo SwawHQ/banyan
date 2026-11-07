@@ -39,6 +39,9 @@
     {{- end -}}
     {{- $seenKeys = merge $seenKeys (dict $key $href) -}}
     {{- $attrs := dict "kind" $row.kind -}}
+    {{- with $row.sort_variant -}}
+      {{- $attrs = merge $attrs (dict "sort-variant" . "default-sort" $row.default_sort) -}}
+    {{- end -}}
     {{- range $field := $fields -}}
       {{- $key := printf "sort_%s" $field -}}
       {{- if isset $row $key -}}

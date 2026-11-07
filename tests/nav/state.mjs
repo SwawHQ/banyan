@@ -123,8 +123,8 @@ try {
             'https://example.test/zh/p/example/#from=d/wsl',
             ['name-asc', '']
         ),
-        '/zh/p/example/#from=d/wsl&sorts=name-asc,_',
-        'non-default ancestor sort should keep the full lineage for depth alignment'
+        '/zh/p/example/#from=d/wsl&sorts=name-asc',
+        'non-default ancestor sort must omit trailing defaults'
     );
 
     assert.equal(
@@ -136,6 +136,11 @@ try {
         '/zh/p/example/#from=d/wsl&sorts=_,name-asc',
         'non-default descendant sort should keep placeholder alignment'
     );
+    const sparseSlots = ['', '', 'name-desc', '', ''];
+    assert.equal(applySorts(navState, 'https://example.test/p/?keep=1#anchor=chapter', sparseSlots),
+        '/p/?keep=1#anchor=chapter&sorts=_,_,name-desc',
+        'Serialization must preserve leading and middle positions while trimming only the tail.');
+    assert.deepEqual(sparseSlots, ['', '', 'name-desc', '', ''], 'Serialization must not change its input slots.');
 
     console.log('Navigation state checks passed.');
 
@@ -161,8 +166,16 @@ try {
         'Restoring the main default must not clear an ancestor with a different default.');
     assert.deepEqual(navState.buildLineageSortsTokensForPath('/d/wsl/', '/d/', 'date-desc', 'date-desc'), ['', 'date-asc'],
         'Restoring an ancestor default must preserve the main sort.');
-    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'date-desc', 'date-desc'), ['name-asc', '', 'date-desc'],
-        'A child inherits an explicit token because its own default is not known to its parent.');
+    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'date-desc', 'date-desc', 'section', 'date-desc'), ['name-asc', '', ''],
+        'A child default must be omitted when its link is built.');
+    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'name-asc', 'date-desc', 'name', 'name-asc'), ['name-asc', 'name-asc', ''],
+        'Omitting a child default must keep the same token when it is non-default in the parent.');
+    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'date-asc', 'date-desc', 'name', 'name-asc'), ['name-asc', 'date-asc', ''],
+        'An unsupported inherited field uses the child default without an explicit token.');
+    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'name-desc', 'date-desc', 'name', 'name-asc'), ['name-asc', 'name-desc', 'name-desc'],
+        'A supported non-default token must still be inherited by the child.');
+    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'name-asc', 'name-asc', 'section', 'date-desc'), ['name-asc', '', 'name-asc'],
+        'An inherited parent default stays explicit when it is non-default in the child.');
     window.location.hash = '#from=d/wsl';
     assert.deepEqual(
         navState.buildLineageSortsTokensForPath('/d/wsl/', '/d/', 'date-asc'),
@@ -384,8 +397,8 @@ try {
     window.location.hash = '#from=d/wsl';
     assert.equal(
         breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
-        '/zh/p/example/#from=d/wsl&sorts=date-asc,_',
-        'ancestor column toggles should preserve the full lineage and update only the ancestor slot'
+        '/zh/p/example/#from=d/wsl&sorts=date-asc',
+        'ancestor column toggles must omit trailing defaults without changing slot positions'
     );
     assert.equal(
         breadcrumbItems.buildCollectionSortToggleHref(wslCollectionSource),
@@ -443,8 +456,8 @@ try {
             window.location.href,
             '/d/wsl/'
         ),
-        '/zh/discover/tooling/devtools/windows/wsl/#from=d/wsl&sorts=date-asc,_',
-        'a visible-lineage override should preserve every column slot when no from state exists yet'
+        '/zh/discover/tooling/devtools/windows/wsl/#from=d/wsl&sorts=date-asc',
+        'a visible-lineage override must keep the ancestor sort without trailing defaults'
     );
 
     window.location.href = 'https://example.test/zh/p/example/#from=discover/windows';
@@ -635,7 +648,7 @@ try {
             same([...nav.children[1].querySelectorAll('.item-title > bdi')].map(node => node.textContent), ['Beta', 'Alpha'],
                 'Default ordering must retain the compiled fragment order.');
             check(movedRows === 0, 'Default rendering must not move already ordered row elements.');
-            check(fragment.readFieldValue(nav.children[0].querySelector('[data-collection-sort-toggle]').hash, 'sorts') === 'date-asc,_',
+            check(fragment.readFieldValue(nav.children[0].querySelector('[data-collection-sort-toggle]').hash, 'sorts') === 'date-asc',
                 'The first render must build header links for the full lineage.');
             check(reserved.every((node, index) => node === nav.children[index]), 'Rendering must retain outer scrolling containers.');
             const selected = nav.children[1].querySelector('[aria-current=page]');
@@ -671,6 +684,8 @@ try {
                 fragments.windows.replace('<span class="icon icon--text" aria-hidden="true">β</span>', '<iframe src="/frame/"></iframe>'),
                 fragments.windows.replace('<span class="path-sort-label">Date</span>', ''),
                 fragments.windows.replace('data-default-sort="date-desc"', 'data-default-sort="date-desc-extra"'),
+                fragments.windows.replace('data-kind="page"', 'data-kind="page" data-sort-variant="name" data-default-sort="date-desc"'),
+                fragments.windows.replace('data-kind="page"', 'data-kind="page" data-default-sort="name-asc"'),
                 fragments.windows.replace('<bdi>Alpha</bdi>', '<div data-list-item>Extra marker</div><bdi>Alpha</bdi>'),
             ];
             for (const html of badFragments) {

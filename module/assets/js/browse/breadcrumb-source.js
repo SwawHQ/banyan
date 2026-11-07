@@ -55,6 +55,11 @@ function readColumnFragment(text, logicalPath) {
             || !link.querySelector('.item-title > bdi')?.textContent.trim()
             || !isLocalLink(link.getAttribute('href'))) invalid();
         const row = { kind: node.dataset.kind, href: link.getAttribute('href'), _originalIndex: index };
+        const childVariant = node.dataset.sortVariant || '';
+        const childDefault = node.dataset.defaultSort || '';
+        if (childVariant ? (!SORT_VARIANTS[childVariant]?.fields[childDefault.split('-')[0]]
+            || !/^[a-z]+-(?:asc|desc)$/.test(childDefault)) : childDefault) invalid();
+        if (node.dataset.defaultSort) row.default_sort = node.dataset.defaultSort;
         for (const [key, value] of Object.entries(node.dataset)) {
             if (key.startsWith('sort')) row[key.replace(/([A-Z])/g, '_$1').toLowerCase()] = value;
         }

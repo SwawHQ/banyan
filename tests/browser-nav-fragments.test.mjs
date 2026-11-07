@@ -117,6 +117,25 @@ test('default path HTML contains prefix resources without routes or sibling rows
     'Disabled breadcrumb must not load the path controller.');
 });
 
+test('rendered default collection links omit sorting fragments and declare child defaults',()=>{
+  const html=fs.readFileSync(path.join(output,'plain/index.html'),'utf8');
+  const main=extractBlocks(html,'main')[0].inner;
+  const column=[...publishedColumns].find(([,logicalPath])=>logicalPath==='/plain/')[0];
+  const fragment=fs.readFileSync(path.join(output,column),'utf8');
+  for(const markup of [main,fragment]){
+    const rows=extractBlocks(markup,'div',tag=>/\sdata-list-item(?:\s|=|>)/.test(tag));
+    const names=rows.find(row=>extractStartTags(row.inner,'a').some(tag=>extractTagAttribute(tag,'href')==='/plain/names/'));
+    assert.ok(names,'The rendered child URL must already be free of sorting fragments.');
+    assert.equal(extractTagAttribute(names.open,'data-sort-variant'),'name');
+    assert.equal(extractTagAttribute(names.open,'data-default-sort'),'name-asc');
+    for(const row of rows)for(const tag of extractStartTags(row.inner,'a')){
+      const href=extractTagAttribute(tag,'href');
+      assert.equal(new URL(href,'https://fixture.test').hash,'','Default fixture links must not contain even an empty #.');
+      assert.equal(href.includes('#'),false);
+    }
+  }
+});
+
 test('external navigation handles slow, stale, failed and offline column requests',{timeout:120000},async()=>{
   const scenarios=[{id:'default-columns-load-from-fragments',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
     let release;const gate=new Promise(resolve=>{release=resolve;}),requests=[],responses=[];
@@ -235,7 +254,11 @@ test('external navigation handles slow, stale, failed and offline column request
       const visible=page.locator('.path-column[data-navigation-column="'+firstReady+'"]');
       const fields=new URLSearchParams(new URL(await visible.locator('[data-collection-sort-toggle]').getAttribute('href'),baseUrl).hash.slice(1));
       assert.equal(fields.get('from'),'products/examples');
-      assert.equal(fields.get('sorts').split(',').length,2,'An early header must already use the complete source lineage.');
+      const tokens=fields.get('sorts').split(','),index=firstReady.split('/').filter(Boolean).length-1;
+      const next=(await visible.getAttribute('data-default-sort')).replace(/-(asc|desc)$/,(_,order)=>order==='asc'?'-desc':'-asc');
+      assert.equal(tokens[index],next,'An early header must target its own source slot.');
+      assert.ok(tokens.every((token,i)=>i===index||token==='_'),'An early header must keep every other slot at its default.');
+      assert.notEqual(tokens.at(-1),'_','An early header must omit trailing defaults.');
       await visible.evaluate(column=>{window.earlyColumnList=column.firstElementChild;});
       await page.evaluate(hash=>{location.hash=hash;},routeFor(slowSource).split('#')[1]+'&sorts=name-desc,name-desc');
       await page.waitForFunction(key=>document.querySelector('.path-column[data-navigation-column="'+key+'"] [data-sort-indicator]')?.textContent==='↓',firstReady);
@@ -390,7 +413,7 @@ test('external navigation handles slow, stale, failed and offline column request
         await toggle.focus();await toggle.press('Enter');
         await page.waitForFunction(({parent,before})=>document.querySelector('.path-column[data-navigation-column="'+parent+'"] [data-sort-indicator]')?.textContent!==before,{parent,before:initial});
         const fields=new URLSearchParams(new URL(page.url()).hash.slice(1)),tokens=(fields.get('sorts')||'').split(',');
-        const slots=[...Array(Math.max(0,2-tokens.length)).fill('_'),...tokens];
+        const slots=[...tokens,...Array(Math.max(0,2-tokens.length)).fill('_')];
         assert.equal(fields.has('from'),false,'Sorting a parent must retain the current collection lineage without from.');
         assert.equal(slots[0],initial==='↓'?'date-asc':'date-desc','The parent sort must occupy its own lineage slot.');
         assert.ok(slots[1]==='_'||slots[1]==='date-desc','The current main collection must retain its default order.');
@@ -416,7 +439,7 @@ test('external navigation handles slow, stale, failed and offline column request
     const expected=await defaultData(page);
     assert.equal(expected.paths.length,2,'The nested collection must have two ancestor columns.');
     assert.deepEqual((await snapshot(page)).columns.map(column=>column.path),expected.paths,'An ancestor from must not shorten the collection path.');
-    assert.equal(new URL(page.url()).hash,'#sorts=date-asc,_,_','Removing an ancestor from must retain the full sort lineage.');
+    assert.equal(new URL(page.url()).hash,'#sorts=date-asc,_,_','Removing an ancestor from must preserve the supplied sort state.');
     for(const href of await page.locator('[data-collection-sort-toggle]').evaluateAll(nodes=>nodes.map(node=>node.href))){
       assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).has('from'),false,'Late fragment rendering must not restore a collection source.');
     }
@@ -540,9 +563,59 @@ test('external navigation handles slow, stale, failed and offline column request
     await toggle.click();await waitForBrowse(page);
     const sorted=new URL(page.url()),fields=new URLSearchParams(sorted.hash.slice(1));
     assert.equal(fields.get('from'),null,'Default column sorting must not add from.');
-    assert.equal(fields.get('sorts'),'date-asc,_');
+    assert.equal(fields.get('sorts'),'date-asc');
     assert.equal(fields.get('anchor'),'reading');assert.equal(sorted.search,'?keep=1');
     return {articleSorts:entry.hash,childSorts:child.hash,sorted:sorted.hash};
+  }});
+  scenarios.push({id:'default-sort-links-are-compact',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){
+    for(const pathname of ['/plain/','/plain/names/','/articles/category1/','/articles/category1/nested/']){
+      await page.goto(baseUrl+pathname,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+      assert.equal(page.url(),baseUrl+pathname);
+      const links=await page.locator('main [data-list-entry], [data-slot=breadcrumb] [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>({
+        href:node.href,kind:node.parentElement.dataset.kind
+      })));
+      for(const {href,kind} of links){
+        const url=new URL(href);
+        assert.equal(new URLSearchParams(url.hash.slice(1)).has('sorts'),false,'Default hrefs must be clean before a click: '+href);
+        if(kind==='section')assert.equal(url.hash,'','Default collection hrefs must not have a fragment.');
+      }
+    }
+    await page.locator('main [data-sort-field=name]').click();await afterPaint(page);
+    assert.equal(new URL(page.url()).hash,'#sorts=_,_,name-asc','A third-column sort must keep both leading positions.');
+    const restore=await page.locator('main [data-sort-field=date]').getAttribute('href');
+    assert.equal(new URL(restore,baseUrl).hash,'','The restore-default href must already be clean.');
+    await page.locator('main [data-sort-field=date]').click();await afterPaint(page);
+    assert.equal(new URL(page.url()).hash,'');
+
+    const extra=await context.newPage();
+    try{
+      for(const [sorts,expected] of [['',''],['name-asc','name-asc'],['date-asc','date-asc'],['name-desc','name-desc,name-desc']]){
+        await page.goto(baseUrl+'/plain/'+(sorts?'#sorts='+sorts:''),{waitUntil:'load'});await waitForBrowse(page);
+        const href=await page.locator('main [data-list-entry][href^="/plain/names/"]').getAttribute('href');
+        assert.equal(new URLSearchParams(new URL(href,baseUrl).hash.slice(1)).get('sorts')||'',expected,
+          'The main-list href must use the target default and supported fields before navigation.');
+        await extra.goto(new URL(href,baseUrl).href,{waitUntil:'load'});await waitForBrowse(extra);await afterPaint(extra);
+        assert.equal(extra.url(),new URL(href,baseUrl).href,'Opening a new tab must not require URL cleanup.');
+        assert.equal(await extra.locator('main [data-sort-field=name] [data-sort-indicator]').textContent(),sorts==='name-desc'?'↓':'↑');
+        const pathHref=await extra.locator('[data-slot=breadcrumb] [data-list-entry][href^="/plain/names/"]').getAttribute('href');
+        assert.equal(pathHref,href,'Path-column hrefs must use the same target metadata as the main list.');
+      }
+    }finally{await extra.close();}
+    return {defaultLinks:true,newTabs:4};
+  }});
+  scenarios.push({id:'loading-keeps-supplied-sort-url',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
+    await page.addInitScript(()=>{
+      window.sortUrlWrites=[];
+      const replace=history.replaceState.bind(history);
+      history.replaceState=(...args)=>{const before=location.href;replace(...args);if(before!==location.href)window.sortUrlWrites.push(location.href);};
+    });
+    for(const route of ['/plain/names/?keep=%2f+value#anchor=chapter&sorts=date-desc,name-asc',
+      '/articles/category1/nested/#sorts=_,_,date-desc','/plain/names/#sorts=name-asc,_,_']){
+      await page.goto(baseUrl+route,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+      assert.equal(page.url(),baseUrl+route,'Loading must read the supplied sorting without rewriting its URL.');
+      assert.deepEqual(await page.evaluate(()=>window.sortUrlWrites),[]);
+    }
+    return {urlWrites:0};
   }});
   scenarios.push({id:'mixed-defaults-and-native-sort-links',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){
     const collection='/plain/names/';
@@ -581,14 +654,14 @@ test('external navigation handles slow, stale, failed and offline column request
     assert.equal(new URLSearchParams(new URL(articleHref,baseUrl).hash.slice(1)).get('sorts'),'date-asc,name-desc');
     assert.equal(new URLSearchParams(new URL(articleHref,baseUrl).hash.slice(1)).has('sort'),false);
     await main.click();await afterPaint(page);
-    assert.equal(new URL(page.url()).hash,'#sorts=date-asc,_','Restoring the main default must keep the parent sort.');
+    assert.equal(new URL(page.url()).hash,'#sorts=date-asc','Restoring the main default must keep the parent sort.');
     await parentToggle.click();await afterPaint(page);
     assert.equal(page.url(),source,'Restoring both defaults must remove sorts.');
     await page.goto(baseUrl+collection+'#sorts=name-asc,_',{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
     await main.click();await afterPaint(page);await main.click();await afterPaint(page);
-    assert.equal(new URL(page.url()).hash,'#sorts=name-asc,_','A main default must not erase the same token used as a non-default parent sort.');
+    assert.equal(new URL(page.url()).hash,'#sorts=name-asc','A main default must not erase the same token used as a non-default parent sort.');
     const links=await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>node.href));
-    for(const href of links)assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).get('sorts'),'name-asc,_');
+    for(const href of links)assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).get('sorts'),'name-asc');
     return {toggleHref,labelHref,articleHref};
   }});
   for(const worker of [false,true])scenarios.push({id:'native-column-prefetch-'+(worker?'sw':'http'),kind:'single',serviceWorkers:worker?'allow':'block',async run({page,baseUrl}){
@@ -686,6 +759,6 @@ test('external navigation handles slow, stale, failed and offline column request
       'missing-terminal-skips-candidate-request','existing-ancestor-validates-before-default',
       'collection-sorting-keeps-source-free-urls','root-only-source-selection-needs-no-fragments',
       'column-404-recovers','column-malformed-recovers','column-nested-item-recovers',
-      'default-links-and-sort-toggles-stay-clean','mixed-defaults-and-native-sort-links']});
+      'default-links-and-sort-toggles-stay-clean','default-sort-links-are-compact','loading-keeps-supplied-sort-url','mixed-defaults-and-native-sort-links']});
   checkResult(webkit);
 });

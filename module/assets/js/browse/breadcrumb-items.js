@@ -126,7 +126,7 @@ export function applyBreadcrumbRowSort(url, row, collectionSource, sortState = {
     const isCollection = isCollectionRowKind(row.kind);
     applySortsTokensToUrl(
         url,
-        isCollection ? buildDescendantSortsTokens(logicalPath, sortToken, defaultSort) : sortsTokens
+        isCollection ? buildDescendantSortsTokens(logicalPath, sortToken, defaultSort, row.sort_variant, row.default_sort) : sortsTokens
     );
 }
 
