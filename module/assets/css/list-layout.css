@@ -46,7 +46,7 @@
 }
 
 .list-item:not(.list-header) > .item-field:not(.item-field--name) {
-    font-size: small;
+    font-size: 0.875rem;
 }
 
 .list-item:not(.list-header) > :is(.item-field--date, .item-field--count, .item-field--version, .item-field--price) {
