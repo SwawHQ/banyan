@@ -28,22 +28,21 @@ description: 说明来源、排序、章节与浏览器历史之间的边界。
    - 当前页面发布可进入来源的列索引，列内容使用共享 HTML 片段
 3. 运行时状态层
    - 当前从哪条路径进入：`from`
-   - 当前 collection 的排序：`sort`
-   - 当前路径上每层冻结排序：`sorts`
+   - 当前路径上各 collection 的排序，包括主列表：`sorts`
 
 不要把这 3 层混在一起。
 
 ## URL 状态
 
-`from`、`sort`、`sorts` 是前端视图状态，统一放在 URL 的 `#` 后：
+`from`、`sorts` 是前端视图状态，统一放在 URL 的 `#` 后：
 
 ```txt
-/p/example-product/#from=products/examples&sort=name-asc&sorts=_,date-desc&anchor=installation
+/p/example-product/#from=products/examples&sorts=_,name-desc&anchor=installation
 ```
 
 字段名是代码协议，不再通过 `navigation-state-default.toml` 配置。
 读取和写入共用 `navigation-state.contract.js`。真实查询参数仍保留在 `?` 后。
-前端不读取旧查询参数中的导航状态，也不自动迁移旧地址。
+前端不读取旧查询参数中的导航状态，也不读取或迁移独立的 `sort` 字段。
 
 `anchor` 表示正文目标元素的 ID。没有其他状态时，仍使用原生 `#installation`。
 带导航状态的章节链接使用 `&anchor=installation`；JS 负责定位，同时保留来源和排序。
@@ -79,7 +78,7 @@ description: 说明来源、排序、章节与浏览器历史之间的边界。
 第一列始终保留完整根页面列表，`from` 仅调整选中状态和后续路径列。
 
 分类和聚合列表页由页面自身确定完整导航路径，不生成冗余的 `from`。列表页忽略并移除 `from`，保留查询参数、排序和锚点。例如
-`/zh/pr/paid/#sorts=date-asc,_` 表示 `/pr/` 按时间升序，`_` 保留 `/pr/paid/` 层的位置；主列表排序仍由 `sort` 控制。
+`/zh/pr/paid/#sorts=date-asc,_` 表示 `/pr/` 按时间升序，`/pr/paid/` 主列表使用该栏目的默认排序。
 
 ### 系统页面与返回
 
@@ -113,43 +112,33 @@ Hugo 已输出的 `link[rel="alternate"][hreflang]` 打开所选语言版本，�
 
 语言选项、地址和选中状态由 Hugo 一次输出，浏览器仅处理用户点击。所有页面不再重复附带 `data-language-context`；返回说明保留为一个本地化文本属性。SEO 翻译链接以发布域名输出，返回时核对其与 canonical 同源，再使用路径在当前服务域名下打开，确保本地预览也正常。
 
-### `sort`
-
-`sort` 表示当前页面的活动 collection 排序。
-
-例子：
-
-```txt
-#sort=name-asc
-```
-
-它只服务当前页主列表与列头控件，也会同步投影到从该主列表离开的导航链接上。
-breadcrumb 分栏不读取或改写 `sort`。
-
 ### `sorts`
 
-`sorts` 表示当前进入路径上，每一层 collection 的冻结排序。
+`sorts` 按当前有效路径的层级记录每一列 collection 的排序，包含主列表。
 
 例子：
 
 ```txt
-#from=d/products&sorts=name-asc,date-desc
+/zh/articles/#sorts=name-desc
+/zh/articles/docs/#sorts=date-asc,name-desc
+/p/example-product/#from=products/examples&sorts=_,name-desc
 ```
 
-含义：
-
-- `/d/` 这一层按 `name-asc`
-- `/d/products/` 这一层按 `date-desc`
+单级列表只有一项。两级列表中，第一项对应 `/articles/` 路径列，第二项对应 `/articles/docs/` 主列表。文章页按有效来源路径读取各项，文章本身不增加一项。
 
 注意：
 
-- `sorts` 按路径层级位置对齐
+- `sorts` 按集合逻辑路径从根级依次排列；语言前缀和第一列根导航不占位置
+- 读取短数组时从根级对齐，缺失的尾项按各列自己的默认排序处理
 - 它不是全站排序
 - 它对应当前有效导航路径：文章页使用有效 `from` 或默认内容路径，分类和聚合列表页使用自身路径
-- breadcrumb 分栏排序只改写自己对应的 slot；不会联动主列表 `sort`
-- 当路径上的排序都等于对应 collection 的默认排序时，URL 应省略
-  `sorts`；只有出现非默认排序时才写入完整 lineage，必要时用 `_`
-  保持层级占位。
+- 每列排序只改写自己对应的一项，保留其他列的排序
+- `_` 表示该列自己的默认排序；父子栏目的默认排序可以不同
+- 全部槽位为 `_` 时省略 `sorts`；否则写出完整层级，不裁掉末尾占位
+
+写入某列排序时，所选排序等于该列默认值才归一化为 `_`。进入子栏目时可以显式携带继承的父级排序值；子栏目的默认值未知时不作默认归一化，也不自动清理显式排序值。
+
+主列表排序后同步更新路径列的原生链接。普通点击与新标签打开使用相同的最新排序；排序不增加历史记录，也不触发正文锚点重定位。
 
 ## 内嵌 collection payload
 
@@ -169,7 +158,7 @@ breadcrumb 分栏不读取或改写 `sort`。
 
 初始骨架先按索引预留列宽，加载成功后填充已有滚动容器。加载失败时显示本地化说明。来源片段不包含当前文章时，运行时清除无效 `from` 并回到真实内容路径。
 
-URL 中的 `from/sort/sorts` 保存本次浏览状态；共享片段只提供列内容和默认排序，不保存滚动位置或用户状态。生产检查分别核对索引、片段文件和页面 HTML 的体积。
+URL 中的 `from/sorts` 保存本次浏览状态；共享片段只提供列内容和默认排序，不保存滚动位置或用户状态。生产检查分别核对索引、片段文件和页面 HTML 的体积。
 
 ## 路径项目与列来源
 
@@ -187,7 +176,7 @@ URL 中的 `from/sort/sorts` 保存本次浏览状态；共享片段只提供列
 
 1. 真实根页面生成第一列；结构路径保存 `schema_items`、`root_item` 和 `nodes: [{item, owner}]`。
 2. Hugo 生成共享导航 HTML，并把本页所需的逻辑路径和资源哈希写入 `data-navigation`。
-3. 骨架脚本预留容器；浏览器加载片段，按 `from/sort/sorts` 克隆、排序和选中节点。
+3. 骨架脚本预留容器；浏览器加载片段，按 `from/sorts` 克隆、排序和选中节点。
 
 文章页与集合页共用片段读取、排序规则和链接生成。主列表排序仍移动本页已有 HTML 行；路径列排序移动已加载的片段行。读取边界见 [内嵌 collection payload](#内嵌-collection-payload)。
 

@@ -85,8 +85,8 @@ test('settings chains use one-step native history and language homes without pri
   const state=report(cli('history',['--from',article,'--pages',pages.join(','),'--trace','--out',path.join(work,'reports')]));
   assert.equal(state.details.returned,article);assert.deepEqual(state.details.steps,pages);
   assert.equal(state.details.empty.length,3);assert.ok(state.details.empty.every(item=>item.home==='/'));
-  const translated=report(cli('history',['--from','/zh/all/#sort=name-asc&anchor=reading-position','--pages',pages.map(page=>'/zh'+page).join(','),'--out',path.join(work,'reports')]));
-  assert.equal(translated.details.returned,'/zh/all/#sort=name-asc&anchor=reading-position');
+  const translated=report(cli('history',['--from','/zh/all/#sorts=name-asc&anchor=reading-position','--pages',pages.map(page=>'/zh'+page).join(','),'--out',path.join(work,'reports')]));
+  assert.equal(translated.details.returned,'/zh/all/#sorts=name-asc&anchor=reading-position');
   assert.ok(translated.details.empty.every(item=>item.home==='/zh/'));
 });
 

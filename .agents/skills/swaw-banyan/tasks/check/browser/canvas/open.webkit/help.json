@@ -15,7 +15,7 @@
       "  --touch          Use native taps in a mobile touch context",
       "",
       "swban check/browser/canvas/open.webkit ./preview --from /all/ --page /article/",
-      "swban check/browser/canvas/open.webkit ./preview --from /all/#sort=name-desc --page /article/ --touch"
+      "swban check/browser/canvas/open.webkit ./preview --from /all/#sorts=name-desc --page /article/ --touch"
     ]
   },
   "zh": {
@@ -34,7 +34,7 @@
       "  --touch          在移动触摸环境中使用原生点按",
       "",
       "swban check/browser/canvas/open.webkit ./preview --from /all/ --page /article/",
-      "swban check/browser/canvas/open.webkit ./preview --from /all/#sort=name-desc --page /article/ --touch"
+      "swban check/browser/canvas/open.webkit ./preview --from /all/#sorts=name-desc --page /article/ --touch"
     ]
   }
 }

@@ -68,7 +68,7 @@ test('breadcrumb options require explicit paths and generate complete help',{tim
 });
 
 test('Fragment loading retains reserved columns and sorting retains rows, source, query and fragment',{timeout:45000},()=>{
-  const result=cli('sort',['--page',collection+'child/#sorts=date-desc,date-asc','--column',collection,'--trace','--out',path.join(work,'reports')]);
+  const result=cli('sort',['--page',collection+'child/#sorts=date-desc,date-asc,_','--column',collection,'--trace','--out',path.join(work,'reports')]);
   assert.equal(result.status,0,result.stdout+result.stderr);
   const folder=result.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
   assert.equal(report.browser,'chromium');assert.ok(report.browserVersion);assert.equal(report.details.cases.length,2);
@@ -85,20 +85,20 @@ test('sort checks in-place reuse after an explicit source rebuild',{timeout:2000
 });
 
 test('isolation preserves article sources and keeps collection sorting free of from',{timeout:45000},()=>{
-  for(const route of [article+'#from=d/breadcrumb-fixture',collection+'#from=d/breadcrumb-fixture&sort=date-asc&sorts=date-asc,date-asc',collection+'#sort=date-asc&sorts=date-asc,date-asc']) {
+  for(const route of [article+'#from=d/breadcrumb-fixture',collection+'#from=d/breadcrumb-fixture&sorts=date-asc,date-asc',collection+'#sorts=date-asc,date-asc']) {
     const result=cli('isolation',['--page',route]);assert.equal(result.status,0,route+'\n'+result.stdout+result.stderr);
   }
 });
 
 test('native collections and articles work without JavaScript while fragment paths retain source sorting',{timeout:45000},()=>{
-  for(const query of ['','#from=discover/tooling','#sorts=date-desc,date-asc']) {
+  for(const query of ['','#from=discover/tooling','#sorts=date-desc,date-asc,_']) {
     const result=cli('source',['--page','/discover/tooling/devtools/'+query,'--column','/discover/tooling/','--article',article]);
     assert.equal(result.status,0,query+'\n'+result.stdout+result.stderr);
   }
 });
 
 test('default article sources use clean native links and retain their effective path',{timeout:30000},()=>{
-  for(const query of ['','#sorts=date-desc,date-asc']) {
+  for(const query of ['','#sorts=date-desc,date-asc,_']) {
     const result=cli('source',['--page',collection+'child/'+query,'--column',collection,'--article',article]);
     assert.equal(result.status,0,query+'\n'+result.stdout+result.stderr);
   }
@@ -145,7 +145,7 @@ test('isolation rejects changed siblings, redundant collection sources and stale
   const redundant=fixture('redundant-source');settledScript(redundant,collection,`const addSource=href=>{const url=new URL(href,location.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','d/breadcrumb-fixture');url.hash=fields.toString();return url;};document.querySelectorAll('[data-collection-sort-toggle]').forEach(link=>link.href=addSource(link.href));const replace=history.replaceState;history.replaceState=function(state,title,href){return replace.call(this,state,title,addSource(href));};`);
   const source=cli('isolation',['--page',collection],redundant);assert.equal(source.status,1);assert.match(source.stderr,/must not add a source parameter/);
   const links=fixture('stale-links');script(links,collection,`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelectorAll('.slot-main [data-list-entry]').forEach(link=>{const url=new URL(link.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('sorts','date-asc,date-asc');url.hash=fields.toString();link.href=url.href;});});`);
-  const stale=cli('isolation',['--page',collection+'#sort=date-asc&sorts=date-asc'],links);assert.equal(stale.status,1);assert.match(stale.stderr,/reflect each ancestor sort/);
+  const stale=cli('isolation',['--page',collection+'#sorts=date-asc,date-asc'],links);assert.equal(stale.status,1);assert.match(stale.stderr,/reflect each ancestor sort/);
 });
 
 test('source rejects wrong native and runtime lineage, missing links and malformed pages',{timeout:45000},()=>{

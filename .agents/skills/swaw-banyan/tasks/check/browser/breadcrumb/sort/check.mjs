@@ -3,13 +3,8 @@ import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {readColumns,selectColumn,columnLocator,observeColumns,columnSort} from '../_shared/page.mjs';
 import {checkPrefetchSelectors} from './prefetch.mjs';
 
-function normalizedSortURL(value,defaultSort) {
-  const url=new URL(value),fields=new URLSearchParams(url.hash.slice(1)),raw=fields.get('sorts');
-  if(raw) {
-    const tokens=raw.split(',').map(token=>token===defaultSort?'_':token);
-    if(tokens.every(token=>token==='_'))fields.delete('sorts');
-    else fields.set('sorts',tokens.join(','));
-  }
+function normalizedSortURL(value) {
+  const url=new URL(value),fields=new URLSearchParams(url.hash.slice(1));
   fields.sort();url.hash=fields.toString();url.searchParams.sort();return url.href;
 }
 
@@ -45,8 +40,8 @@ export async function toggleColumn(page,href) {
     // Activate without Playwright scrolling the header back into view.
     await column.locator('[data-collection-sort-toggle]').evaluate(node=>node.click());
     await waitForBrowse(page);await afterPaint(page);
-    assert.equal(normalizedSortURL(page.url(),before.source.defaultSort),normalizedSortURL(before.toggle,before.source.defaultSort),
-      'Sorting must follow the declared toggle URL, treating default sort slots and placeholders equally.');
+    assert.equal(normalizedSortURL(page.url()),normalizedSortURL(before.toggle),
+      'Sorting must follow the declared toggle URL.');
   } finally {
     page.off('request',record);
     continuity=await page.evaluate(()=>{
@@ -81,7 +76,7 @@ export async function check({page,baseUrl,options}) {
   const prefetch=await checkPrefetchSelectors(page);
   const slots=(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('sorts')||'').split(',');
   const depth=selected.source.logicalPath.split('/').filter(Boolean).length;
-  const requested=slots[Math.min(depth,slots.length)-1];
+  const requested=slots[depth-1];
   assert.equal(columnSort(selected),requested&&requested!=='_'?requested:selected.source.defaultSort,
     'Initial breadcrumb sort must reflect the requested slot or declared default.');
   assert.ok(initial.sourcePending,'Path columns must wait for their JSON data.');

@@ -65,7 +65,7 @@ after(()=>{if(work){assert.equal(path.dirname(work),parent);fs.rmSync(work,{recu
 
 test('header options declare column paths, widths and detailed help',{timeout:20000},()=>{
   const spec=headerCommand('check/browser/breadcrumb/header');assert.throws(()=>parseArguments(spec,[]),/--page is required/);
-  assert.throws(()=>parseArguments(spec,['--page',collection,'--column','/all/#sort=name-asc']),/without a query/);
+  assert.throws(()=>parseArguments(spec,['--page',collection,'--column','/all/#sorts=name-asc']),/without a query/);
   assert.throws(()=>parseArguments(spec,['--page',collection,'--widths','390,390']));
   assert.match(helpFor(spec,'en'),/--column <path>/);assert.match(helpFor(spec,'en'),/default: 390,1440/);
 
@@ -135,7 +135,7 @@ test(name+' moves RTL home art left and keeps keyboard skip links inside the can
 });
 
 test(name+' checks collection startup, sort previews and deep canvas geometry',{timeout:30000},()=>{
-  for(const route of [collection,'/discover/tooling/devtools/',collection+'#sorts=date-asc,date-asc']) {
+  for(const route of [collection,'/discover/tooling/devtools/',collection+'#sorts=date-asc,date-asc,_']) {
     const state=report(cli('canvas/first-paint'+suffix,['--page',route,'--widths','390,1440']));
     assert.equal(state.browser,name);
     for(const result of state.details.cases)assert.equal(result.first.collection,true);

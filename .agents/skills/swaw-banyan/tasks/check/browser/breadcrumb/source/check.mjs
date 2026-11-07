@@ -50,7 +50,9 @@ export async function check({page,baseUrl,options}) {
   await openPage(page,baseUrl+options.page);
   const column=await selectColumn(page,options.column),target=sourceLink(column,options.article,baseUrl);
   assert.equal(new URLSearchParams(new URL(target).hash.slice(1)).get('from'),new URLSearchParams(new URL(raw).hash.slice(1)).get('from'),'Runtime initialization must preserve the static article source.');
-  if(column.toggle)assert.equal(new URLSearchParams(new URL(target).hash.slice(1)).get('sort')||column.source.defaultSort,columnSort(column),
+  const depth=column.source.logicalPath.split('/').filter(Boolean).length;
+  const token=(new URLSearchParams(new URL(target).hash.slice(1)).get('sorts')||'').split(',')[depth-1];
+  if(column.toggle)assert.equal(token&&token!=='_'?token:column.source.defaultSort,columnSort(column),
     'Runtime article link must carry the column sort.');
   const href=await columnLocator(page,options.column).locator('[data-list-entry]').evaluateAll((nodes,target)=>nodes.find(node=>node.href===target)?.getAttribute('href'),target);
   await columnLocator(page,options.column).locator('[data-list-entry][href='+JSON.stringify(href)+']').click();await page.waitForURL(target);

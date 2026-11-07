@@ -95,7 +95,7 @@ test('choices use real native links without JS and accessible translated setting
 test('return preserves source, sorting and fragment for articles and collections',{timeout:45000},()=>{
   const state=report(cli('return',['--from',article,'--to','zh','--out',path.join(work,'reports')]));
   assert.equal(state.details.returned,'/zh'+article);assert.equal(state.details.settings,'/zh/language/');
-  const collection=report(cli('return',['--from','/zh/all/#sort=name-asc','--page','/zh/language/','--to','en','--out',path.join(work,'reports')]));
+  const collection=report(cli('return',['--from','/zh/all/#sorts=name-asc','--page','/zh/language/','--to','en','--out',path.join(work,'reports')]));
   for(const result of [state,collection]) {
     assert.deepEqual(result.details.visits.map(visit=>visit.locale).sort(),['en-US','zh-CN']);
     assert.ok(result.details.visits.every(visit=>visit.phases.length===4));

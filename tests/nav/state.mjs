@@ -36,9 +36,9 @@ try {
     async function importBrowserModule(entrypoint) {
         return import(pathToFileURL(bundleFor(entrypoint).file).href);
     }
-    function applySorts(module, inputUrl, tokens, defaultTokens = []) {
+    function applySorts(module, inputUrl, tokens) {
         const url = new URL(inputUrl);
-        module.applySortsTokensToUrl(url, tokens, defaultTokens);
+        module.applySortsTokensToUrl(url, tokens);
         return `${url.pathname}${url.search}${url.hash}`;
     }
 
@@ -64,7 +64,6 @@ try {
     assert.equal(fragment.readAnchor('#%invalid'), '', 'Malformed anchors must not throw');
     assert.equal(fragment.readFieldValue(new URL('https://example.test/?from=all#chapter'), 'from'), '',
         'Query fields must not act as navigation state');
-    assert.equal(fragment.applyFragmentField(new URL('https://example.test/#sort=name-desc'), 'sort', '').hash, '');
 
     const collectionSortSources = bundleFor(collectionSortEntry).sources;
     for (const input of ['browse/collection-sort.js', 'browse/sort-policy.js', 'browse/collection-navigation.js']) {
@@ -92,8 +91,7 @@ try {
         applySorts(
             navState,
             'https://example.test/zh/d/wsl/#sorts=date-desc,date-desc',
-            ['date-desc', 'date-desc'],
-            ['date-desc', 'date-desc']
+            ['', '']
         ),
         '/zh/d/wsl/',
         'default lineage sorts should be omitted from URLs'
@@ -103,8 +101,7 @@ try {
         applySorts(
             navState,
             'https://example.test/zh/p/example/#from=d&sorts=date-desc',
-            ['date-desc'],
-            ['date-desc']
+            ['']
         ),
         '/zh/p/example/#from=d',
         'default entry lineage sorts should be omitted while preserving from'
@@ -114,8 +111,7 @@ try {
         applySorts(
             navState,
             'https://example.test/zh/p/example/#from=products/first-party',
-            ['', 'name-asc'],
-            ['date-desc', 'name-asc']
+            ['', '']
         ),
         '/zh/p/example/#from=products/first-party',
         'placeholder/default lineage sorts should be omitted when every layer is default'
@@ -125,10 +121,9 @@ try {
         applySorts(
             navState,
             'https://example.test/zh/p/example/#from=d/wsl',
-            ['name-asc', 'date-desc'],
-            ['date-desc', 'date-desc']
+            ['name-asc', '']
         ),
-        '/zh/p/example/#from=d/wsl&sorts=name-asc,date-desc',
+        '/zh/p/example/#from=d/wsl&sorts=name-asc,_',
         'non-default ancestor sort should keep the full lineage for depth alignment'
     );
 
@@ -136,8 +131,7 @@ try {
         applySorts(
             navState,
             'https://example.test/zh/p/example/#from=d/wsl',
-            ['', 'name-asc'],
-            ['date-desc', 'date-desc']
+            ['', 'name-asc']
         ),
         '/zh/p/example/#from=d/wsl&sorts=_,name-asc',
         'non-default descendant sort should keep placeholder alignment'
@@ -158,6 +152,18 @@ try {
     };
 
     window.location.hash = '#from=d/wsl';
+    assert.deepEqual(navState.readEffectiveSortsTokens('/d/wsl/'), ['', '']);
+    window.location.hash = '#sorts=name-desc';
+    assert.deepEqual(navState.readEffectiveSortsTokens('/d/wsl/'), ['name-desc', ''],
+        'Short arrays align from the root and leave the missing descendant at its own default.');
+    window.location.hash = '#sorts=name-asc,date-asc';
+    assert.deepEqual(navState.buildCurrentPageSortsTokens('/d/wsl/', 'name-asc', 'name-asc'), ['name-asc', ''],
+        'Restoring the main default must not clear an ancestor with a different default.');
+    assert.deepEqual(navState.buildLineageSortsTokensForPath('/d/wsl/', '/d/', 'date-desc', 'date-desc'), ['', 'date-asc'],
+        'Restoring an ancestor default must preserve the main sort.');
+    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'date-desc', 'date-desc'), ['name-asc', '', 'date-desc'],
+        'A child inherits an explicit token because its own default is not known to its parent.');
+    window.location.hash = '#from=d/wsl';
     assert.deepEqual(
         navState.buildLineageSortsTokensForPath('/d/wsl/', '/d/', 'date-asc'),
         ['date-asc', ''],
@@ -175,6 +181,10 @@ try {
     const breadcrumbPath = await importBrowserModule(breadcrumbEntry);
     const collectionItems = await importBrowserModule(collectionItemsEntry);
     const rootController = await importBrowserModule(rootControllerEntry);
+    window.location.hash = '#sort=name-desc';
+    assert.equal(collectionItems.readRequestedSortToken('section', '/d/'), 'date-desc',
+        'The removed sort field must not control a collection or migrate into sorts.');
+    window.location.hash = '#from=d/wsl';
 
     const compositeRows = [
         {
@@ -198,9 +208,9 @@ try {
     ];
 
     function readCompositeOrder(token, rows = compositeRows, variant = 'all') {
-        window.location.hash = `#sort=${token}`;
+        window.location.hash = `#sorts=${token}`;
         window.location.href = `https://example.test/zh/all/${window.location.hash}`;
-        return collectionItems.sortItemsRows(rows, variant).rows.map((row) => new URL(row.href, window.location.origin).pathname.split('/').filter(Boolean).at(-1));
+        return collectionItems.sortItemsRows(rows, variant, '/all/').rows.map((row) => new URL(row.href, window.location.origin).pathname.split('/').filter(Boolean).at(-1));
     }
 
     const compositeAsc = readCompositeOrder('size-asc');
@@ -319,8 +329,7 @@ try {
             order: 'desc',
             nextToken: 'date-asc',
             defaultSort: 'date-desc',
-            sortsTokens: ['date-desc'],
-            defaultSortsTokens: ['date-desc'],
+            sortsTokens: [''],
         },
         'column header should expose the active field and direction without adding a field picker'
     );
@@ -331,12 +340,12 @@ try {
         'column header should toggle only its lineage sort direction'
     );
 
-    window.location.href = 'https://example.test/zh/p/example/#from=all&sort=name-desc&sorts=name-desc';
-    window.location.hash = '#from=all&sort=name-desc&sorts=name-desc';
+    window.location.href = 'https://example.test/zh/p/example/#from=all&sorts=name-desc';
+    window.location.hash = '#from=all&sorts=name-desc';
     assert.equal(
         breadcrumbItems.buildCollectionSortToggleHref(allCollectionSource),
-        '/zh/p/example/#from=all&sort=name-desc&sorts=name-asc',
-        'column header should preserve the independent main sort while toggling its lineage slot'
+        '/zh/p/example/#from=all&sorts=name-asc',
+        'column header should toggle its single lineage slot'
     );
 
     window.location.href = 'https://example.test/zh/p/example/#from=d/wsl&sorts=name-asc,date-desc';
@@ -384,12 +393,12 @@ try {
         'active column toggles should update only the deepest lineage slot'
     );
 
-    window.location.href = 'https://example.test/zh/p/example/#from=d/wsl&sort=date-asc&sorts=_,date-asc';
-    window.location.hash = '#from=d/wsl&sort=date-asc&sorts=_,date-asc';
+    window.location.href = 'https://example.test/zh/p/example/#from=d/wsl&sorts=_,date-asc';
+    window.location.hash = '#from=d/wsl&sorts=_,date-asc';
     assert.equal(
         breadcrumbItems.getCollectionSortState(directoryCollectionSource)?.sortToken,
         'date-desc',
-        'the active sort alias must not leak into an ancestor column'
+        'the deepest slot must not leak into an ancestor column'
     );
     assert.equal(
         breadcrumbItems.getCollectionSortState(wslCollectionSource)?.sortToken,
@@ -401,9 +410,9 @@ try {
     document.body.dataset.navigation = JSON.stringify({
         home: '/zh/', resources: '/site/navigation/', default: '/d/', columns: {},
     });
-    window.location.href = 'https://example.test/zh/d/wsl/#sort=name-asc';
+    window.location.href = 'https://example.test/zh/d/wsl/#sorts=_,name-asc';
     window.location.pathname = '/zh/d/wsl/';
-    window.location.hash = '#sort=name-asc';
+    window.location.hash = '#sorts=_,name-asc';
     assert.equal(
         breadcrumbItems.getCollectionSortState(directoryCollectionSource)?.sortToken,
         'date-desc',
@@ -411,16 +420,16 @@ try {
     );
     assert.equal(
         breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
-        '/zh/d/wsl/#sort=name-asc&sorts=date-asc,_',
+        '/zh/d/wsl/#sorts=date-asc,name-asc',
         'collection sorting must use its full path without adding from or changing the main sort'
     );
 
-    window.location.href = 'https://example.test/zh/d/wsl/#sort=name-asc&sorts=date-asc,_';
-    window.location.hash = '#sort=name-asc&sorts=date-asc,_';
+    window.location.href = 'https://example.test/zh/d/wsl/#sorts=date-asc,name-asc';
+    window.location.hash = '#sorts=date-asc,name-asc';
     assert.equal(
         breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
-        '/zh/d/wsl/#sort=name-asc',
-        'returning a breadcrumb column to its default should remove sorts without changing sort'
+        '/zh/d/wsl/#sorts=_,name-asc',
+        'returning a breadcrumb column to its default must preserve the main slot'
     );
     delete document.body.dataset.collectionPath;
     delete document.body.dataset.navigation;
@@ -445,8 +454,7 @@ try {
         breadcrumbItems.buildBreadcrumbRowHref(
             { kind: 'page', href: '/zh/p/contract-beta/#from=discover/windows', text: '紧凑标题' },
             { logicalPath: '/discover/windows/', provider: 'collection' },
-            { sortToken: '', defaultSort: 'date-desc', sortsTokens: [],
-                defaultSortsTokens: ['date-desc', 'date-desc'] }
+            { sortToken: '', defaultSort: 'date-desc', sortsTokens: [] }
         ),
         '/zh/p/contract-beta/#from=discover/windows',
         'entry hrefs should preserve the non-default source supplied by the fragment'
@@ -698,12 +706,11 @@ try {
             document.body.dataset.navigation = JSON.stringify(manifest);
             window.fetch = async url => response(url.includes(hashes.notes) ? fragments.notes : fragments.discover);
             const startPending = () => document.documentElement.setAttribute('data-entry-breadcrumb-pending', 'true');
-            setLocation('/zh/p/contract-beta/?keep=%2f+value#from=discover&sort=name-desc&sorts=date-asc&anchor=chapter');
+            setLocation('/zh/p/contract-beta/?keep=%2f+value#from=discover&sorts=date-asc&anchor=chapter');
             startPending();await entry.initializeBreadcrumb();
             check(fragment.readFieldValue(location.hash, 'from') === '', 'A loaded terminal without the current article clears invalid from.');
-            check(location.search === '?keep=%2f+value' && fragment.readFieldValue(location.hash, 'sort') === 'name-desc'
-                && fragment.readFieldValue(location.hash, 'sorts') === 'date-asc' && fragment.readAnchor(location.hash) === 'chapter',
-                'Invalid source cleanup must retain queries, independent sorting and anchors.');
+            check(location.search === '?keep=%2f+value' && fragment.readFieldValue(location.hash, 'sorts') === 'date-asc'
+                && fragment.readAnchor(location.hash) === 'chapter', 'Invalid source cleanup must retain queries, sorting and anchors.');
             same([...nav.children].map(node => node.dataset.navigationColumn), ['/notes/'], 'Invalid membership restores the default columns.');
             check(!document.documentElement.hasAttribute('data-entry-breadcrumb-pending'), 'Initialization clears pending flags.');
             setLocation('/zh/p/contract-beta/#from=missing&anchor=chapter');startPending();await entry.initializeBreadcrumb();
@@ -717,10 +724,10 @@ try {
             const own = structuredClone(manifest);own.default = '/discover/';delete own.columns['/discover/windows/'];
             document.body.dataset.navigation = JSON.stringify(own);document.body.dataset.collectionPath = '/discover/windows/';
             window.fetch = async () => { throw new Error('Own main list must not require its missing resource'); };
-            setLocation('/zh/discover/windows/?keep=%2f+value#from=discover/windows&sort=name-desc&sorts=date-asc,_&anchor=chapter');startPending();await entry.initializeBreadcrumb();
+            setLocation('/zh/discover/windows/?keep=%2f+value#from=discover/windows&sorts=date-asc,name-desc&anchor=chapter');startPending();await entry.initializeBreadcrumb();
             check(fragment.readFieldValue(location.hash, 'from') === '', 'Own collection sources are redundant and must be removed.');
-            check(location.search === '?keep=%2f+value' && fragment.readFieldValue(location.hash, 'sort') === 'name-desc'
-                && fragment.readFieldValue(location.hash, 'sorts') === 'date-asc,_' && fragment.readAnchor(location.hash) === 'chapter',
+            check(location.search === '?keep=%2f+value' && fragment.readFieldValue(location.hash, 'sorts') === 'date-asc,name-desc'
+                && fragment.readAnchor(location.hash) === 'chapter',
                 'Removing a redundant collection source must retain queries, sorting and anchors.');
             same([...nav.children].map(node => node.dataset.navigationColumn), ['/discover/'], 'Own collection uses only ancestor columns.');
             delete own.columns['/discover/%E5%B7%A5%E5%85%B7/'];document.body.dataset.navigation = JSON.stringify(own);

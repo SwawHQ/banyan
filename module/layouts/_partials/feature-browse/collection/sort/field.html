@@ -11,7 +11,7 @@
 {{ $indicator := "↨" }}
 {{ if $isActive }}{{ $indicator = cond (eq $currentOrder "asc") "↑" "↓" }}{{ end }}
 {{ $actionLabel := replace (index .actions $nextOrder) "{field}" $label }}
-{{ $href := partial "./url.html" (dict "ctx" $ctx "baseHref" .baseHref "sort" (printf "%s-%s" $field $nextOrder) "fragment" .fragment) }}
+{{ $href := partial "./url.html" (dict "ctx" $ctx "baseHref" .baseHref "token" (printf "%s-%s" $field $nextOrder) "defaultToken" (printf "%s-%s" $currentField $currentOrder) "fragment" .fragment) }}
 <span class="item-field {{ $class }}" data-item-field="{{ $field }}">
   <a
     href="{{ $href }}"

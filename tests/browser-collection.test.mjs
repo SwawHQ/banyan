@@ -117,10 +117,10 @@ test('directory, aggregate and product headers fit their shared fixed columns in
     const context=await browser.newContext({viewport:{width:390,height:900},serviceWorkers:'block'}),page=await context.newPage();
     for(const prefix of ['','/zh','/ar'])for(const route of ['/d/','/all/','/products-all/']) {
       for(const field of route==='/products-all/'?['version','price']:['date',route==='/all/'?'size':'count']) {
-        await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:prefix+route+'#sort='+field+'-desc',widths:'390,1440'}});
+        await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:prefix+route+'#sorts='+field+'-desc',widths:'390,1440'}});
       }
     }
-    for(const field of ['version','price'])await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:'/ar/products-all/#sort='+field+'-desc',widths:'390,1440'}});
+    for(const field of ['version','price'])await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:'/ar/products-all/#sorts='+field+'-desc',widths:'390,1440'}});
   } finally {try{if(browser)await browser.close();}finally{await server.stop();}}
 });
 

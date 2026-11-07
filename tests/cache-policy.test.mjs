@@ -449,7 +449,7 @@ test('bucket caching preserves query keys, validates versioned responses and war
   assert.ok((await dispatch(listeners,requestFor('/validated.json'))).ok);
   assert.deepEqual(requests.slice(-2).map(request=>request.cache),['no-cache','reload'],
     'A bare 304 exposed to the SW must be retried for a complete cacheable body.');
-  await probe.warmNavigationUrl('https://example.test/about/?keep=1#from=articles&sort=title&sorts=date');
+  await probe.warmNavigationUrl('https://example.test/about/?keep=1#from=articles&sorts=name-asc');
   assert.equal(requests.find(request=>new URL(request.url).pathname==='/about/').cache,'no-cache');
   assert.equal(requests.find(request=>new URL(request.url).pathname==='/js/app.hash.js').cache,'default');
   assert.equal(requests.some(request=>['/unvisited/','/data.json','/sw.js'].includes(new URL(request.url).pathname)

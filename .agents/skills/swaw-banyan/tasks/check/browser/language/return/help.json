@@ -13,7 +13,7 @@
       "  --to <code>     Target language declared in translated settings",
       "",
       "swban check/browser/language/return ./preview --from /article/#from=all&anchor=details --to zh",
-      "swban check/browser/language/return ./preview --from /zh/all/#sort=name-asc --page /zh/language/ --to en --trace"
+      "swban check/browser/language/return ./preview --from /zh/all/#sorts=name-asc --page /zh/language/ --to en --trace"
     ]
   },
   "zh": {
@@ -30,7 +30,7 @@
       "  --to <code>     翻译设置中声明的目标语言",
       "",
       "swban check/browser/language/return ./preview --from /article/#from=all&anchor=details --to zh",
-      "swban check/browser/language/return ./preview --from /zh/all/#sort=name-asc --page /zh/language/ --to en --trace"
+      "swban check/browser/language/return ./preview --from /zh/all/#sorts=name-asc --page /zh/language/ --to en --trace"
     ]
   }
 }

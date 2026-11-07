@@ -2,8 +2,6 @@ import { normalizeCollectionSource } from './collection-source.js';
 import { readNavigation } from './entry-source.js';
 import {
     SORT_VARIANTS,
-    applySortTokenToUrl,
-    getNormalizedSortToken,
     parseSortToken,
     toggleSortOrder,
 } from './sort-policy.js';
@@ -14,7 +12,6 @@ import {
 import {
     applyFromPathToUrl,
     applySortsTokensToUrl,
-    buildDefaultSortsTokens,
     buildCurrentPageSortsTokens,
     buildDescendantSortsTokens,
     buildLineageSortsTokensForPath,
@@ -36,17 +33,13 @@ export function readRequestedSortState(source, sortVariant, defaultSort = '') {
     const fallbackToken = defaultSort || SORT_VARIANTS[sortVariant]?.defaultToken || '';
     const sortToken = sortVariant ? readRequestedSortToken(sortVariant, source?.logicalPath || '', fallbackToken) : '';
     const sortsTokens = source?.logicalPath
-        ? buildCurrentPageSortsTokens(source.logicalPath, sortToken)
-        : [];
-    const defaultSortsTokens = source?.logicalPath
-        ? buildDefaultSortsTokens(source.logicalPath, fallbackToken)
+        ? buildCurrentPageSortsTokens(source.logicalPath, sortToken, fallbackToken)
         : [];
 
     return {
         sortToken,
         defaultSort: fallbackToken,
         sortsTokens,
-        defaultSortsTokens,
     };
 }
 
@@ -59,11 +52,7 @@ export function getCollectionSortState(source) {
     const sortVariant = collectionSource.sortVariant || '';
     const defaultSort = collectionSource.defaultSort || SORT_VARIANTS[sortVariant]?.defaultToken || '';
     const requestedState = readRequestedSortState(collectionSource, sortVariant, defaultSort);
-    const sortToken = getNormalizedSortToken(
-        requestedState.sortToken,
-        sortVariant,
-        defaultSort
-    );
+    const sortToken = requestedState.sortToken;
     const current = parseSortToken(sortToken);
     if (!current.field || !current.order) {
         return null;
@@ -106,8 +95,7 @@ export function buildCollectionSortToggleHref(
         }
         applySortsTokensToUrl(
             url,
-            buildLineageSortsTokensForPath(lineageLogicalPath, targetLogicalPath, state.nextToken),
-            buildDefaultSortsTokens(lineageLogicalPath, state.defaultSort)
+            buildLineageSortsTokensForPath(lineageLogicalPath, targetLogicalPath, state.nextToken, state.defaultSort)
         );
         return toRelativeHref(url);
     } catch (error) {
@@ -124,9 +112,8 @@ export function buildCollectionPageHref(href, logicalPath, sortVariant, defaultS
     try {
         const url = new URL(rawHref, window.location.origin);
         const sortToken = readRequestedSortToken(sortVariant, logicalPath, defaultSort);
-        const sortsTokens = buildCurrentPageSortsTokens(logicalPath, sortToken);
-        applySortTokenToUrl(url, sortToken, defaultSort);
-        applySortsTokensToUrl(url, sortsTokens, buildDefaultSortsTokens(logicalPath, defaultSort));
+        const sortsTokens = buildCurrentPageSortsTokens(logicalPath, sortToken, defaultSort || SORT_VARIANTS[sortVariant]?.defaultToken);
+        applySortsTokensToUrl(url, sortsTokens);
         return toRelativeHref(url);
     } catch (error) {
         return rawHref;
@@ -134,15 +121,12 @@ export function buildCollectionPageHref(href, logicalPath, sortVariant, defaultS
 }
 
 export function applyBreadcrumbRowSort(url, row, collectionSource, sortState = {}) {
-    const { sortToken = '', defaultSort = '', sortsTokens = [], defaultSortsTokens = [] } = sortState;
+    const { sortToken = '', defaultSort = '', sortsTokens = [] } = sortState;
     const logicalPath = collectionSource.logicalPath;
     const isCollection = isCollectionRowKind(row.kind);
-    applySortTokenToUrl(url, sortToken, defaultSort);
     applySortsTokensToUrl(
         url,
-        isCollection ? buildDescendantSortsTokens(logicalPath, sortToken) : sortsTokens,
-        isCollection ? buildDefaultSortsTokens(logicalPath, defaultSort, 1)
-            : defaultSortsTokens.length ? defaultSortsTokens : buildDefaultSortsTokens(logicalPath, defaultSort)
+        isCollection ? buildDescendantSortsTokens(logicalPath, sortToken, defaultSort) : sortsTokens
     );
 }
 

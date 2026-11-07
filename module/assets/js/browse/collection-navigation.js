@@ -1,25 +1,22 @@
 import {
     SORT_VARIANTS,
-    applySortTokenToUrl,
     parseSortToken,
-    readCurrentSortToken,
     toggleSortOrder,
 } from './sort-policy.js';
 import {
     applySortsTokensToUrl,
-    buildDefaultSortsTokens,
     buildCurrentPageSortsTokens,
-    getLogicalPathDepth,
-    normalizeFromPath,
-    readCurrentFromPath,
-    readEffectiveSortsTokens,
+    buildDescendantSortsTokens,
 } from './navigation-state.js';
+import { readRequestedSortToken } from './collection-items.js';
 import { readPageCollectionSource } from './collection-source.js';
 import { readCollectionSortCopy, formatSortAction } from './collection-sort-copy.js';
 
 function buildSortHref(token, defaultToken) {
     const url = new URL(window.location.href);
-    applySortTokenToUrl(url, token, defaultToken);
+    const source = readPageCollectionSource();
+    if (!source) return '';
+    applySortsTokensToUrl(url, buildCurrentPageSortsTokens(source.logicalPath, token, defaultToken));
     return `${url.pathname}${url.search}${url.hash}`;
 }
 
@@ -30,44 +27,15 @@ function buildRelativeHref(url) {
         : url.toString();
 }
 
-function isLogicalPathPrefix(prefixPath, logicalPath) {
-    const prefixSegments = normalizeFromPath(prefixPath).split('/').filter(Boolean);
-    const logicalSegments = normalizeFromPath(logicalPath).split('/').filter(Boolean);
-    return prefixSegments.length > 0
-        && prefixSegments.length < logicalSegments.length
-        && prefixSegments.every((segment, index) => segment === logicalSegments[index]);
-}
-
-function buildProjectedCollectionSortsTokens(logicalPath, currentToken) {
-    const fromPath = readCurrentFromPath();
-    if (!isLogicalPathPrefix(fromPath, logicalPath)) {
-        return buildCurrentPageSortsTokens(logicalPath, currentToken);
-    }
-
-    const fromDepth = getLogicalPathDepth(fromPath);
-    const logicalDepth = getLogicalPathDepth(logicalPath);
-    return [
-        ...readEffectiveSortsTokens(fromPath),
-        ...Array(Math.max(0, logicalDepth - fromDepth - 1)).fill(''),
-        currentToken,
-    ];
-}
-
 function updateCollectionEntryLinks(list, variantName, currentToken, pageCollectionSource) {
     const variant = SORT_VARIANTS[variantName];
     if (!variant) return;
 
     const currentSorts = pageCollectionSource?.logicalPath
-        ? buildProjectedCollectionSortsTokens(pageCollectionSource.logicalPath, currentToken)
+        ? buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, currentToken, variant.defaultToken)
         : [];
     const descendantSorts = pageCollectionSource?.logicalPath
-        ? [...currentSorts, currentToken]
-        : [];
-    const currentDefaultSorts = pageCollectionSource?.logicalPath
-        ? buildDefaultSortsTokens(pageCollectionSource.logicalPath, variant.defaultToken)
-        : [];
-    const descendantDefaultSorts = pageCollectionSource?.logicalPath
-        ? buildDefaultSortsTokens(pageCollectionSource.logicalPath, variant.defaultToken, 1)
+        ? buildDescendantSortsTokens(pageCollectionSource.logicalPath, currentToken, variant.defaultToken)
         : [];
 
     list.querySelectorAll('[data-list-item] > [data-list-entry][href]').forEach((link) => {
@@ -82,13 +50,11 @@ function updateCollectionEntryLinks(list, variantName, currentToken, pageCollect
         }
         if (url.origin !== window.location.origin) return;
 
-        applySortTokenToUrl(url, currentToken, variant.defaultToken);
         if (pageCollectionSource?.logicalPath) {
             const isEntryLink = link.parentElement.dataset.kind === 'page';
             applySortsTokensToUrl(
                 url,
-                isEntryLink ? currentSorts : descendantSorts,
-                isEntryLink ? currentDefaultSorts : descendantDefaultSorts
+                isEntryLink ? currentSorts : descendantSorts
             );
         }
         link.href = buildRelativeHref(url);
@@ -136,6 +102,7 @@ export function refreshMainCollectionNavigation() {
     const variant = SORT_VARIANTS[variantName];
     if (!variant) return;
 
-    const currentToken = readCurrentSortToken(variantName, variant.defaultToken);
-    refreshCollectionNavigation(list, variantName, currentToken, readPageCollectionSource());
+    const source = readPageCollectionSource();
+    const currentToken = readRequestedSortToken(variantName, source?.logicalPath, variant.defaultToken);
+    refreshCollectionNavigation(list, variantName, currentToken, source);
 }

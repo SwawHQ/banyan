@@ -29,7 +29,7 @@ export async function check({page,baseUrl,options}) {
     const main=document.getElementById('main').getBoundingClientRect();
     return main.left>=-1&&main.left<innerWidth&&main.top>=-1&&main.top<innerHeight&&document.querySelector('.page-content').scrollTop===0;
   });
-  for(const key of ['from','sort','sorts'])assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).get(key),
+  for(const key of ['from','sorts'])assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).get(key),
     new URLSearchParams(new URL(baseUrl+options.page).hash.slice(1)).get(key),'Skip link must preserve '+key);
   const after = await column.evaluate(node=>node.scrollTop);
   assert.ok(after<before,`Skip to content must return to the start of the reading column (before ${before}, after ${after}).`);

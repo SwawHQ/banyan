@@ -84,7 +84,7 @@ test('UI paths, contrast defaults and detailed help use the same declarations',(
   }
   const appearance = appearanceCommand('check/browser/appearance');
   assert.equal(parseArguments(appearance,[]).from,'/');
-  assert.equal(parseArguments(appearance,['--from','/zh/all/#sort=name-asc']).from,'/zh/all/#sort=name-asc');
+  assert.equal(parseArguments(appearance,['--from','/zh/all/#sorts=name-asc']).from,'/zh/all/#sorts=name-asc');
 });
 
 test('appearance uses the home of an independent starter without a branded about page',{timeout:15000},()=>{

@@ -343,7 +343,7 @@ try {
             assert.deepEqual(Object.fromEntries(rows.map(row => [row.href, row.sort_version])), expected, 'HTML fragment attributes preserve literal versions.');
             const versionPage = await versionContext.newPage();
             for (const direction of ['asc', 'desc']) {
-                await gotoAndWait(versionPage, `${baseUrl}/products/paid/#sort=version-${direction}`);
+                await gotoAndWait(versionPage, `${baseUrl}/products/paid/#sorts=_,version-${direction}`);
                 const main = await versionPage.locator('.slot-main [data-list-item]').evaluateAll(rows => rows.map(row => {
                     const cell = row.querySelector('[data-item-field="version"]');
                     return {href:new URL(row.querySelector('[data-list-entry]').href).pathname,
@@ -386,7 +386,7 @@ try {
         }
         for (const list of ['d', 'all', 'products/contract-dates']) {
             for (const direction of ['asc', 'desc']) {
-                await gotoAndWait(page, `${baseUrl}/${list}/#sort=date-${direction}`);
+                await gotoAndWait(page, `${baseUrl}/${list}/#sorts=${list.includes('/')?'_,':''}date-${direction}`);
                 const links = '.slot-main .item-control[href*="/p/contract-"]';
                 const dates = await page.locator(links).evaluateAll(nodes => nodes
                     .filter(node => /\/p\/contract-(priced|missing)\//.test(node.href))
@@ -404,7 +404,7 @@ try {
         }
         console.log('PASS Lastmod ascending/descending display and article path order');
         for (const direction of ['asc', 'desc']) {
-            await gotoAndWait(page, `${baseUrl}/products/free/#sort=version-${direction}`);
+            await gotoAndWait(page, `${baseUrl}/products/free/#sorts=_,version-${direction}`);
             assert.equal(await page.locator('.slot-main [data-sort-field="version"]').getAttribute('aria-label'),
                 'Sort by Version '+(direction==='asc'?'descending':'ascending'));
             const ordered = await page.locator('.slot-main .item-list--products .item-control').evaluateAll(links => links.map(link => ({
@@ -419,7 +419,7 @@ try {
             assert.deepEqual(items, ordered.map(row => row.href), 'Version sort survives entry into the article path column.');
         }
         for (const direction of ['asc', 'desc']) {
-            await gotoAndWait(page, `${baseUrl}/products/free/#sort=price-${direction}`);
+            await gotoAndWait(page, `${baseUrl}/products/free/#sorts=_,price-${direction}`);
             assert.equal(await page.locator('.slot-main [data-sort-field="price"]').getAttribute('aria-label'),
                 'Sort by Price '+(direction==='asc'?'descending':'ascending'));
             const ordered = await page.locator('.slot-main .item-list--products .item-control').evaluateAll(links => links.map(link => ({
@@ -477,11 +477,11 @@ try {
         const iconsContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 960 } });
         const iconsPage = await iconsContext.newPage();
         const selectedIcon = () => iconsPage.locator('[data-slot=breadcrumb] a.is-current[href*="/p/contract-missing/"] use').getAttribute('href');
-        await gotoAndWait(iconsPage, `${baseUrl}/products/free/#sort=name-desc`);
+        await gotoAndWait(iconsPage, `${baseUrl}/products/free/#sorts=_,name-desc`);
         await iconsPage.locator('.slot-main a[href*="/p/contract-missing/"]').click();
         await waitForBrowse(iconsPage);
         assert.equal(await selectedIcon(), '#icon-product');
-        await gotoAndWait(iconsPage, `${baseUrl}/p/contract-missing/#from=products/paid&sort=name-asc`);
+        await gotoAndWait(iconsPage, `${baseUrl}/p/contract-missing/#from=products/paid&sorts=_,name-asc`);
         assert.equal(await selectedIcon(), '#icon-appearance-light');
         await iconsPage.reload();
         await waitForBrowse(iconsPage);
@@ -493,7 +493,7 @@ try {
         await waitForBrowse(iconsPage);
         assert.equal(await selectedIcon(), '#icon-appearance-light');
         for (const prefix of prefixes) {
-            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/all/#sort=name-asc`);
+            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/all/#sorts=name-asc`);
             await iconsPage.locator('.slot-main a[href*="/p/contract-unclassified/"]').click();
             const selectedAsset = () => iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-unclassified/"] img.icon--image.icon--monochrome');
             await waitForBrowse(iconsPage);
@@ -506,7 +506,7 @@ try {
             await iconsPage.goForward();
             await waitForBrowse(iconsPage);
             assert.equal(await selectedAsset().getAttribute('src'), assetImage.image);
-            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/#sort=name-asc`);
+            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/#sorts=_,name-asc`);
             await iconsPage.locator('.slot-main a[href*="/p/contract-no-offer/"]').click();
             const selectedImage = () => iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-no-offer/"] img.icon--image');
             await waitForBrowse(iconsPage);
@@ -523,7 +523,7 @@ try {
             await iconsPage.locator('.slot-main a[href*="/p/contract-image-child/"]').click();
             await waitForBrowse(iconsPage);
             assert.equal(await iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-image-child/"] img.icon--image.icon--monochrome').getAttribute('src'), inheritedImage.image);
-            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/#sort=name-asc`);
+            await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/#sorts=_,name-asc`);
             await iconsPage.locator('.slot-main a[href*="/p/contract-zero/"]').click();
             const selectedText = () => iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-zero/"] .icon--text').textContent();
             await waitForBrowse(iconsPage);
@@ -574,7 +574,7 @@ try {
                 assert.equal(await namesPage.locator(nameGrid).getAttribute('data-sort-columns'), null);
                 assert.ok(await namesPage.locator(nameGrid).evaluate(grid => [...grid.children].every(row=>getComputedStyle(row).display==='grid'&&getComputedStyle(row).gridTemplateColumns==='225px')));
                 await namesPage.locator(`${nameGrid} [data-sort-field="name"]`).click();
-                await namesPage.waitForURL(url => new URLSearchParams(url.hash.slice(1)).get('sort') === 'name-desc');
+                await namesPage.waitForURL(url => new URLSearchParams(url.hash.slice(1)).get('sorts')?.split(',')[list.split('/').length-1] === 'name-desc');
                 assert.equal(await namesPage.locator(`${nameGrid} [data-sort-field="name"]`).getAttribute('aria-label'), ascendingAction);
                 assert.equal(await namesPage.locator(`${nameGrid} [data-sort-field="name"]`).getAttribute('title'), ascendingAction);
                 const descending = [...expected].reverse();
@@ -625,7 +625,7 @@ try {
         assert.equal(await literalSort.locator('b').count(), 0, 'Field names must remain literal text.');
         await gotoAndWait(namesPage, `${baseUrl}/zh/d/`);
         await namesPage.screenshot({path: path.join(work, 'name-list-zh.png')});
-        await gotoAndWait(namesPage, `${baseUrl}/zh/p/contract-missing/#from=products/contract-name&sort=name-desc`);
+        await gotoAndWait(namesPage, `${baseUrl}/zh/p/contract-missing/#from=products/contract-name&sorts=_,name-desc`);
         await namesPage.screenshot({path: path.join(work, 'name-list-path-zh.png')});
         await namesContext.close();
         console.log('PASS name-only SSR, native layout inheritance, referenced names, ascending/descending sort, path columns and history in three languages');

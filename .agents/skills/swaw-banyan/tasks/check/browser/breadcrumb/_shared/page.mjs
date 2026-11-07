@@ -6,10 +6,8 @@ export const columnLocator=(page,href)=>page.locator(columnsSelector+'[data-brea
 
 export function columnSort(column) {
   const url=new URL(column.toggle),depth=column.source.logicalPath.split('/').filter(Boolean).length;
-  const lineage=(new URLSearchParams(url.hash.slice(1)).get('from')||column.source.logicalPath).split('/').filter(Boolean).length;
   const tokens=(new URLSearchParams(url.hash.slice(1)).get('sorts')||'').split(',');
-  const slots=[...Array(Math.max(0,lineage-tokens.length)).fill('_'),...tokens];
-  const next=slots[depth-1],token=next&&next!=='_'?next:column.source.defaultSort;
+  const next=tokens[depth-1],token=next&&next!=='_'?next:column.source.defaultSort;
   return token.replace(/-(asc|desc)$/,'')+'-'+(column.indicator==='↑'?'asc':'desc');
 }
 

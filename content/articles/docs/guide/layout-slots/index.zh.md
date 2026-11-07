@@ -1,7 +1,7 @@
 ---
 title: 页面区域与布局
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-07
 url: p/layout-slots/
 description: 配置根导航入口、路径区域和文章元信息。
 ---
@@ -72,7 +72,7 @@ Powered by 总览由站点根 `content/powered-by/index*.md` 维护，使用 `pa
 
 ## 与导航状态和布局的边界
 
-`params.slots` 决定页面装配哪些区域；`from / sort / sorts` 表示当次浏览来源及排序。有效 `from` 决定来源根，没有有效来源时按真实内容祖先确定归属。例如 [Banyan 示例文章](https://banyan.swaw.com/zh/p/example-product/)直接访问时选中“文章 - 分类”；从产品分类进入时选中“产品 - 分类”。其他栏目通过 `_map.toml` 引用它时，正文网址保持不变，`from` 保留该次来源。
+`params.slots` 决定页面装配哪些区域；`from / sorts` 表示当次浏览来源及排序。有效 `from` 决定来源根，没有有效来源时按真实内容祖先确定归属。例如 [Banyan 示例文章](https://banyan.swaw.com/zh/p/example-product/)直接访问时选中“文章 - 分类”；从产品分类进入时选中“产品 - 分类”。其他栏目通过 `_map.toml` 引用它时，正文网址保持不变，`from` 保留该次来源。
 
 系统页使用普通链接，不携带 `return`；语言与外观页的返回行为见 [导航状态协议](/zh/p/navigation-state/)。切换语言留在对应语言的设置页，不改变当前系统入口的选中态。首页选中自身；其他页面匹配自身和最近的可列出祖先，但不把首页当成所有页面的默认选中项。没有可列出根祖先的内部页不强行选中入口。
 

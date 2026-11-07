@@ -1,10 +1,18 @@
 {{- $ctx := .ctx -}}
-{{- $sort := printf "%v" (.sort | default "") -}}
+{{- $token := printf "%v" (.token | default "") -}}
 {{- $href := printf "%v" (.baseHref | default $ctx.RelPermalink) -}}
-{{- if ne $sort "" -}}
-  {{- $href = printf "%s#sort=%s" $href $sort -}}
+{{- $sorts := "" -}}
+{{- if and (ne $token "") (ne $token (.defaultToken | default "")) -}}
+  {{- $logicalPath := partial "feature-browse/collection/logical-path.html" (dict "ctx" $ctx "href" $href) -}}
+  {{- $parts := split (trim $logicalPath "/") "/" -}}
+  {{- $slots := slice -}}
+  {{- range $index, $_ := $parts -}}
+    {{- $slots = $slots | append (cond (eq $index (sub (len $parts) 1)) $token "_") -}}
+  {{- end -}}
+  {{- $sorts = delimit $slots "," -}}
+  {{- $href = printf "%s#sorts=%s" $href $sorts -}}
 {{- end -}}
 {{- with .fragment -}}
-  {{- $href = printf "%s%s%s" $href (cond (ne $sort "") "&anchor=" "#") (replace (urlquery .) "+" "%20") -}}
+  {{- $href = printf "%s%s%s" $href (cond (ne $sorts "") "&anchor=" "#") (replace (urlquery .) "+" "%20") -}}
 {{- end -}}
 {{- return $href -}}

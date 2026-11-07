@@ -119,8 +119,8 @@ test('opening and first-paint options declare paths, widths, pan and touch',()=>
   const spec=openCommand('check/browser/canvas/open');
   assert.throws(()=>parseArguments(spec,[]),/--from is required/);
   assert.throws(()=>parseArguments(spec,['--from','/all/']),/--page is required/);
-  const options=parseArguments(spec,['--from','/all/#sort=name-desc','--page','/d/canvas-first/','--widths','390,1440','--pan','120','--touch']);
-  assert.equal(options.pan,120);assert.equal(options.touch,true);assert.equal(options.from,'/all/#sort=name-desc');
+  const options=parseArguments(spec,['--from','/all/#sorts=name-desc','--page','/d/canvas-first/','--widths','390,1440','--pan','120','--touch']);
+  assert.equal(options.pan,120);assert.equal(options.touch,true);assert.equal(options.from,'/all/#sorts=name-desc');
   for(const pan of ['-1','1.5','no','9007199254740992'])assert.throws(()=>parseArguments(spec,['--from','/all/','--page','/article/','--pan',pan]));
   assert.throws(()=>parseArguments(spec,['--from','/all/','--page','/article/#from=all']),/article pathname/);
   assert.match(helpFor(spec,'en'),/--touch/);assert.match(helpFor(spec,'en'),/default: 390,1024,1440/);
@@ -134,12 +134,12 @@ test('opening and first-paint options declare paths, widths, pan and touch',()=>
 });
 
 test('native drag opening uses real touch and retains source sort and history',{timeout:30000},()=>{
-  const args=['--from','/all/#sort=name-desc','--page','/d/canvas-first/','--widths','390','--touch','--drag','160'];
+  const args=['--from','/all/#sorts=name-desc','--page','/d/canvas-first/','--widths','390','--touch','--drag','160'];
   const result=cli('open',[...args,'--trace','--out',path.join(work,'drag-reports')]);
   assert.equal(result.status,0,result.stdout+result.stderr);
   const folder=result.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
   const state=report.details.cases[0];assert.ok(state.drag.after.x>0);assert.equal(state.drag.after.y,state.drag.before.y);
-  assert.equal(new URLSearchParams(new URL(state.target,'http://fixture').hash.slice(1)).get('sort'),'name-desc');
+  assert.equal(new URLSearchParams(new URL(state.target,'http://fixture').hash.slice(1)).get('sorts'),'name-desc');
   assert.equal(state.history.back,state.before.canvasOffsetX);
   assert.ok(fs.statSync(path.join(folder,'trace.zip')).size>0);
   const blocked=fixture('opening-drag-blocked');
@@ -167,15 +167,15 @@ test(name+' opens sorted collections and observes initial layout with held scrip
   for(const command of commands){
     const article=command==='open'?new URL(route,'http://fixture').pathname:route;
     const args=['--page',article,'--widths','390,1440','--out',path.join(work,'reports')];
-    if(command==='open')args.push('--from','/all/#sort=name-desc','--trace');
+    if(command==='open')args.push('--from','/all/#sorts=name-desc','--trace');
     const result=cli(command+suffix,args);assert.equal(result.status,0,command+'\n'+result.stdout+result.stderr);
     const folder=result.stdout.match(/Artifacts: (.+)/)[1].trim(),report=JSON.parse(fs.readFileSync(path.join(folder,'result.json'),'utf8'));
     assert.equal(report.browser,name);assert.ok(report.browserVersion);assert.equal(report.details.page,article);
     for(const state of report.details.cases){
       assert.ok(state.first.scriptsHeld>0);assert.equal(state.final.reservedColumnsRetained,true);
       if(command==='open'){
-        assert.equal(state.from,'/all/#sort=name-desc');assert.ok(state.current.readingY>0);assert.equal(state.history.back,state.before.canvasOffsetX);
-        assert.equal(new URLSearchParams(new URL(state.target,'http://fixture').hash.slice(1)).get('sort'),'name-desc');
+        assert.equal(state.from,'/all/#sorts=name-desc');assert.ok(state.current.readingY>0);assert.equal(state.history.back,state.before.canvasOffsetX);
+        assert.equal(new URLSearchParams(new URL(state.target,'http://fixture').hash.slice(1)).get('sorts'),'name-desc');
       }
     }
     if(command==='open')assert.ok(fs.statSync(path.join(folder,'trace.zip')).size>0);
@@ -190,10 +190,10 @@ test(name+' opens a referenced directory and uses native taps',{timeout:20000},(
 
 test(name+' opens nested directories and product categories with retained lineage',{timeout:30000},()=>{
   for(const [from,page,root,sort] of [
-    ['/d/opening/#sort=name-desc','/d/opening/one/','/d/','name-desc'],
-    ['/zh/d/opening/#sort=name-desc','/zh/d/opening/one/','/zh/d/','name-desc'],
-    ['/products/fixture-alpha/#sort=price-desc','/d/canvas-first/','/products/','price-desc'],
-    ['/products-all/#sort=version-desc','/d/canvas-first/','/products-all/','version-desc']
+    ['/d/opening/#sorts=_,name-desc','/d/opening/one/','/d/','name-desc'],
+    ['/zh/d/opening/#sorts=_,name-desc','/zh/d/opening/one/','/zh/d/','name-desc'],
+    ['/products/fixture-alpha/#sorts=_,price-desc','/d/canvas-first/','/products/','price-desc'],
+    ['/products-all/#sorts=version-desc','/d/canvas-first/','/products-all/','version-desc']
   ]) {
     const result=cli('open'+suffix,['--from',from,'--page',page,'--widths','1440','--out',path.join(work,'lineage-reports')]);
     assert.equal(result.status,0,from+'\n'+result.stdout+result.stderr);
@@ -209,7 +209,7 @@ test(name+' opens nested directories and product categories with retained lineag
 });
 
 test(name+' opening rejects wrong roots, sibling order, ancestor selection and sort',{timeout:45000},()=>{
-  const args=['--from','/discover/tooling/devtools/#sort=name-desc','--page','/d/canvas-first/','--widths','1440'];
+  const args=['--from','/discover/tooling/devtools/#sorts=_,_,name-desc','--page','/d/canvas-first/','--widths','1440'];
   for(const [id,code,message] of [
     ['root',"document.querySelectorAll('[data-root-href]').forEach(link=>{const current=link.dataset.rootHref==='/all/';link.classList.toggle('is-current',current);if(current)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});",/Root selection must match/],
     ['siblings',"const list=document.querySelector('.path-column .item-list');list.append(list.querySelector('[data-list-item]'));",/retain every source column/],
@@ -229,7 +229,7 @@ test(name+' opening rejects wrong roots, sibling order, ancestor selection and s
 });
 
 test(name+' opening history rejects root repair on reload and changed siblings on Back',{timeout:30000},()=>{
-  const args=['--from','/all/#sort=name-desc','--page','/d/canvas-first/','--widths','1440'];
+  const args=['--from','/all/#sorts=name-desc','--page','/d/canvas-first/','--widths','1440'];
   const reload=fixture('opening-reload-'+name);
   script(reload,"const visits=Number(sessionStorage.getItem('swban-opening-reload')||0)+1;sessionStorage.setItem('swban-opening-reload',String(visits));if(visits>1){const link=document.querySelector('[data-root-href].is-current');link.classList.remove('is-current');link.removeAttribute('aria-current');}");
   const lost=cli('open'+suffix,args,reload);assert.equal(lost.status,1);assert.match(lost.stderr,/Root selection must match/);

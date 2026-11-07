@@ -476,7 +476,7 @@ test('worker selection is bounded, matches Banyan, and rolls back known sends',{
   }}]);
 });
 
-test('DCL and restored from/sort paths gate every shared candidate',{timeout:30000},async()=>{
+test('DCL and restored from/sorts paths gate every shared candidate',{timeout:30000},async()=>{
   const blocked=output('blocked-ready');
   for(const route of [probePage,debugPage,'/d/prefetch-scopes/child/one/','/d/prefetch-scopes/child/']) {
     const file=path.join(blocked,route,'index.html');
@@ -489,8 +489,8 @@ test('DCL and restored from/sort paths gate every shared candidate',{timeout:300
     session.on('Preload.preloadingAttemptSourcesUpdated',event=>attempts.push(...event.preloadingAttemptSources??[]));
     await session.send('Network.enable');await session.send('Preload.enable');
     try {
-      for(const route of [probePage,debugPage+'?prefetch-backend=link','/d/prefetch-scopes/child/one/#from=%2Fd%2Fprefetch-scopes%2Fchild%2F&sorts=name-desc,date-asc',
-        '/d/prefetch-scopes/child/#sort=name-desc']) {
+      for(const route of [probePage,debugPage+'?prefetch-backend=link','/d/prefetch-scopes/child/one/#from=%2Fd%2Fprefetch-scopes%2Fchild%2F&sorts=name-desc,date-asc,_',
+        '/d/prefetch-scopes/child/#sorts=_,_,name-desc']) {
         let release,started;const gate=new Promise(resolve=>{release=resolve;}),requested=new Promise(resolve=>{started=resolve;});
         await page.route('**/prefetch-blocker.js',async route=>{started();await gate;await route.fulfill({contentType:'text/javascript',body:''});});
         await page.goto(new URL(route,baseUrl).href,{waitUntil:'commit'});await requested;
@@ -508,7 +508,7 @@ test('DCL and restored from/sort paths gate every shared candidate',{timeout:300
         assert.equal((await runtimeState(page)).ready,true);
         assert.equal(await page.evaluate(()=>document.documentElement.hasAttribute('data-entry-breadcrumb-pending')||
           document.documentElement.hasAttribute('data-breadcrumb-sort-pending')),false);
-        if(route.endsWith('#sort=name-desc')) {
+        if(route.endsWith('#sorts=_,_,name-desc')) {
           const order=await page.locator('main [data-list-entry][href]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname)
             .filter(href=>/^\/d\/prefetch-scopes\/child\/(one|two)\/$/.test(href)));
           assert.deepEqual(order,['/d/prefetch-scopes/child/two/','/d/prefetch-scopes/child/one/'],'sorting is complete before candidate activation');
@@ -531,7 +531,7 @@ test('custom startup waits for navigation and recovers after a fragment failure'
     await page.route('**/site/navigation/*.txt',handler);
     const requested=page.waitForRequest('**/site/navigation/*.txt');
     try {
-      await page.goto(baseUrl+article+'?prefetch-backend=link#from=d/prefetch-scopes/child&sorts=name-desc,date-asc',{waitUntil:'load'});
+      await page.goto(baseUrl+article+'?prefetch-backend=link#from=d/prefetch-scopes/child&sorts=name-desc,date-asc,_',{waitUntil:'load'});
       await requested;
       const pending=await runtimeState(page);
       assert.equal(pending.candidates.length,0,'Pending columns must not expose prefetch candidates.');

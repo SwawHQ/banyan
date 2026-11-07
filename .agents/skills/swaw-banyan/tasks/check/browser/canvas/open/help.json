@@ -16,7 +16,7 @@
       "  --drag <px>      Drag left with real Chromium touch input before opening",
       "",
       "swban check/browser/canvas/open ./preview --from /all/ --page /article/",
-      "swban check/browser/canvas/open ./preview --from /all/#sort=name-desc --page /article/ --touch",
+      "swban check/browser/canvas/open ./preview --from /all/#sorts=name-desc --page /article/ --touch",
       "swban check/browser/canvas/open ./preview --from /all/ --page /article/ --widths 390 --touch --drag 160"
     ]
   },
@@ -37,7 +37,7 @@
       "  --drag <px>      打开前用 Chromium 原生触摸向左拖动",
       "",
       "swban check/browser/canvas/open ./preview --from /all/ --page /article/",
-      "swban check/browser/canvas/open ./preview --from /all/#sort=name-desc --page /article/ --touch",
+      "swban check/browser/canvas/open ./preview --from /all/#sorts=name-desc --page /article/ --touch",
       "swban check/browser/canvas/open ./preview --from /all/ --page /article/ --widths 390 --touch --drag 160"
     ]
   }

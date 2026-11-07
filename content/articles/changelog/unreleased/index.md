@@ -190,9 +190,12 @@ lastmod: 2026-11-06
   sites maintain its interface copy in `params.prefetch_debug.labels`.
   Unconfigured icons use the default.
   Remove the invalid legacy URL count from prefetch size reports.
-- Move the frontend `from`, `sort`, and `sorts` fields into URL fragments,
-  preserving them in chapter links. Back and Forward restore the source and
-  breadcrumb sorting. Sorting category and aggregate lists no longer adds a
+- Keep frontend `from` and `sorts` state in URL fragments, preserving it in chapter links.
+  Use `sorts` for every path column and the main list, with full path depth and `_`
+  for each column's own default. Remove the separate `sort` field without reading
+  or migrating it. Main-list sorting refreshes path-column links so new tabs retain
+  the latest order. Back and Forward restore the source and each column's sorting.
+  Sorting category and aggregate lists no longer adds a
   redundant `from`; article links retain their required non-default source.
   Remove `navigation-state-default.toml`;
   query parameters no longer control the navigation view. Path columns load shared,

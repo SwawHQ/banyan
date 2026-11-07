@@ -23,7 +23,7 @@ function checkQueryPreservation(before,after,isCollection) {
     fields.sort();url.hash=fields.toString();
   }
   previous.searchParams.sort();next.searchParams.sort();
-  assert.equal(next.href,previous.href,'Path sorting must preserve main sort, unrelated query fields and fragment.');
+  assert.equal(next.href,previous.href,'Path sorting must preserve unrelated query fields and fragment.');
 }
 
 function checkMainLinks(main,columns) {
@@ -35,15 +35,14 @@ function checkMainLinks(main,columns) {
   assert.ok(links.length>0,'Main collection must contain an article.');
   for(const row of links) {
     const url=new URL(row.href),slots=(new URLSearchParams(url.hash.slice(1)).get('sorts')||'').split(',');
-    const effective=[...Array(Math.max(0,depth-slots.length)).fill('_'),...slots];
+    if(new URLSearchParams(url.hash.slice(1)).has('sorts'))assert.equal(slots.length,depth,'Article links must retain every source sort slot.');
+    const effective=[...slots,...Array(Math.max(0,depth-slots.length)).fill('_')];
     const tokenAt=(index,fallback)=>effective[index]&&effective[index]!=='_'?effective[index]:fallback;
     assert.equal(tokenAt(depth-1,defaults),active,'Main article links must retain the active collection sort.');
-    assert.equal(new URLSearchParams(url.hash.slice(1)).get('sort')||defaults,active,'Main article links must retain their own sort token.');
+    assert.equal(new URLSearchParams(url.hash.slice(1)).has('sort'),false,'Article links must use only sorts.');
     for(const column of columns.filter(column=>column.toggle)) {
       const columnDepth=column.source.logicalPath.split('/').filter(Boolean).length;
       if(columnDepth>=depth)continue;
-      const requested=(new URLSearchParams(url.hash.slice(1)).get('sorts')||'').split(',');
-      assert.ok(requested.length<=depth,'Main article links must not append an extra sort slot.');
       assert.equal(tokenAt(columnDepth-1,column.source.defaultSort),columnSort(column),
         'Main article links must reflect each ancestor sort.');
     }

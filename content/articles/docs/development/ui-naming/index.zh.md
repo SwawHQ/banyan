@@ -1,7 +1,7 @@
 ---
 title: UI 命名与职责
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-07
 url: p/ui-naming/
 description: 约定页面列、列表、条目、样式类与行为标记的命名。
 ---
@@ -35,7 +35,7 @@ layout: page-collection-directory-name-only
 
 ## 路径数据与显示
 
-构建期的 `feature-browse/navigation/path/` 生成真实结构路径，`navigation/source/` 生成共享 HTML 片段与本页列索引。`system-metadata/seo/breadcrumb.html` 输出 BreadcrumbList；`params.slots` 中的 `breadcrumb` 与网址 `from/sort/sorts` 保持各自职责。
+构建期的 `feature-browse/navigation/path/` 生成真实结构路径，`navigation/source/` 生成共享 HTML 片段与本页列索引。`system-metadata/seo/breadcrumb.html` 输出 BreadcrumbList；`params.slots` 中的 `breadcrumb` 与网址 `from/sorts` 保持各自职责。
 
 浏览器的 `browse/entry-source.js` 读取 `data-navigation`，`breadcrumb-source.js` 加载片段，`path-render.js` 复用滚动容器并克隆列头和条目。`preparePathColumns()` 维护列容器，`renderPathColumn()` 填充单列；`selectedPathname` 表示当前项，最终输出 `.is-current` 与 `aria-current`。读取边界见 [导航状态](/zh/p/navigation-state/#内嵌-collection-payload)。
 

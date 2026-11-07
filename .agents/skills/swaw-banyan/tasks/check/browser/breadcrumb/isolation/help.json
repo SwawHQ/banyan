@@ -11,7 +11,7 @@
       "  --page <path>   Page with two sortable path columns, or a path column and main collection",
       "",
       "swban check/browser/breadcrumb/isolation ./preview --page /article/#from=section/child",
-      "swban check/browser/breadcrumb/isolation ./preview --page /section/child/#sort=date-asc"
+      "swban check/browser/breadcrumb/isolation ./preview --page /section/child/#sorts=_,date-asc"
     ]
   },
   "zh": {
@@ -26,7 +26,7 @@
       "  --page <path>   含两个可排序路径列，或同时含路径列与主集合的页面",
       "",
       "swban check/browser/breadcrumb/isolation ./preview --page /article/#from=section/child",
-      "swban check/browser/breadcrumb/isolation ./preview --page /section/child/#sort=date-asc"
+      "swban check/browser/breadcrumb/isolation ./preview --page /section/child/#sorts=_,date-asc"
     ]
   }
 }

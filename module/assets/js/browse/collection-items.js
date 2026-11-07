@@ -2,7 +2,7 @@ import {
     SORT_VARIANTS,
     compareSortRecords,
     parseSortToken,
-    readCurrentSortToken,
+    getNormalizedSortToken,
 } from './sort-policy.js';
 import {
     normalizeFromPath,
@@ -37,12 +37,12 @@ export function readRequestedSortToken(sortVariant, logicalPath = '', defaultSor
     }
 
     const fallbackToken = defaultSort || SORT_VARIANTS[sortVariant]?.defaultToken || '';
-    if (!logicalPath) {
-        return readCurrentSortToken(sortVariant, fallbackToken);
-    }
-
     const normalizedLogicalPath = normalizeFromPath(logicalPath);
-    return readSortTokenForPath(normalizedLogicalPath, fallbackToken);
+    return getNormalizedSortToken(
+        normalizedLogicalPath ? readSortTokenForPath(normalizedLogicalPath, fallbackToken) : '',
+        sortVariant,
+        fallbackToken
+    );
 }
 
 export function sortItemsRows(rows, sortVariant, logicalPath = '', defaultSort = '') {

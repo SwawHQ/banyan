@@ -35,14 +35,14 @@ export async function check({page,baseUrl,options}) {
       const [tab]=await Promise.all([page.context().waitForEvent('page'),link.click({modifiers:['Control']})]);
       try {
         await tab.waitForLoadState('load');await waitForBrowse(tab);await assertTarget(tab);
-        for(const key of ['from','sort','sorts'])assert.equal(new URLSearchParams(new URL(tab.url()).hash.slice(1)).get(key),
+        for(const key of ['from','sorts'])assert.equal(new URLSearchParams(new URL(tab.url()).hash.slice(1)).get(key),
           new URLSearchParams(new URL(url).hash.slice(1)).get(key),'New-tab chapter links must preserve '+key);
       } finally {await tab.close();}
     }
     await activate(page,link);await page.waitForURL(target=>(new URLSearchParams(target.hash.slice(1)).get('anchor')||decodeURIComponent(target.hash.slice(1)))===id);await assertTarget();
     assert.equal(await page.locator('#document-aside-toggle').getAttribute('aria-expanded'),'true','Selecting a chapter must keep the aside open.');
     assert.equal(new URL(page.url()).search,new URL(url).search,'Chapter activation must preserve query parameters.');
-    for(const key of ['from','sort','sorts'])assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).get(key),
+    for(const key of ['from','sorts'])assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).get(key),
       new URLSearchParams(new URL(url).hash.slice(1)).get(key),'Chapter activation must preserve '+key);
     await activate(page,link);await assertTarget();
     await page.reload({waitUntil:'load'});await waitForBrowse(page);await assertTarget();

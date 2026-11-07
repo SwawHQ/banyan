@@ -1,5 +1,4 @@
 export const ENTRY_LINEAGE_FIELD = 'from';
-export const ACTIVE_SORT_FIELD = 'sort';
 export const LINEAGE_SORTS_FIELD = 'sorts';
 export const SORTS_PLACEHOLDER = '_';
 

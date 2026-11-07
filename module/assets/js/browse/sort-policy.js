@@ -1,8 +1,3 @@
-import {
-    applySortFieldToUrl,
-    readCurrentSortTokenRaw,
-} from './navigation-state.js';
-
 export const SORT_VARIANTS = Object.freeze({
     name: {
         defaultToken: 'name-asc',
@@ -142,12 +137,4 @@ export function getNormalizedSortToken(token, variantName, defaultTokenOverride 
 
 export function toggleSortOrder(order) {
     return order === 'asc' ? 'desc' : 'asc';
-}
-
-export function readCurrentSortToken(variantName, defaultTokenOverride = '') {
-    return getNormalizedSortToken(readCurrentSortTokenRaw(), variantName, defaultTokenOverride);
-}
-
-export function applySortTokenToUrl(url, token, defaultToken) {
-    return applySortFieldToUrl(url, !token || token === defaultToken ? '' : token);
 }

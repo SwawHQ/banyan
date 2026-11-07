@@ -1,18 +1,19 @@
 import {
     SORT_VARIANTS,
-    applySortTokenToUrl,
     compareSortRecords,
     parseSortToken,
-    readCurrentSortToken,
     toggleSortOrder
 } from './sort-policy.js';
 import { readPageCollectionSource } from './collection-source.js';
 import { refreshCollectionNavigation } from './collection-navigation.js';
-import { applyFromPathToUrl, readCurrentFromPath } from './navigation-state.js';
+import { readRequestedSortToken } from './collection-items.js';
+import { applyFromPathToUrl, readCurrentFromPath, applySortsTokensToUrl, buildCurrentPageSortsTokens } from './navigation-state.js';
 
 function writeSortToken(token, defaultToken) {
+    const source = readPageCollectionSource();
+    if (!source) return;
     const url = new URL(window.location.href);
-    applySortTokenToUrl(url, token, defaultToken);
+    applySortsTokensToUrl(url, buildCurrentPageSortsTokens(source.logicalPath, token, defaultToken));
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
@@ -46,7 +47,7 @@ function applySortableList(list) {
     if (!variant) return;
 
     const pageCollectionSource = readPageCollectionSource();
-    const currentToken = readCurrentSortToken(variantName, variant.defaultToken);
+    const currentToken = readRequestedSortToken(variantName, pageCollectionSource?.logicalPath, variant.defaultToken);
     const current = parseSortToken(currentToken);
     if (!variant.fields[current.field]) return;
 
@@ -104,7 +105,7 @@ function initSortableLists() {
         const variant = SORT_VARIANTS[variantName];
         const field = (control.dataset.sortField || '').toLowerCase();
         const defaultOrder = (control.dataset.sortDefaultOrder || 'asc').toLowerCase();
-        const currentToken = readCurrentSortToken(variantName, variant?.defaultToken || '');
+        const currentToken = readRequestedSortToken(variantName, readPageCollectionSource()?.logicalPath, variant?.defaultToken || '');
         const current = parseSortToken(currentToken);
         const nextOrder = current.field === field ? toggleSortOrder(current.order) : defaultOrder;
         const nextToken = `${field}-${nextOrder}`;
@@ -114,6 +115,7 @@ function initSortableLists() {
         event.preventDefault();
         writeSortToken(nextToken, variant.defaultToken);
         applySortableLists();
+        window.dispatchEvent(new Event('banyan:sortschange'));
     });
 }
 

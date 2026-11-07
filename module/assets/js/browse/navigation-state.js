@@ -1,5 +1,4 @@
 import {
-    ACTIVE_SORT_FIELD,
     ENTRY_LINEAGE_FIELD,
     LINEAGE_SORTS_FIELD,
     SORTS_PLACEHOLDER,
@@ -48,10 +47,6 @@ export function readCurrentFromPath() {
     return normalizeFromPath(readStateParam(ENTRY_LINEAGE_FIELD));
 }
 
-export function readCurrentSortTokenRaw() {
-    return safeDecode(readStateParam(ACTIVE_SORT_FIELD)).trim().toLowerCase();
-}
-
 function normalizeSortSlot(token) {
     const value = `${token ?? ''}`.trim().toLowerCase();
     return value === '' || value === SORTS_PLACEHOLDER ? '' : value;
@@ -97,7 +92,7 @@ export function readEffectiveSortsTokens(logicalPath) {
         return rawTokens.slice(0, depth);
     }
 
-    return [...Array(depth - rawTokens.length).fill(''), ...rawTokens];
+    return [...rawTokens, ...Array(depth - rawTokens.length).fill('')];
 }
 
 export function readSortTokenForPath(logicalPath, fallbackToken = '') {
@@ -106,23 +101,18 @@ export function readSortTokenForPath(logicalPath, fallbackToken = '') {
     return current || `${fallbackToken ?? ''}`.trim().toLowerCase();
 }
 
-export function buildCurrentPageSortsTokens(logicalPath, currentToken = '') {
+export function buildCurrentPageSortsTokens(logicalPath, currentToken = '', defaultToken = '') {
     const slots = readEffectiveSortsTokens(logicalPath);
     const normalizedCurrent = normalizeSortSlot(currentToken);
-    if (!normalizedCurrent) {
-        return slots;
-    }
-
-    if (slots.length === 0) {
-        return [normalizedCurrent];
-    }
+    const token = normalizedCurrent === normalizeSortSlot(defaultToken) ? '' : normalizedCurrent;
+    if (slots.length === 0) return [];
 
     const next = slots.slice();
-    next[next.length - 1] = normalizedCurrent;
+    next[next.length - 1] = token;
     return next;
 }
 
-export function buildLineageSortsTokensForPath(lineageLogicalPath, targetLogicalPath, targetToken = '') {
+export function buildLineageSortsTokensForPath(lineageLogicalPath, targetLogicalPath, targetToken = '', defaultToken = '') {
     const lineageSegments = normalizeFromPath(lineageLogicalPath).split('/').filter(Boolean);
     const targetSegments = normalizeFromPath(targetLogicalPath).split('/').filter(Boolean);
     const targetBelongsToLineage = targetSegments.length > 0
@@ -130,59 +120,30 @@ export function buildLineageSortsTokensForPath(lineageLogicalPath, targetLogical
         && targetSegments.every((segment, index) => segment === lineageSegments[index]);
 
     if (!targetBelongsToLineage) {
-        return buildCurrentPageSortsTokens(targetLogicalPath, targetToken);
+        return buildCurrentPageSortsTokens(targetLogicalPath, targetToken, defaultToken);
     }
 
     const slots = readEffectiveSortsTokens(lineageLogicalPath);
-    slots[targetSegments.length - 1] = normalizeSortSlot(targetToken);
+    const normalizedTarget = normalizeSortSlot(targetToken);
+    slots[targetSegments.length - 1] = normalizedTarget === normalizeSortSlot(defaultToken) ? '' : normalizedTarget;
     return slots;
 }
 
-export function buildDescendantSortsTokens(logicalPath, currentToken = '') {
+export function buildDescendantSortsTokens(logicalPath, currentToken = '', defaultToken = '') {
     const normalizedCurrent = normalizeSortSlot(currentToken);
-    const currentSlots = buildCurrentPageSortsTokens(logicalPath, normalizedCurrent);
-    if (!normalizedCurrent) {
-        return currentSlots;
-    }
-
+    const currentSlots = buildCurrentPageSortsTokens(logicalPath, normalizedCurrent, defaultToken);
     return [...currentSlots, normalizedCurrent];
-}
-
-export function buildDefaultSortsTokens(logicalPath, defaultToken = '', extraDepth = 0) {
-    const depth = getLogicalPathDepth(logicalPath) + Math.max(0, Number(extraDepth) || 0);
-    const normalizedDefault = normalizeSortSlot(defaultToken);
-    if (depth <= 0 || !normalizedDefault) {
-        return [];
-    }
-
-    return Array(depth).fill(normalizedDefault);
 }
 
 export function applyFromPathToUrl(url, fromPath) {
     return applyFragmentField(url, ENTRY_LINEAGE_FIELD, buildFromParamValue(fromPath));
 }
 
-export function applySortFieldToUrl(url, token) {
-    return applyFragmentField(url, ACTIVE_SORT_FIELD, token);
-}
-
-function everySortSlotIsDefault(tokens, defaultTokens) {
-    if (!Array.isArray(defaultTokens) || defaultTokens.length === 0) {
-        return false;
-    }
-
-    return tokens.every((token, index) => {
-        const defaultToken = normalizeSortSlot(defaultTokens[index] ?? '');
-        return token === '' || (defaultToken !== '' && token === defaultToken);
-    });
-}
-
-export function applySortsTokensToUrl(url, tokens, defaultTokens = []) {
+export function applySortsTokensToUrl(url, tokens) {
     const normalizedTokens = normalizeSortSlots(tokens);
     if (
         normalizedTokens.length === 0
         || normalizedTokens.every((token) => token === '')
-        || everySortSlotIsDefault(normalizedTokens, normalizeSortSlots(defaultTokens))
     ) {
         return applyFragmentField(url, LINEAGE_SORTS_FIELD, '');
     }

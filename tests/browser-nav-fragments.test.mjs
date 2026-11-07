@@ -66,6 +66,9 @@ before(()=>{
   }
   write(path.join(content,'plain/_index.md'),directoryPage('Plain directory'));
   write(path.join(content,'plain/aggregate/_index.md'),'---\ntitle: Aggregate directory\nlayout: page-collection-directory-all\nparams:\n  aggregate: /articles\n  slots: [breadcrumb]\n---\n');
+  write(path.join(content,'plain/names/_index.md'),'---\ntitle: Names\nlayout: page-collection-directory-name-only\nparams:\n  slots: [breadcrumb]\n---\n');
+  for(const [name,title] of [['a','Alpha'],['z','Zulu']])write(path.join(content,'plain/names/'+name+'/index.md'),
+    '---\ntitle: '+title+'\nurl: p/fragment-mixed-'+name+'/\ndate: 2026-10-01\n---\nMixed-default sorting fixture.');
   write(path.join(content,'plain/readonly/_index.md'),'---\ntitle: Readonly ancestor\nlayout: page-article-norss\nparams:\n  slots: [breadcrumb]\n---\nReadonly ancestor.');
   for(const name of ['a','b'])write(path.join(content,'plain/readonly/'+name+'/index.md'),
     '---\ntitle: Readonly '+name+'\nurl: p/fragment-readonly-'+name+'/\ndate: 2026-10-01\n---\nReadonly article.');
@@ -520,7 +523,7 @@ test('external navigation handles slow, stale, failed and offline column request
     return {fault,retried};
   }});
   scenarios.push({id:'default-links-and-sort-toggles-stay-clean',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
-    await page.goto(baseUrl+'/articles/category1/#sort=name-asc&sorts=date-desc,name-asc',{waitUntil:'load'});
+    await page.goto(baseUrl+'/articles/category1/#sorts=_,name-asc',{waitUntil:'load'});
     await waitForBrowse(page);
     const links=await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(link=>({
       kind:link.parentElement.dataset.kind,href:link.href
@@ -528,8 +531,8 @@ test('external navigation handles slow, stale, failed and offline column request
     const entry=new URL(links.find(link=>new URL(link.href).pathname==='/p/example-product/').href);
     const child=new URL(links.find(link=>link.kind==='section').href);
     assert.equal(new URLSearchParams(entry.hash.slice(1)).get('from'),null);
-    assert.equal(new URLSearchParams(entry.hash.slice(1)).get('sorts'),'date-desc,name-asc');
-    assert.equal(new URLSearchParams(child.hash.slice(1)).get('sorts'),'date-desc,name-asc,name-asc');
+    assert.equal(new URLSearchParams(entry.hash.slice(1)).get('sorts'),'_,name-asc');
+    assert.equal(new URLSearchParams(child.hash.slice(1)).get('sorts'),'_,name-asc,name-asc');
     await page.goto(baseUrl+article+'?keep=1#anchor=reading',{waitUntil:'load'});await waitForBrowse(page);
     const selected=page.locator('[data-slot=breadcrumb] [aria-current=page]').last();
     assert.equal(new URLSearchParams(new URL(await selected.getAttribute('href'),baseUrl).hash.slice(1)).get('from'),null);
@@ -540,6 +543,53 @@ test('external navigation handles slow, stale, failed and offline column request
     assert.equal(fields.get('sorts'),'date-asc,_');
     assert.equal(fields.get('anchor'),'reading');assert.equal(sorted.search,'?keep=1');
     return {articleSorts:entry.hash,childSorts:child.hash,sorted:sorted.hash};
+  }});
+  scenarios.push({id:'mixed-defaults-and-native-sort-links',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){
+    const collection='/plain/names/';
+    await page.goto(baseUrl+collection,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    const parent=page.locator('[data-slot=breadcrumb] > [data-navigation-column="/plain/"]');
+    const parentToggle=parent.locator('[data-collection-sort-toggle]'),main=page.locator('main [data-sort-field=name]');
+    assert.equal(await parent.locator('[data-sort-indicator]').textContent(),'↓','The directory parent defaults to descending dates.');
+    assert.equal(await main.locator('[data-sort-indicator]').textContent(),'↑','The name-only main list has a different default.');
+    const initialOrder=await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname));
+    const source=page.url();
+    await main.click();await afterPaint(page);
+    assert.equal(new URL(page.url()).hash,'#sorts=_,name-desc');
+    assert.deepEqual(await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname)),initialOrder.slice().reverse());
+    const toggleHref=await parentToggle.getAttribute('href');
+    assert.equal(new URLSearchParams(new URL(toggleHref,baseUrl).hash.slice(1)).get('sorts'),'date-asc,name-desc',
+      'The native parent link must include the latest main sort.');
+    const extra=await context.newPage();
+    try{
+      await extra.goto(new URL(toggleHref,baseUrl).href,{waitUntil:'load'});await waitForBrowse(extra);await afterPaint(extra);
+      assert.equal(await extra.locator('[data-slot=breadcrumb] > [data-navigation-column="/plain/"] [data-sort-indicator]').textContent(),'↑');
+      assert.equal(await extra.locator('main [data-sort-field=name] [data-sort-indicator]').textContent(),'↓');
+      assert.equal(new URL(page.url()).hash,'#sorts=_,name-desc','Opening the native link must leave its opener unchanged.');
+    }finally{await extra.close();}
+    await parentToggle.click();await afterPaint(page);
+    assert.equal(new URL(page.url()).hash,'#sorts=date-asc,name-desc');
+    const labelHref=await parent.locator('.path-column-label').getAttribute('href');
+    assert.equal(new URL(labelHref,baseUrl).pathname,'/plain/');
+    assert.equal(new URL(labelHref,baseUrl).hash,'#sorts=date-asc','Returning to an ancestor must truncate the main slot.');
+    const labelPage=await context.newPage();
+    try{
+      await labelPage.goto(new URL(labelHref,baseUrl).href,{waitUntil:'load'});await waitForBrowse(labelPage);await afterPaint(labelPage);
+      assert.equal(await labelPage.locator('main [data-sort-active=true]').getAttribute('data-sort-field'),'date');
+      assert.equal(await labelPage.locator('main [data-sort-active=true] [data-sort-indicator]').textContent(),'↑');
+    }finally{await labelPage.close();}
+    const articleHref=await page.locator('main [data-list-entry]').first().getAttribute('href');
+    assert.equal(new URLSearchParams(new URL(articleHref,baseUrl).hash.slice(1)).get('sorts'),'date-asc,name-desc');
+    assert.equal(new URLSearchParams(new URL(articleHref,baseUrl).hash.slice(1)).has('sort'),false);
+    await main.click();await afterPaint(page);
+    assert.equal(new URL(page.url()).hash,'#sorts=date-asc,_','Restoring the main default must keep the parent sort.');
+    await parentToggle.click();await afterPaint(page);
+    assert.equal(page.url(),source,'Restoring both defaults must remove sorts.');
+    await page.goto(baseUrl+collection+'#sorts=name-asc,_',{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    await main.click();await afterPaint(page);await main.click();await afterPaint(page);
+    assert.equal(new URL(page.url()).hash,'#sorts=name-asc,_','A main default must not erase the same token used as a non-default parent sort.');
+    const links=await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>node.href));
+    for(const href of links)assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).get('sorts'),'name-asc,_');
+    return {toggleHref,labelHref,articleHref};
   }});
   for(const worker of [false,true])scenarios.push({id:'native-column-prefetch-'+(worker?'sw':'http'),kind:'single',serviceWorkers:worker?'allow':'block',async run({page,baseUrl}){
     if(worker){await page.goto(baseUrl+'/',{waitUntil:'load'});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));}
@@ -578,12 +628,12 @@ test('external navigation handles slow, stale, failed and offline column request
     const record=request=>{if(request.serviceWorker()&&urls.includes(request.url()))network.push(request.url());};
     context.on('request',record);
     const target=source==='/products/'?'/products/examples/':routeFor(source);
-    await page.locator('main [data-list-entry]').evaluateAll((nodes,target)=>{
+    const actualTarget=await page.locator('main [data-list-entry]').evaluateAll((nodes,target)=>{
       const link=nodes.find(node=>new URL(node.href).pathname===target.split('#')[0]);
       if(!link)throw new Error('The first collection must link to '+target);
-      link.click();
+      const href=link.href;link.click();return href;
     },target);
-    await page.waitForURL(baseUrl+target);await page.waitForLoadState('load');await waitForBrowse(page);await afterPaint(page);
+    await page.waitForURL(actualTarget);await page.waitForLoadState('load');await waitForBrowse(page);await afterPaint(page);
     context.off('request',record);
     assert.equal(await page.locator('script[src]').evaluateAll((nodes,runtime)=>nodes.filter(node=>node.src===runtime).length,runtime),1,
       'The target must execute the exact prefetched runtime.');
@@ -636,6 +686,6 @@ test('external navigation handles slow, stale, failed and offline column request
       'missing-terminal-skips-candidate-request','existing-ancestor-validates-before-default',
       'collection-sorting-keeps-source-free-urls','root-only-source-selection-needs-no-fragments',
       'column-404-recovers','column-malformed-recovers','column-nested-item-recovers',
-      'default-links-and-sort-toggles-stay-clean']});
+      'default-links-and-sort-toggles-stay-clean','mixed-defaults-and-native-sort-links']});
   checkResult(webkit);
 });
