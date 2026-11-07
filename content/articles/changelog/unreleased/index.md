@@ -190,7 +190,9 @@ lastmod: 2026-11-06
   Remove the invalid legacy URL count from prefetch size reports.
 - Move the frontend `from`, `sort`, and `sorts` fields into URL fragments,
   preserving them in chapter links. Back and Forward restore the source and
-  breadcrumb sorting. Remove `navigation-state-default.toml`;
+  breadcrumb sorting. Sorting category and aggregate lists no longer adds a
+  redundant `from`; article links retain their required non-default source.
+  Remove `navigation-state-default.toml`;
   query parameters no longer control the navigation view. Path columns load shared,
   fingerprinted `.txt` HTML fragments under `/site/navigation/`. Root navigation,
   main collection lists and articles retain HTML and work without JavaScript.

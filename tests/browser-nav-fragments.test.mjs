@@ -65,6 +65,7 @@ before(()=>{
       '---\ntitle: '+title+'\nurl: p/navigation-extra-'+index+'/\ndate: 2026-10-01\n---\nNavigation fixture.');
   }
   write(path.join(content,'plain/_index.md'),directoryPage('Plain directory'));
+  write(path.join(content,'plain/aggregate/_index.md'),'---\ntitle: Aggregate directory\nlayout: page-collection-directory-all\nparams:\n  aggregate: /articles\n  slots: [breadcrumb]\n---\n');
   write(path.join(content,'plain/readonly/_index.md'),'---\ntitle: Readonly ancestor\nlayout: page-article-norss\nparams:\n  slots: [breadcrumb]\n---\nReadonly ancestor.');
   for(const name of ['a','b'])write(path.join(content,'plain/readonly/'+name+'/index.md'),
     '---\ntitle: Readonly '+name+'\nurl: p/fragment-readonly-'+name+'/\ndate: 2026-10-01\n---\nReadonly article.');
@@ -365,27 +366,57 @@ test('external navigation handles slow, stale, failed and offline column request
       assert.equal(url.search,'?keep=%2F+value');assert.equal(fields.get('anchor'),'reading');assert.equal(fields.get('sorts'),'name-asc,name-asc');
       return {candidate:candidate.paths,default:expected.paths};
     }finally{release();}
-  }},{id:'collection-from-self-uses-default-prefixes',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
+  }},{id:'collection-sorting-keeps-source-free-urls',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
     const requests=[];page.on('request',request=>{const pathname=fragmentPath(request);if(pathname)requests.push(pathname);});
-    await page.goto(baseUrl+'/articles/category1/#from=articles/category1',{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    for(const [collection,parent,articleSource] of [['/articles/category1/','/articles/',null],['/plain/aggregate/','/plain/','plain/aggregate']]){
+      for(const hash of ['','#from='+collection.slice(1,-1)]){
+        await page.goto('about:blank');
+        requests.length=0;
+        await page.goto(baseUrl+collection+hash,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+        assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).has('from'),false,'Collections must use their own path without from.');
+        const expected=await defaultData(page);
+        assert.deepEqual((await snapshot(page)).columns.map(column=>column.path),expected.paths);
+        const warm=await page.locator('head link[rel=prefetch]').getAttribute('href');
+        assert.deepEqual(requests.filter(url=>url!==warm).sort(),expected.urls.sort());
+        assert.ok(requests.filter(url=>url===warm).length<=1,'The current collection may only prefetch its shared fragment once.');
+        const initialRequests=[...requests].sort();
+        assert.ok(await page.locator('main [data-list-entry]').count());
+        const toggle=page.locator('.path-column[data-navigation-column="'+parent+'"] [data-collection-sort-toggle]');
+        assert.equal(new URLSearchParams(new URL(await toggle.getAttribute('href'),baseUrl).hash.slice(1)).has('from'),false,'Native sort links must not add from.');
+        const initial=await toggle.locator('[data-sort-indicator]').textContent();
+        await toggle.focus();await toggle.press('Enter');
+        await page.waitForFunction(({parent,before})=>document.querySelector('.path-column[data-navigation-column="'+parent+'"] [data-sort-indicator]')?.textContent!==before,{parent,before:initial});
+        const fields=new URLSearchParams(new URL(page.url()).hash.slice(1)),tokens=(fields.get('sorts')||'').split(',');
+        const slots=[...Array(Math.max(0,2-tokens.length)).fill('_'),...tokens];
+        assert.equal(fields.has('from'),false,'Sorting a parent must retain the current collection lineage without from.');
+        assert.equal(slots[0],initial==='↓'?'date-asc':'date-desc','The parent sort must occupy its own lineage slot.');
+        assert.ok(slots[1]==='_'||slots[1]==='date-desc','The current main collection must retain its default order.');
+        assert.equal(await page.locator('main [data-sort-active="true"] [data-sort-indicator]').textContent(),'↓');
+        const links=await page.locator('main [data-kind="page"] [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>node.href));
+        assert.ok(links.length>0,'Each collection must contain an article.');
+        for(const href of links)assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).get('from'),articleSource,'Article links must retain only their required source.');
+        assert.deepEqual(requests.sort(),initialRequests,'Sorting a parent must not add fragment requests.');
+        await toggle.press('Enter');await afterPaint(page);
+        assert.equal(new URL(page.url()).hash,'','Returning to default sorting must leave a clean collection URL.');
+      }
+    }
+    for(const collection of ['/plain/','/articles-all/']){
+      await page.goto(baseUrl+collection+'#from='+collection.slice(1,-1),{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+      assert.equal(await page.locator('[data-slot=breadcrumb]').count(),0,'Root collections must also cover sorting without path columns.');
+      assert.equal(new URL(page.url()).hash,'','Collections without path columns must remove redundant from.');
+      const control=page.locator('main [data-sort-active="true"]');
+      assert.equal(new URLSearchParams(new URL(await control.getAttribute('href'),baseUrl).hash.slice(1)).has('from'),false);
+      await control.click();await afterPaint(page);
+      assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).has('from'),false,'Main sorting must not retain a redundant collection source.');
+    }
+    await page.goto(baseUrl+'/articles/category1/nested/#from=articles&sorts=date-asc,_,_',{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
     const expected=await defaultData(page);
-    assert.deepEqual((await snapshot(page)).columns.map(column=>column.path),expected.paths);
-    const warm=await page.locator('head link[rel=prefetch]').getAttribute('href');
-    assert.deepEqual(requests.filter(url=>url!==warm).sort(),expected.urls.sort());
-    assert.ok(requests.filter(url=>url===warm).length<=1,'The current collection may only prefetch its shared fragment once.');
-    const initialRequests=[...requests].sort();
-    assert.ok(await page.locator('main [data-list-entry]').count());
-    const toggle=page.locator('.path-column[data-navigation-column="/articles/"] [data-collection-sort-toggle]');
-    const initial=await toggle.locator('[data-sort-indicator]').textContent();
-    await toggle.focus();await toggle.press('Enter');
-    await page.waitForFunction(before=>document.querySelector('.path-column[data-navigation-column="/articles/"] [data-sort-indicator]')?.textContent!==before,initial);
-    const fields=new URLSearchParams(new URL(page.url()).hash.slice(1)),tokens=(fields.get('sorts')||'').split(',');
-    const slots=[...Array(Math.max(0,2-tokens.length)).fill('_'),...tokens];
-    assert.equal(fields.get('from'),'articles/category1','Sorting a parent must retain the current collection lineage.');
-    assert.equal(slots[0],initial==='↓'?'date-asc':'date-desc','The parent sort must occupy its own lineage slot.');
-    assert.ok(slots[1]==='_'||slots[1]==='date-desc','The current main collection must retain its default order.');
-    assert.equal(await page.locator('main [data-sort-active="true"] [data-sort-indicator]').textContent(),'↓');
-    assert.deepEqual(requests.sort(),initialRequests,'Sorting a parent must not add fragment requests.');
+    assert.equal(expected.paths.length,2,'The nested collection must have two ancestor columns.');
+    assert.deepEqual((await snapshot(page)).columns.map(column=>column.path),expected.paths,'An ancestor from must not shorten the collection path.');
+    assert.equal(new URL(page.url()).hash,'#sorts=date-asc,_,_','Removing an ancestor from must retain the full sort lineage.');
+    for(const href of await page.locator('[data-collection-sort-toggle]').evaluateAll(nodes=>nodes.map(node=>node.href))){
+      assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).has('from'),false,'Late fragment rendering must not restore a collection source.');
+    }
     return {requests:requests.length};
   }},{id:'root-only-source-selection-needs-no-fragments',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
     let release;const gate=new Promise(resolve=>{release=resolve;}),requests=[];
@@ -603,7 +634,7 @@ test('external navigation handles slow, stale, failed and offline column request
       'slow-terminal-keeps-first-column-visible','slow-ancestor-keeps-last-column-visible',
       'source-race-and-cache','shared-ancestor-updates-selection','hash-retry-respects-newer-state',
       'missing-terminal-skips-candidate-request','existing-ancestor-validates-before-default',
-      'collection-from-self-uses-default-prefixes','root-only-source-selection-needs-no-fragments',
+      'collection-sorting-keeps-source-free-urls','root-only-source-selection-needs-no-fragments',
       'column-404-recovers','column-malformed-recovers','column-nested-item-recovers',
       'default-links-and-sort-toggles-stay-clean']});
   checkResult(webkit);

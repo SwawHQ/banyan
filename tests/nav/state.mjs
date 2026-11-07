@@ -397,9 +397,13 @@ try {
         'the deepest column should read its own lineage slot'
     );
 
-    window.location.href = 'https://example.test/zh/d/wsl/#from=d&sort=name-asc';
+    document.body.dataset.collectionPath = '/d/wsl/';
+    document.body.dataset.navigation = JSON.stringify({
+        home: '/zh/', resources: '/site/navigation/', default: '/d/', columns: {},
+    });
+    window.location.href = 'https://example.test/zh/d/wsl/#sort=name-asc';
     window.location.pathname = '/zh/d/wsl/';
-    window.location.hash = '#from=d&sort=name-asc';
+    window.location.hash = '#sort=name-asc';
     assert.equal(
         breadcrumbItems.getCollectionSortState(directoryCollectionSource)?.sortToken,
         'date-desc',
@@ -407,17 +411,19 @@ try {
     );
     assert.equal(
         breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
-        '/zh/d/wsl/#from=d&sort=name-asc&sorts=date-asc',
-        'breadcrumb sorting should preserve the main-grid sort while updating only its lineage slot'
+        '/zh/d/wsl/#sort=name-asc&sorts=date-asc,_',
+        'collection sorting must use its full path without adding from or changing the main sort'
     );
 
-    window.location.href = 'https://example.test/zh/d/wsl/#from=d&sort=name-asc&sorts=date-asc';
-    window.location.hash = '#from=d&sort=name-asc&sorts=date-asc';
+    window.location.href = 'https://example.test/zh/d/wsl/#sort=name-asc&sorts=date-asc,_';
+    window.location.hash = '#sort=name-asc&sorts=date-asc,_';
     assert.equal(
         breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
-        '/zh/d/wsl/#from=d&sort=name-asc',
+        '/zh/d/wsl/#sort=name-asc',
         'returning a breadcrumb column to its default should remove sorts without changing sort'
     );
+    delete document.body.dataset.collectionPath;
+    delete document.body.dataset.navigation;
 
     window.location.href = 'https://example.test/zh/discover/tooling/devtools/windows/wsl/';
     window.location.pathname = '/zh/discover/tooling/devtools/windows/wsl/';
@@ -488,6 +494,11 @@ try {
     assert.deepEqual(entrySource.selectNavigationRoute(collectionNavigation, '', '/discover/windows/'), {
         root: '/zh/discover/', columns: [{ column: '/discover/' }], lineage: '/discover/windows/', from: '',
     }, 'a collection without from must keep its main-list lineage without adding its main list as a path column');
+    for (const from of ['/discover/', '/notes/']) {
+        assert.deepEqual(entrySource.selectNavigationRoute(parsed, from, '/discover/windows/'), {
+            ...defaultRoute, lineage: '/discover/windows/',
+        }, 'a collection must ignore ancestor and foreign sources from its first render');
+    }
     for (const from of ['/discover/windows/contract-beta/', '/discover/unknown/', '/products/windows/', '']) {
         assert.deepEqual(entrySource.selectNavigationRoute(parsed, from), defaultRoute,
             'a missing terminal resource must select the default route');
@@ -706,13 +717,16 @@ try {
             const own = structuredClone(manifest);own.default = '/discover/';delete own.columns['/discover/windows/'];
             document.body.dataset.navigation = JSON.stringify(own);document.body.dataset.collectionPath = '/discover/windows/';
             window.fetch = async () => { throw new Error('Own main list must not require its missing resource'); };
-            setLocation('/zh/discover/windows/#from=discover/windows');startPending();await entry.initializeBreadcrumb();
-            check(fragment.readFieldValue(location.hash, 'from') === 'discover/windows', 'Own collection sources do not require self-membership.');
+            setLocation('/zh/discover/windows/?keep=%2f+value#from=discover/windows&sort=name-desc&sorts=date-asc,_&anchor=chapter');startPending();await entry.initializeBreadcrumb();
+            check(fragment.readFieldValue(location.hash, 'from') === '', 'Own collection sources are redundant and must be removed.');
+            check(location.search === '?keep=%2f+value' && fragment.readFieldValue(location.hash, 'sort') === 'name-desc'
+                && fragment.readFieldValue(location.hash, 'sorts') === 'date-asc,_' && fragment.readAnchor(location.hash) === 'chapter',
+                'Removing a redundant collection source must retain queries, sorting and anchors.');
             same([...nav.children].map(node => node.dataset.navigationColumn), ['/discover/'], 'Own collection uses only ancestor columns.');
             delete own.columns['/discover/%E5%B7%A5%E5%85%B7/'];document.body.dataset.navigation = JSON.stringify(own);
             document.body.dataset.collectionPath = '/discover/%E5%B7%A5%E5%85%B7/';
             setLocation('/zh/discover/%E5%B7%A5%E5%85%B7/#from=discover/%E5%B7%A5%E5%85%B7');startPending();await entry.initializeBreadcrumb();
-            check(fragment.readFieldValue(location.hash, 'from') === 'discover/工具', 'Encoded own-entry paths remain valid.');
+            check(fragment.readFieldValue(location.hash, 'from') === '', 'Encoded own-collection sources must also be removed.');
 
             const race = structuredClone(manifest);race.columns['/discover/'] = '3'.repeat(64);race.columns['/discover/windows/'] = '2'.repeat(64);
             document.body.dataset.navigation = JSON.stringify(race);delete document.body.dataset.collectionPath;

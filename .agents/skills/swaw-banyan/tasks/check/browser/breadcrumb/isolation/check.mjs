@@ -12,12 +12,13 @@ const readMain=page=>page.evaluate(()=>{
 });
 const order=column=>({href:column.href,field:column.field,indicator:column.indicator,rows:column.rows.map(({key,text})=>({key,text}))});
 
-function checkQueryPreservation(before,after) {
+function checkQueryPreservation(before,after,isCollection) {
   const previous=new URL(before),next=new URL(after);
   assert.equal(next.pathname,previous.pathname,'Sorting must keep the page pathname.');
   if(new URLSearchParams(previous.hash.slice(1)).has('from'))assert.equal(new URLSearchParams(next.hash.slice(1)).get('from'),new URLSearchParams(previous.hash.slice(1)).get('from'),'Sorting must preserve the full source lineage.');
   for(const url of [previous,next]) {
     const fields=new URLSearchParams(url.hash.slice(1));
+    if(isCollection)assert.equal(fields.has('from'),false,'Collection sorting must not add a source parameter.');
     for(const key of ['from','sorts'])fields.delete(key);
     fields.sort();url.hash=fields.toString();
   }
@@ -53,13 +54,14 @@ export async function check({page,baseUrl,options}) {
   await page.setViewportSize({width:1440,height:960});
   const url=baseUrl+options.page;await openPage(page,url);
   const initial=await readColumns(page),main=await readMain(page),initialUrl=page.url(),targets=initial.filter(column=>column.toggle);
+  const isCollection=await page.evaluate(()=>Boolean(document.body.dataset.collectionPath));
   assert.ok(targets.length>=2||(targets.length>=1&&main),'Choose two sortable path columns, or a path column and main collection.');
   const cases=[];
   for(const target of targets) {
     await openPage(page,url);
     const before=await readColumns(page),mainBefore=await readMain(page),previous=page.url();
     const result=await toggleColumn(page,target.href),after=await readColumns(page),mainAfter=await readMain(page);
-    checkQueryPreservation(previous,page.url());
+    checkQueryPreservation(previous,page.url(),isCollection);
     assert.deepEqual(after.filter(column=>column.href!==target.href).map(order),before.filter(column=>column.href!==target.href).map(order),
       'Sorting one path column must not change another column order or indicator.');
     if(mainBefore) {
@@ -75,6 +77,7 @@ export async function check({page,baseUrl,options}) {
     assert.equal(await control.count(),1,'Main collection must expose one active sort control.');
     const marker=await page.evaluate(()=>window.__swbanMainSort=crypto.randomUUID()),target=await control.evaluate(node=>node.href);
     await control.click();await page.waitForURL(target);await waitForBrowse(page);await afterPaint(page);
+    assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).has('from'),false,'Collection sorting must not add a source parameter.');
     assert.equal(await page.evaluate(()=>window.__swbanMainSort),marker,'Main sorting must retain the document.');
     const after=await readColumns(page),mainAfter=await readMain(page);
     assert.deepEqual(after.map(order),before.map(order),'Main sorting must not change breadcrumb order or indicators.');

@@ -36,8 +36,7 @@ export function readNavigation() {
 export function selectNavigationRoute(navigation, fromPath, collectionPath = '') {
     const from = normalizeFromPath(fromPath);
     const collection = normalizeFromPath(collectionPath);
-    const own = from && from === collection;
-    const requested = from && !own
+    const requested = !collection && from
         && Object.hasOwn(navigation?.columns || {}, from) ? from : '';
     const path = requested || navigation?.default || '';
     const parts = path.split('/').filter(Boolean);

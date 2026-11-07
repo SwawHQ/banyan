@@ -1,4 +1,4 @@
-import { normalizeFromPath, normalizePathname, applyFromPathToUrl, readCurrentFromPath } from './navigation-state.js';
+import { normalizePathname, applyFromPathToUrl, readCurrentFromPath } from './navigation-state.js';
 import { loadBreadcrumbColumn, readBreadcrumbColumns, readBreadcrumbColumn } from './breadcrumb-source.js';
 import { readNavigation, readActiveNavigationRoute } from './entry-source.js';
 import { preparePathColumns, fillPathColumn } from './path-render.js';
@@ -34,7 +34,7 @@ export async function initializeBreadcrumb() {
         if (!document.querySelector('[data-slot="breadcrumb"]')) return result;
         const route = readActiveNavigationRoute();
         const requested = readCurrentFromPath();
-        if (requested && !route.from && requested !== normalizeFromPath(document.body?.dataset.collectionPath)) {
+        if (requested && !route.from) {
             const url = new URL(window.location.href);
             applyFromPathToUrl(url, '');
             window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);

@@ -8,6 +8,7 @@ import {
 } from './sort-policy.js';
 import { readPageCollectionSource } from './collection-source.js';
 import { refreshCollectionNavigation } from './collection-navigation.js';
+import { applyFromPathToUrl, readCurrentFromPath } from './navigation-state.js';
 
 function writeSortToken(token, defaultToken) {
     const url = new URL(window.location.href);
@@ -77,6 +78,11 @@ function applySortableList(list) {
 }
 
 function applySortableLists() {
+    if (readPageCollectionSource() && readCurrentFromPath()) {
+        const url = new URL(window.location.href);
+        applyFromPathToUrl(url, '');
+        window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    }
     const lists = Array.from(document.querySelectorAll('[data-sortable="true"][data-sort-variant]'));
     lists.forEach(applySortableList);
 }

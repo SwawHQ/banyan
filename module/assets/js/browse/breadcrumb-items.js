@@ -93,7 +93,8 @@ export function buildCollectionSortToggleHref(
     try {
         const url = new URL(baseHref, window.location.origin);
         const currentLineagePath = readCurrentFromPath();
-        const defaultLineagePath = readNavigation()?.default || '';
+        const defaultLineagePath = normalizeFromPath(document.body?.dataset.collectionPath)
+            || readNavigation()?.default || '';
         const targetLogicalPath = state.collectionSource.logicalPath;
         const lineageLogicalPath = normalizeFromPath(lineagePathOverride)
             || currentLineagePath

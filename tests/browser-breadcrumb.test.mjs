@@ -84,7 +84,7 @@ test('sort checks in-place reuse after an explicit source rebuild',{timeout:2000
   assert.equal(report.details.sourceRebuilt,true);assert.ok(report.details.prefetch.entries>0);
 });
 
-test('isolation covers ancestors and main collections, including sort previews without from',{timeout:45000},()=>{
+test('isolation preserves article sources and keeps collection sorting free of from',{timeout:45000},()=>{
   for(const route of [article+'#from=d/breadcrumb-fixture',collection+'#from=d/breadcrumb-fixture&sort=date-asc&sorts=date-asc,date-asc',collection+'#sort=date-asc&sorts=date-asc,date-asc']) {
     const result=cli('isolation',['--page',route]);assert.equal(result.status,0,route+'\n'+result.stdout+result.stderr);
   }
@@ -139,9 +139,11 @@ test('sort rejects legacy prefetch markers after source hydration and direction 
   }
 });
 
-test('isolation rejects changed siblings and stale main-entry sort slots',{timeout:45000},()=>{
+test('isolation rejects changed siblings, redundant collection sources and stale main-entry sort slots',{timeout:45000},()=>{
   const sibling=fixture('sibling');script(sibling,article,`document.addEventListener('click',event=>{if(!event.target.closest('[data-collection-sort-toggle]'))return;const own=event.target.closest('[data-collection-column]');const other=[...document.querySelectorAll('[data-collection-column]')].find(node=>node!==own);other.querySelector('[data-sort-indicator]').textContent='broken';});`);
   const result=cli('isolation',['--page',article+'#from=d/breadcrumb-fixture'],sibling);assert.equal(result.status,1);assert.match(result.stderr,/another column order or indicator/);
+  const redundant=fixture('redundant-source');settledScript(redundant,collection,`const addSource=href=>{const url=new URL(href,location.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','d/breadcrumb-fixture');url.hash=fields.toString();return url;};document.querySelectorAll('[data-collection-sort-toggle]').forEach(link=>link.href=addSource(link.href));const replace=history.replaceState;history.replaceState=function(state,title,href){return replace.call(this,state,title,addSource(href));};`);
+  const source=cli('isolation',['--page',collection],redundant);assert.equal(source.status,1);assert.match(source.stderr,/must not add a source parameter/);
   const links=fixture('stale-links');script(links,collection,`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelectorAll('.slot-main [data-list-entry]').forEach(link=>{const url=new URL(link.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('sorts','date-asc,date-asc');url.hash=fields.toString();link.href=url.href;});});`);
   const stale=cli('isolation',['--page',collection+'#sort=date-asc&sorts=date-asc'],links);assert.equal(stale.status,1);assert.match(stale.stderr,/reflect each ancestor sort/);
 });
