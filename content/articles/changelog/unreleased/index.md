@@ -8,6 +8,8 @@ lastmod: 2026-11-06
 
 ## Added
 
+- RSS subscription pages show the all-articles feed and category subscription instructions without enumerating categories. `rss-link` reads the actual feed address, and `site-root` provides the current language root for URL examples.
+
 - Each language's homepage `title` supplies its site name. Remove site titles from `hugo.toml`. Browser title suffixes, RSS and `llms.txt` use the localized name; the shared PWA manifest uses the default language's name.
 - `defaultContentLanguage` selects the default site. Changing language weights no longer changes the PWA manifest name, SEO default language or 404 default language.
 - Language option icons now come from each translated settings page's `params.language_icon`. Remove language icon settings from `hugo.toml`; the settings navigation entry still uses `params.icon`.

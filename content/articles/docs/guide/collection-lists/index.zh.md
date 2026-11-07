@@ -88,6 +88,8 @@ params:
 
 `layouts/_shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址，并在新标签打开。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。删除 RSS 说明页不会关闭订阅输出。
 
+RSS 页面按“全部文章 + 分类订阅”组织：全站地址使用 `rss-link` 读取实际输出；分类部分用固定长度的规则说明，不枚举分类。示例通过 `site-root` 输出当前语言首页的绝对网址，自动保留部署子路径和语言前缀，其余分类路径以代码展示。分类是否提供 RSS 由其输出配置决定；普通文章默认不单独发布 RSS。
+
 栏目 RSS 与目录计数、汇总列表共用递归成员，包含子栏目的真实文章和 `_map.toml` 引用。
 同一正文在一个 feed 中只出现一次，链接始终指向原文。RSS 只收录布局为 `page-article-rss` 的文章。首页 RSS 使用当前语言可列出的文章；
 产品栏目使用相同规则；不同栏目的 RSS 可以收录同一篇文章。输出由 `[outputs]` 控制，条数使用 `[services.rss].limit`。

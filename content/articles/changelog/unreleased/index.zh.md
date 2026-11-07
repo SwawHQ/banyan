@@ -8,6 +8,8 @@ lastmod: 2026-11-06
 
 ## 新增
 
+- RSS 订阅页提供“全部文章 + 分类订阅规则”，不再枚举所有分类。`rss-link` 读取实际全站订阅地址，`site-root` 为网址示例生成当前语言的站点前缀。
+
 - 各语言首页的 `title` 统一提供站名；删除 `hugo.toml` 中的站名配置。浏览器标题后缀、RSS 和 `llms.txt` 使用对应语言的站名，PWA 清单使用默认语言的站名。
 - 默认站点由 `defaultContentLanguage` 选择；调整语言 `weight` 不再改变 PWA 清单名称、SEO 默认语言或 404 默认语言。
 - 语言选项图标改由各语言设置页的 `params.language_icon` 提供，移除 `hugo.toml` 中的语言图标配置；设置页导航图标仍使用 `params.icon`。

@@ -1,0 +1,22 @@
+{{- partial "feature-browse/directory/assert-map-resources.html" . -}}
+{{- /* Validate layouts even when a page renders only RSS. */ -}}
+{{- $collectionConfig := partial "feature-browse/collection/config.html" (dict "page" .) -}}
+{{- /* Keep Hugo's RSS fields; directory feeds share the collection membership. */ -}}
+{{- $pages := slice -}}
+{{- if .IsHome -}}
+  {{- $pages = .Site.RegularPages -}}
+{{- else if or .IsSection .Params.aggregate -}}
+  {{- $pages = partial "feature-browse/collection/articles.html" . -}}
+{{- else -}}
+  {{- $pages = .Pages -}}
+{{- end -}}
+{{- $entries := slice -}}
+{{- range $pages -}}
+  {{- if and .IsPage (eq .Layout "page-article-rss") (partial "feature-browse/is-rendered-html.html" .) -}}
+    {{- $entries = $entries | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- $pages = sort (uniq $entries) "Date" "desc" -}}
+{{- $limit := .Site.Config.Services.RSS.Limit -}}
+{{- if ge $limit 1 -}}{{- $pages = first $limit $pages -}}{{- end -}}
+{{- return $pages -}}

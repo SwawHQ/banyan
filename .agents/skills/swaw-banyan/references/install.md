@@ -223,6 +223,9 @@ printPathWarnings = true
 [minify]
 disableJS = true
 
+[markup.highlight]
+noClasses = false
+
 [[cascade]]
 [cascade.build]
 # true: automatically publish page bundle resources, including unused files.
@@ -255,6 +258,7 @@ palette = "site/theme.css"
 
 ```
 
+`noClasses = false` keeps code-block styles in external stylesheets.
 `disableJS` preserves the inline bytes used for CSP hashes. Preserve each article's
 published address in its front matter `url` field. Each enabled language declares
 its native `label` and `locale`. Its settings page's `params.language_icon`

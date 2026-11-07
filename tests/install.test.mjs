@@ -346,7 +346,7 @@ test('the release module directory also installs and builds as a local Hugo them
 
 test('site content, palette, translations and delivery data drive a fresh install',()=>{
   const root=consumer('overridden consumer',{multilingual:true});
-  write(root,'content/rss/index.zh.md','---\ntitle: 本站订阅\nurl: rss/\ndescription: 本站订阅地址。\nlayout: page-article-norss\noutputs: [HTML]\n---\n\n{{< rss-link >}}\n');
+  write(root,'content/rss/index.zh.md','---\ntitle: 本站订阅\nurl: rss/\ndescription: 本站订阅地址。\nlayout: page-article-norss\n---\n\n{{< rss-link >}}\n');
   write(root,'assets/site/theme.css',fs.readFileSync(path.join(repository,'assets/site/theme.css'),'utf8')+'\n:root{--consumer-palette-marker:1}\n');
   write(root,'assets/i18n/zh.toml',fs.readFileSync(path.join(repository,'assets/i18n/zh.toml'),'utf8').replace('other = "名称"','other = "本站名称"'));
   const template='assets/site/manifest.webmanifest.tmpl';
