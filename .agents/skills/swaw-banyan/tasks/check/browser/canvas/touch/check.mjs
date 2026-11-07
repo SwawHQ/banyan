@@ -21,6 +21,9 @@ export async function check({page,context,baseUrl,options}) {
   assert.equal(initial.canvasOffsetX,0,'A direct visit must start at the canvas origin.');
   assert.ok(Number.isFinite(initial.firstFrameX)&&Math.abs(initial.firstFrameX)<=1,'The first mobile frame must start at the canvas origin.');
   assert.ok(await page.evaluate(()=>navigator.maxTouchPoints>0),'The browser context must support native touch input.');
+  assert.ok(await page.evaluate(()=>Math.abs(document.querySelector('.page-shell').getBoundingClientRect().bottom
+    -document.querySelector('.reading-group').getBoundingClientRect().bottom)<=1),
+    'Touch-only devices must not reserve footer space for mouse instructions.');
   assert.ok(initial.nav.x>=0&&initial.nav.x<=16&&initial.nav.right<=width,'Root navigation must be visible at the reading start before dragging.');
   const cdp=await context.newCDPSession(page),drags=[],documents=[];
   const record=request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())documents.push(request.url());};
@@ -32,6 +35,8 @@ export async function check({page,context,baseUrl,options}) {
       if(!dy)assert.equal(drag.after.y,drag.before.y,'Horizontal touch input must preserve the vertical reading position.');
       assert.equal(page.url(),url,'Dragging a navigation link must not activate it.');
       assert.deepEqual(documents,[],'Dragging must not request a new document.');
+      assert.equal(await page.locator('[data-canvas-wheel-status]').isVisible(),false,'Native touch must not show mouse instructions.');
+      assert.equal(await page.locator('[data-canvas-wheel-hint]').isVisible(),false,'Native touch must not show the wheel marker.');
       return drag;
     };
     const root=await page.locator('[data-root-navigation] [data-root-href]').first().evaluate(node=>{

@@ -3,7 +3,7 @@ title: Unreleased
 url: p/unreleased/
 description: Unreleased changes to the Banyan theme and Skill.
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-07
 ---
 
 ## Added
@@ -126,6 +126,7 @@ lastmod: 2026-11-06
 
 ## Changed
 
+- The horizontal wheel arrow appears only in locked mode; hovering does not show the arrow or enter locked mode. The wheel can pan the canvas from its native horizontal scrollbar, which stays visible while locked. Shift+wheel on the native track no longer causes duplicate horizontal movement. During mouse input, a short help line at the navigation's starting edge follows scrollbar visibility. Its text has a translucent background that follows the page theme and does not intercept page input. Touch input does not show mouse instructions. Site interface dictionaries must include `canvas_wheel_help`.
 - Browser checks `nav/sort`, `palette/contrast`, `palette/roles`, `prose/layout` and `canvas/layout` require an explicit `--page`. Appearance and PWA navigation sources default to the home page.
 
 - Require Hugo 0.168.0. Language configuration uses native `label` and `locale`;

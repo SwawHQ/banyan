@@ -35,6 +35,9 @@ other = "This page has no {lang} version. Showing the original content."
 [navigation_load_failed]
 other = "Navigation could not load."
 
+[canvas_wheel_help]
+other = "Scroll sideways · Click or Esc to exit"
+
 [notFoundTitle]
 other = "Page not found"
 

@@ -3,7 +3,7 @@ title: 未发布
 url: p/unreleased/
 description: Banyan 主题和 Skill 的未发布变更。
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-07
 ---
 
 ## 新增
@@ -106,6 +106,7 @@ lastmod: 2026-11-06
 
 ## 调整
 
+- 横向滚轮箭头仅在横向锁定时显示，悬停不再显示箭头或进入锁定。原生横向滚动条支持直接用滚轮横移，锁定期间保持可见；修复轨道上 Shift＋滚轮可能重复横移的问题。鼠标操作时，底部导航起始边距处的简短说明跟随滚动条显隐；提示文字带随主题变化的半透明底色，且不拦截页面操作。触屏操作不显示鼠标提示。站点界面字典需包含 `canvas_wheel_help`。
 - 浏览器检查 `nav/sort`、`palette/contrast`、`palette/roles`、`prose/layout` 和 `canvas/layout` 须显式指定 `--page`。外观和 PWA 导航来源默认使用首页。
 
 - 最低 Hugo 版本升级为 0.168.0。语言配置使用原生 `label` 和 `locale`，

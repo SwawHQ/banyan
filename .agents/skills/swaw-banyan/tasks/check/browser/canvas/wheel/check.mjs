@@ -8,9 +8,10 @@ const read=page=>page.evaluate(()=>({x:scrollX*(getComputedStyle(document.docume
 const hint=page=>page.evaluate(()=>{
   const node=document.querySelector('[data-canvas-wheel-hint]');
   if(!node)return {visible:false};
-  const style=getComputedStyle(node);
+  const style=getComputedStyle(node),box=node.getBoundingClientRect();
   return {visible:!node.hidden&&style.display!=='none'&&style.visibility!=='hidden'&&Number(style.opacity)>0&&node.getClientRects().length>0,
-    pointerEvents:style.pointerEvents,ariaHidden:node.getAttribute('aria-hidden'),transform:style.transform};
+    pointerEvents:style.pointerEvents,ariaHidden:node.getAttribute('aria-hidden'),transform:style.transform,
+    left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:document.documentElement.clientWidth,height:document.documentElement.clientHeight};
 });
 
 async function checkHint(page,visible,message) {
@@ -19,6 +20,45 @@ async function checkHint(page,visible,message) {
   if(visible) {
     assert.equal(state.pointerEvents,'none','The wheel marker must not intercept links or hit testing.');
     assert.equal(state.ariaHidden,'true','The decorative wheel marker must stay outside the accessibility tree.');
+    assert.ok(state.left>=0&&state.right<=state.width+1&&state.top>=0&&state.bottom<=state.height+1,
+      'The wheel marker must remain above the native scrollbar and inside the visible page.');
+  }
+  return state;
+}
+
+async function checkStatus(page,message) {
+  await afterPaint(page);
+  const state=await page.locator('[data-canvas-wheel-status]').evaluate(node=>{
+    const style=getComputedStyle(node),box=node.getBoundingClientRect();
+    return {visible:!node.hidden&&style.display!=='none'&&style.visibility!=='hidden'&&Number(style.opacity)>0&&box.width>0,
+      text:node.textContent,mode:document.documentElement.dataset.canvasWheel,pointer:document.documentElement.dataset.canvasPointer,screen:matchMedia('screen').matches,
+      automatic:document.documentElement.hasAttribute('data-auto-scrollbar'),scrolling:document.documentElement.hasAttribute('data-scrolling'),
+      hover:document.documentElement.hasAttribute('data-scrollbar-hover'),
+      role:node.getAttribute('role'),background:style.backgroundColor,backgroundImage:style.backgroundImage,opacity:style.opacity,
+      borders:[style.borderTopWidth,style.borderRightWidth,style.borderBottomWidth,style.borderLeftWidth].map(parseFloat),
+      padding:[style.paddingTop,style.paddingRight,style.paddingBottom,style.paddingLeft].map(parseFloat),textAlign:style.textAlign,
+      columnsBottom:Math.max(...[...document.querySelectorAll('.page-column')].map(column=>column.getBoundingClientRect().bottom)),
+      edge:parseFloat(getComputedStyle(document.body).paddingInlineStart),rtl:getComputedStyle(node).direction==='rtl',
+      pointerEvents:style.pointerEvents,position:style.position,left:box.left,right:box.right,top:box.top,bottom:box.bottom,
+      width:document.documentElement.clientWidth,height:document.documentElement.clientHeight};
+  });
+  assert.equal(state.automatic,true,'The canvas scrollbar must initialize before checking its help.');
+  assert.equal(state.visible,state.screen&&state.pointer==='mouse'&&(state.scrolling||state.hover||state.mode==='locked'),message);
+  assert.ok(state.text.trim(),'Scrollbar help must contain the static instruction.');
+  if(state.visible) {
+    assert.equal(state.role,'status','The wheel state must be available to assistive technology.');
+    assert.equal(state.pointerEvents,'none','The bottom status must not intercept page or scrollbar input.');
+    assert.equal(state.position,'fixed','The bottom status must remain in the visible viewport.');
+    assert.ok(state.left>=0&&state.right<=state.width+1&&state.bottom<=state.height+1,'The status must fit the visible viewport.');
+    assert.ok(Math.abs(state.columnsBottom-state.height)<=1,'Reading columns must retain their full height without a footer reserve.');
+    assert.doesNotMatch(state.background,/^(?:transparent|rgba\(0, 0, 0, 0\))$/,'The status must have a background behind its text.');
+    assert.equal(state.opacity,'1','Only the background may be translucent; the instruction text must remain opaque.');
+    assert.equal(state.backgroundImage,'none','The status must not have a background image.');
+    assert.ok(state.borders.every(value=>value===0),'The status must not have a border.');
+    assert.ok(state.padding.every(value=>value===0),'The status must not have padding.');
+    assert.equal(state.textAlign,'start','The status text must align to the logical start.');
+    assert.ok(Math.abs((state.rtl?state.width-state.right:state.left)-state.edge)<=1,
+      'The status must align with the navigation start edge in the visible viewport.');
   }
   return state;
 }
@@ -48,7 +88,8 @@ async function checkHintWork(page) {
           if(type==='leave')document.documentElement.dispatchEvent(new PointerEvent('pointerleave',{pointerType:'mouse'}));
           else {Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));}
           await frame();await frame();
-          cancelled.push({type,requested:calls.requested-before.requested,fired:calls.fired-before.fired,writes:calls.writes-before.writes,hidden:node.hidden});
+          cancelled.push({type,requested:calls.requested-before.requested,fired:calls.fired-before.fired,writes:calls.writes-before.writes,
+            hidden:node.hidden});
         } finally {
           if(type==='hidden'){if(descriptor)Object.defineProperty(document,'hidden',descriptor);else delete document.hidden;}
         }
@@ -104,8 +145,98 @@ async function positionCanvas(page,x) {
   await panCanvas(page,x);await afterPaint(page);
 }
 
+async function waitCanvasIdle(page) {
+  await afterPaint(page);await page.waitForFunction(()=>!document.documentElement.hasAttribute('data-scrolling'));
+}
+
 async function settledWheel(page,delta) {
   await page.mouse.wheel(0,delta);await page.waitForTimeout(300);
+}
+
+async function checkNativeScrollbar(page,url) {
+  await visit(page,url);
+  const geometry=await page.evaluate(()=>({width:document.documentElement.clientWidth,height:document.documentElement.clientHeight,
+    gutter:innerHeight-document.documentElement.clientHeight,rtl:getComputedStyle(document.documentElement).direction==='rtl',
+    supportsColor:CSS.supports('scrollbar-color','auto')}));
+  if(geometry.gutter<=0)return {...geometry,skipReason:'The browser has no native horizontal scrollbar gutter; native track input was not exercised.'};
+  const point={x:geometry.width/2,y:geometry.height+geometry.gutter/2};
+  await page.mouse.move(point.x,point.y);await page.waitForTimeout(600);
+  await checkHint(page,false,'Hovering the native horizontal track must not show the locked wheel marker.');
+  const hovered=await checkStatus(page,'Native-track help must follow scrollbar hover activity.');
+  assert.equal(hovered.visible,true,'Hovering the native scrollbar must reveal its help.');
+  assert.equal(hovered.mode,'ready','Native scrollbar hover must not enter wheel mode.');
+  const guards=await page.evaluate(point=>{
+    const root=document.documentElement,states=[];
+    for(const modifiers of [{ctrlKey:true},{metaKey:true},{buttons:1},{buttons:4}]) {
+      const before=scrollX,allowed=root.dispatchEvent(new WheelEvent('wheel',
+        {bubbles:true,cancelable:true,clientX:point.x,clientY:point.y,deltaY:40,...modifiers}));
+      states.push({modifiers,allowed,before,after:scrollX,mode:root.dataset.canvasWheel});
+    }
+    return states;
+  },point);
+  for(const state of guards) {
+    assert.equal(state.allowed,true,'Native-track zoom and held-button wheel input must remain native.');
+    assert.equal(state.mode,'ready','Native-track modifiers must not enter custom horizontal mode.');
+    assert.equal(state.after,state.before,'Native-track modifiers must not move the canvas through JavaScript.');
+  }
+  const shiftBefore=await read(page);
+  await page.keyboard.down('Shift');
+  try {
+    await settledWheel(page,geometry.rtl?-80:80);await waitCanvasIdle(page);
+  } finally {await page.keyboard.up('Shift');}
+  const shifted=await read(page);
+  assert.ok(Math.abs(shifted.x-shiftBefore.x-80)<=1,'Native Shift wheel input must pan once, without a second site conversion.');
+  assert.equal(shifted.mode,'ready','Native Shift wheel input must not enter custom wheel mode.');
+  await checkHint(page,false,'Native Shift wheel input must not show the custom locked marker.');
+  await positionCanvas(page,0);await waitCanvasIdle(page);
+  const before=await read(page);await page.mouse.wheel(0,80);
+  await page.waitForFunction(x=>document.documentElement.dataset.canvasWheel==='locked'
+    &&scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)>x+1,before.x);
+  const wheel={before,after:await read(page)};
+  await checkHint(page,true,'Native-track locking must keep the marker above the scrollbar.');
+  const lockedHelp=await checkStatus(page,'Native-track help must remain visible while wheel mode is locked.');
+  assert.equal(lockedHelp.text,hovered.text,'Wheel locking must not change scrollbar instructions.');
+  await page.mouse.move(geometry.width/2,100);await page.waitForTimeout(600);
+  const paused=await page.evaluate(()=>({mode:document.documentElement.dataset.canvasWheel,
+    scrolling:document.documentElement.hasAttribute('data-scrolling'),color:getComputedStyle(document.documentElement).scrollbarColor}));
+  assert.equal(paused.mode,'locked','A native-track wheel pause must retain horizontal mode.');
+  assert.equal(paused.scrolling,false,'The native-track pause must outlast the scrollbar activity timer.');
+  if(geometry.supportsColor)assert.equal(paused.color,'auto','Locked mode must keep native scrollbar colors visible after a pause.');
+  await checkStatus(page,'Native-track help must remain visible after a locked pause.');
+  await page.mouse.move(point.x,point.y);await page.keyboard.press('Escape');
+  const ready=await checkStatus(page,'Native-track hover must keep help visible after Escape.');
+  assert.equal(ready.text,hovered.text,'Escape must not change scrollbar instructions.');
+  assert.equal((await read(page)).mode,'ready','Escape on the native track must exit horizontal mode.');
+  await checkHint(page,false,'Escape must hide the wheel marker even while the scrollbar stays hovered.');
+  await page.mouse.move((ready.left+ready.right)/2,(ready.top+ready.bottom)/2);
+  await checkStatus(page,'Hovering the former help position must follow scrollbar activity.');
+  assert.equal((await read(page)).mode,'ready','Hovering the former native-track help position must retain ready mode.');
+  await page.mouse.move(point.x,point.y);
+  const suspended=await page.evaluate(point=>{
+    const root=document.documentElement;
+    root.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:1,clientX:point.x,clientY:point.y}));
+    root.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerType:'mouse',button:1,clientX:point.x,clientY:point.y}));
+    const before=scrollX,allowed=root.dispatchEvent(new WheelEvent('wheel',
+      {bubbles:true,cancelable:true,clientX:point.x,clientY:point.y,deltaY:40}));
+    return {allowed,before,after:scrollX,mode:root.dataset.canvasWheel};
+  },point);
+  assert.deepEqual(suspended,{allowed:true,before:suspended.before,after:suspended.before,mode:'suspended'},
+    'Native-track wheel input must respect middle-button suspension.');
+  await checkHint(page,false,'Middle-button suspension must hide the native-track marker.');
+  await checkStatus(page,'Middle-button suspension must retain help while the native scrollbar is hovered.');
+  await page.keyboard.press('Escape');await positionCanvas(page,0);
+  const thumbX=geometry.rtl?geometry.width-geometry.gutter-4:geometry.gutter+4;
+  await page.mouse.move(thumbX,point.y);await page.mouse.down();
+  await page.mouse.move(thumbX+(geometry.rtl?-60:60),point.y,{steps:5});await page.mouse.up();
+  await page.waitForFunction(()=>Math.abs(scrollX)>1);
+  const dragged=await read(page);
+  assert.equal(dragged.mode,'ready','Dragging the native scrollbar thumb must not enter wheel mode.');
+  await positionCanvas(page,0);
+  await page.mouse.click(geometry.rtl?geometry.gutter*2:geometry.width-geometry.gutter*2,point.y);
+  await page.waitForFunction(()=>Math.abs(scrollX)>1);
+  const clicked=await read(page);
+  assert.equal(clicked.mode,'ready','Clicking the native scrollbar track must not enter wheel mode.');
+  return {...geometry,shifted,wheel,guards,paused,suspended,dragged,clicked};
 }
 
 async function tailState(page) {
@@ -147,22 +278,49 @@ export async function check({page,baseUrl,options}) {
     assert.ok(geometry.scrollWidth+1>=geometry.lastRight+geometry.tail,'The document scroll range must include the full tail space.');
     assert.equal(geometry.snap,'none','Normal browsing must retain native scrolling without added snapping.');
     assert.ok(geometry.align.every(value=>value==='none'),'Normal columns must retain native scrollIntoView alignment.');
+    stage=width+' native horizontal scrollbar';
+    const nativeScrollbar=await checkNativeScrollbar(page,baseUrl+options.page);
+    await visit(page,baseUrl+options.page);
     await assertCanvasEnd(page);await positionCanvas(page,0);
     const gap=await gapPoint(page);await page.mouse.move(gap.x,gap.y);
     const readyCursor=await page.evaluate(({x,y})=>getComputedStyle(document.elementFromPoint(x,y)).cursor,gap);
     assert.ok(!readyCursor.includes('url('),'Column gaps must retain a native cursor.');
-    await checkHint(page,true,'Column gaps must show a horizontal wheel marker.');
+    await checkHint(page,false,'Column gaps must not show a horizontal wheel marker before scrolling.');
+    await checkStatus(page,'Column-gap help must follow scrollbar activity.');
+    stage=width+' bottom hover help';
+    const bottomY=await page.evaluate(()=>document.documentElement.clientHeight-8);
+    await page.mouse.move(gap.x,bottomY);
+    await checkHint(page,false,'Bottom-page hover must not show the locked wheel marker.');
+    await checkStatus(page,'Bottom-page hover help must follow scrollbar activity.');
+    const bottomStart=await read(page);await page.mouse.wheel(0,40);
+    await page.waitForFunction(x=>document.documentElement.dataset.canvasWheel==='locked'
+      &&scrollX*(getComputedStyle(document.documentElement).direction==='rtl'?-1:1)>x+1,bottomStart.x);
+    const bottomStatus=await checkStatus(page,'Wheel input in the bottom gap must reveal scrollbar help.');
+    await checkHint(page,true,'Wheel input in the bottom gap must show the locked wheel marker.');
+    await page.keyboard.press('Escape');
+    await checkHint(page,false,'Escape must immediately hide the bottom wheel marker.');
+    await checkStatus(page,'After Escape, help must follow remaining scrollbar activity.');
+    await waitCanvasIdle(page);
+    const idleHelp=await checkStatus(page,'The scrollbar activity timer must hide help after Escape.');
+    assert.equal(idleHelp.visible,false,'The instruction must hide after activity stops outside the native scrollbar.');
+    assert.equal(idleHelp.text,bottomStatus.text,'Leaving wheel mode must not change scrollbar instructions.');
+    assert.equal(idleHelp.columnsBottom,bottomStatus.columnsBottom,'Showing or hiding help must not resize the reading columns.');
+    await page.mouse.move((bottomStatus.left+bottomStatus.right)/2,(bottomStatus.top+bottomStatus.bottom)/2);
+    await checkStatus(page,'Hovering where help was displayed must not reveal it again after activity stops.');
+    assert.equal((await read(page)).mode,'ready','Hovering the former message position must not change wheel mode.');
+    await positionCanvas(page,0);
+    await page.mouse.move(gap.x,gap.y);
+    await checkHint(page,false,'Leaving the bottom area must hide the ready marker.');
+    await checkStatus(page,'Leaving the bottom area must keep help synchronized with scrollbar activity.');
     stage=width+' ready marker bounds';
     await positionCanvas(page,(await read(page)).maxX);
     const stationary=await page.evaluate(({x,y})=>({
-      gap:document.documentElement.hasAttribute('data-canvas-wheel-gap'),
       cursor:getComputedStyle(document.elementFromPoint(x,y)).cursor
     }),gap);
-    assert.equal(stationary.gap,false,'Scrolling a gap out from under a stationary mouse must clear its marker hint.');
     assert.ok(!stationary.cursor.includes('url('),'Tail space under a stationary mouse must keep a native cursor.');
     await checkHint(page,false,'Scrolling a gap away must hide its marker under a stationary mouse.');
     await page.evaluate(()=>scrollTo({left:0,top:0,behavior:'instant'}));await afterPaint(page);
-    await checkHint(page,true,'Scrolling a gap back under a stationary mouse must restore its marker.');
+    await checkHint(page,false,'Scrolling a gap back under a stationary mouse must keep its ready marker hidden.');
     const blankPoints=await page.evaluate(()=>{
       const rail=document.querySelector('.page-rail').getBoundingClientRect();
       if(rail.bottom+10>=innerHeight)throw new Error('Choose a root navigation that leaves blank space below it.');
@@ -204,13 +362,24 @@ export async function check({page,baseUrl,options}) {
     assert.equal(await page.locator('[data-root-navigation] a').first().evaluate(node=>getComputedStyle(node).cursor),nativeLinkCursor,
       'Locked mode must retain native link cursors.');
     await checkHint(page,true,'Locked mode must show its marker across reading columns.');
+    await checkStatus(page,'Locked mode must show scrollbar help across reading columns.');
     await page.waitForTimeout(400);
     assert.equal((await read(page)).mode,'locked','A pause must not exit horizontal wheel mode.');
+    await checkStatus(page,'Scrollbar help must remain visible after locked wheel input stops.');
+    await page.setViewportSize({width:width+160,height:900});await afterPaint(page);
+    const lockedResize=await tailState(page);
+    assert.ok(Math.abs(lockedResize.tail-Math.max(0,lockedResize.width-lockedResize.readingWidth))<=1,
+      'Locked resizing must preserve the reading group tail space.');
+    assert.ok((await read(page)).maxX>1,'Reading columns must remain horizontally reachable after resizing.');
+    assert.equal((await read(page)).mode,'locked','Resizing must preserve horizontal wheel mode.');
+    await checkHint(page,true,'Resizing must preserve the locked wheel marker.');
+    await checkStatus(page,'Resizing must preserve locked scrollbar help.');
+    await page.setViewportSize({width,height:900});await afterPaint(page);
     const markerWork=await checkHintWork(page);
     assert.equal(markerWork.moving.requested,1,'A burst of pointer events must request at most one marker frame.');
     assert.equal(markerWork.moving.fired,1,'A burst of pointer events must execute one marker frame.');
     assert.equal(markerWork.moving.writes,1,'A pointer burst must move only the marker once per frame.');
-    assert.equal(markerWork.moving.hits,0,'Locked pointer movement must not run gap hit tests.');
+    assert.equal(markerWork.moving.hits,0,'Locked pointer movement must not run ready-area hit tests.');
     assert.equal(markerWork.moving.rects,0,'Locked pointer movement must not scan column rectangles.');
     assert.notEqual(markerWork.moving.transform,'none','The marker must follow pointer coordinates.');
     for(const key of ['requested','fired','writes'])assert.equal(markerWork.idle[key],markerWork.moving[key],'An idle pointer must stop marker work: '+key);
@@ -254,6 +423,7 @@ export async function check({page,baseUrl,options}) {
     assert.ok(Math.abs((await read(page)).x-edgeX)<=1,'Mouse alignment must complete after the 180-millisecond idle interval.');
     assert.equal((await read(page)).mode,'locked','Snapping must retain horizontal wheel mode.');
     assert.equal((await read(page)).y,snapY,'Snapping must preserve the article reading position.');
+    await checkStatus(page,'Canvas movement must keep scrollbar help aligned to the viewport start edge.');
     stage=width+' cancel pending snap';
     for(const cancel of ['Escape','middle','touch','horizontal','zoom','external','blur']) {
       await page.keyboard.press('Escape');await positionCanvas(page,edgeX-24);await page.mouse.move(20,100);
@@ -281,13 +451,25 @@ export async function check({page,baseUrl,options}) {
     assert.equal(resumed.y,resumedBefore.y,'Resumed horizontal scrolling must preserve reading progress.');
     await page.keyboard.press('Escape');
     await page.waitForFunction(()=>document.documentElement.dataset.canvasWheel==='ready');
+    await checkStatus(page,'After Escape, help must follow scrollbar activity outside the native track.');
     assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).scrollSnapType),'none',
       'Normal mode must retain native scrolling without snapping.');
 
-    stage=width+' vertical article';await reveal(page,content);
+    stage=width+' vertical article';const articlePoint=await reveal(page,content);
     const articleCursor=await content.evaluate(node=>getComputedStyle(node.querySelector('p')??node).cursor);
     assert.equal(articleCursor,nativeArticleCursor,'An article must keep its normal cursor before horizontal wheel mode starts.');
     await checkHint(page,false,'A vertically scrollable article must not show a ready marker.');
+    const articleBottom=await content.evaluate(node=>{
+      const box=node.getBoundingClientRect(),width=document.documentElement.clientWidth;
+      const point={x:(Math.max(0,box.left)+Math.min(width,box.right))/2,y:box.bottom-8};
+      if(document.elementFromPoint(point.x,point.y)?.closest('.page-content')!==node)
+        throw new Error('The bottom article sample must hit the vertically scrollable content column.');
+      return point;
+    });
+    await page.mouse.move(articleBottom.x,articleBottom.y);
+    await checkHint(page,false,'The bottom of a vertically scrollable article must not advertise horizontal wheel input.');
+    await checkStatus(page,'Article-bottom help must follow canvas scrollbar activity.');
+    await page.mouse.move(articlePoint.x,articlePoint.y);
     await content.evaluate(node=>{node.scrollTop=0;});await afterPaint(page);
     const verticalBefore=await read(page);
     assert.ok(await content.evaluate(node=>node.scrollHeight>node.clientHeight+1),'Choose a long article that scrolls vertically.');
@@ -340,7 +522,8 @@ export async function check({page,baseUrl,options}) {
         return point;
       });
       await afterPaint(page);await page.mouse.move(groupGap.x,groupGap.y);
-      await checkHint(page,true,'The gap inside the reading group must show the ready marker.');
+      await checkHint(page,false,'The gap inside the reading group must not show a ready marker.');
+      await checkStatus(page,'Reading-group gap help must follow canvas scrollbar activity.');
       const asideEdge=await columnEdge(page.locator('.document-aside'));
       await positionCanvas(page,asideEdge-20);await page.mouse.move(20,100);
       await page.evaluate(()=>document.querySelector('.page-shell').dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:8})));
@@ -414,6 +597,7 @@ export async function check({page,baseUrl,options}) {
         assert.equal(released.after,released.before,'Suspended wheel handling must not move the canvas through JavaScript.');
         assert.ok(!released.cursor.includes('url('),'Suspended mode must keep a native cursor.');
         await checkHint(page,false,'Native middle-button scrolling must hide the marker.');
+        await checkStatus(page,'Middle-button scrolling must keep help synchronized with canvas scrollbar activity.');
         await page.evaluate(()=>scrollTo({left:0,top:0,behavior:'instant'}));await afterPaint(page);
         const resumePoint=await gapPoint(page);await page.mouse.click(resumePoint.x,resumePoint.y);
         assert.equal((await read(page)).mode,'ready','Another click must resume normal wheel handling.');
@@ -449,6 +633,7 @@ export async function check({page,baseUrl,options}) {
     assert.equal(touch.mode,'ready','Touch input must clear mouse wheel mode.');
     assert.notEqual(touch.pointer,'mouse','Touch input must clear the mouse input marker.');
     await checkHint(page,false,'Touch input must hide the mouse-only marker.');
+    assert.equal((await checkStatus(page,'Touch input must hide mouse instructions.')).visible,false);
     const touchWheel=await page.evaluate(()=>document.querySelector('.page-shell').dispatchEvent(
       new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:120})));
     assert.equal(touchWheel,true,'Wheel conversion must require mouse pointer input.');
@@ -464,7 +649,7 @@ export async function check({page,baseUrl,options}) {
       content.style.cssText='inline-size:100px;block-size:80px;padding:0';group.replaceChildren(content);shell.replaceChildren(group);
       shell.style.cssText='inline-size:100%;min-inline-size:0;padding:0;column-gap:0';
       scrollTo({left:0,top:0,behavior:'instant'});
-    });await afterPaint(page);await page.mouse.move(40,40);
+    });await afterPaint(page);await page.mouse.move(40,await page.evaluate(()=>document.documentElement.clientHeight-8));
     const noOverflow=await page.evaluate(()=>({
       maxX:document.scrollingElement.scrollWidth-document.scrollingElement.clientWidth,
       allowed:document.querySelector('.page-content').dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:120})),
@@ -473,7 +658,17 @@ export async function check({page,baseUrl,options}) {
     assert.ok(noOverflow.maxX<=1,'The no-overflow sample must fit the viewport.');
     assert.equal(noOverflow.allowed,true,'A page without horizontal overflow must not cancel the wheel event.');
     assert.equal(noOverflow.mode,'ready','A page without horizontal overflow must not enter horizontal mode.');
-    cases.push({width,geometry,locked,markerWork,edgeX,resumed,vertical,bottom,nested,short:shortState,buttons,touch,passthrough,noOverflow});
+    await checkHint(page,false,'A page without horizontal overflow must not show the ready marker.');
+    await waitCanvasIdle(page);
+    assert.equal((await checkStatus(page,'An idle page without horizontal overflow must not show scrollbar help.')).visible,false);
+    stage=width+' print help';await visit(page,baseUrl+options.page);await enter(page);
+    await page.emulateMedia({media:'print'});
+    await checkHint(page,false,'The decorative wheel marker must not print.');
+    await checkStatus(page,'Scrollbar help must not print.');
+    await page.emulateMedia({media:'screen'});
+    assert.equal((await read(page)).mode,'locked','A print round trip must preserve the screen wheel mode.');
+    await checkStatus(page,'Returning from print must restore active scrollbar help.');
+    cases.push({width,geometry,nativeScrollbar,locked,lockedResize,markerWork,edgeX,resumed,vertical,bottom,nested,short:shortState,buttons,touch,passthrough,noOverflow});
   }
   } catch(error) {error.message=stage+': '+error.message;throw error;}
   return {page:options.page,short:options.short,cases};

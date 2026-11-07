@@ -1,8 +1,9 @@
+import { isCanvasScrollbarPoint } from './auto-scrollbar.js';
+
 export function initCanvasWheel() {
     const root = document.documentElement;
     const shell = document.querySelector('.page-shell');
     if (!shell) return;
-    const group = shell.querySelector('.reading-group');
     const rtl = root.dir === 'rtl';
     let mousePoint;
     let middleReleasePending = false;
@@ -18,19 +19,14 @@ export function initCanvasWheel() {
     document.body.appendChild(hint);
     root.dataset.canvasWheel = 'ready';
     const canvasX = () => window.visualViewport?.pageLeft ?? window.scrollX;
-    const hintTransform = () => `translate(${Math.max(0, Math.min(mousePoint.x + 12, innerWidth - 20))}px, ${Math.max(0, Math.min(mousePoint.y + 12, innerHeight - 18))}px)`;
-
-    function hideHint() {
-        if (hintFrame) cancelAnimationFrame(hintFrame);
-        hintFrame = 0;
-        if (!hint.hidden) hint.hidden = true;
-    }
+    const hintTransform = () => `translate(${Math.max(0, Math.min(mousePoint.x + 12, root.clientWidth - 20))}px, ${Math.max(0, Math.min(mousePoint.y + 12, root.clientHeight - 18))}px)`;
 
     function updateHint() {
         if (!mousePoint || document.hidden || root.dataset.canvasPointer !== 'mouse'
-            || !(root.dataset.canvasWheel === 'locked'
-                || (root.dataset.canvasWheel === 'ready' && root.hasAttribute('data-canvas-wheel-gap')))) {
-            hideHint();
+            || root.dataset.canvasWheel !== 'locked') {
+            if (hintFrame) cancelAnimationFrame(hintFrame);
+            hintFrame = 0;
+            if (!hint.hidden) hint.hidden = true;
             return;
         }
         if (hintFrame || (!hint.hidden && hintPosition === hintTransform())) return;
@@ -47,7 +43,7 @@ export function initCanvasWheel() {
         clearTimeout(snapTimer);
         middleReleasePending = false;
         if (root.dataset.canvasWheel !== 'ready') root.dataset.canvasWheel = 'ready';
-        updateGap();
+        updateHint();
     }
 
     function align(position, direction) {
@@ -75,42 +71,16 @@ export function initCanvasWheel() {
         }
     }
 
-    function updateGap() {
-        if (root.dataset.canvasWheel !== 'ready') return;
-        let gap = false;
-        const hit = root.dataset.canvasPointer === 'mouse' && mousePoint
-            && document.elementFromPoint(mousePoint.x, mousePoint.y);
-        if (hit === shell || hit === group) {
-            let previousEnd;
-            const x = rtl ? -mousePoint.x : mousePoint.x;
-            for (const column of shell.querySelectorAll('.page-column')) {
-                const rect = column.getBoundingClientRect();
-                if (!rect.width) continue;
-                const start = rtl ? -rect.right : rect.left;
-                if (previousEnd !== undefined && x >= previousEnd && x < start) {
-                    gap = true;
-                    break;
-                }
-                previousEnd = rtl ? -rect.left : rect.right;
-            }
-        }
-        root.toggleAttribute('data-canvas-wheel-gap', gap);
-        updateHint();
-    }
-
     function markMouse(event) {
         touchScroll = undefined;
         if (root.dataset.canvasPointer !== 'mouse') root.dataset.canvasPointer = 'mouse';
         mousePoint = { x: event.clientX, y: event.clientY };
-        if (root.dataset.canvasWheel === 'locked') updateHint();
-        else updateGap();
+        updateHint();
     }
 
-    window.addEventListener('scroll', updateGap, { passive: true });
     window.addEventListener('resize', () => {
         clearTimeout(snapTimer);
         touchScroll = undefined;
-        updateGap();
         updateHint();
     }, { passive: true });
     for (const viewport of [document, window.visualViewport].filter(Boolean)) {
@@ -179,7 +149,7 @@ export function initCanvasWheel() {
             // shortcut: native autoscroll state is unavailable; replace click/Escape suspension when browsers expose it.
             root.dataset.canvasWheel = 'suspended';
             middleReleasePending = true;
-            hideHint();
+            updateHint();
         } else {
             unlock();
         }
@@ -205,21 +175,23 @@ export function initCanvasWheel() {
         return true;
     }
 
-    window.addEventListener('wheel', event => {
+    function handleWheel(event) {
         clearTimeout(snapTimer);
         touchScroll = undefined;
+        const scrollbar = isCanvasScrollbarPoint(event.clientX, event.clientY);
         if (root.dataset.canvasPointer === 'touch') markMouse(event);
         // shortcut: wheel cannot distinguish a mouse from a trackpad after mouse input; use a device API if browsers add one.
         if (root.dataset.canvasPointer !== 'mouse' || root.dataset.canvasWheel === 'suspended'
-            || event.defaultPrevented || !event.cancelable
+            || event.defaultPrevented || (!event.cancelable && (!scrollbar || event.shiftKey))
             || event.buttons || event.ctrlKey || event.metaKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
         if (root.dataset.canvasWheel !== 'locked') {
-            const canvas = document.scrollingElement;
-            if (canvas.scrollWidth <= canvas.clientWidth + 1 || !canStart(event.target)) return;
+            if (root.scrollWidth <= root.clientWidth + 1 || (!scrollbar && !canStart(event.target))) return;
+            if (scrollbar) mousePoint = { x: event.clientX, y: event.clientY };
             root.dataset.canvasWheel = 'locked';
             updateHint();
         }
-        event.preventDefault();
+        // Without Shift, native track wheel input can be non-cancelable and needs horizontal conversion.
+        if (event.cancelable) event.preventDefault();
         const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE
             ? parseFloat(getComputedStyle(shell).lineHeight)
             : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? root.clientWidth : 1;
@@ -231,18 +203,24 @@ export function initCanvasWheel() {
         snapTimer = setTimeout(() => {
             if (root.dataset.canvasWheel === 'locked' && root.dataset.canvasPointer === 'mouse') align(position, direction);
         }, 180);
+    }
+
+    // Chromium forwards native scrollbar wheel input only when a passive listener is present.
+    window.addEventListener('wheel', event => {
+        if (event.cancelable) handleWheel(event);
     }, { passive: false });
+    window.addEventListener('wheel', event => {
+        if (!event.cancelable) handleWheel(event);
+    }, { passive: true });
 
     root.addEventListener('pointerleave', () => {
         mousePoint = undefined;
-        root.removeAttribute('data-canvas-wheel-gap');
-        hideHint();
+        updateHint();
     });
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) return;
         mousePoint = undefined;
-        root.removeAttribute('data-canvas-wheel-gap');
-        hideHint();
+        updateHint();
     });
     window.addEventListener('pointercancel', () => {
         mousePoint = undefined;

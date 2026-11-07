@@ -23,6 +23,7 @@ import {check as checkPrint} from '../.agents/skills/swaw-banyan/tasks/check/bro
 import {assertChoices} from '../.agents/skills/swaw-banyan/tasks/check/browser/language/choices/check.mjs';
 import {wheelCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/wheel/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
+import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),skill=path.join(root,'.agents/skills/swaw-banyan');
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/canvas-wheel');
@@ -66,6 +67,17 @@ test('wheel check validates local pages and widths before opening a browser',()=
   assert.match(helpFor(spec,'en'),/--short/);
 });
 
+test('scrollbar help uses the page language',()=>{
+  const copy=['','zh/','ar/'].map(prefix=>{
+    const html=fs.readFileSync(path.join(output,prefix,'d/wheel-long/index.html'),'utf8');
+    const blocks=extractBlocks(html,'div',tag=>tag.includes('data-canvas-wheel-status'));
+    assert.equal(blocks.length,1,'Each language must publish one scrollbar instruction.');
+    assert.ok(blocks[0].inner.trim(),'Each language must publish its scrollbar help.');return blocks[0].inner;
+  });
+  assert.equal(copy[1],'横向滚动 · 单击或按 Esc 退出');
+  assert.equal(new Set(copy).size,3,'Translated pages must not reuse another language\'s scrollbar help.');
+});
+
 for(const [name,suffix] of [['Chromium',''],['WebKit','.webkit']]) {
   test(name+' keeps static home and long articles reachable in English, Chinese and Arabic',{timeout:45000},async()=>{
     const server=await createStaticSiteServer(output);let browser;
@@ -96,7 +108,7 @@ for(const [name,suffix] of [['Chromium',''],['WebKit','.webkit']]) {
     } finally {try{await browser?.close();}finally{await server.stop();}}
   });
 
-  test(name+' checks wheel locking, native clicks, demand-driven gap markers and light edge alignment',{timeout:65000},()=>{
+  test(name+' checks wheel locking, native clicks, bottom help and light edge alignment',{timeout:65000},()=>{
     const result=cli(suffix);assert.equal(result.status,0,result.stdout+result.stderr);
   });
   test(name+' checks the same wheel behavior and canvas bounds in RTL',{timeout:65000},()=>{

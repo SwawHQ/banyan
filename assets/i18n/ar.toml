@@ -35,6 +35,9 @@ other = "لا تتوفر نسخة من هذه الصفحة باللغة {lang}. 
 [navigation_load_failed]
 other = "تعذر تحميل التنقل."
 
+[canvas_wheel_help]
+other = "تمرير أفقي · انقر أو اضغط Esc للخروج"
+
 [notFoundTitle]
 other = "الصفحة غير موجودة"
 [notFoundDesc]
