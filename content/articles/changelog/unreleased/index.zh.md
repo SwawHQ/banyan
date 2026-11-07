@@ -106,7 +106,8 @@ lastmod: 2026-11-07
 
 ## 调整
 
-- 栏目标题使用正文色并稍加粗，排序文字略小；保留标题行高、列表密度和分隔线。
+- 桌面端各列和横向画幅统一使用原生细滚动条，按钮外观跟随系统。横向滚动条与滚轮提示同步显隐，保留滚动、悬停和横向锁定行为及列间距；触屏与系统强制颜色模式使用系统默认宽度。
+- 栏目标题和正文页名使用正文色并稍加粗，排序文字略小；保留标题行高、列表密度和分隔线。第一列按 `weight` 排序后的首项增加表头线，保持原字重。自定义配色将 `--list-header-border` 定义在 `.item-list` 中。
 - 横向滚轮箭头仅在横向锁定时显示，悬停不再显示箭头或进入锁定。原生横向滚动条支持直接用滚轮横移，锁定期间保持可见；修复轨道上 Shift＋滚轮可能重复横移的问题。鼠标操作时，底部导航起始边距处的简短说明跟随滚动条显隐；提示文字带随主题变化的半透明底色，且不拦截页面操作。触屏操作不显示鼠标提示。站点界面字典需包含 `canvas_wheel_help`。
 - 浏览器检查 `nav/sort`、`palette/contrast`、`palette/roles`、`prose/layout` 和 `canvas/layout` 须显式指定 `--page`。外观和 PWA 导航来源默认使用首页。
 
@@ -204,7 +205,7 @@ lastmod: 2026-11-07
   `assets/site/`。站点直接维护 `assets/site/manifest.webmanifest.tmpl`，
   Module 只读取并执行，产物为 `/site/site.<hash>.webmanifest`；图像发布到 `/site/*`。
   完整配色由站点维护，Module 不再提供 `css/theme.css`。参考配色统一放在根 `assets/site/`。
-  默认选择 `site/theme.css`：选中与悬停同色，浅色混入前景 4%、深色 10%，采用直角和 2px 当前项起始边线；原高对比选中配色通过 `site/theme.high-contrast.css` 选择。
+  默认选择 `site/theme.css`：选中与悬停同色，浅色混入前景 4%、深色 10%，采用直角和 2px 当前项起始边线。未选中的单色列表图标使用 70% 不透明度，当前项、文字图标和彩色图片保持原样；原高对比配色通过 `site/theme.high-contrast.css` 选择。
   `page-home` 首页正文通过 `home-art` 引用 `content/_res/home-art/<主题>/` 下的隐藏叶子包。
   各语言艺术页维护场景文字和参数，包内 CSS、JS 由 `params.styles` 和 `params.scripts` 选择；
   风场正文使用 `home-art/wind/scene`，宿主首页的 `params.show_navigation` 控制第一列导航。

@@ -40,6 +40,11 @@
     border-bottom: 1px solid var(--prose-heading-border);
 }
 
+.prose > h1.column-heading {
+    color: var(--fg);
+    font-weight: 600;
+}
+
 .prose h2 {
     margin: 44px 0 44px;
 }

@@ -82,7 +82,8 @@
     line-height: var(--column-line-height);
 }
 
-.list-item.list-header {
+.list-item.list-header,
+.page-rail .item-list > .list-item:first-child {
     border-bottom: 1px solid var(--list-header-border);
 }
 

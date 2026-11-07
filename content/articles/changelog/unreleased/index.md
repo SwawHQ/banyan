@@ -126,7 +126,8 @@ lastmod: 2026-11-07
 
 ## Changed
 
-- Section headings use the body text color and a slightly heavier weight. Sort labels use a smaller font; header line height, list density and separators stay the same.
+- Desktop columns and the horizontal canvas use native thin scrollbars with system buttons. The horizontal scrollbar and wheel help appear and hide together. Scroll, hover and horizontal-lock behavior and column gaps stay the same. Touch and forced-colors modes retain the system's default width.
+- Section headings and article page titles use the body text color and a slightly heavier weight. Sort labels use a smaller font; header line height, list density and separators stay the same. The first navigation entry after `weight` sorting gains a header rule and keeps its original font weight. Custom palettes define `--list-header-border` on `.item-list`.
 - The horizontal wheel arrow appears only in locked mode; hovering does not show the arrow or enter locked mode. The wheel can pan the canvas from its native horizontal scrollbar, which stays visible while locked. Shift+wheel on the native track no longer causes duplicate horizontal movement. During mouse input, a short help line at the navigation's starting edge follows scrollbar visibility. Its text has a translucent background that follows the page theme and does not intercept page input. Touch input does not show mouse instructions. Site interface dictionaries must include `canvas_wheel_help`.
 - Browser checks `nav/sort`, `palette/contrast`, `palette/roles`, `prose/layout` and `canvas/layout` require an explicit `--page`. Appearance and PWA navigation sources default to the home page.
 
@@ -258,7 +259,8 @@ lastmod: 2026-11-07
   Complete palettes belong to root `assets/site/`; the Module no longer supplies
   `css/theme.css`. The reference site selects `site/theme.css`:
   selection and hover share a 4% foreground fill in light mode and 10% in dark mode,
-  with square corners and a 2px current-item start marker. Select `site/theme.high-contrast.css` to
+  with square corners and a 2px current-item start marker. Unselected monochrome list icons use 70% opacity;
+  current items, text icons and color images stay unchanged. Select `site/theme.high-contrast.css` to
   keep the original high-contrast selection palette. A `page-home` homepage uses `home-art` in its body
   to reference a hidden leaf bundle under `content/_res/home-art/<theme>/`.
   Translated art pages own scene copy and parameters; `params.styles` and

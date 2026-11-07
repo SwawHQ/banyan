@@ -69,7 +69,7 @@
     --item-current-ring: var(--item-current-text);
 }
 
-.list-header {
+.item-list {
     --list-header-border: color-mix(in srgb, var(--fg) 20%, transparent);
 }
 

@@ -40,7 +40,7 @@
     --item-current-ring: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
-.list-header {
+.item-list {
     --list-header-border: color-mix(in srgb, var(--fg) 20%, transparent);
 }
 

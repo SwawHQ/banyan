@@ -78,6 +78,21 @@ test('scrollbar help uses the page language',()=>{
   assert.equal(new Set(copy).size,3,'Translated pages must not reuse another language\'s scrollbar help.');
 });
 
+test('Chromium keeps forced-color scrollbars native without pixel comparisons',{timeout:15000},async()=>{
+  const server=await createStaticSiteServer(output);let browser;
+  try {
+    await server.start();const type=loadChromium();
+    browser=await type.launch({headless:true,executablePath:type.executablePath(),ignoreDefaultArgs:['--hide-scrollbars']});
+    const context=await browser.newContext({forcedColors:'active',serviceWorkers:'block'}),page=await context.newPage();
+    context.setDefaultTimeout(5000);
+    page.screenshot=()=>assert.fail('Native always-visible scrollbars must not be pixel-sampled.');
+    const result=await checkScrollbar({page,baseUrl:server.getBaseUrl(),options:{page:article,widths:'390'}});
+    assert.equal(result.cases[0].resized.supportsColor,true);
+    assert.equal(result.cases[0].resized.hidesIdle,false);
+    assert.ok(result.cases[0].canvas.hover,'Native scrollbar hover must still be checked.');
+  } finally {try{await browser?.close();}finally{await server.stop();}}
+});
+
 for(const [name,suffix] of [['Chromium',''],['WebKit','.webkit']]) {
   test(name+' keeps static home and long articles reachable in English, Chinese and Arabic',{timeout:45000},async()=>{
     const server=await createStaticSiteServer(output);let browser;

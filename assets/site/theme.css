@@ -56,6 +56,11 @@
     --item-current-marker: color-mix(in srgb, var(--fg) 55%, var(--bg));
 }
 
+:is(.page-rail, .path-column, .slot-main--collection)
+    .item-control:not(.is-current):not([aria-expanded="true"]) .item-icon :is(svg.icon, img.icon--monochrome) {
+    opacity: 0.7;
+}
+
 .item-control:is(.is-current, [aria-expanded="true"]) .icon {
     --icon-accent: currentColor;
     --icon-shade: currentColor;
@@ -66,7 +71,7 @@
     --item-current-ring: var(--item-current-text);
 }
 
-.list-header {
+.item-list {
     --list-header-border: color-mix(in srgb, var(--fg) 20%, transparent);
 }
 

@@ -92,13 +92,19 @@ export async function check({page,baseUrl,options}) {
     if(resized.supportsColor)assert.equal(canvasSettled.color,expected,'Idle must hide the canvas scrollbar again.');
     let canvasHover;
     if(!options.touch&&canvasIdle.gutter>0) {
+      const clip={x:0,y:900-canvasIdle.gutter,width,height:canvasIdle.gutter};
+      const idlePaint=resized.supportsColor&&resized.hidesIdle?await page.screenshot({clip}):null;
       await page.mouse.move(20,899);
       await page.waitForFunction(()=>document.scrollingElement.hasAttribute('data-scrollbar-hover'));
       canvasHover=await readCanvas(page);
       if(resized.supportsColor)assert.equal(canvasHover.color,'auto','Hovering the canvas scrollbar must reveal native colors.');
+      if(idlePaint)assert.equal((await page.screenshot({clip})).equals(idlePaint),false,
+        'Hovering must visibly reveal the canvas scrollbar, not only change computed styles.');
       await page.mouse.move(0,0);
       await page.waitForFunction(()=>!document.scrollingElement.hasAttribute('data-scrollbar-hover'));
       if(resized.supportsColor)assert.equal((await readCanvas(page)).color,expected,'Leaving the canvas scrollbar must restore idle colors.');
+      if(idlePaint)assert.equal((await page.screenshot({clip})).equals(idlePaint),true,
+        'Leaving the canvas scrollbar must restore its idle pixels.');
     }
     cases.push({width,resized,active,idle:settled,readingHover,canvas:{idle:canvasIdle,active:canvasActive,settled:canvasSettled,hover:canvasHover}});
   }

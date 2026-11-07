@@ -125,6 +125,12 @@ body {
 }
 
 @media (hover: hover) and (pointer: fine) and (forced-colors: none) {
+    html,
+    body,
+    .page-column {
+        scrollbar-width: thin;
+    }
+
     [data-auto-scrollbar]:not([data-scrolling]):not([data-scrollbar-hover]):not([data-canvas-wheel="locked"]) {
         scrollbar-color: transparent transparent;
     }
