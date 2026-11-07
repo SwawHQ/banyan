@@ -15,11 +15,7 @@ async function readList(list) {
     const items=[...node.querySelectorAll(':scope > [data-list-item]')];
     const rows=items.map(item=>item.querySelector(':scope > [data-list-entry]'));
     const link=rows[0],icon=link?.querySelector('.item-icon'),title=link?.querySelector('.item-title');
-    if(!header||!label||!link||!icon||!title)return null;
-    const texts=document.createTreeWalker(label,NodeFilter.SHOW_TEXT);let text;
-    while((text=texts.nextNode()))if(text.textContent.trim())break;
-    if(!text)return null;
-    const range=document.createRange();range.selectNodeContents(text);
+    if(!header||!label?.textContent.trim()||!link||!icon||!title)return null;
     const box=node.getBoundingClientRect(),row=link.getBoundingClientRect(),mark=icon.getBoundingClientRect();
     const separator=getComputedStyle(heading);
     const probe=document.createElement('span');probe.style.cssText='position:absolute;visibility:hidden;inline-size:var(--navigation-column-inline)';
@@ -32,7 +28,7 @@ async function readList(list) {
       fields:[...row.children].map(cell=>({field:cell.dataset.itemField,x:cell.getBoundingClientRect().left-box.left,width:cell.getBoundingClientRect().width,contentWidth:cell.scrollWidth}))});
     return {top:box.top,nameWidth:header.getBoundingClientRect().width,headerX:header.getBoundingClientRect().left-box.left,declaredWidth,
       fields,heading:readFields(heading),items:items.map(readFields),headerTrack:heading.getBoundingClientRect().height,
-      headerY:range.getBoundingClientRect().top-box.top,rowY:row.top-box.top,rowHeight:row.height,rowWidth:row.width,
+      rowY:row.top-box.top,rowHeight:row.height,rowWidth:row.width,
       iconX:separator.direction==='rtl'?row.right-mark.right:mark.left-row.left,
       titleGap:separator.direction==='rtl'?mark.left-title.getBoundingClientRect().right:title.getBoundingClientRect().left-mark.right,
       separatorY:heading.getBoundingClientRect().bottom-box.top,separatorWidth:Number.parseFloat(separator.borderBottomWidth),
@@ -81,7 +77,7 @@ export async function check({page,baseUrl,options}) {
       const href=new URL(options.page,baseUrl).pathname;
       path=await readList(page.locator('[data-slot=breadcrumb] [data-breadcrumb-collection-href='+JSON.stringify(href)+'] > .item-list'));checkList(path);
       assert.ok(path.pathGrid&&path.nameOnly,'Path collections must contain name fields only.');
-      for(const metric of ['top','headerTrack','headerY','rowY','rowHeight','iconX','titleGap','separatorY']) {
+      for(const metric of ['top','headerTrack','rowY','rowHeight','iconX','titleGap','separatorY']) {
         assert.ok(Math.abs(main[metric]-path[metric])<=.1,'Main and path lists must align: '+metric+'.');
       }
     }

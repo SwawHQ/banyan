@@ -91,6 +91,11 @@
     text-decoration: none;
 }
 
+.list-header [data-sort-control] {
+    font-size: 0.875rem;
+    line-height: calc(1rem * var(--column-line-height));
+}
+
 .list-sort-indicator {
     display: inline-block;
     min-width: 1.5ch;
@@ -106,7 +111,8 @@
 
 .item-list h1.list-header {
     margin: 0;
-    font-weight: 400;
+    color: var(--fg);
+    font-weight: 600;
 }
 
 .item-list .list-header a[data-sort-active="true"] {

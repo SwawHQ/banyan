@@ -18,10 +18,16 @@
     white-space: nowrap;
 }
 
-.path-column-label {
+.list-header .path-column-label {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--fg);
+    font-weight: 600;
+}
+
+.path-column-sort {
+    font-size: 0.875rem;
 }
 
 .path-column-separator,
