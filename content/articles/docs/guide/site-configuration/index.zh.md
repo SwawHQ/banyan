@@ -104,9 +104,9 @@ palette = "site/theme.css"
 
 站点自行维护完整配色，Module 不提供默认配色。
 参考站点使用根 `assets/site/theme.css`：浅色 4%、深色 10% 的选中与悬停底色，当前列表项显示起始边线。
-非当前排序箭头使用 50% 不透明度，当前箭头保持 100%；导航首项、目录表头和正文栏标题不显示底线，也不保留边框占位。此调整仅属于默认配色。
+默认配色的非当前排序箭头使用 50% 不透明度，当前箭头保持 100%。
 根 `assets/site/theme.high-contrast.css` 使用高对比选中和悬停同色、选中名称加粗及直角，文字与单色图标同步反色；设置 `palette = "site/theme.high-contrast.css"` 即可选择。
-两份配色都包含浅色和深色，不改变彩色图片。
+三套参考配色（默认、高对比度、Rose）都包含浅色和深色，不改变彩色图片。导航首项、列表头和全部 `h1` 默认无底线，也不保留边框占位；各 CSS 文件在对应变量旁提供恢复线条的注释示例。
 自定义文件如 `assets/site/theme-custom.css`，配置为 `palette = "site/theme-custom.css"`。
 修改后重新构建并部署；外观页继续在所选配色中切换跟随系统、浅色和深色。
 
@@ -116,7 +116,7 @@ palette = "site/theme.css"
 同路径文件整体替换，不按 CSS 声明合并。配色文件维护颜色角色及其浅色、深色值，条目圆角使用 `--item-radius`，表头线可指定颜色及是否占位；列表结构、动画和交互规则保留在组件中。
 `--item-current-marker` 控制当前项起始边线的颜色，设为 `transparent` 隐藏；线宽由组件固定为 2px。
 
-`.item-list` 的 `--list-header-border` 和 `.prose` 的 `--prose-heading-border` 使用完整边框声明：`none` 取消线条和占位，`1px solid transparent` 隐藏线条并保留占位，`1px solid #888` 显示线条。可在 `.prose > h1.column-heading` 中单独设置正文栏标题。
+`.item-list` 的 `--list-header-border` 和 `.prose` 的 `--prose-heading-border` 使用完整边框声明：`none` 取消线条和占位，`1px solid transparent` 隐藏线条并保留占位，`1px solid #888` 显示线条。单独定制正文栏标题线时，有目录按钮的页面在 `.document-heading` 中设置该变量，其余页面在 `.prose > h1.column-heading` 中设置。
 
 | 作用域 | 颜色用途 |
 | --- | --- |

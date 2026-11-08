@@ -40,7 +40,7 @@
     border-bottom: var(--prose-heading-border);
 }
 
-.prose > h1.column-heading {
+.prose h1.column-heading {
     color: var(--fg);
     font-weight: 600;
 }

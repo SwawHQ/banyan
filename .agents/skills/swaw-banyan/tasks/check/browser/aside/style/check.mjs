@@ -7,17 +7,36 @@ export async function check({page,baseUrl,options}) {
   await page.emulateMedia({reducedMotion:'reduce'});
   const results=[];
   const paint=locator=>locator.evaluate(node=>({color:getComputedStyle(node).color,background:getComputedStyle(node,'::before').backgroundColor,
-    ring:getComputedStyle(node,'::before').boxShadow,underline:getComputedStyle(node.querySelector('.item-title')).textDecorationThickness}));
+    ring:getComputedStyle(node,'::before').boxShadow}));
   for(const width of options.widths.split(',').map(Number)) {
     await page.setViewportSize({width,height:900});await openArticle(page,baseUrl+options.page);
     const toggle=page.locator('#document-aside-toggle'),close=page.locator('#document-aside-close');
     const spacing=await toggle.evaluate(node=>{
-      const list=document.querySelector('[data-root-navigation] .item-list'),row=list.querySelector('.item-control'),title=document.querySelector('.prose h1');
-      return {height:node.getBoundingClientRect().height,rowHeight:row.getBoundingClientRect().height,
-        gap:node.getBoundingClientRect().top-title.getBoundingClientRect().bottom,rowGap:parseFloat(getComputedStyle(list).rowGap)};
+      const row=document.querySelector('[data-root-navigation] .item-control'),title=document.querySelector('.prose h1');
+      const button=node.getBoundingClientRect(),heading=title.getBoundingClientRect(),container=node.parentElement.getBoundingClientRect();
+      const rtl=getComputedStyle(node).direction==='rtl';
+      return {height:button.height,width:button.width,rowHeight:row.getBoundingClientRect().height,
+        topGap:button.top-heading.top,endGap:rtl?button.left-container.left:container.right-button.right,
+        titleGap:rtl?heading.left-button.right:button.left-heading.right};
     });
     assert.ok(Math.abs(spacing.height-spacing.rowHeight)<0.1,'The toggle must occupy one navigation row.');
-    assert.ok(Math.abs(spacing.gap-spacing.rowGap)<0.1,'Toggle spacing must match the navigation row gap.');
+    assert.ok(Math.abs(spacing.topGap)<0.1&&Math.abs(spacing.endGap)<0.1&&spacing.titleGap>=7,
+      'The toggle must share the title row and align at its inline end without overlap.');
+    assert.ok(spacing.width>=24&&spacing.height>=24,'The icon control must retain a usable target size.');
+    assert.equal(await page.locator('.prose h1').evaluate(node=>getComputedStyle(node).marginBottom),'0px',
+      'The title must not retain the old separate tool-row spacing.');
+    const label=await page.locator('#document-aside').getAttribute('aria-label');
+    assert.ok(label);assert.equal(await toggle.getAttribute('aria-label'),label);assert.equal(await toggle.getAttribute('title'),label);
+    assert.equal(await toggle.locator('.item-icon .icon use').getAttribute('href'),'#icon-menu');
+    const title=page.locator('.prose h1'),text=await title.textContent();
+    try {
+      await title.evaluate(node=>{node.textContent+=' Long title 测试'.repeat(20);});
+      assert.ok(await toggle.evaluate(node=>{
+        const button=node.getBoundingClientRect(),heading=node.parentElement.querySelector('h1').getBoundingClientRect();
+        return heading.height>button.height&&Math.abs(button.top-heading.top)<0.1
+          &&(getComputedStyle(node).direction==='rtl'?heading.left>=button.right:heading.right<=button.left);
+      }),'Long titles must wrap without moving or overlapping the toggle.');
+    } finally {await title.evaluate((node,text)=>{node.textContent=text;},text);}
     assert.equal(await page.locator('#document-aside button').count(),1,'The aside must have one explicit close control.');
     assert.ok(await close.evaluate(node=>node.closest('.document-tools')===document.querySelector('#document-aside').lastElementChild
       &&!!(document.querySelector('.document-toc').compareDocumentPosition(node)&Node.DOCUMENT_POSITION_FOLLOWING)),
@@ -42,6 +61,13 @@ export async function check({page,baseUrl,options}) {
       const selected=page.locator('[data-root-navigation] .item-control.is-current');
       assert.equal(await selected.count(),1,'The page must have one selected root entry.');
       assert.deepEqual(await paint(toggle),await paint(selected),'The expanded toggle must reuse selected navigation styles.');
+      const icon=toggle.locator('.icon');
+      assert.equal(await icon.evaluate(node=>getComputedStyle(node).color),(await paint(toggle)).color,'The icon must inherit the control color.');
+      const visible=await toggle.screenshot({animations:'disabled'});
+      let hidden;
+      try {await icon.evaluate(node=>{node.style.visibility='hidden';});hidden=await toggle.screenshot({animations:'disabled'});}
+      finally {await icon.evaluate(node=>{node.style.removeProperty('visibility');});}
+      assert.ok(!visible.equals(hidden),'The expanded icon must remain visible above the control background.');
       assert.equal(await toggle.evaluate(node=>getComputedStyle(node).borderTopWidth),'0px');
       assert.ok(await page.evaluate(()=>{
         const edge=getComputedStyle(document.documentElement).direction==='rtl'?'right':'left';

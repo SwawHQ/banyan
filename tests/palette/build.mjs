@@ -11,6 +11,7 @@ import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/cs
 import {createStaticSiteServer} from '../../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {check as checkContrast} from '../../.agents/skills/swaw-banyan/tasks/check/browser/palette/contrast/check.mjs';
 import {check as checkRoles} from '../../.agents/skills/swaw-banyan/tasks/check/browser/palette/roles/check.mjs';
+import {check as checkAsideStyle} from '../../.agents/skills/swaw-banyan/tasks/check/browser/aside/style/check.mjs';
 
 import {fixtureEnvironment,fixtureSiteMounts} from '../_shared/hugo.mjs';
 
@@ -133,7 +134,7 @@ try {
                                 return {width:style.borderBottomWidth,style:style.borderBottomStyle,...(style.borderBottomStyle==='none'?{}:{color:style.borderBottomColor})};
                             };
                             const state = {heading:border('h1'),columnHeading:border('.column-heading'),list:border('.list-header'),root:border('.page-rail .list-item'),previous:border('.previous')};
-                            for (const value of ['1px solid transparent','none']) {
+                            for (const value of ['1px solid color-mix(in srgb, var(--fg) 20%, transparent)','1px solid transparent','none']) {
                                 fixture.querySelectorAll('.item-list').forEach(list=>list.style.setProperty('--list-header-border',value));
                                 fixture.querySelector('.column-heading').style.setProperty('--prose-heading-border',value);
                                 state[value] = [border('.list-header'),border('.page-rail .list-item'),border('.column-heading')];
@@ -142,20 +143,34 @@ try {
                             return state;
                         });
                         const none = {width:'0px',style:'none'};
-                        const visible = name === 'high-contrast' || name === 'rose';
-                        assert.deepEqual(borders.heading, name === 'site-override' ? {width:'2px',style:'dotted',color:'rgb(49, 84, 122)'} : borders.previous,
+                        assert.deepEqual(borders.heading, name === 'site-override' ? {width:'2px',style:'dotted',color:'rgb(49, 84, 122)'} : none,
                             `${engine.name()} ${name} ${mode}: the heading uses its own palette role.`);
-                        assert.deepEqual(borders.columnHeading, visible ? borders.previous : none,
-                            `${engine.name()} ${name} ${mode}: column-title rules stay separate from body-heading rules.`);
-                        assert.deepEqual(borders.list, name === 'custom' ? {width:'2px',style:'dashed',color:'rgb(156, 51, 79)'} : visible ? borders.previous : none,
+                        assert.deepEqual(borders.columnHeading,borders.heading,
+                            `${engine.name()} ${name} ${mode}: column titles inherit the h1 border unless overridden.`);
+                        assert.deepEqual(borders.list, name === 'custom' ? {width:'2px',style:'dashed',color:'rgb(156, 51, 79)'} : none,
                             `${engine.name()} ${name} ${mode}: the list header uses its own palette role.`);
                         assert.deepEqual(borders.root,borders.list,'The first navigation item follows the list border.');
+                        assert.deepEqual(borders['1px solid color-mix(in srgb, var(--fg) 20%, transparent)'],
+                            [borders.previous,borders.previous,borders.previous],'The documented value restores lines in either mode.');
                         assert.deepEqual(borders['none'],[none,none,none],'None removes both the border and its space.');
                         const transparent = {width:'1px',style:'solid',color:'rgba(0, 0, 0, 0)'};
                         assert.deepEqual(borders['1px solid transparent'],[transparent,transparent,transparent],'A transparent border retains its space.');
                         await page.screenshot({ path: path.join(work, `${engine.name()}-${name}-${mode}.png`), animations: 'disabled' });
                     }
-                    console.log(`[PASS] ${engine.name()}: ${name} light/dark palette styles and contrast`);
+                    const article='/zh/p/layout-slots/#from=articles-all';
+                    if (['configured','high-contrast','rose'].includes(name))
+                        await checkAsideStyle({page,baseUrl:server.getBaseUrl(),options:{page:article,widths:'390,1440'}});
+                    await page.goto(server.getBaseUrl()+article,{waitUntil:'load'});
+                    for (const mode of ['light','dark']) {
+                        await page.evaluate(mode=>document.documentElement.dataset.theme=mode,mode);
+                        const heading=await page.locator('.document-heading').evaluate(node=>({
+                            line:getComputedStyle(node).borderBottomWidth,style:getComputedStyle(node).borderBottomStyle,
+                            titleLine:getComputedStyle(node.querySelector('h1')).borderBottomWidth
+                        }));
+                        assert.deepEqual(heading,{line:name==='site-override'?'2px':'0px',style:name==='site-override'?'dotted':'none',titleLine:'0px'},
+                            'The title row follows the existing theme heading border without a second line.');
+                    }
+                    console.log(`[PASS] ${engine.name()}: ${name} light/dark palette styles, title row and contrast`);
                 } finally { try { if (page) await page.close(); } finally { await server.stop(); } }
             }
         } finally { await browser.close(); }

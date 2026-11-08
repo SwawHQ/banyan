@@ -41,7 +41,9 @@
 }
 
 .item-list {
-    --list-header-border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+    --list-header-border: none;
+    /* Uncomment to restore lines below list headers and the first root entry. */
+    /* --list-header-border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent); */
 }
 
 .prose {
@@ -51,7 +53,9 @@
     --prose-border-neutral: color-mix(in srgb, var(--fg) 18%, var(--bg));
 
     --prose-heading-color: var(--accent);
-    --prose-heading-border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+    --prose-heading-border: none;
+    /* Uncomment to restore lines below all h1 headings, including column titles. */
+    /* --prose-heading-border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent); */
     --prose-rule-border: color-mix(in srgb, var(--fg) 52%, var(--bg));
     --prose-deleted-color: var(--muted);
     --prose-deleted-decoration: var(--accent);
