@@ -71,23 +71,23 @@ test('header options declare column paths, widths and detailed help',{timeout:20
 
 });
 
-test('Chromium keeps a long header visible before and after a native sort click',{timeout:20000},()=>{
+test('Chromium keeps only sorting visible and retains accessible column names',{timeout:20000},()=>{
   const state=report(cli('breadcrumb/header',['--page',collection,'--column','/d/presentation/','--widths','390,1440']));
   assert.equal(state.browser,'chromium');
   for(const result of state.details.cases) {
-    assert.ok(result.initial.labelContentWidth>result.initial.labelWidth,'Fixture must exercise an ellipsized long label.');
-    assert.equal(result.initial.title,result.sorted.title);assert.notEqual(result.initial.indicator,result.sorted.indicator);
+    assert.ok(result.initial.label.startsWith('Very long collection label'),'Fixture must retain its full accessible name.');
+    assert.equal(result.initial.label,result.sorted.label);assert.notEqual(result.initial.indicator,result.sorted.indicator);
   }
   const translated=cli('breadcrumb/header',['--page','/zh/discover/tooling/devtools/','--widths','390']);
   assert.equal(translated.status,0,translated.stdout+translated.stderr);
 });
 
-test('Chromium rejects clipped controls, missing titles and spacing changed by sorting',{timeout:30000},()=>{
-  const clipped=fixture('clipped');inject(clipped,'d/presentation/child','css','.path-column-label{min-width:600px!important}');
+test('Chromium rejects clipped controls, missing accessible names and changed spacing',{timeout:30000},()=>{
+  const clipped=fixture('clipped');inject(clipped,'d/presentation/child','css','.path-column-sort{min-width:600px!important}');
   const clip=cli('breadcrumb/header',['--page',collection,'--widths','390'],clipped);assert.equal(clip.status,1);assert.match(clip.stderr,/clip the sort control/);
-  const title=fixture('title');inject(title,'d/presentation/child','js',"function removeTitle(){const label=document.querySelector('.path-column-label');if(label)label.removeAttribute('title');else requestAnimationFrame(removeTitle);}removeTitle();");
-  const missing=cli('breadcrumb/header',['--page',collection,'--widths','390'],title);assert.equal(missing.status,1);assert.match(missing.stderr,/full title/);
-  const gap=fixture('sort-gap');inject(gap,'d/presentation/child','js',"document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelector('.path-column-separator').style.marginInline='12px';});");
+  const title=fixture('title');inject(title,'d/presentation/child','js',"function removeName(){const list=document.querySelector('.item-list--path-column');if(list)list.removeAttribute('aria-label');else requestAnimationFrame(removeName);}removeName();");
+  const missing=cli('breadcrumb/header',['--page',collection,'--widths','390'],title);assert.equal(missing.status,1);assert.match(missing.stderr,/accessible name/);
+  const gap=fixture('sort-gap');inject(gap,'d/presentation/child','js',"document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))event.target.closest('[data-list-header]').querySelector('.item-field').style.paddingInlineStart='12px';});");
   const changed=cli('breadcrumb/header',['--page',collection,'--widths','390'],gap);assert.equal(changed.status,1);assert.match(changed.stderr,/retain header spacing/);
 });
 

@@ -10,38 +10,6 @@
     min-inline-size: 0;
 }
 
-/* Path-specific headers and list adaptation follow the shared collection rules. */
-.item-list--path-column .list-header > .item-field--name {
-    display: flex;
-    align-items: baseline;
-    min-width: 0;
-    white-space: nowrap;
-}
-
-.list-header .path-column-label {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--fg);
-    font-weight: 600;
-}
-
-.path-column-sort {
-    font-size: 0.875rem;
-}
-
-.path-column-separator,
-.path-column-sort {
-    flex: none;
-}
-
-.path-column-separator {
-    margin-inline: 0.24rem;
-    opacity: 0.72;
-}
-
-.path-column-label:hover,
-.path-column-label:focus-visible,
 .path-column-sort:hover,
 .path-column-sort:focus-visible {
     color: var(--link-hover);

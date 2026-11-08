@@ -585,10 +585,10 @@ try {
                 + '<span class="item-title"><bdi>' + esc(row.text) + '</bdi></span></a></div>';
             const columnHTML = (logicalPath, label, href, rows, sortable = true) =>
                 '<div class="item-list item-list--path-column" data-navigation-column="' + esc(logicalPath)
+                + '" role="group" aria-label="' + esc(label) + '" data-collection-href="' + esc(href)
                 + '" data-sort-variant="' + (sortable ? 'section' : '') + '" data-default-sort="' + (sortable ? 'date-desc' : '') + '">'
                 + '<div class="list-item list-header list-header--path" data-list-header><span class="item-field item-field--name" data-item-field="name">'
-                + '<a class="path-column-label" href="' + esc(href) + '" title="' + esc(label) + '"><bdi>' + esc(label) + '</bdi></a>'
-                + (sortable ? '<span class="path-column-separator" aria-hidden="true">·</span><a class="path-column-sort" data-collection-sort-toggle="true" href="'
+                + (sortable ? '<a class="path-column-sort" data-collection-sort-toggle="true" href="'
                     + esc(href) + '"><span class="path-sort-label">Date</span><span class="list-sort-indicator" data-sort-indicator aria-hidden="true">↓</span></a>' : '')
                 + '</span></div>' + rows.map(rowHTML).join('') + '</div>';
             const fragments = {
@@ -663,6 +663,16 @@ try {
             check(document.activeElement === focused, 'Sorting must retain focus when rows move.');
             check(nav.children[1].querySelector('[data-list-entry]').title === 'Alpha', 'Sorting reorders cloned row elements.');
             check(selected.hash.includes('from=discover/windows'), 'Row links inherit source state.');
+            const parentLink = nav.children[0].querySelector('[aria-current=page]');
+            check(parentLink.hash === '#sorts=_,name-asc', 'Parent links retain the child sort even when the parent column did not refresh.');
+            parentLink.search = '?keep=%2f+value';
+            parentLink.hash += '&anchor=chapter';
+            setLocation('/zh/p/contract-beta/#from=discover/windows&sorts=date-asc,name-asc');
+            sort.refreshBreadcrumbCollectionColumns('/discover/');
+            check(parentLink.search === '?keep=%2f+value' && fragment.readAnchor(parentLink.hash) === 'chapter', 'Parent link sorting preserves unrelated query and fragment fields.');
+            check(fragment.readFieldValue(parentLink.hash, 'sorts') === 'date-asc,name-asc', 'Parent links retain independently selected ancestor and child sorts.');
+            const rootLink = document.querySelector('[data-root-href="/zh/discover/"]');
+            check(rootLink.hash === '#sorts=date-asc', 'Root entry retains its column sort and truncates descendant slots.');
 
             const updated = structuredClone(manifest);updated.columns['/discover/windows/'] = hashes.updated;
             document.body.dataset.navigation = JSON.stringify(updated);
@@ -671,6 +681,8 @@ try {
             check(unloaded.payload === null, 'A changed hash must not reuse the old template.');
             const badFragments = [
                 '', '<p>Not a column</p>', fragments.discover,
+                fragments.windows.replace('aria-label="Windows"', ''),
+                fragments.windows.replace('role="group"', ''),
                 fragments.windows + fragments.notes, fragments.windows + 'unexpected text',
                 fragments.windows.replace('<div class=', '<script></script><div class='),
                 fragments.windows.replace('data-kind="page"', 'onpointerenter="alert(1)" data-kind="page"'),
@@ -728,6 +740,7 @@ try {
                 && fragment.readAnchor(location.hash) === 'chapter', 'Invalid source cleanup must retain queries, sorting and anchors.');
             same([...nav.children].map(node => node.dataset.navigationColumn), ['/notes/'], 'Invalid membership restores the default columns.');
             check(!document.documentElement.hasAttribute('data-entry-breadcrumb-pending'), 'Initialization clears pending state.');
+            check(rootLink.getAttribute('href') === '/zh/discover/', 'Leaving a lineage restores its native root entry URL.');
             setLocation('/zh/p/contract-beta/#from=missing&anchor=chapter');startPending();await entry.initializeBreadcrumb();
             check(fragment.readFieldValue(location.hash, 'from') === '' && fragment.readAnchor(location.hash) === 'chapter', 'Missing terminal references preserve anchors.');
 

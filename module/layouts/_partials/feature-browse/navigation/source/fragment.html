@@ -9,10 +9,9 @@
 {{- else if eq $config.view "directory" -}}
   {{- $fields = $fields | append "date" "count" -}}
 {{- end -}}
-<div class="item-list item-list--path-column" data-navigation-column="{{ $source.logicalPath }}" data-sort-variant="{{ $source.sortVariant }}" data-default-sort="{{ $source.defaultSort }}">
+<div class="item-list item-list--path-column" role="group" aria-label="{{ $source.label }}" data-collection-href="{{ $source.href }}" data-navigation-column="{{ $source.logicalPath }}" data-sort-variant="{{ $source.sortVariant }}" data-default-sort="{{ $source.defaultSort }}">
   <div class="list-item list-header list-header--path" data-list-header>
     <span class="item-field item-field--name" data-item-field="name">
-      <a class="path-column-label" href="{{ $source.href }}" title="{{ $source.label }}"><bdi>{{ $source.label }}</bdi></a>
       {{- if $source.sortVariant -}}
         {{- $copy := partial "feature-browse/collection/sort/copy.html" $page -}}
         {{- $sort := split $source.defaultSort "-" -}}
@@ -21,8 +20,9 @@
         {{- $next := cond (eq $order "asc") "desc" "asc" -}}
         {{- $label := index $copy.fields $field -}}
         {{- $action := replace (index $copy.actions $next) "{field}" $label -}}
-        <span class="path-column-separator" aria-hidden="true">·</span>
         <a class="path-column-sort" data-collection-sort-toggle="true" href="{{ $source.href }}" title="{{ $action }}" aria-label="{{ $action }}"><span class="path-sort-label">{{ $label }}</span><span class="list-sort-indicator" data-sort-indicator aria-hidden="true">{{ cond (eq $order "asc") "↑" "↓" }}</span></a>
+      {{- else -}}
+        <bdi>{{ $source.label }}</bdi>
       {{- end -}}
     </span>
   </div>

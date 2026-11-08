@@ -114,8 +114,8 @@ function fixtureNavigation(resources='/site/navigation/') {
 }
 const navigationHtml=value=>'<html lang=en><link rel=canonical href="https://example.test/article/"><body data-navigation="'+encodeNavigation(value)+'"></body></html>';
 function fragment({logicalPath='/shared/',href='/shared/',label='Shared',sortVariant='section',defaultSort='date-desc',rows=[]}={}) {
-  return '<div class="item-list item-list--path-column" data-navigation-column="'+escape(logicalPath)+'" data-sort-variant="'+sortVariant+'" data-default-sort="'+defaultSort+'">'+
-    '<div class="list-item list-header list-header--path" data-list-header><a class="path-column-label" href="'+escape(href)+'"><bdi>'+escape(label)+'</bdi></a>'+
+  return '<div class="item-list item-list--path-column" role="group" aria-label="'+escape(label)+'" data-collection-href="'+escape(href)+'" data-navigation-column="'+escape(logicalPath)+'" data-sort-variant="'+sortVariant+'" data-default-sort="'+defaultSort+'">'+
+    '<div class="list-item list-header list-header--path" data-list-header>'+
     (sortVariant?'<a class="path-column-sort" data-collection-sort-toggle="true" href="'+escape(href)+'"><span class="path-sort-label">Date</span><span data-sort-indicator>↓</span></a>':'')+'</div>'+
     rows.map(row=>'<div class="list-item" data-list-item data-kind="'+escape(row.kind||'page')+'"'+
       Object.entries(row).filter(([key])=>key.startsWith('sort_')).map(([key,value])=>' data-'+key.replaceAll('_','-')+'="'+escape(value)+'"').join('')+'>'+
@@ -235,6 +235,8 @@ test('navigation fragments preserve literal entities in labels, rows, icons and 
 test('navigation fragments reject malformed roots, active markup and unsafe links',()=>{
   const valid=fragment({rows:[{href:'/one/',text:'One'}]});
   for(const content of [valid+valid,'<!DOCTYPE html><html>'+valid+'</html>',valid.replace('data-sort-variant="section"','data-sort-variant="unknown"'),
+    valid.replace('aria-label="Shared"',''),valid.replace('role="group"',''),
+    valid.replace('data-collection-href="/shared/"','data-collection-href="https://outside.test/"'),
     valid.replace('data-default-sort="date-desc"','data-default-sort="price-desc"'),valid.replace('data-list-header',''),
     valid.replace('<span class="path-sort-label">Date</span>',''),valid.replace('data-sort-indicator',''),
     valid.replace('href="#icon-file"','href="/same-origin.svg#file"'),

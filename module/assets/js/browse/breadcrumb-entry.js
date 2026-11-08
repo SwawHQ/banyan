@@ -2,7 +2,7 @@ import { normalizePathname, applyFromPathToUrl, readCurrentFromPath } from './na
 import { loadBreadcrumbColumn, readBreadcrumbColumns, readBreadcrumbColumn } from './breadcrumb-source.js';
 import { readNavigation, readActiveNavigationRoute } from './entry-source.js';
 import { preparePathColumns, fillPathColumn } from './path-render.js';
-import { refreshBreadcrumbCollectionColumns } from './breadcrumb-column-sort.js';
+import { refreshBreadcrumbCollectionColumns, refreshBreadcrumbParentLinks } from './breadcrumb-column-sort.js';
 import { refreshRootSelection } from './root-navigation.js';
 import { refreshMainCollectionNavigation } from './collection-navigation.js';
 
@@ -23,6 +23,7 @@ export async function initializeBreadcrumb() {
             } finally {
                 if (request === initialization && !slots[index].querySelector('[data-list-header]')) {
                     fillPathColumn(slots[index], { ...column, ...readBreadcrumbColumn(column.key) }, readNavigation()?.error || '', lineage);
+                    refreshBreadcrumbParentLinks();
                 }
             }
         }));

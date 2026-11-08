@@ -10,6 +10,7 @@ import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/
 import {urlCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/settings/url/options.mjs';
 import {historyCommand,pageList} from '../.agents/skills/swaw-banyan/tasks/check/browser/settings/history/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
+import {afterBrowseScript} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/_tests/fixtures.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-settings-tests');
 const article='/d/settings-fixture/#from=all&sorts=name-asc&anchor=details';
@@ -104,7 +105,7 @@ test('URL checks detect stripped queries, fragments and caller history state',{t
 
 test('history checks reject rewritten root links and duplicated visits',{timeout:15000},()=>{
   for(const [name,code,message] of [
-    ['rewritten-links','document.addEventListener("DOMContentLoaded",()=>{for(const link of document.querySelectorAll("[data-root-href]"))link.href+="?return=wrong";});',/ordinary URLs/],
+    ['rewritten-links',afterBrowseScript('for(const link of document.querySelectorAll("[data-root-href]"))link.href+="?return=wrong";'),/ordinary URLs/],
     ['duplicate-history','history.pushState(history.state,"",location.href);',/one native history entry/]
   ]) {
     const broken=fixture(name);probe(broken,name,code,[name==='rewritten-links'?'d/settings-fixture':'prefs/one']);

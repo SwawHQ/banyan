@@ -96,7 +96,7 @@
     text-decoration: none;
 }
 
-.list-header [data-sort-control] {
+.list-header :is([data-sort-control], .path-column-sort) {
     font-size: 0.875rem;
     line-height: calc(1rem * var(--column-line-height));
 }
@@ -107,7 +107,7 @@
     text-align: center;
 }
 
-.item-list:not(.item-list--path-column) .list-header a {
+.item-list .list-header a {
     display: block;
     width: 100%;
     margin: 0;

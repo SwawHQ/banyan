@@ -16,13 +16,8 @@ export const readCanvas=async page=>({...await page.evaluate(()=>{
   if(probe?.shifts)for(const entry of probe.shifts.takeRecords())if(!entry.hadRecentInput)probe.layoutShift+=entry.value;
   const collection=main.classList.contains('slot-main--collection');
   const pathContent=columns.map(column=>{
-    const header=column.querySelector('.list-header--path'),label=header?.querySelector('.path-column-label');
-    const separator=header?.querySelector('.path-column-separator'),sort=header?.querySelector('.path-column-sort');
     return {href:column.dataset.breadcrumbCollectionHref,
-      rows:[...column.querySelectorAll('[data-list-entry]')].map(link=>({path:new URL(link.href).pathname,text:link.textContent.trim()})),
-      header:label&&separator&&sort?{label:label.textContent.trim(),
-        labelToSeparator:rect(separator).x-rect(label).right,
-        separatorToSort:rect(sort).x-rect(separator).right}:null};
+      rows:[...column.querySelectorAll('[data-list-entry]')].map(link=>({path:new URL(link.href).pathname,text:link.textContent.trim()}))};
   });
   return {direction,main:rect(main),nav:rect(nav),columns:columns.map(rect),mainDocumentX:rect(main).x+direction*(view?.pageLeft??scrollX),
     canvasOffsetX:direction*(view?.pageLeft??scrollX)||0,canvasOffsetY:view?.pageTop??scrollY,readingY:content.scrollTop,

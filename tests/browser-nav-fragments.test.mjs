@@ -12,6 +12,8 @@ import {loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/ru
 import {visit} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
 import {afterPaint,waitForBrowse} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/viewport.mjs';
 import {readNavigationFragment} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {readColumns} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/_shared/page.mjs';
+import {assertRootLinks} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/_shared/links.mjs';
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
@@ -617,6 +619,39 @@ test('external navigation handles slow, stale, failed and offline column request
     }
     return {urlWrites:0};
   }});
+  scenarios.push({id:'parent-entries-retain-expanded-column-sorts',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){
+    const route=article+'#from=articles/category1&sorts=name-desc,date-asc';
+    await page.goto(baseUrl+route,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    await page.locator('[data-slot=breadcrumb] [data-collection-sort-toggle]').first().click();await afterPaint(page);
+    await assertRootLinks(page);
+    const columns=await readColumns(page),url=page.url();
+    assert.equal(columns.length,2);assert.deepEqual(columns.map(column=>column.field),['Name','Updated']);
+    assert.deepEqual(columns.map(column=>column.indicator),['↑','↑']);
+    for(const column of columns) {
+      const parent=page.locator('[data-root-navigation] a[data-root-href], [data-slot=breadcrumb] a[data-list-entry]')
+        .filter({has:page.locator('bdi')});
+      const hrefs=await parent.evaluateAll(nodes=>nodes.map(node=>node.href));
+      const href=hrefs.find(href=>new URL(href).pathname===new URL(column.href,baseUrl).pathname);
+      assert.ok(href,'Each expanded column has a parent entry.');
+      const tab=await context.newPage();
+      try {
+        await tab.goto(href,{waitUntil:'load'});await waitForBrowse(tab);await afterPaint(tab);
+        assert.equal(await tab.locator('main [data-sort-active=true] [data-sort-indicator]').textContent(),column.indicator);
+        assert.deepEqual(await tab.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname)),
+          column.rows.map(row=>row.key),'Opening the parent entry in a new tab preserves the exact row order.');
+      } finally {await tab.close();}
+      await parent.evaluateAll((nodes,href)=>nodes.find(node=>node.href===href).click(),href);
+      await page.waitForURL(href);await waitForBrowse(page);await afterPaint(page);
+      assert.deepEqual(await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname)),column.rows.map(row=>row.key));
+      await page.goto(url,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    }
+    await page.evaluate(()=>location.hash='from=articles-all&sorts=name-desc');await waitForBrowse(page);await afterPaint(page);
+    await page.waitForFunction(()=>document.querySelector('[data-slot=breadcrumb] > .path-column')?.dataset.navigationColumn==='/articles-all/');
+    assert.equal(await page.locator('[data-root-href="/articles/"]').getAttribute('href'),'/articles/','The old root entry must lose the previous lineage sort.');
+    assert.equal(await page.locator('[data-root-href="/articles-all/"]').getAttribute('href'),'/articles-all/#sorts=name-desc');
+    await assertRootLinks(page);
+    return {columns:columns.length,newTabs:true,sourceSwitch:true};
+  }});
   scenarios.push({id:'mixed-defaults-and-native-sort-links',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){
     const collection='/plain/names/';
     await page.goto(baseUrl+collection,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
@@ -641,15 +676,15 @@ test('external navigation handles slow, stale, failed and offline column request
     }finally{await extra.close();}
     await parentToggle.click();await afterPaint(page);
     assert.equal(new URL(page.url()).hash,'#sorts=date-asc,name-desc');
-    const labelHref=await parent.locator('.path-column-label').getAttribute('href');
-    assert.equal(new URL(labelHref,baseUrl).pathname,'/plain/');
-    assert.equal(new URL(labelHref,baseUrl).hash,'#sorts=date-asc','Returning to an ancestor must truncate the main slot.');
-    const labelPage=await context.newPage();
+    const parentHref=await page.locator('[data-root-navigation] [data-root-href="/plain/"]').getAttribute('href');
+    assert.equal(new URL(parentHref,baseUrl).pathname,'/plain/');
+    assert.equal(new URL(parentHref,baseUrl).hash,'#sorts=date-asc','Returning to an ancestor must truncate the main slot.');
+    const parentPage=await context.newPage();
     try{
-      await labelPage.goto(new URL(labelHref,baseUrl).href,{waitUntil:'load'});await waitForBrowse(labelPage);await afterPaint(labelPage);
-      assert.equal(await labelPage.locator('main [data-sort-active=true]').getAttribute('data-sort-field'),'date');
-      assert.equal(await labelPage.locator('main [data-sort-active=true] [data-sort-indicator]').textContent(),'↑');
-    }finally{await labelPage.close();}
+      await parentPage.goto(new URL(parentHref,baseUrl).href,{waitUntil:'load'});await waitForBrowse(parentPage);await afterPaint(parentPage);
+      assert.equal(await parentPage.locator('main [data-sort-active=true]').getAttribute('data-sort-field'),'date');
+      assert.equal(await parentPage.locator('main [data-sort-active=true] [data-sort-indicator]').textContent(),'↑');
+    }finally{await parentPage.close();}
     const articleHref=await page.locator('main [data-list-entry]').first().getAttribute('href');
     assert.equal(new URLSearchParams(new URL(articleHref,baseUrl).hash.slice(1)).get('sorts'),'date-asc,name-desc');
     assert.equal(new URLSearchParams(new URL(articleHref,baseUrl).hash.slice(1)).has('sort'),false);
@@ -662,7 +697,7 @@ test('external navigation handles slow, stale, failed and offline column request
     assert.equal(new URL(page.url()).hash,'#sorts=name-asc','A main default must not erase the same token used as a non-default parent sort.');
     const links=await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>node.href));
     for(const href of links)assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).get('sorts'),'name-asc');
-    return {toggleHref,labelHref,articleHref};
+    return {toggleHref,parentHref,articleHref};
   }});
   scenarios.push(...['/articles/category1/','/articles/category1/nested/'].map((route,index)=>({
     id:'collection-path-text-before-controller-'+(index?'deep':'single'),kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
@@ -836,6 +871,7 @@ test('external navigation handles slow, stale, failed and offline column request
       'collection-sorting-keeps-source-free-urls','root-only-source-selection-needs-no-fragments',
       'column-404-recovers','column-malformed-recovers','column-nested-item-recovers',
       'default-links-and-sort-toggles-stay-clean','default-sort-links-are-compact','loading-keeps-supplied-sort-url','mixed-defaults-and-native-sort-links',
+      'parent-entries-retain-expanded-column-sorts',
       'collection-path-text-before-controller-single','collection-path-text-before-controller-deep',
       'collection-head-failure-is-consumed-once-and-retried']});
   checkResult(webkit);

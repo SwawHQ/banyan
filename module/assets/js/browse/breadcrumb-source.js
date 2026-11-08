@@ -37,11 +37,12 @@ function readColumnFragment(text, logicalPath) {
         }
     }
     const header = list.firstElementChild;
-    const label = header?.querySelector('a.path-column-label[href]');
+    const label = list.getAttribute('aria-label')?.trim();
+    const href = list.dataset.collectionHref;
     const sortVariant = list.dataset.sortVariant || '';
     const defaultSort = list.dataset.defaultSort || '';
-    if (!header?.matches('div[data-list-header]') || !label?.textContent.trim()
-        || !isLocalLink(label.getAttribute('href'))
+    if (!header?.matches('div[data-list-header]') || !label || list.getAttribute('role') !== 'group'
+        || !isLocalLink(href)
         || (sortVariant && (!SORT_VARIANTS[sortVariant]
             || !SORT_VARIANTS[sortVariant].fields[defaultSort.split('-')[0]]
             || !/^[a-z]+-(?:asc|desc)$/.test(defaultSort)))
@@ -69,8 +70,7 @@ function readColumnFragment(text, logicalPath) {
     if (list.querySelectorAll('[data-list-item]').length !== rows.length
         || list.querySelectorAll('[data-list-entry]').length !== rows.length
         || new Set(rows.map(row => row.href)).size !== rows.length) invalid();
-    return { provider: 'collection', logicalPath, label: label.textContent.trim(),
-        href: label.getAttribute('href'), sortVariant, defaultSort, rows, template };
+    return { provider: 'collection', logicalPath, label, href, sortVariant, defaultSort, rows, template };
 }
 
 export function readBreadcrumbColumn(logicalPath) {

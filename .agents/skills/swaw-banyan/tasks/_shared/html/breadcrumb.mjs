@@ -44,16 +44,15 @@ export function readNavigationFragment(text,{siteURL='https://output.invalid/'}=
   const header=extractBlocks(root.inner,'div')[0];
   if(!header||root.inner.slice(0,header.index).trim()||!/\sdata-list-header(?:\s|=|>)/i.test(header.open))
     throw new Error('Navigation fragment needs its header first');
-  const labels=extractBlocks(header.inner,'a',tag=>hasClassToken(tag,'path-column-label'));
+  const href=extractTagAttribute(root.open,'data-collection-href'),label=extractTagAttribute(root.open,'aria-label').trim();
+  if(!label||extractTagAttribute(root.open,'role')!=='group'||!localLink(href,siteURL))
+    throw new Error('Invalid navigation fragment label or collection URL');
   if(sortVariant) {
     const controls=extractBlocks(header.inner,'a',tag=>/\sdata-collection-sort-toggle(?:\s|=|>)/i.test(tag));
     if(controls.length!==1||!hasClassToken(controls[0].inner,'path-sort-label')
       ||!extractStartTags(controls[0].inner,'span').some(tag=>/\sdata-sort-indicator(?:\s|=|>)/i.test(tag)))
       throw new Error('Navigation fragment needs a complete sort control');
   }
-  if(labels.length!==1)throw new Error('Navigation fragment needs one column label');
-  const href=extractTagAttribute(labels[0].open,'href'),label=textContent(labels[0].inner);
-  if(!label||!localLink(href,siteURL))throw new Error('Invalid navigation fragment label');
   const seen=new Set();
   const rows=extractBlocks(root.inner,'div',tag=>/\sdata-list-item(?:\s|=|>)/i.test(tag)).map(block=>{
     const links=extractBlocks(block.inner,'a',tag=>/\sdata-list-entry(?:\s|=|>)/i.test(tag));

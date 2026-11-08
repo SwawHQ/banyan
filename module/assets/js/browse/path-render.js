@@ -1,6 +1,5 @@
 import {
     buildBreadcrumbRowHref,
-    buildCollectionPageHref,
     buildCollectionSortToggleHref,
     getCollectionSortState,
     readRequestedSortState,
@@ -12,9 +11,6 @@ import { readCollectionSortCopy, formatSortAction } from './collection-sort-copy
 
 export function updateCollectionColumnHeader(header, source, state, lineageLogicalPath) {
     const copy = readCollectionSortCopy();
-    header.querySelector('.path-column-label').href = buildCollectionPageHref(
-        source.href, source.logicalPath, state.sortVariant, state.defaultSort
-    );
     const toggle = header.querySelector('[data-collection-sort-toggle]');
     toggle.href = buildCollectionSortToggleHref(source, window.location.href, lineageLogicalPath);
     const fieldLabel = copy.fields[state.field] || state.field;

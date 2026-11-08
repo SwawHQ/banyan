@@ -1,5 +1,6 @@
 import {
     applyBreadcrumbRowSort,
+    buildCollectionPageHref,
     buildCollectionSortToggleHref,
     getCollectionSortState,
     readRequestedSortState,
@@ -21,9 +22,23 @@ function isPlainPrimaryClick(event, link) {
         && !link.hasAttribute('download') && (!link.target || link.target === '_self');
 }
 
+export function refreshBreadcrumbParentLinks() {
+    const sources = new Map(readBreadcrumbColumns().filter(column => column.source).map(({ source }) => [
+        normalizePathname(new URL(source.href, window.location.origin).pathname), source,
+    ]));
+    document.querySelectorAll('[data-root-navigation] a[data-root-href], [data-slot="breadcrumb"] a[data-list-entry][href]').forEach(link => {
+        // Root entries keep a native URL so leaving a lineage also clears its sort.
+        const href = link.dataset.rootHref || link.getAttribute('href');
+        const source = sources.get(normalizePathname(new URL(href, window.location.origin).pathname));
+        if (!source && !link.dataset.rootHref) return;
+        const next = source
+            ? buildCollectionPageHref(href, source.logicalPath, source.sortVariant, source.defaultSort) : href;
+        if (link.getAttribute('href') !== next) link.setAttribute('href', next);
+    });
+}
+
 export function refreshBreadcrumbCollectionColumns(changedLogicalPath = '') {
     const wrappers = [...document.querySelectorAll('[data-slot="breadcrumb"] [data-collection-column]')];
-    if (!wrappers.length) return;
     const columns = readBreadcrumbColumns();
     const lineageLogicalPath = visibleLineage(columns);
     const changedIndex = columns.findIndex(column => column.key === changedLogicalPath);
@@ -73,6 +88,7 @@ export function refreshBreadcrumbCollectionColumns(changedLogicalPath = '') {
         }
         if (state) updateCollectionColumnHeader(header, source, state, lineageLogicalPath);
     });
+    refreshBreadcrumbParentLinks();
 }
 
 export function initBreadcrumbColumnSort() {

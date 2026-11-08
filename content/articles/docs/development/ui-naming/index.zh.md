@@ -115,11 +115,11 @@ layout: page-collection-directory-name-only
 
 第一列、共享导航片段、主列表和选择列表在构建时共用 `system-ui/list/render.html` 与 `item.html`。前者输出 `.item-list` 和表头外层；后者输出完整的 `.list-item`，包含名称控件及功能模板已生成的字段 HTML。`item-link.html` 与 `item-button.html` 输出原生控件，均调用 `item-content.html` 输出图标和文字。浏览器动态路径列继续按同一 DOM 协议绘制。
 
-每条使用独立 Grid，表头使用相同的字段宽度和间距。表头下边框读取主题的完整 `--list-header-border` 声明；设为 `none` 时不保留占位。路径列只显示名称及排序控件，主集合列表按布局显示其他字段。`source/fragment.html` 输出 `.list-header--path`；`.item-list--path-column` 保留父列表头的名称与排序控件布局。选择列表的标题仍使用 `h1.list-header`。
+每条使用独立 Grid，表头使用相同的字段宽度和间距。表头下边框读取主题的完整 `--list-header-border` 声明；设为 `none` 时不保留占位。可排序的路径列表头只显示排序字段和箭头，主集合列表按布局显示其他字段。`source/fragment.html` 输出 `.list-header--path`；`.item-list--path-column` 用 `role="group"` 和 `aria-label` 保留栏目名称。选择列表的标题仍使用 `h1.list-header`。
 
 条目字段使用 `.item-field`，名称、日期等用 `--name`、`--date` 等修饰。链接和按钮共用 `.item-control`，图标与标题使用 `.item-icon`、`.item-title`，数量单位使用 `.item-count-unit`。名称控件自身就是名称字段，不再套一层名称容器。当前选中使用 `.is-current`，控件外观与状态变量使用 `--item-*`，颜色值由所选配色文件提供。
 
-`.list-header` 只表示列表头，排序箭头使用 `.list-sort-indicator`。普通文章和窄面板标题见 [公共页面列](#公共页面列)。路径列头内部使用 `.path-column-label`、`.path-column-sort`、`.path-column-separator` 和 `.path-sort-label`。
+`.list-header` 只表示列表头，排序箭头使用 `.list-sort-indicator`。普通文章和窄面板标题见 [公共页面列](#公共页面列)。路径列头内部使用 `.path-column-sort` 和 `.path-sort-label`，字号与行高复用公共排序控件规则。
 
 名称使用 `--navigation-column-inline`；其他两列使用 `--item-date-inline`、`--item-count-inline`，默认分别为 `5.6rem`、`3.8rem`。目录表显示更新时间及数量／大小，汇总表显示更新时间及大小，产品表显示版本及价格。三列表的 `--item-field-gap` 为 `0.25rem`；`--list-field-tracks` 定义轨道，`--list-inline-size` 定义总宽度。长值在字段内截断，完整值保留在提示中。
 

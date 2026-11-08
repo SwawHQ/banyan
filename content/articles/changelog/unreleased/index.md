@@ -199,7 +199,9 @@ lastmod: 2026-11-08
   sorts and trailing default slots; keep `_` for default positions before another sort.
   Remove the separate `sort` field without reading or migrating it.
   Main-list sorting refreshes path-column links so new tabs retain
-  the latest order. Back and Forward restore the source and each column's sorting.
+  the latest order. Path-column headers show only the sort field and direction.
+  Matching parent entries, including root entries, retain the expanded column's current sort.
+  Back and Forward restore the source and each column's sorting.
   Sorting category and aggregate lists no longer adds a
   redundant `from`; article links retain their required non-default source.
   Remove `navigation-state-default.toml`;
