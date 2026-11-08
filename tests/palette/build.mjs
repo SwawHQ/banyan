@@ -66,14 +66,15 @@ try {
     const explicit = build('explicit', paletteConfig(JSON.stringify(` ${palettePath} `)));
     assert.deepEqual(pageCss(explicit), pageCss(normal), 'Whitespace around a palette path does not change its CSS.');
     const highContrast = build('high-contrast', paletteConfig('"site/theme.high-contrast.css"'));
+    const rose = build('rose', paletteConfig('"site/theme.rose.css"'));
     assert.notEqual(pageCss(highContrast).href, pageCss(normal).href, 'Site-owned high-contrast and default palettes produce separate CSS bundles.');
 
     const overlay = path.join(work, 'assets');
     const customPath = `__palette-test/${path.basename(work)}.css`;
     write(path.join(overlay, palettePath), paletteCss.replace(/--accent:\s*[^;]+;/, '--accent: #123456;')
-        .replace(/--prose-heading-border:\s*[^;]+;/, '--prose-heading-border: #31547a;'));
+        .replace(/--prose-heading-border:\s*[^;]+;/, '--prose-heading-border: 2px dotted #31547a;'));
     write(path.join(overlay, customPath), paletteCss.replace(/--accent:\s*[^;]+;/, '--accent: #234567;')
-        .replace(/--list-header-border:\s*[^;]+;/, '--list-header-border: #9c334f;'));
+        .replace(/--list-header-border:\s*[^;]+;/, '--list-header-border: 2px dashed #9c334f;'));
     write(path.join(overlay, 'invalid.txt'), 'This is not CSS.');
     const mounts = fixtureSiteMounts+`[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "assets"\n`;
     const overridden = build('site-override', paletteConfig(JSON.stringify(palettePath)) + mounts);
@@ -99,7 +100,7 @@ try {
     for (const engine of [loadChromium(), loadWebkit()]) {
         const browser = await engine.launch({executablePath:engine.executablePath()});
         try {
-            for (const [name, output] of [['configured', normal], ['high-contrast', highContrast], ['site-override', overridden], ['custom', custom]]) {
+            for (const [name, output] of [['configured', normal], ['high-contrast', highContrast], ['rose', rose], ['site-override', overridden], ['custom', custom]]) {
                 const server = await createStaticSiteServer(output);
                 await server.start();
                 let page;
@@ -121,20 +122,37 @@ try {
                         await page.evaluate(mode => document.documentElement.dataset.theme = mode, mode);
                         const borders = await page.evaluate(() => {
                             const fixture = document.createElement('div');
-                            fixture.innerHTML = '<div class="prose"><h1>Heading</h1></div>'
+                            fixture.innerHTML = '<div class="prose"><h1>Heading</h1><h1 class="column-heading">Column heading</h1></div>'
                                 + '<div class="item-list"><div class="list-item list-header">List header</div></div>'
-                                + '<span></span>';
+                                + '<div class="page-rail"><div class="item-list"><div class="list-item">First navigation item</div></div></div>'
+                                + '<span class="previous"></span>';
                             fixture.lastElementChild.style.borderBottom = '1px solid color-mix(in srgb,var(--fg) 20%,transparent)';
                             document.body.append(fixture);
-                            const border = selector => getComputedStyle(fixture.querySelector(selector)).borderBottomColor;
-                            const colors = {heading:border('h1'),list:border('.list-header'),previous:border('span')};
+                            const border = selector => {
+                                const style=getComputedStyle(fixture.querySelector(selector));
+                                return {width:style.borderBottomWidth,style:style.borderBottomStyle,...(style.borderBottomStyle==='none'?{}:{color:style.borderBottomColor})};
+                            };
+                            const state = {heading:border('h1'),columnHeading:border('.column-heading'),list:border('.list-header'),root:border('.page-rail .list-item'),previous:border('.previous')};
+                            for (const value of ['1px solid transparent','none']) {
+                                fixture.querySelectorAll('.item-list').forEach(list=>list.style.setProperty('--list-header-border',value));
+                                fixture.querySelector('.column-heading').style.setProperty('--prose-heading-border',value);
+                                state[value] = [border('.list-header'),border('.page-rail .list-item'),border('.column-heading')];
+                            }
                             fixture.remove();
-                            return colors;
+                            return state;
                         });
-                        assert.equal(borders.heading, name === 'site-override' ? 'rgb(49, 84, 122)' : borders.previous,
+                        const none = {width:'0px',style:'none'};
+                        const visible = name === 'high-contrast' || name === 'rose';
+                        assert.deepEqual(borders.heading, name === 'site-override' ? {width:'2px',style:'dotted',color:'rgb(49, 84, 122)'} : borders.previous,
                             `${engine.name()} ${name} ${mode}: the heading uses its own palette role.`);
-                        assert.equal(borders.list, name === 'custom' ? 'rgb(156, 51, 79)' : borders.previous,
+                        assert.deepEqual(borders.columnHeading, visible ? borders.previous : none,
+                            `${engine.name()} ${name} ${mode}: column-title rules stay separate from body-heading rules.`);
+                        assert.deepEqual(borders.list, name === 'custom' ? {width:'2px',style:'dashed',color:'rgb(156, 51, 79)'} : visible ? borders.previous : none,
                             `${engine.name()} ${name} ${mode}: the list header uses its own palette role.`);
+                        assert.deepEqual(borders.root,borders.list,'The first navigation item follows the list border.');
+                        assert.deepEqual(borders['none'],[none,none,none],'None removes both the border and its space.');
+                        const transparent = {width:'1px',style:'solid',color:'rgba(0, 0, 0, 0)'};
+                        assert.deepEqual(borders['1px solid transparent'],[transparent,transparent,transparent],'A transparent border retains its space.');
                         await page.screenshot({ path: path.join(work, `${engine.name()}-${name}-${mode}.png`), animations: 'disabled' });
                     }
                     console.log(`[PASS] ${engine.name()}: ${name} light/dark palette styles and contrast`);

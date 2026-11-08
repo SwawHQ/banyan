@@ -115,7 +115,7 @@ layout: page-collection-directory-name-only
 
 第一列、共享导航片段、主列表和选择列表在构建时共用 `system-ui/list/render.html` 与 `item.html`。前者输出 `.item-list` 和表头外层；后者输出完整的 `.list-item`，包含名称控件及功能模板已生成的字段 HTML。`item-link.html` 与 `item-button.html` 输出原生控件，均调用 `item-content.html` 输出图标和文字。浏览器动态路径列继续按同一 DOM 协议绘制。
 
-每条使用独立 Grid，表头使用相同的字段宽度和间距，分隔线是表头自身的下边框。路径列只显示名称及排序控件，主集合列表按布局显示其他字段。`source/fragment.html` 输出 `.list-header--path`；`.item-list--path-column` 保留父列表头的名称与排序控件布局。选择列表的标题仍使用 `h1.list-header`。
+每条使用独立 Grid，表头使用相同的字段宽度和间距。表头下边框读取主题的完整 `--list-header-border` 声明；设为 `none` 时不保留占位。路径列只显示名称及排序控件，主集合列表按布局显示其他字段。`source/fragment.html` 输出 `.list-header--path`；`.item-list--path-column` 保留父列表头的名称与排序控件布局。选择列表的标题仍使用 `h1.list-header`。
 
 条目字段使用 `.item-field`，名称、日期等用 `--name`、`--date` 等修饰。链接和按钮共用 `.item-control`，图标与标题使用 `.item-icon`、`.item-title`，数量单位使用 `.item-count-unit`。名称控件自身就是名称字段，不再套一层名称容器。当前选中使用 `.is-current`，控件外观与状态变量使用 `--item-*`，颜色值由所选配色文件提供。
 

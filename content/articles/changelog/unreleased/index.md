@@ -128,7 +128,7 @@ lastmod: 2026-11-08
 
 - Collection pages load their parent navigation sooner, reducing the empty-column interval. Main content does not wait for navigation to finish loading.
 - Desktop columns and the horizontal canvas use native thin scrollbars with system buttons. The horizontal scrollbar and wheel help appear and hide together. Scroll, hover and horizontal-lock behavior and column gaps stay the same. Touch and forced-colors modes retain the system's default width.
-- Section headings and article page titles use the body text color and a slightly heavier weight. Sort labels and secondary fields, including dates and sizes, use 87.5% of the base font size and scale with it. Header line height, list density and separators stay the same. The first navigation entry after `weight` sorting gains a header rule and keeps its original font weight. Custom palettes define `--list-header-border` on `.item-list`.
+- Section headings and article page titles use the body text color and a slightly heavier weight. Sort labels and secondary fields, including dates and sizes, use 87.5% of the base font size and scale with it. Name headers in the current list and path-column headers use a `0.3em` start indent based on the header container's font size. Sort arrows stay after their labels. Text line height and ordinary list density stay the same. The first navigation entry after `weight` sorting uses the palette's header rule and keeps its original font weight. Custom palettes define `--list-header-border` on `.item-list`.
 - The horizontal wheel arrow appears only in locked mode; hovering does not show the arrow or enter locked mode. The wheel can pan the canvas from its native horizontal scrollbar, which stays visible while locked. Shift+wheel on the native track no longer causes duplicate horizontal movement. During mouse input, a short help line at the navigation's starting edge follows scrollbar visibility. Its text has a translucent background that follows the page theme and does not intercept page input. Touch input does not show mouse instructions. Site interface dictionaries must include `canvas_wheel_help`.
 - Browser checks `nav/sort`, `palette/contrast`, `palette/roles`, `prose/layout` and `canvas/layout` require an explicit `--page`. Appearance and PWA navigation sources default to the home page.
 
@@ -261,7 +261,10 @@ lastmod: 2026-11-08
   `css/theme.css`. The reference site selects `site/theme.css`:
   selection and hover share a 4% foreground fill in light mode and 10% in dark mode,
   with square corners and a 2px current-item start marker. Unselected monochrome list icons use 70% opacity;
-  current items, text icons and color images stay unchanged. Select `site/theme.high-contrast.css` to
+  current items, text icons and color images stay unchanged. Non-current sort arrows use 50% opacity;
+  the current sort arrow stays at 100%. Rules below the first navigation item, list headers and
+  article column titles are removed with their border space. Body headings, body separators and other palettes stay unchanged.
+  Select `site/theme.high-contrast.css` to
   use the same high-contrast fill for selection and hover, with inverted text and monochrome icons,
   700-weight selected names and square item corners.
   A `page-home` homepage uses `home-art` in its body
@@ -328,9 +331,9 @@ lastmod: 2026-11-08
 - Cloudflare `_headers` generation rejects header names starting with `#`,
   preventing them from being silently treated as comments.
 - Article structured data remains available when visible metadata is disabled.
-- Custom palettes control article-title and list-header borders independently,
+- Custom palettes control complete article-title and list-header borders independently,
   while reference palettes retain their current appearance.
-  Site-owned palettes must define `--list-header-border` in `.list-header`.
+  `--list-header-border` on `.item-list` and `--prose-heading-border` on `.prose` now use complete declarations such as `1px solid #888`. Use `none` to remove the line and its space, or `1px solid transparent` to retain the space. Update color-only values in custom palettes.
 - Invalid saved theme preferences follow the system theme from the first paint.
 - Commands can reuse a prepared Python environment concurrently without installation-lock errors
   and accept uv's Python aliases within the managed installation directory.

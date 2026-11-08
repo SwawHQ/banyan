@@ -83,7 +83,7 @@
 }
 
 .item-list {
-    --list-header-border: color-mix(in srgb, var(--fg) 20%, transparent);
+    --list-header-border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
 }
 
 .prose {
@@ -93,7 +93,7 @@
     --prose-border-neutral: color-mix(in srgb, var(--fg) 12%, var(--bg));
 
     --prose-heading-color: var(--accent);
-    --prose-heading-border: color-mix(in srgb, var(--fg) 20%, transparent);
+    --prose-heading-border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
     --prose-rule-border: color-mix(in srgb, var(--fg) 24%, var(--bg));
     --prose-deleted-color: var(--muted);
     --prose-deleted-decoration: var(--accent);

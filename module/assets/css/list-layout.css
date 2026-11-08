@@ -82,9 +82,13 @@
     line-height: var(--column-line-height);
 }
 
+.list-header > .item-field--name {
+    padding-inline-start: 0.3em;
+}
+
 .list-item.list-header,
 .page-rail .item-list > .list-item:first-child {
-    border-bottom: 1px solid var(--list-header-border);
+    border-bottom: var(--list-header-border);
 }
 
 .list-header a {

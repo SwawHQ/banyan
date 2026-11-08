@@ -72,7 +72,11 @@
 }
 
 .item-list {
-    --list-header-border: color-mix(in srgb, var(--fg) 20%, transparent);
+    --list-header-border: none;
+}
+
+[data-sort-active="false"] .list-sort-indicator {
+    opacity: 0.5;
 }
 
 .prose {
@@ -82,7 +86,7 @@
     --prose-border-neutral: color-mix(in srgb, var(--fg) 12%, var(--bg));
 
     --prose-heading-color: var(--accent);
-    --prose-heading-border: color-mix(in srgb, var(--fg) 20%, transparent);
+    --prose-heading-border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
     --prose-rule-border: color-mix(in srgb, var(--fg) 24%, var(--bg));
     --prose-deleted-color: var(--muted);
     --prose-deleted-decoration: var(--accent);
@@ -147,6 +151,10 @@
     --code-token-comment: #969696;
     --code-token-keyword: #C6C6C6;
     --code-token-type: #B6B6B6;
+}
+
+.prose > h1.column-heading {
+    --prose-heading-border: none;
 }
 
 .page-home {
