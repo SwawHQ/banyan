@@ -3,7 +3,7 @@ title: Unreleased
 url: p/unreleased/
 description: Unreleased changes to the Banyan theme and Skill.
 date: 2026-11-06
-lastmod: 2026-11-07
+lastmod: 2026-11-08
 ---
 
 ## Added
@@ -297,8 +297,8 @@ lastmod: 2026-11-07
   history keep native behavior. The first visit does not receive extra cache warmup.
   Remove the `update_check_interval` and `update_visibility_throttle` settings.
   Publish content versions at the fixed `sw-version.json` URL, so content-only
-  releases do not change `sw.js`. The SW checks in the background after a successful
-  navigation response. `sw.content_check_interval` sets the minimum
+  releases do not change `sw.js`. The SW starts an independent background check
+  on navigation. `sw.content_check_interval` sets the minimum
   interval in minutes, with a default of 5. A new content version switches caches
   and removes old content caches without reloading the current page;
   fingerprinted resource caches remain shared across versions. Waiting programs
@@ -306,6 +306,8 @@ lastmod: 2026-11-07
   activation. Re-enabling restores the content version; reinstalling the same
   program refreshes its offline pages. Activation preserves newer offline pages
   cached during the waiting period and fills missing paths from prepared pages.
+  An updated program resets the content-check time on activation, so the next
+  page navigation checks the version without waiting for the previous interval.
 - List dates and date sorting use `lastmod`, then `date`. Git commits and
   filesystem times do not change editorial dates.
 - List fields keep fixed widths from first paint. Long values are clipped without

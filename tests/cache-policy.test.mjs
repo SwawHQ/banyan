@@ -527,15 +527,19 @@ test('visited navigation fragments stays offline without warming unused source c
 test('off rules also exclude offline-page preparation and fallback during program updates',async()=>{
   const policy='[[routes]]\npath = "/*"\nsw.bucket = "versioned"\n'+
     '[[routes]]\npath = "/*offline/"\nsw.bucket = "off"\n';
-  const {listeners,requests}=cachedWorker(passed(build('offline-off',policy)),request=>{
+  const runtime=cachedWorker(passed(build('offline-off',policy)),request=>{
     if(new URL(request.url).pathname==='/sw-version.json')return Response.json('v-fixture');
     throw new TypeError('Offline');
   },{self:{registration:{active:{},addEventListener(){}}}},new Map([['sw-content-state',new Map()]]));
+  const {listeners,requests}=runtime;
   let installed;listeners.install({waitUntil:promise=>{installed=promise;}});await installed;
   assert.equal(requests.length,1,'Installation only fetches the content version when offline pages are disabled.');
   let activated;listeners.activate({waitUntil:promise=>{activated=promise;}});await activated;
-  assert.equal((await dispatch(listeners,requestFor('/uncached/',true))).status,503);
-  assert.equal(requests.length,2,'Disabled offline pages must not be fetched through fallback.');
+  const failed=await navigation(runtime,'/uncached/');await failed.done;
+  assert.equal(failed.response.status,503);
+  assert.equal(versionRequests(runtime).length,2,'Navigation must check the version after program activation.');
+  assert.deepEqual(requests.filter(request=>new URL(request.url).pathname!=='/sw-version.json')
+    .map(request=>new URL(request.url).pathname),['/uncached/'],'Disabled offline pages must not be fetched through fallback.');
 });
 
 test('offline navigation uses the configured default language before the built-in uncached response',async()=>{
@@ -752,11 +756,13 @@ test('program installation cancels in-flight checks and a waiting program permit
   assert.equal(runtime.registration.waiting,waiting);
 });
 
-test('program installation stages offline pages without touching an active commit; restart activates offline into the final version',async()=>{
+test('program activation keeps the final content caches and resets the next background check across restart',async()=>{
   const runtime=contentRuntime(),url='https://example.test/sw-version.json';
   runtime.stores.set('nav-html-v-one',new Map());
-  runtime.stores.set('nav-html-v-two',new Map());
-  runtime.stores.set('asset-versioned-v-two',new Map());
+  const pages=new Map([['https://example.test/cached/',new Response('Cached page',{headers:{'Content-Type':'text/html'}})]]);
+  const assets=new Map();
+  runtime.stores.set('nav-html-v-two',pages);
+  runtime.stores.set('asset-versioned-v-two',assets);
   runtime.stores.set('sw-program-offline-another-install',new Map());
   const before=await runtime.probe.readContentState();
   let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
@@ -771,10 +777,26 @@ test('program installation stages offline pages without touching an active commi
   let activated;restarted.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
   assert.equal(restarted.requests.length,0,'Activation must not wait on the network.');
   assert.equal(restarted.probe.currentGeneration.version,'v-two');
+  assert.deepEqual(await restarted.probe.readContentState(),{version:'v-two',lastAttemptAt:0});
+  assert.equal(runtime.stores.get('nav-html-v-two'),pages);
+  assert.equal(runtime.stores.get('asset-versioned-v-two'),assets);
   assert.equal(runtime.stores.has(runtime.probe.PROGRAM_OFFLINE_CACHE),false);
   assert.ok(runtime.stores.has('sw-program-offline-another-install'),'Another program stage must survive activation.');
-  const response=await dispatch(restarted.listeners,requestFor('/unvisited-after-program-update/',true));
-  assert.equal(response.ok,true);assert.match(await response.text(),/v-two/);
+  let release;
+  const resumed=contentRuntime({stores:runtime.stores,clock:runtime.clock,respond:request=>
+    new URL(request.url).pathname==='/sw-version.json'?new Promise(resolve=>{release=()=>resolve(Response.json('v-three'));}):undefined});
+  resumed.control.version='v-three';
+  await resumed.probe.getCurrentGeneration();
+  assert.deepEqual(await resumed.probe.readContentState(),{version:'v-two',lastAttemptAt:0},'Restart must retain the pending check.');
+  const [cached,miss]=await Promise.all([navigation(resumed),navigation(resumed,'/other/')]);
+  assert.equal(await cached.response.text(),'Cached page');
+  assert.match(await miss.response.text(),/v-three/,'A pending version check must not block an uncached navigation.');
+  assert.equal(versionRequests(resumed).length,1,'Concurrent navigations must share the first post-upgrade check.');
+  assert.equal(resumed.probe.currentGeneration.version,'v-two');
+  release();await Promise.all([cached.done,miss.done]);
+  assert.deepEqual(await resumed.probe.readContentState(),{version:'v-three',lastAttemptAt:runtime.clock.Date.now()});
+  const next=await navigation(resumed);await next.done;
+  assert.equal(versionRequests(resumed).length,1,'Completed checks must restore the configured interval.');
 });
 
 test('program activation preserves newer content and fills missing offline pages after a waiting-period commit',async()=>{
@@ -791,7 +813,7 @@ test('program activation preserves newer content and fills missing offline pages
     const restarted=contentRuntime({stores:runtime.stores,clock:runtime.clock});restarted.control.fail=true;
     let activated;restarted.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
     assert.equal(restarted.requests.length,0,'Activation must use prepared data without network requests.');
-    assert.deepEqual(await restarted.probe.readContentState(),state,'Activation must retain the active program\'s final content state.');
+    assert.deepEqual(await restarted.probe.readContentState(),{...state,lastAttemptAt:0},'Activation must retain the final version and make its next check eligible.');
     for(const prefix of ['','ar/']){
       const response=await dispatch(restarted.listeners,requestFor('/'+prefix+'uncached-after-activation/',true));
       assert.match(await response.text(),/v-three/,'Prepared pages must not replace newer offline responses.');
@@ -820,7 +842,7 @@ test('missing or invalid content state is staged and initialized offline on acti
     let activated;restarted.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
     assert.equal(restarted.requests.length,0,'Bootstrap activation must use only prepared data.');
     assert.equal(restarted.probe.currentGeneration.version,'v-two');
-    assert.deepEqual(await restarted.probe.readContentState(),{version:'v-two',lastAttemptAt:runtime.clock.Date.now()});
+    assert.deepEqual(await restarted.probe.readContentState(),{version:'v-two',lastAttemptAt:0});
     assert.equal(runtime.stores.has('nav-html-obsolete'),false);
     assert.equal(runtime.stores.has(runtime.probe.PROGRAM_OFFLINE_CACHE),false);
     const response=dispatch(restarted.listeners,requestFor('/unvisited-after-enable/',true));
@@ -846,7 +868,7 @@ test('bootstrap staging does not overwrite a concurrent active content commit',a
   const restarted=contentRuntime({stores:runtime.stores,clock:runtime.clock});restarted.control.fail=true;
   let activated;restarted.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
   assert.equal(restarted.requests.length,0);assert.equal(restarted.probe.currentGeneration.version,'v-final');
-  assert.deepEqual(await restarted.probe.readContentState(),finalState);
+  assert.deepEqual(await restarted.probe.readContentState(),{...finalState,lastAttemptAt:0});
   assert.equal(runtime.stores.has('nav-html-v-bootstrap'),false);
 });
 
@@ -880,12 +902,16 @@ test('first installation publishes content before activation and removes a stage
   runtime.stores.set('sw-program-offline-another-install',new Map());
   let installed;runtime.listeners.install({waitUntil:task=>{installed=task;}});await installed;
   assert.equal(runtime.probe.currentGeneration.version,'v-two','First installation must prepare its initial content generation.');
-  assert.equal((await runtime.probe.readContentState()).version,'v-two');
+  const state=await runtime.probe.readContentState();
+  assert.deepEqual(state,{version:'v-two',lastAttemptAt:runtime.clock.Date.now()});
   assert.equal(runtime.stores.has(stage),false);
   assert.ok(runtime.stores.has('sw-program-offline-another-install'));
   runtime.control.fail=true;
   let activated;runtime.listeners.activate({waitUntil:task=>{activated=task;}});await activated;
-  assert.match(await (await dispatch(runtime.listeners,requestFor('/after-unregister-reinstall/',true))).text(),/v-two/);
+  assert.deepEqual(await runtime.probe.readContentState(),state,'First activation must retain its completed install check.');
+  const first=await navigation(runtime,'/after-unregister-reinstall/');await first.done;
+  assert.match(await first.response.text(),/v-two/);
+  assert.equal(versionRequests(runtime).length,1,'First-install navigation must not repeat the install check.');
 });
 
 test('bootstrap JSON failures reject installation without publishing content state',async()=>{

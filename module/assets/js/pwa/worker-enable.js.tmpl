@@ -548,7 +548,7 @@ async function restoreProgramOffline(generation) {
     const stateResponse = await cache.match(CONTENT_VERSION_URL);
     const preparedState = stateResponse ? await stateResponse.json() : null;
     if (!isValidContentVersion(preparedState?.version)) throw new Error('Program activation needs a content version.');
-    const bootstrapState = generation ? null : preparedState;
+    const bootstrap = !generation;
     if (!generation) generation = await openGeneration(preparedState.version);
     const pages = await Promise.all(getOfflineFallbackUrls().filter((url) =>
         getMatchingRoute(new URL(url).pathname).bucket === 'versioned').map(async (url) => {
@@ -562,10 +562,10 @@ async function restoreProgramOffline(generation) {
             && isCacheableHtmlResponse(await generation.navigationCache.match(request))) continue;
         await generation.navigationCache.put(request, response);
     }
-    if (bootstrapState) {
-        lastAttemptAt = Number.isFinite(bootstrapState.lastAttemptAt) && bootstrapState.lastAttemptAt > 0
-            ? bootstrapState.lastAttemptAt : 0;
-        await saveContentState(generation.version, lastAttemptAt);
+    // Check on the next navigation without adding network work to activation.
+    lastAttemptAt = 0;
+    await saveContentState(generation.version, lastAttemptAt);
+    if (bootstrap) {
         currentGeneration = generation;
         generationPromise = Promise.resolve(generation);
         await cleanupVersionedCaches(generation);
