@@ -49,6 +49,7 @@
       {{- partial "feature-browse/collection/prefetch.html" (dict
         "page" . "columns_by_href" $navigation.columns_by_href
         "has_path_columns" $navigation.has_path_columns "runtime" $navigation.runtime
+        "navigation" $navigation.data
       ) -}}
     {{- end -}}
     {{- with .Params.robots }}

@@ -506,8 +506,7 @@ test('DCL and restored from/sorts paths gate every shared candidate',{timeout:30
         release();await page.waitForLoadState('load');await page.unroute('**/prefetch-blocker.js');
         await page.waitForFunction(()=>window.banyanPrefetchState&&window.banyanPrefetchState.reason!=='selecting');
         assert.equal((await runtimeState(page)).ready,true);
-        assert.equal(await page.evaluate(()=>document.documentElement.hasAttribute('data-entry-breadcrumb-pending')||
-          document.documentElement.hasAttribute('data-breadcrumb-sort-pending')),false);
+        assert.equal(await page.evaluate(()=>document.documentElement.hasAttribute('data-entry-breadcrumb-pending')),false);
         if(route.endsWith('#sorts=_,_,name-desc')) {
           const order=await page.locator('main [data-list-entry][href]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname)
             .filter(href=>/^\/d\/prefetch-scopes\/child\/(one|two)\/$/.test(href)));

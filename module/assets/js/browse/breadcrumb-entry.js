@@ -12,8 +12,6 @@ export async function initializeBreadcrumb() {
     const request = ++initialization;
     const html = document.documentElement;
     const entryPending = html.getAttribute('data-entry-breadcrumb-pending') === 'true';
-    const sortPending = html.getAttribute('data-breadcrumb-sort-pending') === 'true';
-    const result = { entryRendered: false, sortRendered: false };
     const renderColumns = async () => {
         const columns = readBreadcrumbColumns();
         const slots = preparePathColumns(columns);
@@ -28,10 +26,9 @@ export async function initializeBreadcrumb() {
                 }
             }
         }));
-        result.entryRendered = entryPending;
     };
     try {
-        if (!document.querySelector('[data-slot="breadcrumb"]')) return result;
+        if (!document.querySelector('[data-slot="breadcrumb"]')) return;
         const route = readActiveNavigationRoute();
         const requested = readCurrentFromPath();
         if (requested && !route.from) {
@@ -41,7 +38,7 @@ export async function initializeBreadcrumb() {
         }
         await renderColumns();
         // A later source selection owns the DOM, even if this request finishes last.
-        if (request !== initialization) return { ...result, stale: true };
+        if (request !== initialization) return;
         const terminal = route.from ? readBreadcrumbColumn(route.from).payload : null;
         const pathname = normalizePathname(window.location.pathname);
         const invalid = terminal && !terminal.rows.some(row => row.kind === 'page'
@@ -51,16 +48,11 @@ export async function initializeBreadcrumb() {
             applyFromPathToUrl(url, '');
             window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
             await renderColumns();
-            if (request !== initialization) return { ...result, stale: true };
+            if (request !== initialization) return;
             refreshRootSelection();
         }
         refreshMainCollectionNavigation();
-        result.sortRendered = sortPending;
     } finally {
-        if (request === initialization) {
-            if (entryPending) html.removeAttribute('data-entry-breadcrumb-pending');
-            if (sortPending) html.removeAttribute('data-breadcrumb-sort-pending');
-        }
+        if (request === initialization && entryPending) html.removeAttribute('data-entry-breadcrumb-pending');
     }
-    return result;
 }

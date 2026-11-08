@@ -1,3 +1,8 @@
+{{- range $path, $hash := .navigation.columns -}}
+  {{- if strings.HasPrefix $.navigation.default $path -}}
+<meta name="banyan-navigation-fragment" content="{{ $.navigation.resources }}{{ $hash }}.txt">
+  {{- end -}}
+{{- end -}}
 {{- $column := index .columns_by_href .page.RelPermalink | default dict -}}
 {{- if not $column -}}
   {{- $column = (partial "feature-browse/navigation/source/page-model.html" (dict "page" .page)).currentColumn -}}

@@ -664,6 +664,82 @@ test('external navigation handles slow, stale, failed and offline column request
     for(const href of links)assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).get('sorts'),'name-asc');
     return {toggleHref,labelHref,articleHref};
   }});
+  scenarios.push(...['/articles/category1/','/articles/category1/nested/'].map((route,index)=>({
+    id:'collection-path-text-before-controller-'+(index?'deep':'single'),kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
+    let release,heldScripts=0;const gate=new Promise(resolve=>{release=resolve;}),requests=[],errors=[];
+    page.on('pageerror',error=>errors.push(error.message));
+    page.on('request',request=>{const url=fragmentPath(request);if(url)requests.push(url);});
+    await page.addInitScript(()=>{
+      window.navigationTextReads=[];
+      const text=Response.prototype.text;
+      Response.prototype.text=async function(){
+        const body=await text.call(this);
+        if(this.url&&new URL(this.url).pathname.startsWith('/site/navigation/'))window.navigationTextReads.push(new URL(this.url).pathname);
+        return body;
+      };
+    });
+    await page.route('**/*',async route=>{
+      if(route.request().resourceType()==='script'){heldScripts++;await gate;}
+      await route.continue();
+    });
+    try{
+      const depth=route.split('/').filter(Boolean).length;
+      await page.goto(baseUrl+route+'#sorts='+Array(depth).fill('name-desc').join(','),{waitUntil:'commit'});
+      await page.locator('main').waitFor({state:'attached'});
+      const expected=await defaultData(page),next=await page.locator('head link[rel=prefetch]').getAttribute('href');
+      assert.equal(expected.paths.length,depth-1,'Every ancestor must have its own visible path column.');
+      assert.equal(publishedColumns.get(next),route,'The next-page prefetch must remain separate from the visible parent columns.');
+      await page.waitForFunction(urls=>urls.every(url=>window.navigationTextReads?.includes(url)),expected.urls);
+      assert.ok(heldScripts>0,'The controller must still be held when the head startup reads its parent fragments.');
+      const hints=await page.locator('head meta[name=banyan-navigation-fragment]').evaluateAll(nodes=>nodes.map(node=>new URL(node.content,location.href).pathname));
+      assert.deepEqual(hints.sort(),expected.urls.sort(),'Early fragment hints must select only the visible parent columns.');
+      assert.deepEqual(requests.filter(url=>url!==next).sort(),expected.urls.sort(),'Each visible parent must load once, independently of the next-page prefetch.');
+      assert.equal(await page.locator('[data-slot=breadcrumb] [data-list-entry]').count(),0,'Reading fragments must not bypass runtime validation and rendering.');
+      assert.equal(await page.evaluate(()=>document.documentElement.hasAttribute('data-entry-breadcrumb-pending')),true);
+      release();await page.waitForLoadState('load');await waitForBrowse(page);await afterPaint(page);
+      const ready=await snapshot(page);
+      assert.deepEqual(ready.columns.map(column=>column.href),expected.hrefs);
+      assert.deepEqual(requests.filter(url=>url!==next).sort(),expected.urls.sort(),'The controller must reuse the successful head requests.');
+      assert.deepEqual(await page.evaluate(()=>window.navigationTextReads.slice().sort()),expected.urls.sort(),'The controller must reuse the text without reading each body twice.');
+      assert.equal(await page.locator('.path-column [aria-current=page]').count(),expected.paths.length);
+      assert.deepEqual(await page.locator('.path-column [data-sort-indicator]').allTextContents(),expected.paths.map(()=> '↓'),'Every parent column must retain its requested sort state.');
+      assert.equal(await page.locator('main [data-sort-control][data-sort-active=true]').getAttribute('data-sort-field'),'name','The main column must retain its independent requested sort.');
+      assert.deepEqual(errors,[],'Early response completion must not cause unhandled failures.');
+      return {columns:expected.urls.length,heldScripts};
+    }finally{release();}
+  }})));
+  scenarios.push({id:'collection-head-failure-is-consumed-once-and-retried',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
+    let release,attempts=0,failing=true;const gate=new Promise(resolve=>{release=resolve;}),errors=[];
+    page.on('pageerror',error=>errors.push(error.message));
+    await page.route('**/*',async route=>{
+      if(route.request().resourceType()==='script')await gate;
+      if(fragmentLogicalPath(route.request())==='/articles/'){
+        attempts++;
+        if(failing)return route.fulfill({status:404,contentType:'text/plain',body:'Missing fragment'});
+      }
+      await route.continue();
+    });
+    try{
+      const failed=page.waitForResponse(response=>fragmentLogicalPath(response.request())==='/articles/');
+      await page.goto(baseUrl+'/articles/category1/',{waitUntil:'commit'});
+      const response=await failed;assert.equal(response.status(),404);await response.finished();
+      await page.locator('main').waitFor({state:'attached'});await afterPaint(page);
+      assert.equal(attempts,1,'The head startup must attempt its parent fragment before external scripts run.');
+      assert.deepEqual(errors,[],'The early rejection must remain handled while the controller is held.');
+      release();await page.waitForLoadState('load');await waitForBrowse(page);
+      const column=page.locator('.path-column[data-navigation-column="/articles/"]');
+      assert.notEqual(await column.getAttribute('data-navigation-failed'),null);
+      assert.equal(attempts,1,'The controller must consume the head failure without an automatic duplicate request.');
+      failing=false;
+      await page.evaluate(()=>{location.hash='sorts=name-desc,name-desc';});
+      await page.waitForFunction(()=>!document.querySelector('.path-column[data-navigation-column="/articles/"]').hasAttribute('data-navigation-failed'));
+      await waitForBrowse(page);
+      assert.ok(await column.locator('[data-list-entry]').count());
+      assert.equal(attempts,2,'A later state change must retry the consumed failed request once.');
+      assert.deepEqual(errors,[],'Consuming and retrying the head failure must not cause an unhandled rejection.');
+      return {attempts};
+    }finally{release();}
+  }});
   for(const worker of [false,true])scenarios.push({id:'native-column-prefetch-'+(worker?'sw':'http'),kind:'single',serviceWorkers:worker?'allow':'block',async run({page,baseUrl}){
     if(worker){await page.goto(baseUrl+'/',{waitUntil:'load'});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));}
     const warmed=page.waitForResponse(response=>fragmentLogicalPath(response.request())==='/articles/category1/');
@@ -759,6 +835,8 @@ test('external navigation handles slow, stale, failed and offline column request
       'missing-terminal-skips-candidate-request','existing-ancestor-validates-before-default',
       'collection-sorting-keeps-source-free-urls','root-only-source-selection-needs-no-fragments',
       'column-404-recovers','column-malformed-recovers','column-nested-item-recovers',
-      'default-links-and-sort-toggles-stay-clean','default-sort-links-are-compact','loading-keeps-supplied-sort-url','mixed-defaults-and-native-sort-links']});
+      'default-links-and-sort-toggles-stay-clean','default-sort-links-are-compact','loading-keeps-supplied-sort-url','mixed-defaults-and-native-sort-links',
+      'collection-path-text-before-controller-single','collection-path-text-before-controller-deep',
+      'collection-head-failure-is-consumed-once-and-retried']});
   checkResult(webkit);
 });

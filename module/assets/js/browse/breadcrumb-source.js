@@ -1,6 +1,7 @@
 import { normalizeFromPath } from './navigation-state.js';
 import { readNavigation, readActiveNavigationRoute } from './entry-source.js';
 import { SORT_VARIANTS } from './sort-policy.js';
+import { breadcrumbRequests, requestBreadcrumbText } from './breadcrumb-request.js';
 
 const loadedColumns = new Map();
 const loadingColumns = new Map();
@@ -95,18 +96,13 @@ export async function loadBreadcrumbColumn(column) {
     if (!key) throw new Error('Missing navigation resource');
     if (loadedColumns.get(key)?.logicalPath === column.key) return;
     const url = new URL(key, window.location.href);
-    if (!/^https?:$/.test(url.protocol) || url.origin !== window.location.origin) throw new Error('Navigation data must be same-origin');
     if (!loadingColumns.has(key)) {
         const task = (async () => {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), 8000);
             try {
-                const response = await fetch(url.href, { signal: controller.signal, credentials: 'same-origin' });
-                if (!response.ok) throw new Error('Navigation data request failed');
-                const payload = readColumnFragment(await response.text(), column.key);
+                const payload = readColumnFragment(await requestBreadcrumbText(url), column.key);
                 loadedColumns.set(key, payload);
             } finally {
-                clearTimeout(timer);
+                breadcrumbRequests().delete(url.href);
                 loadingColumns.delete(key);
             }
         })();

@@ -220,9 +220,9 @@ test(name+' opening rejects wrong roots, sibling order, ancestor selection and s
     const broken=fixture('opening-'+id+'-'+name);
     const settled=['siblings','ancestor','sort'].includes(id);
     script(broken,settled?`const fail=()=>{${code}};const html=document.documentElement;
-      const pending=()=>html.hasAttribute('data-entry-breadcrumb-pending')||html.hasAttribute('data-breadcrumb-sort-pending');
+      const pending=()=>html.hasAttribute('data-entry-breadcrumb-pending');
       if(pending()){const observer=new MutationObserver(()=>{if(!pending()){observer.disconnect();fail();}});
-        observer.observe(html,{attributes:true,attributeFilter:['data-entry-breadcrumb-pending','data-breadcrumb-sort-pending']});
+        observer.observe(html,{attributes:true,attributeFilter:['data-entry-breadcrumb-pending']});
       }else fail();`:code);
     const result=cli('open'+suffix,args,broken);assert.equal(result.status,1,id+'\n'+result.stdout+result.stderr);assert.match(result.stderr,message);
   }

@@ -7,7 +7,7 @@
     {{- $iconScopes = merge $iconScopes (dict $icon (merge $scopes (dict (index $parts 1) true))) -}}
   {{- end -}}
 {{- end -}}
-{{- $base := "html[data-prefetch-ready]:not([data-entry-breadcrumb-pending]):not([data-breadcrumb-sort-pending]) a[href]:not([download]):not([data-sort-control]):not([aria-hidden=\"true\"] a):is(:not([target]),[target=\"\"],[target=\"_self\" i])" -}}
+{{- $base := "html[data-prefetch-ready]:not([data-entry-breadcrumb-pending]) a[href]:not([download]):not([data-sort-control]):not([aria-hidden=\"true\"] a):is(:not([target]),[target=\"\"],[target=\"_self\" i])" -}}
 {{- $root := "[data-root-navigation] a" -}}
 {{- $path := "[data-slot=\"breadcrumb\"]:not([aria-hidden=\"true\"]) > .path-column" -}}
 {{- $collection := "html:has(.slot-main--collection)" -}}

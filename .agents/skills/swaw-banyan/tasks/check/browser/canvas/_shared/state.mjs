@@ -29,7 +29,7 @@ export const readCanvas=async page=>({...await page.evaluate(()=>{
     viewport:view?.width||innerWidth,maxX:document.scrollingElement.scrollWidth-(view?.width||innerWidth),
     directoryMetadata:[...document.querySelectorAll('.document-meta__row--path')].map(node=>({ariaLabel:node.getAttribute('aria-label'),html:node.innerHTML})),
     entryPending:document.documentElement.hasAttribute('data-entry-breadcrumb-pending'),
-    sortPending:document.documentElement.hasAttribute('data-breadcrumb-sort-pending'),collection,pathContent,
+    collection,pathContent,
     layoutShift:probe?.layoutShift??null,
     parsed:probe?.parsed??null,firstFrameX:probe?.firstFrameX==null?null:direction*probe.firstFrameX,domContentLoaded:probe?.domContentLoaded??null,
     reservedColumnsRetained:!!probe?.nav&&probe.nav===path&&probe.nav.isConnected&&probe.columns.length===columns.length

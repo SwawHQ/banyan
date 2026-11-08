@@ -727,7 +727,7 @@ try {
             check(location.search === '?keep=%2f+value' && fragment.readFieldValue(location.hash, 'sorts') === 'date-asc'
                 && fragment.readAnchor(location.hash) === 'chapter', 'Invalid source cleanup must retain queries, sorting and anchors.');
             same([...nav.children].map(node => node.dataset.navigationColumn), ['/notes/'], 'Invalid membership restores the default columns.');
-            check(!document.documentElement.hasAttribute('data-entry-breadcrumb-pending'), 'Initialization clears pending flags.');
+            check(!document.documentElement.hasAttribute('data-entry-breadcrumb-pending'), 'Initialization clears pending state.');
             setLocation('/zh/p/contract-beta/#from=missing&anchor=chapter');startPending();await entry.initializeBreadcrumb();
             check(fragment.readFieldValue(location.hash, 'from') === '' && fragment.readAnchor(location.hash) === 'chapter', 'Missing terminal references preserve anchors.');
 
@@ -757,8 +757,8 @@ try {
                 return response(url.includes('2'.repeat(64)) ? fragments.windows : fragments.discover); };
             setLocation('/zh/p/contract-beta/#from=discover/windows');startPending();const older = entry.initializeBreadcrumb();
             setLocation('/zh/p/contract-beta/#from=notes');startPending();await entry.initializeBreadcrumb();
-            const currentNodes = [...nav.children];releaseRace();
-            check((await older).stale && currentNodes.every((node, index) => node === nav.children[index]), 'An older request must not overwrite the current DOM.');
+            const currentNodes = [...nav.children], currentHTML = nav.innerHTML;releaseRace();await older;
+            check(nav.innerHTML === currentHTML && currentNodes.every((node, index) => node === nav.children[index]), 'An older request must not overwrite the current DOM.');
             check(fragment.readFieldValue(location.hash, 'from') === 'notes', 'An older request must not clear a newer source.');
 
             window.fetch = async () => { invalidRequests++;throw new Error('Root navigation must not fetch'); };
@@ -767,10 +767,9 @@ try {
             setLocation('/zh/p/contract-beta/#from=unregistered');root.refreshRootSelection();
             check(document.querySelector('[data-root-navigation] [aria-current=page]').dataset.rootHref === '/zh/notes/', 'Invalid roots retain the default selection.');
             check(invalidRequests === 0, 'Root selection requires no resources.');
-            nav.remove();startPending();document.documentElement.setAttribute('data-breadcrumb-sort-pending', 'true');
+            nav.remove();startPending();
             await entry.initializeBreadcrumb();
-            check(!document.documentElement.hasAttribute('data-entry-breadcrumb-pending')
-                && !document.documentElement.hasAttribute('data-breadcrumb-sort-pending'), 'Pages without a path host clear pending state.');
+            check(!document.documentElement.hasAttribute('data-entry-breadcrumb-pending'), 'Pages without a path host clear pending state.');
             return { malformedFragments: badFragments.length, requests: 2, nativeDOM: true };
         }, { code, manifest, hashes });
         console.log('Native browser fragment and entry checks passed: ' + JSON.stringify(result));
