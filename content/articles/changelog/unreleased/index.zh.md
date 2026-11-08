@@ -206,7 +206,7 @@ lastmod: 2026-11-08
   `assets/site/`。站点直接维护 `assets/site/manifest.webmanifest.tmpl`，
   Module 只读取并执行，产物为 `/site/site.<hash>.webmanifest`；图像发布到 `/site/*`。
   完整配色由站点维护，Module 不再提供 `css/theme.css`。参考配色统一放在根 `assets/site/`。
-  默认选择 `site/theme.css`：选中与悬停同色，浅色混入前景 4%、深色 10%，采用直角和 2px 当前项起始边线。未选中的单色列表图标使用 70% 不透明度，当前项、文字图标和彩色图片保持原样；原高对比配色通过 `site/theme.high-contrast.css` 选择。
+  默认选择 `site/theme.css`：选中与悬停同色，浅色混入前景 4%、深色 10%，采用直角和 2px 当前项起始边线。未选中的单色列表图标使用 70% 不透明度，当前项、文字图标和彩色图片保持原样；`site/theme.high-contrast.css` 的选中与悬停使用同一高对比底色，文字和单色图标同步反色，选中名称使用 700 粗体，条目采用直角。
   `page-home` 首页正文通过 `home-art` 引用 `content/_res/home-art/<主题>/` 下的隐藏叶子包。
   各语言艺术页维护场景文字和参数，包内 CSS、JS 由 `params.styles` 和 `params.scripts` 选择；
   风场正文使用 `home-art/wind/scene`，宿主首页的 `params.show_navigation` 控制第一列导航。

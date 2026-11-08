@@ -262,7 +262,9 @@ lastmod: 2026-11-08
   selection and hover share a 4% foreground fill in light mode and 10% in dark mode,
   with square corners and a 2px current-item start marker. Unselected monochrome list icons use 70% opacity;
   current items, text icons and color images stay unchanged. Select `site/theme.high-contrast.css` to
-  keep the original high-contrast selection palette. A `page-home` homepage uses `home-art` in its body
+  use the same high-contrast fill for selection and hover, with inverted text and monochrome icons,
+  700-weight selected names and square item corners.
+  A `page-home` homepage uses `home-art` in its body
   to reference a hidden leaf bundle under `content/_res/home-art/<theme>/`.
   Translated art pages own scene copy and parameters; `params.styles` and
   `params.scripts` select CSS and JS from the bundle. Wind scenes use

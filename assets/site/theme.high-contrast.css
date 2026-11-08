@@ -1,6 +1,6 @@
 /* Complete monochrome palette with light/dark defaults. Components only consume these roles.
    Near-white and pure-black canvases use softened text. Selected navigation
-   uses the body foreground as its fill; hover stays unfilled with an outline.
+   and pointer hover use the body foreground as their fill; keyboard focus keeps an outline.
    Unqualified scopes apply to both modes; dark blocks keep explicit mode defaults.
    Keep each scope when overriding: aliases and mixes resolve before inheritance.
    A role may use a literal, an alias, or a mix without changing its consumers. */
@@ -37,6 +37,7 @@
 }
 
 .item-control {
+    --item-radius: 0;
     --item-text: var(--link);
     --item-hover-text: var(--fg);
     --item-hover-bg: transparent;
@@ -44,6 +45,18 @@
     --item-current-text: var(--monochrome-dark-fg);
     --item-current-bg: var(--fg);
     --item-current-ring: transparent;
+    /* Switch text and fill together so inversion does not hide the label. */
+    transition: none;
+}
+
+.item-control.is-current .item-title {
+    font-weight: 700;
+}
+
+.item-control:hover:not(:focus-visible) {
+    --item-hover-text: var(--item-current-text);
+    --item-hover-bg: var(--item-current-bg);
+    --item-hover-ring: transparent;
 }
 
 [data-theme="dark"] .item-control {
@@ -51,16 +64,16 @@
     --item-current-bg: var(--fg);
 }
 
-.item-control:is(.is-current, [aria-expanded="true"]) .icon {
+.item-control:is(.is-current, [aria-expanded="true"], :hover:not(:focus-visible)) .icon {
     --icon-accent: currentColor;
     --icon-shade: currentColor;
 }
 
-.item-control:is(.is-current, [aria-expanded="true"]) .icon--monochrome {
+.item-control:is(.is-current, [aria-expanded="true"], :hover:not(:focus-visible)) .icon--monochrome {
     filter: brightness(0) invert(1);
 }
 
-[data-theme="dark"] .item-control:is(.is-current, [aria-expanded="true"]) .icon--monochrome {
+[data-theme="dark"] .item-control:is(.is-current, [aria-expanded="true"], :hover:not(:focus-visible)) .icon--monochrome {
     filter: brightness(0);
 }
 

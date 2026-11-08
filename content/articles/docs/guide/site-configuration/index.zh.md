@@ -104,7 +104,7 @@ palette = "site/theme.css"
 
 站点自行维护完整配色，Module 不提供默认配色。
 参考站点使用根 `assets/site/theme.css`：浅色 4%、深色 10% 的选中与悬停底色，当前列表项显示起始边线。
-根 `assets/site/theme.high-contrast.css` 保留原高对比选中、圆角和单色图片反色；设置 `palette = "site/theme.high-contrast.css"` 即可选择。
+根 `assets/site/theme.high-contrast.css` 使用高对比选中和悬停同色、选中名称加粗及直角，文字与单色图标同步反色；设置 `palette = "site/theme.high-contrast.css"` 即可选择。
 两份配色都包含浅色和深色，不改变彩色图片。
 自定义文件如 `assets/site/theme-custom.css`，配置为 `palette = "site/theme-custom.css"`。
 修改后重新构建并部署；外观页继续在所选配色中切换跟随系统、浅色和深色。
