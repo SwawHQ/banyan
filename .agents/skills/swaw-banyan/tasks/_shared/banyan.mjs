@@ -2,15 +2,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {parseYaml as parse,parseToml} from '../_shared/parsers.mjs';
-import {toolExecutable} from '../_shared/tools/operations.mjs';
+import {parseYaml as parse,parseToml} from './parsers.mjs';
+import {toolExecutable} from './tools/operations.mjs';
 import {hugoEnvironment} from '../base/hugo/run.mjs';
 
 const skillRoot = fileURLToPath(new URL('../../',import.meta.url));
 const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$/;
 
 export function readRelease(root = skillRoot) {
-  const text = fs.readFileSync(path.join(root,'SKILL.md'),'utf8');
+  return parseRelease(fs.readFileSync(path.join(root,'SKILL.md'),'utf8'));
+}
+
+export function parseRelease(text) {
   const front = text.match(/^\uFEFF?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
   const metadata = front && parse(front[1])?.metadata;
   if (!metadata || typeof metadata.version !== 'string' || !versionPattern.test(metadata.version)

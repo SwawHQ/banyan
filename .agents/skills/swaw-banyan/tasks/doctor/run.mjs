@@ -3,7 +3,7 @@ import {pythonHome} from '../base/uv/environment.mjs';
 import {inspectPython} from '../base/uv/python/runtime.mjs';
 import {readBindings,resolveBinding} from '../_shared/tools/bindings.mjs';
 import {inspectBinding} from '../_shared/tools/selection.mjs';
-import {inspect,readRelease} from './banyan.mjs';
+import {inspect,readRelease} from '../_shared/banyan.mjs';
 import {loadCatalog,tools} from './catalog.mjs';
 import {systemLanguage} from '../help/run.mjs';
 import {dependencyState} from '../_shared/dependencies.mjs';

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {assess,readRelease} from '../banyan.mjs';
+import {assess,readRelease} from '../../_shared/banyan.mjs';
 import {readBindings,resolveBinding,writeBindings} from '../../_shared/tools/bindings.mjs';
 import {skillRoot} from '../../_shared/tools/manifest.mjs';
 
