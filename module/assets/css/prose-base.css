@@ -120,3 +120,25 @@
     overflow: hidden;
     clear: both;
 }
+
+.prose.preferences-body {
+    margin-block-start: 1.5rem;
+}
+
+.prose.collection-body {
+    box-sizing: border-box;
+    margin-block-start: 1.2rem;
+    padding-inline: 0.3em;
+}
+
+.prose.collection-body > h1.column-heading {
+    margin-block-end: 0.55rem;
+}
+
+.prose.collection-body h2 {
+    margin-block: 1.6rem 0.55rem;
+}
+
+.prose.collection-body h3 {
+    margin-block: 1.1rem 0.4rem;
+}

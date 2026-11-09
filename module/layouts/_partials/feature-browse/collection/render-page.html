@@ -1,10 +1,15 @@
 {{- $content := trim (printf "%s" .Content) " \r\n\t" -}}
 {{- $config := partial "./config.html" (dict "page" .) -}}
 <article class="article">
-  {{- with $content -}}<div class="prose">{{ . | safeHTML }}</div>{{- end -}}
   {{- if eq $config.view "choice" -}}
     {{- partial "feature-preferences/render.html" (dict "page" . "provider" $config.provider) -}}
   {{- else -}}
     {{- partial "./render.html" (dict "page" .) -}}
+  {{- end -}}
+  {{- with $content -}}
+  <div class="prose {{ if eq $config.view "choice" }}preferences-body{{ else }}collection-body{{ end }}">
+    {{- if ne $config.view "choice" -}}<h1 class="column-heading">{{ $.Title }}</h1>{{- end -}}
+    {{ . | safeHTML }}
+  </div>
   {{- end -}}
 </article>

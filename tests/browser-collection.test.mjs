@@ -155,7 +155,16 @@ test('style checks actual links and choice buttons in both themes and widths',{t
   assert.equal(translated.status,0,translated.stdout+translated.stderr);
 });
 
-test('layout rejects narrowed names, changed headers, moved rows, padding and missing separators',{timeout:20000},()=>{
+test('layout accepts hidden, transparent and custom theme borders',{timeout:20000},()=>{
+  for(const [name,value,width] of [['none','none',0],['transparent','1px solid transparent',1],['custom','2px dashed #9c334f',2]]) {
+    const directory=fixture('border-'+name),rule='.item-list{--list-header-border:'+value+'}';
+    for(const route of ['all','d/collection-fixture/one'])css(directory,route,rule);
+    const state=report(cli('layout',['--page','/all/','--article',article,'--widths','390,1440','--out',path.join(work,'reports')],directory));
+    for(const result of state.details.cases)for(const list of [result.main,result.path])assert.equal(list.separatorWidth,width);
+  }
+});
+
+test('layout rejects narrowed names, changed headers, moved rows, padding and overlapping rows',{timeout:20000},()=>{
   const width=fixture('name-width');css(width,'all','.item-list--all > .list-item{grid-template-columns:100px 10ch 6ch!important}');
   const narrowed=cli('layout',['--page','/all/','--widths','390'],width);assert.equal(narrowed.status,1);assert.match(narrowed.stderr,/Name column must match/);
   const header=fixture('header');css(header,'d/collection-fixture/one','.item-list--path-column .list-header{padding-block-start:5px!important}');
@@ -164,8 +173,8 @@ test('layout rejects narrowed names, changed headers, moved rows, padding and mi
   const moved=cli('layout',['--page','/all/','--article',article,'--widths','390'],offset);assert.equal(moved.status,1);assert.match(moved.stderr,/column start/);
   const padding=fixture('padding');css(padding,'d/collection-fixture/one','.item-list--path-column .item-control{padding-inline-start:12px!important}');
   const padded=cli('layout',['--page','/all/','--article',article,'--widths','390'],padding);assert.equal(padded.status,1);assert.match(padded.stderr,/Row icons must begin/);
-  const separator=fixture('separator');css(separator,'all','.list-header{border-bottom:0!important}');
-  const missing=cli('layout',['--page','/all/','--widths','390'],separator);assert.equal(missing.status,1);assert.match(missing.stderr,/below the header separator/);
+  const overlap=fixture('overlap');css(overlap,'all','.item-list--all > [data-list-item]{transform:translateY(-10px)}');
+  const overlapping=cli('layout',['--page','/all/','--widths','390'],overlap);assert.equal(overlapping.status,1);assert.match(overlapping.stderr,/below the header/);
 });
 
 test('layout rejects field drift, subgrid and content-sized tracks',{timeout:20000},()=>{

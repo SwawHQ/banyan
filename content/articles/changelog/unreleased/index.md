@@ -3,7 +3,7 @@ title: Unreleased
 url: p/unreleased/
 description: Unreleased changes to the Banyan theme and Skill.
 date: 2026-11-06
-lastmod: 2026-11-08
+lastmod: 2026-11-09
 ---
 
 ## Added
@@ -141,6 +141,7 @@ lastmod: 2026-11-08
 
 ## Changed
 
+- Collection pages show their list before the section title and body, in the same scrolling column. The title and body align with the name header, with less space above the body and around its headings. Pages without body content add no title or spacing.
 - Article information controls use the `menu` icon from `assets/site/icons.toml` at the right of the title row, with a tooltip, accessible name and the existing expand and collapse behavior.
 - Collection pages load their parent navigation sooner, reducing the empty-column interval. Main content does not wait for navigation to finish loading.
 - Desktop columns and the horizontal canvas use native thin scrollbars with system buttons. The horizontal scrollbar and wheel help appear and hide together. Scroll, hover and horizontal-lock behavior and column gaps stay the same. Touch and forced-colors modes retain the system's default width.
@@ -351,7 +352,7 @@ lastmod: 2026-11-08
 - Default, high-contrast and Rose palettes remove lines and border space below the first
   navigation item, list headers and all `h1` headings. Each palette CSS includes commented
   examples to restore the lines. List and `h1` borders can be configured separately.
-  `--list-header-border` on `.item-list` and `--prose-heading-border` on `.prose` now use complete declarations such as `1px solid #888`. Use `none` to remove the line and its space, or `1px solid transparent` to retain the space. Update color-only values in custom palettes.
+  `--list-header-border` on `.item-list` and `--prose-heading-border` on `.prose` now use complete declarations such as `1px solid #888`. Use `none` to remove the line and its space, or `1px solid transparent` to retain the space. Update color-only values in custom palettes. Collection layout checks accept hidden, transparent and custom list-header borders.
 - Invalid saved theme preferences follow the system theme from the first paint.
 - Commands can reuse a prepared Python environment concurrently without installation-lock errors
   and accept uv's Python aliases within the managed installation directory.

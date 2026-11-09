@@ -62,7 +62,7 @@ function checkList(state) {
     &&Math.abs(state.rootHeight-state.rowHeight)<=.1,'Collection rows must share root navigation dimensions after scrollbar space.');
   assert.ok(state.rows.every(row=>Math.abs(row.width-state.nameWidth)<=1&&Math.abs(row.height-state.rowHeight)<=.1&&Math.abs(row.x-state.headerX)<=.1),
     'Name rows must share width, height and column start.');
-  assert.ok(state.separatorWidth>0&&state.rowY>=state.separatorY-.1,'Rows must start below the header separator.');
+  assert.ok(state.rowY>=state.separatorY-.1,'Rows must start below the header.');
   assert.ok(state.paddingStart<=.1&&Math.abs(state.iconX)<=.1&&state.titleGap>0,'Row icons must begin at the name-column edge with a visible title gap.');
 }
 
