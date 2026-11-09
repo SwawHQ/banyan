@@ -1,0 +1,4 @@
+{
+  "en": {"summary":"Theme upgrade tools","usage":"swban help upgrade","details":["swban upgrade/version/current  #Identify the current official comparison base","swban help upgrade/git         #Inspect changes before upgrading"]},
+  "zh": {"summary":"主题升级工具","usage":"swban help upgrade","details":["swban upgrade/version/current  #识别当前官方比对起点","swban help upgrade/git         #查看升级前的变动检查方法"]}
+}

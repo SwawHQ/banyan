@@ -27,7 +27,18 @@ lastmod: 2026-11-08
   修复提示包含项目地址、主题源码 ZIP 和 Module 版本调整命令。
 - 提供 Windows x64 命令行工具，支持 Node/npm、Git、Go、Hugo
   和可选的 Bun、GitHub CLI。便携版下载使用校验和验证。
-  `help upgrade/git` 提供官方版本比对命令，辅助检查主题升级变动。
+  `upgrade/version/current` 从实际 Module 或 vendor 版本输出比对起点；本地源码须核实 HEAD 属于官方当前远程历史，
+  无法核实时报告 `old: null`，声明版本仅作为候选。
+  修复本地 Git 历史改写可能将未发布提交误报为官方版本的问题。
+  本地版本识别不下载缺失的 Git 对象，包括部分克隆中的对象。
+  `deploy/release/tag` 校验提交内的 Theme、Skill 版本，使用 Go 原生解析核对 Module 标识，再向 origin 原子发布配套标签，支持 `--check` 预览。
+  发布不受子模块递归推送配置影响，避免报告成功却未发布主仓库标签。
+  发布地址按 Git 的 origin 原生规则解析，避免重复 URL 重写导致发往错误仓库；预检使用实际推送目标。
+  版本不一致或标签已存在时，按系统语言列出实际版本、文件字段或冲突标签，并提示核对已发布版本、修改提交及重试方法。
+  `help` 列出 `upgrade/` 和升级需关注的四个根项。
+  `help upgrade/git` 提供 Git 比对命令，以及子目录、原生 pathspec 通配符和目录排除示例；
+  来源未知时按目标版本参考站点全量核对，目录统一使用路径占位符。
+  同时说明完整 Skill 的配套更新与升级后验证。
   uv 和 Python 3.13 在 Skill 内隔离运行脚本和 CLI，支持站点已有 uv 项目，
   不修改系统 PATH 或 Python 注册表。
   `sync/ext` 和内容检查用 npm 按需准备 Skill 内的解析依赖，与父工作区隔离；

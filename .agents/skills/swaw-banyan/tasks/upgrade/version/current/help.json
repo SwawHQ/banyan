@@ -1,0 +1,20 @@
+{
+  "en": {
+    "summary":"Identify the current official comparison base",
+    "usage":"swban upgrade/version/current [directory]",
+    "details":[
+      "Default: current site directory. Output JSON: old, source and basis; modified reports local Git changes when available.",
+      "Use old as <old> in swban help upgrade/git. Local sources check current official refs with ls-remote and require their commit history to be available locally; no fetch is performed.",
+      "If old is null, exit 1; candidate is only a declared version. Use the target reference site to review all four roots and migrate step by step, or set up from it as a new site."
+    ]
+  },
+  "zh": {
+    "summary":"识别当前官方比对起点",
+    "usage":"swban upgrade/version/current [目录]",
+    "details":[
+      "默认检查当前站点目录。输出 JSON：old、source 和 basis；可读取本地 Git 状态时，modified 表示源码是否有改动。",
+      "将 old 用作 swban help upgrade/git 中的 <old>。本地源码用 ls-remote 核对官方当前引用，并需本地已有相应提交历史；不执行 fetch。",
+      "old 为 null 时退出码为 1；candidate 仅为声明版本。按目标版本参考站点全量核对四个根项并逐步迁移，或按新站点设置。"
+    ]
+  }
+}

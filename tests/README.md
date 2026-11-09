@@ -23,7 +23,7 @@ Generic package, archive, help, doctor, theme resolution, robots, delivery, fing
 and asset-report tests ship with the Skill:
 
 ```powershell
-$skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_shared/_tests','./.agents/skills/swaw-banyan/tasks/_shared/tools/_tests','./.agents/skills/swaw-banyan/tasks/base/uv/_tests','./.agents/skills/swaw-banyan/tasks/check/delivery/_tests','./.agents/skills/swaw-banyan/tasks/check/robots/_tests','./.agents/skills/swaw-banyan/tasks/doctor/_tests','./.agents/skills/swaw-banyan/tasks/help/_tests','./.agents/skills/swaw-banyan/tasks/report/size/assets/_tests') -Filter '*.test.mjs' -File
+$skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_shared/_tests','./.agents/skills/swaw-banyan/tasks/_shared/tools/_tests','./.agents/skills/swaw-banyan/tasks/base/uv/_tests','./.agents/skills/swaw-banyan/tasks/check/delivery/_tests','./.agents/skills/swaw-banyan/tasks/check/robots/_tests','./.agents/skills/swaw-banyan/tasks/doctor/_tests','./.agents/skills/swaw-banyan/tasks/help/_tests','./.agents/skills/swaw-banyan/tasks/upgrade/version/current/_tests','./.agents/skills/swaw-banyan/tasks/deploy/release/tag/_tests','./.agents/skills/swaw-banyan/tasks/report/size/assets/_tests') -Filter '*.test.mjs' -File
 .\.agents\skills\swaw-banyan\swban.cmd base/node --test $skillTests.FullName
 ```
 

@@ -1,7 +1,7 @@
 ---
 title: 开始使用
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-08
 url: p/getting-started/
 description: 安装配套的 Banyan Hugo Module 和 Agent Skill。
 weight: 1
@@ -72,6 +72,11 @@ Module 标签 `module/v0.1.0` 指向同一提交。`module/` 前缀供 Go 识别
 ## 调整版本
 
 先选择目标版本 `vX.Y.Z`。升级和降级使用相同步骤。
+运行 `swban help upgrade/git`，按 `hugo.toml`、`content/`、`assets/`、`archetypes/`
+检查官方版本变动，再逐层查看受影响的目录和文件。先比较官方旧版与新版，再修改本站文件；
+保留本站内容、语言和品牌配置。运行 `swban upgrade/version/current`，取输出的 `old` 作为比对起点。
+来源无法确认或此前迁移未完成时，按目标版本参考站点全量核对四项，逐步迁移或按新站点设置。
+有本地主题改动时，先保留源码，再合并官方变动。完成检查后，将目标版本记为下次比对起点。
 在[项目 Releases](https://github.com/SwawHQ/banyan/releases) 中选择该版本，
 下载 **Source code (zip)**。也可下载标签源码：
 `https://github.com/SwawHQ/banyan/archive/refs/tags/vX.Y.Z.zip`。
@@ -91,3 +96,5 @@ swban doctor                                                    #检查 Skill �
 ```
 
 只修改 `SKILL.md` 或 `theme.toml` 中的版本号，不会更新代码。
+升级后执行构建、交付和 CSP 检查，并按受影响功能执行浏览器检查；
+步骤见上述 Skill 安装说明的 Verify the result。

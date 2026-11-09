@@ -28,7 +28,22 @@ lastmod: 2026-11-08
   Recovery messages include the project URL,
   theme source ZIP and Module version commands.
 - Windows x64 CLI with Node/npm, Git, Go, Hugo and optional Bun and GitHub CLI.
-  `help upgrade/git` shows official-version comparison commands for theme upgrades.
+  `upgrade/version/current` reports the official comparison base from the active Module,
+  vendor version. For local sources, HEAD must be verified against current official remote refs;
+  an unverified source reports `old: null` and any declared candidate separately.
+  Fixed false official-source reports caused by local Git history overrides.
+  Local version inspection does not download missing Git objects, including in partial clones.
+  `deploy/release/tag` validates committed Theme/Skill versions and uses native Go parsing for
+  Module identity, then atomically publishes matching project and Module tags to origin;
+  `--check` previews the plan. Submodule-recursion settings cannot suppress publication of the tag pair.
+  Publication uses Git's native origin resolution to avoid repeated URL rewriting and checks the actual push destination.
+  Version mismatches and existing tags report their values, fields or tag names in the system language,
+  with steps to check prior publication, commit corrections and retry.
+  `help` lists `upgrade/` and the four site roots to review before upgrading.
+  `help upgrade/git` provides Git comparisons, subdirectory exploration, native pathspec globs
+  and directory exclusions; unknown bases use a full review against the target reference site.
+  Directory arguments use path placeholders. The help also explains how to update the complete
+  matching Skill and verify the upgrade.
   uv and Python 3.13 support isolated Python scripts and CLI packages in the Skill,
   including sites that already use uv. The system PATH and Python registry stay unchanged.
   Portable downloads are checksum-verified. npm prepares parser packages

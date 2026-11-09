@@ -1,0 +1,20 @@
+{
+  "en":{
+    "summary":"Validate and publish matching project and Module tags",
+    "usage":"swban deploy/release/tag [--check]",
+    "details":[
+      "swban deploy/release/tag --check  #Validate HEAD and show the tag plan without publishing",
+      "swban deploy/release/tag          #Atomically publish both version tags to origin",
+      "Tags use SemVer: vX.Y.Z and module/vX.Y.Z point to the same commit and match its Theme and Skill versions."
+    ]
+  },
+  "zh":{
+    "summary":"校验并发布配套的项目与 Module 标签",
+    "usage":"swban deploy/release/tag [--check]",
+    "details":[
+      "swban deploy/release/tag --check  #校验 HEAD 并输出标签计划，不发布",
+      "swban deploy/release/tag          #向 origin 原子发布两个版本标签",
+      "标签采用语义版本：vX.Y.Z 与 module/vX.Y.Z 指向同一提交，并与该提交的 Theme、Skill 版本一致。"
+    ]
+  }
+}
