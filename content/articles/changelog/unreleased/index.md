@@ -341,6 +341,9 @@ lastmod: 2026-11-09
 
 ## Fixed
 
+- Printed columns fit the paper width. Long code and table contents wrap without clipping at the right edge. Separate code line-number columns are hidden in print because they cannot align with wrapped code.
+- Prose headings retain the spacing adjustment for text line boxes next to quotes, tables, code and images. Collection bodies use compact spacing. Responsive and ordinary images share the same spacing and match code and quote gaps next to paragraphs; inline images no longer trigger image-paragraph gaps. Article title spacing no longer depends on metadata or JavaScript. Quote, code, table and caption fonts scale with the base size.
+
 - Content links resolve pages and attachments before adding the deployment subpath; default-language links follow their published directory. Bare percent signs in links no longer stop builds. Inline links preserve adjacent text without extra whitespace.
 - Shared deployment files are generated when the default language publishes only RSS and another language publishes HTML.
 - Column URL checks and shared navigation handle literal percent signs in deployment directories. Names such as the literal directory `a%20b` remain unsupported because Hugo emits an ambiguous relative URL; builds reject them explicitly.

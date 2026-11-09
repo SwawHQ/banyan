@@ -18,8 +18,7 @@
 @media print {
     .path-navigation {
         display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: var(--navigation-column-inline);
+        grid-template-columns: repeat(auto-fit, minmax(min(var(--navigation-column-inline), 100%), 1fr));
         column-gap: var(--page-shell-gap-inline);
         align-items: start;
     }

@@ -44,7 +44,7 @@
     background: transparent;
     border: none;
     border-radius: 0;
-    font-size: 14px;
+    font-size: calc(14rem / 15);
     color: inherit;
 }
 
@@ -118,4 +118,34 @@
 
 .prose .chroma .ge {
     font-style: italic;
+}
+
+@media print {
+    .prose :is(pre, .highlight) {
+        overflow: visible;
+    }
+
+    .prose pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .prose pre code {
+        display: block;
+        min-inline-size: 0;
+    }
+
+    .prose .chroma .cl {
+        min-inline-size: 0;
+    }
+
+    .prose .chroma .lntable {
+        inline-size: 100%;
+        table-layout: fixed;
+    }
+
+    .prose .chroma .lntd:first-child {
+        /* A separate number column cannot follow wrapped code lines. */
+        display: none;
+    }
 }

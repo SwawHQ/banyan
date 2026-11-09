@@ -129,9 +129,6 @@
     text-decoration: none;
     text-underline-offset: 0.16em;
     text-decoration-thickness: 1px;
-}
-
-.page-home__signal > :is(a, button) {
     box-sizing: border-box;
     display: inline;
     margin: 0;

@@ -22,7 +22,7 @@
     padding-inline: 4px 1px;
     text-align: start;
     vertical-align: top;
-    font-size: 12px;
+    font-size: 0.8rem;
     color: var(--table-text);
     word-break: keep-all;
     border: 1px solid var(--table-border);
@@ -30,4 +30,17 @@
 
 .prose tr:where(:not(.chroma, .chroma *)):nth-child(even) {
     background: var(--table-striped-bg);
+}
+
+@media print {
+    .prose table:where(:not(.chroma, .chroma *)) {
+        display: table;
+        table-layout: fixed;
+        overflow: visible;
+    }
+
+    .prose :is(th, td):where(:not(.chroma, .chroma *)) {
+        word-break: normal;
+        overflow-wrap: anywhere;
+    }
 }

@@ -15,21 +15,6 @@
         display: none;
     }
 
-    .document-heading {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.5rem;
-        margin-block-end: 8px;
-        border-bottom: var(--prose-heading-border);
-    }
-
-    .prose .document-heading > h1 {
-        flex: 1;
-        min-inline-size: 0;
-        margin: 0;
-        border-bottom: 0;
-    }
-
     #document-aside-toggle {
         display: inline-flex;
         justify-content: center;

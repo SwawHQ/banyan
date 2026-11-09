@@ -19,7 +19,7 @@
 .prose blockquote p {
     margin: 0 0 0.55rem;
     /* 覆写了上面 P 的外部节奏间距，因为在此组件内部 */
-    font-size: 14px;
+    font-size: calc(14rem / 15);
     line-height: 1.65;
     color: var(--quote-text);
 }

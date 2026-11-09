@@ -213,6 +213,21 @@ test(name+' rejects an article without headings and honors alternate page paths'
   const article=cli('nav/keyboard'+suffix,['--page',routes['nav/anchors']]);assert.equal(article.status,0,article.stdout+article.stderr);
 });
 
+test(name+' detects inconsistent prose spacing, fixed fonts and clipped print',{timeout:15000},()=>{
+  for(const [fixtureName,cssText,message] of [
+    ['heading-gap','.prose h2 + blockquote{margin-block-start:80px!important}','Heading spacing'],
+    ['heading-compensation','.prose h2 + .highlight{margin-block-start:0!important}','Heading spacing'],
+    ['responsive-gap','.prose picture img{margin-block-start:18px!important}','Responsive and ordinary images'],
+    ['fixed-font','.prose blockquote p{font-size:14px!important}','Prose fonts must scale'],
+    ['print-wrap','@media print{.prose pre{white-space:pre!important;overflow-wrap:normal!important}}','Printed']
+  ]) {
+    const broken=fixture(fixtureName+'-'+name);write(path.join(broken,'broken.css'),cssText);
+    fs.appendFileSync(path.join(broken,'about/index.html'),'<link rel="stylesheet" href="/broken.css">');
+    const result=cli('prose/layout'+suffix,['--page',routes['prose/layout']],broken);
+    assert.equal(result.status,1);assert.ok(result.stderr.includes(message),result.stderr);
+  }
+});
+
 test(name+' prevents stale scheduled chapter reveals from overriding the skip link',{timeout:15000},async()=>{
   const server=await createStaticSiteServer(output),type=name==='chromium'?loadChromium():loadWebkit();
   let browser;

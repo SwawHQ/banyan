@@ -72,6 +72,17 @@
     text-decoration: none;
 }
 
+@media print {
+    .item-list {
+        --list-field-tracks: minmax(0, 1fr);
+        max-inline-size: 100%;
+    }
+
+    .item-list:is(.item-list--directory, .item-list--all, .item-list--products) {
+        --list-field-tracks: minmax(0, 1fr) var(--item-date-inline) var(--item-count-inline);
+    }
+}
+
 .item-list :is(a, button):focus-visible {
     outline-offset: -2px;
 }
@@ -93,7 +104,6 @@
 
 .list-header a {
     color: inherit;
-    text-decoration: none;
 }
 
 .list-header :is([data-sort-control], .path-column-sort) {
@@ -111,7 +121,6 @@
     display: block;
     width: 100%;
     margin: 0;
-    text-decoration: none;
 }
 
 .item-list h1.list-header {

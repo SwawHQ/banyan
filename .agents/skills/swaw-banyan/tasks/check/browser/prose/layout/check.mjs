@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {setTheme} from '../../_shared/theme.mjs';
 import {tableSamples,checkTableStyles} from './tables.mjs';
+import {checkFlow} from './flow.mjs';
+import {checkPrint} from './print.mjs';
 
 export async function check({page,baseUrl,options}) {
   await page.emulateMedia({reducedMotion:'reduce'});
@@ -34,5 +36,5 @@ export async function check({page,baseUrl,options}) {
       assert.equal(style.quoteBottom, 0,'The final quote must have no trailing spacing.');
       assert(style.longLinkFits,'Long URLs must fit the prose column.');
   }
-  return {page:options.page,width:230,themes:results};
+  return {page:options.page,width:230,themes:results,flow:await checkFlow(page),print:await checkPrint(page)};
 }
