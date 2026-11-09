@@ -85,7 +85,7 @@ test('layout checks directory, flat, reference and product lists at narrow and w
   const products=report(cli('layout',['--page','/products-all/','--widths','390,1440','--out',path.join(work,'reports')]));
   for(const result of products.details.cases) {
     const fields=result.main.heading.fields,aggregate=state.details.cases.find(item=>item.width===result.width).main.heading.fields;
-    assert.deepEqual(result.main.fields,['name','version','price']);
+    assert.deepEqual(result.main.fields,['name','date','price']);
     assert.ok(fields.at(-1).x+fields.at(-1).width-fields[0].x<=390,'Product fields must fit the same 390 CSS px row budget.');
     assert.deepEqual(fields.map(({x,width})=>({x,width})),aggregate.map(({x,width})=>({x,width})),
       'Products and aggregate lists must share every column width and gap.');
@@ -116,11 +116,11 @@ test('directory, aggregate and product headers fit their shared fixed columns in
     await server.start();const type=loadChromium();browser=await type.launch({headless:true,executablePath:type.executablePath()});
     const context=await browser.newContext({viewport:{width:390,height:900},serviceWorkers:'block'}),page=await context.newPage();
     for(const prefix of ['','/zh','/ar'])for(const route of ['/d/','/all/','/products-all/']) {
-      for(const field of route==='/products-all/'?['version','price']:['date',route==='/all/'?'size':'count']) {
+      for(const field of route==='/products-all/'?['date','price']:['date',route==='/all/'?'size':'count']) {
         await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:prefix+route+'#sorts='+field+'-desc',widths:'390,1440'}});
       }
     }
-    for(const field of ['version','price'])await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:'/ar/products-all/#sorts='+field+'-desc',widths:'390,1440'}});
+    for(const field of ['date','price'])await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:'/ar/products-all/#sorts='+field+'-desc',widths:'390,1440'}});
   } finally {try{if(browser)await browser.close();}finally{await server.stop();}}
 });
 

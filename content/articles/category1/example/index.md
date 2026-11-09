@@ -4,7 +4,7 @@ title: Example article
 # linkTitle: Short title
 # Set lastmod when article content changes; moving files does not change it.
 date: "2026-01-02T00:00:00+08:00"
-lastmod: "2026-01-02T00:00:00+08:00"
+lastmod: "2026-11-09T00:00:00+08:00"
 # Keep this URL when moving or renaming the bundle.
 url: p/example-product/
 description: One article shown in article and product lists.
@@ -36,4 +36,4 @@ params:
 
 This article belongs to the articles section. The products directory references it with `_map.toml`.
 
-The article lists show article metadata. The product lists use `offer` for the version and price. Both link to this page.
+The article lists show article metadata. The product lists show update time and use `offer` for the price. Both link to this page.

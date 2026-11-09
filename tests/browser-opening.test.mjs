@@ -193,7 +193,7 @@ test(name+' opens nested directories and product categories with retained lineag
     ['/d/opening/#sorts=_,name-desc','/d/opening/one/','/d/','name-desc'],
     ['/zh/d/opening/#sorts=_,name-desc','/zh/d/opening/one/','/zh/d/','name-desc'],
     ['/products/fixture-alpha/#sorts=_,price-desc','/d/canvas-first/','/products/','price-desc'],
-    ['/products-all/#sorts=version-desc','/d/canvas-first/','/products-all/','version-desc']
+    ['/products-all/#sorts=date-asc','/d/canvas-first/','/products-all/','date-asc']
   ]) {
     const result=cli('open'+suffix,['--from',from,'--page',page,'--widths','1440','--out',path.join(work,'lineage-reports')]);
     assert.equal(result.status,0,from+'\n'+result.stdout+result.stderr);

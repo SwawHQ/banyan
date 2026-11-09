@@ -1,7 +1,7 @@
 ---
 title: UI 命名与职责
 date: 2026-11-06
-lastmod: 2026-11-07
+lastmod: 2026-11-09
 url: p/ui-naming/
 description: 约定页面列、列表、条目、样式类与行为标记的命名。
 ---
@@ -121,9 +121,9 @@ layout: page-collection-directory-name-only
 
 `.list-header` 只表示列表头，排序箭头使用 `.list-sort-indicator`。普通文章和窄面板标题见 [公共页面列](#公共页面列)。路径列头内部使用 `.path-column-sort` 和 `.path-sort-label`，字号与行高复用公共排序控件规则。
 
-名称使用 `--navigation-column-inline`；其他两列使用 `--item-date-inline`、`--item-count-inline`，默认分别为 `5.6rem`、`3.8rem`。目录表显示更新时间及数量／大小，汇总表显示更新时间及大小，产品表显示版本及价格。三列表的 `--item-field-gap` 为 `0.25rem`；`--list-field-tracks` 定义轨道，`--list-inline-size` 定义总宽度。长值在字段内截断，完整值保留在提示中。
+名称使用 `--navigation-column-inline`；其他两列使用 `--item-date-inline`、`--item-count-inline`，默认分别为 `5.6rem`、`3.8rem`。目录表显示更新时间及数量／大小，汇总表显示更新时间及大小，产品表显示更新时间及价格。三列表的 `--item-field-gap` 为 `0.25rem`；`--list-field-tracks` 定义轨道，`--list-inline-size` 定义总宽度。长值在字段内截断，完整值保留在提示中。
 
-排序读取 `data-list-item` 上的 `data-sort-*`，直接移动完整条目；表头使用 `data-list-header`，不参与内容排序。字段位置使用 `data-item-field="name|date|count|size|version|price"`，进入条目使用 `data-list-entry`，排序箭头保留 `data-sort-indicator`。这些标记表达行为，样式类表达呈现；SSR 和动态路径列一起输出它们。`feature-browse/collection/sort/header.html` 配置并生成表头字段，单个排序字段由 `sort/field.html` 输出。
+排序读取 `data-list-item` 上的 `data-sort-*`，直接移动完整条目；表头使用 `data-list-header`，不参与内容排序。字段位置使用 `data-item-field="name|date|count|size|price"`，进入条目使用 `data-list-entry`，排序箭头保留 `data-sort-indicator`。这些标记表达行为，样式类表达呈现；SSR 和动态路径列一起输出它们。`feature-browse/collection/sort/header.html` 配置并生成表头字段，单个排序字段由 `sort/field.html` 输出。
 
 正文元信息统一为 `.document-meta__row`、`__label`、`__separator`，跳转正文链接为 `.skip-link`。
 

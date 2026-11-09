@@ -18,7 +18,7 @@ export function readNavigationFragment(text,{siteURL='https://output.invalid/'}=
     throw new Error('Expected one navigation fragment root');
   const root=roots[0],logicalPath=extractTagAttribute(root.open,'data-navigation-column');
   const sortVariant=extractTagAttribute(root.open,'data-sort-variant'),defaultSort=extractTagAttribute(root.open,'data-default-sort');
-  const sortFields={name:['name'],section:['name','date','count'],all:['name','date','size'],products:['name','version','price']};
+  const sortFields={name:['name'],section:['name','date','count'],all:['name','date','size'],products:['name','date','price']};
   if(!/^\/(?!\/).+\/$/.test(logicalPath)
     ||(sortVariant?(!sortFields[sortVariant]?.includes(defaultSort.split('-')[0])
       ||!/^[a-z]+-(?:asc|desc)$/.test(defaultSort)):defaultSort!==''))
@@ -63,7 +63,7 @@ export function readNavigationFragment(text,{siteURL='https://output.invalid/'}=
     if(!text||!localLink(href,siteURL)||seen.has(href))throw new Error('Invalid or duplicate navigation fragment row link');
     seen.add(href);
     const row={kind,href,text};
-    for(const field of ['name','date','count','size','price','version'])
+    for(const field of ['name','date','count','size','price'])
       if(new RegExp('\\sdata-sort-'+field+'(?:\\s|=|>)', 'i').test(block.open))row['sort_'+field]=extractTagAttribute(block.open,'data-sort-'+field);
     const title=extractTagAttribute(links[0].open,'title');if(title&&title!==text)row.title=title;
     const icons=extractBlocks(block.inner,'span',tag=>hasClassToken(tag,'icon--text'));

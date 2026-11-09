@@ -44,8 +44,8 @@ lastmod: 2026-11-09
   `sync/ext` 和内容检查用 npm 按需准备 Skill 内的解析依赖，与父工作区隔离；
   站点构建不需要 npm 依赖。
 - 新增 `page-collection-directory-name-only` 名称列表和产品列表，复用多列导航和排序。
-  名称列表只占一列；产品分类由站点定义，产品字段显示名称、版本和价格。
-  `params.offer.version` 使用字符串，替代已移除的 `offer.value` 价值点；省略版本时显示 `—`。
+  名称列表只占一列；产品分类由站点定义，产品字段显示名称、更新时间和价格，默认按更新时间倒序。
+  `params.offer.version` 可保留为定义值，列表不显示，也不按它排序；`offer.value` 价值点已移除。
 - Powered by 页面显示实际主题版本、Hugo 版本、站点构建信息及 PWA 状态。
   标题、说明、源码和变更记录链接由各语言 Markdown 正文维护，外链复用 `new-tab`；
   删除旧 `params.theme_changelog` 和 `params.theme_repo` 配置。
@@ -254,6 +254,10 @@ lastmod: 2026-11-09
   下一次页面导航立即后台检查版本，无需等待原检查间隔。
 - 列表显示日期和日期排序先读取 `lastmod`，再读取 `date`。
   Git 提交和文件系统时间不改变内容日期。
+
+## 升级迁移
+
+- 本次产品列表调整无必需迁移。已有 `params.offer.version` 定义值可保留。
 
 ## 修复
 

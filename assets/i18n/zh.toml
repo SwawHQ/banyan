@@ -11,8 +11,6 @@ other = "按{field}降序排序"
 
 [products_col_price]
 other = "价格"
-[products_col_version]
-other = "版本"
 
 [products_free]
 other = "免费"

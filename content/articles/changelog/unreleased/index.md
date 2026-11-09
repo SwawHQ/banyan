@@ -51,8 +51,9 @@ lastmod: 2026-11-09
   site builds need no npm dependencies.
 - `page-collection-directory-name-only` and product lists share column navigation
   and sorting. Name-only lists occupy one column. Sites organize product categories;
-  product fields show name, version and price. String `params.offer.version` replaces
-  the removed `offer.value` benefit field; an omitted version displays `—`.
+  product fields show name, update time and price, with newest updates first.
+  `params.offer.version` can remain as metadata; lists do not display or sort it.
+  The `offer.value` benefit field is removed.
 - Powered by shows the effective theme and Hugo versions, site build details and PWA status.
   Maintain headings, prose, source and changelog links in each language's Markdown
   body, using `new-tab` for external links. Remove `params.theme_changelog` and
@@ -338,6 +339,10 @@ lastmod: 2026-11-09
   Custom list styles use `item-list`, `list-item`, `item-field`, and
   `item-control`; custom palettes use `--item-*` color roles. List field
   widths use `--item-*-inline` and `--item-field-gap`.
+
+## Upgrade migration
+
+- This product-list change requires no site data changes. Existing `params.offer.version` values can remain.
 
 ## Fixed
 

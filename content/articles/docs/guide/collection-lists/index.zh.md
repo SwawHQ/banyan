@@ -1,7 +1,7 @@
 ---
 title: 列表与产品声明
 date: 2026-11-06
-lastmod: 2026-11-07
+lastmod: 2026-11-09
 url: p/collection-lists/
 description: 配置目录、引用、条目图标和产品列表。
 ---
@@ -42,7 +42,7 @@ Swaw 的“发现 - 分类”使用普通 `content/d/` 目录；“发现 - 全�
 layout: page-collection-products
 ```
 
-列表仍包含原有子项，产品布局显示名称、版本、价格；没有 `params.offer` 的文章显示价格 `—`。`page-collection-directory-all` 显示名称、更新时间和大小，且需指定 `params.aggregate`；`page-collection-directory` 显示名称、更新时间、数量／大小；`page-collection-directory-name-only` 只显示带图标的名称。布局可沿内容祖先的 `cascade` 继承。普通文章使用 `page-article-rss` 或 `page-article-norss`，不会因栏目布局变成列表。
+列表仍包含原有子项，产品布局显示名称、更新时间、价格，默认按更新时间倒序；没有 `params.offer` 的文章显示价格 `—`。`page-collection-directory-all` 显示名称、更新时间和大小，且需指定 `params.aggregate`；`page-collection-directory` 显示名称、更新时间、数量／大小；`page-collection-directory-name-only` 只显示带图标的名称。布局可沿内容祖先的 `cascade` 继承。普通文章使用 `page-article-rss` 或 `page-article-norss`，不会因栏目布局变成列表。
 
 新增普通列表目录时使用 `_index.<lang>.md`，声明 `layout: page-collection-directory` 和需要的 `params.slots: [breadcrumb]`；位于已有目录下时可继承布局和区域声明。正文只写介绍，列表自动在介绍后出现。单篇文章使用 `name/index.<lang>.md` 叶子包。
 
@@ -100,13 +100,13 @@ GitHub 和备案页的目标链接使用 `{{</* new-tab href="https://example.co
 
 ## 统一更新时间
 
-目录、内容全部视图和路径列的时间统一读取 Hugo `.Lastmod`，列名为“更新时间”。文章显示自身更新时间；非空目录汇总其递归文章集合的最新更新时间，包含引用。空目录使用自身 `.Lastmod`；没有有效时间的条目显示 `—`，排序值为空。
+目录、内容全部视图、产品列表和路径列的时间统一读取 Hugo `.Lastmod`，列名为“更新时间”。文章显示自身更新时间；非空目录汇总其递归文章集合的最新更新时间，包含引用。空目录使用自身 `.Lastmod`；没有有效时间的条目显示 `—`，排序值为空。
 
 站点根 `hugo.toml` 配置 `[frontmatter] lastmod = ["lastmod", "date"]`：显式 `lastmod` 优先，未填写时使用手写 `date`，两者都没有则无有效更新时间。Git 提交和文件修改时间不参与文章更新时间。
 
 文章 front matter 显式填写 `date` 和 `lastmod`：`date` 记录发布日期，初始 `lastmod` 与 `date` 相同，后续有实质内容更新时再手动调整 `lastmod`。整理分类、格式或目录时无需改动这两个字段。`banyan` 新建文章模板会生成相同的初始日期；为已有文章补字段时复制其 `date`，保留原本已经填写的 `lastmod`。
 
-显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。`sorts` 中的 `date-asc`、`date-desc` 均按更新时间排序，产品表仍只有名称、版本、价格三列。正文中的发布日期继续使用 `.Date`，不改变其含义；本站内容版本使用构建标识，不参与文章日期排序。
+显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。`sorts` 中的 `date-asc`、`date-desc` 均按更新时间排序，产品表显示名称、更新时间、价格三列。正文中的发布日期继续使用 `.Date`，不改变其含义；本站内容版本使用构建标识，不参与文章日期排序。
 
 ## 怎样声明条目图标
 
@@ -192,7 +192,7 @@ params:
 
 `offer` 可省略，或只写字符串 `version`；填写 `amount` 时必须提供 `currency`，金额需为非负数字。
 未标价显示 `—`，价格升序和降序均排在已标价项后；0 显示本语言的“免费”。
-版本缺失时显示 `—`。价格和版本字段不决定文章进入哪个栏目。
+`version` 可保留为产品定义值，列表不显示，也不按它排序。价格和版本字段不决定文章进入哪个栏目。
 
 Swaw 的每个产品栏目使用 `content/pr/<目录>/_index.<lang>.md` 设置标题与介绍，
 继承产品根的产品列表布局。列表的排序由用户当前选择决定。

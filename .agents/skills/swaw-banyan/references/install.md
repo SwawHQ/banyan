@@ -419,8 +419,8 @@ Collection layouts bind their fields, sorting and controls. Use:
 | `page-collection-directory-name-only` | Direct entries, names only |
 | `page-collection-directory` | Direct entries with date and count |
 | `page-collection-directory-all` | Articles under `params.aggregate`, with date and size; optional time ranges form a directory tree |
-| `page-collection-products` | Direct entries with version and price |
-| `page-collection-products-all` | All articles under `params.aggregate`, with version and price |
+| `page-collection-products` | Direct entries with update time and price |
+| `page-collection-products-all` | All articles under `params.aggregate`, with update time and price |
 | `page-collection-language` | Enabled language links |
 | `page-collection-appearance` | Auto, light and dark buttons |
 
@@ -598,7 +598,7 @@ description: Free products.
 ```
 
 Add `content/products/free/_map.toml` with the same article reference shown above.
-The article's `params.offer` supplies its version and price. The same article can occur in
+Product lists show `Lastmod` as update time and sort newest first. The article's `params.offer` supplies its price; `offer.version` can remain as metadata. The same article can occur in
 several directories. A product aggregate lists it once. Create
 `content/products-all/_index.md`:
 

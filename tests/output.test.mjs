@@ -206,16 +206,18 @@ test('breadcrumb readers validate external fragments, site paths and base URL pr
 test('navigation fragments retain names, sorting fields and all supported icons',()=>{
   const content=fragment({logicalPath:'/书签/',label:'A & B <C>',rows:[
     {kind:'section',href:'/a/',text:'A & B <C>',sort_name:'1',sort_count:'0',sort_date:'2026-10-01'},
-    {href:'/b/',text:'Literal &quot;quote&quot;',title:'Full & exact',sort_name:'2',sort_version:'1.2.3',sort_price:'0',icon:'<span class="item-icon item-icon--text"><span class="icon icon--text">💡 &amp; ✨</span></span>'},
+    {href:'/b/',text:'Literal &quot;quote&quot;',title:'Full & exact',sort_name:'2',sort_date:'20261109000000',sort_price:'0',icon:'<span class="item-icon item-icon--text"><span class="icon icon--text">💡 &amp; ✨</span></span>'},
     {href:'/c/',text:'Image',icon:'<span class="item-icon"><img class="icon icon--image icon--monochrome" src="/media/icon.hash.svg" alt="" width="16" height="16" decoding="async"></span>'}
   ]});
   const data=readNavigationFragment(content);
   assert.equal(data.logicalPath,'/书签/');assert.equal(data.label,'A & B <C>');assert.equal(data.rows[0].text,'A & B <C>');
   assert.deepEqual(data.rows[0],{kind:'section',href:'/a/',text:'A & B <C>',sort_name:'1',sort_date:'2026-10-01',sort_count:'0',icon:'file'});
   assert.equal(data.rows[1].text,'Literal &quot;quote&quot;');assert.equal(data.rows[1].title,'Full & exact');
-  assert.equal(data.rows[1].sort_version,'1.2.3');assert.equal(data.rows[1].sort_price,'0');assert.deepEqual(data.rows[1].icon,{text:'💡 & ✨'});
+  assert.equal(data.rows[1].sort_date,'20261109000000');assert.equal(data.rows[1].sort_price,'0');assert.deepEqual(data.rows[1].icon,{text:'💡 & ✨'});
   assert.deepEqual(data.rows[2].icon,{image:'/media/icon.hash.svg',monochrome:true});
   assert.deepEqual(readNavigationFragment(fragment({sortVariant:'',defaultSort:''})).rows,[],'Read-only empty columns are valid.');
+  assert.equal(readNavigationFragment(fragment({sortVariant:'products'})).defaultSort,'date-desc');
+  assert.throws(()=>readNavigationFragment(fragment({sortVariant:'products',defaultSort:'version-asc'})),/Invalid navigation fragment metadata/);
   const empty=fragment({rows:[{href:'/empty/',text:'Empty',sort_date:'',sort_price:''}]}).replace('data-sort-date=""','data-sort-date').replace('data-sort-price=""','data-sort-price');
   const emptyRow=readNavigationFragment(empty).rows[0];assert.equal(emptyRow.sort_date,'');assert.equal(emptyRow.sort_price,'','Minified empty sort attributes retain empty values.');
 });

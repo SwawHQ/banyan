@@ -6,7 +6,7 @@ import {toggleColumn} from '../sort/check.mjs';
 const readMain=page=>page.evaluate(()=>{
   const grid=document.querySelector('.slot-main [data-sortable]');if(!grid)return null;
   const control=grid.querySelector('[data-sort-active="true"]');
-  return {source:{logicalPath:document.body.dataset.collectionPath,defaultSort:['name','products'].includes(grid.dataset.sortVariant)?'name-asc':'date-desc'},
+  return {source:{logicalPath:document.body.dataset.collectionPath,defaultSort:grid.dataset.sortVariant==='name'?'name-asc':'date-desc'},
     field:control?.dataset.sortField,indicator:control?.querySelector('[data-sort-indicator]')?.textContent.trim(),
     rows:[...grid.querySelectorAll('[data-list-entry]')].map(link=>({kind:link.parentElement.dataset.kind,key:new URL(link.href).pathname,href:link.href,text:link.textContent.trim()}))};
 });

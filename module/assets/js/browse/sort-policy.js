@@ -27,12 +27,12 @@ export const SORT_VARIANTS = Object.freeze({
         }
     },
     products: {
-        defaultToken: 'name-asc',
+        defaultToken: 'date-desc',
         grouped: false,
         tieBreakField: 'name',
         fields: {
             name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
-            version: { dataKey: 'sortVersion', type: 'string', defaultOrder: 'asc' },
+            date: { dataKey: 'sortDate', type: 'number', defaultOrder: 'desc' },
             price: { dataKey: 'sortPrice', type: 'number', defaultOrder: 'desc', missingLast: true }
         }
     }

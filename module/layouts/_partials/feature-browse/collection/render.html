@@ -18,7 +18,7 @@
   {{- with $row.sort_variant -}}
     {{- $attrs = merge $attrs (dict "sort-variant" . "default-sort" $row.default_sort) -}}
   {{- end -}}
-  {{- range $key := slice "group" "name" "date" "count" "size" "version" "price" -}}
+  {{- range $key := slice "group" "name" "date" "count" "size" "price" -}}
     {{- if isset $row (printf "sort_%s" $key) -}}
       {{- $attrs = merge $attrs (dict (printf "sort-%s" $key) (index $row (printf "sort_%s" $key))) -}}
     {{- end -}}

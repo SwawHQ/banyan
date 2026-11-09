@@ -57,4 +57,4 @@
 {{- end -}}
 {{- if $timeTree -}}{{- $view = "directory" -}}{{- end -}}
 {{- $variant := cond (eq $view "directory") "section" $view -}}
-{{- return (dict "view" $view "provider" $provider "script" $script "time_tree" $timeTree "sortable" (and (ne $view "") (ne $view "choice")) "sort_variant" $variant "default_sort" (cond (in (slice "name" "products") $view) "name-asc" "date-desc")) -}}
+{{- return (dict "view" $view "provider" $provider "script" $script "time_tree" $timeTree "sortable" (and (ne $view "") (ne $view "choice")) "sort_variant" $variant "default_sort" (cond (eq $view "name") "name-asc" "date-desc")) -}}

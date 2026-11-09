@@ -1,7 +1,7 @@
 ---
 title: 目录与引用
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-09
 url: p/directories/
 description: 用真实目录组织正文，用共享引用将文章加入其他栏目。
 ---
@@ -85,7 +85,7 @@ refs = ["/articles/category1/example"]
 `articles-all` 使用 `page-collection-directory-all` 和 `params.aggregate: /articles`，汇总文章目录中的正文。
 
 目录名和汇总入口可以修改。Swaw 使用 `pr` 与 `pr-all` 实现相同行为。
-正文的 `params.offer` 只提供版本和价格，不控制收录。
+正文的 `params.offer` 提供价格，并可保留版本定义值，不控制收录。
 详见 [怎样收录产品](/zh/p/collection-lists/#怎样收录产品)。
 
 演示站根配置保留空的 `[taxonomies]`，关闭 Hugo 默认的 `tags` 和 `categories`。

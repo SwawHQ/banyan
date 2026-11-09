@@ -49,7 +49,7 @@
     font-size: 0.875rem;
 }
 
-.list-item:not(.list-header) > :is(.item-field--date, .item-field--count, .item-field--version, .item-field--price) {
+.list-item:not(.list-header) > :is(.item-field--date, .item-field--count, .item-field--price) {
     color: var(--muted);
 }
 

@@ -30,7 +30,7 @@
   {{- $byName = $byName | append (merge $row (dict "sort_name" (printf "%d" (add $index 1)))) -}}
 {{- end -}}
 {{- $ordered := $byName -}}
-{{- if eq $config.view "all" -}}
+{{- if in (slice "all" "products") $config.view -}}
   {{- $ordered = sort (collections.Reverse $byName) "sort_date" "desc" -}}
 {{- else if eq $config.view "directory" -}}
   {{- $byName = collections.Reverse $byName -}}

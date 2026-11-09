@@ -3,7 +3,7 @@
 {{- $config := .config -}}
 {{- $fields := slice "name" -}}
 {{- if eq $config.view "products" -}}
-  {{- $fields = $fields | append "version" "price" -}}
+  {{- $fields = $fields | append "date" "price" -}}
 {{- else if eq $config.view "all" -}}
   {{- $fields = $fields | append "date" "size" -}}
 {{- else if eq $config.view "directory" -}}
