@@ -44,7 +44,7 @@ params:
       article: "文章"
 ---
 
-**{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Swaw Banyan{{< /new-tab >}}**：{{< new-tab href="/zh/articles/changelog/" >}}{{< theme-version local="本地开发版" >}}{{< /new-tab >}}
+**Swaw Banyan** {{< asset src="site/favicon.link.svg" alt="Banyan" class="icon icon--image md-inline-image" width="16" height="16" >}}：{{< new-tab href="https://github.com/SwawHQ/banyan" >}}{{< theme-version local="本地开发版" >}}{{< /new-tab >}}
 
 ### PWA 缓存信息：
 
@@ -52,7 +52,7 @@ params:
 **服务器**：{{< site-update "content" >}}  
 **触发同步**：{{< site-update "interval" "页面加载时 且 间隔 ≥ %d 分钟" >}}  
 **sw-策略**：{{< site-update "policy" >}}  
-**离线页**：{{< site-update "offline" >}}  
+**离线提示页**：{{< site-update "offline" >}}\
 **sw-状态**：{{< site-update "status" >}}
 
 {{< details-start summary="**更多诊断信息**" >}}

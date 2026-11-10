@@ -78,6 +78,25 @@ test('the reference site owns its images, manifest and robots templates',()=>{
   assert.match(extractTagAttribute(icon,'href'),/^\/site\/favicon\.link\.[a-f0-9]{64}\.svg$/);
 });
 
+test('GitHub pages link only to the organization and its avatar',()=>{
+  for(const prefix of prefixes) {
+    const html=fs.readFileSync(path.join(output,prefix,'github/index.html'),'utf8');
+    const main=extractBlocks(html,'main')[0].inner;
+    const links=extractStartTags(main,'a');
+    assert.equal(links.length,2);
+    assert.ok(links.every(tag=>extractTagAttribute(tag,'href')==='https://github.com/SwawHQ'));
+    const images=extractStartTags(main,'img');assert.equal(images.length,1);
+    const src=extractTagAttribute(images[0],'src');
+    assert.match(src,/\/site\/avatar\.swaw\.[a-f0-9]{64}\.svg$/);
+    assert.equal(extractTagAttribute(images[0],'width'),'64');
+    assert.equal(extractTagAttribute(images[0],'height'),'64');
+    assert.ok(fs.existsSync(path.join(output,src)));
+  }
+  const source=fs.readFileSync(path.join(root,'assets/site/favicon.link.svg'),'utf8');
+  assert.match(source,/width="32" height="32"/);
+  assert.match(source,/viewBox="0 0 1024 1024"/);
+});
+
 test('the reference site owns its delivery data, icons and interface translations',()=>{
   assert.deepEqual(Object.keys(parseToml(fs.readFileSync(path.join(root,'hugo.toml'),'utf8')).languages),languages);
   assert.deepEqual(fs.readdirSync(path.join(root,'assets/i18n')).sort(),languages.map(language=>language+'.toml').sort());
@@ -162,8 +181,8 @@ test('the reference site owns its columns and links to its local documentation',
     assert.equal(extractBlocks(offline,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb').length,0,'Resource pages do not inherit path columns.');
     for(const file of [path.join(output,prefix||'en/','sitemap.xml'),path.join(output,prefix,'llms.txt')])
       assert.ok(!fs.readFileSync(file,'utf8').includes('/_res/'),'Resource pages stay out of discovery outputs.');
-    assert.equal(roots.includes('/'+prefix+'github/'),false,'No standalone GitHub entry.');
-    for(const name of ['notes','notes-all','discover','all','catalog','catalog-all','changelog','github'])
+    assert.equal(roots.includes('/'+prefix+'github/'),true,'GitHub is available in every enabled language.');
+    for(const name of ['notes','notes-all','discover','all','catalog','catalog-all','changelog'])
       assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'No retired or unconfigured column is published: '+name);
     const docs=(prefix==='zh/'?'/zh/':'/')+'articles/docs/';
     assert.ok(extractStartTags(home,'a').some(tag=>extractTagAttribute(tag,'href')===docs),'Home links to the available documentation language.');
@@ -478,9 +497,9 @@ test('Powered by contains translated diagnostics and same-language test links',(
     if(prefix)assert.doesNotMatch(main,/Prefetch transport|Browser support|Selected backend|Loading\.\.\./,'Diagnostic copy follows the current language.');
     const external=extractStartTags(main,'a').filter(tag=>extractTagAttribute(tag,'href').startsWith('https://'));
     assert.deepEqual(external.map(tag=>extractTagAttribute(tag,'href')),['https://github.com/SwawHQ/banyan','https://gohugo.io/news/']);
-    const changelog=(prefix==='zh/'?'/zh/':'/')+'articles/changelog/';
-    assert.ok(extractStartTags(main,'a').some(tag=>extractTagAttribute(tag,'href')===changelog),'Theme version links to the local release notes.');
-    assert.ok(fs.existsSync(path.join(output,changelog,'index.html')));
+    const themeLink=extractBlocks(main,'a',tag=>extractTagAttribute(tag,'href')==='https://github.com/SwawHQ/banyan')[0];
+    assert.ok(themeLink.inner.trim()&&!themeLink.inner.includes('Swaw Banyan'),'Only the theme version links to GitHub.');
+    assert.ok(extractBlocks(main,'strong').some(block=>block.inner==='Swaw Banyan'),'The theme name has no link.');
     assert.equal(extractBlocks(main,'h2').length,0,'The compact layout keeps technology links and the update panel above collapsed diagnostics.');
     for(const link of external) {
       assert.equal(extractTagAttribute(link,'target'),'_blank');

@@ -44,7 +44,7 @@ params:
       article: "مقال"
 ---
 
-**{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Swaw Banyan{{< /new-tab >}}**: {{< new-tab href="/articles/changelog/" >}}{{< theme-version local="تطوير محلي" >}}{{< /new-tab >}}
+**Swaw Banyan** {{< asset src="site/favicon.link.svg" alt="Banyan" class="icon icon--image md-inline-image" width="16" height="16" >}}: {{< new-tab href="https://github.com/SwawHQ/banyan" >}}{{< theme-version local="تطوير محلي" >}}{{< /new-tab >}}
 
 ### ملحق: معلومات ذاكرة PWA المؤقتة
 
@@ -52,7 +52,7 @@ params:
 **الخادم**: {{< site-update "content" >}}  
 **بدء المزامنة**: {{< site-update "interval" "عند الانتقال إلى صفحة وفاصل زمني ≥ %d دقائق" >}}  
 **سياسة SW**: {{< site-update "policy" >}}  
-**صفحة العمل دون اتصال**: {{< site-update "offline" >}}  
+**صفحة إشعار عدم الاتصال**: {{< site-update "offline" >}}\
 **حالة SW**: {{< site-update "status" >}}
 
 {{< details-start summary="**مزيد من معلومات التشخيص**" >}}

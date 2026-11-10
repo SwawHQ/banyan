@@ -4,7 +4,7 @@ title: "About"
 # linkTitle: "About" #Replace the navigation label only.
 description: "Learn how Banyan organizes content directories and navigation for Hugo sites."
 url: about/ #Keep this route when renaming the content directory.
-weight: 110
+weight: 120
 layout: page-article-norss #Render Markdown without RSS inclusion.
 
 params:

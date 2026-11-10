@@ -3,10 +3,12 @@ title: 未发布
 url: p/unreleased/
 description: Banyan 主题和 Skill 的未发布变更。
 date: 2026-11-06
-lastmod: 2026-11-09
+lastmod: 2026-11-10
 ---
 
 ## 新增
+
+- SVG favicon 必须显式声明 32×32 默认尺寸，否则构建报错；参考站新增 GitHub 页面，头像独立于站点 favicon。第一列导航将 GitHub 放在“关于”之前，“关于”排在最后。参考站 SVG、ICO、Apple touch 和 PWA 图标统一使用鲜叶绿 `#26861C`；ICO 保留单张 32×32、32 位 DIB 图像。Powered by 的主题名称后显示与首页入口同尺寸的站点图标；仅主题版本文字链接到项目 GitHub 首页。
 
 - RSS 订阅页提供“全部文章 + 分类订阅规则”，不再枚举所有分类。`rss-link` 读取实际全站订阅地址，`site-root` 为网址示例生成当前语言的站点前缀。
 
@@ -134,7 +136,7 @@ lastmod: 2026-11-09
   移除不再使用的 `version_prefix` 和 `timestamp_layout` 配置。
 - 内容栏目使用普通目录和共享的 `_map.toml` 引用，列表、数量、元信息和栏目 RSS 使用同一归属，不复制正文。
   栏目名称由各站点定义。Banyan 演示用 `articles`、`articles-all`、`products` 和 `products-all`
-  展示普通列表与产品列表。列表与产品示例共用一篇正文和一份 `_map.toml`；文档和变更记录也在 `articles` 下维护。保留关于页，移除独立的 GitHub 入口。
+  展示普通列表与产品列表。列表与产品示例共用一篇正文和一份 `_map.toml`；文档和变更记录也在 `articles` 下维护。保留关于页和独立的 GitHub 入口。
   `d`、`d-all`、`pr` 和 `pr-all` 由 Swaw 自行声明；“产品 - 全部”使用 `/pr-all/`。
   移除主题对特定正文根和永久链接的约定；普通页面直接填写 `url`，正文使用 `p/名称/`，语言保留各自前缀。
   移动栏目时保留 `url` 即可保持发布网址。移除 `slug` 必填要求及逐栏目永久链接配置；缺少 `url` 时提示构建错误。
@@ -256,6 +258,8 @@ lastmod: 2026-11-09
   Git 提交和文件系统时间不改变内容日期。
 
 ## 升级迁移
+
+- 使用 `favicon.link.svg` 的站点 → `assets/site/favicon.link.svg` → 设置 `width="32" height="32"`，保留与路径匹配的 `viewBox`；引用处仍可指定其他显示尺寸。
 
 - 本次产品列表调整无必需迁移。已有 `params.offer.version` 定义值可保留。
 

@@ -4,7 +4,7 @@ title: "关于"
 # linkTitle: "关于" #只替换导航名称。
 description: "了解 Banyan 如何为 Hugo 站点组织内容目录和导航。"
 url: about/ #重命名内容目录时保留此网址。
-weight: 110
+weight: 120
 layout: page-article-norss #显示 Markdown 正文，不作为 RSS 条目。
 
 params:

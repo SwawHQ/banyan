@@ -3,6 +3,13 @@
   {{- $publish := . | resources.Copy "favicon.ico" | resources.Publish -}}
 {{- end -}}
 {{- $linkedIcon := resources.Get "site/favicon.link.svg" -}}
+{{- with $linkedIcon -}}
+  {{- $root := "" -}}
+  {{- range findRE `<svg\b[^>]*>` .Content 1 -}}{{- $root = . -}}{{- end -}}
+  {{- if or (not (findRE `\swidth\s*=\s*["']32(?:px)?["']` $root)) (not (findRE `\sheight\s*=\s*["']32(?:px)?["']` $root)) -}}
+    {{- errorf "Build failed: assets/site/favicon.link.svg must declare width=32 and height=32 (32x32 default size); keep viewBox in the artwork's coordinate system." -}}
+  {{- end -}}
+{{- end -}}
 {{- if not $linkedIcon -}}
   {{- $linkedIcon = resources.Get "site/favicon.link.ico" -}}
 {{- end -}}

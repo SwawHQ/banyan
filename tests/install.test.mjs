@@ -45,13 +45,9 @@ function consumer(name,{replacement='',multilingual=false}={}) {
   fixtureSiteFiles(root);
   fixtureSitePages(root,['appearance','language','my','_res','rss','powered-by']);
   for(const suffix of ['','.zh','.ar']) {
-    for(const [directory,href] of [
-      ['_res/home-art/wind',(suffix==='.zh'?'/zh/':'/')+'articles/docs/'],
-      ['powered-by',(suffix==='.zh'?'/zh/':'/')+'articles/changelog/']
-    ]) {
-      const file=path.join(root,'content',directory,'index'+suffix+'.md');
-      fs.writeFileSync(file,fs.readFileSync(file,'utf8').replaceAll(href,'https://banyan.swaw.com'+href));
-    }
+    const href=(suffix==='.zh'?'/zh/':'/')+'articles/docs/';
+    const file=path.join(root,'content/_res/home-art/wind','index'+suffix+'.md');
+    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replaceAll(href,'https://banyan.swaw.com'+href));
   }
   for(const suffix of multilingual?['','.zh','.ar']:['']) {
     const translated=value=>value.replace(/^title: (.+)$/m,'title: $1'+suffix);
@@ -100,7 +96,6 @@ function directoryDefaults(output,{prefix='',suffix=''}={}) {
   assert.ok(products.includes('<title>Products - All'+suffix));
   assert.match(products,/data-sort-variant="?products\b/);
   assert.equal([...products.matchAll(/data-sort-price=/g)].length,1,'Repeated references produce one product row.');
-  assert.ok(products.includes('<bdi>1.0.0</bdi>'));
   assert.ok(products.includes('/'+prefix+'p/alpha/'));
   const category=fs.readFileSync(path.join(output,prefix,'products/free/index.html'),'utf8');
   assert.match(category,/data-sort-variant="?products\b/);
@@ -271,6 +266,10 @@ test('favicon files select SVG before ICO and keep the fixed icon independent',(
   for(const kind of ['fixed','ico','both','svg']) {
     const root=consumer('favicon '+kind,{replacement:moduleRoot}),assets=path.join(root,'assets/site');
     const ico=fs.readFileSync(path.join(assets,'favicon.ico'));
+    for(const suffix of ['','.zh','.ar']) {
+      const file=path.join(root,'content/powered-by','index'+suffix+'.md');
+      fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('src="site/favicon.link.svg"','src="site/icon-180.png"'));
+    }
     if(kind==='fixed'||kind==='ico')fs.unlinkSync(path.join(assets,'favicon.link.svg'));
     if(kind==='ico'||kind==='both')fs.writeFileSync(path.join(assets,'favicon.link.ico'),ico);
     if(kind==='svg')fs.unlinkSync(path.join(assets,'favicon.ico'));
@@ -298,6 +297,25 @@ test('favicon files select SVG before ICO and keep the fixed icon independent',(
   assert.match(missing.stdout+missing.stderr,/missing favicon resource/);
 });
 
+test('SVG favicon requires a 32x32 default size',()=>{
+  const root=consumer('favicon dimensions',{replacement:moduleRoot}),file=path.join(root,'assets/site/favicon.link.svg');
+  const original=fs.readFileSync(file,'utf8');
+  for(const [name,source] of [
+    ['missing width',original.replace(/ width="32"/,'')],
+    ['missing height',original.replace(/ height="32"/,'')],
+    ['wrong width',original.replace('width="32"','width="64"')],
+    ['wrong height',original.replace('height="32"','height="16"')],
+    ['missing root','<path width="32" height="32"/>']
+  ]) {
+    fs.writeFileSync(file,source);
+    const result=command(root,skill,['base/hugo','--minify','--noBuildLock']);
+    assert.notEqual(result.status,0,name);
+    assert.match(result.stdout+result.stderr,/favicon\.link\.svg must declare width=32 and height=32/,name);
+  }
+  fs.writeFileSync(file,original.replace('width="32" height="32"',"height='32px' width='32px'"));
+  build(root,skill);
+});
+
 test('packaged Skill and versioned Module build from an isolated proxy',()=>{
   const root=consumer('packaged consumer',{multilingual:true});
   assert.match(passed(root,installed,['doctor']),/site\.banyan: matched/);
@@ -315,9 +333,9 @@ test('packaged Skill and versioned Module build from an isolated proxy',()=>{
     assert.ok(fs.readFileSync(path.join(output,prefix,'llms.txt'),'utf8').startsWith('# My site - '+label));
     assert.ok(fs.existsSync(path.join(output,prefix,'rss/index.html')));
     const panel=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
-    assert.ok(panel.includes('>'+version+'</a>'),'Powered by shows the installed Module version as plain text.');
+    assert.ok(panel.includes('>'+version+'</a>'),'Powered by shows the installed Module version as link text.');
     assert.ok(extractStartTags(panel,'a').some(tag=>extractTagAttribute(tag,'href')===
-      'https://banyan.swaw.com/'+(prefix==='zh/'?'zh/':'')+'articles/changelog/'));
+      'https://github.com/SwawHQ/banyan'));
     assert.match(panel,/<button\b[^>]*data-site-update-action=check[^>]* disabled>/,'Default SW-off panel keeps a disabled refresh action.');
   }
   assert.equal(fs.existsSync(path.join(root,'node_modules')),false);

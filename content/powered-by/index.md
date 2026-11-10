@@ -44,7 +44,7 @@ params:
       article: "Article"
 ---
 
-**{{< new-tab href="https://github.com/SwawHQ/banyan" >}}Swaw Banyan{{< /new-tab >}}**: {{< new-tab href="/articles/changelog/" >}}{{< theme-version local="Local development" >}}{{< /new-tab >}}
+**Swaw Banyan** {{< asset src="site/favicon.link.svg" alt="Banyan" class="icon icon--image md-inline-image" width="16" height="16" >}}: {{< new-tab href="https://github.com/SwawHQ/banyan" >}}{{< theme-version local="Local development" >}}{{< /new-tab >}}
 
 ### Appendix: PWA cache information
 
@@ -52,7 +52,7 @@ params:
 **Server**: {{< site-update "content" >}}  
 **Sync trigger**: {{< site-update "interval" "On page navigation and interval ≥ %d minutes" >}}  
 **SW policy**: {{< site-update "policy" >}}  
-**Offline page**: {{< site-update "offline" >}}  
+**Offline notice page**: {{< site-update "offline" >}}\
 **SW status**: {{< site-update "status" >}}
 
 {{< details-start summary="**More diagnostics**" >}}

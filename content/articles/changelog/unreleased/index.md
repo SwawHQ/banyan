@@ -3,10 +3,12 @@ title: Unreleased
 url: p/unreleased/
 description: Unreleased changes to the Banyan theme and Skill.
 date: 2026-11-06
-lastmod: 2026-11-09
+lastmod: 2026-11-10
 ---
 
 ## Added
+
+- SVG favicons must declare a 32×32 default size or the build fails. The reference site adds a GitHub page with independent avatars. The first navigation column places GitHub before About, with About last. Its SVG, ICO, Apple touch and PWA icons use leaf green `#26861C`; the ICO contains one 32×32, 32-bit DIB image. Powered by shows the site icon after the theme name, at the same size as the home navigation icon; only the theme version text links to the project GitHub homepage.
 
 - RSS subscription pages show the all-articles feed and category subscription instructions without enumerating categories. `rss-link` reads the actual feed address, and `site-root` provides the current language root for URL examples.
 
@@ -163,7 +165,7 @@ lastmod: 2026-11-09
   Section names belong to each site. The Banyan demo uses `articles`, `articles-all`, `products`
   and `products-all` to show ordinary and product lists. The list and product examples share one article and one `_map.toml`;
   documentation and release notes also live under `articles`. The demo keeps its about page
-  and removes the standalone GitHub entry. Swaw owns its
+  and its standalone GitHub entry. Swaw owns its
   `d`, `d-all`, `pr` and `pr-all` entries; Products - All uses `/pr-all/`.
   Remove theme-specific root and permalink conventions. Articles declare explicit `url`
   fields such as `p/article-name/`, with their language prefix; retaining `url`
@@ -341,6 +343,8 @@ lastmod: 2026-11-09
   widths use `--item-*-inline` and `--item-field-gap`.
 
 ## Upgrade migration
+
+- Sites using `favicon.link.svg` → `assets/site/favicon.link.svg` → set `width="32" height="32"` and retain the artwork coordinate system in `viewBox`; callers can still request other display sizes.
 
 - This product-list change requires no site data changes. Existing `params.offer.version` values can remain.
 
