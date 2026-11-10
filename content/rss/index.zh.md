@@ -19,13 +19,12 @@ params:
 
 ## 分类订阅 {#by-section}
 
-对提供 RSS 的**分类**或**子分类**列表页面，去掉网址中的 `?`、`#` 及其后的内容（若有），在分类路径末尾的 `/` 后添加 `index.xml`，即为订阅地址。示例（假设存在 `category1/category2/` 分类路径）：
+对**分类**或**子分类**列表页面，去掉网址中的 `?`、`#` 及其后面内容（若有），拼接上 `index.xml`，即为订阅地址。示例（假设存在 `category1/category2/` 分类路径）：
 
 ```text
 分类页面：{{< site-root >}}category1/category2/
 分类页面：{{< site-root >}}category1/category2/#...
 分类页面：{{< site-root >}}category1/category2/?...
-
 订阅地址：{{< site-root >}}category1/category2/index.xml
 ```
 
