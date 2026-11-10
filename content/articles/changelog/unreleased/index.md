@@ -357,7 +357,7 @@ lastmod: 2026-11-10
 - Shared deployment files are generated when the default language publishes only RSS and another language publishes HTML.
 - Column URL checks and shared navigation handle literal percent signs in deployment directories. Names such as the literal directory `a%20b` remain unsupported because Hugo emits an ambiguous relative URL; builds reject them explicitly.
 - HTML checks preserve `>` inside quoted attributes and skip attribute-like text inside their values, avoiding false link and anchor reports or missed broken links. Resource paths resolve deployment prefixes containing Chinese characters, spaces or percent signs.
-- Canvas end spacing fits the visible reading columns, including with JavaScript disabled. Document information opens reliably after scrolling on mobile. Root and path lists fit the width left by vertical scrollbars, avoiding inner horizontal scrollbars.
+- Canvas end spacing fits the visible reading columns, including with JavaScript disabled. Document information opens reliably after scrolling on mobile. Root and path lists fit the width left by vertical scrollbars, avoiding inner horizontal scrollbars. Code blocks allow the browser to pass horizontal scrolling to the outer canvas at either edge; the browser determines the handoff behavior.
 - Cloudflare `_headers` generation rejects header names starting with `#`,
   preventing them from being silently treated as comments.
 - Article structured data remains available when visible metadata is disabled.
