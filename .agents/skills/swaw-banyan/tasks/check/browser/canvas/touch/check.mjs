@@ -18,6 +18,7 @@ export async function check({page,context,baseUrl,options}) {
   const url=baseUrl+options.page,response=await page.goto(url,{waitUntil:'load'});
   assert.ok(response?.ok(),'Article must return a successful response.');await waitForBrowse(page);await afterPaint(page);
   const initial=await readCanvas(page),width=initial.viewport;
+  assert.equal(await page.locator('[data-canvas-wheel-hint]').count(),0,'Touch pages must not create floating wheel hints.');
   assert.equal(initial.canvasOffsetX,0,'A direct visit must start at the canvas origin.');
   assert.ok(Number.isFinite(initial.firstFrameX)&&Math.abs(initial.firstFrameX)<=1,'The first mobile frame must start at the canvas origin.');
   assert.ok(await page.evaluate(()=>navigator.maxTouchPoints>0),'The browser context must support native touch input.');
@@ -36,7 +37,6 @@ export async function check({page,context,baseUrl,options}) {
       assert.equal(page.url(),url,'Dragging a navigation link must not activate it.');
       assert.deepEqual(documents,[],'Dragging must not request a new document.');
       assert.equal(await page.locator('[data-canvas-wheel-status]').isVisible(),false,'Native touch must not show mouse instructions.');
-      assert.equal(await page.locator('[data-canvas-wheel-hint]').isVisible(),false,'Native touch must not show the wheel marker.');
       return drag;
     };
     const root=await page.locator('[data-root-navigation] [data-root-href]').first().evaluate(node=>{

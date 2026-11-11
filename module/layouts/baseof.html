@@ -83,7 +83,7 @@
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         <div class="page-shell">
             {{- if $showHomeNavigation -}}
-            <div class="page-column page-rail">
+            <div class="page-column page-rail" tabindex="0" role="group" aria-label="{{ partial "system-metadata/site/title.html" .Site }}">
                 {{- partial "feature-browse/navigation/root/render.html" . -}}
                 {{- if and (not $navigation.has_path_columns) $navigation.has_sources -}}
                 <script>{{ index $inlineScripts "root_navigation" | safeJS }}</script>
@@ -96,7 +96,7 @@
             <script>{{ $navigationStartupInline | safeJS }}</script>
             {{- end -}}
             <div class="reading-group">
-                <div class="page-column page-content">
+                <div class="page-column page-content" tabindex="0" role="group" aria-label="{{ .Title }}">
                 <main id="main" class="slot slot-main{{ if $navigation.sortable }} slot-main--collection{{ end }}" data-slot="main" tabindex="-1">
                     {{- block "main" . -}}{{- end -}}
                     {{- if $navigation.has_breadcrumb -}}

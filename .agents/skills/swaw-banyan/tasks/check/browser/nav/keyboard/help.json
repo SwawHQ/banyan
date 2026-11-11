@@ -1,6 +1,6 @@
 {
   "en": {
-    "summary": "Column keyboard order; Chromium",
+    "summary": "Column focus and keyboard order; Chromium",
     "usage": "swban check/browser/nav/keyboard [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>]",
     "details": [
       "  dir             Published site directory; default: public",
@@ -16,7 +16,7 @@
     ]
   },
   "zh": {
-    "summary": "列间键盘顺序；Chromium",
+    "summary": "列焦点与键盘顺序；Chromium",
     "usage": "swban check/browser/nav/keyboard [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>]",
     "details": [
       "  dir             已完成的站点构建目录；默认：public",

@@ -5,45 +5,16 @@ export function initCanvasWheel() {
     const shell = document.querySelector('.page-shell');
     if (!shell) return;
     const rtl = root.dir === 'rtl';
-    let mousePoint;
     let middleReleasePending = false;
     let snapTimer;
     let touchScroll;
-    let hintFrame = 0;
-    let hintPosition = '';
-    const hint = document.createElement('span');
-    hint.dataset.canvasWheelHint = '';
-    hint.setAttribute('aria-hidden', 'true');
-    hint.textContent = '↔';
-    hint.hidden = true;
-    document.body.appendChild(hint);
     root.dataset.canvasWheel = 'ready';
     const canvasX = () => window.visualViewport?.pageLeft ?? window.scrollX;
-    const hintTransform = () => `translate(${Math.max(0, Math.min(mousePoint.x + 12, root.clientWidth - 20))}px, ${Math.max(0, Math.min(mousePoint.y + 12, root.clientHeight - 18))}px)`;
-
-    function updateHint() {
-        if (!mousePoint || document.hidden || root.dataset.canvasPointer !== 'mouse'
-            || root.dataset.canvasWheel !== 'locked') {
-            if (hintFrame) cancelAnimationFrame(hintFrame);
-            hintFrame = 0;
-            if (!hint.hidden) hint.hidden = true;
-            return;
-        }
-        if (hintFrame || (!hint.hidden && hintPosition === hintTransform())) return;
-        // Read the latest coordinates once per frame; do not schedule an idle loop.
-        hintFrame = requestAnimationFrame(() => {
-            hintFrame = 0;
-            hintPosition = hintTransform();
-            hint.style.transform = hintPosition;
-            hint.hidden = false;
-        });
-    }
 
     function unlock() {
         clearTimeout(snapTimer);
         middleReleasePending = false;
         if (root.dataset.canvasWheel !== 'ready') root.dataset.canvasWheel = 'ready';
-        updateHint();
     }
 
     function align(position, direction) {
@@ -71,17 +42,14 @@ export function initCanvasWheel() {
         }
     }
 
-    function markMouse(event) {
+    function markMouse() {
         touchScroll = undefined;
         if (root.dataset.canvasPointer !== 'mouse') root.dataset.canvasPointer = 'mouse';
-        mousePoint = { x: event.clientX, y: event.clientY };
-        updateHint();
     }
 
     window.addEventListener('resize', () => {
         clearTimeout(snapTimer);
         touchScroll = undefined;
-        updateHint();
     }, { passive: true });
     for (const viewport of [document, window.visualViewport].filter(Boolean)) {
         viewport.addEventListener('scroll', event => {
@@ -125,9 +93,8 @@ export function initCanvasWheel() {
 
     window.addEventListener('pointermove', event => {
         if (event.pointerType === 'mouse') {
-            markMouse(event);
+            markMouse();
         } else {
-            mousePoint = undefined;
             if (event.pointerType !== 'touch') {
                 touchScroll = undefined;
                 delete root.dataset.canvasPointer;
@@ -140,16 +107,14 @@ export function initCanvasWheel() {
         clearTimeout(snapTimer);
         touchScroll = undefined;
         if (event.pointerType !== 'mouse') {
-            mousePoint = undefined;
             delete root.dataset.canvasPointer;
             return unlock();
         }
-        markMouse(event);
+        markMouse();
         if (event.button === 1 && root.dataset.canvasWheel !== 'suspended') {
             // shortcut: native autoscroll state is unavailable; replace click/Escape suspension when browsers expose it.
             root.dataset.canvasWheel = 'suspended';
             middleReleasePending = true;
-            updateHint();
         } else {
             unlock();
         }
@@ -162,14 +127,14 @@ export function initCanvasWheel() {
         else unlock();
     }, { capture: true });
 
-    function canStart(target) {
+    function canStart(target, vertical = true) {
         if (!(target instanceof Element) || !shell.contains(target)
             || target.isContentEditable
-            || target.closest('input, textarea, select, button, audio, video, iframe')) return false;
+            || target.closest('input, textarea, select, button, audio, video, iframe, summary')) return false;
         for (let node = target; node !== shell; node = node.parentElement) {
             const style = getComputedStyle(node);
             // Overflow remains scrollable at either end of its current range.
-            if ((/auto|scroll/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1)
+            if ((vertical && /auto|scroll/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1)
                 || (/auto|scroll/.test(style.overflowX) && node.scrollWidth > node.clientWidth + 1)) return false;
         }
         return true;
@@ -179,16 +144,14 @@ export function initCanvasWheel() {
         clearTimeout(snapTimer);
         touchScroll = undefined;
         const scrollbar = isCanvasScrollbarPoint(event.clientX, event.clientY);
-        if (root.dataset.canvasPointer === 'touch') markMouse(event);
-        // shortcut: wheel cannot distinguish a mouse from a trackpad after mouse input; use a device API if browsers add one.
+        if (root.dataset.canvasPointer === 'touch' || root.dataset.canvasWheel === 'locked') markMouse();
+        // shortcut: wheel cannot distinguish a mouse from a trackpad; use a device API if browsers add one.
         if (root.dataset.canvasPointer !== 'mouse' || root.dataset.canvasWheel === 'suspended'
             || event.defaultPrevented || (!event.cancelable && (!scrollbar || event.shiftKey))
             || event.buttons || event.ctrlKey || event.metaKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
         if (root.dataset.canvasWheel !== 'locked') {
             if (root.scrollWidth <= root.clientWidth + 1 || (!scrollbar && !canStart(event.target))) return;
-            if (scrollbar) mousePoint = { x: event.clientX, y: event.clientY };
             root.dataset.canvasWheel = 'locked';
-            updateHint();
         }
         // Without Shift, native track wheel input can be non-cancelable and needs horizontal conversion.
         if (event.cancelable) event.preventDefault();
@@ -213,27 +176,47 @@ export function initCanvasWheel() {
         if (!event.cancelable) handleWheel(event);
     }, { passive: true });
 
-    root.addEventListener('pointerleave', () => {
-        mousePoint = undefined;
-        updateHint();
-    });
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) return;
-        mousePoint = undefined;
-        updateHint();
-    });
-    window.addEventListener('pointercancel', () => {
-        mousePoint = undefined;
-        unlock();
-    });
+    window.addEventListener('pointercancel', unlock);
     window.addEventListener('keydown', event => {
         clearTimeout(snapTimer);
         touchScroll = undefined;
-        if (event.key === 'Escape') unlock();
+        if (event.isComposing) return;
+        if (['ArrowUp', 'ArrowDown', 'Escape', 'Tab', 'Enter', ' '].includes(event.key)) return unlock();
+        if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey
+            || root.dataset.canvasWheel === 'suspended'
+            || !['ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) return;
+        if (root.scrollWidth <= root.clientWidth + 1) return unlock();
+        const target = event.target === document.body || event.target === root ? shell : event.target;
+        const arrow = event.key === 'ArrowLeft' || event.key === 'ArrowRight';
+        // Only unlocked page keys defer to a column's native vertical scrolling.
+        if (!canStart(target, !arrow && root.dataset.canvasWheel !== 'locked')) return;
+        if (root.dataset.canvasWheel !== 'locked') {
+            root.dataset.canvasWheel = 'locked';
+        }
+        if (arrow) return;
+        event.preventDefault();
+        const direction = rtl ? -1 : 1;
+        const width = window.visualViewport?.width ?? root.clientWidth;
+        const max = document.scrollingElement.scrollWidth - width;
+        let next = event.key === 'Home' || event.key === 'PageUp' ? 0 : max;
+        if (event.key === 'PageUp' || event.key === 'PageDown') {
+            const position = canvasX() * direction;
+            const step = event.key === 'PageUp' ? -1 : 1;
+            const edge = parseFloat(getComputedStyle(document.body).paddingInlineStart);
+            for (const column of shell.querySelectorAll('.page-column')) {
+                const rect = column.getBoundingClientRect();
+                if (!rect.width) continue;
+                const start = direction * (window.scrollX + (rtl ? rect.right - root.clientWidth + edge : rect.left - edge));
+                const boundary = Math.max(0, Math.min(start, max));
+                if ((boundary - position) * step > 1 && (next - boundary) * step > 0) next = boundary;
+            }
+            // A wide column must remain readable before advancing to the next column.
+            next = position + step * Math.min(width, Math.abs(next - position));
+        }
+        window.scrollTo({ left: next * direction, top: 0, behavior: 'instant' });
     });
     for (const name of ['blur', 'pagehide']) window.addEventListener(name, () => {
         touchScroll = undefined;
-        mousePoint = undefined;
         delete root.dataset.canvasPointer;
         unlock();
     });

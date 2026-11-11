@@ -3,7 +3,7 @@ title: Unreleased
 url: p/unreleased/
 description: Unreleased changes to the Banyan theme and Skill.
 date: 2026-11-06
-lastmod: 2026-11-10
+lastmod: 2026-11-11
 ---
 
 ## Added
@@ -149,7 +149,7 @@ lastmod: 2026-11-10
 - Collection pages load their parent navigation sooner, reducing the empty-column interval. Main content does not wait for navigation to finish loading.
 - Desktop columns and the horizontal canvas use native thin scrollbars with system buttons. The horizontal scrollbar and wheel help appear and hide together. Scroll, hover and horizontal-lock behavior and column gaps stay the same. Touch and forced-colors modes retain the system's default width.
 - Section headings and article page titles use the body text color and a slightly heavier weight. Sort labels and secondary fields, including dates and sizes, use 87.5% of the base font size and scale with it. Name headers in the current list and path-column headers use a `0.3em` start indent based on the header container's font size. Sort arrows stay after their labels. Text line height and ordinary list density stay the same. The first navigation entry after `weight` sorting uses the palette's header rule and keeps its original font weight. Custom palettes define `--list-header-border` on `.item-list`.
-- The horizontal wheel arrow appears only in locked mode; hovering does not show the arrow or enter locked mode. The wheel can pan the canvas from its native horizontal scrollbar, which stays visible while locked. Shift+wheel on the native track no longer causes duplicate horizontal movement. During mouse input, a short help line at the navigation's starting edge follows scrollbar visibility. Its text has a translucent background that follows the page theme and does not intercept page input. Touch input does not show mouse instructions. Site interface dictionaries must include `canvas_wheel_help`.
+- The floating horizontal wheel arrow is removed; the bottom help line remains. Hovering does not enter locked mode. Left/right arrow keys also enter this shared mode while retaining native movement. After keyboard locking, the first wheel pans the canvas even if the mouse has not moved. Home/End and PageUp/PageDown enter it directly when the focused area has no native scroll target; vertically scrollable columns retain their keys even at either end. Each column has a named Tab stop and a focus outline; path columns become focusable after loading. Home/End move to the canvas ends; PageUp/PageDown move by column, or by one viewport inside a wide column. Up/down arrows, Esc, Tab, Shift+Tab, Enter and Space exit without blocking their native action. Space and Shift+Space retain native paging; Enter and Space retain control activation. Controls and inner horizontal scrollers retain their keys. The wheel can pan the canvas from its native horizontal scrollbar, whose colors remain visible while locked; system overlay scrollbars can still hide. Shift+wheel on the native track no longer causes duplicate horizontal movement. During mouse input, a short help line at the navigation's starting edge appears during scrolling, scrollbar hovering or horizontal lock. Its text has a translucent background that follows the page theme and does not intercept page input. Touch input does not show mouse instructions. Site interface dictionaries must include `canvas_wheel_help`.
 - Browser checks `nav/sort`, `palette/contrast`, `palette/roles`, `prose/layout` and `canvas/layout` require an explicit `--page`. Appearance and PWA navigation sources default to the home page.
 
 - Require Hugo 0.168.0. Language configuration uses native `label` and `locale`;
@@ -346,7 +346,7 @@ lastmod: 2026-11-10
 
 - Sites using `favicon.link.svg` → `assets/site/favicon.link.svg` → set `width="32" height="32"` and retain the artwork coordinate system in `viewBox`; callers can still request other display sizes.
 
-- This product-list change requires no site data changes. Existing `params.offer.version` values can remain.
+- The product-list and horizontal keyboard changes require no site migration. Existing `params.offer.version` values can remain.
 
 ## Fixed
 

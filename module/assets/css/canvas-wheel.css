@@ -1,26 +1,8 @@
-[data-canvas-wheel-hint],
 [data-canvas-wheel-status] {
     display: none;
 }
 
 @media screen {
-    [data-canvas-wheel-hint]:not([hidden]) {
-        display: block;
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 20;
-        inline-size: 18px;
-        block-size: 16px;
-        font: 12px/16px system-ui, sans-serif;
-        text-align: center;
-        direction: ltr;
-        color: var(--muted);
-        opacity: 0.8;
-        pointer-events: none;
-        user-select: none;
-    }
-
     html[data-canvas-pointer="mouse"][data-auto-scrollbar]:is([data-scrolling], [data-scrollbar-hover], [data-canvas-wheel="locked"]) [data-canvas-wheel-status] {
         display: block;
         position: fixed;

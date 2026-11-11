@@ -25,7 +25,7 @@
 <body>
     <div class="page">
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        <div class="page-column page-content">
+        <div class="page-column page-content" tabindex="0" role="group" aria-label="{{ .Title }}">
             <main id="main" class="slot slot-main" data-slot="main" tabindex="-1">
                 {{- partial "feature-document/render-page.html" . -}}
             </main>

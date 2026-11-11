@@ -250,6 +250,8 @@ test('external navigation handles slow, stale, failed and offline column request
       await afterPaint(page);const held=await snapshot(page);
       assert.ok(await page.locator('main').isVisible(),'The article must remain visible while columns load.');
       assert.equal(held.widths.length,expected.hrefs.length,'All path columns must be reserved before fragments arrive.');
+      assert.equal(await page.locator('.path-column[data-navigation-column="'+delayed+'"]').getAttribute('tabindex'),null,
+        'An empty reserved column must stay outside the Tab order.');
       assert.equal(await page.locator('[data-slot=breadcrumb] > .path-column').nth(expected.paths.indexOf(delayed))
         .locator('[data-list-entry]').count(),0,'Only the unfinished column may remain empty.');
       assert.equal(await page.locator('[data-slot=breadcrumb]').getAttribute('aria-hidden'),null);

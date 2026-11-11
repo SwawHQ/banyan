@@ -1,6 +1,6 @@
 {
   "en": {
-    "summary": "Horizontal wheel mode, native input and tail space; Chromium",
+    "summary": "Horizontal wheel and keyboard mode, native input and tail space; Chromium",
     "usage": "swban check/browser/canvas/wheel [dir] --page <path> --short <path> [--widths <list>] [--headed] [--trace] [--out <dir>] [--timeout <ms>]",
     "details": [
       "  dir              Published site directory; default: public",
@@ -12,11 +12,11 @@
       "  --out <dir>      Save JSON and screenshot in a new subdirectory",
       "  --timeout <ms>   Browser action timeout; default: 15000",
       "",
-      "swban check/browser/canvas/wheel ./preview --page /long/ --short /short/  #Check mouse wheel mode"
+      "swban check/browser/canvas/wheel ./preview --page /long/ --short /short/  #Check horizontal wheel and keyboard mode"
     ]
   },
   "zh": {
-    "summary": "横向滚轮模式、原生输入与尾部留白；Chromium",
+    "summary": "横向滚轮与键盘模式、原生输入与尾部留白；Chromium",
     "usage": "swban check/browser/canvas/wheel [dir] --page <path> --short <path> [--widths <list>] [--headed] [--trace] [--out <dir>] [--timeout <ms>]",
     "details": [
       "  dir              已完成的站点构建目录；默认：public",
@@ -28,7 +28,7 @@
       "  --out <dir>      在新子目录保存 JSON 和截图",
       "  --timeout <ms>   浏览器操作超时，单位为毫秒；默认：15000",
       "",
-      "swban check/browser/canvas/wheel ./preview --page /long/ --short /short/  #检查鼠标横向滚轮模式"
+      "swban check/browser/canvas/wheel ./preview --page /long/ --short /short/  #检查横向滚轮与键盘模式"
     ]
   }
 }

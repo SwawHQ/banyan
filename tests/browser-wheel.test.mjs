@@ -123,7 +123,7 @@ for(const [name,suffix] of [['Chromium',''],['WebKit','.webkit']]) {
     } finally {try{await browser?.close();}finally{await server.stop();}}
   });
 
-  test(name+' checks wheel locking, native clicks, bottom help and light edge alignment',{timeout:65000},()=>{
+  test(name+' checks wheel and keyboard locking, native input, bottom help and edge alignment',{timeout:65000},()=>{
     const result=cli(suffix);assert.equal(result.status,0,result.stdout+result.stderr);
   });
   test(name+' checks the same wheel behavior and canvas bounds in RTL',{timeout:65000},()=>{
@@ -162,6 +162,17 @@ test('wheel check detects a missing tail space',{timeout:20000},()=>{
   write(path.join(broken,'broken.css'),'.reading-group{min-inline-size:0!important}');
   fs.appendFileSync(path.join(broken,article,'index.html'),'<link rel="stylesheet" href="/broken.css">');
   const result=cli('',broken);assert.equal(result.status,1);assert.match(result.stderr,/tail|blank|padding|留白/i);
+});
+test('wheel check detects intercepted horizontal keyboard paging',{timeout:20000},()=>{
+  const broken=path.join(work,'blocked-keyboard');fs.cpSync(output,broken,{recursive:true});
+  write(path.join(broken,'blocked-keyboard.js'),"window.addEventListener('keydown',event=>{if(event.key==='Home')event.stopImmediatePropagation();});");
+  fs.appendFileSync(path.join(broken,article,'index.html'),'<script src="/blocked-keyboard.js"></script>');
+  const result=cli('',broken);assert.equal(result.status,1);assert.match(result.stderr,/(?:Fallback|Locked) Home/);
+});
+test('wheel check rejects a floating wheel hint',{timeout:20000},()=>{
+  const broken=path.join(work,'floating-hint');fs.cpSync(output,broken,{recursive:true});
+  fs.appendFileSync(path.join(broken,article,'index.html'),'<span data-canvas-wheel-hint hidden>↔</span>');
+  const result=cli('',broken);assert.equal(result.status,1);assert.match(result.stderr,/Floating wheel hints must be absent/);
 });
 for(const prefix of ['','/ar']) {
 test('native touch still pans roots, prose and metadata and restores history'+(prefix?' in RTL':''),{timeout:35000},async()=>{

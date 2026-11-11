@@ -79,6 +79,11 @@ body {
     scroll-margin-inline-start: var(--page-edge-inline);
 }
 
+.page-column:focus-visible {
+    outline: 2px dashed var(--focus-ring);
+    outline-offset: -2px;
+}
+
 .page-rail,
 .path-column {
     inline-size: var(--navigation-column-inline);

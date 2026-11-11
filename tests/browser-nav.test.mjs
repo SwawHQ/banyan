@@ -179,6 +179,13 @@ test('chromium rejects shortened date keys and a descending sort with ascending 
 });
 
 for(const {name,suffix} of engines){
+test(name+' catches a missing column Tab stop',{timeout:15000},()=>{
+  const broken=fixture('column-focus-'+name);
+  script(broken,'appearance',"document.querySelector('.page-content').tabIndex=-1;");
+  const result=cli('nav/keyboard'+suffix,[],broken);
+  assert.equal(result.status,1);assert.match(result.stderr,/Tab stop|before its controls/);
+});
+
 test(name+' catches a misdirected skip link',{timeout:15000},()=>{
   const skip=fixture('skip-'+name);
   script(skip,'d/swban-nav-long',`document.querySelector('.skip-link').href='#missing-main';`);

@@ -49,6 +49,9 @@ export function renderPathColumn(column, payload, { selectedPathname = '', linea
     column.dataset.sortVariant = payload.sortVariant;
     column.dataset.defaultSort = payload.defaultSort;
     column.dataset.breadcrumbCollectionHref = payload.href;
+    column.tabIndex = 0;
+    column.setAttribute('role', 'group');
+    column.setAttribute('aria-label', list.getAttribute('aria-label'));
     initAutoScrollbar(column);
     column.replaceChildren(list);
 }
@@ -86,6 +89,8 @@ export function preparePathColumns(models) {
         }
         if (column.dataset.navigationColumn !== model.key) {
             column.replaceChildren();
+            column.removeAttribute('tabindex');
+            column.removeAttribute('aria-label');
             column.removeAttribute('data-navigation-failed');
             delete column.dataset.breadcrumbCollectionHref;
             delete column.dataset.sortVariant;
