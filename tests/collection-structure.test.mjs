@@ -107,7 +107,7 @@ test('public navigation requires explicit section pages and rendered ancestors',
   } finally {fs.rmSync(path.dirname(child),{recursive:true,force:true});}
 });
 
-test('visible read-only ancestors work and internal hidden trees need no path columns',()=>{
+test('visible read-only ancestors work and internal hidden trees need no breadcrumb columns',()=>{
   changed(content('docs/direct/index.md'),article('Direct leaf').replace('slots: []','slots: [breadcrumb]'),passed);
   changed(content('docs/_index.md'),'---\ntitle: Read only\nlayout: page-article-norss\noutputs: [HTML]\n---\n',passed);
   const internal=content('_res/private');

@@ -50,17 +50,17 @@ layout: page-collection-products
 
 Powered by 由站点根 `content/powered-by/index*.md` 维护，使用 `page-article-norss` 展示技术总览，通过 `weight` 排序，并声明 `params.icon: code`。标题、说明、源码和变更记录链接在各语言 Markdown 正文维护；外链复用 `new-tab`。
 
-`theme-version` 只输出来自 `hugo.Deps` 的主题版本，接受 `label`、`local` 文案参数；`hugo-version` 读取 `hugo.Version`。`site-update "version"` 显示当前页面构建时的内容版本；启用 SW 时，`sw-version.json` 使用同一版本。`site-update "interval" "每 %d 分钟检查"` 显示检查间隔，`site-update "policy"` 提供缓存策略链接，`site-update "offline"` 按交付配置生成当前语言的离线页链接，保留部署子路径。
+`theme-version` 只输出来自 `hugo.Deps` 的主题版本，接受 `label`、`local` 文案参数；`hugo-version` 读取 `hugo.Version`。`site-status "version"` 显示当前页面构建时的内容版本；启用 SW 时，`sw-version.json` 使用同一版本。`site-status "interval" "每 %d 分钟检查"` 显示检查间隔，`site-status "policy"` 提供缓存策略链接，`site-status "offline"` 按交付配置生成当前语言的离线页链接，保留部署子路径。
 
 文档和版本说明均继承 `articles` 的 `cascade`：栏目使用 `page-collection-directory`，正文使用 `page-article-rss` 和 `params.slots: [breadcrumb, meta]`，提供日期、来源链接、章节目录和 RSS。开发期间在 `content/articles/changelog/unreleased/index.md` 记录变化，发布时归档为 `content/articles/changelog/v版本号/index.md`。
 
-PWA 段落中的 `site-update "status"` 显示程序更新状态和检查按钮；`site-update "content"` 显示当前页面的内容版本状态；`params.site_update.labels` 与技术说明同存于 `content/powered-by/index*.md`。参考站和 Swaw 的各语言 Powered by 将预取诊断放在折叠区中，使用 `prefetch-debug-controls`、`prefetch-debug-links` 和 `prefetch-debug-state` 短代码；其 `serviceWorker.controlled` 只表示该诊断页是否受控，不代表其他标签页。
+PWA 段落中的 `site-status "status"` 显示程序更新状态和检查按钮；`site-status "content"` 显示当前页面的内容版本状态；`params.site_status.labels` 与技术说明同存于 `content/powered-by/index*.md`。参考站和 Swaw 的各语言 Powered by 将预取诊断放在折叠区中，使用 `prefetch-debug-controls`、`prefetch-debug-links` 和 `prefetch-debug-state` 短代码；其 `serviceWorker.controlled` 只表示该诊断页是否受控，不代表其他标签页。
 
 面板自行读取 registration，显示检查、安装和等待状态；构建信息只在上方显示一次。检查按钮始终只检查，不激活或刷新。程序更新和激活由浏览器管理；普通链接、刷新、历史和锚点保持原生行为。
 
 ## 名称列表与公共样式
 
-`page-collection-directory-name-only` 是完整的名称列表，默认按名称升序，点击名称列头切换升／降序，不按目录和文章分组。它使用与其他集合列表相同的成员、图标继承、`from`、路径列及历史恢复；共享导航 HTML 片段只携带名称列表需要的字段，不输出更新时间、计数或价格。名称列表列出直接子项及引用；汇总成员须选用相应的 `-all` 布局。
+`page-collection-directory-name-only` 是完整的名称列表，默认按名称升序，点击名称列头切换升／降序，不按目录和文章分组。它使用与其他集合列表相同的成员、图标继承、`from`、面包屑列及历史恢复；共享导航 HTML 片段只携带名称列表需要的字段，不输出更新时间、计数或价格。名称列表列出直接子项及引用；汇总成员须选用相应的 `-all` 布局。
 
 例如将上述产品目录改成名称列表，只需把 `layout` 改为 `page-collection-directory-name-only`。新建独立目录时可声明：
 
@@ -72,7 +72,7 @@ params:
 
 名称列表与选择列表共用单列样式。语言／外观布局直接提供选项，语言与外观脚本分别处理操作。内容不再另外声明 `list` 或列配置。
 
-`layout` 由集合模型解析，决定渲染器输出的列表变体；`params.slots` 中的 `breadcrumb` 决定路径区域是否存在。公共 DOM、行为标记与字段宽度见 [UI 命名与职责](/zh/p/ui-naming/#样式类与行为标记)，样式归属与发布边界见 [CSS 源码与发布名](/zh/p/ui-naming/#css-源码与发布名)。
+`layout` 由集合模型解析，决定渲染器输出的列表变体；`params.slots` 中的 `breadcrumb` 决定面包屑区域是否存在。公共 DOM、行为标记与字段宽度见 [UI 命名与职责](/zh/p/ui-naming/#样式类与行为标记)，样式归属与发布边界见 [CSS 源码与发布名](/zh/p/ui-naming/#css-源码与发布名)。
 
 集合页只有确实渲染 `.prose` 时才取得单一 `prose.css`；纯列表不会加载正文包。
 
@@ -100,7 +100,7 @@ GitHub 和备案页的目标链接使用 `{{</* new-tab href="https://example.co
 
 ## 统一更新时间
 
-目录、内容全部视图、产品列表和路径列的时间统一读取 Hugo `.Lastmod`，列名为“更新时间”。文章显示自身更新时间；非空目录汇总其递归文章集合的最新更新时间，包含引用。空目录使用自身 `.Lastmod`；没有有效时间的条目显示 `—`，排序值为空。
+目录、内容全部视图、产品列表和面包屑列的时间统一读取 Hugo `.Lastmod`，列名为“更新时间”。文章显示自身更新时间；非空目录汇总其递归文章集合的最新更新时间，包含引用。空目录使用自身 `.Lastmod`；没有有效时间的条目显示 `—`，排序值为空。
 
 站点根 `hugo.toml` 配置 `[frontmatter] lastmod = ["lastmod", "date"]`：显式 `lastmod` 优先，未填写时使用手写 `date`，两者都没有则无有效更新时间。Git 提交和文件修改时间不参与文章更新时间。
 
@@ -128,13 +128,13 @@ params:
 
 图片默认值在声明目录解析后才继承，不会改成从子目录寻找同名文件。图片按 `1rem` 显示、保持比例，使用共用图标占位，无灯箱或正文图片的响应式变体。缺失资源、静态／远程 URL 和非图片文件会使构建失败。若页面自行声明 `build`，需同时保留 `publishResources: false`，避免覆盖全局 cascade 后又发布无哈希原图。`params.language_icon` 中的图片以目标语言设置页作为 bundle 上下文，同样支持全站 assets。
 
-图片默认保留原色。需要跟随外观时，可声明 `icon: { image: "site/favicon.link.svg", monochrome: true }`。共用图标样式在浅色使用 `brightness(0)`、深色使用 `brightness(0) invert(1)`，分别显示纯黑／纯白，并保留透明度；手动切换或跟随系统都生效。它只改变当前图标元素的显示，不修改源文件、发布文件或哈希 URL，也不会让共用图片的浏览器 favicon、正文头像自动变色。此选项适合有透明背景的单色图形；多色细节会统一变成黑／白。省略或 `false` 均保留原色，不接受字符串 `"true"`。第一列、主列表及动态路径列都保留同一声明。
+图片默认保留原色。需要跟随外观时，可声明 `icon: { image: "site/favicon.link.svg", monochrome: true }`。共用图标样式在浅色使用 `brightness(0)`、深色使用 `brightness(0) invert(1)`，分别显示纯黑／纯白，并保留透明度；手动切换或跟随系统都生效。它只改变当前图标元素的显示，不修改源文件、发布文件或哈希 URL，也不会让共用图片的浏览器 favicon、正文头像自动变色。此选项适合有透明背景的单色图形；多色细节会统一变成黑／白。省略或 `false` 均保留原色，不接受字符串 `"true"`。第一列、主列表及动态面包屑列都保留同一声明。
 
 Swaw 在 `content/pr/_index*.md` 和 `content/pr-all/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置。未声明 `icon` 的文章使用当前列表的默认图标；需要在所有入口使用同一图标时，在文章各语言文件中声明 `icon`。
 
 `aggregate` 只提供集合成员，不参与默认图标继承；`/pr-all/` 与 `/pr/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `_index.md` 声明的 `/d-all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。访问首页只选中首页，其他页面按真实入口或有效来源选中。
 
-图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。路径列从共享 HTML 片段克隆图标节点，保留相同图片地址、字符和 SVG 引用。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主表、共享导航 HTML 片段和路径列共用；站点列表与第一列也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
+图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。面包屑列从共享 HTML 片段克隆图标节点，保留相同图片地址、字符和 SVG 引用。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主表、共享导航 HTML 片段和面包屑列共用；站点列表与第一列也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
 
 ## 怎样声明选择列表
 
@@ -200,12 +200,12 @@ Swaw 的每个产品栏目使用 `content/pr/<目录>/_index.<lang>.md` 设置�
 
 ## 来源与排序
 
-从栏目进入文章时，路径导航保留该次来源；直接打开正文时，显示文章的实际目录路径。
+从栏目进入文章时，面包屑导航保留该次来源；直接打开正文时，显示文章的实际目录路径。
 分类和聚合列表页使用自身路径，排序时不生成冗余的 `from`；文章链接在来源不同于默认归属时保留 `from`。
 `sorts` 按路径保存各列排序，包含当前主列表；全部默认时省略该参数，尾部默认项也省略，其余默认位置用 `_` 保留。每列独立更新，新标签打开的链接也保留最新状态。
 排序和浏览器前进、后退会保留各自的来源与排序状态。
 
-同一名称顺序由 Hugo 生成，主表和路径列使用相同结果。更新时间相同时，名称作为后续排序依据。
+同一名称顺序由 Hugo 生成，主表和面包屑列使用相同结果。更新时间相同时，名称作为后续排序依据。
 
 Swaw 的 `/pr/` 是产品栏目根，`/pr-all/` 是产品全部。Banyan 演示对应 `/products/` 和 `/products-all/`。两组入口均由各自站点声明，收录范围由目录和 `aggregate` 决定。
-技术说明见[路径模型](/zh/p/breadcrumb-models/)和[导航状态](/zh/p/navigation-state/)。
+技术说明见[面包屑模型](/zh/p/breadcrumb-models/)和[导航状态](/zh/p/navigation-state/)。

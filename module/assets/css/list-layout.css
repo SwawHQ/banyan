@@ -16,7 +16,7 @@
 }
 
 .page-rail .item-list,
-.path-column .item-list {
+.breadcrumb-column .item-list {
     --list-field-tracks: 100%;
     inline-size: 100%;
 }
@@ -106,7 +106,7 @@
     color: inherit;
 }
 
-.list-header :is([data-sort-control], .path-column-sort) {
+.list-header :is([data-sort-control], .breadcrumb-column-sort) {
     font-size: 0.875rem;
     line-height: calc(1rem * var(--column-line-height));
 }

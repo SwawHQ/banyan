@@ -35,7 +35,7 @@
 <html lang="{{ .Site.Language.Lang }}" dir="{{ .Site.Language.Direction | default "ltr" }}"
     {{- if .Sitemap.Disable }} data-sitemap-disabled="true"{{ end }}
     {{- if $navigation.has_breadcrumb }}
-    data-has-breadcrumb-columns="{{ $navigation.has_path_columns }}"
+    data-has-breadcrumb-columns="{{ $navigation.has_breadcrumb_columns }}"
     {{- end }}>
 
 <head>
@@ -48,7 +48,7 @@
     {{- if $navigation.sortable -}}
       {{- partial "feature-browse/collection/prefetch.html" (dict
         "page" . "columns_by_href" $navigation.columns_by_href
-        "has_path_columns" $navigation.has_path_columns "runtime" $navigation.runtime
+        "has_breadcrumb_columns" $navigation.has_breadcrumb_columns "runtime" $navigation.runtime
         "navigation" $navigation.data
       ) -}}
     {{- end -}}
@@ -58,7 +58,7 @@
     {{/* 首屏同步主题，避免浅色与深色切换时闪烁。 */}}
     <script>{{ $themeBootInline | safeJS }}</script>
     {{/* Mark path loading before parsing the page. */}}
-    {{- if $navigation.has_path_columns }}
+    {{- if $navigation.has_breadcrumb_columns }}
     <script>{{ $breadcrumbPendingInline | safeJS }}</script>
     {{- end }}
     {{- partial "system-ui/page-styles.html" . -}}
@@ -70,7 +70,7 @@
     {{- $js := resources.Get "js/main.js" | js.Build (dict "minify" (not hugo.IsServer)) -}}
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
-    {{- if $navigation.has_path_columns -}}
+    {{- if $navigation.has_breadcrumb_columns -}}
     <script src="{{ $navigation.runtime.RelPermalink }}" integrity="{{ $navigation.runtime.Data.Integrity }}" defer></script>
     {{- end -}}
     {{- partial "system-delivery/pwa/service-worker.html" (dict
@@ -78,20 +78,20 @@
       "sw_routes" $delivery.sw_routes
     ) -}}
 </head>
-<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }} data-language-return-missing="{{ i18n "language_return_missing" }}" data-navigation="{{ $navigation.data | jsonify }}"{{ with $navigation.page_source.logicalPath }} data-collection-path="{{ . }}"{{ end }}{{ if or $navigation.has_path_columns $navigation.sortable }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
+<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }} data-language-return-missing="{{ i18n "language_return_missing" }}" data-navigation="{{ $navigation.data | jsonify }}"{{ with $navigation.page_source.logicalPath }} data-collection-path="{{ . }}"{{ end }}{{ if or $navigation.has_breadcrumb_columns $navigation.sortable }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
     <div class="page">
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         <div class="page-shell">
             {{- if $showHomeNavigation -}}
             <div class="page-column page-rail" tabindex="0" role="group" aria-label="{{ partial "system-metadata/site/title.html" .Site }}">
                 {{- partial "feature-browse/navigation/root/render.html" . -}}
-                {{- if and (not $navigation.has_path_columns) $navigation.has_sources -}}
+                {{- if and (not $navigation.has_breadcrumb_columns) $navigation.has_sources -}}
                 <script>{{ index $inlineScripts "root_navigation" | safeJS }}</script>
                 {{- end -}}
             </div>
             {{- end -}}
-            {{- if $navigation.has_path_columns -}}
-            <nav class="slot path-navigation" data-slot="breadcrumb" aria-label="Breadcrumb" aria-hidden="true"></nav>
+            {{- if $navigation.has_breadcrumb_columns -}}
+            <nav class="slot breadcrumb-navigation" data-slot="breadcrumb" aria-label="Breadcrumb" aria-hidden="true"></nav>
             {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
             <script>{{ $navigationStartupInline | safeJS }}</script>
             {{- end -}}
@@ -100,7 +100,7 @@
                 <main id="main" class="slot slot-main{{ if $navigation.sortable }} slot-main--collection{{ end }}" data-slot="main" tabindex="-1">
                     {{- block "main" . -}}{{- end -}}
                     {{- if $navigation.has_breadcrumb -}}
-                      {{- partial "system-metadata/seo/breadcrumb.html" (dict "ctx" $ "model" $navigation.path_model) -}}
+                      {{- partial "system-metadata/seo/breadcrumb-list.html" (dict "ctx" $ "model" $navigation.breadcrumb_model) -}}
                     {{- end -}}
                 </main>
                 </div>

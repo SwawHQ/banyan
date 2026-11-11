@@ -8,7 +8,7 @@ weight: 90
 
 params:
   icon: rss
-  slots: [breadcrumb] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
+  slots: [breadcrumb] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
 ---
 
 将订阅地址添加到 RSS 阅读器，即可接收文章更新。

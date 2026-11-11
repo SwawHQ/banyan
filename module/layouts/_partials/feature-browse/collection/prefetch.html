@@ -8,6 +8,6 @@
   {{- $column = (partial "feature-browse/navigation/source/page-model.html" (dict "page" .page)).currentColumn -}}
 {{- end -}}
 <link rel="prefetch" href="{{ $column.payloadUrl }}">
-{{- if not .has_path_columns -}}
+{{- if not .has_breadcrumb_columns -}}
 <link rel="prefetch" as="script" href="{{ .runtime.RelPermalink }}">
 {{- end -}}

@@ -16,8 +16,8 @@ export async function installStartupProbe(page) {
     const observer=new MutationObserver(()=>{
       if(!document.getElementById('main'))return;
       probe.nav=document.querySelector('[data-slot=breadcrumb]');
-      probe.columns=[...document.querySelectorAll('[data-slot=breadcrumb] [data-collection-column]')];
-      probe.parsed={columns:probe.columns.length,entryPending:document.documentElement.hasAttribute('data-entry-breadcrumb-pending')};
+      probe.columns=[...document.querySelectorAll('[data-slot=breadcrumb] [data-breadcrumb-column]')];
+      probe.parsed={columns:probe.columns.length,entryPending:document.documentElement.hasAttribute('data-breadcrumb-pending')};
       observer.disconnect();
       requestAnimationFrame(()=>{probe.firstFrameX=window.visualViewport?.pageLeft??scrollX;});
     });

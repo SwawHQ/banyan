@@ -17,7 +17,7 @@ async function articleLink(page,article) {
 
 async function centerVertically(link) {
   await link.evaluate(node=>{
-    const column=node.closest('.page-content,.path-column'),box=node.getBoundingClientRect(),parent=column.getBoundingClientRect();
+    const column=node.closest('.page-content,.breadcrumb-column'),box=node.getBoundingClientRect(),parent=column.getBoundingClientRect();
     column.scrollTop+=box.top+box.height/2-parent.top-parent.height/2;
   });
 }

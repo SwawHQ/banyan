@@ -251,7 +251,7 @@ test('one backend is selected once; overrides apply only on diagnostic pages',{t
       const prefix=language==='en'?'':'/'+language,pathname=prefix+'/powered-by/',fragment='#keep-position';
       await visit(page,baseUrl,'auto',pathname+'?keep=yes'+fragment);
       assert.equal(await page.locator('html').getAttribute('lang'),language);
-      assert.equal(await page.locator('[data-site-update-panel]').count(),1);
+      assert.equal(await page.locator('[data-site-status-panel]').count(),1);
       assert.equal(await page.locator('#prefetch-debug-controls').count(),1);
       const disclosure=page.locator('details:has(#prefetch-debug-controls)'),summary=disclosure.locator('summary');
       assert.equal(await disclosure.count(),1);assert.equal(await summary.isVisible(),true);
@@ -506,7 +506,7 @@ test('DCL and restored from/sorts paths gate every shared candidate',{timeout:30
         release();await page.waitForLoadState('load');await page.unroute('**/prefetch-blocker.js');
         await page.waitForFunction(()=>window.banyanPrefetchState&&window.banyanPrefetchState.reason!=='selecting');
         assert.equal((await runtimeState(page)).ready,true);
-        assert.equal(await page.evaluate(()=>document.documentElement.hasAttribute('data-entry-breadcrumb-pending')),false);
+        assert.equal(await page.evaluate(()=>document.documentElement.hasAttribute('data-breadcrumb-pending')),false);
         if(route.endsWith('#sorts=_,_,name-desc')) {
           const order=await page.locator('main [data-list-entry][href]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname)
             .filter(href=>/^\/d\/prefetch-scopes\/child\/(one|two)\/$/.test(href)));
@@ -541,7 +541,7 @@ test('custom startup waits for navigation and recovers after a fragment failure'
       const warmed=await page.evaluate(()=>window.__swbanPrefetchTrace.links);
       assert.equal(warmed.filter(href=>new URL(href).pathname==='/d/prefetch-scopes/child/two/').length,failed?0:1,
         'Startup must capture links after navigation loads, once per URL.');
-      await page.evaluate(()=>{const root=document.documentElement;root.setAttribute('data-entry-breadcrumb-pending','true');root.removeAttribute('data-entry-breadcrumb-pending');});
+      await page.evaluate(()=>{const root=document.documentElement;root.setAttribute('data-breadcrumb-pending','true');root.removeAttribute('data-breadcrumb-pending');});
       assert.deepEqual(await page.evaluate(()=>window.__swbanPrefetchTrace.links),warmed,'Later navigation state changes must not restart prefetch.');
     }finally{release();await page.unroute('**/site/navigation/*.txt',handler);}
   }})));
@@ -552,12 +552,12 @@ test('two-ended scopes resolve columns and prerender independently',{timeout:300
   assert.equal(accepted.enabled,true);
   await scenarios('columns',columns,[{id:'column-positions-and-overlap',run:async({page,baseUrl})=>{
     await visit(page,baseUrl,'off');
-    const inspect=async(collection,pathCount)=>page.evaluate(({collection,pathCount})=>{
+    const inspect=async(collection,breadcrumbCount)=>page.evaluate(({collection,breadcrumbCount})=>{
       const anchor=(name,folder=true)=>'<a data-list-entry data-probe="'+name+'" href="/probe-'+name+'/"><span class="item-icon"><svg class="icon icon-'+(folder?'folder':'file')+'"></svg></span>'+name+'</a>';
       document.querySelectorAll('[data-root-navigation],[data-slot="breadcrumb"],[data-slot="main"],[data-column-probe]').forEach(node=>node.remove());
       const panel=document.createElement('div');panel.dataset.columnProbe='';
       panel.innerHTML='<nav data-root-navigation>'+anchor('root')+'</nav>'+
-        '<nav data-slot="breadcrumb">'+Array.from({length:pathCount},(_,i)=>'<div class="path-column">'+anchor('path-'+i)+'</div>').join('')+'</nav>'+
+        '<nav data-slot="breadcrumb">'+Array.from({length:breadcrumbCount},(_,i)=>'<div class="breadcrumb-column">'+anchor('path-'+i)+'</div>').join('')+'</nav>'+
         '<main data-slot="main" class="'+(collection?'slot-main--collection':'')+'">'+anchor('main')+anchor('file',false)+'</main>'+
         '<aside>'+anchor('aside')+'</aside>';
       document.body.appendChild(panel);
@@ -570,7 +570,7 @@ test('two-ended scopes resolve columns and prerender independently',{timeout:300
           const id=matched[0]?.id;
           return [kind,id?{id,mode:(kind==='prefetch'?config.modes:config.prerender)[id]}:null];
         }))]));
-    },{collection,pathCount});
+    },{collection,breadcrumbCount});
     let result=await inspect(true,1);
     assert.deepEqual(result.root.prefetch,{id:'folder/root',mode:'off'});
     assert.deepEqual(result['path-0'].prefetch,{id:'folder/tail-1',mode:'moderate'},'tail offset wins over root offset');

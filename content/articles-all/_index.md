@@ -11,5 +11,5 @@ params:
   aggregate: /articles
   # Optional Lastmod range: include start, exclude end. See the installation guide for child sections.
   # time_range: {start: "2000-01-01", end: "2005-02-01"}
-  slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+  slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---

@@ -125,7 +125,7 @@ palette = "site/theme.css"
 | `.item-control` | 普通、已访问、悬停、焦点和当前项的文字、背景及边框 |
 | `.item-list` | 列表标题和第一列首项的表头线 |
 | `.prose` | 标题、分隔线、删除文字、代码、引用、图片、表格和语法高亮 |
-| `.page-home` | 风场艺术包中的锚点、地平线、信号和风向袋 |
+| `.home-art-wind` | 风场艺术包中的锚点、地平线、信号和风向袋 |
 
 无模式限定的作用域用于浅色和深色；深色规则只覆盖不同的值。
 保留各作用域及其深色规则，在角色定义处修改。CSS 变量的别名和混色在继承前解析；
@@ -172,7 +172,7 @@ params:
   styles: [style.css]
   scripts: [script.js]
   brand_line: 为探索型发布提供清晰结构。
-  home_signals:
+  signals:
     - Hugo
     - name: 使用文档
       url: /zh/articles/docs/
@@ -188,10 +188,10 @@ params:
 
 | 艺术页可选参数 | 默认值 | 用途 |
 | --- | --- | --- |
-| `home_wind_field_start_offset_rem` | `6` | 信号区域顶部距首页区域顶部的距离，单位为 rem |
-| `home_signal_drift_seconds` | `90` | 普通信号漂移周期的基准秒数 |
-| `home_signal_launch_gap_seconds` | `4` | 相邻信号启动的基准间隔秒数 |
-| `home_signal_guide_chance` | `0` | 带拖尾引导线的信号比例，范围 0–100 |
+| `wind_field_start_offset_rem` | `6` | 信号区域顶部距首页区域顶部的距离，单位为 rem |
+| `signal_drift_seconds` | `90` | 普通信号漂移周期的基准秒数 |
+| `signal_launch_gap_seconds` | `4` | 相邻信号启动的基准间隔秒数 |
+| `signal_guide_chance` | `0` | 带拖尾引导线的信号比例，范围 0–100 |
 
 ## 覆盖主题文件
 

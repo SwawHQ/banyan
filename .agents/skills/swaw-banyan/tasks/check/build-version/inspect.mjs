@@ -14,7 +14,7 @@ async function readUtf8IfExists(absolutePath) {
 
 function extractUpdateVersionElements(text) {
     const elements = [];
-    const pattern = /<time\b(?=[^>]*\bdata-site-update-version(?:\s|=|>))[^>]*>([\s\S]*?)<\/time>/gi;
+    const pattern = /<time\b(?=[^>]*\bdata-site-build-version(?:\s|=|>))[^>]*>([\s\S]*?)<\/time>/gi;
     for (const match of text.matchAll(pattern)) {
         const tag = match[0].slice(0, match[0].indexOf('>') + 1);
         elements.push({
@@ -42,7 +42,7 @@ async function inspectBuildVersionContract(rootDir, rows) {
     }
 
     if (updateVersions.length === 0) {
-        issues.push('No data-site-update-version <time> element was published.');
+        issues.push('No data-site-build-version <time> element was published.');
     } else {
         for (const entry of updateVersions) {
             if (!entry.buildVersion) {

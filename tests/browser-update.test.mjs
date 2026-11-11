@@ -65,7 +65,7 @@ title: Independent version indicator
 url: /version-only/
 layout: page-article-norss
 params:
-  site_update:
+  site_status:
     labels:
       content_checking: Checking version
       content_current: Same version
@@ -75,9 +75,9 @@ params:
       refresh_icon: 🔄
       content_refresh: Refresh server version
 ---
-Build: {{< site-update "version" >}}
+Build: {{< site-status "version" >}}
 
-Server: {{< site-update "content" >}}
+Server: {{< site-status "content" >}}
 `);
   const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureSiteMounts;
   const build=(name,version=versions[0],asset,code,mode='enable')=>{
@@ -94,7 +94,7 @@ Server: {{< site-update "content" >}}
   };
   old=build('old');next=build('next',versions[1]);off=build('off',versions[0],undefined,undefined,'off');
   const manager=fs.readFileSync(path.join(root,'module/assets/js/pwa/manager-entry.js.tmpl'),'utf8').replaceAll('\r\n','\n');
-  const panelScript=fs.readFileSync(path.join(root,'module/assets/js/updates/page.js'),'utf8').replaceAll('\r\n','\n');
+  const panelScript=fs.readFileSync(path.join(root,'module/assets/js/site-status/page.js'),'utf8').replaceAll('\r\n','\n');
   const worker=fs.readFileSync(path.join(root,'module/assets/js/pwa/worker-enable.js.tmpl'),'utf8').replaceAll('\r\n','\n');
   for(const [name,input,search,replacement] of [
     ['startup-check',panelScript,'await readRegistration();\n        syncRegistrationStatus();','await readRegistration(); await registration.update();\n        syncRegistrationStatus();'],
@@ -102,7 +102,7 @@ Server: {{< site-update "content" >}}
     ['visibility-checks',panelScript,'const ready = () => {',"document.addEventListener('visibilitychange', () => void checkForUpdates());\n        const ready = () => {"]
   ]) {
     assert.ok(input.includes(search),'Fault must alter real source: '+name);
-    faults[name]=build(name,versions[0],'js/updates/page.js',input.replace(search,replacement));
+    faults[name]=build(name,versions[0],'js/site-status/page.js',input.replace(search,replacement));
   }
   const install="self.addEventListener('install', (event) => {";
   assert.ok(worker.includes(install));
@@ -193,7 +193,7 @@ test('the panel reports failed registration and retries without a global runtime
       });
       await page.goto(baseUrl+panel,{waitUntil:'load'});await panelState(page,'failed');
       assert.equal(await page.evaluate(()=>typeof window.BanyanServiceWorkerManagerRuntime),'undefined');
-      const action=page.locator('[data-site-update-action="check"]');assert.equal(await action.isEnabled(),true);
+      const action=page.locator('[data-site-sw-action="check"]');assert.equal(await action.isEnabled(),true);
       await action.click();await panelState(page,'failed');
       await page.waitForFunction(()=>document.querySelector('[data-site-content-status]')?.dataset.siteContentState==='current');
       await page.evaluate(()=>{window.__swbanAllowRegistration=true;});
@@ -217,21 +217,21 @@ test('version indicators work independently and keep build text fixed',{timeout:
         if(!requests)await page.goto(baseUrl+'/version-only/',{waitUntil:'load'});
         else await page.locator('[data-site-content-action]').click();
         await contentIndicator(page,state,state==='current'?versions[0]:versions[1]);
-        assert.equal(await page.locator('[data-site-update-panel]').count(),0);
-        assert.equal(await page.locator('script[src*="/js/updates/page."]').count(),1);
-        assert.equal(await page.locator('[data-site-update-version]').textContent(),versions[0]);
-        assert.equal(await page.locator('a [data-site-update-version]').count(),0);
+        assert.equal(await page.locator('[data-site-status-panel]').count(),0);
+        assert.equal(await page.locator('script[src*="/js/site-status/page."]').count(),1);
+        assert.equal(await page.locator('[data-site-build-version]').textContent(),versions[0]);
+        assert.equal(await page.locator('a [data-site-build-version]').count(),0);
       }
       reply={status:200,body:JSON.stringify(versions[0])};
       await page.goto(baseUrl+panel,{waitUntil:'load'});await panelState(page,'failed');
       await contentIndicator(page,'current',versions[0]);
       const before=requests;
-      await page.locator('[data-site-update-action]').click();await panelState(page,'failed');
+      await page.locator('[data-site-sw-action]').click();await panelState(page,'failed');
       assert.equal(requests,before,'Program checks must not run the independent version comparison.');
       reply={status:200,body:JSON.stringify(versions[1])};
-      const programText=await page.locator('[data-site-update-status]').textContent();
+      const programText=await page.locator('[data-site-sw-status]').textContent();
       await page.locator('[data-site-content-action]').click();await contentIndicator(page,'changed',versions[1]);
-      assert.equal(await page.locator('[data-site-update-status]').textContent(),programText,'Version refresh must not change the program status.');
+      assert.equal(await page.locator('[data-site-sw-status]').textContent(),programText,'Version refresh must not change the program status.');
       assert.equal(page.url(),baseUrl+panel,'Refreshing a row must not reload or navigate.');
       await page.locator('[data-site-content-status] a').click();
       await page.waitForURL(baseUrl+'/sw-version.json');
@@ -247,15 +247,15 @@ test('off mode reports an existing controller without unregistering it',{timeout
       await server.setRoot(off);
       await page.goto(baseUrl+panel+'?off-mode-probe=1',{waitUntil:'load'});
       await panelState(page,'off');await contentIndicator(page,'unavailable');
-      const state=await page.locator('[data-site-update-panel]').evaluate(node=>({
-        text:node.textContent,copy:JSON.parse(node.dataset.siteUpdateCopy),controlled:Boolean(navigator.serviceWorker.controller)
+      const state=await page.locator('[data-site-status-panel]').evaluate(node=>({
+        text:node.textContent,copy:JSON.parse(node.dataset.siteSwCopy),controlled:Boolean(navigator.serviceWorker.controller)
       }));
       assert.equal(state.controlled,true);
       assert.ok(state.text.includes(state.copy.status_controlled));
       assert.ok((await page.locator('[data-site-sw-policy]').textContent()).trim());
       assert.equal(await page.locator('[data-site-sw-policy] a').count(),0);
-      assert.equal(await page.locator('[data-site-update-action]').isVisible(),true);
-      assert.equal(await page.locator('[data-site-update-action]').isDisabled(),true);
+      assert.equal(await page.locator('[data-site-sw-action]').isVisible(),true);
+      assert.equal(await page.locator('[data-site-sw-action]').isDisabled(),true);
       assert.ok(await page.evaluate(async()=>Boolean((await navigator.serviceWorker.getRegistration('/'))?.active)));
       return {mode:'off',controllerRetained:true};
     }}]});

@@ -122,20 +122,20 @@
     --code-token-type: #9EC889;
 }
 
-.page-home {
-    --page-home-anchor-color: var(--muted);
-    --page-home-horizon-color: currentColor;
-    --page-home-signal-color: color-mix(in srgb, #5F759E 84%, var(--fg));
-    --page-home-signal-selected-color: var(--accent);
-    --page-home-windsock-body-color: var(--accent);
-    --page-home-windsock-stripe-color: var(--bg);
-    --page-home-windsock-pole-color: currentColor;
+.home-art-wind {
+    --home-art-wind-anchor-color: var(--muted);
+    --home-art-wind-horizon-color: currentColor;
+    --home-art-wind-signal-color: color-mix(in srgb, #5F759E 84%, var(--fg));
+    --home-art-wind-signal-selected-color: var(--accent);
+    --home-art-wind-windsock-body-color: var(--accent);
+    --home-art-wind-windsock-stripe-color: var(--bg);
+    --home-art-wind-windsock-pole-color: currentColor;
 }
 
-[data-theme="dark"] .page-home {
-    --page-home-anchor-color: color-mix(in srgb, var(--fg) 58%, var(--bg));
-    --page-home-horizon-color: color-mix(in srgb, var(--border) 38%, var(--bg));
-    --page-home-signal-color: color-mix(in srgb, #7388AC 78%, var(--fg));
-    --page-home-signal-selected-color: color-mix(in srgb, var(--accent) 82%, var(--fg));
-    --page-home-windsock-pole-color: color-mix(in srgb, var(--border) 52%, var(--bg));
+[data-theme="dark"] .home-art-wind {
+    --home-art-wind-anchor-color: color-mix(in srgb, var(--fg) 58%, var(--bg));
+    --home-art-wind-horizon-color: color-mix(in srgb, var(--border) 38%, var(--bg));
+    --home-art-wind-signal-color: color-mix(in srgb, #7388AC 78%, var(--fg));
+    --home-art-wind-signal-selected-color: color-mix(in srgb, var(--accent) 82%, var(--fg));
+    --home-art-wind-windsock-pole-color: color-mix(in srgb, var(--border) 52%, var(--bg));
 }

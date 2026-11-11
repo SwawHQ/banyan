@@ -12,7 +12,7 @@ params:
   icon: { text: "©" }
 
   # share_image: false #此页面不继承社交分享预览图。
-  slots: [breadcrumb] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
+  slots: [breadcrumb] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
 ---
 
 

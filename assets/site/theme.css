@@ -52,11 +52,11 @@
     --item-hover-bg: color-mix(in srgb, var(--fg) 10%, var(--bg));
 }
 
-:is(.page-rail, .path-column, .slot-main--collection) .item-control {
+:is(.page-rail, .breadcrumb-column, .slot-main--collection) .item-control {
     --item-current-marker: color-mix(in srgb, var(--fg) 55%, var(--bg));
 }
 
-:is(.page-rail, .path-column, .slot-main--collection)
+:is(.page-rail, .breadcrumb-column, .slot-main--collection)
     .item-control:not(.is-current):not([aria-expanded="true"]) .item-icon :is(svg.icon, img.icon--monochrome) {
     opacity: 0.7;
 }
@@ -161,20 +161,20 @@
     --code-token-type: #B6B6B6;
 }
 
-.page-home {
-    --page-home-anchor-color: var(--muted);
-    --page-home-horizon-color: currentColor;
-    --page-home-signal-color: color-mix(in srgb, #666666 84%, var(--fg));
-    --page-home-signal-selected-color: var(--accent);
-    --page-home-windsock-body-color: var(--accent);
-    --page-home-windsock-stripe-color: var(--bg);
-    --page-home-windsock-pole-color: currentColor;
+.home-art-wind {
+    --home-art-wind-anchor-color: var(--muted);
+    --home-art-wind-horizon-color: currentColor;
+    --home-art-wind-signal-color: color-mix(in srgb, #666666 84%, var(--fg));
+    --home-art-wind-signal-selected-color: var(--accent);
+    --home-art-wind-windsock-body-color: var(--accent);
+    --home-art-wind-windsock-stripe-color: var(--bg);
+    --home-art-wind-windsock-pole-color: currentColor;
 }
 
-[data-theme="dark"] .page-home {
-    --page-home-anchor-color: var(--muted);
-    --page-home-horizon-color: color-mix(in srgb, var(--border) 75%, var(--bg));
-    --page-home-signal-color: color-mix(in srgb, #AAAAAA 78%, var(--fg));
-    --page-home-signal-selected-color: color-mix(in srgb, var(--accent) 82%, var(--fg));
-    --page-home-windsock-pole-color: var(--border);
+[data-theme="dark"] .home-art-wind {
+    --home-art-wind-anchor-color: var(--muted);
+    --home-art-wind-horizon-color: color-mix(in srgb, var(--border) 75%, var(--bg));
+    --home-art-wind-signal-color: color-mix(in srgb, #AAAAAA 78%, var(--fg));
+    --home-art-wind-signal-selected-color: color-mix(in srgb, var(--accent) 82%, var(--fg));
+    --home-art-wind-windsock-pole-color: var(--border);
 }

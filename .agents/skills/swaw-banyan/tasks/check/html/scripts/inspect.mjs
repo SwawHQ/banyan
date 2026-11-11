@@ -3,7 +3,7 @@ import {extractExternalScriptSrcs,extractStartTags} from '../../../_shared/html/
 import {localReference,insideOutput,isFile,readOptional} from '../../../_shared/output.mjs';
 import {inspectDocumentControls} from './controls.mjs';
 
-const controllers=['preferences/language-page','preferences/back-links','updates/page','pages/offline'];
+const controllers=['preferences/language-page','pages/back','site-status/page','pages/reload'];
 const belongsTo=(reference,family)=>new RegExp('(?:^|/)js/'+family.replaceAll('.','\\.')+'(?:\\.min)?\\.[^/]+\\.js$').test(reference);
 function hasMarker(text,name) {
   return (text.match(/<[a-z][^>]*>/gi)||[]).some(tag=>new RegExp('\\sdata-'+name+'(?:\\s|=|/?>)','i').test(tag));
@@ -27,14 +27,14 @@ export async function inspect(directory) {
     }
     if(page.isRedirect)continue;
     for(const issue of inspectDocumentControls(page.text))issues.push(issue+': '+page.relativePath);
-    if(page.relativePath==='index.html'&&assets.some(ref=>belongsTo(ref,'browse/path-entry'))) {
-      issues.push('Home page must not load the path entry bundle: ' + page.relativePath);
+    if(page.relativePath==='index.html'&&assets.some(ref=>belongsTo(ref,'browse/breadcrumb-entry'))) {
+      issues.push('Home page must not load the breadcrumb entry bundle: ' + page.relativePath);
     }
     const expected=[];
     if(hasMarker(page.text,'language-settings'))expected.push('preferences/language-page');
-    if(['site-update-panel','site-content-status','site-update-version','site-update-interval','site-sw-policy'].some(marker=>hasMarker(page.text,marker)))expected.push('updates/page');
-    if(hasMarker(page.text,'page-actions'))expected.push('pages/offline');
-    if(!hasMarker(page.text,'language-settings')&&/\sdata-page-action=(?:"back"|'back'|back(?:\s|>))/.test(page.text))expected.push('preferences/back-links');
+    if(['site-status-panel','site-content-status','site-build-version','site-content-interval','site-sw-policy'].some(marker=>hasMarker(page.text,marker)))expected.push('site-status/page');
+    if(hasMarker(page.text,'page-actions'))expected.push('pages/reload');
+    if(!hasMarker(page.text,'language-settings')&&/\sdata-page-action=(?:"back"|'back'|back(?:\s|>))/.test(page.text))expected.push('pages/back');
     for(const family of controllers) {
       const count=references.filter(ref=>belongsTo(ref,family)).length;
       if(count!==(expected.includes(family)?1:0))issues.push(`Controller loading boundary ${family}: expected ${expected.includes(family)?1:0}, found ${count} on ${page.relativePath}`);
@@ -43,7 +43,7 @@ export async function inspect(directory) {
   }
   for(const asset of common) {
     const code=await readOptional(insideOutput(root,asset));
-    for(const marker of ['data-language-choice','data-site-update-panel','data-site-content-status','data-page-action'])
+    for(const marker of ['data-language-choice','data-site-status-panel','data-site-content-status','data-page-action'])
       if(code.includes(marker))issues.push(`Page controller ${marker} must stay out of shared bundle ${asset}`);
   }
   return {issues};

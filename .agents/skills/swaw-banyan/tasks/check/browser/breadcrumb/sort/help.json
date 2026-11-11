@@ -16,7 +16,7 @@
     ]
   },
   "zh": {
-    "summary": "路径列排序、节点复用与预取标记；Chromium",
+    "summary": "面包屑列排序、节点复用与预取标记；Chromium",
     "usage": "swban check/browser/breadcrumb/sort [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--column <path>]",
     "details": [
       "  dir              已完成的站点构建目录；默认：public",
@@ -24,7 +24,7 @@
       "  --trace          保存 trace.zip；默认输出到系统临时目录",
       "  --out <dir>      在新子目录保存 JSON 和截图",
       "  --timeout <ms>   浏览器启动和单次操作的超时，单位为毫秒；默认：15000",
-      "  --page <path>    含可排序路径列的页面",
+      "  --page <path>    含可排序面包屑列的页面",
       "  --column <path>  目标列的集合路径；默认：首个可排序列",
       "",
       "swban check/browser/breadcrumb/sort ./preview --page /article/#from=all",

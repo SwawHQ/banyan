@@ -7,8 +7,8 @@ weight: 100
 
 params:
   icon: code
-  slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
-  site_update: #Text for the site-update shortcode below.
+  slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+  site_status: #Text for the site-status shortcode below.
     labels: #Translate values for this language; keep the keys.
       checking: "Checking…"
       installing: "Installing the new version…"
@@ -48,12 +48,12 @@ params:
 
 ### Appendix: PWA cache information
 
-**Local**: {{< site-update "version" >}}  
-**Server**: {{< site-update "content" >}}  
-**Sync trigger**: {{< site-update "interval" "On page navigation and interval ≥ %d minutes" >}}  
-**SW policy**: {{< site-update "policy" >}}  
-**Offline notice page**: {{< site-update "offline" >}}\
-**SW status**: {{< site-update "status" >}}
+**Local**: {{< site-status "version" >}}  
+**Server**: {{< site-status "content" >}}  
+**Sync trigger**: {{< site-status "interval" "On page navigation and interval ≥ %d minutes" >}}  
+**SW policy**: {{< site-status "policy" >}}  
+**Offline notice page**: {{< site-status "offline" >}}\
+**SW status**: {{< site-status "status" >}}
 
 {{< details-start summary="**More diagnostics**" >}}
 

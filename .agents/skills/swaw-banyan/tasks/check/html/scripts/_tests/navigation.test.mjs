@@ -12,9 +12,9 @@ test('main follows body navigation while independent pages retain their own cont
   try {
     fs.mkdirSync(path.join(root,'js/pages'),{recursive:true});
     const main='<script src="/js/main.fixture.js"></script>';
-    const retry='<script src="/js/pages/offline.fixture.js"></script>';
+    const retry='<script src="/js/pages/reload.fixture.js"></script>';
     fs.writeFileSync(path.join(root,'js/main.fixture.js'),'void 0;');
-    fs.writeFileSync(path.join(root,'js/pages/offline.fixture.js'),'void 0;');
+    fs.writeFileSync(path.join(root,'js/pages/reload.fixture.js'),'void 0;');
     const write=(body,content)=>fs.writeFileSync(path.join(root,'index.html'),
       '<html><head><link rel="canonical" href="https://example.test/"></head>'+body+content+'</body></html>');
     write('<body data-navigation="{}">',main);
@@ -31,7 +31,7 @@ test('main follows body navigation while independent pages retain their own cont
     write('<body>',actions+retry);
     assert.deepEqual((await inspect(root)).issues,[]);
     write('<body>',actions);
-    assert.match((await inspect(root)).issues.join('\n'),/Controller loading boundary pages\/offline: expected 1, found 0/);
+    assert.match((await inspect(root)).issues.join('\n'),/Controller loading boundary pages\/reload: expected 1, found 0/);
   } finally {
     assert.equal(path.dirname(fs.realpathSync(root)),fs.realpathSync(parent));
     fs.rmSync(root,{recursive:true,force:true});

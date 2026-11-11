@@ -313,10 +313,10 @@ export async function check({page,baseUrl,options}) {
     assert.ok(await page.locator('.page-column').evaluateAll(nodes=>nodes.every(node=>
       getComputedStyle(node).scrollSnapAlign==='none')),'Locked columns must not expose snap points.');
     stage=width+' light snapping';
-    const edgeX=await columnEdge(page.locator('.path-column').first());
+    const edgeX=await columnEdge(page.locator('.breadcrumb-column').first());
     const snapY=(await read(page)).y;
     const maxX=(await read(page)).maxX;
-    assert.ok(edgeX>=73&&edgeX+73<=maxX,'The path column must allow both approach directions.');
+    assert.ok(edgeX>=73&&edgeX+73<=maxX,'The breadcrumb column must allow both approach directions.');
     for(const direction of [1,-1]) {
       await positionCanvas(page,edgeX-direction*72);await settledWheel(page,direction*8);
       assert.ok(Math.abs((await read(page)).x-edgeX)<=1,'A column edge exactly 64 pixels ahead must align after wheel idle.');

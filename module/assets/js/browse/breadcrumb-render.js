@@ -1,31 +1,31 @@
 import {
     buildBreadcrumbRowHref,
-    buildCollectionSortToggleHref,
-    getCollectionSortState,
+    buildBreadcrumbSortToggleHref,
+    getBreadcrumbSortState,
     readRequestedSortState,
-} from './breadcrumb-items.js';
+} from './breadcrumb-links.js';
 import { sortItemsRows } from './collection-items.js';
 import { normalizePathname } from './navigation-state.js';
 import { initAutoScrollbar } from './auto-scrollbar.js';
 import { readCollectionSortCopy, formatSortAction } from './collection-sort-copy.js';
 
-export function updateCollectionColumnHeader(header, source, state, lineageLogicalPath) {
+export function updateBreadcrumbColumnHeader(header, source, state, lineageLogicalPath) {
     const copy = readCollectionSortCopy();
-    const toggle = header.querySelector('[data-collection-sort-toggle]');
-    toggle.href = buildCollectionSortToggleHref(source, window.location.href, lineageLogicalPath);
+    const toggle = header.querySelector('[data-breadcrumb-sort-toggle]');
+    toggle.href = buildBreadcrumbSortToggleHref(source, window.location.href, lineageLogicalPath);
     const fieldLabel = copy.fields[state.field] || state.field;
     const actionLabel = formatSortAction(copy, state.field, state.order === 'asc' ? 'desc' : 'asc');
     toggle.title = actionLabel;
     toggle.setAttribute('aria-label', actionLabel);
-    toggle.querySelector('.path-sort-label').textContent = fieldLabel;
+    toggle.querySelector('.breadcrumb-sort-label').textContent = fieldLabel;
     toggle.querySelector('[data-sort-indicator]').textContent = state.order === 'asc' ? '↑' : '↓';
 }
 
-export function renderPathColumn(column, payload, { selectedPathname = '', lineageLogicalPath = '' } = {}) {
+export function renderBreadcrumbColumn(column, payload, { selectedPathname = '', lineageLogicalPath = '' } = {}) {
     if (!(column instanceof Element) || !payload?.template) return;
     const list = payload.template.content.firstElementChild.cloneNode(true);
     const elements = [...list.querySelectorAll('[data-list-item]')];
-    const state = getCollectionSortState(payload);
+    const state = getBreadcrumbSortState(payload);
     const linkState = state || readRequestedSortState(payload, '', '');
     // Hugo has already ordered the fragment for its default sort.
     const reordered = state && state.sortToken !== payload.defaultSort;
@@ -43,9 +43,9 @@ export function renderPathColumn(column, payload, { selectedPathname = '', linea
         ordered?.appendChild(element);
     }
     if (ordered) list.appendChild(ordered);
-    if (state) updateCollectionColumnHeader(list.querySelector('[data-list-header]'), payload, state, lineageLogicalPath);
-    column.removeAttribute('data-navigation-failed');
-    column.dataset.navigationColumn = payload.logicalPath;
+    if (state) updateBreadcrumbColumnHeader(list.querySelector('[data-list-header]'), payload, state, lineageLogicalPath);
+    column.removeAttribute('data-breadcrumb-failed');
+    column.dataset.breadcrumbColumnPath = payload.logicalPath;
     column.dataset.sortVariant = payload.sortVariant;
     column.dataset.defaultSort = payload.defaultSort;
     column.dataset.breadcrumbCollectionHref = payload.href;
@@ -56,9 +56,9 @@ export function renderPathColumn(column, payload, { selectedPathname = '', linea
     column.replaceChildren(list);
 }
 
-export function fillPathColumn(column, model, error = '', lineageLogicalPath = '') {
-    column.dataset.navigationColumn = model.key;
-    column.toggleAttribute('data-navigation-failed', !model.payload);
+export function fillBreadcrumbColumn(column, model, error = '', lineageLogicalPath = '') {
+    column.dataset.breadcrumbColumnPath = model.key;
+    column.toggleAttribute('data-breadcrumb-failed', !model.payload);
     if (!model.payload) {
         delete column.dataset.breadcrumbCollectionHref;
         delete column.dataset.sortVariant;
@@ -70,10 +70,10 @@ export function fillPathColumn(column, model, error = '', lineageLogicalPath = '
         return;
     }
     const selectedPathname = normalizePathname(new URL(model.selected, window.location.origin).pathname);
-    renderPathColumn(column, model.payload, { selectedPathname, lineageLogicalPath });
+    renderBreadcrumbColumn(column, model.payload, { selectedPathname, lineageLogicalPath });
 }
 
-export function preparePathColumns(models) {
+export function prepareBreadcrumbColumns(models) {
     const nav = document.querySelector('[data-slot="breadcrumb"]');
     if (!nav) return [];
     // Keep the reserved scroll containers attached. Replacing them resets the
@@ -83,19 +83,19 @@ export function preparePathColumns(models) {
         let column = columns[index];
         if (!column) {
             column = document.createElement('div');
-            column.className = 'page-column path-column';
-            column.dataset.collectionColumn = 'true';
+            column.className = 'page-column breadcrumb-column';
+            column.dataset.breadcrumbColumn = 'true';
             nav.appendChild(column);
         }
-        if (column.dataset.navigationColumn !== model.key) {
+        if (column.dataset.breadcrumbColumnPath !== model.key) {
             column.replaceChildren();
             column.removeAttribute('tabindex');
             column.removeAttribute('aria-label');
-            column.removeAttribute('data-navigation-failed');
+            column.removeAttribute('data-breadcrumb-failed');
             delete column.dataset.breadcrumbCollectionHref;
             delete column.dataset.sortVariant;
             delete column.dataset.defaultSort;
-            column.dataset.navigationColumn = model.key;
+            column.dataset.breadcrumbColumnPath = model.key;
         }
     });
     columns.slice(models.length).forEach(column => column.remove());

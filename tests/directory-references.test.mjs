@@ -144,7 +144,7 @@ test('page descriptions override localized home defaults and missing defaults fa
   } finally {for(const home of homes)write(home.file,home.original);}
 });
 
-test('meta controls article metadata, chapters and schema independently of path navigation',()=>{
+test('meta controls article metadata, chapters and schema independently of breadcrumb navigation',()=>{
   const file=path.join(source,'content/library/original/item/index.md'),original=fs.readFileSync(file,'utf8');
   const schemas=(html,type='BlogPosting')=>[...html.matchAll(/(<script\b[^>]*>)([\s\S]*?)<\/script>/g)]
     .filter(match=>extractTagAttribute(match[1],'type')==='application/ld+json')
@@ -161,28 +161,28 @@ test('meta controls article metadata, chapters and schema independently of path 
       assert.equal(articleSchemas.length,meta?1:0,'The meta slot must control BlogPosting.');
       if(meta) {
         expected??=articleSchemas;
-        assert.deepEqual(articleSchemas,expected,'Path navigation must not change article schema.');
+        assert.deepEqual(articleSchemas,expected,'Breadcrumb navigation must not change article schema.');
       }
       const metadata=extractBlocks(html,'div',tag=>(extractTagAttribute(tag,'class')||'').split(/\s+/).includes('document-meta'));
       assert.equal(metadata.length,meta?1:0,'The meta slot must control the visible metadata.');
       const chapters=extractBlocks(html,'nav',tag=>(extractTagAttribute(tag,'class')||'').split(/\s+/).includes('document-toc'));
       assert.equal(chapters.length,meta?1:0,'The meta slot must control chapters.');
       assert.equal(/id=["']?document-aside-toggle/.test(html),meta,'The meta slot must control the article aside.');
-      const paths=extractBlocks(html,'nav',tag=>(extractTagAttribute(tag,'class')||'').split(/\s+/).includes('document-meta__row--path'));
+      const paths=extractBlocks(html,'nav',tag=>(extractTagAttribute(tag,'class')||'').split(/\s+/).includes('document-meta__row--breadcrumb'));
       assert.equal(paths.length,meta?4:0,'Metadata must retain the physical directory and all three reference paths.');
       if(meta) {
         expectedMetadata??=metadata[0].html;
-        assert.equal(metadata[0].html,expectedMetadata,'Path navigation must not change article metadata.');
+        assert.equal(metadata[0].html,expectedMetadata,'Breadcrumb navigation must not change article metadata.');
       }
       const navigation=extractBlocks(html,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb');
-      assert.equal(navigation.length,breadcrumb?1:0,'The breadcrumb slot must control path columns.');
+      assert.equal(navigation.length,breadcrumb?1:0,'The breadcrumb slot must control breadcrumb columns.');
       if(breadcrumb) {
         expectedNavigation??=navigation[0].html;
-        assert.equal(navigation[0].html,expectedNavigation,'Slot order and metadata visibility must not change path columns.');
+        assert.equal(navigation[0].html,expectedNavigation,'Slot order and metadata visibility must not change breadcrumb columns.');
         assert.equal(extractBlocks(navigation[0].html,'a').length,0,'Path entries load from shared HTML fragments rather than repeat in article HTML.');
         const defaults=readBreadcrumbData(html,{directory:destination});assert.equal(defaults.error,'');
         assert.ok(defaults.defaultColumns.length>0,'The physical path has selected-item metadata.');
-        assert.ok(defaults.defaultColumns.every(column=>column.selected?.href&&column.payload), 'Every physical path column has shared data.');
+        assert.ok(defaults.defaultColumns.every(column=>column.selected?.href&&column.payload), 'Every physical breadcrumb column has shared data.');
       }
       assert.equal(schemas(html,'BreadcrumbList').length,breadcrumb?1:0,'The breadcrumb slot must control breadcrumb schema.');
       for(const route of ['language','appearance','powered-by','_res/offline'])
@@ -226,15 +226,15 @@ test('shortcodes load their scripts once on a plain article and each retry reloa
     passed(build(source,destination));
     assert.deepEqual((await inspectScripts(destination)).issues,[]);
     const scripts=extractExternalScriptSrcs(read('p/shortcodes','index.html',destination));
-    for(const family of ['updates/page','pages/offline','prefetch/debug-page'])
+    for(const family of ['site-status/page','pages/reload','prefetch/debug-page'])
       assert.equal(scripts.filter(src=>src.includes('/js/'+family+'.')).length,1,family+' loads once per page.');
     const plain=extractExternalScriptSrcs(read('p/item','index.html',destination));
-    assert.ok(!plain.some(src=>src.includes('/js/updates/page.')||src.includes('/js/pages/offline.')),'Pages without these shortcodes do not load their scripts.');
+    assert.ok(!plain.some(src=>src.includes('/js/site-status/page.')||src.includes('/js/pages/reload.')),'Pages without these shortcodes do not load their scripts.');
     server=await createStaticSiteServer(destination);await server.start();
     const chromium=loadChromium();browser=await chromium.launch({headless:true,executablePath:chromium.executablePath()});
     const page=await browser.newPage({serviceWorkers:'block'}),url=server.getBaseUrl()+'/p/shortcodes/?retry=1';
     await gotoAndWait(page,url);
-    await page.waitForFunction(()=>['off','disable','unavailable','failed'].includes(document.querySelector('[data-site-update-panel]')?.dataset.siteUpdateState));
+    await page.waitForFunction(()=>['off','disable','unavailable','failed'].includes(document.querySelector('[data-site-status-panel]')?.dataset.siteSwState));
     for(const index of [0,1]) {
       await Promise.all([page.waitForEvent('load'),page.locator('[data-page-action="reload"]').nth(index).click()]);
       assert.equal(page.url(),url,'Retry must reload the current URL, including its query.');

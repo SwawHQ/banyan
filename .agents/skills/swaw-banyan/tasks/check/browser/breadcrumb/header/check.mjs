@@ -4,16 +4,16 @@ import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 
 async function readHeader(header) {
   return header.evaluate(node=>{
-    const list=node.closest('.item-list'),sort=node.querySelector('[data-collection-sort-toggle]');
+    const list=node.closest('.item-list'),sort=node.querySelector('[data-breadcrumb-sort-toggle]');
     const arrow=sort?.querySelector('[data-sort-indicator]');
     if(!sort||!arrow)return null;
     const bounds=node.getBoundingClientRect(),sortBox=sort.getBoundingClientRect(),arrowBox=arrow.getBoundingClientRect();
     return {width:node.clientWidth,contentWidth:node.scrollWidth,left:bounds.left,right:bounds.right,height:bounds.height,
       label:list.getAttribute('aria-label'),role:list.getAttribute('role'),
-      repeatedName:!!node.querySelector('.path-column-label,.path-column-separator'),
+      repeatedName:!!node.querySelector('.breadcrumb-column-label,.breadcrumb-column-separator'),
       rowHeight:list.querySelector('[data-list-entry]')?.getBoundingClientRect().height,
       border:parseFloat(getComputedStyle(node).borderBottomWidth),
-      sortField:sort.querySelector('.path-sort-label')?.textContent.trim(),action:sort.getAttribute('aria-label'),sortTitle:sort.title,
+      sortField:sort.querySelector('.breadcrumb-sort-label')?.textContent.trim(),action:sort.getAttribute('aria-label'),sortTitle:sort.title,
       sortInset:sortBox.left-bounds.left,sortLeft:sortBox.left,sortRight:sortBox.right,sortWidth:sortBox.width,arrowLeft:arrowBox.left,arrowRight:arrowBox.right,arrowWidth:arrowBox.width,
       indicator:arrow.textContent.trim(),visible:getComputedStyle(sort).visibility==='visible'&&getComputedStyle(sort).display!=='none'};
   });
@@ -34,9 +34,9 @@ export async function check({page,baseUrl,options}) {
   const cases=[];
   for(const width of options.widths.split(',').map(Number)) {
     await page.setViewportSize({width,height:900});await openPage(page,baseUrl+options.page);
-    const column=await selectColumn(page,options.column),header=page.locator(columnsSelector+'[data-breadcrumb-collection-href='+JSON.stringify(column.href)+'] .list-header--path');
+    const column=await selectColumn(page,options.column),header=page.locator(columnsSelector+'[data-breadcrumb-collection-href='+JSON.stringify(column.href)+'] .list-header--breadcrumb');
     const initial=await readHeader(header);checkHeader(initial);
-    const toggle=header.locator('[data-collection-sort-toggle]');await toggle.click();
+    const toggle=header.locator('[data-breadcrumb-sort-toggle]');await toggle.click();
     await page.waitForFunction(({selector,previous})=>document.querySelector(selector)?.textContent.trim()!==previous,
       {selector:columnsSelector+'[data-breadcrumb-collection-href='+JSON.stringify(column.href)+'] [data-sort-indicator]',previous:initial.indicator});
     await waitForBrowse(page);await afterPaint(page);

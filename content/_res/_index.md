@@ -12,5 +12,5 @@ cascade:
     publishResources: false
   params:
     robots: noindex, follow
-    slots: [] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+    slots: [] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---

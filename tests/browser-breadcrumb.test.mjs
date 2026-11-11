@@ -113,7 +113,7 @@ test('Unicode default and explicit sources compare decoded and encoded paths equ
 });
 
 test('sort rejects initial node replacement and click-time loss of focus or query data',{timeout:45000},()=>{
-  const replaced=fixture('replaced');settledScript(replaced,article,`const column=document.querySelector('[data-slot=breadcrumb] .path-column:last-child');column.replaceWith(column.cloneNode(true));`);
+  const replaced=fixture('replaced');settledScript(replaced,article,`const column=document.querySelector('[data-slot=breadcrumb] .breadcrumb-column:last-child');column.replaceWith(column.cloneNode(true));`);
   const initial=cli('sort',['--page',article,'--column',collection],replaced);assert.equal(initial.status,1);assert.match(initial.stderr,/retain reserved column nodes/);
   for(const [name,change,message] of [
     ['focus','document.activeElement.blur()','retain toggle focus'],
@@ -122,16 +122,16 @@ test('sort rejects initial node replacement and click-time loss of focus or quer
     ['record',`sessionStorage.setItem('banyan:canvas-navigation','unexpected')`,'must not create a navigation record'],
     ['blank',`node.style.visibility='hidden';requestAnimationFrame(()=>requestAnimationFrame(()=>node.style.removeProperty('visibility')))`,'must not show a blank frame']
   ]) {
-    const broken=fixture(name);script(broken,article,`document.addEventListener('click',event=>{const node=event.target.closest('[data-collection-column]');if(node&&event.target.closest('[data-collection-sort-toggle]')){${change}}});`);
+    const broken=fixture(name);script(broken,article,`document.addEventListener('click',event=>{const node=event.target.closest('[data-breadcrumb-column]');if(node&&event.target.closest('[data-breadcrumb-sort-toggle]')){${change}}});`);
     const result=cli('sort',['--page',article,'--column',collection],broken);assert.equal(result.status,1);assert.ok(result.stderr.includes(message),result.stderr);
   }
 });
 
 test('sort rejects legacy prefetch markers after source hydration and direction changes',{timeout:20000},()=>{
   for(const [name,code] of [
-    ['hydrated-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-entry-breadcrumb-pending'))requestAnimationFrame(ready);else document.querySelector('[data-slot=breadcrumb] [data-list-entry]').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`],
-    ['sort-slot',`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelector('[data-slot=breadcrumb] [data-list-entry]').dataset.prefetchSlot='crumb';});`],
-    ['header-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-entry-breadcrumb-pending'))requestAnimationFrame(ready);else document.querySelector('[data-slot=breadcrumb] a:not([data-list-entry])').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`]
+    ['hydrated-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-breadcrumb-pending'))requestAnimationFrame(ready);else document.querySelector('[data-slot=breadcrumb] [data-list-entry]').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`],
+    ['sort-slot',`document.addEventListener('click',event=>{if(event.target.closest('[data-breadcrumb-sort-toggle]'))document.querySelector('[data-slot=breadcrumb] [data-list-entry]').dataset.prefetchSlot='crumb';});`],
+    ['header-slot',`document.addEventListener('DOMContentLoaded',()=>{const ready=()=>{if(document.documentElement.hasAttribute('data-breadcrumb-pending'))requestAnimationFrame(ready);else document.querySelector('[data-slot=breadcrumb] a:not([data-list-entry])').dataset.prefetchSlot='nav';};requestAnimationFrame(ready);});`]
   ]) {
     const broken=fixture(name);script(broken,article,code);
     const result=cli('sort',['--page',article+'#from=all','--column','/all/'],broken);
@@ -140,11 +140,11 @@ test('sort rejects legacy prefetch markers after source hydration and direction 
 });
 
 test('isolation rejects changed siblings, redundant collection sources and stale main-entry sort slots',{timeout:45000},()=>{
-  const sibling=fixture('sibling');script(sibling,article,`document.addEventListener('click',event=>{if(!event.target.closest('[data-collection-sort-toggle]'))return;const own=event.target.closest('[data-collection-column]');const other=[...document.querySelectorAll('[data-collection-column]')].find(node=>node!==own);other.querySelector('[data-sort-indicator]').textContent='broken';});`);
+  const sibling=fixture('sibling');script(sibling,article,`document.addEventListener('click',event=>{if(!event.target.closest('[data-breadcrumb-sort-toggle]'))return;const own=event.target.closest('[data-breadcrumb-column]');const other=[...document.querySelectorAll('[data-breadcrumb-column]')].find(node=>node!==own);other.querySelector('[data-sort-indicator]').textContent='broken';});`);
   const result=cli('isolation',['--page',article+'#from=d/breadcrumb-fixture'],sibling);assert.equal(result.status,1);assert.match(result.stderr,/another column order or indicator/);
-  const redundant=fixture('redundant-source');settledScript(redundant,collection,`const addSource=href=>{const url=new URL(href,location.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','d/breadcrumb-fixture');url.hash=fields.toString();return url;};document.querySelectorAll('[data-collection-sort-toggle]').forEach(link=>link.href=addSource(link.href));const replace=history.replaceState;history.replaceState=function(state,title,href){return replace.call(this,state,title,addSource(href));};`);
+  const redundant=fixture('redundant-source');settledScript(redundant,collection,`const addSource=href=>{const url=new URL(href,location.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('from','d/breadcrumb-fixture');url.hash=fields.toString();return url;};document.querySelectorAll('[data-breadcrumb-sort-toggle]').forEach(link=>link.href=addSource(link.href));const replace=history.replaceState;history.replaceState=function(state,title,href){return replace.call(this,state,title,addSource(href));};`);
   const source=cli('isolation',['--page',collection],redundant);assert.equal(source.status,1);assert.match(source.stderr,/must not add a source parameter/);
-  const links=fixture('stale-links');script(links,collection,`document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))document.querySelectorAll('.slot-main [data-list-entry]').forEach(link=>{const url=new URL(link.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('sorts','date-asc,date-asc');url.hash=fields.toString();link.href=url.href;});});`);
+  const links=fixture('stale-links');script(links,collection,`document.addEventListener('click',event=>{if(event.target.closest('[data-breadcrumb-sort-toggle]'))document.querySelectorAll('.slot-main [data-list-entry]').forEach(link=>{const url=new URL(link.href);const fields=new URLSearchParams(url.hash.slice(1));fields.set('sorts','date-asc,date-asc');url.hash=fields.toString();link.href=url.href;});});`);
   const stale=cli('isolation',['--page',collection+'#sorts=date-asc,date-asc'],links);assert.equal(stale.status,1);assert.match(stale.stderr,/reflect each ancestor sort/);
 });
 

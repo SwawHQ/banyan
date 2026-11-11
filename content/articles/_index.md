@@ -13,16 +13,16 @@ params:
   # Row icons inherit these defaults; each row's own icon takes priority.
   # list_icon_folder: folder
   # list_icon_file: file
-  slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+  slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 
 # Descendants use these defaults unless their own front matter overrides them.
 cascade:
   - target: {kind: page}
     layout: page-article-rss
     params:
-      slots: [breadcrumb, meta] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+      slots: [breadcrumb, meta] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
   - target: {kind: section}
     layout: page-collection-directory
     params:
-      slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+      slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---

@@ -1,40 +1,40 @@
 (function () {
-    const SIGNAL_CONTROL_SELECTOR = "[data-page-home-signal]";
-    const pageHomes = Array.from(document.querySelectorAll(".page-home"));
+    const SIGNAL_CONTROL_SELECTOR = "[data-home-art-wind-signal]";
+    const windScenes = Array.from(document.querySelectorAll(".home-art-wind"));
     const scenePauseStates = new Map();
     let selectedSignalControl = null;
 
-    const setScenePaused = (pageHome, reason, paused) => {
-        if (!pageHome) {
+    const setScenePaused = (windScene, reason, paused) => {
+        if (!windScene) {
             return;
         }
 
-        const state = scenePauseStates.get(pageHome) || {
+        const state = scenePauseStates.get(windScene) || {
             document: document.hidden,
             viewport: false,
         };
 
         state[reason] = paused;
-        scenePauseStates.set(pageHome, state);
-        pageHome.classList.toggle("is-paused", state.document || state.viewport);
+        scenePauseStates.set(windScene, state);
+        windScene.classList.toggle("is-paused", state.document || state.viewport);
     };
 
     const syncDocumentPauseState = () => {
-        pageHomes.forEach((pageHome) => {
-            setScenePaused(pageHome, "document", document.hidden);
+        windScenes.forEach((windScene) => {
+            setScenePaused(windScene, "document", document.hidden);
         });
     };
 
     const initSignalButtons = () => {
-        pageHomes.forEach((pageHome) => {
-            pageHome.querySelectorAll("button[data-page-home-signal]").forEach((button) => {
+        windScenes.forEach((windScene) => {
+            windScene.querySelectorAll("button[data-home-art-wind-signal]").forEach((button) => {
                 button.setAttribute("aria-pressed", "false");
             });
         });
     };
 
     const setSignalSelected = (control, selected) => {
-        const signal = control.closest(".page-home__signal");
+        const signal = control.closest(".home-art-wind__signal");
         if (control instanceof HTMLButtonElement) {
             control.setAttribute("aria-pressed", selected ? "true" : "false");
         }
@@ -62,7 +62,7 @@
         const control = target.closest(SIGNAL_CONTROL_SELECTOR);
 
         if (!control) {
-            if (!target.closest(".page-home__signals")) {
+            if (!target.closest(".home-art-wind__signals")) {
                 clearSelectedSignal();
             }
             return;
@@ -102,12 +102,12 @@
     if ("IntersectionObserver" in window) {
         const sceneObserver = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
-                setScenePaused(entry.target.closest(".page-home"), "viewport", !entry.isIntersecting);
+                setScenePaused(entry.target.closest(".home-art-wind"), "viewport", !entry.isIntersecting);
             });
         });
 
-        pageHomes.forEach((pageHome) => {
-            sceneObserver.observe(pageHome.querySelector(".page-home__scene") || pageHome);
+        windScenes.forEach((windScene) => {
+            sceneObserver.observe(windScene.querySelector(".home-art-wind__scene") || windScene);
         });
     }
 })();

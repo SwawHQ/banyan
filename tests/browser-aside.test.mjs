@@ -104,7 +104,7 @@ test(name+' rejects an aside gap, mismatched control styles and clipped print',{
 });
 
 test(name+' rejects divergent canvas widths and accepts translated paths',{timeout:15000},()=>{
-  const broken=fixture('canvas-'+name);css(broken,'.path-column{inline-size:100px!important}');
+  const broken=fixture('canvas-'+name);css(broken,'.breadcrumb-column{inline-size:100px!important}');
   const canvas=cli('canvas/layout'+suffix,['--page',route,'--widths','390'],broken);assert.equal(canvas.status,1);assert.match(canvas.stderr,/share a width/);
   const translated=cli('canvas/layout'+suffix,['--page','/zh/about/','--widths','390,1024']);assert.equal(translated.status,0,translated.stdout+translated.stderr);
 });

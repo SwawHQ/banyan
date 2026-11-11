@@ -12,11 +12,11 @@ const localLink=(href,siteURL)=>{
 };
 
 export function readNavigationFragment(text,{siteURL='https://output.invalid/'}={}) {
-  const roots=extractBlocks(text,'div',tag=>/\sdata-navigation-column(?:\s|=|>)/i.test(tag));
+  const roots=extractBlocks(text,'div',tag=>/\sdata-breadcrumb-column-path(?:\s|=|>)/i.test(tag));
   if(roots.length!==1||roots[0].html.trim()!==text.trim()
-    ||!hasClassToken(roots[0].open,'item-list')||!hasClassToken(roots[0].open,'item-list--path-column'))
+    ||!hasClassToken(roots[0].open,'item-list')||!hasClassToken(roots[0].open,'item-list--breadcrumb-column'))
     throw new Error('Expected one navigation fragment root');
-  const root=roots[0],logicalPath=extractTagAttribute(root.open,'data-navigation-column');
+  const root=roots[0],logicalPath=extractTagAttribute(root.open,'data-breadcrumb-column-path');
   const sortVariant=extractTagAttribute(root.open,'data-sort-variant'),defaultSort=extractTagAttribute(root.open,'data-default-sort');
   const sortFields={name:['name'],section:['name','date','count'],all:['name','date','size'],products:['name','date','price']};
   if(!/^\/(?!\/).+\/$/.test(logicalPath)
@@ -48,8 +48,8 @@ export function readNavigationFragment(text,{siteURL='https://output.invalid/'}=
   if(!label||extractTagAttribute(root.open,'role')!=='group'||!localLink(href,siteURL))
     throw new Error('Invalid navigation fragment label or collection URL');
   if(sortVariant) {
-    const controls=extractBlocks(header.inner,'a',tag=>/\sdata-collection-sort-toggle(?:\s|=|>)/i.test(tag));
-    if(controls.length!==1||!hasClassToken(controls[0].inner,'path-sort-label')
+    const controls=extractBlocks(header.inner,'a',tag=>/\sdata-breadcrumb-sort-toggle(?:\s|=|>)/i.test(tag));
+    if(controls.length!==1||!hasClassToken(controls[0].inner,'breadcrumb-sort-label')
       ||!extractStartTags(controls[0].inner,'span').some(tag=>/\sdata-sort-indicator(?:\s|=|>)/i.test(tag)))
       throw new Error('Navigation fragment needs a complete sort control');
   }

@@ -133,14 +133,14 @@ test('enabled panels render a blocked-worker failure without claiming registrati
 
 test('panel checks detect missing controllers and incorrect localized state',{timeout:20000},()=>{
   const missing=fixture('missing-controller'),file=path.join(missing,panel,'index.html');
-  const html=fs.readFileSync(file,'utf8'),changed=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,script=>script.includes('/js/updates/page.')?'':script);
+  const html=fs.readFileSync(file,'utf8'),changed=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,script=>script.includes('/js/site-status/page.')?'':script);
   assert.ok(changed!==html,'The missing-controller fixture must remove the page asset.');write(file,changed);
   const absent=cli(['--page',panel,'--from',from,'--widths','1024','--timeout','1500'],missing);
   assert.equal(absent.status,1,absent.stdout+absent.stderr);assert.match(absent.stderr,/Timeout/);
   for(const [name,code,message] of [
-    ['wrong-locale','document.querySelector("[data-site-update-status]").textContent="wrong locale";',/localized message/],
-    ['wrong-state','document.querySelector("[data-site-update-panel]").dataset.siteUpdateState="ready";',/configured mode/],
-    ['missing-status','document.querySelector("[data-site-update-status]").textContent="";',/update panel must be visible/]
+    ['wrong-locale','document.querySelector("[data-site-sw-status]").textContent="wrong locale";',/localized message/],
+    ['wrong-state','document.querySelector("[data-site-status-panel]").dataset.siteSwState="ready";',/configured mode/],
+    ['missing-status','document.querySelector("[data-site-sw-status]").textContent="";',/update panel must be visible/]
   ]) {
     const broken=fixture(name);probe(broken,name,'document.addEventListener("DOMContentLoaded",()=>{'+code+'});');
     const result=cli(['--page',panel,'--from',from,'--widths','1024'],broken);
@@ -150,15 +150,15 @@ test('panel checks detect missing controllers and incorrect localized state',{ti
 
 test('panel checks detect inaccessible announcements and incorrect check controls',{timeout:20000},()=>{
   for(const [name,code,message] of [
-    ['wrong-role','document.querySelector("[data-site-update-status]").setAttribute("role","alert");',/status role/],
-    ['wrong-live','document.querySelector("[data-site-update-status]").setAttribute("aria-live","off");',/politely/],
-    ['wrong-action','document.querySelector("[data-site-update-action]").disabled=true;',/whether checking is available/],
-    ['wrong-pressed','document.querySelector("[data-site-update-action]").setAttribute("aria-pressed","false");',/must not expose a pressed state/],
-    ['empty-label','document.querySelector("[data-site-update-action]").setAttribute("aria-label","");',/localized label/]
+    ['wrong-role','document.querySelector("[data-site-sw-status]").setAttribute("role","alert");',/status role/],
+    ['wrong-live','document.querySelector("[data-site-sw-status]").setAttribute("aria-live","off");',/politely/],
+    ['wrong-action','document.querySelector("[data-site-sw-action]").disabled=true;',/whether checking is available/],
+    ['wrong-pressed','document.querySelector("[data-site-sw-action]").setAttribute("aria-pressed","false");',/must not expose a pressed state/],
+    ['empty-label','document.querySelector("[data-site-sw-action]").setAttribute("aria-label","");',/localized label/]
   ]) {
     // Registration failure publishes after load. Keep the fault after each render,
     // observing only the state attribute so corrupting the control cannot loop.
-    const broken=fixture(name,enabled);probe(broken,name,'document.addEventListener("DOMContentLoaded",()=>{const corrupt=()=>{'+code+'};corrupt();new MutationObserver(corrupt).observe(document.querySelector("[data-site-update-panel]"),{attributes:true,attributeFilter:["data-site-update-state"]});});');
+    const broken=fixture(name,enabled);probe(broken,name,'document.addEventListener("DOMContentLoaded",()=>{const corrupt=()=>{'+code+'};corrupt();new MutationObserver(corrupt).observe(document.querySelector("[data-site-status-panel]"),{attributes:true,attributeFilter:["data-site-sw-state"]});});');
     const result=cli(['--page',panel,'--from',from,'--widths','1024'],broken);
     assert.equal(result.status,1,result.stdout+result.stderr);assert.match(result.stderr,message);
   }
@@ -166,8 +166,8 @@ test('panel checks detect inaccessible announcements and incorrect check control
 
 test('panel checks detect history-only failures and hidden narrow panels',{timeout:15000},()=>{
   for(const [name,code,width,message] of [
-    ['broken-back','if(performance.getEntriesByType("navigation")[0]?.type==="back_forward")document.querySelector("[data-site-update-status]").textContent="broken back";','1024',/localized message/],
-    ['hidden-mobile','if(innerWidth<500)document.querySelector("[data-site-update-panel]").hidden=true;','390',/must be visible/]
+    ['broken-back','if(performance.getEntriesByType("navigation")[0]?.type==="back_forward")document.querySelector("[data-site-sw-status]").textContent="broken back";','1024',/localized message/],
+    ['hidden-mobile','if(innerWidth<500)document.querySelector("[data-site-status-panel]").hidden=true;','390',/must be visible/]
   ]) {
     const broken=fixture(name);probe(broken,name,'document.addEventListener("DOMContentLoaded",()=>{'+code+'});');
     const result=cli(['--page',panel,'--from',from,'--widths',width],broken);

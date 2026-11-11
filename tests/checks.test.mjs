@@ -28,8 +28,8 @@ const security = {
   'Referrer-Policy':'strict-origin-when-cross-origin'
 };
 const rules = JSON.stringify({prefetch:[{source:'document',where:{and:[{selector_matches:'html[data-prefetch-native-ready] a'},{selector_matches:'html[data-prefetch-ready] a:has(> .item-icon > svg.icon-folder)'},{href_matches:'/*',relative_to:'document'}]},eagerness:'eager'}]});
-const updatePanel='<span data-site-update-panel data-site-update-status role=status aria-live=polite></span>';
-const updateAction='<button type=button data-site-update-action=check aria-label="Refresh SW status">↻</button>';
+const updatePanel='<span data-site-status-panel data-site-sw-status role=status aria-live=polite></span>';
+const updateAction='<button type=button data-site-sw-action=check aria-label="Refresh SW status">↻</button>';
 const dateRow=value=>'<div class=document-meta__row><span><svg><use href=#icon-clock></use></svg></span><time datetime="'+value+'">'+value+'</time></div>';
 const metadata=inner=>'<div class=document-meta>'+inner+'</div>';
 const asideScript='<script src=/js/document/aside.fixture.js></script>';
@@ -117,10 +117,10 @@ test('individual HTML checks and reports ignore defects outside their own respon
   const scripts = output('missing script',html.replace('/js/main.0123456789abcdef.js','/js/main.missing.js'));
   checked('check/html/scripts',scripts,/Missing script asset/);
   assert.equal(cli('check/html/jsonld',[scripts]).status,0);
-  const pathEntry=output('home path entry',html.replace('</body>','<script src="/js/browse/path-entry.fixture.js"></script></body>'));
-  write(pathEntry,'js/browse/path-entry.fixture.js','void 0;');
-  checked('check/html/scripts',pathEntry,/Home page must not load the path entry bundle/);
-  assert.equal(cli('check/html/metadata',[pathEntry]).status,0);
+  const breadcrumbEntry=output('home breadcrumb entry',html.replace('</body>','<script src="/js/browse/breadcrumb-entry.fixture.js"></script></body>'));
+  write(breadcrumbEntry,'js/browse/breadcrumb-entry.fixture.js','void 0;');
+  checked('check/html/scripts',breadcrumbEntry,/Home page must not load the breadcrumb entry bundle/);
+  assert.equal(cli('check/html/metadata',[breadcrumbEntry]).status,0);
 });
 
 function llmsText(siteURL,sitemapURL,urls) {
@@ -275,8 +275,8 @@ test('stylesheet checks allow CSS attachments and retain stylesheet contracts',(
 test('script controllers follow declared page capabilities and stay out of shared bundles',() => {
   const html=fs.readFileSync(path.join(site,'public/index.html'),'utf8');
   const cases=[['preferences/language-page','<div data-language-settings></div>'],
-    ['preferences/back-links','<a data-page-action=back href=/>Back</a>'],['updates/page',updatePanel],
-    ['pages/offline','<p data-page-actions><a data-page-action=reload href=/>Retry</a></p>']];
+    ['pages/back','<a data-page-action=back href=/>Back</a>'],['site-status/page',updatePanel],
+    ['pages/reload','<p data-page-actions><a data-page-action=reload href=/>Retry</a></p>']];
   for(const [family,marker] of cases) {
     const src='/js/'+family+'.0123456789abcdef.js',script='<script src="'+src+'"></script>';
     const directory=output('controller-'+family.replaceAll('/','-'),html.replace('</body>',marker+script+'</body>'));
@@ -294,7 +294,7 @@ test('script controllers follow declared page capabilities and stay out of share
     marker+'<script src="/js/'+family+'.0123456789abcdef.js"></script>').join('')+'</body>'));
   for(const [family] of independent)write(combined,'js/'+family+'.0123456789abcdef.js','void 0;');
   assert.equal(cli('check/html/scripts',[combined]).status,0,'Page capabilities must load their controllers independently.');
-  const global=output('shared-sw-controller');write(global,'js/sw-manager.enable.0123456789abcdef.js','document.querySelector("[data-site-update-panel]");');
+  const global=output('shared-sw-controller');write(global,'js/sw-manager.enable.0123456789abcdef.js','document.querySelector("[data-site-status-panel]");');
   write(global,'index.html',html.replace('</body>','<script src=/js/sw-manager.enable.0123456789abcdef.js></script></body>'));
   checked('check/html/scripts',global,/stay out of shared bundle/);
 });
@@ -311,7 +311,7 @@ test('shared HTML extraction keeps nested elements and excludes raw text',()=>{
 
 test('shared metadata accepts optional dates and rejects merged or reordered rows',()=>{
   const dates=[dateRow('2026-10-11'),dateRow('2026-10-10')];
-  const directory='<nav class="document-meta__row document-meta__row--path"><a href=/>Home</a></nav>';
+  const directory='<nav class="document-meta__row document-meta__row--breadcrumb"><a href=/>Home</a></nav>';
   for(const count of [0,1,2])assert.deepEqual(inspectDocumentMetadata(metadata(dates.slice(0,count).join('')+directory)),[]);
   const merged=dates.join('').replace('</time></div><div class=document-meta__row><span><svg><use href=#icon-clock></use></svg></span>','</time>');
   assert.match(inspectDocumentMetadata(metadata(merged))[0],/separate metadata rows/);
@@ -381,7 +381,7 @@ test('breadcrumb and prefetch payload checks keep parsing failures and runtime p
 });
 test('breadcrumb checks count merged navigation anchors and reject legacy slot markers',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
-  const nav = '<nav class="slot path-navigation" data-slot=breadcrumb aria-label=Breadcrumb><div class=page-column><a href=/one/>One</a><div><a href=/two/>Two</a></div></div></nav>';
+  const nav = '<nav class="slot breadcrumb-navigation" data-slot=breadcrumb aria-label=Breadcrumb><div class=page-column><a href=/one/>One</a><div><a href=/two/>Two</a></div></div></nav>';
   const text = html.replace('</body>',nav+'<a href=/outside/>Outside</a></body>');
   const row = breadcrumbRows([{text}])[0];
   assert.equal(row.breadcrumbAnchorCount,2);
@@ -412,7 +412,7 @@ test('shared inline rules checks cover disabled, accepted, invalid JSON and miss
 });
 test('build version checks compare the rendered version with the content-version JSON',() => {
   const html = fs.readFileSync(path.join(site,'public/index.html'),'utf8');
-  const directory = output('version',html.replace('</body>','<time data-site-update-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>v20261008120000</time></body>'));
+  const directory = output('version',html.replace('</body>','<time data-site-build-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>v20261008120000</time></body>'));
   write(directory,'sw.js','const versionURL = "/sw-version.json";');
   write(directory,'sw-version.json',JSON.stringify('v20261008120000'));
   assert.equal(cli('check/build-version',[directory]).status,0);

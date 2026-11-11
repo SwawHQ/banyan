@@ -36,7 +36,7 @@
     {{- $script = "js/preferences/language-page.js" -}}
   {{- else if eq $page.Layout "page-collection-appearance" -}}
     {{- $provider = "appearance" -}}
-    {{- $script = "js/preferences/back-links.js" -}}
+    {{- $script = "js/pages/back.js" -}}
   {{- else if hasSuffix $page.Layout "-all" -}}
     {{- $provider = "aggregate" -}}
   {{- end -}}

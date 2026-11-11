@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {openAside} from '../../aside/_shared/page.mjs';
 
-const columns='.page-rail,.path-column,.page-content,.document-aside:not([hidden])';
+const columns='.page-rail,.breadcrumb-column,.page-content,.document-aside:not([hidden])';
 const read=page=>page.evaluate(selector=>{
   const doc=document.scrollingElement,main=document.querySelector('.page-content'),meta=document.querySelector('.slot-meta');
   return {direction:getComputedStyle(doc).direction==='rtl'?-1:1,documentHeight:doc.scrollHeight,viewportHeight:doc.clientHeight,rootY:scrollY,

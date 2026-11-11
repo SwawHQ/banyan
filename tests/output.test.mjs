@@ -44,7 +44,7 @@ test('repository HTML budgets keep raw and gzip failures outside published check
   }
 });
 
-test('collection heads prefetch their own column and missing path runtime without adding a visible path',{timeout:60000},()=>{
+test('collection heads prefetch their own column and missing breadcrumb runtime without adding a visible path',{timeout:60000},()=>{
   const root=fileURLToPath(new URL('../',import.meta.url)),content=path.join(work,'prefetch-content'),output=path.join(work,'prefetch-build');
   const languages=[['',''],['.zh','zh/'],['.ar','ar/']];
   for(const [suffix,prefix] of languages) {
@@ -62,22 +62,22 @@ test('collection heads prefetch their own column and missing path runtime withou
   const read=(prefix,route)=>fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');
   for(const [,prefix] of languages) {
     const urls={};
-    const runtime=extractStartTags(read(prefix,'p/example-product'),'script').find(tag=>extractTagAttribute(tag,'src').includes('/browse/path-entry.'));
-    assert.ok(runtime,'The target article must load the path runtime.');
+    const runtime=extractStartTags(read(prefix,'p/example-product'),'script').find(tag=>extractTagAttribute(tag,'src').includes('/browse/breadcrumb-entry.'));
+    assert.ok(runtime,'The target article must load the breadcrumb runtime.');
     const runtimeUrl=extractTagAttribute(runtime,'src'),runtimeIntegrity=extractTagAttribute(runtime,'integrity');
-    assert.match(runtimeUrl,/^\/js\/browse\/path-entry\.[a-f0-9]{64}\.js$/);
+    assert.match(runtimeUrl,/^\/js\/browse\/breadcrumb-entry\.[a-f0-9]{64}\.js$/);
     assert.equal(runtimeIntegrity,'sha256-'+createHash('sha256').update(fs.readFileSync(path.join(output,runtimeUrl.slice(1)))).digest('base64'));
     for(const route of ['articles','articles/category1','articles-all','products','products/examples','products-all','prefetch-name','prefetch-unlisted']) {
       const html=read(prefix,route),links=prefetches(html),logicalPath='/'+route+'/';
-      const hasPath=['articles/category1','products/examples'].includes(route);
+      const hasBreadcrumb=['articles/category1','products/examples'].includes(route);
       const fragments=links.filter(tag=>extractTagAttribute(tag,'href').startsWith('/site/navigation/'));
       const scripts=links.filter(tag=>extractTagAttribute(tag,'as')==='script');
-      const executing=extractStartTags(html,'script').filter(tag=>extractTagAttribute(tag,'src').includes('/browse/path-entry.'));
+      const executing=extractStartTags(html,'script').filter(tag=>extractTagAttribute(tag,'src').includes('/browse/breadcrumb-entry.'));
       assert.equal(fragments.length,1,prefix+route+' prefetches exactly one current column.');
-      assert.equal(scripts.length,hasPath?0:1,prefix+route+' only prefetches the runtime when it is not executing.');
+      assert.equal(scripts.length,hasBreadcrumb?0:1,prefix+route+' only prefetches the runtime when it is not executing.');
       assert.equal(links.length,fragments.length+scripts.length);
-      assert.equal(executing.length,hasPath?1:0,'Prefetch must not execute the runtime on collections without path columns.');
-      if(hasPath) {
+      assert.equal(executing.length,hasBreadcrumb?1:0,'Prefetch must not execute the runtime on collections without breadcrumb columns.');
+      if(hasBreadcrumb) {
         assert.equal(extractTagAttribute(executing[0],'src'),runtimeUrl);
         assert.equal(extractTagAttribute(executing[0],'integrity'),runtimeIntegrity);
       } else assert.equal(extractTagAttribute(scripts[0],'href'),runtimeUrl,'The next page uses the same fingerprinted runtime.');
@@ -114,9 +114,9 @@ function fixtureNavigation(resources='/site/navigation/') {
 }
 const navigationHtml=value=>'<html lang=en><link rel=canonical href="https://example.test/article/"><body data-navigation="'+encodeNavigation(value)+'"></body></html>';
 function fragment({logicalPath='/shared/',href='/shared/',label='Shared',sortVariant='section',defaultSort='date-desc',rows=[]}={}) {
-  return '<div class="item-list item-list--path-column" role="group" aria-label="'+escape(label)+'" data-collection-href="'+escape(href)+'" data-navigation-column="'+escape(logicalPath)+'" data-sort-variant="'+sortVariant+'" data-default-sort="'+defaultSort+'">'+
-    '<div class="list-item list-header list-header--path" data-list-header>'+
-    (sortVariant?'<a class="path-column-sort" data-collection-sort-toggle="true" href="'+escape(href)+'"><span class="path-sort-label">Date</span><span data-sort-indicator>↓</span></a>':'')+'</div>'+
+  return '<div class="item-list item-list--breadcrumb-column" role="group" aria-label="'+escape(label)+'" data-collection-href="'+escape(href)+'" data-breadcrumb-column-path="'+escape(logicalPath)+'" data-sort-variant="'+sortVariant+'" data-default-sort="'+defaultSort+'">'+
+    '<div class="list-item list-header list-header--breadcrumb" data-list-header>'+
+    (sortVariant?'<a class="breadcrumb-column-sort" data-breadcrumb-sort-toggle="true" href="'+escape(href)+'"><span class="breadcrumb-sort-label">Date</span><span data-sort-indicator>↓</span></a>':'')+'</div>'+
     rows.map(row=>'<div class="list-item" data-list-item data-kind="'+escape(row.kind||'page')+'"'+
       Object.entries(row).filter(([key])=>key.startsWith('sort_')).map(([key,value])=>' data-'+key.replaceAll('_','-')+'="'+escape(value)+'"').join('')+'>'+
       '<a class="item-control item-field item-field--name" data-list-entry href="'+escape(row.href)+'"'+(row.title?' title="'+escape(row.title)+'"':'')+'>'+
@@ -240,7 +240,7 @@ test('navigation fragments reject malformed roots, active markup and unsafe link
     valid.replace('aria-label="Shared"',''),valid.replace('role="group"',''),
     valid.replace('data-collection-href="/shared/"','data-collection-href="https://outside.test/"'),
     valid.replace('data-default-sort="date-desc"','data-default-sort="price-desc"'),valid.replace('data-list-header',''),
-    valid.replace('<span class="path-sort-label">Date</span>',''),valid.replace('data-sort-indicator',''),
+    valid.replace('<span class="breadcrumb-sort-label">Date</span>',''),valid.replace('data-sort-indicator',''),
     valid.replace('href="#icon-file"','href="/same-origin.svg#file"'),
     valid.replace('data-kind="page"',''),valid.replace('<bdi>One</bdi>',''),
     valid.replace('<bdi>One</bdi>','<script>alert(1)</script><bdi>One</bdi>'),valid.replace('<a class="item-control','<a onclick="alert(1)" class="item-control'),

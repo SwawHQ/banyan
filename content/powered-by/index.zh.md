@@ -7,8 +7,8 @@ weight: 100
 
 params:
   icon: code
-  slots: [breadcrumb] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
-  site_update: #下方 site-update 短代码使用的文字。
+  slots: [breadcrumb] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
+  site_status: #下方 site-status 短代码使用的文字。
     labels: #按当前语言翻译值；保留键名。
       checking: "检查中…"
       installing: "正在安装新版…"
@@ -48,12 +48,12 @@ params:
 
 ### PWA 缓存信息：
 
-**本地**：{{< site-update "version" >}}  
-**服务器**：{{< site-update "content" >}}  
-**触发同步**：{{< site-update "interval" "页面加载时 且 间隔 ≥ %d 分钟" >}}  
-**sw-策略**：{{< site-update "policy" >}}  
-**离线提示页**：{{< site-update "offline" >}}\
-**sw-状态**：{{< site-update "status" >}}
+**本地**：{{< site-status "version" >}}  
+**服务器**：{{< site-status "content" >}}  
+**触发同步**：{{< site-status "interval" "页面加载时 且 间隔 ≥ %d 分钟" >}}  
+**sw-策略**：{{< site-status "policy" >}}  
+**离线提示页**：{{< site-status "offline" >}}\
+**sw-状态**：{{< site-status "status" >}}
 
 {{< details-start summary="**更多诊断信息**" >}}
 

@@ -62,21 +62,20 @@ export async function rootLink(page,href) {
   const index=await links.evaluateAll((nodes,href)=>nodes.findIndex(node=>node.href===href),href);
   assert.ok(index>=0,'The page must contain a native root link to '+new URL(href).pathname+'.');
   const link=links.nth(index);
-  assert.equal(await link.getAttribute('data-site-update-link'),null,'Root links must retain ordinary navigation semantics.');
   return link;
 }
 
 export async function panelState(page,status) {
-  await page.waitForSelector('[data-site-update-panel][data-site-update-state="'+status+'"]');
-  const value=await page.locator('[data-site-update-panel]').evaluate(node=>({
-    copy:JSON.parse(node.dataset.siteUpdateCopy),status:node.textContent
+  await page.waitForSelector('[data-site-status-panel][data-site-sw-state="'+status+'"]');
+  const value=await page.locator('[data-site-status-panel]').evaluate(node=>({
+    copy:JSON.parse(node.dataset.siteSwCopy),status:node.textContent
   }));
   const field={off:'mode_off',disable:'mode_disable',unavailable:'unavailable',checking:'checking',installing:'installing',failed:'check_failed',offline:'status_offline',ready:'status_ready',current:'status_current'}[status];
   assert.ok(value.copy[field]&&value.status.includes(value.copy[field]),'Update status must use its localized message.');
 }
 
 export async function version(page) {
-  const version=await page.locator('[data-site-update-version]').getAttribute('title');
+  const version=await page.locator('[data-site-build-version]').getAttribute('title');
   assert.ok(version?.trim(),'The update page must expose its build version.');
   return version;
 }

@@ -16,14 +16,14 @@ document.addEventListener('DOMContentLoaded', () => { void startPrefetch(); }, {
 async function startPrefetch() {
     const root = document.documentElement;
     // Navigation fragments must arrive before startup candidates are captured.
-    const pending = '[data-entry-breadcrumb-pending]';
+    const pending = '[data-breadcrumb-pending]';
     if (root.matches(pending)) await new Promise(resolve => {
         const observer = new MutationObserver(() => {
             if (root.matches(pending)) return;
             observer.disconnect();
             resolve();
         });
-        observer.observe(root, { attributes: true, attributeFilter: ['data-entry-breadcrumb-pending'] });
+        observer.observe(root, { attributes: true, attributeFilter: ['data-breadcrumb-pending'] });
     });
     root.dataset.prefetchReady = '';
     const config = readPrefetchPayload() || {};

@@ -14,7 +14,7 @@ description: 在文章和产品列表中显示同一篇文章。
 params:
   # 替换浏览器标签页标题；不改变页面可见标题。
   # browser_title: 浏览器标题
-  # slots: [breadcrumb, meta] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
+  # slots: [breadcrumb, meta] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
   # 列表图标；省略时使用列表默认值。选择一种写法。
   # icon: file
   # icon: {text: "A"}

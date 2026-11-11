@@ -378,10 +378,10 @@ test('disabled and off workers do not publish a policy copy, and worker tables m
     assert.equal(fs.existsSync(path.join(output,'sw-version.json')),false);
     for(const prefix of ['','zh/','ar/']) {
       const html=fs.readFileSync(path.join(output,prefix+'powered-by/index.html'),'utf8');
-      assert.equal((html.match(/<time\b[^>]*data-site-update-version/g)||[]).length,1,'Build information remains visible with SW '+mode);
+      assert.equal((html.match(/<time\b[^>]*data-site-build-version/g)||[]).length,1,'Build information remains visible with SW '+mode);
       assert.doesNotMatch(html,/<a\b[^>]*href=["']?\/sw-(?:version|policy)\.json/,'Disabled SW files must not have page links.');
       const unavailable=extractBlocks(html,'span',tag=>tag.includes('data-site-content-status'))[0].inner;
-      for(const marker of ['data-site-update-interval','data-site-sw-policy'])
+      for(const marker of ['data-site-content-interval','data-site-sw-policy'])
         assert.equal(extractBlocks(html,'span',tag=>tag.includes(marker))[0].inner,unavailable,'Disabled rows use the same localized message.');
       const offline=extractBlocks(html,'span',tag=>tag.includes('data-site-offline-page'))[0];
       assert.equal(extractTagAttribute(extractBlocks(offline.inner,'a')[0].open,'href'),'/'+prefix+'_res/offline/','The offline link remains available with SW '+mode);
@@ -398,7 +398,7 @@ test('disabled and off workers do not publish a policy copy, and worker tables m
 test('sync hints show the configured interval without an enabled-mode prefix',()=>{
   const output=passed(build('sync-hint',undefined,'',serviceWorkerPolicy('enable',11)));
   const html=fs.readFileSync(path.join(output,'zh/powered-by/index.html'),'utf8');
-  const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-update-interval'))[0];
+  const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-content-interval'))[0];
   assert.equal(decodeHtmlAttribute(interval.inner),'页面加载时 且 间隔 ≥ 11 分钟');
   const offline=extractBlocks(html,'span',tag=>tag.includes('data-site-offline-page'))[0];
   assert.equal(extractTagAttribute(extractBlocks(offline.inner,'a')[0].open,'href'),'/zh/_res/offline/');
@@ -493,7 +493,7 @@ test('visited navigation fragments stays offline without warming unused source c
     if(pathname==='/article/')return new Response(html,{headers:{'Content-Type':'text/html'}});
     if(pathname==='/js/shared.hash.js')return new Response('/* script */',{headers:{'Content-Type':'text/javascript'}});
     const logicalPath=Object.keys(urls).find(key=>urls[key]===pathname);
-    if(logicalPath)return new Response('<div data-navigation-column="'+logicalPath+'">Entry</div>',{headers:{'Content-Type':'text/plain; charset=utf-8'}});
+    if(logicalPath)return new Response('<div data-breadcrumb-column-path="'+logicalPath+'">Entry</div>',{headers:{'Content-Type':'text/plain; charset=utf-8'}});
     throw new Error('Unexpected request '+request.url);
   });
   await runtime.probe.warmNavigationUrl('https://example.test/article/#from=articles/tools');
@@ -502,7 +502,7 @@ test('visited navigation fragments stays offline without warming unused source c
   const selected=['/articles/','/articles/tools/'];
   await Promise.all(selected.map(async logicalPath=>{
     const response=await dispatch(runtime.listeners,requestFor(urls[logicalPath]));
-    assert.ok((await response.text()).includes('data-navigation-column="'+logicalPath+'"'));
+    assert.ok((await response.text()).includes('data-breadcrumb-column-path="'+logicalPath+'"'));
   }));
   const assetCache=runtime.stores.get(runtime.probe.getCacheNameForRoute(runtime.probe.getMatchingRoute(urls['/articles/'])));
   assert.ok(assetCache.has('https://example.test'+urls['/articles/']));
@@ -512,7 +512,7 @@ test('visited navigation fragments stays offline without warming unused source c
   offline=true;
   assert.equal(await (await dispatch(runtime.listeners,requestFor('/article/',true))).text(),html);
   for(const logicalPath of selected)
-    assert.ok((await (await dispatch(runtime.listeners,requestFor(urls[logicalPath]))).text()).includes('data-navigation-column="'+logicalPath+'"'));
+    assert.ok((await (await dispatch(runtime.listeners,requestFor(urls[logicalPath]))).text()).includes('data-breadcrumb-column-path="'+logicalPath+'"'));
   assert.equal(runtime.requests.length,count,'Offline reload must reuse both the page and its loaded column fragments.');
   await assert.rejects(dispatch(runtime.listeners,requestFor(urls['/articles-all/'])),/Network unavailable/,
     'An unvisited source must remain uncached.');
@@ -520,7 +520,7 @@ test('visited navigation fragments stays offline without warming unused source c
     Response.json({version:'v-next',lastAttemptAt:Date.now()}));
   const reopened=cachedWorker(output,()=>{throw new TypeError('Network unavailable');},{},runtime.stores);
   for(const logicalPath of selected)
-    assert.ok((await (await dispatch(reopened.listeners,requestFor(urls[logicalPath]))).text()).includes('data-navigation-column="'+logicalPath+'"'));
+    assert.ok((await (await dispatch(reopened.listeners,requestFor(urls[logicalPath]))).text()).includes('data-breadcrumb-column-path="'+logicalPath+'"'));
   assert.equal(reopened.requests.length,0,'Content version changes must keep unchanged fingerprinted column fragments.');
 });
 

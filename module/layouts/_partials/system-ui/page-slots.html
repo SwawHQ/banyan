@@ -1,5 +1,5 @@
 {{- $ctx := .ctx | default . -}}
-{{- /* Slots enable path navigation, article metadata, chapters and BlogPosting. */ -}}
+{{- /* Slots enable breadcrumb navigation, article metadata, chapters and BlogPosting. */ -}}
 {{- $pageID := printf "%s %s" $ctx.Kind $ctx.RelPermalink -}}
 {{- with $ctx.File -}}{{- $pageID = .Path -}}{{- end -}}
 {{- $slotConfig := slice -}}

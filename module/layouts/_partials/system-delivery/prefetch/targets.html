@@ -7,9 +7,9 @@
     {{- $iconScopes = merge $iconScopes (dict $icon (merge $scopes (dict (index $parts 1) true))) -}}
   {{- end -}}
 {{- end -}}
-{{- $base := "html[data-prefetch-ready]:not([data-entry-breadcrumb-pending]) a[href]:not([download]):not([data-sort-control]):not([aria-hidden=\"true\"] a):is(:not([target]),[target=\"\"],[target=\"_self\" i])" -}}
+{{- $base := "html[data-prefetch-ready]:not([data-breadcrumb-pending]) a[href]:not([download]):not([data-sort-control]):not([aria-hidden=\"true\"] a):is(:not([target]),[target=\"\"],[target=\"_self\" i])" -}}
 {{- $root := "[data-root-navigation] a" -}}
-{{- $path := "[data-slot=\"breadcrumb\"]:not([aria-hidden=\"true\"]) > .path-column" -}}
+{{- $breadcrumbColumns := "[data-slot=\"breadcrumb\"]:not([aria-hidden=\"true\"]) > .breadcrumb-column" -}}
 {{- $collection := "html:has(.slot-main--collection)" -}}
 {{- $document := "html:not(:has(.slot-main--collection))" -}}
 {{- $targets := slice -}}
@@ -35,22 +35,22 @@
     {{- else if eq $scope "tail" -}}
       {{- $positions = slice
         (printf "%s [data-slot=\"main\"] a" $collection)
-        (printf "%s %s:nth-last-child(1) a" $document $path)
-        (printf "%s:not(:has(%s)) %s" $document $path $root)
+        (printf "%s %s:nth-last-child(1) a" $document $breadcrumbColumns)
+        (printf "%s:not(:has(%s)) %s" $document $breadcrumbColumns $root)
       -}}
     {{- else if strings.HasPrefix $scope "root+" -}}
       {{- $distance := int (strings.TrimPrefix "root+" $scope) -}}
-      {{- $positions = $positions | append (printf "%s:nth-child(%d) a" $path $distance) -}}
-      {{- $count := partial "./path-count.html" (dict "path" $path "count" (sub $distance 1)) -}}
+      {{- $positions = $positions | append (printf "%s:nth-child(%d) a" $breadcrumbColumns $distance) -}}
+      {{- $count := partial "./breadcrumb-count.html" (dict "selector" $breadcrumbColumns "count" (sub $distance 1)) -}}
       {{- $positions = $positions | append (printf "%s%s [data-slot=\"main\"] a" $collection $count) -}}
     {{- else if strings.HasPrefix $scope "tail-" -}}
       {{- $distance := int (strings.TrimPrefix "tail-" $scope) -}}
       {{- $positions = slice
-        (printf "%s %s:nth-last-child(%d) a" $collection $path $distance)
-        (printf "%s %s:nth-last-child(%d) a" $document $path (add $distance 1))
+        (printf "%s %s:nth-last-child(%d) a" $collection $breadcrumbColumns $distance)
+        (printf "%s %s:nth-last-child(%d) a" $document $breadcrumbColumns (add $distance 1))
       -}}
       {{- range slice (dict "page" $collection "count" (sub $distance 1)) (dict "page" $document "count" $distance) -}}
-        {{- $count := partial "./path-count.html" (dict "path" $path "count" .count) -}}
+        {{- $count := partial "./breadcrumb-count.html" (dict "selector" $breadcrumbColumns "count" .count) -}}
         {{- $positions = $positions | append (printf "%s%s %s" .page $count $root) -}}
       {{- end -}}
     {{- end -}}

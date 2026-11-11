@@ -61,12 +61,11 @@ lastmod: 2026-11-11
   body, using `new-tab` for external links. Remove `params.theme_changelog` and
   `params.theme_repo`. `theme-version` replaces `powered-by-theme` and outputs only
   the theme version; `hugo-version` shows the actual Hugo version.
-  `site-update` accepts `version`, `content`, `interval`, `policy`, `offline` or `status` for the
+  `site-status` accepts `version`, `content`, `interval`, `policy`, `offline` or `status` for the
   local version, server version, content-check interval, cache policy, localized offline-page link and SW status.
   The `interval` display text contains `%d`. `content` and `status` provide separate
   manual checks without activating a waiting SW or reloading the current page.
-  Remove `site-build`, argument-free `site-update` and its `debug` argument;
-  the page owns `params.site_update.labels`. Prefetch diagnostics can use a separate
+  The page owns `params.site_status.labels`. Prefetch diagnostics can use a separate
   page or body section, with copy in `params.prefetch_debug.labels`.
   Separate diagnostic links retain the default-language and deployment subpaths;
   their worker state reports only whether the diagnostic page itself is controlled.
@@ -148,8 +147,8 @@ lastmod: 2026-11-11
 - Article information controls use the `menu` icon from `assets/site/icons.toml` at the right of the title row, with a tooltip, accessible name and the existing expand and collapse behavior.
 - Collection pages load their parent navigation sooner, reducing the empty-column interval. Main content does not wait for navigation to finish loading.
 - Desktop columns and the horizontal canvas use native thin scrollbars with system buttons. The horizontal scrollbar and wheel help appear and hide together. Scroll, hover and horizontal-lock behavior and column gaps stay the same. Touch and forced-colors modes retain the system's default width.
-- Section headings and article page titles use the body text color and a slightly heavier weight. Sort labels and secondary fields, including dates and sizes, use 87.5% of the base font size and scale with it. Name headers in the current list and path-column headers use a `0.3em` start indent based on the header container's font size. Sort arrows stay after their labels. Text line height and ordinary list density stay the same. The first navigation entry after `weight` sorting uses the palette's header rule and keeps its original font weight. Custom palettes define `--list-header-border` on `.item-list`.
-- The floating horizontal wheel arrow is removed; the bottom help line remains. Hovering does not enter locked mode. Left/right arrow keys also enter this shared mode while retaining native movement. After keyboard locking, the first wheel pans the canvas even if the mouse has not moved. Home/End and PageUp/PageDown enter it directly when the focused area has no native scroll target; vertically scrollable columns retain their keys even at either end. Each column has a named Tab stop and a focus outline; path columns become focusable after loading. Home/End move to the canvas ends; PageUp/PageDown move by column, or by one viewport inside a wide column. Up/down arrows, Esc, Tab, Shift+Tab, Enter and Space exit without blocking their native action. Space and Shift+Space retain native paging; Enter and Space retain control activation. Controls and inner horizontal scrollers retain their keys. The wheel can pan the canvas from its native horizontal scrollbar, whose colors remain visible while locked; system overlay scrollbars can still hide. Shift+wheel on the native track no longer causes duplicate horizontal movement. During mouse input, a short help line at the navigation's starting edge appears during scrolling, scrollbar hovering or horizontal lock. Its text has a translucent background that follows the page theme and does not intercept page input. Touch input does not show mouse instructions. Site interface dictionaries must include `canvas_wheel_help`.
+- Section headings and article page titles use the body text color and a slightly heavier weight. Sort labels and secondary fields, including dates and sizes, use 87.5% of the base font size and scale with it. Name headers in the current list and breadcrumb-column headers use a `0.3em` start indent based on the header container's font size. Sort arrows stay after their labels. Text line height and ordinary list density stay the same. The first navigation entry after `weight` sorting uses the palette's header rule and keeps its original font weight. Custom palettes define `--list-header-border` on `.item-list`.
+- The floating horizontal wheel arrow is removed; the bottom help line remains. Hovering does not enter locked mode. Left/right arrow keys also enter this shared mode while retaining native movement. After keyboard locking, the first wheel pans the canvas even if the mouse has not moved. Home/End and PageUp/PageDown enter it directly when the focused area has no native scroll target; vertically scrollable columns retain their keys even at either end. Each column has a named Tab stop and a focus outline; breadcrumb columns become focusable after loading. Home/End move to the canvas ends; PageUp/PageDown move by column, or by one viewport inside a wide column. Up/down arrows, Esc, Tab, Shift+Tab, Enter and Space exit without blocking their native action. Space and Shift+Space retain native paging; Enter and Space retain control activation. Controls and inner horizontal scrollers retain their keys. The wheel can pan the canvas from its native horizontal scrollbar, whose colors remain visible while locked; system overlay scrollbars can still hide. Shift+wheel on the native track no longer causes duplicate horizontal movement. During mouse input, a short help line at the navigation's starting edge appears during scrolling, scrollbar hovering or horizontal lock. Its text has a translucent background that follows the page theme and does not intercept page input. Touch input does not show mouse instructions. Site interface dictionaries must include `canvas_wheel_help`.
 - Browser checks `nav/sort`, `palette/contrast`, `palette/roles`, `prose/layout` and `canvas/layout` require an explicit `--page`. Appearance and PWA navigation sources default to the home page.
 
 - Require Hugo 0.168.0. Language configuration uses native `label` and `locale`;
@@ -208,24 +207,24 @@ lastmod: 2026-11-11
   an active Banyan SW, or link automatically; optional scopes enable native
   prerender. Inline native rules use CSP hashes and wait for navigation and
   sorting. Initialize custom prefetch once after asynchronous navigation and
-  sorting finish, so slow loads do not omit path-column links. Keep page URL
+  sorting finish, so slow loads do not omit breadcrumb-column links. Keep page URL
   deduplication and remove session gates. The diagnostic page provides per-page backend
   selection, reload testing and dispatch status. The reference page uses English;
   sites maintain its interface copy in `params.prefetch_debug.labels`.
   Unconfigured icons use the default.
   Remove the invalid legacy URL count from prefetch size reports.
 - Keep frontend `from` and `sorts` state in URL fragments, preserving it in chapter links.
-  Use `sorts` for every path column and the main list. Generated links omit default
+  Use `sorts` for every breadcrumb column and the main list. Generated links omit default
   sorts and trailing default slots; keep `_` for default positions before another sort.
   Remove the separate `sort` field without reading or migrating it.
-  Main-list sorting refreshes path-column links so new tabs retain
-  the latest order. Path-column headers show only the sort field and direction.
+  Main-list sorting refreshes breadcrumb-column links so new tabs retain
+  the latest order. Breadcrumb-column headers show only the sort field and direction.
   Matching parent entries, including root entries, retain the expanded column's current sort.
   Back and Forward restore the source and each column's sorting.
   Sorting category and aggregate lists no longer adds a
   redundant `from`; article links retain their required non-default source.
   Remove `navigation-state-default.toml`;
-  query parameters no longer control the navigation view. Path columns load shared,
+  query parameters no longer control the navigation view. Breadcrumb columns load shared,
   fingerprinted `.txt` HTML fragments under `/site/navigation/`. Root navigation,
   main collection lists and articles retain HTML and work without JavaScript.
 - Each site owns its complete root `assets/site/delivery.toml`, using the Banyan root
@@ -343,6 +342,13 @@ lastmod: 2026-11-11
   widths use `--item-*-inline` and `--item-field-gap`.
 
 ## Upgrade migration
+
+- Sites using the wind art bundle → `content/_res/home-art/<theme>/index*.md` → rename `params.home_signals` to `params.signals`, `params.home_signal_*` to `params.signal_*`, and `params.home_wind_field_start_offset_rem` to `params.wind_field_start_offset_rem`. Signal objects use `name`, `url` and `primary`; merge `title` or `label` into `name`, and rename `href` to `url`.
+- Sites with custom wind styles or template overrides → art bundle CSS/JS, `assets/site/theme*.css` and `layouts/` → replace wind classes `.page-home` and `.page-home__*`, variables `--page-home-*` and the `data-page-home-signal` marker with the current reference bundle's `home-art-wind` names. Use `--home-art-wind-field-*` for the old `--page-home-wind-field-*` variables, and `--home-art-wind-signal-*` for `--signal-*`. Move the model override to `layouts/_partials/feature-home-art/wind/model.html`.
+- Sites overriding page actions → `layouts/` and `assets/js/` → use `pages/back.js` for back links and `pages/reload.js` for reload links.
+- Sites overriding breadcrumb components → `layouts/`, `assets/js/` and custom CSS → match the current Module's `breadcrumb-*` scripts and `.breadcrumb-navigation` and `.breadcrumb-column` styles. Article directory chains use `.document-meta__row--breadcrumb` and `.document-meta__breadcrumb`. Use `feature-browse/navigation/breadcrumb/` for model overrides and `system-metadata/seo/breadcrumb-list.html` for the SEO template override. Column markers are `data-breadcrumb-column`, `data-breadcrumb-column-path` and `data-breadcrumb-collection-href`; sorting and failure markers are `data-breadcrumb-sort-toggle` and `data-breadcrumb-failed`; loading markers are `data-breadcrumb-pending` and `data-has-breadcrumb-columns`. Keep the `breadcrumb` value in `params.slots`.
+
+- Sites using the old site status controls → page bodies, front matter and same-path template overrides → replace `site-update` with `site-status` and `params.site_update.labels` with `params.site_status.labels`; use the current Module resource paths and DOM markers in template overrides. Old names are not supported.
 
 - Sites using `favicon.link.svg` → `assets/site/favicon.link.svg` → set `width="32" height="32"` and retain the artwork coordinate system in `viewBox`; callers can still request other display sizes.
 

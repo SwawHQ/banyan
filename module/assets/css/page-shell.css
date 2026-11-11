@@ -85,7 +85,7 @@ body {
 }
 
 .page-rail,
-.path-column {
+.breadcrumb-column {
     inline-size: var(--navigation-column-inline);
 }
 
@@ -200,7 +200,7 @@ body {
         grid-column: 1;
     }
 
-    .path-navigation,
+    .breadcrumb-navigation,
     .page-content,
     .document-aside {
         grid-column: 2;
@@ -216,7 +216,7 @@ body {
 
     .slot-main,
     .page-rail,
-    .path-column {
+    .breadcrumb-column {
         max-inline-size: 100%;
     }
 

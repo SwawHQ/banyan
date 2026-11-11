@@ -55,7 +55,7 @@
     block-size: 1lh;
 }
 
-.document-meta__path,
+.document-meta__breadcrumb,
 .document-meta__value {
     min-width: 0;
 }

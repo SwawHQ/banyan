@@ -40,8 +40,8 @@ function inspect(page) {
   const nativeDeclared=Boolean((native?.prefetch?.length??0)+(native?.prerender?.length??0));
   const exclusive=payload?.enabled&&nativeDeclared&&Object.values(payload.modes??{}).some(mode=>mode!=='off')&&candidates.length;
   return {route,language:attr(extractStartTags(text,'html')[0]??'','lang'),roots,sortable,
-    prose:hasClassToken(text,'prose'),panel:has(text,'data-site-update-panel'),
-    version:has(text,'data-site-update-version'),
+    prose:hasClassToken(text,'prose'),panel:has(text,'data-site-status-panel'),
+    version:has(text,'data-site-build-version'),
     worker:extractExternalScriptSrcs(text).some(src=>/\/sw-manager\.enable\./.test(src)),
     overlap:Boolean(exclusive),rules:native!==null,
     debug:Boolean(rules?.prefetch?.length&&has(body,'data-prefetch-debug')&&extractStartTags(text,'pre').some(tag=>attr(tag,'id')==='prefetch-debug-support'))};

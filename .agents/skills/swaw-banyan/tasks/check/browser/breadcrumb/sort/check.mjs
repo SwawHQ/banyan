@@ -15,7 +15,7 @@ export async function toggleColumn(page,href) {
   assert.ok(before.rows.length>=2,'Choose a column with at least two sortable rows.');
   assert.ok(['↑','↓'].includes(before.indicator),'Column must expose its current sort direction.');
   const marker=await column.evaluate(node=>{
-    const toggle=node.querySelector('[data-collection-sort-toggle]');toggle.focus({preventScroll:true});
+    const toggle=node.querySelector('[data-breadcrumb-sort-toggle]');toggle.focus({preventScroll:true});
     const probe=window.__swbanColumnSort={node,nodes:[...node.querySelectorAll('[data-list-header],[data-list-item],[data-item-field],.item-icon')],
       marker:crypto.randomUUID(),running:true,minimumVisibleRows:Infinity,blankObserved:false};
     const sample=()=>{
@@ -38,7 +38,7 @@ export async function toggleColumn(page,href) {
   let continuity;
   try {
     // Activate without Playwright scrolling the header back into view.
-    await column.locator('[data-collection-sort-toggle]').evaluate(node=>node.click());
+    await column.locator('[data-breadcrumb-sort-toggle]').evaluate(node=>node.click());
     await waitForBrowse(page);await afterPaint(page);
     assert.equal(normalizedSortURL(page.url()),normalizedSortURL(before.toggle),
       'Sorting must follow the declared toggle URL.');
@@ -48,7 +48,7 @@ export async function toggleColumn(page,href) {
       const probe=window.__swbanColumnSort;if(!probe)return null;probe.running=false;
       return {marker:probe.marker,minimumVisibleRows:probe.minimumVisibleRows,blankObserved:probe.blankObserved,
         retained:probe.node.isConnected&&probe.nodes.every(node=>node.isConnected&&probe.node.contains(node)),
-        focused:document.activeElement===probe.node.querySelector('[data-collection-sort-toggle]')};
+        focused:document.activeElement===probe.node.querySelector('[data-breadcrumb-sort-toggle]')};
     });
   }
   assert.equal(requests,0,'Breadcrumb sorting must not request another document.');
@@ -79,11 +79,11 @@ export async function check({page,baseUrl,options}) {
   const requested=slots[depth-1];
   assert.equal(columnSort(selected),requested&&requested!=='_'?requested:selected.source.defaultSort,
     'Initial breadcrumb sort must reflect the requested slot or declared default.');
-  assert.ok(initial.sourcePending,'Path columns must wait for their JSON data.');
+  assert.ok(initial.sourcePending,'Breadcrumb columns must wait for their JSON data.');
   assert.ok(initial.columns.length>0&&initial.columns.every(column=>column.rows.length===0),
-    'Reserved path columns must not inline list rows.');
+    'Reserved breadcrumb columns must not inline list rows.');
   assert.ok(await page.evaluate(()=>{
-    const columns=[...document.querySelectorAll('[data-slot=breadcrumb] [data-collection-column]')];
+    const columns=[...document.querySelectorAll('[data-slot=breadcrumb] [data-breadcrumb-column]')];
     return window.__swbanParsedColumns.length===columns.length
       &&window.__swbanParsedColumns.every((record,index)=>record.column===columns[index]&&record.column.isConnected);
   }),'Initial loading must retain reserved column nodes.');
@@ -113,7 +113,7 @@ export async function check({page,baseUrl,options}) {
   const anchor=await chapters.count()?chapters.last():page.locator('a[data-chapter-anchor="main"]').first();
   // Native anchor navigation creates an entry that sorting then replaces.
   await anchor.evaluate(link=>link.click());await afterPaint(page);
-  await column.locator('[data-collection-sort-toggle]').evaluate(link=>link.click());await afterPaint(page);
+  await column.locator('[data-breadcrumb-sort-toggle]').evaluate(link=>link.click());await afterPaint(page);
   const sortedUrl=page.url(),sorted=await selectColumn(page,selected.href);
   const state=column=>({field:column.field,indicator:column.indicator,rows:column.rows});
   for(const [navigation,url,expected] of [['goBack',originalUrl,original],['goForward',sortedUrl,sorted]]) {

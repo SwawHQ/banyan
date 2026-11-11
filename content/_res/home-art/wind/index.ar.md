@@ -5,7 +5,7 @@ params:
   styles: [style.css]
   scripts: [script.js]
   brand_line: بنية واضحة لاكتشاف المحتوى ونشره.
-  home_signals:
+  signals:
     - name: جميع المقالات
       url: /ar/articles-all/
       primary: true

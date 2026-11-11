@@ -79,7 +79,7 @@ export async function check({page,context,baseUrl,options}) {
       'Touch alignment must run from native scrollend after all fingers are released: '+JSON.stringify(approachCalls));
 
     const boundaries=await page.evaluate(()=>{
-      const shell=document.querySelector('.page-shell'),column=document.querySelector('.path-column');
+      const shell=document.querySelector('.page-shell'),column=document.querySelector('.breadcrumb-column');
       const edge=parseFloat(getComputedStyle(document.body).paddingInlineStart);
       const rtl=getComputedStyle(document.documentElement).direction==='rtl',axis=rtl?-1:1;
       const columnStart=()=>rtl?document.documentElement.clientWidth-column.getBoundingClientRect().right-scrollX:column.getBoundingClientRect().left+scrollX;
@@ -133,7 +133,7 @@ export async function check({page,context,baseUrl,options}) {
 
     await cdp.send('Emulation.setPageScaleFactor',{pageScaleFactor:2});
     const zoom=await page.evaluate(()=>{
-      const shell=document.querySelector('.page-shell'),column=document.querySelector('.path-column');
+      const shell=document.querySelector('.page-shell'),column=document.querySelector('.breadcrumb-column');
       const edge=parseFloat(getComputedStyle(document.body).paddingInlineStart);
       const rtl=getComputedStyle(document.documentElement).direction==='rtl';
       const columnStart=()=>rtl?document.documentElement.clientWidth-column.getBoundingClientRect().right-scrollX:column.getBoundingClientRect().left+scrollX;

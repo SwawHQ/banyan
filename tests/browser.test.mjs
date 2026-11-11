@@ -41,10 +41,10 @@ before(() => {
     [runtime]:{source:'path',path:process.execPath,version:process.versions.node}
   }}));
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
-  write(site,'public/index.html','<!doctype html><html><head><title>Fixture</title><script src="/main.js"></script><script src="/js/browse/path-entry.fixture.js"></script></head><body><main class="slot-main">Browser fixture</main></body></html>');
+  write(site,'public/index.html','<!doctype html><html><head><title>Fixture</title><script src="/main.js"></script><script src="/js/browse/breadcrumb-entry.fixture.js"></script></head><body><main class="slot-main">Browser fixture</main></body></html>');
   write(site,'public/main.js','document.title="Loaded by JavaScript";');
   write(site,'public/preload/index.html','<!doctype html><title>Preload fixture</title><link rel="preload" href="/main.js" as="script" crossorigin="anonymous"><script src="/main.js"></script><main class="slot-main">Preload fixture</main>');
-  write(site,'public/js/browse/path-entry.fixture.js','void 0;');
+  write(site,'public/js/browse/breadcrumb-entry.fixture.js','void 0;');
   write(site,'public/_headers',"/*\n  Content-Security-Policy: default-src 'self'; script-src 'self'\n");
   const suiteModule=new URL('file:///'+path.join(skill,'tasks/check/browser/_shared/suite.mjs').replaceAll('\\','/')).href;
   const runtimeModule=new URL('file:///'+path.join(skill,'tasks/_shared/browser/runtime.mjs').replaceAll('\\','/')).href;

@@ -1,34 +1,34 @@
 {{- $ctx := . -}}
-{{- $pathModel := partial "feature-browse/navigation/path/model.html" (dict "ctx" $ctx) -}}
+{{- $breadcrumbModel := partial "feature-browse/navigation/breadcrumb/model.html" (dict "ctx" $ctx) -}}
 {{- $directoryItems := slice -}}
-{{- range $pathModel.schema_items -}}
+{{- range $breadcrumbModel.schema_items -}}
   {{- if ne (index . "current") true -}}
     {{- $directoryItems = $directoryItems | append . -}}
   {{- end -}}
 {{- end -}}
-{{- $directoryPaths := slice -}}
+{{- $directoryBreadcrumbs := slice -}}
 {{- if gt (len $directoryItems) 0 -}}
-  {{- $directoryPaths = $directoryPaths | append (dict "items" $directoryItems "reference" "") -}}
+  {{- $directoryBreadcrumbs = $directoryBreadcrumbs | append (dict "items" $directoryItems "reference" "") -}}
 {{- end -}}
 {{- if $ctx.IsPage -}}
   {{- $directoryIndex := partialCached "feature-browse/directory/index.html" $ctx.Site $ctx.Site.Language.Lang -}}
   {{- range index $directoryIndex.incoming $ctx.Path | default slice -}}
     {{- if not (partial "feature-browse/is-rendered-html.html" .) -}}{{- continue -}}{{- end -}}
-    {{- $path := partial "feature-browse/navigation/path/model.html" (dict "ctx" .) -}}
-    {{- $directoryPaths = $directoryPaths | append (dict "items" $path.schema_items "reference" .Path) -}}
+    {{- $breadcrumb := partial "feature-browse/navigation/breadcrumb/model.html" (dict "ctx" .) -}}
+    {{- $directoryBreadcrumbs = $directoryBreadcrumbs | append (dict "items" $breadcrumb.schema_items "reference" .Path) -}}
   {{- end -}}
 {{- end -}}
-{{- $hasPath := gt (len $directoryPaths) 0 -}}
+{{- $hasDirectoryBreadcrumbs := gt (len $directoryBreadcrumbs) 0 -}}
 {{- $hasDates := false -}}
 {{- if $ctx.Date -}}{{- $hasDates = true -}}{{- end -}}
 {{- $externalLinks := partial "./external-links.html" $ctx -}}
-{{- if or $hasPath $hasDates $externalLinks -}}
+{{- if or $hasDirectoryBreadcrumbs $hasDates $externalLinks -}}
 <div class="document-meta">
   {{- if $hasDates -}}{{ partial "./dates.html" $ctx }}{{- end -}}
-  {{- range $directoryPaths -}}
-  <nav class="document-meta__row document-meta__row--path" aria-label="{{ i18n "article_meta_directory" }}"{{ with .reference }} data-directory-reference="{{ . }}"{{ end }}>
+  {{- range $directoryBreadcrumbs -}}
+  <nav class="document-meta__row document-meta__row--breadcrumb" aria-label="{{ i18n "article_meta_directory" }}"{{ with .reference }} data-directory-reference="{{ . }}"{{ end }}>
     <span class="item-icon">{{ partial "system-ui/icon/render.html" (dict "name" "folder-tree") }}</span>
-    <span class="document-meta__path">
+    <span class="document-meta__breadcrumb">
     {{- $homeLabel := i18n "goHome" -}}
     {{- partial "system-ui/link.html" (dict
       "href" $ctx.Site.Home.RelPermalink

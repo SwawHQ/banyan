@@ -66,7 +66,7 @@ try {
         throw new Error(`Preview did not reach expected state. ${lastError || ''}\n${logs}`);
     }
     function directoryLabel(document) {
-        const row = document.match(/<nav class="document-meta__row document-meta__row--path"[\s\S]*?<\/nav>/)?.[0];
+        const row = document.match(/<nav class="document-meta__row document-meta__row--breadcrumb"[\s\S]*?<\/nav>/)?.[0];
         const link = row?.match(/<a\b[^>]*href="(?:\/zh|\/ar)?\/d\/"[^>]*>[\s\S]*?<\/a>/)?.[0] || '';
         return extractElementText(link, 'a');
     }

@@ -4,15 +4,15 @@ import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 async function rendered(page,expected) {
   await waitForBrowse(page);await afterPaint(page);
   assert.equal(page.url(),expected,'Panel navigation must retain the requested URL.');
-  const panel=page.locator('[data-site-update-panel]');
+  const panel=page.locator('[data-site-status-panel]');
   assert.equal(await panel.count(),1,'The page must contain one update panel.');
   assert.ok(await panel.isVisible(),'The update panel must be visible.');
-  await page.waitForFunction(()=>Boolean(document.querySelector('[data-site-update-panel]')?.dataset.siteUpdateState));
+  await page.waitForFunction(()=>Boolean(document.querySelector('[data-site-status-panel]')?.dataset.siteSwState));
   await panel.scrollIntoViewIfNeeded();
   const value=await panel.evaluate(node=>{
-    const copy=JSON.parse(node.dataset.siteUpdateCopy);
-    const status=node,action=document.querySelector('[data-site-update-action="check"]');
-    return {state:node.dataset.siteUpdateState,mode:node.dataset.siteSwMode,copy,status:status?.textContent,
+    const copy=JSON.parse(node.dataset.siteSwCopy);
+    const status=node,action=document.querySelector('[data-site-sw-action="check"]');
+    return {state:node.dataset.siteSwState,mode:node.dataset.siteSwMode,copy,status:status?.textContent,
       role:status?.getAttribute('role'),live:status?.getAttribute('aria-live'),
       action:action?{tag:action.tagName,type:action.getAttribute('type'),pressed:action.getAttribute('aria-pressed'),disabled:action.disabled,label:action.getAttribute('aria-label')}:null};
   });

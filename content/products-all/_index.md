@@ -12,5 +12,5 @@ params:
   list_icon_file: product
   # Aggregate reads all articles and _map.toml references under this section, without duplicates.
   aggregate: /products
-  slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+  slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---

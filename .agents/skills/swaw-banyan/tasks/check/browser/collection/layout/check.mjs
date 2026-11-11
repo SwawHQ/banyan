@@ -21,7 +21,7 @@ async function readList(list) {
     const probe=document.createElement('span');probe.style.cssText='position:absolute;visibility:hidden;inline-size:var(--navigation-column-inline)';
     node.append(probe);const declaredWidth=probe.getBoundingClientRect().width;probe.remove();
     const rootLink=document.querySelector('[data-root-navigation] .item-control'),root=rootLink.getBoundingClientRect();
-    const pathColumn=node.closest('.path-column'),rail=rootLink.closest('.page-rail');
+    const breadcrumbColumn=node.closest('.breadcrumb-column'),rail=rootLink.closest('.page-rail');
     const children=[...node.children],fields=[...heading.children].map(cell=>cell.dataset.itemField);
     const readFields=row=>({display:getComputedStyle(row).display,columns:getComputedStyle(row).gridTemplateColumns,
       template:getComputedStyle(row).getPropertyValue('--list-field-tracks'),
@@ -35,9 +35,9 @@ async function readList(list) {
       paddingStart:Number.parseFloat(getComputedStyle(link).paddingInlineStart),
       rows:rows.map(row=>({x:row.getBoundingClientRect().left-box.left,width:row.getBoundingClientRect().width,height:row.getBoundingClientRect().height})),
       rootWidth:root.width,rootHeight:root.height,rootScrollbar:rail.offsetWidth-rail.clientWidth,
-      pathScrollbar:pathColumn?pathColumn.offsetWidth-pathColumn.clientWidth:0,
+      breadcrumbScrollbar:breadcrumbColumn?breadcrumbColumn.offsetWidth-breadcrumbColumn.clientWidth:0,
       completeRows:children.length===items.length+1&&children.every(child=>child===heading||child.hasAttribute('data-list-item')),
-      pathGrid:node.matches('.item-list.item-list--path-column'),
+      breadcrumbGrid:node.matches('.item-list.item-list--breadcrumb-column'),
       nameOnly:fields.length===1&&fields[0]==='name'&&items.every(item=>item.children.length===1&&item.firstElementChild.dataset.itemField==='name'),
       documentWidth:document.scrollingElement.clientWidth,documentScrollWidth:document.scrollingElement.scrollWidth};
   });
@@ -47,7 +47,7 @@ function checkList(state) {
   assert.ok(state,'Choose a nonempty collection with a name header, row icons and titles.');
   assert.ok(state.completeRows&&state.items.length>0&&state.fields[0]==='name'&&state.fields.every(Boolean),
     'Collection headers and complete rows must be direct list children.');
-  assert.ok(state.declaredWidth>0&&Math.abs(state.nameWidth+state.pathScrollbar-state.declaredWidth)<=1,
+  assert.ok(state.declaredWidth>0&&Math.abs(state.nameWidth+state.breadcrumbScrollbar-state.declaredWidth)<=1,
     'Name column must match --navigation-column-inline after scrollbar space.');
   for(const row of [state.heading,...state.items]) {
     assert.ok(row.display==='grid'&&!row.columns.includes('subgrid'),'Each collection row must use an independent Grid.');
@@ -58,7 +58,7 @@ function checkList(state) {
   }
   assert.ok(state.heading.fields.every(cell=>cell.field==='name'||cell.contentWidth<=cell.width+1),
     'Metadata headers and sort indicators must fit their fixed field width: '+JSON.stringify(state.heading.fields));
-  assert.ok(Math.abs(state.rootWidth+state.rootScrollbar-state.nameWidth-state.pathScrollbar)<=1
+  assert.ok(Math.abs(state.rootWidth+state.rootScrollbar-state.nameWidth-state.breadcrumbScrollbar)<=1
     &&Math.abs(state.rootHeight-state.rowHeight)<=.1,'Collection rows must share root navigation dimensions after scrollbar space.');
   assert.ok(state.rows.every(row=>Math.abs(row.width-state.nameWidth)<=1&&Math.abs(row.height-state.rowHeight)<=.1&&Math.abs(row.x-state.headerX)<=.1),
     'Name rows must share width, height and column start.');
@@ -71,17 +71,17 @@ export async function check({page,baseUrl,options}) {
   for(const width of options.widths.split(',').map(Number)) {
     await page.setViewportSize({width,height:900});await visit(page,baseUrl+options.page);
     const main=await readList(page.locator('.slot-main .item-list'));checkList(main);
-    let path;
+    let breadcrumb;
     if(options.article) {
       await visit(page,baseUrl+options.article);
       const href=new URL(options.page,baseUrl).pathname;
-      path=await readList(page.locator('[data-slot=breadcrumb] [data-breadcrumb-collection-href='+JSON.stringify(href)+'] > .item-list'));checkList(path);
-      assert.ok(path.pathGrid&&path.nameOnly,'Path collections must contain name fields only.');
+      breadcrumb=await readList(page.locator('[data-slot=breadcrumb] [data-breadcrumb-collection-href='+JSON.stringify(href)+'] > .item-list'));checkList(breadcrumb);
+      assert.ok(breadcrumb.breadcrumbGrid&&breadcrumb.nameOnly,'Breadcrumb collections must contain name fields only.');
       for(const metric of ['top','headerTrack','rowY','rowHeight','iconX','titleGap','separatorY']) {
-        assert.ok(Math.abs(main[metric]-path[metric])<=.1,'Main and path lists must align: '+metric+'.');
+        assert.ok(Math.abs(main[metric]-breadcrumb[metric])<=.1,'Main and breadcrumb lists must align: '+metric+'.');
       }
     }
-    cases.push({width,main,...(path?{path}:{})});
+    cases.push({width,main,...(breadcrumb?{breadcrumb}:{})});
   }
   return {page:options.page,article:options.article,cases};
 }

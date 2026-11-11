@@ -69,18 +69,18 @@ export async function check({page,baseUrl,options}) {
 
       await visit(page,baseUrl+options.page);await setTheme(page,theme);await clearInput(page);
       const current=page.locator('[data-slot=breadcrumb] .item-control.is-current').first(),other=page.locator('[data-slot=breadcrumb] .item-control:not(.is-current)').first();
-      const pathSelected=await readPaint(current),pathRootSelected=await readPaint(rootCurrent(page));
-      assert.deepEqual(pathRootSelected,selected,'Article root selection must reuse the settings-page style.');
-      assert.deepEqual(pathSelected,selected,'Path rows must reuse root selection styles.');
-      const pathHover=await readHover(other);assert.deepEqual(pathHover,hover,'Path rows must reuse root hover styles.');
-      const pathFocus=await readFocus(page,current);checkFocus(pathFocus,'A');
+      const breadcrumbSelected=await readPaint(current),breadcrumbRootSelected=await readPaint(rootCurrent(page));
+      assert.deepEqual(breadcrumbRootSelected,selected,'Article root selection must reuse the settings-page style.');
+      assert.deepEqual(breadcrumbSelected,selected,'Breadcrumb rows must reuse root selection styles.');
+      const breadcrumbHover=await readHover(other);assert.deepEqual(breadcrumbHover,hover,'Breadcrumb rows must reuse root hover styles.');
+      const breadcrumbFocus=await readFocus(page,current);checkFocus(breadcrumbFocus,'A');
 
       await visit(page,baseUrl+options.collection);await setTheme(page,theme);await clearInput(page);
       const row=page.locator('.slot-main .item-list .item-control').first();
       const mainHover=await readHover(row);assert.deepEqual(mainHover,hover,'Main collection rows must reuse root hover styles.');
       const mainFocus=await readFocus(page,row);checkFocus(mainFocus,'A');
-      for(const focus of [choiceFocus,pathFocus,mainFocus])assert.deepEqual({...focus,tag:'A'},rootFocus,'All collection controls must share keyboard focus styles.');
-      cases.push({width,theme,selected,hover,choiceSelected,choiceHover,pathSelected,pathHover,mainHover,rootFocus,choiceFocus,pathFocus,mainFocus});
+      for(const focus of [choiceFocus,breadcrumbFocus,mainFocus])assert.deepEqual({...focus,tag:'A'},rootFocus,'All collection controls must share keyboard focus styles.');
+      cases.push({width,theme,selected,hover,choiceSelected,choiceHover,breadcrumbSelected,breadcrumbHover,mainHover,rootFocus,choiceFocus,breadcrumbFocus,mainFocus});
     }
   }
   return {page:options.page,collection:options.collection,choices:options.choices,cases};

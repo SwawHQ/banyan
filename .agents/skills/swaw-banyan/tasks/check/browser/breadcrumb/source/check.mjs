@@ -33,7 +33,7 @@ export async function check({page,baseUrl,options}) {
       'Root navigation must retain native links without JavaScript.');
     assert.ok((await staticPage.locator('main').textContent()).trim(),'The main content must remain available without JavaScript.');
     assert.equal(await staticPage.locator('[data-slot=breadcrumb] [data-list-entry]').count(),0,
-      'Path rows must load from shared fragments.');
+      'Breadcrumb rows must load from shared fragments.');
     const sourceResponse=await staticPage.goto(baseUrl+options.column,{waitUntil:'load'});
     assert.ok(sourceResponse?.ok(),'The source collection must remain a native page.');
     const column=await staticPage.evaluate(()=>({
@@ -72,7 +72,7 @@ export async function check({page,baseUrl,options}) {
   const snapshot=async document=>({
     columns:(await readColumns(document)).map(({href,field,indicator,rows})=>({href,field,indicator,rows:rows.map(row=>row.key)})),
     root:await document.locator('[data-root-navigation] .is-current').evaluateAll(nodes=>nodes.map(node=>node.dataset.rootHref)),
-    path:await document.locator('[data-slot=breadcrumb]').evaluate(nav=>({ariaHidden:nav.getAttribute('aria-hidden'),
+    breadcrumb:await document.locator('[data-slot=breadcrumb]').evaluate(nav=>({ariaHidden:nav.getAttribute('aria-hidden'),
       selected:[...nav.querySelectorAll('[data-list-entry].is-current')].map(link=>new URL(link.href).pathname),
       current:[...nav.querySelectorAll('[data-list-entry][aria-current=page]')].map(link=>new URL(link.href).pathname)}))
   });

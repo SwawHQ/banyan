@@ -17,7 +17,7 @@ export async function readOpeningSource(page,canvas) {
   assertRootSelection(canvas.root,root);
   return {logicalPath:source.logicalPath,rootHref:source.rootItem.href,root,roots:canvas.root.roots,
     sort:state.sort,
-    columns:[...canvas.pathContent.map(({href,rows})=>({href,rows})),
+    columns:[...canvas.breadcrumbContent.map(({href,rows})=>({href,rows})),
       {href:new URL(page.url()).pathname,rows:state.rows}]};
 }
 
@@ -26,7 +26,7 @@ export async function checkOpeningSource(page,source) {
   const state=await page.evaluate(logicalPath=>({
     source:(()=>{const navigation=JSON.parse(document.body.dataset.navigation);return Object.hasOwn(navigation.columns,logicalPath)
       ?{root:navigation.home+logicalPath.replace(/^\/+/, '').split('/')[0]+'/',default:navigation.default}:null;})(),
-    selections:[...document.querySelectorAll('[data-slot=breadcrumb] [data-collection-column]')].map(column=>({
+    selections:[...document.querySelectorAll('[data-slot=breadcrumb] [data-breadcrumb-column]')].map(column=>({
       selected:[...column.querySelectorAll('[data-list-entry].is-current')].map(link=>new URL(link.href).pathname),
       current:[...column.querySelectorAll('[data-list-entry][aria-current="page"]')].map(link=>new URL(link.href).pathname)
     }))

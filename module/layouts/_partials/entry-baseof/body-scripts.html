@@ -1,10 +1,10 @@
 {{- $page := .page -}}
 {{- $homeArt := .home_art -}}
-{{- if or ($page.HasShortcode "site-update") (and $homeArt ($homeArt.HasShortcode "site-update")) -}}
-  {{- partial "system-assets/script.html" (dict "path" "js/updates/page.js") -}}
+{{- if or ($page.HasShortcode "site-status") (and $homeArt ($homeArt.HasShortcode "site-status")) -}}
+  {{- partial "system-assets/script.html" (dict "path" "js/site-status/page.js") -}}
 {{- end -}}
 {{- if or ($page.HasShortcode "page-actions") (and $homeArt ($homeArt.HasShortcode "page-actions")) -}}
-  {{- partial "system-assets/script.html" (dict "path" "js/pages/offline.js") -}}
+  {{- partial "system-assets/script.html" (dict "path" "js/pages/reload.js") -}}
 {{- end -}}
 {{- if .prefetch_debug -}}
   {{- partial "feature-prefetch-debug/script.html" $page -}}

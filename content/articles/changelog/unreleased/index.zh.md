@@ -52,10 +52,10 @@ lastmod: 2026-11-11
   标题、说明、源码和变更记录链接由各语言 Markdown 正文维护，外链复用 `new-tab`；
   删除旧 `params.theme_changelog` 和 `params.theme_repo` 配置。
   `theme-version` 替代 `powered-by-theme`，只输出主题版本；`hugo-version` 显示实际 Hugo 版本。
-  `site-update` 使用 `version`、`content`、`interval`、`policy`、`offline` 或 `status` 参数，分别输出
+  `site-status` 使用 `version`、`content`、`interval`、`policy`、`offline` 或 `status` 参数，分别输出
   本地版本、服务器版本、内容检查间隔、缓存策略、当前语言的离线页链接和 SW 状态；`interval` 的显示文字包含 `%d`。
   `content` 和 `status` 分别提供手动检查按钮，不激活等待中的 SW，也不自动刷新当前页面。
-  删除 `site-build`、无参 `site-update` 及其 `debug` 参数；页面维护 `params.site_update.labels`。
+  页面维护 `params.site_status.labels`。
   预取诊断使用独立页面或正文分节，文案由 `params.prefetch_debug.labels` 维护；
   独立页面链接保留默认语言和部署子路径，其受控状态仅表示诊断页自身是否受 SW 控制。
   自行覆写该页的站点须同步当前参考正文；旧 `powered-by` 短代码和 `powered_by` 文案字段已移除。
@@ -123,8 +123,8 @@ lastmod: 2026-11-11
 - 文章的“目录与信息”按钮改用 `assets/site/icons.toml` 中的 `menu` 图标，放在标题同行的右侧；保留悬停说明、无障碍名称及原有展开和收起操作。
 - 栏目页提前加载父栏目导航，缩短空白列等待时间；主内容不等待导航加载完成。
 - 桌面端各列和横向画幅统一使用原生细滚动条，按钮外观跟随系统。横向滚动条与滚轮提示同步显隐，保留滚动、悬停和横向锁定行为及列间距；触屏与系统强制颜色模式使用系统默认宽度。
-- 栏目标题和正文页名使用正文色并稍加粗；排序文字及日期、大小等辅助字段使用整体字号的 87.5%，随整体字号缩放。当前列表的名称表头与路径列表头按表头容器字号缩进 `0.3em`，排序箭头保持在文字后。保留文字行高和普通条目密度。第一列按 `weight` 排序后的首项依配色显示表头线，保持原字重。自定义配色将 `--list-header-border` 定义在 `.item-list` 中。
-- 移除跟随鼠标的横向滚轮箭头，保留底部说明；悬停不进入锁定。左右方向键也可进入此共用状态，保留原生横向移动；修复页面加载后未移动鼠标时，键盘入锁后的首次滚轮仍纵向滚动正文的问题；焦点区域没有原生滚动目标时，Home/End 和 PageUp/PageDown 可直接进入，具有纵向滚动能力的列即使已到端点也保留原生按键。各列提供有名称的 Tab 焦点入口和焦点边框，路径列加载后才进入 Tab 顺序；Home/End 到达画幅两端，PageUp/PageDown 按列移动，宽列内每次最多移动一个视口。上下方向键、Esc、Tab、Shift+Tab、回车和空格退出，保留原生动作；空格与 Shift+空格保留原生翻页，回车与空格保留控件激活；控件与内部横向滚动容器保留自身按键。原生横向滚动条支持直接用滚轮横移，锁定期间不隐藏其颜色，系统叠加式滚动条仍可自动隐藏；修复轨道上 Shift＋滚轮可能重复横移的问题。鼠标操作时，底部导航起始边距处的简短说明在滚动、悬停滚动条或横向锁定时显示；提示文字带随主题变化的半透明底色，且不拦截页面操作。触屏操作不显示鼠标提示。站点界面字典需包含 `canvas_wheel_help`。
+- 栏目标题和正文页名使用正文色并稍加粗；排序文字及日期、大小等辅助字段使用整体字号的 87.5%，随整体字号缩放。当前列表的名称表头与面包屑列表头按表头容器字号缩进 `0.3em`，排序箭头保持在文字后。保留文字行高和普通条目密度。第一列按 `weight` 排序后的首项依配色显示表头线，保持原字重。自定义配色将 `--list-header-border` 定义在 `.item-list` 中。
+- 移除跟随鼠标的横向滚轮箭头，保留底部说明；悬停不进入锁定。左右方向键也可进入此共用状态，保留原生横向移动；修复页面加载后未移动鼠标时，键盘入锁后的首次滚轮仍纵向滚动正文的问题；焦点区域没有原生滚动目标时，Home/End 和 PageUp/PageDown 可直接进入，具有纵向滚动能力的列即使已到端点也保留原生按键。各列提供有名称的 Tab 焦点入口和焦点边框，面包屑列加载后才进入 Tab 顺序；Home/End 到达画幅两端，PageUp/PageDown 按列移动，宽列内每次最多移动一个视口。上下方向键、Esc、Tab、Shift+Tab、回车和空格退出，保留原生动作；空格与 Shift+空格保留原生翻页，回车与空格保留控件激活；控件与内部横向滚动容器保留自身按键。原生横向滚动条支持直接用滚轮横移，锁定期间不隐藏其颜色，系统叠加式滚动条仍可自动隐藏；修复轨道上 Shift＋滚轮可能重复横移的问题。鼠标操作时，底部导航起始边距处的简短说明在滚动、悬停滚动条或横向锁定时显示；提示文字带随主题变化的半透明底色，且不拦截页面操作。触屏操作不显示鼠标提示。站点界面字典需包含 `canvas_wheel_help`。
 - 浏览器检查 `nav/sort`、`palette/contrast`、`palette/roles`、`prose/layout` 和 `canvas/layout` 须显式指定 `--page`。外观和 PWA 导航来源默认使用首页。
 
 - 最低 Hugo 版本升级为 0.168.0。语言配置使用原生 `label` 和 `locale`，
@@ -167,18 +167,18 @@ lastmod: 2026-11-11
   基础预取和预渲染独立解析，尾列文件夹默认使用 `moderate` 预渲染。
   前端自动选择原生规则、活动的 Banyan SW 或 link；可选范围支持原生 prerender。
   原生规则静态内联并由 CSP 哈希许可，待导航和排序就绪后激活。
-  自实现等待异步导航和排序完成后只初始化一次，避免慢速加载时漏掉路径列链接；保留页面内去重，移除会话去重。
+  自实现等待异步导航和排序完成后只初始化一次，避免慢速加载时漏掉面包屑列链接；保留页面内去重，移除会话去重。
   诊断页提供单页机制选择、重载测试和发送状态；参考页使用英语，站点通过 `params.prefetch_debug.labels` 维护界面文字。
   未配置图标使用默认策略。
   预取体积报告移除无效的旧 URL 计数。
 - 来源和排序参数 `from`、`sorts` 使用 URL 的 `#` 后片段，章节定位与这些状态共存。
-  `sorts` 统一记录各路径列和主列表的排序；生成链接时省略默认值和尾部默认项，其他默认位置用 `_` 保留。移除独立的 `sort`，不读取或迁移旧字段。
-  各列使用自己的默认排序，主列表排序后同步更新路径列链接，新标签打开也保留最新排序。路径列表头只显示排序字段与方向；父列对应条目和根入口保留已展开栏目的当前排序。
+  `sorts` 统一记录各面包屑列和主列表的排序；生成链接时省略默认值和尾部默认项，其他默认位置用 `_` 保留。移除独立的 `sort`，不读取或迁移旧字段。
+  各列使用自己的默认排序，主列表排序后同步更新面包屑列链接，新标签打开也保留最新排序。面包屑列表头只显示排序字段与方向；父列对应条目和根入口保留已展开栏目的当前排序。
   浏览器后退和前进会恢复来源和各列排序。
   分类和聚合列表页排序不再生成冗余的 `from`，文章链接仍保留所需的非默认来源。
   移除 `navigation-state-default.toml` 配置；
   旧查询参数不再控制导航视图。
-  路径列改为加载 `/site/navigation/` 下共享的指纹 `.txt` HTML 片段；
+  面包屑列改为加载 `/site/navigation/` 下共享的指纹 `.txt` HTML 片段；
   根导航、栏目主列表和正文仍保留 HTML，禁用 JavaScript 时可继续访问。
 - 站点根完整 `assets/site/delivery.toml` 是交付配置的唯一来源，
   以 Banyan 根参考文件为起点并保留本站策略值。
@@ -259,6 +259,13 @@ lastmod: 2026-11-11
 
 ## 升级迁移
 
+- 使用风场艺术包的站点 → `content/_res/home-art/<主题>/index*.md` → 将 `params.home_signals` 改为 `params.signals`，`params.home_signal_*` 改为 `params.signal_*`，`params.home_wind_field_start_offset_rem` 改为 `params.wind_field_start_offset_rem`；信号对象使用 `name`、`url`、`primary`，将 `title` 或 `label` 合并到 `name`，将 `href` 改为 `url`。
+- 自行维护风场样式或模板覆写的站点 → 艺术包 CSS/JS、`assets/site/theme*.css` 和 `layouts/` → 将风场类名 `.page-home`、`.page-home__*`、变量 `--page-home-*` 和行为标记 `data-page-home-signal` 改用当前参考艺术包的 `home-art-wind` 名称；其中 `--page-home-wind-field-*` 改为 `--home-art-wind-field-*`，`--signal-*` 改为 `--home-art-wind-signal-*`。计算模板覆写移至 `layouts/_partials/feature-home-art/wind/model.html`。
+- 自行覆写页面动作的站点 → `layouts/`、`assets/js/` → 返回脚本改用 `pages/back.js`，重载脚本改用 `pages/reload.js`。
+- 自行覆写面包屑组件的站点 → `layouts/`、`assets/js/`、自定义 CSS → 同步当前 Module 的 `breadcrumb-*` 脚本与 `.breadcrumb-navigation`、`.breadcrumb-column` 样式；文章目录链样式使用 `.document-meta__row--breadcrumb`、`.document-meta__breadcrumb`。构建模型覆写使用 `feature-browse/navigation/breadcrumb/`，SEO 模板覆写使用 `system-metadata/seo/breadcrumb-list.html`。列标记使用 `data-breadcrumb-column`、`data-breadcrumb-column-path`、`data-breadcrumb-collection-href`；排序和失败标记使用 `data-breadcrumb-sort-toggle`、`data-breadcrumb-failed`；加载标记使用 `data-breadcrumb-pending`、`data-has-breadcrumb-columns`。`params.slots` 中的 `breadcrumb` 无需修改。
+
+- 使用旧站点状态控件的站点 → 页面正文、front matter 和同路径模板覆写 → 将 `site-update` 改为 `site-status`，将 `params.site_update.labels` 改为 `params.site_status.labels`；模板覆写使用当前 Module 的资源路径和 DOM 标记，不保留旧名兼容。
+
 - 使用 `favicon.link.svg` 的站点 → `assets/site/favicon.link.svg` → 设置 `width="32" height="32"`，保留与路径匹配的 `viewBox`；引用处仍可指定其他显示尺寸。
 
 - 本次产品列表及横向键盘操作调整无必需迁移。已有 `params.offer.version` 定义值可保留。
@@ -276,7 +283,7 @@ lastmod: 2026-11-11
   自定义列表样式使用 `item-list`、`list-item`、`item-field` 和 `item-control`，
   配色使用 `--item-*` 颜色变量，字段宽度使用 `--item-*-inline` 和 `--item-field-gap`。
 
-- 横向画幅的末端留白适配可见阅读列，禁用 JavaScript 时也正常；修复手机上滚动正文后元信息有时无法展开。根导航和路径列的列表适应纵向滚动条占用的宽度，避免出现内部横向滚动条。代码块到达左右边界时，允许浏览器将横向滚动传递给外层画幅；实际交接由浏览器决定。
+- 横向画幅的末端留白适配可见阅读列，禁用 JavaScript 时也正常；修复手机上滚动正文后元信息有时无法展开。根导航和面包屑列的列表适应纵向滚动条占用的宽度，避免出现内部横向滚动条。代码块到达左右边界时，允许浏览器将横向滚动传递给外层画幅；实际交接由浏览器决定。
 - 生成 Cloudflare `_headers` 时拒绝以 `#` 开头的响应头名称，避免被静默当作注释忽略。
 - 关闭可见元信息时，文章结构信息仍正常输出。
 - 默认、高对比度和 Rose 配色统一取消导航首项、列表头及全部 `h1` 的底线和占位；各配色 CSS 提供恢复线条的注释示例。列表线和 `h1` 底线可分别定制。

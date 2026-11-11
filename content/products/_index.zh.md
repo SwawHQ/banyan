@@ -7,7 +7,7 @@ layout: page-collection-directory
 
 params:
   # icon: {text: "P"} #替换此栏目的默认文件夹图标。
-  slots: [breadcrumb] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
+  slots: [breadcrumb] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
   # 列表行图标继承这些默认值；各行自身的 icon 优先。
   # list_icon_folder: folder
   list_icon_file: product
@@ -17,9 +17,9 @@ cascade:
   - target: {kind: page}
     layout: page-article-rss
     params:
-      slots: [breadcrumb, meta] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
+      slots: [breadcrumb, meta] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
   - target: {kind: section}
     layout: page-collection-products
     params:
-      slots: [breadcrumb] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
+      slots: [breadcrumb] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
 ---

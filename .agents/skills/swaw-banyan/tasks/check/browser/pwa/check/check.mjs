@@ -16,7 +16,7 @@ export async function check({page,context=page.context(),server,baseUrl,options}
     await server.setRoot(pair.old);await visit(page,target,options.timeout);
     const before=await version(page);
     await page.evaluate(()=>{window.__swbanOldController=navigator.serviceWorker.controller;});
-    const action=page.locator('[data-site-update-action="check"]');
+    const action=page.locator('[data-site-sw-action="check"]');
     await panelState(page,'current');
     assert.equal(await page.evaluate(()=>window.__swbanUpdateChecks),0,'A new document must not check for updates automatically.');
     await page.clock.fastForward('16:00');

@@ -83,11 +83,11 @@ test('Chromium keeps only sorting visible and retains accessible column names',{
 });
 
 test('Chromium rejects clipped controls, missing accessible names and changed spacing',{timeout:30000},()=>{
-  const clipped=fixture('clipped');inject(clipped,'d/presentation/child','css','.path-column-sort{min-width:600px!important}');
+  const clipped=fixture('clipped');inject(clipped,'d/presentation/child','css','.breadcrumb-column-sort{min-width:600px!important}');
   const clip=cli('breadcrumb/header',['--page',collection,'--widths','390'],clipped);assert.equal(clip.status,1);assert.match(clip.stderr,/clip the sort control/);
-  const title=fixture('title');inject(title,'d/presentation/child','js',"function removeName(){const list=document.querySelector('.item-list--path-column');if(list)list.removeAttribute('aria-label');else requestAnimationFrame(removeName);}removeName();");
+  const title=fixture('title');inject(title,'d/presentation/child','js',"function removeName(){const list=document.querySelector('.item-list--breadcrumb-column');if(list)list.removeAttribute('aria-label');else requestAnimationFrame(removeName);}removeName();");
   const missing=cli('breadcrumb/header',['--page',collection,'--widths','390'],title);assert.equal(missing.status,1);assert.match(missing.stderr,/accessible name/);
-  const gap=fixture('sort-gap');inject(gap,'d/presentation/child','js',"document.addEventListener('click',event=>{if(event.target.closest('[data-collection-sort-toggle]'))event.target.closest('[data-list-header]').querySelector('.item-field').style.paddingInlineStart='12px';});");
+  const gap=fixture('sort-gap');inject(gap,'d/presentation/child','js',"document.addEventListener('click',event=>{if(event.target.closest('[data-breadcrumb-sort-toggle]'))event.target.closest('[data-list-header]').querySelector('.item-field').style.paddingInlineStart='12px';});");
   const changed=cli('breadcrumb/header',['--page',collection,'--widths','390'],gap);assert.equal(changed.status,1);assert.match(changed.stderr,/retain header spacing/);
 });
 
@@ -99,8 +99,8 @@ test(name+' moves RTL home art left and keeps keyboard skip links inside the can
     const context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage();
     for(const width of [390,1440]) {
       await page.setViewportSize({width,height:900});await page.goto(server.getBaseUrl()+'/ar/',{waitUntil:'load'});
-      const motion=await page.locator('.page-home__signal').first().evaluate(async signal=>{
-        const animation=signal.getAnimations().find(item=>item.animationName==='page-home-signal-drift');
+      const motion=await page.locator('.home-art-wind__signal').first().evaluate(async signal=>{
+        const animation=signal.getAnimations().find(item=>item.animationName==='home-art-wind-signal-drift');
         if(!animation)throw new Error('The Arabic homepage must include animated signals.');
         animation.pause();await animation.ready;
         const {delay,duration}=animation.effect.getTiming();
@@ -145,9 +145,9 @@ test(name+' checks collection startup, sort previews and deep canvas geometry',{
 });
 
 test(name+' rejects empty loaded columns, shifted geometry and column replacement',{timeout:30000},()=>{
-  const empty=fixture('empty-'+name);inject(empty,'d/presentation/child','js',afterBrowseScript("document.querySelector('[data-slot=breadcrumb] [data-collection-column]').replaceChildren();"));
-  const missing=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],empty);assert.equal(missing.status,1);assert.match(missing.stderr,/Loaded path columns must contain navigation rows/);
-  const shifted=fixture('shifted-'+name);inject(shifted,'d/presentation/child','js',"document.querySelector('[data-slot=breadcrumb] [data-collection-column]').style.transform='translateX(12px)';");
+  const empty=fixture('empty-'+name);inject(empty,'d/presentation/child','js',afterBrowseScript("document.querySelector('[data-slot=breadcrumb] [data-breadcrumb-column]').replaceChildren();"));
+  const missing=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],empty);assert.equal(missing.status,1);assert.match(missing.stderr,/Loaded breadcrumb columns must contain navigation rows/);
+  const shifted=fixture('shifted-'+name);inject(shifted,'d/presentation/child','js',"document.querySelector('[data-slot=breadcrumb] [data-breadcrumb-column]').style.transform='translateX(12px)';");
   const changed=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],shifted);assert.equal(changed.status,1);assert.match(changed.stderr,/retain their initial geometry/);
   const nodes=fixture('nodes-'+name);inject(nodes,'d/presentation/child','js',"const nav=document.querySelector('[data-slot=breadcrumb]');nav.replaceWith(nav.cloneNode(true));");
   const replaced=cli('canvas/first-paint'+suffix,['--page',collection,'--widths','390'],nodes);assert.equal(replaced.status,1);assert.match(replaced.stderr,/reuse its reserved/);
@@ -156,7 +156,7 @@ test(name+' rejects empty loaded columns, shifted geometry and column replacemen
 test(name+' rejects inconsistent canvas gaps, detached columns and nested horizontal scrollers',{timeout:30000},()=>{
   const gap=fixture('layout-gap-'+name);inject(gap,'d/presentation/child/two/three/four/article-4','css','.page-shell{column-gap:3px!important}');
   const uneven=cli('canvas/layout'+suffix,['--page',deep,'--widths','1280'],gap);assert.equal(uneven.status,1);assert.match(uneven.stderr,/share --page-shell-gap-inline/);
-  const detached=fixture('layout-detached-'+name);inject(detached,'d/presentation/child/two/three/four/article-4','js',"document.querySelector('.page').append(document.querySelector('[data-slot=breadcrumb] [data-collection-column]'));");
+  const detached=fixture('layout-detached-'+name);inject(detached,'d/presentation/child/two/three/four/article-4','js',"document.querySelector('.page').append(document.querySelector('[data-slot=breadcrumb] [data-breadcrumb-column]'));");
   const outside=cli('canvas/layout'+suffix,['--page',deep,'--widths','1280'],detached);assert.equal(outside.status,1);assert.match(outside.stderr,/belong to the canvas/);
   const nested=fixture('layout-scroll-'+name);inject(nested,'d/presentation/child/two/three/four/article-4','js',"const nav=document.querySelector('[data-slot=breadcrumb]'),group=document.createElement('div');group.style.cssText='display:grid;grid-auto-flow:column;grid-auto-columns:240px;inline-size:240px;overflow-x:auto';nav.before(group);group.append(nav);");
   const scroller=cli('canvas/layout'+suffix,['--page',deep,'--widths','1280'],nested);assert.equal(scroller.status,1);assert.match(scroller.stderr,/nested horizontal scroller/);

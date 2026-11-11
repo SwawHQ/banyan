@@ -8,7 +8,7 @@ weight: 100
 params:
   icon: code
   slots: [breadcrumb]
-  site_update:
+  site_status:
     labels:
       checking: "جارٍ التحقق…"
       installing: "جارٍ تثبيت الإصدار الجديد…"
@@ -48,12 +48,12 @@ params:
 
 ### ملحق: معلومات ذاكرة PWA المؤقتة
 
-**محلي**: {{< site-update "version" >}}  
-**الخادم**: {{< site-update "content" >}}  
-**بدء المزامنة**: {{< site-update "interval" "عند الانتقال إلى صفحة وفاصل زمني ≥ %d دقائق" >}}  
-**سياسة SW**: {{< site-update "policy" >}}  
-**صفحة إشعار عدم الاتصال**: {{< site-update "offline" >}}\
-**حالة SW**: {{< site-update "status" >}}
+**محلي**: {{< site-status "version" >}}  
+**الخادم**: {{< site-status "content" >}}  
+**بدء المزامنة**: {{< site-status "interval" "عند الانتقال إلى صفحة وفاصل زمني ≥ %d دقائق" >}}  
+**سياسة SW**: {{< site-status "policy" >}}  
+**صفحة إشعار عدم الاتصال**: {{< site-status "offline" >}}\
+**حالة SW**: {{< site-status "status" >}}
 
 {{< details-start summary="**مزيد من معلومات التشخيص**" >}}
 

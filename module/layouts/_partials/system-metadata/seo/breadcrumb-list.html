@@ -1,7 +1,7 @@
 {{- $ctx := .ctx | default . -}}
 {{- $model := .model | default dict -}}
 {{- if eq (len $model) 0 -}}
-  {{- errorf "Build failed: system-metadata/seo/breadcrumb.html requires a navigation model for %q." $ctx.RelPermalink -}}
+  {{- errorf "Build failed: system-metadata/seo/breadcrumb-list.html requires a navigation model for %q." $ctx.RelPermalink -}}
 {{- end -}}
 {{- $items := index $model "schema_items" | default slice -}}
 {{- if gt (len $items) 0 -}}

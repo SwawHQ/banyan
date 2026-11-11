@@ -1,6 +1,6 @@
 export function breadcrumbRequests() {
     // The inline startup and deferred controller must share the same text promises.
-    return document.banyanNavigationRequests ||= new Map();
+    return document.banyanBreadcrumbRequests ||= new Map();
 }
 
 export function requestBreadcrumbText(url) {

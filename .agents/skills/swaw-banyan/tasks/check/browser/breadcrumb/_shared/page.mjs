@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 
-export const columnsSelector='[data-slot=breadcrumb] [data-collection-column]';
+export const columnsSelector='[data-slot=breadcrumb] [data-breadcrumb-column]';
 export const columnLocator=(page,href)=>page.locator(columnsSelector+'[data-breadcrumb-collection-href='+JSON.stringify(href)+']');
 
 export function columnSort(column) {
@@ -19,11 +19,11 @@ export async function openPage(page,url) {
 
 export const readColumns=page=>page.evaluate(selector=>{
   return [...document.querySelectorAll(selector)].map(column=>{
-    const href=column.dataset.breadcrumbCollectionHref,source={href,logicalPath:column.dataset.navigationColumn,
+    const href=column.dataset.breadcrumbCollectionHref,source={href,logicalPath:column.dataset.breadcrumbColumnPath,
       sortVariant:column.dataset.sortVariant,defaultSort:column.dataset.defaultSort};
-    const toggle=column.querySelector('[data-collection-sort-toggle]');
+    const toggle=column.querySelector('[data-breadcrumb-sort-toggle]');
     return {href,source,toggle:toggle?.href,indicator:toggle?.querySelector('[data-sort-indicator]')?.textContent.trim(),
-      field:toggle?.querySelector('.path-sort-label')?.textContent.trim(),y:column.scrollTop,
+      field:toggle?.querySelector('.breadcrumb-sort-label')?.textContent.trim(),y:column.scrollTop,
       rows:[...column.querySelectorAll('[data-list-entry]')].map(link=>({
         key:new URL(link.href).pathname,href:link.href,text:link.textContent.trim()
       }))};
@@ -65,7 +65,7 @@ export async function observeColumns(page,url) {
     assert.ok(response?.ok(),'Page must return a successful response.');
     await page.waitForFunction(()=>!!window.__swbanParsedColumns
       &&[...document.querySelectorAll('link[rel="stylesheet"]')].every(link=>link.disabled||link.sheet));
-    await afterPaint(page);initial={columns:await readColumns(page),sourcePending:await page.evaluate(()=>document.documentElement.hasAttribute('data-entry-breadcrumb-pending'))};
+    await afterPaint(page);initial={columns:await readColumns(page),sourcePending:await page.evaluate(()=>document.documentElement.hasAttribute('data-breadcrumb-pending'))};
   } finally {
     release();try {await Promise.all(held);}finally {await page.unroute('**/*',handler);}
   }

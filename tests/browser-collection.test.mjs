@@ -73,7 +73,7 @@ test('layout checks directory, flat, reference and product lists at narrow and w
   }
   const state=report(cli('layout',['--page','/all/','--article',article,'--widths','390,1440','--out',path.join(work,'reports')]));
   assert.equal(state.browser,'chromium');assert.ok(state.browserVersion);
-  for(const result of state.details.cases){assert.ok(result.main.rows.length>=4);assert.deepEqual(result.main.fields,['name','date','size']);assert.equal(result.path.pathGrid,true);assert.equal(result.path.nameOnly,true);}
+  for(const result of state.details.cases){assert.ok(result.main.rows.length>=4);assert.deepEqual(result.main.fields,['name','date','size']);assert.equal(result.breadcrumb.breadcrumbGrid,true);assert.equal(result.breadcrumb.nameOnly,true);}
   for(const directory of directories) {
     const fields=directory.main.heading.fields,aggregate=state.details.cases.find(result=>result.width===directory.width).main.heading.fields;
     assert.deepEqual(fields.map(cell=>cell.field),['name','date','count']);
@@ -95,17 +95,17 @@ test('layout checks directory, flat, reference and product lists at narrow and w
 
 test('navigation lists fit native scrollbar space while main fields keep their widths',{timeout:15000},async()=>{
   const directory=fixture('native-gutters');
-  css(directory,'d/collection-fixture/one','.page-rail,.path-column{block-size:60px}');
+  css(directory,'d/collection-fixture/one','.page-rail,.breadcrumb-column{block-size:60px}');
   const server=await createStaticSiteServer(directory);let browser;
   try {
     await server.start();const type=loadChromium();
     browser=await type.launch({headless:true,executablePath:type.executablePath(),ignoreDefaultArgs:['--hide-scrollbars']});
     const context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage();
     const result=await checkCollectionLayout({page,baseUrl:server.getBaseUrl(),options:{page:'/all/',article,widths:'390,1440'}});
-    for(const {main,path} of result.cases) {
+    for(const {main,breadcrumb} of result.cases) {
       assert.equal(main.nameWidth,main.declaredWidth);
-      assert.ok(path.pathScrollbar>0,'The fixture must reserve a native scrollbar.');
-      assert.ok(path.nameWidth<main.nameWidth,'Path names must fit the remaining scroll-column space.');
+      assert.ok(breadcrumb.breadcrumbScrollbar>0,'The fixture must reserve a native scrollbar.');
+      assert.ok(breadcrumb.nameWidth<main.nameWidth,'Breadcrumb names must fit the remaining scroll-column space.');
     }
   } finally {try{if(browser)await browser.close();}finally{await server.stop();}}
 });
@@ -150,7 +150,7 @@ for(const [name,loadBrowser] of [['chromium',loadChromium],['webkit',loadWebkit]
 test('style checks actual links and choice buttons in both themes and widths',{timeout:45000},()=>{
   const state=report(cli('style',['--page',article,'--collection','/all/','--widths','390,1440','--trace','--out',path.join(work,'reports')]));
   assert.equal(state.browser,'chromium');assert.equal(state.details.cases.length,4);
-  for(const result of state.details.cases){assert.equal(result.choiceFocus.tag,'BUTTON');assert.equal(result.pathFocus.tag,'A');assert.equal(result.mainFocus.visible,true);}
+  for(const result of state.details.cases){assert.equal(result.choiceFocus.tag,'BUTTON');assert.equal(result.breadcrumbFocus.tag,'A');assert.equal(result.mainFocus.visible,true);}
   const translated=cli('style',['--page','/zh/d/translated-one/#from=all','--collection','/zh/all/','--choices','/zh/appearance/']);
   assert.equal(translated.status,0,translated.stdout+translated.stderr);
 });
@@ -160,18 +160,18 @@ test('layout accepts hidden, transparent and custom theme borders',{timeout:2000
     const directory=fixture('border-'+name),rule='.item-list{--list-header-border:'+value+'}';
     for(const route of ['all','d/collection-fixture/one'])css(directory,route,rule);
     const state=report(cli('layout',['--page','/all/','--article',article,'--widths','390,1440','--out',path.join(work,'reports')],directory));
-    for(const result of state.details.cases)for(const list of [result.main,result.path])assert.equal(list.separatorWidth,width);
+    for(const result of state.details.cases)for(const list of [result.main,result.breadcrumb])assert.equal(list.separatorWidth,width);
   }
 });
 
 test('layout rejects narrowed names, changed headers, moved rows, padding and overlapping rows',{timeout:20000},()=>{
   const width=fixture('name-width');css(width,'all','.item-list--all > .list-item{grid-template-columns:100px 10ch 6ch!important}');
   const narrowed=cli('layout',['--page','/all/','--widths','390'],width);assert.equal(narrowed.status,1);assert.match(narrowed.stderr,/Name column must match/);
-  const header=fixture('header');css(header,'d/collection-fixture/one','.item-list--path-column .list-header{padding-block-start:5px!important}');
-  const shifted=cli('layout',['--page','/all/','--article',article,'--widths','390'],header);assert.equal(shifted.status,1);assert.match(shifted.stderr,/Main and path lists must align/);
-  const offset=fixture('offset');css(offset,'d/collection-fixture/one','.item-list--path-column .item-control{transform:translateX(12px)!important}');
+  const header=fixture('header');css(header,'d/collection-fixture/one','.item-list--breadcrumb-column .list-header{padding-block-start:5px!important}');
+  const shifted=cli('layout',['--page','/all/','--article',article,'--widths','390'],header);assert.equal(shifted.status,1);assert.match(shifted.stderr,/Main and breadcrumb lists must align/);
+  const offset=fixture('offset');css(offset,'d/collection-fixture/one','.item-list--breadcrumb-column .item-control{transform:translateX(12px)!important}');
   const moved=cli('layout',['--page','/all/','--article',article,'--widths','390'],offset);assert.equal(moved.status,1);assert.match(moved.stderr,/column start/);
-  const padding=fixture('padding');css(padding,'d/collection-fixture/one','.item-list--path-column .item-control{padding-inline-start:12px!important}');
+  const padding=fixture('padding');css(padding,'d/collection-fixture/one','.item-list--breadcrumb-column .item-control{padding-inline-start:12px!important}');
   const padded=cli('layout',['--page','/all/','--article',article,'--widths','390'],padding);assert.equal(padded.status,1);assert.match(padded.stderr,/Row icons must begin/);
   const overlap=fixture('overlap');css(overlap,'all','.item-list--all > [data-list-item]{transform:translateY(-10px)}');
   const overlapping=cli('layout',['--page','/all/','--widths','390'],overlap);assert.equal(overlapping.status,1);assert.match(overlapping.stderr,/below the header/);
@@ -189,9 +189,9 @@ test('layout rejects field drift, subgrid and content-sized tracks',{timeout:200
   }
 });
 
-test('style rejects different path selection, main hover and button focus styles',{timeout:20000},()=>{
-  const selected=fixture('selection');css(selected,'d/collection-fixture/one','.item-list--path-column .item-control.is-current::before{background:red!important}');
-  const mismatch=cli('style',['--page',article,'--collection','/all/'],selected);assert.equal(mismatch.status,1);assert.match(mismatch.stderr,/Path rows must reuse root selection/);
+test('style rejects different breadcrumb selection, main hover and button focus styles',{timeout:20000},()=>{
+  const selected=fixture('selection');css(selected,'d/collection-fixture/one','.item-list--breadcrumb-column .item-control.is-current::before{background:red!important}');
+  const mismatch=cli('style',['--page',article,'--collection','/all/'],selected);assert.equal(mismatch.status,1);assert.match(mismatch.stderr,/Breadcrumb rows must reuse root selection/);
   const hover=fixture('hover');css(hover,'all','.slot-main .item-control:hover::before{box-shadow:none!important}');
   const different=cli('style',['--page',article,'--collection','/all/'],hover);assert.equal(different.status,1);assert.match(different.stderr,/Main collection rows must reuse root hover/);
   const focus=fixture('focus');css(focus,'appearance','.item-list button:focus-visible{outline:none!important}');

@@ -8,7 +8,7 @@ weight: 90
 
 params:
   icon: rss
-  slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+  slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---
 
 Add a subscription address to your RSS reader to receive article updates.

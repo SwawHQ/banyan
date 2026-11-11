@@ -53,14 +53,14 @@ JSON 请求由 SW 发出，不依赖页面通知，不阻塞导航响应。
 - 发现新版本后，发布新的内容缓存版本，清理旧缓存，再预热离线页。
   首次安装必须准备默认离线页；其余离线预热失败不阻止版本切换。
   进行中的旧版本请求不得重新创建已删除的缓存。
-- 内容切换不刷新当前页面；新版本只影响后续请求。`site-update "status"` 的按钮只检查 SW 程序；
-  `site-update "content"` 的按钮只读取服务器内容版本，不切换缓存或刷新页面。
+- 内容切换不刷新当前页面；新版本只影响后续请求。`site-status "status"` 的按钮只检查 SW 程序；
+  `site-status "content"` 的按钮只读取服务器内容版本，不切换缓存或刷新页面。
 
 ## 页面脚本边界
 
 - `assets/js/pwa/manager-entry.js.tmpl` 只负责注册。
-- `assets/js/updates/page.js` 在使用 `site-update` 的页面按实际节点绑定程序状态与检查。
-  `updates/content.js` 独立绑定内容版本显示；文案由对应页面的 `params.site_update.labels` 提供。
+- `assets/js/site-status/page.js` 在使用 `site-status` 的页面按实际节点绑定程序状态与检查。
+  `site-status/content.js` 独立绑定内容版本显示；文案由对应页面的 `params.site_status.labels` 提供。
 - 页面不创建全局 `BanyanServiceWorkerManagerRuntime`。
 - 待更新程序直接读取 `registration.waiting`。
 

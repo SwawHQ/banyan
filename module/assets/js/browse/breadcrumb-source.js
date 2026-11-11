@@ -1,5 +1,5 @@
 import { normalizeFromPath } from './navigation-state.js';
-import { readNavigation, readActiveNavigationRoute } from './entry-source.js';
+import { readNavigation, readActiveNavigationRoute } from './navigation-source.js';
 import { SORT_VARIANTS } from './sort-policy.js';
 import { breadcrumbRequests, requestBreadcrumbText } from './breadcrumb-request.js';
 
@@ -23,8 +23,8 @@ function readColumnFragment(text, logicalPath) {
     const invalid = () => { throw new Error('Navigation fragment does not match its column'); };
     if (template.content.children.length !== 1
         || [...template.content.childNodes].some(node => node.nodeType !== 1 && node.textContent.trim())
-        || !list.matches('div.item-list.item-list--path-column')
-        || normalizeFromPath(list.dataset.navigationColumn) !== logicalPath) invalid();
+        || !list.matches('div.item-list.item-list--breadcrumb-column')
+        || normalizeFromPath(list.dataset.breadcrumbColumnPath) !== logicalPath) invalid();
     // Keep downloaded markup passive before any cloned nodes enter the page.
     for (const node of [list, ...list.querySelectorAll('*')]) {
         if (!['div', 'span', 'a', 'bdi', 'svg', 'use', 'img'].includes(node.localName)) invalid();
@@ -47,8 +47,8 @@ function readColumnFragment(text, logicalPath) {
             || !SORT_VARIANTS[sortVariant].fields[defaultSort.split('-')[0]]
             || !/^[a-z]+-(?:asc|desc)$/.test(defaultSort)))
         || (!sortVariant && defaultSort)) invalid();
-    const toggle = header.querySelector('a[data-collection-sort-toggle]');
-    if (sortVariant && (!toggle?.querySelector('.path-sort-label')
+    const toggle = header.querySelector('a[data-breadcrumb-sort-toggle]');
+    if (sortVariant && (!toggle?.querySelector('.breadcrumb-sort-label')
         || !toggle.querySelector('[data-sort-indicator]'))) invalid();
     const rows = [...list.children].slice(1).map((node, index) => {
         const link = node.firstElementChild;
@@ -81,7 +81,7 @@ export function readBreadcrumbColumn(logicalPath) {
         ? `${navigation.resources}${hash}.txt` : '';
     const cached = loadedColumns.get(url);
     const payload = cached?.logicalPath === key ? cached : null;
-    return { key, url, payload, source: payload };
+    return { key, url, payload };
 }
 
 export function readBreadcrumbColumns() {

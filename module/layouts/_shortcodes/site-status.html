@@ -1,0 +1,37 @@
+{{- $part := .Get 0 -}}
+{{- if not (in (slice "version" "interval" "policy" "offline" "status" "content") $part) -}}
+  {{- errorf "Build failed: %s site-status requires version, interval, policy, offline, status or content." .Page.File.Path -}}
+{{- end -}}
+{{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
+{{- $swEnabled := eq $delivery.sw.mode "enable" -}}
+{{- if eq $part "version" -}}
+  {{- $version := partial "system-build/version.html" .Page -}}
+  <time data-site-build-version title="{{ $version }}" datetime="{{ partial "system-build/time-iso.html" .Page }}">{{ $version }}</time>
+{{- else if eq $part "interval" -}}
+  {{- $format := .Get 1 -}}
+  {{- if not (and (eq (printf "%T" $format) "string") (strings.Contains $format "%d")) -}}
+    {{- errorf "Build failed: %s site-status interval requires display text containing %%d." .Page.File.Path -}}
+  {{- end -}}
+  <span data-site-content-interval>{{- if $swEnabled -}}
+    {{- printf $format $delivery.sw.content_check_interval -}}
+  {{- else -}}
+    {{- $labels := partial "feature-site-status/labels.html" (dict "ctx" .Page "keys" (slice "cache_disabled")) -}}
+    {{- $labels.cache_disabled -}}
+  {{- end -}}</span>
+{{- else if eq $part "policy" -}}
+  <span data-site-sw-policy>{{- if $swEnabled -}}<a href="{{ "sw-policy.json" | relURL }}">sw-policy.json</a>{{- else -}}
+    {{- $labels := partial "feature-site-status/labels.html" (dict "ctx" .Page "keys" (slice "cache_disabled")) -}}
+    {{- $labels.cache_disabled -}}
+  {{- end -}}</span>
+{{- else if eq $part "offline" -}}
+  {{- $url := printf "%s%s/" .Page.Site.Home.RelPermalink (trim $delivery.sw.offline_notice_path "/") -}}
+  <span data-site-offline-page><a href="{{ $url }}">{{ $url }}</a></span>
+{{- else if eq $part "status" -}}
+  {{- $labels := partial "feature-site-status/labels.html" (dict "ctx" .Page "keys" (slice "checking" "check_failed" "unavailable" "status_current" "status_ready" "status_offline" "installing" "status_click_retry" "mode_off" "mode_disable" "status_controlled" "status_refresh" "refresh_icon")) -}}
+  <span class="site-status-message" data-site-status-panel data-site-sw-status data-site-sw-mode="{{ $delivery.sw.mode }}" data-site-sw-url="{{ "sw.js" | relURL }}" data-site-sw-copy='{{ $labels | jsonify }}' role="status" aria-live="polite">{{ if $swEnabled }}{{ $labels.checking }}{{ else }}{{ index $labels (printf "mode_%s" $delivery.sw.mode) }}{{ end }}</span>
+  <button class="site-status-refresh" type="button" data-site-sw-action="check" title="{{ $labels.status_refresh }}" aria-label="{{ $labels.status_refresh }}" disabled>{{ $labels.refresh_icon }}</button>
+{{- else if eq $part "content" -}}
+  {{- $labels := partial "feature-site-status/labels.html" (dict "ctx" .Page "keys" (slice "content_checking" "content_current" "content_failed" "cache_disabled" "content_current_icon" "content_refresh" "refresh_icon")) -}}
+  <span data-site-content-status data-site-page-version="{{ partial "system-build/version.html" .Page }}"{{ if $swEnabled }} data-site-version-url="{{ "sw-version.json" | relURL }}"{{ end }} data-site-content-copy='{{ $labels | jsonify }}' role="status" aria-live="polite">{{ if $swEnabled }}{{ $labels.content_checking }}{{ else }}{{ $labels.cache_disabled }}{{ end }}</span>
+  <button class="site-status-refresh" type="button" data-site-content-action="check" title="{{ $labels.content_refresh }}" aria-label="{{ $labels.content_refresh }}" disabled>{{ $labels.refresh_icon }}</button>
+{{- end -}}

@@ -1,10 +1,10 @@
 import './content.js';
 
-const panel = document.querySelector('[data-site-update-panel]');
+const panel = document.querySelector('[data-site-status-panel]');
 
 function readCopy() {
     try {
-        const copy = JSON.parse(panel?.dataset.siteUpdateCopy || '');
+        const copy = JSON.parse(panel?.dataset.siteSwCopy || '');
         return copy && typeof copy === 'object' ? copy : null;
     } catch (error) {
         return null;
@@ -23,7 +23,7 @@ function getStatusValue(copy, status) {
 }
 
 function render(copy, status) {
-    panel.dataset.siteUpdateState = status;
+    panel.dataset.siteSwState = status;
     if (action) action.disabled = checking || ['checking', 'installing', 'unavailable'].includes(status);
 
     const value = getStatusValue(copy, status);
@@ -31,7 +31,7 @@ function render(copy, status) {
 }
 
 const copy = panel ? readCopy() : null;
-const action = document.querySelector('[data-site-update-action="check"]');
+const action = document.querySelector('[data-site-sw-action="check"]');
 let registration = null;
 let checking = false;
 
@@ -107,7 +107,7 @@ async function start() {
 if (panel && copy) {
     if (panel.dataset.siteSwMode !== 'enable') {
         const showMode = () => {
-            panel.dataset.siteUpdateState = panel.dataset.siteSwMode;
+            panel.dataset.siteSwState = panel.dataset.siteSwMode;
             panel.textContent = copy['mode_' + panel.dataset.siteSwMode]
                 + (navigator.serviceWorker?.controller ? ' ' + copy.status_controlled : '');
         };

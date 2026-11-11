@@ -98,7 +98,7 @@ export async function check({page,baseUrl,options}) {
       const nav=document.querySelector('[data-root-navigation]'),main=document.querySelector('#main'),content=document.querySelector('.page-content'),prose=document.querySelector('.prose'),footer=document.querySelector('.slot-footer');
       const collection=main.classList.contains('slot-main--collection'),list=collection?main.querySelector('.item-list'):null;
       const inlineSpace=(node,properties)=>properties.reduce((sum,key)=>sum+Number.parseFloat(getComputedStyle(node)[key]),0);
-      const columns=[...document.querySelectorAll('[data-slot=breadcrumb] [data-collection-column]')];
+      const columns=[...document.querySelectorAll('[data-slot=breadcrumb] [data-breadcrumb-column]')];
       const probe=document.createElement('div');
       probe.style.cssText='position:absolute;visibility:hidden;pointer-events:none;block-size:0;padding:0;border:0';
       document.querySelector('.page').append(probe);
@@ -110,7 +110,7 @@ export async function check({page,baseUrl,options}) {
       const tailColumns=[...canvas.querySelectorAll('.page-content,.document-aside')].filter(node=>node.getClientRects().length);
       const tailColumnsWidth=rect(tailColumns.at(-1)).right-rect(tailColumns[0]).x;
       const tail=rect(group).right-rect(tailColumns.at(-1)).right;
-      const scrollColumns=[...document.querySelectorAll('.page-column,.page-rail,.path-column,.page-content,.document-aside')];
+      const scrollColumns=[...document.querySelectorAll('.page-column,.page-rail,.breadcrumb-column,.page-content,.document-aside')];
       const unifiedCanvas=document.querySelectorAll('.page-shell').length===1&&canvas.querySelectorAll('.reading-group').length===1
         &&getComputedStyle(group).overflowX==='visible'&&getComputedStyle(group).overflowY==='visible'&&scrollColumns.every(column=>{
         let parent=column.parentElement;
@@ -130,7 +130,7 @@ export async function check({page,baseUrl,options}) {
         readingInlineSpace:content.offsetWidth-content.clientWidth+inlineSpace(content,['paddingLeft','paddingRight'])+inlineSpace(main,['marginLeft','marginRight']),
         mainInlineSpace:inlineSpace(main,['paddingLeft','paddingRight','borderLeftWidth','borderRightWidth']),
         list:list?{...rect(list),margins:inlineSpace(list,['marginLeft','marginRight'])}:null,
-        plainColumns:columns.every(node=>node.querySelector(':scope > .item-list.item-list--path-column')&&!node.querySelector('[aria-expanded],[role="menu"],[hidden]')),
+        plainColumns:columns.every(node=>node.querySelector(':scope > .item-list.item-list--breadcrumb-column')&&!node.querySelector('[aria-expanded],[role="menu"],[hidden]')),
         sharedColumns:scrollColumns.every(node=>node.classList.contains('page-column')),
         rootNavigationCount:document.querySelectorAll('[data-root-navigation]').length,
         rootCount:nav?.querySelectorAll('[data-root-href]').length??0,

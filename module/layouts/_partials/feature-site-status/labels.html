@@ -1,0 +1,8 @@
+{{- $page := .ctx -}}
+{{- $labels := $page.Params.site_status.labels | default dict -}}
+{{- $copy := dict -}}
+{{- range .keys -}}
+  {{- if not (index $labels .) -}}{{- errorf "Build failed: %s requires site_status.labels.%s." $page.File.Path . -}}{{- end -}}
+  {{- $copy = merge $copy (dict . (index $labels .)) -}}
+{{- end -}}
+{{- return $copy -}}

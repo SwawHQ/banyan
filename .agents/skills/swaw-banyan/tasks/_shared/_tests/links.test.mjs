@@ -12,7 +12,7 @@ test('internal links resolve relative, same-origin, encoded and navigation fragm
     <a href="#local">Local</a><a href="guide/?x=1&amp;y=2#%E9%85%8D%E7%BD%AE">Encoded</a>
     <a href="https://example.test/guide/#配置">Absolute</a><a href="/guide/#legacy">Named</a>
     <a href="/guide/#from=articles&amp;sorts=name-asc&amp;anchor=%E9%85%8D%E7%BD%AE">Navigation</a>
-    <a href="/guide/#from=articles">Source</a><a href="/guide/#sorts=name-asc">Path sort</a>
+    <a href="/guide/#from=articles">Source</a><a href="/guide/#sorts=name-asc">Breadcrumb sort</a>
     <a href="/guide/#sort=name-asc">Main sort</a>
     <a href="#local:~:text=Local">Text</a><a href="manual.pdf#page=2">Download</a>
     <a href="https://external.test/missing/">External</a><a href="mailto:example@example.test">Mail</a>

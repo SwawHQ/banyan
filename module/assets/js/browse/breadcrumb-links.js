@@ -1,5 +1,5 @@
 import { normalizeCollectionSource } from './collection-source.js';
-import { readNavigation } from './entry-source.js';
+import { readNavigation } from './navigation-source.js';
 import {
     SORT_VARIANTS,
     parseSortToken,
@@ -43,7 +43,7 @@ export function readRequestedSortState(source, sortVariant, defaultSort = '') {
     };
 }
 
-export function getCollectionSortState(source) {
+export function getBreadcrumbSortState(source) {
     const collectionSource = normalizeCollectionSource(source);
     if (!collectionSource?.logicalPath) {
         return null;
@@ -69,12 +69,12 @@ export function getCollectionSortState(source) {
     };
 }
 
-export function buildCollectionSortToggleHref(
+export function buildBreadcrumbSortToggleHref(
     source,
     baseHref = window.location.href,
     lineagePathOverride = ''
 ) {
-    const state = getCollectionSortState(source);
+    const state = getBreadcrumbSortState(source);
     if (!state) {
         return '';
     }

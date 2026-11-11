@@ -26,7 +26,7 @@ HTML 压缩不能再次改写 JS，否则 CSP 哈希失效。
 内联入口位于 `module/assets/js/inline/`：
 
 - `theme-boot.js` 同步首帧主题。
-- `breadcrumb-pending.js`、`breadcrumb-skeleton.js` 预留路径列。
+- `breadcrumb-pending.js`、`breadcrumb-skeleton.js` 预留面包屑列。
 - `root-navigation.js` 同步根入口选中状态。
 - `canvas-position.js` 保存和恢复横向画幅。
 

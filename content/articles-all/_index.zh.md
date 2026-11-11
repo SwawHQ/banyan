@@ -11,5 +11,5 @@ params:
   aggregate: /articles
   # 可选 Lastmod 范围：包含起点，不包含终点；子栏目示例见安装说明。
   # time_range: {start: "2000-01-01", end: "2005-02-01"}
-  slots: [breadcrumb] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
+  slots: [breadcrumb] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
 ---

@@ -44,7 +44,7 @@ layouts/
 当前只有两个入口私有目录：
 
 - `entry-baseof/`：全站骨架独有的内联脚本和内容图标声明审计。`entry-baseof/audit-content-icons.html` 依赖入口对可列出页面的精确判断，不属于通用构建审计。
-- `entry-page-home/`：宿主首页的艺术包与资源装配；`wind/model.html` 为风场短代码生成信号条目和场景样式。站点艺术包维护内容、CSS 和 JS。
+- `entry-page-home/`：宿主首页的艺术包与资源装配。站点艺术包维护内容、CSS 和 JS。
 
 ## Partial 所有权
 
@@ -57,8 +57,10 @@ _partials/
 │
 ├─ feature-browse/
 ├─ feature-document/
+├─ feature-home-art/
 ├─ feature-preferences/
-├─ feature-updates/
+├─ feature-prefetch-debug/
+├─ feature-site-status/
 │
 ├─ system-ui/
 ├─ system-assets/
@@ -67,10 +69,12 @@ _partials/
 └─ system-build/
 ```
 
-- `feature-browse/`：集合成员、统一 row、排序、第一列入口、路径列、浏览来源、目录引用、URL 状态和集合内部的产品展示适配。
+- `feature-browse/`：集合成员、统一 row、排序、第一列入口、面包屑列、浏览来源、目录引用、URL 状态和集合内部的产品展示适配。
 - `feature-document/`：正文外壳、标题契约、辅助列的元信息与章节目录、文章 schema、正文样式和 Markdown 图片渲染。
-- `feature-preferences/`：语言上下文、语言选项模型，以及语言页与外观页共用的返回操作。外观固定为 auto、light、dark 三项，由 `feature-preferences/render.html` 提供；它不负责账号、会话或权限。
-- `feature-updates/`：更新状态文案；`site-update` 短代码输出状态与原生按钮，浏览器控制器只读取页面数据。
+- `feature-home-art/`：艺术包的专用计算模板；`wind/model.html` 生成风场信号条目和场景样式。
+- `feature-preferences/`：语言上下文与语言选项模型。外观固定为 auto、light、dark 三项，由 `feature-preferences/render.html` 提供；通用返回和重新加载行为位于 `assets/js/pages/`。
+- `feature-prefetch-debug/`：预取诊断文案校验与诊断脚本装配。
+- `feature-site-status/`：站点状态文案；`site-status` 短代码输出构建信息、缓存配置、状态与原生按钮，浏览器控制器只读取页面数据。
 - `system-ui/`：公共列表、完整条目、图标、原生控件、链接、页面 slot 与公共页面样式装配。
 - `system-assets/`：Hugo Pipes、CSS/JS 构建、页面及全局资源发布、图片处理原语。
 - `system-metadata/`：站点元信息、SEO、分享图和 agent/llms 输出。
@@ -94,14 +98,14 @@ feature-*   ──→ 少量明确、单向的其他 feature-*
 system-*    ──X feature-*
 ```
 
-当前唯一的跨功能依赖是 `feature-document → feature-browse`：文章元信息读取目录反向引用和路径模型。它表达真实领域关系，保持单向即可。不要为了让依赖图看起来分层而把目录归属降成通用工具。
+当前唯一的跨功能依赖是 `feature-document → feature-browse`：文章元信息读取目录反向引用和面包屑模型。它表达真实领域关系，保持单向即可。不要为了让依赖图看起来分层而把目录归属降成通用工具。
 
 `system-*` 不得反向取得 Feature 状态。具体规则如下：
 
 - `baseof.html` 取得浏览来源并输出页面数据；内联脚本只处理首帧状态，prefetch 和 Service Worker 从交付配置取得各自的数据，不读取浏览功能模型。
 - `system-assets/script.html` 只处理调用者指定的资源和显式构建参数，不自行读取浏览路由。
-- `system-metadata/seo/breadcrumb.html` 只消费入口传入的路径模型，不自行构建导航。
-- `site-update` 短代码读取当前语言页面文案和交付配置；`"version"` 输出构建版本，`"status"`、`"content"` 分别装配程序和内容状态。
+- `system-metadata/seo/breadcrumb-list.html` 只消费入口传入的面包屑模型，不自行构建导航。
+- `site-status` 短代码读取当前语言页面文案和交付配置；`"version"` 输出构建版本，`"status"`、`"content"` 分别装配程序和内容状态。
 
 目录表达“谁拥有这段代码、它为什么变化”；调用图表达“谁依赖谁”。不要根据偶然的调用顺序创造 `site → explorer → ui → assets` 之类伪层级，也不要建立 `common`、`utils`、`platform`、`runtime` 等没有明确收口条件的目录。
 
@@ -110,12 +114,12 @@ system-*    ──X feature-*
 以下边界仍然成立：
 
 1. 普通 section 列出直接成员，汇总入口读取目录的递归成员。
-2. 结构路径用于静态 HTML 和 SEO；用户进入来源可由 `from` 改变，不能作为 canonical 事实。
-3. 结构路径的 `nodes[].owner` 使用 Hugo Page，只在构建期读取；共享片段和浏览器列索引与结构路径分开生成。
+2. 结构面包屑用于静态 HTML 和 SEO；用户进入来源可由 `from` 改变，不能作为 canonical 事实。
+3. 结构面包屑的 `nodes[].owner` 使用 Hugo Page，只在构建期读取；共享片段和浏览器列索引与结构面包屑分开生成。
 4. collection source 是构建期描述；浏览器索引只保存所需逻辑路径和共享 HTML 片段哈希。
 5. Markdown 响应式图片与社交分享图具有不同尺寸和继承规则，但共用底层资源处理原语。
-6. 第一列、路径列和主列表共用完整列表与行组件，各功能保留成员发现规则。
-7. 更新面板是用户功能；Service Worker、缓存和预取是 delivery 机制。
+6. 第一列、面包屑列和主列表共用完整列表与行组件，各功能保留成员发现规则。
+7. 站点状态控件是用户功能；Service Worker、缓存和预取是 delivery 机制。
 
 `feature-browse/directory/index.html` 每种语言建立一次目录成员索引，返回：
 
@@ -140,14 +144,14 @@ SSR 列表使用以下分工：
 | `system-ui/list/render.html`、`item.html` | 输出列表、表头外层和完整条目；条目包含名称控件及已生成的字段 HTML |
 | `system-ui/list/item-link.html`、`item-button.html`、`item-content.html` | 输出链接或按钮，以及共用的图标和文字 |
 | `feature-browse/navigation/root/model.html`、`root/render.html` | 模型取得结构根页面并生成可见入口；渲染器装配 `nav` 与公共列表 |
-| `feature-browse/navigation/path/columns.html`、`source/fallback-model.html` | 从结构 owner 取得集合列模型或不可排序的后备列 |
-| `feature-browse/navigation/source/fragment.html`、`publish.html` | 生成并发布路径列头、行、图标及排序字段的共享 HTML 片段 |
+| `feature-browse/navigation/breadcrumb/columns.html`、`source/fallback-model.html` | 从结构 owner 取得集合列模型或不可排序的后备列 |
+| `feature-browse/navigation/source/fragment.html`、`publish.html` | 生成并发布面包屑列头、行、图标及排序字段的共享 HTML 片段 |
 | `feature-browse/collection/render.html`、`item-fields.html`、`sort/header.html` | 保留配置、领域 row、来源链接、排序属性与 schema；生成字段和表头 HTML 供公共列表装配 |
-| `system-ui/choice/render.html`、`_shortcodes/site-update.html` | 分别生成选择列表与更新状态及检查按钮 |
+| `system-ui/choice/render.html`、`_shortcodes/site-status.html` | 分别生成选择列表与站点状态及检查按钮 |
 
-功能模板先生成字段 HTML，再通过 `fields` 传给完整条目。公共模板只装配 HTML，不读取集合配置或调用功能模板。公共列表接收 `title` 时保留选择页的 `h1`，接收 `header` 时为已生成的字段头添加外层行。浏览器动态路径列克隆共享片段的 DOM。
+功能模板先生成字段 HTML，再通过 `fields` 传给完整条目。公共模板只装配 HTML，不读取集合配置或调用功能模板。公共列表接收 `title` 时保留选择页的 `h1`，接收 `header` 时为已生成的字段头添加外层行。浏览器动态面包屑列克隆共享片段的 DOM。
 
-`feature-browse/navigation/source/models.html` 复用目录索引生成 `columns_by_href`，列模型包含 config、rows、source 和 `payloadUrl`。`source/publish.html` 发布共享 HTML，`source/pack.html` 输出本页所需的列索引。主列表、导航片段和正文路径读取同一份集合成员。结构模型与浏览器索引的边界见 [路径模型](/zh/p/breadcrumb-models/#路径模型)。
+`feature-browse/navigation/source/models.html` 复用目录索引生成 `columns_by_href`，列模型包含 config、rows、source 和 `payloadUrl`。`source/publish.html` 发布共享 HTML，`source/pack.html` 输出本页所需的列索引。主列表、导航片段和正文路径读取同一份集合成员。结构模型与浏览器索引的边界见 [面包屑模型](/zh/p/breadcrumb-models/#面包屑模型)。
 
 页面 bundle 资源的定位与发布是两个动作：`system-assets/resolve-page.html` 只返回源 resource 和目标目录，`system-assets/publish-page.html` 才发布源文件。分享图先解析源 resource；可处理的位图只发布最终 `1200x630` JPG，非位图才发布原资源，避免为了生成衍生图而附带发布未引用的源图。
 

@@ -23,7 +23,7 @@ function checkQueryPreservation(before,after,isCollection) {
     fields.sort();url.hash=fields.toString();
   }
   previous.searchParams.sort();next.searchParams.sort();
-  assert.equal(next.href,previous.href,'Path sorting must preserve unrelated query fields and fragment.');
+  assert.equal(next.href,previous.href,'Breadcrumb sorting must preserve unrelated query fields and fragment.');
 }
 
 function checkMainLinks(main,columns) {
@@ -57,7 +57,7 @@ export async function check({page,baseUrl,options}) {
   const url=baseUrl+options.page;await openPage(page,url);
   const initial=await readColumns(page),main=await readMain(page),initialUrl=page.url(),targets=initial.filter(column=>column.toggle);
   const isCollection=await page.evaluate(()=>Boolean(document.body.dataset.collectionPath));
-  assert.ok(targets.length>=2||(targets.length>=1&&main),'Choose two sortable path columns, or a path column and main collection.');
+  assert.ok(targets.length>=2||(targets.length>=1&&main),'Choose two sortable breadcrumb columns, or a breadcrumb column and main collection.');
   const cases=[];
   for(const target of targets) {
     await openPage(page,url);
@@ -65,9 +65,9 @@ export async function check({page,baseUrl,options}) {
     const result=await toggleColumn(page,target.href),after=await readColumns(page),mainAfter=await readMain(page);
     checkQueryPreservation(previous,page.url(),isCollection);
     assert.deepEqual(after.filter(column=>column.href!==target.href).map(order),before.filter(column=>column.href!==target.href).map(order),
-      'Sorting one path column must not change another column order or indicator.');
+      'Sorting one breadcrumb column must not change another column order or indicator.');
     if(mainBefore) {
-      assert.deepEqual(order(mainAfter),order(mainBefore),'Path sorting must not change main collection order or indicator.');
+      assert.deepEqual(order(mainAfter),order(mainBefore),'Breadcrumb sorting must not change main collection order or indicator.');
       checkMainLinks(mainBefore,before);checkMainLinks(mainAfter,after);
     }
     cases.push({column:target.href,url:page.url(),...result});

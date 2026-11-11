@@ -53,7 +53,7 @@ export async function check({page,baseUrl,options}) {
         return boxes.slice(1).map((box,index)=>box.top-boxes[index].bottom);
       });
       if(metadata.length)assert.ok(Math.max(...metadata)-Math.min(...metadata)<=1,'Metadata rows must have uniform spacing.');
-      const directory=page.locator('.document-meta__row--path').first();
+      const directory=page.locator('.document-meta__row--breadcrumb').first();
       if(await directory.count()) {
         await directory.hover();
         assert.equal(await directory.evaluate(node=>getComputedStyle(node).backgroundColor),'rgba(0, 0, 0, 0)','A multi-link metadata row must have no hover background.');

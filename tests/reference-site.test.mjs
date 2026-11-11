@@ -45,13 +45,13 @@ after(()=>{if(work){assert.equal(path.basename(path.dirname(fs.realpathSync(work
 
 test('functional pages keep their shortcode scripts without article metadata, chapters or BlogPosting',async()=>{
   assert.deepEqual((await inspectScripts(output)).issues,[]);
-  for(const prefix of prefixes)for(const [route,family] of [['powered-by','updates/page'],['_res/offline','pages/offline']]) {
+  for(const prefix of prefixes)for(const [route,family] of [['powered-by','site-status/page'],['_res/offline','pages/reload']]) {
     const html=fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');
     const scripts=extractStartTags(html,'script').map(tag=>extractTagAttribute(tag,'src')||'');
     assert.equal(scripts.filter(src=>src.includes('/js/'+family+'.')).length,1,prefix+route+' loads its controller once.');
     assert.doesNotMatch(html,/document-meta|document-toc|document-aside-toggle|"@type"\s*:\s*"BlogPosting"/);
     if(route==='_res/offline') {
-      assert.deepEqual(scripts.filter(Boolean),scripts.filter(src=>src.includes('/js/pages/offline.')),
+      assert.deepEqual(scripts.filter(Boolean),scripts.filter(src=>src.includes('/js/pages/reload.')),
         'The standalone offline layout loads only its retry controller.');
       assert.doesNotMatch(html,/\bdata-navigation=|\bdata-prefetch|site-prefetch|speculationrules/);
       assert.equal(extractBlocks(html,'nav').length,0,'The offline layout has no navigation columns.');
@@ -129,7 +129,7 @@ test('the reference site owns its delivery data, icons and interface translation
     for(const route of ['articles','articles/category1','articles-all','products/examples','products-all']) {
       const page=fs.readFileSync(path.join(output,prefixes[languages.indexOf(language)],route,'index.html'),'utf8');
       const shared=JSON.parse(extractTagAttribute(extractStartTags(page,'body')[0],'data-collection-sort-copy'));
-      assert.deepEqual(shared,copy,'Main and path columns share one translated copy, including root collections.');
+      assert.deepEqual(shared,copy,'Main and breadcrumb columns share one translated copy, including root collections.');
       const controls=extractStartTags(page,'a').filter(tag=>extractTagAttribute(tag,'data-sort-control')==='true');
       assert.equal(controls.length,3);
       for(const tag of controls) {
@@ -178,7 +178,7 @@ test('the reference site owns its columns and links to its local documentation',
     assert.equal(extractCanonicalHref(offline),origin+offlinePath);
     assert.ok(extractStartTags(offline,'meta').some(tag=>extractTagAttribute(tag,'name')==='robots'&&extractTagAttribute(tag,'content')==='noindex, follow'));
     assert.equal(extractBlocks(offline,'aside').length,0,'Resource pages do not inherit the document sidebar.');
-    assert.equal(extractBlocks(offline,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb').length,0,'Resource pages do not inherit path columns.');
+    assert.equal(extractBlocks(offline,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb').length,0,'Resource pages do not inherit breadcrumb columns.');
     for(const file of [path.join(output,prefix||'en/','sitemap.xml'),path.join(output,prefix,'llms.txt')])
       assert.ok(!fs.readFileSync(file,'utf8').includes('/_res/'),'Resource pages stay out of discovery outputs.');
     assert.equal(roots.includes('/'+prefix+'github/'),true,'GitHub is available in every enabled language.');
@@ -358,7 +358,7 @@ test('Arabic pages use RTL and demonstrate mixed text without losing translation
   assert.ok(main.includes('https://example.com/docs/?lang=ar&amp;version=2'));
   assert.ok(extractStartTags(article,'link').some(tag=>extractTagAttribute(tag,'hreflang')==='en'));
   const home=fs.readFileSync(path.join(output,'ar/index.html'),'utf8');
-  const signals=extractStartTags(home,'a').filter(tag=>/\bdata-page-home-signal(?:\s|=|>)/.test(tag));
+  const signals=extractStartTags(home,'a').filter(tag=>/\bdata-home-art-wind-signal(?:\s|=|>)/.test(tag));
   assert.equal(signals.length,6);
   assert.ok(signals.slice(0,4).every(tag=>extractTagAttribute(tag,'href').startsWith('/ar/')));
 });
@@ -487,7 +487,7 @@ test('Powered by contains translated diagnostics and same-language test links',(
     }
     const collectionPath=new URL(extractTagAttribute(links[0],'href'),origin).pathname;
     assert.match(extractBlocks(fs.readFileSync(path.join(output,collectionPath,'index.html'),'utf8'),'main')[0].inner,/data-sortable=(?:"true"|true)/);
-    const panel=extractBlocks(main,'span',tag=>tag.includes('data-site-update-panel'))[0];
+    const panel=extractBlocks(main,'span',tag=>tag.includes('data-site-status-panel'))[0];
     assert.equal(panel.html.includes('data-pwa-controlled'),false,'Page control state belongs to diagnostics');
     assert.ok(disclosure[0].index>=panel.index+panel.html.length,'Diagnostics follow the update controls');
     assert.ok(disclosure[0].html.includes('https://gohugo.io/news/'),'Hugo information belongs to collapsed diagnostics.');
@@ -513,18 +513,18 @@ test('Powered by contains translated diagnostics and same-language test links',(
 test('Powered by Markdown separates build information and update controls',async()=>{
   for(const prefix of prefixes) {
     const html=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
-    const times=extractStartTags(html,'time').filter(tag=>tag.includes('data-site-update-version'));
+    const times=extractStartTags(html,'time').filter(tag=>tag.includes('data-site-build-version'));
     assert.equal(times.length,1);
     const version=extractTagAttribute(times[0],'title');
     assert.match(version,/^v\d{14}$/);
     assert.match(extractTagAttribute(times[0],'datetime'),/^\d{4}-\d{2}-\d{2}T/);
     const source=stripRawText(html),visible=source.replace(/<[^>]*>/g,'');
     assert.deepEqual(visible.match(/v\d{14}/g),[version]);
-    const panel=extractBlocks(html,'span',tag=>tag.includes('data-site-update-panel'))[0];
-    const copy=JSON.parse(extractTagAttribute(panel.open,'data-site-update-copy'));
+    const panel=extractBlocks(html,'span',tag=>tag.includes('data-site-status-panel'))[0];
+    const copy=JSON.parse(extractTagAttribute(panel.open,'data-site-sw-copy'));
     for(const key of ['build','status','check'])assert.equal(key in copy,false,'Static text stays in Markdown.');
     const rows=extractBlocks(html,'p').flatMap(row=>row.inner.split(/<br\s*\/?>/i));
-    const markers=['site-update-version','site-content-status','site-update-interval','site-sw-policy','site-offline-page','site-update-status'];
+    const markers=['site-build-version','site-content-status','site-content-interval','site-sw-policy','site-offline-page','site-sw-status'];
     const indexes=markers.map(marker=>rows.findIndex(row=>row.includes('data-'+marker)));
     assert.ok(indexes.every(index=>index>=0));
     assert.equal(new Set(indexes).size,6,'Each value has its own Markdown line.');
@@ -532,18 +532,18 @@ test('Powered by Markdown separates build information and update controls',async
       assert.doesNotMatch(rows[index],/<code\b/,'Shortcodes do not add inline-code formatting.');
       assert.match(rows[index],/^<strong>[^<]+<\/strong>/,'Each information line keeps its emphasized Markdown label.');
     }
-    const information=extractBlocks(html,'p').find(row=>row.inner.includes('data-site-update-version'));
+    const information=extractBlocks(html,'p').find(row=>row.inner.includes('data-site-build-version'));
     assert.ok(markers.every(marker=>information.inner.includes('data-'+marker)),'The six information lines stay adjacent.');
     for(const action of extractBlocks(information.inner,'button'))assert.equal(action.inner,copy.refresh_icon,'Refresh controls share the configured icon.');
     const contentRow=rows[indexes[1]],policyRow=rows[indexes[3]],offlineRow=rows[indexes[4]],statusRow=rows[indexes[5]];
     assert.ok(contentRow.includes('data-site-content-action'),'Server refresh stays on its own line.');
-    assert.ok(statusRow.includes('data-site-update-action'),'Program refresh stays on its own line.');
+    assert.ok(statusRow.includes('data-site-sw-action'),'Program refresh stays on its own line.');
     assert.ok(!policyRow.includes('<button'),'The policy link is static.');
     const offlineLink=extractStartTags(offlineRow,'a')[0],offlineUrl='/'+prefix+parseToml(fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8')).sw.offline_notice_path.replace(/^\/+|\/+$/g,'')+'/';
     assert.equal(extractTagAttribute(offlineLink,'href'),offlineUrl,'The offline link follows the language and delivery configuration.');
     assert.ok(fs.existsSync(path.join(output,offlineUrl,'index.html')),'The offline link targets a published page.');
     assert.ok(!offlineRow.includes('<button'),'The offline link is static.');
-    const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-update-interval'))[0];
+    const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-content-interval'))[0];
     const enabled=fs.existsSync(path.join(output,'sw-version.json'));
     if(enabled)assert.ok(interval.inner.includes(String(parseToml(fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8')).sw.content_check_interval)));
     else assert.equal(interval.inner,extractBlocks(html,'span',tag=>tag.includes('data-site-sw-policy'))[0].inner);

@@ -6,37 +6,37 @@
 {{- partialCached "feature-browse/collection/assert-url.html" . .Site.Language.Lang .Path -}}
 {{- partialCached "./assert-structure.html" . .Site.Language.Lang .Path -}}
 {{- $hasSortableCollection := $collectionConfig.sortable -}}
-{{- /* Root selection consumes the same valid sources even when path columns are hidden. */ -}}
+{{- /* Root selection consumes the same valid sources even when breadcrumb columns are hidden. */ -}}
 {{- $navigationSources := partial "./source/context.html" (dict "ctx" .) -}}
 {{- $pageCollectionSource := index $navigationSources "page_collection_source" -}}
 {{- $browserNavigationSources := index $navigationSources "browser_sources" -}}
-{{- $collectionColumnsByHref := index $navigationSources "columns_by_href" -}}
+{{- $breadcrumbColumnsByHref := index $navigationSources "columns_by_href" -}}
 {{- $breadcrumbModel := dict -}}
-{{- $pathColumns := slice -}}
+{{- $breadcrumbColumns := slice -}}
 {{- if $hasBreadcrumbCapability -}}
-  {{- $breadcrumbModel = partial "./path/model.html" (dict "ctx" .) -}}
-  {{- $pathColumns = partial "./path/columns.html" (dict "model" $breadcrumbModel "columns_by_href" $collectionColumnsByHref) -}}
+  {{- $breadcrumbModel = partial "./breadcrumb/model.html" (dict "ctx" .) -}}
+  {{- $breadcrumbColumns = partial "./breadcrumb/columns.html" (dict "model" $breadcrumbModel "columns_by_href" $breadcrumbColumnsByHref) -}}
 {{- end -}}
 {{- $browserNavigationData := partial "./source/pack.html" (dict
   "ctx" . "has_breadcrumb" $hasBreadcrumbCapability "page_collection_source" $pageCollectionSource
-  "sources" $browserNavigationSources "default_columns" $pathColumns
+  "sources" $browserNavigationSources "default_columns" $breadcrumbColumns
 ) -}}
-{{- $hasPathColumns := and $hasBreadcrumbCapability (gt (len $browserNavigationData.columns) 0) -}}
+{{- $hasBreadcrumbColumns := and $hasBreadcrumbCapability (gt (len $browserNavigationData.columns) 0) -}}
 {{- $breadcrumbRuntime := dict -}}
-{{- if or $hasPathColumns $hasSortableCollection -}}
-  {{- $breadcrumbRuntime = resources.Get "js/browse/path-entry.js" | js.Build (dict "minify" (not hugo.IsServer)) | fingerprint -}}
+{{- if or $hasBreadcrumbColumns $hasSortableCollection -}}
+  {{- $breadcrumbRuntime = resources.Get "js/browse/breadcrumb-entry.js" | js.Build (dict "minify" (not hugo.IsServer)) | fingerprint -}}
 {{- end -}}
-{{- if $hasPathColumns -}}
-  {{- partial "./source/register-icons.html" (dict "page" . "sources" $browserNavigationSources "default_columns" $pathColumns) -}}
+{{- if $hasBreadcrumbColumns -}}
+  {{- partial "./source/register-icons.html" (dict "page" . "sources" $browserNavigationSources "default_columns" $breadcrumbColumns) -}}
 {{- end -}}
 {{- return (dict
   "has_breadcrumb" $hasBreadcrumbCapability
   "sortable" $hasSortableCollection
-  "has_path_columns" $hasPathColumns
+  "has_breadcrumb_columns" $hasBreadcrumbColumns
   "data" $browserNavigationData
   "page_source" $pageCollectionSource
   "has_sources" (gt (len $browserNavigationSources) 0)
-  "columns_by_href" $collectionColumnsByHref
-  "path_model" $breadcrumbModel
+  "columns_by_href" $breadcrumbColumnsByHref
+  "breadcrumb_model" $breadcrumbModel
   "runtime" $breadcrumbRuntime
 ) -}}

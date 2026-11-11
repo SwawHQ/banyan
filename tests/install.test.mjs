@@ -255,7 +255,7 @@ test('enabled workers require each published HTML offline page and accept site-o
         assert.equal(extractStartTags(html,'symbol').filter(tag=>extractTagAttribute(tag,'id')==='icon-info').length,1,
           'Repeated body icons share one definition on standalone offline pages.');
         const scripts=extractStartTags(html,'script').map(tag=>extractTagAttribute(tag,'src')).filter(Boolean);
-        assert.equal(scripts.length,1);assert.match(scripts[0],/\/js\/pages\/offline\.[^.]+\.js$/);
+        assert.equal(scripts.length,1);assert.match(scripts[0],/\/js\/pages\/reload\.[^.]+\.js$/);
         assert.equal(extractStartTags(html,'nav').length,0);
       }
     }
@@ -336,7 +336,7 @@ test('packaged Skill and versioned Module build from an isolated proxy',()=>{
     assert.ok(panel.includes('>'+version+'</a>'),'Powered by shows the installed Module version as link text.');
     assert.ok(extractStartTags(panel,'a').some(tag=>extractTagAttribute(tag,'href')===
       'https://github.com/SwawHQ/banyan'));
-    assert.match(panel,/<button\b[^>]*data-site-update-action=check[^>]* disabled>/,'Default SW-off panel keeps a disabled refresh action.');
+    assert.match(panel,/<button\b[^>]*data-site-sw-action=check[^>]* disabled>/,'Default SW-off panel keeps a disabled refresh action.');
   }
   assert.equal(fs.existsSync(path.join(root,'node_modules')),false);
   assert.equal(fs.existsSync(path.join(root,'themes')),false);

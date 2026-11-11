@@ -339,7 +339,7 @@ cascade:
     publishResources: false
   params:
     robots: noindex, follow
-    slots: [] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+    slots: [] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---
 ```
 
@@ -384,7 +384,7 @@ params:
   brand_line: Clear structure for exploratory publishing.
 ```
 
-Use `{{< home-art/wind/scene >}}` in the bundle page's body. Keep `home_signals`
+Use `{{< home-art/wind/scene >}}` in the bundle page's body. Keep `signals`
 and scene settings in its `params`. `styles` and `scripts` select CSS and JS from
 the bundle; the framework loads them as same-origin fingerprinted external files.
 
@@ -392,7 +392,7 @@ To add an art theme, create another hidden leaf bundle and put its shortcode
 in the body. Write its HTML in `layouts/_shortcodes/`; shortcode templates read
 the bundle page's `.Page.Params` and `.Page.Resources`. The wind example uses
 `layouts/_shortcodes/home-art/wind/scene.html` and the helper
-`layouts/_partials/entry-page-home/wind/model.html`, supplied by the Module.
+`layouts/_partials/feature-home-art/wind/model.html`, supplied by the Module.
 Put a file at the same path in the site to override it.
 
 Set each language's site name in its home page's `title`, not in `hugo.toml`.
@@ -433,26 +433,26 @@ title: Articles - Categories
 description: Browse articles by topic.
 layout: page-collection-directory
 params:
-  slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+  slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 cascade:
   - target: {kind: page}
     layout: page-article-rss
     params:
-      slots: [breadcrumb, meta] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+      slots: [breadcrumb, meta] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
   - target: {kind: section}
     layout: page-collection-directory
     params:
-      slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+      slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---
 ```
 
 Use `params.slots` to list enabled regions. The order does not change the layout.
-`breadcrumb` enables path navigation. `meta` enables article metadata, chapters
+`breadcrumb` enables breadcrumb navigation. `meta` enables article metadata, chapters
 and BlogPosting on regular article pages. Omit `params.slots` to inherit it;
 use `params.slots: []` to disable them.
 
 Powered by uses `page-article-norss`. The base template loads the required script
-once per page when it uses `site-update` or `page-actions`.
+once per page when it uses `site-status` or `page-actions`.
 Offline pages use the standalone `page-offline` layout. It renders Markdown,
 theme styles and the `page-actions` retry script without navigation, SW management
 or prefetch scripts.
@@ -522,7 +522,7 @@ description: All articles.
 layout: page-collection-directory-all
 params:
   aggregate: /articles
-  slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+  slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---
 ```
 
@@ -574,17 +574,17 @@ layout: page-collection-directory
 outputs: [HTML, RSS]
 params:
   list_icon_file: product
-  slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+  slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 cascade:
   - target: {kind: page}
     layout: page-article-rss
     params:
-      slots: [breadcrumb, meta] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+      slots: [breadcrumb, meta] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
   - target: {kind: section}
     layout: page-collection-products
     outputs: [HTML, RSS]
     params:
-      slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+      slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---
 ```
 
@@ -611,7 +611,7 @@ outputs: [HTML]
 params:
   list_icon_file: product
   aggregate: /products
-  slots: [breadcrumb] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+  slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---
 ```
 
@@ -637,18 +637,18 @@ Powered by keeps headings, prose, source and changelog links in each language's
 Markdown. Use `new-tab` for those external links. `theme-version` outputs only the
 theme version, with `local` text for a local build; `hugo-version` uses
 `hugo.Version`; the reference pages place it inside the diagnostic disclosure.
-Use separate `site-update` parts to arrange build information and update controls:
+Use separate `site-status` parts to arrange build information and update controls:
 
 ```text
-Local: {{< site-update "version" >}}  
-Server: {{< site-update "content" >}}  
-Sync trigger: {{< site-update "interval" "On page navigation and interval ≥ %d minutes" >}}
+Local: {{< site-status "version" >}}  
+Server: {{< site-status "content" >}}  
+Sync trigger: {{< site-status "interval" "On page navigation and interval ≥ %d minutes" >}}
 
-SW policy: {{< site-update "policy" >}}  
-SW status: {{< site-update "status" >}}
+SW policy: {{< site-status "policy" >}}  
+SW status: {{< site-status "status" >}}
 ```
 
-Keep fixed labels in Markdown and changing messages in `params.site_update.labels`.
+Keep fixed labels in Markdown and changing messages in `params.site_status.labels`.
 Two trailing spaces make a line break. Shortcodes do not add code formatting.
 The local version and interval are fixed at build time; the interval comes from
 `sw.content_check_interval`. The server row reads `sw-version.json` after page load

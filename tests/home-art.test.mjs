@@ -32,7 +32,7 @@ function artPage(title,params,body,extra='') {
 }
 function windPage(index,prefix) {
   return artPage('Art source '+index,'  styles: [style.css]\n  scripts: [script.js]\n'+
-    '  brand_line: "wind line '+index+'"\n  home_signal_drift_seconds: 80\n  home_signals:\n'+
+    '  brand_line: "wind line '+index+'"\n  signal_drift_seconds: 80\n  signals:\n'+
     '    - name: "wind signal '+index+'"\n      url: /'+prefix+'about/\n      primary: true\n','{{< home-art/wind/scene >}}');
 }
 function prepare(name) {
@@ -124,10 +124,10 @@ test('a site shortcode can render a different art with no wind assets or navigat
     assert.equal(decodeHtmlAttribute(line),'<em>Art '+index+'</em>');assert.doesNotMatch(line,/<em>/);
     assert.ok(extractStartTags(html,'symbol').some(tag=>extractTagAttribute(tag,'id')==='icon-info'));
     assert.equal(assetsIn(html,'link','href').length,1);assert.equal(assetsIn(html,'script','src').length,1);
-    assert.equal(html.includes('page-home__windsock'),false);
+    assert.equal(html.includes('home-art-wind__windsock'),false);
   }
   const files=(await filesUnder(output)).map(file=>path.relative(output,file).replaceAll('\\','/'));
-  assert.equal(files.some(file=>/^(?:css|js)\/home-art\/wind\/|^css\/page-home-scene\./.test(file)),false);
+  assert.equal(files.some(file=>/^(?:css|js)\/home-art\/wind\//.test(file)),false);
   assert.equal(files.some(file=>/unused|\.(?:md|toml)$/.test(file)),false);
   await checked(output);
   const style=assetsIn(htmlAt(output,''),'link','href')[0].url,css=fs.readFileSync(path.join(output,style),'utf8');
@@ -184,7 +184,7 @@ test('Hugo preview rebuilds art params, body, scene, model and assets and clears
   for(const [index,[prefix,language]] of languages.entries())
     write(path.join(bundle,'index'+suffix(language)+'.md'),windPage(index,prefix));
   homes(source,entry(wind),'  show_navigation: false\n');
-  const scene='layouts/_shortcodes/home-art/wind/scene.html',model='layouts/_partials/entry-page-home/wind/model.html';
+  const scene='layouts/_shortcodes/home-art/wind/scene.html',model='layouts/_partials/feature-home-art/wind/model.html';
   for(const relative of [scene,model])write(path.join(source,relative),fs.readFileSync(path.join(root,'module',relative),'utf8'));
   const probe=net.createServer();await listenOnLoopback(probe);
   const port=probe.address().port;await new Promise((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
@@ -216,16 +216,16 @@ test('Hugo preview rebuilds art params, body, scene, model and assets and clears
   }
   try {
     await until(async()=>artSource(await read('/zh/'))===wind);
-    const initialScene=reference(await read('/zh/'),'link','href','/css/page-home-scene.');
-    change('content/_res/home-art/wind/index.zh.md',text=>text.replace('brand_line: "wind line 1"','brand_line: "ART_CONFIG_PROBE"').replace('home_signal_drift_seconds: 80','home_signal_drift_seconds: 78'));
+    const initialScene=reference(await read('/zh/'),'link','href','/css/home-art/wind/scene.');
+    change('content/_res/home-art/wind/index.zh.md',text=>text.replace('brand_line: "wind line 1"','brand_line: "ART_CONFIG_PROBE"').replace('signal_drift_seconds: 80','signal_drift_seconds: 78'));
     await until(async()=>(await read('/zh/')).includes('ART_CONFIG_PROBE'));
-    await until(async()=>reference(await read('/zh/'),'link','href','/css/page-home-scene.')!==initialScene);
+    await until(async()=>reference(await read('/zh/'),'link','href','/css/home-art/wind/scene.')!==initialScene);
     change('content/_res/home-art/wind/index.zh.md',text=>text+'\nART_BODY_PROBE\n');
     await until(async()=>(await read('/zh/')).includes('ART_BODY_PROBE'));
-    change(scene,text=>text.replace('<section class="page-home"','<section data-art-render-probe="yes" class="page-home"'));
+    change(scene,text=>text.replace('<section class="home-art-wind"','<section data-art-render-probe="yes" class="home-art-wind"'));
     await until(async()=>extractStartTags(await read('/zh/'),'section').some(tag=>extractTagAttribute(tag,'data-art-render-probe')==='yes'));
     change(model,text=>text.replace('$horizonOffsetRem := 31.2','$horizonOffsetRem := 30.2'));
-    await until(async()=>(await read(reference(await read('/zh/'),'link','href','/css/page-home-scene.'))).includes('--page-home-wind-field-height:24.2rem'));
+    await until(async()=>(await read(reference(await read('/zh/'),'link','href','/css/home-art/wind/scene.'))).includes('--home-art-wind-field-height:24.2rem'));
     change('content/_res/home-art/wind/style.css',text=>text+'\n:root{--art-css-probe:1}\n');
     await until(async()=>(await read(reference(await read('/zh/'),'link','href','/css/home-art/wind/style.'))).includes('--art-css-probe:1'));
     change('content/_res/home-art/wind/script.js',text=>text+'\nglobalThis.ART_JS_PROBE=true;\n');
@@ -249,6 +249,24 @@ test('Hugo preview rebuilds art params, body, scene, model and assets and clears
       const stopped=new Promise(resolve=>server.once('exit',resolve));assert.ok(server.kill(),'Could not stop test Hugo process.');await stopped;
     }
   }
+});
+
+test('wind signals accept canonical objects and text, and reject unsupported fields',()=>{
+  const source=prepare('signal-fields'),file=path.join(source,'content/_res/home-art/wind/index.md');
+  const params='  styles: [style.css]\n  scripts: [script.js]\n  signals:\n';
+  const body='{{< home-art/wind/scene >}}';
+  write(file,artPage('Signals',params+'    - Plain signal\n    - name: Canonical signal\n      url: /about/\n      primary: true\n',body));
+  const output=passed('canonical-signals',entry(wind),source),html=htmlAt(output,'');
+  assert.ok(html.includes('Plain signal'));assert.ok(html.includes('Canonical signal'));
+  assert.ok(extractStartTags(html,'a').some(tag=>tag.includes('data-home-art-wind-signal')&&extractTagAttribute(tag,'href')==='/about/'));
+  for(const field of ['title','label','href']) {
+    write(file,artPage('Signals',params+'    - name: Canonical signal\n      '+field+': unsupported\n',body));
+    const {result}=build('invalid-signal-'+field,entry(wind),source);
+    assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,new RegExp('unsupported signal field.*'+field));
+  }
+  write(file,artPage('Signals',params+'    - url: /about/\n',body));
+  const {result}=build('invalid-signal-name',entry(wind),source);
+  assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,/signal objects require a non-empty name/);
 });
 
 test('invalid entries and bundle resource declarations fail during build',()=>{

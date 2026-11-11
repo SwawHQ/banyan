@@ -1,4 +1,4 @@
-import { readActiveNavigationRoute } from './entry-source.js';
+import { readActiveNavigationRoute } from './navigation-source.js';
 
 export function renderRootSelection(rootHref) {
     const navigation = document.querySelector('[data-root-navigation]');

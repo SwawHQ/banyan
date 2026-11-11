@@ -6,7 +6,7 @@
 @import "./canvas-wheel.css";
 @import "./item.css";
 @import "./list-layout.css";
-@import "./path-navigation.css";
+@import "./breadcrumb-navigation.css";
 @import "./document-aside.css";
-@import "./updates-panel.css";
+@import "./site-status.css";
 @import "./not-found.css";

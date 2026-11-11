@@ -3,36 +3,36 @@
     --page-edge-block-end: 1.5rem;
 }
 
-.page-home {
-    --page-home-inline-direction: 1;
-    --page-home-signal-peak-opacity: 0.9;
-    --page-home-signal-guide-opacity: 0.45;
-    --page-home-signal-primary-peak-opacity: 0.9;
-    --page-home-signal-selected-opacity: 1;
-    --page-home-windsock-size: 1.9rem;
-    --page-home-windsock-foot-offset: 1.715rem;
-    --page-home-horizon-windsock-contact-offset: 0.26rem;
+.home-art-wind {
+    --home-art-wind-inline-direction: 1;
+    --home-art-wind-signal-peak-opacity: 0.9;
+    --home-art-wind-signal-guide-opacity: 0.45;
+    --home-art-wind-signal-primary-peak-opacity: 0.9;
+    --home-art-wind-signal-selected-opacity: 1;
+    --home-art-wind-windsock-size: 1.9rem;
+    --home-art-wind-windsock-foot-offset: 1.715rem;
+    --home-art-wind-horizon-windsock-contact-offset: 0.26rem;
     position: relative;
     box-sizing: border-box;
     block-size: 34rem;
-    padding-block-start: var(--page-home-wind-field-start-offset, 18rem);
+    padding-block-start: var(--home-art-wind-field-start-offset, 18rem);
 }
 
-.page-home:dir(rtl) {
-    --page-home-inline-direction: -1;
+.home-art-wind:dir(rtl) {
+    --home-art-wind-inline-direction: -1;
 }
 
-[data-theme="dark"] .page-home {
-    --page-home-signal-peak-opacity: 0.79;
-    --page-home-signal-guide-opacity: 0.32;
-    --page-home-signal-primary-peak-opacity: 0.79;
-    --page-home-signal-selected-opacity: 0.82;
+[data-theme="dark"] .home-art-wind {
+    --home-art-wind-signal-peak-opacity: 0.79;
+    --home-art-wind-signal-guide-opacity: 0.32;
+    --home-art-wind-signal-primary-peak-opacity: 0.79;
+    --home-art-wind-signal-selected-opacity: 0.82;
 }
 
-.page-home__anchor {
+.home-art-wind__anchor {
     position: absolute;
     z-index: 1;
-    inset-block-start: calc(var(--page-home-wind-field-start-offset, 18rem) + var(--page-home-wind-field-height, 13.2rem) + 0.62rem);
+    inset-block-start: calc(var(--home-art-wind-field-start-offset, 18rem) + var(--home-art-wind-field-height, 13.2rem) + 0.62rem);
     inset-inline-start: 1.5rem;
     display: inline-flex;
     flex-wrap: wrap;
@@ -40,52 +40,52 @@
     gap: 0.34rem;
     max-inline-size: min(28rem, calc(100% - 3rem));
     margin: 0;
-    color: var(--page-home-anchor-color);
+    color: var(--home-art-wind-anchor-color);
     font-size: 0.68rem;
     line-height: 1.2;
 }
 
-.page-home__anchor-title,
-.page-home__anchor-line {
+.home-art-wind__anchor-title,
+.home-art-wind__anchor-line {
     margin: 0;
     font-size: inherit;
     line-height: inherit;
     letter-spacing: 0;
 }
 
-.page-home__anchor-title {
+.home-art-wind__anchor-title {
     font-weight: 600;
 }
 
-.page-home__anchor-line {
+.home-art-wind__anchor-line {
     font-weight: 400;
 }
 
-.page-home__scene {
+.home-art-wind__scene {
     position: relative;
     container-type: inline-size;
     inline-size: min(36rem, calc(100% - 3rem));
-    block-size: calc(var(--page-home-wind-field-height, 13.2rem) + var(--page-home-ground-space, 2.8rem));
+    block-size: calc(var(--home-art-wind-field-height, 13.2rem) + var(--home-art-wind-ground-space, 2.8rem));
     margin-inline: 1.5rem auto;
 }
 
-.page-home__horizon {
+.home-art-wind__horizon {
     position: absolute;
-    inset-block-start: var(--page-home-wind-field-height, 13.2rem);
+    inset-block-start: var(--home-art-wind-field-height, 13.2rem);
     inset-inline: 0;
     display: block;
     block-size: 0.48rem;
-    color: var(--page-home-horizon-color);
+    color: var(--home-art-wind-horizon-color);
 }
 
-.page-home__horizon-arc {
+.home-art-wind__horizon-arc {
     display: block;
     inline-size: 100%;
     block-size: 100%;
     overflow: visible;
 }
 
-.page-home__horizon-arc path {
+.home-art-wind__horizon-arc path {
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;
@@ -93,7 +93,7 @@
     vector-effect: non-scaling-stroke;
 }
 
-.page-home__signals {
+.home-art-wind__signals {
     position: absolute;
     inset: 0;
     margin: 0;
@@ -103,16 +103,16 @@
     pointer-events: none;
 }
 
-.page-home__signal {
+.home-art-wind__signal {
     position: absolute;
-    --page-home-signal-travel: calc(100cqi + 8rem);
-    inset-block-start: calc(var(--page-home-wind-field-height, 13.2rem) - var(--signal-lift));
+    --home-art-wind-signal-travel: calc(100cqi + 8rem);
+    inset-block-start: calc(var(--home-art-wind-field-height, 13.2rem) - var(--home-art-wind-signal-lift));
     inset-inline-start: 0;
     display: inline-flex;
     align-items: center;
     column-gap: 0.28rem;
-    color: var(--page-home-signal-color);
-    font-size: var(--page-home-signal-font-size, 0.72rem);
+    color: var(--home-art-wind-signal-color);
+    font-size: var(--home-art-wind-signal-font-size, 0.72rem);
     line-height: 1;
     letter-spacing: 0;
     white-space: nowrap;
@@ -120,11 +120,11 @@
     pointer-events: auto;
 }
 
-.page-home__signal.is-primary {
-    --page-home-signal-peak-opacity: var(--page-home-signal-primary-peak-opacity);
+.home-art-wind__signal.is-primary {
+    --home-art-wind-signal-peak-opacity: var(--home-art-wind-signal-primary-peak-opacity);
 }
 
-.page-home__signal > :is(a, button) {
+.home-art-wind__signal > :is(a, button) {
     color: inherit;
     text-decoration: none;
     text-underline-offset: 0.16em;
@@ -142,83 +142,83 @@
     pointer-events: auto;
 }
 
-.page-home__signal > button {
+.home-art-wind__signal > button {
     text-align: inherit;
 }
 
-.page-home__signal > :is(a, button):focus-visible {
+.home-art-wind__signal > :is(a, button):focus-visible {
     outline-offset: 0.16rem;
 }
 
-.page-home__signal.is-selected {
+.home-art-wind__signal.is-selected {
     z-index: 2;
-    opacity: var(--page-home-signal-selected-opacity) !important;
+    opacity: var(--home-art-wind-signal-selected-opacity) !important;
     animation-play-state: paused;
 }
 
-.page-home__signal.is-selected > :is(a, button) {
-    color: var(--page-home-signal-selected-color);
+.home-art-wind__signal.is-selected > :is(a, button) {
+    color: var(--home-art-wind-signal-selected-color);
 }
 
-.page-home__signal.is-selected > a {
+.home-art-wind__signal.is-selected > a {
     text-decoration-line: underline;
 }
 
-.page-home.is-paused .page-home__signal,
-.page-home.is-paused .page-home__windsock-sock {
+.home-art-wind.is-paused .home-art-wind__signal,
+.home-art-wind.is-paused .home-art-wind__windsock-sock {
     animation-play-state: paused;
 }
 
-.page-home__signal.is-guided::after {
+.home-art-wind__signal.is-guided::after {
     content: "";
     inline-size: 1.25rem;
     border-block-start: 1px solid currentColor;
-    opacity: var(--page-home-signal-guide-opacity);
+    opacity: var(--home-art-wind-signal-guide-opacity);
 }
 
-.page-home__windsock {
+.home-art-wind__windsock {
     position: absolute;
     display: block;
-    inline-size: var(--page-home-windsock-size);
-    block-size: var(--page-home-windsock-size);
+    inline-size: var(--home-art-wind-windsock-size);
+    block-size: var(--home-art-wind-windsock-size);
     /* Align the pole foot to the visible horizon curve, with a tiny stroke overlap. */
-    inset-block-start: calc(var(--page-home-wind-field-height, 13.2rem) + var(--page-home-horizon-windsock-contact-offset) - var(--page-home-windsock-foot-offset));
+    inset-block-start: calc(var(--home-art-wind-field-height, 13.2rem) + var(--home-art-wind-horizon-windsock-contact-offset) - var(--home-art-wind-windsock-foot-offset));
     inset-inline-start: 78%;
     overflow: visible;
-    transform: scaleX(var(--page-home-inline-direction));
+    transform: scaleX(var(--home-art-wind-inline-direction));
 }
 
-.page-home__windsock-sock {
+.home-art-wind__windsock-sock {
     transform-box: view-box;
     transform-origin: 14% 32%;
 }
 
-.page-home__windsock-body {
-    fill: var(--page-home-windsock-body-color);
+.home-art-wind__windsock-body {
+    fill: var(--home-art-wind-windsock-body-color);
 }
 
-.page-home__windsock-stripes {
-    fill: var(--page-home-windsock-stripe-color);
+.home-art-wind__windsock-stripes {
+    fill: var(--home-art-wind-windsock-stripe-color);
 }
 
-.page-home__windsock-pole {
-    fill: var(--page-home-windsock-pole-color);
+.home-art-wind__windsock-pole {
+    fill: var(--home-art-wind-windsock-pole-color);
 }
 
 /* This scene communicates through motion. Keep it animated until there is a deliberate static fallback. */
-.page-home__windsock-sock {
-    animation: page-home-windsock-sock 3.6s ease-in-out infinite;
+.home-art-wind__windsock-sock {
+    animation: home-art-wind-windsock-sock 3.6s ease-in-out infinite;
 }
 
-.page-home__signal {
-    animation-name: page-home-signal-drift;
-    animation-duration: var(--signal-duration);
+.home-art-wind__signal {
+    animation-name: home-art-wind-signal-drift;
+    animation-duration: var(--home-art-wind-signal-duration);
     animation-timing-function: linear;
     animation-iteration-count: infinite;
-    animation-delay: var(--signal-delay);
+    animation-delay: var(--home-art-wind-signal-delay);
 }
 
-@keyframes page-home-windsock-sock {
+@keyframes home-art-wind-windsock-sock {
     0% {
         transform: rotate(-2deg) skewX(-1deg) translate(0, 0);
     }
@@ -240,51 +240,51 @@
     }
 }
 
-@keyframes page-home-signal-drift {
+@keyframes home-art-wind-signal-drift {
     0% {
         opacity: 0;
-        transform: translate(calc(-8rem * var(--page-home-inline-direction)), 0.08rem) rotate(-2deg);
+        transform: translate(calc(-8rem * var(--home-art-wind-inline-direction)), 0.08rem) rotate(-2deg);
         visibility: hidden;
     }
 
     7.99% {
         opacity: 0;
-        transform: translate(calc(-8rem * var(--page-home-inline-direction)), 0.08rem) rotate(-2deg);
+        transform: translate(calc(-8rem * var(--home-art-wind-inline-direction)), 0.08rem) rotate(-2deg);
         visibility: hidden;
     }
 
     8%,
     22% {
-        opacity: var(--page-home-signal-peak-opacity);
+        opacity: var(--home-art-wind-signal-peak-opacity);
         visibility: visible;
     }
 
     28% {
-        opacity: var(--page-home-signal-peak-opacity);
-        transform: translate(calc((100cqi + 1rem) * var(--page-home-inline-direction)), -0.08rem) rotate(1deg);
+        opacity: var(--home-art-wind-signal-peak-opacity);
+        transform: translate(calc((100cqi + 1rem) * var(--home-art-wind-inline-direction)), -0.08rem) rotate(1deg);
         visibility: visible;
     }
 
     28.01% {
         opacity: 0;
-        transform: translate(calc(var(--page-home-signal-travel) * var(--page-home-inline-direction)), 0.04rem) rotate(1deg);
+        transform: translate(calc(var(--home-art-wind-signal-travel) * var(--home-art-wind-inline-direction)), 0.04rem) rotate(1deg);
         visibility: hidden;
     }
 
     100% {
         opacity: 0;
-        transform: translate(calc(var(--page-home-signal-travel) * var(--page-home-inline-direction)), 0.04rem) rotate(1deg);
+        transform: translate(calc(var(--home-art-wind-signal-travel) * var(--home-art-wind-inline-direction)), 0.04rem) rotate(1deg);
         visibility: hidden;
     }
 }
 
 @media (min-width: 58rem) {
-    .page-home__scene {
+    .home-art-wind__scene {
         inline-size: min(36rem, 100%);
         margin-inline: 3rem auto;
     }
 
-    .page-home__anchor {
+    .home-art-wind__anchor {
         inset-inline-start: 3rem;
     }
 

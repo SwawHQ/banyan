@@ -18,7 +18,7 @@ description: ""
 # params:
   # Override the browser/tab title without changing the visible heading.
   # browser_title: "Browser title"
-  # slots: [breadcrumb, meta] #breadcrumb: path navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
+  # slots: [breadcrumb, meta] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 
   # List icon; omit to use the listing's default. Choose one form.
   # icon: file

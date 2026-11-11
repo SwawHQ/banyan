@@ -44,7 +44,7 @@ before(()=>{
   for(let i=0;i<24;i++)body+='## Chapter '+i+'\n\n'+('A paragraph with enough words to exercise independent columns and history restoration.\n\n'.repeat(8));
   for(const name of ['canvas-first','canvas-next'])write(path.join(content,'d',name+'.md'),
     `---\ntitle: ${name}\nurl: /d/${name}/\ndate: "2026-01-01T00:00:00+08:00"\nlastmod: "2026-01-02T00:00:00+08:00"\nparams:\n  offer:\n    version: "${name==='canvas-first'?'2.10':'2.9'}"\n    amount: ${name==='canvas-first'?20:10}\n    currency: "$"\n---\n\n${body}`);
-  write(path.join(content,'d/root-only.md'),'---\ntitle: Root-only fixture\nurl: d/root-only/\nparams:\n  slots: []\n---\nRoot navigation without path columns.');
+  write(path.join(content,'d/root-only.md'),'---\ntitle: Root-only fixture\nurl: d/root-only/\nparams:\n  slots: []\n---\nRoot navigation without breadcrumb columns.');
   for(const suffix of ['','.zh']) {
     write(path.join(content,'d/opening','_index'+suffix+'.md'),'---\ntitle: Nested Opening Fixture\n---\n');
     for(const name of ['one','two'])write(path.join(content,'d/opening',name+suffix+'.md'),
@@ -212,17 +212,17 @@ test(name+' opening rejects wrong roots, sibling order, ancestor selection and s
   const args=['--from','/discover/tooling/devtools/#sorts=_,_,name-desc','--page','/d/canvas-first/','--widths','1440'];
   for(const [id,code,message] of [
     ['root',"document.querySelectorAll('[data-root-href]').forEach(link=>{const current=link.dataset.rootHref==='/all/';link.classList.toggle('is-current',current);if(current)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});",/Root selection must match/],
-    ['siblings',"const list=document.querySelector('.path-column .item-list');list.append(list.querySelector('[data-list-item]'));",/retain every source column/],
-    ['ancestor',"const link=document.querySelector('.path-column [data-list-entry].is-current');link.classList.remove('is-current');link.removeAttribute('aria-current');",/Each source column must select/],
-    ['sort',"const indicator=[...document.querySelectorAll('.path-column [data-sort-indicator]')].at(-1);indicator.textContent=indicator.textContent==='↑'?'↓':'↑';",/retain the collection sort/],
+    ['siblings',"const list=document.querySelector('.breadcrumb-column .item-list');list.append(list.querySelector('[data-list-item]'));",/retain every source column/],
+    ['ancestor',"const link=document.querySelector('.breadcrumb-column [data-list-entry].is-current');link.classList.remove('is-current');link.removeAttribute('aria-current');",/Each source column must select/],
+    ['sort',"const indicator=[...document.querySelectorAll('.breadcrumb-column [data-sort-indicator]')].at(-1);indicator.textContent=indicator.textContent==='↑'?'↓':'↑';",/retain the collection sort/],
     ['home-prefix',"const navigation=JSON.parse(document.body.dataset.navigation);navigation.home='/wrong/';document.body.dataset.navigation=JSON.stringify(navigation);",/root|source column|ancestor/i]
   ]) {
     const broken=fixture('opening-'+id+'-'+name);
     const settled=['siblings','ancestor','sort'].includes(id);
     script(broken,settled?`const fail=()=>{${code}};const html=document.documentElement;
-      const pending=()=>html.hasAttribute('data-entry-breadcrumb-pending');
+      const pending=()=>html.hasAttribute('data-breadcrumb-pending');
       if(pending()){const observer=new MutationObserver(()=>{if(!pending()){observer.disconnect();fail();}});
-        observer.observe(html,{attributes:true,attributeFilter:['data-entry-breadcrumb-pending']});
+        observer.observe(html,{attributes:true,attributeFilter:['data-breadcrumb-pending']});
       }else fail();`:code);
     const result=cli('open'+suffix,args,broken);assert.equal(result.status,1,id+'\n'+result.stdout+result.stderr);assert.match(result.stderr,message);
   }
@@ -254,9 +254,9 @@ test(name+' retains original directory metadata and rejects runtime rewrites',{t
   assert.ok(state.first.directoryMetadata.some(row=>row.html.includes('/discover/tooling/devtools/')));
   assert.deepEqual(state.final.directoryMetadata,state.first.directoryMetadata);
   for(const [id,code] of [
-    ['label',"document.querySelector('.document-meta__row--path').setAttribute('aria-label','Source path');"],
-    ['link',"document.querySelector('.document-meta__row--path a').setAttribute('href','/all/');"],
-    ['removed',"document.querySelector('.document-meta__row--path').remove();"]
+    ['label',"document.querySelector('.document-meta__row--breadcrumb').setAttribute('aria-label','Source path');"],
+    ['link',"document.querySelector('.document-meta__row--breadcrumb a').setAttribute('href','/all/');"],
+    ['removed',"document.querySelector('.document-meta__row--breadcrumb').remove();"]
   ]) {
     const changed=fixture('metadata-'+id+'-'+name);script(changed,code);
     const result=cli('first-paint'+suffix,['--page',route,'--widths','390'],changed);

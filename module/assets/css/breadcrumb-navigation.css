@@ -1,22 +1,22 @@
-/* Path columns use the same layout at every width; the document scrolls horizontally. */
-.path-navigation {
+/* Breadcrumb columns use the same layout at every width; the document scrolls horizontally. */
+.breadcrumb-navigation {
     display: contents;
 }
 
-.path-column {
+.breadcrumb-column {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
     min-inline-size: 0;
 }
 
-.path-column-sort:hover,
-.path-column-sort:focus-visible {
+.breadcrumb-column-sort:hover,
+.breadcrumb-column-sort:focus-visible {
     color: var(--link-hover);
 }
 
 @media print {
-    .path-navigation {
+    .breadcrumb-navigation {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(var(--navigation-column-inline), 100%), 1fr));
         column-gap: var(--page-shell-gap-inline);

@@ -11,25 +11,25 @@ export const readCanvas=async page=>({...await page.evaluate(()=>{
     return {x:rtl?viewport-right:x,y:box.y-(view?.offsetTop||0),width:box.width,right:rtl?viewport-x:right};
   };
   const main=document.querySelector('#main'),nav=document.querySelector('[data-root-navigation]'),content=document.querySelector('.page-content');
-  const path=document.querySelector('[data-slot=breadcrumb]'),columns=[...document.querySelectorAll('[data-slot=breadcrumb] [data-collection-column]')];
+  const breadcrumb=document.querySelector('[data-slot=breadcrumb]'),columns=[...document.querySelectorAll('[data-slot=breadcrumb] [data-breadcrumb-column]')];
   const probe=window.__swbanCanvasStartup;
   if(probe?.shifts)for(const entry of probe.shifts.takeRecords())if(!entry.hadRecentInput)probe.layoutShift+=entry.value;
   const collection=main.classList.contains('slot-main--collection');
-  const pathContent=columns.map(column=>{
+  const breadcrumbContent=columns.map(column=>{
     return {href:column.dataset.breadcrumbCollectionHref,
       rows:[...column.querySelectorAll('[data-list-entry]')].map(link=>({path:new URL(link.href).pathname,text:link.textContent.trim()}))};
   });
   return {direction,main:rect(main),nav:rect(nav),columns:columns.map(rect),mainDocumentX:rect(main).x+direction*(view?.pageLeft??scrollX),
     canvasOffsetX:direction*(view?.pageLeft??scrollX)||0,canvasOffsetY:view?.pageTop??scrollY,readingY:content.scrollTop,
     viewport:view?.width||innerWidth,maxX:document.scrollingElement.scrollWidth-(view?.width||innerWidth),
-    directoryMetadata:[...document.querySelectorAll('.document-meta__row--path')].map(node=>({ariaLabel:node.getAttribute('aria-label'),html:node.innerHTML})),
-    entryPending:document.documentElement.hasAttribute('data-entry-breadcrumb-pending'),
-    collection,pathContent,
+    directoryMetadata:[...document.querySelectorAll('.document-meta__row--breadcrumb')].map(node=>({ariaLabel:node.getAttribute('aria-label'),html:node.innerHTML})),
+    entryPending:document.documentElement.hasAttribute('data-breadcrumb-pending'),
+    collection,breadcrumbContent,
     layoutShift:probe?.layoutShift??null,
     parsed:probe?.parsed??null,firstFrameX:probe?.firstFrameX==null?null:direction*probe.firstFrameX,domContentLoaded:probe?.domContentLoaded??null,
-    reservedColumnsRetained:!!probe?.nav&&probe.nav===path&&probe.nav.isConnected&&probe.columns.length===columns.length
+    reservedColumnsRetained:!!probe?.nav&&probe.nav===breadcrumb&&probe.nav.isConnected&&probe.columns.length===columns.length
       &&probe.columns.every((column,index)=>column===columns[index]&&column.isConnected),
-    pathAccessible:!!path&&!path.hasAttribute('aria-hidden')&&path.getAttribute('aria-label')==='Breadcrumb'};
+    breadcrumbAccessible:!!breadcrumb&&!breadcrumb.hasAttribute('aria-hidden')&&breadcrumb.getAttribute('aria-label')==='Breadcrumb'};
 }),root:await readRootState(page)});
 
 export async function panCanvas(page,left) {

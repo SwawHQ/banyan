@@ -12,5 +12,5 @@ params:
   list_icon_file: product
   # aggregate 汇总此栏目下的文章和 _map.toml 引用，并去除重复项。
   aggregate: /products
-  slots: [breadcrumb] #breadcrumb：路径导航列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
+  slots: [breadcrumb] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
 ---

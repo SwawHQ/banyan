@@ -76,7 +76,7 @@ actual site; default example routes may not exist in a customized site.
 | `nav/sort` | A sortable collection with distinct names in a group and an article carrying source context. |
 | `nav/anchors`, `nav/keyboard` | A scrollable article for anchors; a tabbable control after root navigation for keyboard checks. |
 | `nav/tabs`, `nav/roots`, `img/load` | Actual `_blank` links, linked root pages or matching images respectively. Tab destinations are served locally, not checked as external services. |
-| `breadcrumb/*` | Existing path columns. Sort needs distinct sortable values; isolation needs two sortable areas; source needs a linked article; header should include a long label. |
+| `breadcrumb/*` | Existing breadcrumb columns. Sort needs distinct sortable values; isolation needs two sortable areas; source needs a linked article; header should include a long label. |
 | `collection/layout`, `collection/style` | A nonempty collection; style also needs an article with selected and unselected path rows. |
 | `language/choices`, `language/return` | Translated settings for declared languages. Use a translated source for normal return and an untranslated source for the missing-translation case. |
 | `language/bfcache` | A source translated into both requested targets, plus translated settings. The check requires actual BFCache restoration. |

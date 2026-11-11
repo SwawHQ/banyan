@@ -189,7 +189,7 @@ try {
             else assert.deepEqual(hrefs, directoryMembers.get(lang), `${view} must not filter native directory members`);
             assert.equal(current.sortVariant, view === 'directory' ? 'section' : view);
             const aggregate = payload(output, lang, 'all');
-            assert(aggregate.rows.every(row => !('sort_path' in row) && !('path_text' in row) && !('path_href' in row)), 'aggregate rows omit the removed Path column');
+            assert(aggregate.rows.every(row => !('sort_path' in row) && !('path_text' in row) && !('path_href' in row)), 'aggregate rows omit the removed Breadcrumb column');
             assert.equal(payload(output, lang, 'd/contract-inherit').sortVariant, view==='all'?'section':current.sortVariant, 'undeclared sections inherit the native cascade layout');
             assert.equal(payload(output, lang, 'd/contract-override').sortVariant, 'section');
             assert.equal(payload(output, lang, 'd/contract-override/child').sortVariant, 'section', 'nearest cascade wins');
@@ -368,14 +368,14 @@ try {
                 const ordered = await page.locator(links).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
                 await page.locator(`${links}[href*="/p/contract-missing/"]`).click();
                 await waitForBrowse(page);
-                const pathOrder = await page.locator('[data-slot=breadcrumb] .item-control[href*="/p/contract-"]').evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
-                assert.deepEqual(pathOrder, ordered, 'Lastmod sort survives entry into the article path column');
+                const breadcrumbOrder = await page.locator('[data-slot=breadcrumb] .item-control[href*="/p/contract-"]').evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
+                assert.deepEqual(breadcrumbOrder, ordered, 'Lastmod sort survives entry into the article breadcrumb column');
             }
         }
         console.log('PASS Lastmod ascending/descending display and article path order');
         const isolation = await checkSortIsolation({page,baseUrl,options:{page:'/products/free/'}});
         assert.equal(isolation.initial.main.source.defaultSort, 'date-desc');
-        console.log('PASS independent product main and path sorting');
+        console.log('PASS independent product main and breadcrumb sorting');
         for (const direction of ['asc', 'desc']) {
             await gotoAndWait(page, `${baseUrl}/products/free/#sorts=_,price-${direction}`);
             assert.equal(await page.locator('.slot-main [data-sort-field="price"]').getAttribute('aria-label'),
@@ -396,7 +396,7 @@ try {
             const selected = await page.locator('[data-root-href].is-current').getAttribute('data-root-href');
             assert.equal(selected, '/products/');
             const items = await page.locator('[data-breadcrumb-collection-href="/products/free/"] [data-list-entry]').evaluateAll(links => links.map(a => new URL(a.href).pathname));
-            assert.deepEqual(items, ordered.map(row => row.href), 'path column order matches product table');
+            assert.deepEqual(items, ordered.map(row => row.href), 'breadcrumb column order matches product table');
         }
         // Explicit directories must support article entry, not just compile a page.
         await gotoAndWait(page, `${baseUrl}/products/`);
@@ -413,7 +413,7 @@ try {
         const staticPage = await noJs.newPage();
         const defaultItems = async () => readBreadcrumbData(await staticPage.content(),{directory:builds.directory}).defaultColumns.map(column=>column.selected);
         await staticPage.goto(`${baseUrl}/p/contract-missing/`);
-        assert.equal(await staticPage.locator('[data-slot=breadcrumb] [data-list-entry]').count(), 0, 'Path rows are not repeated in article HTML.');
+        assert.equal(await staticPage.locator('[data-slot=breadcrumb] [data-list-entry]').count(), 0, 'Breadcrumb rows are not repeated in article HTML.');
         assert.ok(await staticPage.locator('[data-root-navigation] a').count(), 'Root navigation stays available without JavaScript.');
         assert.equal(await staticPage.locator('use[href="#icon-appearance-light"]').count(), 0);
         assert.equal(await staticPage.locator('symbol#icon-appearance-light').count(), 1, 'source-only SVG is packed without relying on path HTML rows');
@@ -501,7 +501,7 @@ try {
             assert.equal(await iconsPage.locator('[data-slot=breadcrumb] .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
         }
         await iconsContext.close();
-        console.log('PASS inherited/own icons, source-only SVGs, HTML fragment path columns, reload and history');
+        console.log('PASS inherited/own icons, source-only SVGs, HTML fragment breadcrumb columns, reload and history');
 
         await server.setRoot(builds.name);
         const namesContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1024, height: 700 } });
@@ -548,9 +548,9 @@ try {
                         ['d', 'd/contract-inherit'].includes(list) ? null : list, 'Only reference lists need an explicit source.');
                     assert.deepEqual(await paths(`${column} .item-control`), descending, 'Article path uses the same name list order');
                     assert.deepEqual(await paths(`${column} .item-control.is-current`), [articlePath]);
-                    assert.match(await namesPage.locator(`${column} .path-column-sort`).textContent(), /↓/);
-                    assert.equal(await namesPage.locator(`${column} .path-column-sort`).getAttribute('aria-label'), ascendingAction);
-                    assert.equal(await namesPage.locator(`${column} .path-column-sort`).getAttribute('title'), ascendingAction);
+                    assert.match(await namesPage.locator(`${column} .breadcrumb-column-sort`).textContent(), /↓/);
+                    assert.equal(await namesPage.locator(`${column} .breadcrumb-column-sort`).getAttribute('aria-label'), ascendingAction);
+                    assert.equal(await namesPage.locator(`${column} .breadcrumb-column-sort`).getAttribute('title'), ascendingAction);
                 };
                 await assertNameColumn();
                 await namesPage.reload();
@@ -563,11 +563,11 @@ try {
                 await namesPage.goForward();
                 await waitForBrowse(namesPage);
                 await assertNameColumn();
-                await namesPage.locator(`${column} .path-column-sort`).click();
-                await namesPage.waitForFunction(selector => document.querySelector(selector)?.textContent.includes('↑'), `${column} .path-column-sort`);
-                assert.deepEqual(await paths(`${column} .item-control`), expected, 'Path-column toggle uses name sorting too');
-                assert.equal(await namesPage.locator(`${column} .path-column-sort`).getAttribute('aria-label'), descendingAction);
-                assert.equal(await namesPage.locator(`${column} .path-column-sort`).getAttribute('title'), descendingAction);
+                await namesPage.locator(`${column} .breadcrumb-column-sort`).click();
+                await namesPage.waitForFunction(selector => document.querySelector(selector)?.textContent.includes('↑'), `${column} .breadcrumb-column-sort`);
+                assert.deepEqual(await paths(`${column} .item-control`), expected, 'Breadcrumb-column toggle uses name sorting too');
+                assert.equal(await namesPage.locator(`${column} .breadcrumb-column-sort`).getAttribute('aria-label'), descendingAction);
+                assert.equal(await namesPage.locator(`${column} .breadcrumb-column-sort`).getAttribute('title'), descendingAction);
             }
         }
         await namesPage.evaluate(() => {
@@ -575,18 +575,18 @@ try {
             copy.fields.name = 'Literal <b>$& {field}</b>';
             document.body.dataset.collectionSortCopy = JSON.stringify(copy);
         });
-        const literalSort = namesPage.locator('[data-slot=breadcrumb] [data-breadcrumb-collection-href="/ar/contract-name-reference/"] .path-column-sort');
+        const literalSort = namesPage.locator('[data-slot=breadcrumb] [data-breadcrumb-collection-href="/ar/contract-name-reference/"] .breadcrumb-column-sort');
         await literalSort.click();
         await namesPage.waitForFunction(() => document.querySelector('[data-breadcrumb-collection-href="/ar/contract-name-reference/"] [data-sort-indicator]')?.textContent === '↓');
         assert.equal(await literalSort.getAttribute('aria-label'), 'ترتيب Literal <b>$& {field}</b> تصاعديًا');
-        assert.equal(await literalSort.locator('.path-sort-label').textContent(), 'Literal <b>$& {field}</b>');
+        assert.equal(await literalSort.locator('.breadcrumb-sort-label').textContent(), 'Literal <b>$& {field}</b>');
         assert.equal(await literalSort.locator('b').count(), 0, 'Field names must remain literal text.');
         await gotoAndWait(namesPage, `${baseUrl}/zh/d/`);
         await namesPage.screenshot({path: path.join(work, 'name-list-zh.png')});
         await gotoAndWait(namesPage, `${baseUrl}/zh/p/contract-missing/#from=products/contract-name&sorts=_,name-desc`);
         await namesPage.screenshot({path: path.join(work, 'name-list-path-zh.png')});
         await namesContext.close();
-        console.log('PASS name-only SSR, native layout inheritance, referenced names, ascending/descending sort, path columns and history in three languages');
+        console.log('PASS name-only SSR, native layout inheritance, referenced names, ascending/descending sort, breadcrumb columns and history in three languages');
     } finally {
         await browser.close();
         await server.stop();

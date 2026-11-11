@@ -7,10 +7,10 @@ export function checkReservedColumns(first,final) {
   assert.ok(first.parsed.columns>0,'Source columns must already exist when main is parsed.');
   assert.equal(first.parsed.columns,final.columns.length,'Parsed markup must reserve the final source column count.');
   assert.equal(first.columns.length,final.columns.length,'Startup must retain the reserved source column count.');
-  assert.ok(first.pathContent.every(column=>column.rows.length===0),'Reserved path columns must not inline list rows.');
+  assert.ok(first.breadcrumbContent.every(column=>column.rows.length===0),'Reserved breadcrumb columns must not inline list rows.');
   assert.ok(final.reservedColumnsRetained,'Startup must reuse its reserved navigation and column nodes.');
-  assert.ok(final.pathContent.every(column=>column.rows.length>0),'Loaded path columns must contain navigation rows.');
-  assert.ok(final.pathAccessible,'Settled source navigation must be visible to accessibility tools.');
+  assert.ok(final.breadcrumbContent.every(column=>column.rows.length>0),'Loaded breadcrumb columns must contain navigation rows.');
+  assert.ok(final.breadcrumbAccessible,'Settled source navigation must be visible to accessibility tools.');
 }
 
 export function checkInitialLayout(first,final,expectedX) {
@@ -27,8 +27,8 @@ export function checkInitialLayout(first,final,expectedX) {
 }
 
 function checkStaticColumns(first,final) {
-  assert.equal(first.parsed?.columns,0,'Pages without pending path data must not reserve path columns.');
-  assert.equal(first.columns.length,0,'Pages without pending path data must not contain path columns.');
+  assert.equal(first.parsed?.columns,0,'Pages without pending path data must not reserve breadcrumb columns.');
+  assert.equal(first.columns.length,0,'Pages without pending path data must not contain breadcrumb columns.');
   assert.equal(final.columns.length,0,'A page without a path must not gain columns after startup.');
 }
 

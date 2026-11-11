@@ -1,5 +1,5 @@
 ---
-title: 路径导航模型
+title: 面包屑导航模型
 date: 2026-11-06
 lastmod: 2026-11-07
 url: p/breadcrumb-models/
@@ -18,7 +18,7 @@ description: 说明根导航、来源列和文章进入路径的构建及呈现�
 ## 选中规则
 
 `feature-browse/navigation/root/selected.html` 从当前页面及真实内容祖先中找根入口，提供静态 HTML 的默认选中项。
-公开 URL 可以与内容路径不同，因此不能根据 URL 前缀猜所属入口。文章默认使用真实目录祖先，例如 `content/articles/category1/example/index.zh.md` 的根入口为 `/articles/`，发布网址为 `/zh/p/example-product/`。`content/powered-by/` 是独立根页面，选中自己的入口，无子页路径列。
+公开 URL 可以与内容路径不同，因此不能根据 URL 前缀猜所属入口。文章默认使用真实目录祖先，例如 `content/articles/category1/example/index.zh.md` 的根入口为 `/articles/`，发布网址为 `/zh/p/example-product/`。`content/powered-by/` 是独立根页面，选中自己的入口，无子页面包屑列。
 
 有效的 `from` 指向当前页面已发布的来源集合。运行时根据列索引和有效来源路径调整第一列选中项，完整入口列表始终保留。
 在 Banyan 演示中，从“文章 - 分类”进入同一篇文章就选中“文章 - 分类”，从“产品 - 全部”进入就选中“产品 - 全部”。不存在或不属于当前文章的来源不参与选中，继续使用内容祖先。
@@ -28,9 +28,9 @@ description: 说明根导航、来源列和文章进入路径的构建及呈现�
 从该栏目点击正文时，链接携带栏目的 `#from=`；刷新、返回和排序继续使用相同来源。
 文章元信息同时显示真实目录和额外引用栏目；canonical、SEO 路径和正文网址仍使用原文的真实结构。
 
-## 路径模型
+## 面包屑模型
 
-`feature-browse/navigation/path/model.html` 根据普通页面或首页的真实结构生成构建期模型：
+`feature-browse/navigation/breadcrumb/model.html` 根据普通页面或首页的真实结构生成构建期模型：
 
 - `root_item`：真实结构中的根入口。
 - `schema_items`：结构化数据中的页面路径。
@@ -44,20 +44,20 @@ description: 说明根导航、来源列和文章进入路径的构建及呈现�
 
 `source/pack.html` 将当前页面需要的列投影成 `data-navigation`：语言首页、资源目录、逻辑路径到哈希的映射、默认尾列和错误说明。读取边界见 [导航状态](/zh/p/navigation-state/#内嵌-collection-payload)，命名见 [UI 命名与职责](/zh/p/ui-naming/)。
 
-浏览器的 `entry-source.js` 选择路径；`breadcrumb-source.js` 读取和校验片段；`path-render.js` 克隆 HTML 并调整链接、排序和选中态。`preparePathColumns()` 保留滚动容器，`renderPathColumn()` 填充单列。第一列只渲染一次，不包含在共享片段中。
+浏览器的 `navigation-source.js` 选择路径；`breadcrumb-source.js` 读取和校验片段；`breadcrumb-render.js` 克隆 HTML 并调整链接、排序和选中态。`prepareBreadcrumbColumns()` 保留滚动容器，`renderBreadcrumbColumn()` 填充单列。第一列只渲染一次，不包含在共享片段中。
 
 ## 布局与维护边界
 
-第一列、主列表和共享导航片段复用公共列表与完整条目组件。`source/fragment.html` 输出路径列头及行，浏览器克隆这些节点。DOM 与样式归属见 [UI 命名与职责](/zh/p/ui-naming/#样式类与行为标记)。版权、备案等信息使用普通根入口。
+第一列、主列表和共享导航片段复用公共列表与完整条目组件。`source/fragment.html` 输出面包屑列头及行，浏览器克隆这些节点。DOM 与样式归属见 [UI 命名与职责](/zh/p/ui-naming/#样式类与行为标记)。版权、备案等信息使用普通根入口。
 `params.slots` 中的 `breadcrumb` 控制是否显示路径栏，不存储浏览状态。
 
-移动与桌面共用横向列布局。初始页面的 `nav.path-navigation[data-slot="breadcrumb"]` 只保留容器；骨架脚本在 `#main` 之前按当前索引预留路径列，加载后在原列中填充共享 HTML。根导航、栏目主列表和正文保留原生 HTML。
+移动与桌面共用横向列布局。初始页面的 `nav.breadcrumb-navigation[data-slot="breadcrumb"]` 只保留容器；骨架脚本在 `#main` 之前按当前索引预留面包屑列，加载后在原列中填充共享 HTML。根导航、栏目主列表和正文保留原生 HTML。
 
 片段中的文章链接在来源不同于文章默认归属时携带 `from`，与排序后的链接规则一致。例如 `/articles/docs/guide/` 页面上的 docs 列，其文章链接使用 `#from=articles/docs`。分类和聚合列表链接使用集合自身地址，不生成冗余的 `from`；在列表页排序也沿用自身完整路径。
 
-排序复用已加载的行，保留列头、图标、选中节点和列内滚动位置。主列表和路径列统一更新 `sorts` 中各自对应的一项，保留文章的 `from`、锚点和其他参数；生成链接时省略默认值和尾部默认项，中间默认项用 `_` 保留位置。子栏目行提供目标排序类型与默认值，页面加载不自动改写排序网址。排序不增加历史记录。主列表排序后同步刷新路径列链接，使新标签打开也保留最新排序。
+排序复用已加载的行，保留列头、图标、选中节点和列内滚动位置。主列表和面包屑列统一更新 `sorts` 中各自对应的一项，保留文章的 `from`、锚点和其他参数；生成链接时省略默认值和尾部默认项，中间默认项用 `_` 保留位置。子栏目行提供目标排序类型与默认值，页面加载不自动改写排序网址。排序不增加历史记录。主列表排序后同步刷新面包屑列链接，使新标签打开也保留最新排序。
 
-来源变化由 `initializeBreadcrumb()` 重新选择列，加载所需资源后填充已有容器；按需增减列，不整体替换 nav。加载失败显示本地化说明。来源片段不包含当前文章时，清除无效 `from` 并恢复默认路径。
+来源变化由 `initializeBreadcrumbNavigation()` 重新选择列，加载所需资源后填充已有容器；按需增减列，不整体替换 nav。加载失败显示本地化说明。来源片段不包含当前文章时，清除无效 `from` 并恢复默认路径。
 
 文档负责整页横向滚动，各页面列独立纵向滚动。列角色、尺寸与滚动容器见 [公共页面列](/zh/p/ui-naming/#公共页面列)。辅助列随画幅横向移动，正文滚动时保持原位；无需 fixed、sticky 或滚动同步脚本。主列表随内容列参与整页画幅，不增加内部横向滚动。
 
