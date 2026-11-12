@@ -1,0 +1,3 @@
+{{ define "head-extra" }}{{ partial "feature-browse/wall/styles.html" . }}{{ end }}
+{{ define "main" }}{{ partial "feature-browse/wall/render.html" . }}{{ end }}
+{{ define "body-extra" }}{{ partial "system-assets/script.html" (dict "path" "js/browse/collection-wall.js") }}{{ end }}

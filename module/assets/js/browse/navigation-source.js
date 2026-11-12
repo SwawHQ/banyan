@@ -40,13 +40,13 @@ export function selectNavigationRoute(navigation, fromPath, collectionPath = '')
         && Object.hasOwn(navigation?.columns || {}, from) ? from : '';
     const path = requested || navigation?.default || '';
     const parts = path.split('/').filter(Boolean);
-    const keys = parts.map((_, index) => `/${parts.slice(0, index + 1).join('/')}/`)
+    const keys = (path === '/' ? ['/'] : parts.map((_, index) => `/${parts.slice(0, index + 1).join('/')}/`))
         .filter(key => Object.hasOwn(navigation?.columns || {}, key));
     const columns = keys.map((column, index) => ({ column,
         ...(index + 1 < keys.length ? { selected: navigation.columns[keys[index + 1]].href } : {}) }));
     const href = navigation?.columns[path]?.href || '';
     const first = href ? href.slice(navigation.home.length).split('/')[0] : '';
-    return { root: first ? `${navigation.home}${first}/` : '', columns, lineage: requested || collection || path, from: requested };
+    return { root: first ? `${navigation.home}${first}/` : (path === '/' || collection === '/' ? navigation.home : ''), columns, lineage: requested || collection || path, from: requested };
 }
 
 export function readActiveNavigationRoute() {

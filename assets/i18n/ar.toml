@@ -56,3 +56,21 @@ other = 'إخفاء'
 
 [skip_to_content]
 other = "انتقل إلى المحتوى"
+
+[wall_video]
+other = "فيديو"
+
+[wall_details]
+other = "عرض التفاصيل"
+
+[wall_close]
+other = "إغلاق التفاصيل"
+
+[wall_empty]
+other = "لا توجد مقالات بعد."
+
+[wall_folder]
+other = "قسم"
+
+[wall_folder_count]
+other = "قسم · {{ .Count }} مقالات"

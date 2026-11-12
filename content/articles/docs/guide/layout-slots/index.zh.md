@@ -1,7 +1,7 @@
 ---
 title: 页面区域与布局
 date: 2026-11-06
-lastmod: 2026-11-07
+lastmod: 2026-11-12
 url: p/layout-slots/
 description: 配置根导航入口、面包屑区域和文章元信息。
 ---
@@ -25,7 +25,7 @@ description: 配置根导航入口、面包屑区域和文章元信息。
 - `build.list: never` 的内部节点不作为入口。
 - `weight` 只需在入口本身定义，不应 cascade 到所有文章。
 
-首页在 `content/_index*.md` 声明 `linkTitle`、`weight` 和 `params.icon`，使用普通条目组件，正文使用 `page-home`，通过 `home-art` 引用内部艺术包。`params.show_navigation` 控制首页是否显示第一列；站点自己的根页面决定入口和文案。
+首页在 `content/_index*.md` 声明 `linkTitle`、`weight` 和 `params.icon`，使用普通条目组件，可使用 `page-home` 通过 `home-art` 引用内部艺术包，或使用 `page-collection-wall-all` 显示汇总图片墙。`params.show_navigation` 控制首页是否显示第一列；站点自己的根页面决定入口和文案。
 
 新增入口时建立真实根页面，并提供名称和顺序。内部节点可用 `build.list: never` 排除入口，无需额外的菜单开关。
 

@@ -1,4 +1,5 @@
 {{- $logicalPath := printf "%v" (.logical_path | default "") -}}
+{{- if eq $logicalPath "/" -}}{{- return "/" -}}{{- end -}}
 {{- $segments := split (trim $logicalPath "/") "/" -}}
 {{- $cleanSegments := slice -}}
 {{- range $segment := $segments -}}

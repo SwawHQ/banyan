@@ -6,6 +6,11 @@ weight: 40
 layout: page-collection-directory
 
 params:
+  # Use with layout: page-collection-wall; uncomment params.wall to enable the wall.
+  # wall:
+  #   size: {width: 300, height: 125}
+  #   details: title
+  #   scroll: horizontal
   # This entry uses the default folder icon. Set one value to replace it.
   # icon: folder
   # icon: {text: "A"}
@@ -24,5 +29,10 @@ cascade:
   - target: {kind: section}
     layout: page-collection-directory
     params:
+      # Use with layout: page-collection-wall; uncomment params.wall to enable the wall.
+      # wall:
+      #   size: {width: 300, height: 125}
+      #   details: title
+      #   scroll: horizontal
       slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
 ---

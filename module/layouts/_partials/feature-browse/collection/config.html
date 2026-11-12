@@ -3,13 +3,15 @@
   "page-collection-directory-name-only" "name"
   "page-collection-directory" "directory"
   "page-collection-directory-all" "all"
+  "page-collection-wall" "wall"
+  "page-collection-wall-all" "wall"
   "page-collection-products" "products"
   "page-collection-products-all" "products"
   "page-collection-language" "choice"
   "page-collection-appearance" "choice"
 -}}
 {{- $view := index $views $page.Layout | default "" -}}
-{{- if and $view (ne $page.Kind "section") -}}
+{{- if and $view (ne $page.Kind "section") (not (and $page.IsHome (eq $page.Layout "page-collection-wall-all"))) -}}
   {{- errorf "Collection page %s uses %q and requires an ordinary section _index.md; regular pages cannot use collection layouts." ($page.File.Path | default $page.Path) $page.Layout -}}
 {{- end -}}
 {{- $provider := "" -}}
@@ -56,5 +58,6 @@
   {{- end -}}
 {{- end -}}
 {{- if $timeTree -}}{{- $view = "directory" -}}{{- end -}}
-{{- $variant := cond (eq $view "directory") "section" $view -}}
+{{- if eq $view "wall" -}}{{- $wall := partial "feature-browse/wall/config.html" $page -}}{{- end -}}
+{{- $variant := cond (eq $view "directory") "section" (cond (eq $view "wall") (cond (eq $provider "aggregate") "all" "section") $view) -}}
 {{- return (dict "view" $view "provider" $provider "script" $script "time_tree" $timeTree "sortable" (and (ne $view "") (ne $view "choice")) "sort_variant" $variant "default_sort" (cond (eq $view "name") "name-asc" "date-desc")) -}}

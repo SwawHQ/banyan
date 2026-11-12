@@ -4,9 +4,9 @@
 {{- $fields := slice "name" -}}
 {{- if eq $config.view "products" -}}
   {{- $fields = $fields | append "date" "price" -}}
-{{- else if eq $config.view "all" -}}
+{{- else if eq $config.sort_variant "all" -}}
   {{- $fields = $fields | append "date" "size" -}}
-{{- else if eq $config.view "directory" -}}
+{{- else if eq $config.sort_variant "section" -}}
   {{- $fields = $fields | append "date" "count" -}}
 {{- end -}}
 <div class="item-list item-list--breadcrumb-column" role="group" aria-label="{{ $source.label }}" data-collection-href="{{ $source.href }}" data-breadcrumb-column-path="{{ $source.logicalPath }}" data-sort-variant="{{ $source.sortVariant }}" data-default-sort="{{ $source.defaultSort }}">

@@ -361,6 +361,41 @@ params:
 {{< home-art "/_res/home-art/wind" >}}
 ```
 
+For an image-wall home, use this front matter and omit the art shortcode:
+
+```yaml
+layout: page-collection-wall-all
+params:
+  aggregate: /articles
+  wall:
+    size:
+      width: auto
+      height: 200
+    details: title
+    scroll: horizontal
+```
+
+For a mixed section, use `page-collection-wall`, omit `aggregate`, and set
+`params.slots: [breadcrumb]`. It shows direct child sections, articles and references.
+Section covers open the section; titles or dots open the shared details popover
+with its description and article count. Section covers use bundle `cover.*`,
+falling back to an independent `description` at body text size. Without a distinct description, missing covers use the centered site `favicon.link.svg`, then `favicon.ico`; absence of both is a build error. Ancestor columns stay compact.
+Use a section-only cascade to apply the layout, wall options and breadcrumb slot
+to descendants; articles keep their separate cover options.
+
+Both layouts share the wall CSS and JS, loaded only on wall pages.
+Size specifies target image dimensions
+in CSS pixels, excluding titles and gaps. Two numbers set a fixed crop ratio;
+`width: auto` preserves the source ratio at equal height, and `height: auto`
+preserves it at equal width. Actual dimensions adapt to available space.
+Details are `title`, `overlay` (image dots), or `overlay-hover` (always visible
+on touch screens). Scrolling is `horizontal` or `vertical`.
+Put `cover.*` in an article bundle, or set article `params.wall.cover` to a
+bundle resource name. Optional `params.wall.alt` supplies image text;
+`params.wall.kind: video` adds a video marker and still links to the article.
+Restore `page-home`, remove `aggregate` and `wall`, and restore the art shortcode
+to switch back. The reference site retains both art bundles.
+
 The home page's `params.show_navigation` controls the first navigation column
 and defaults to `true`. It also applies to homes without a `home-art` shortcode.
 

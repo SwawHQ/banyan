@@ -6,6 +6,11 @@ weight: 40
 layout: page-collection-directory
 
 params:
+  # 配套 layout: page-collection-wall 使用；启用图片墙时取消下方 params.wall 的注释。
+  # wall:
+  #   size: {width: 300, height: 125}
+  #   details: title
+  #   scroll: horizontal
   # 此栏目使用默认文件夹图标；设置以下任意一种值可替换它。
   # icon: folder
   # icon: {text: "A"}
@@ -24,5 +29,10 @@ cascade:
   - target: {kind: section}
     layout: page-collection-directory
     params:
+      # 配套 layout: page-collection-wall 使用；启用图片墙时取消下方 params.wall 的注释。
+      # wall:
+      #   size: {width: 300, height: 125}
+      #   details: title
+      #   scroll: horizontal
       slots: [breadcrumb] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
 ---

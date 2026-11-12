@@ -27,6 +27,7 @@ function readStateParam(field) {
 
 export function normalizeFromPath(value) {
     const decoded = safeDecode(typeof value === 'string' ? value.trim() : '');
+    if (decoded === '/') return '/';
     const segments = decoded.split('/').filter(Boolean);
     if (segments.length === 0) {
         return '';
@@ -37,6 +38,7 @@ export function normalizeFromPath(value) {
 
 function buildFromParamValue(logicalPath) {
     const normalizedPath = normalizeFromPath(logicalPath);
+    if (normalizedPath === '/') return '/';
     if (!normalizedPath) {
         return '';
     }
@@ -58,6 +60,7 @@ function normalizeSortSlots(tokens) {
 }
 
 export function getLogicalPathDepth(logicalPath) {
+    if (normalizeFromPath(logicalPath) === '/') return 1;
     return normalizeFromPath(logicalPath).split('/').filter(Boolean).length;
 }
 

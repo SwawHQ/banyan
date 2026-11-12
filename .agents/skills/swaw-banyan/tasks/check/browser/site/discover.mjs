@@ -26,7 +26,7 @@ function inspect(page) {
   const roots=anchors.filter(({tag,href})=>href&&has(tag,'data-root-href')).map(({href})=>href);
   const logicalPath=attr(body,'data-collection-path'),rawNavigation=attr(body,'data-navigation');
   const navigation=rawNavigation?JSON.parse(rawNavigation):null;
-  const rootHref=logicalPath&&navigation?.home?navigation.home+logicalPath.replace(/^\/+/, '').split('/')[0]+'/':'';
+  const rootHref=logicalPath&&navigation?.home?(logicalPath==='/'?navigation.home:navigation.home+logicalPath.replace(/^\/+/, '').split('/')[0]+'/'):'';
   const names=extractStartTags(text,'div').filter(tag=>has(tag,'data-list-item'))
     .map(tag=>({name:attr(tag,'data-sort-name'),group:attr(tag,'data-sort-group')||'0'})).filter(row=>row.name);
   // This leaf checks selected visible roots; hidden collections are valid sites.

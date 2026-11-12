@@ -1,7 +1,7 @@
 ---
 title: 列表与产品声明
 date: 2026-11-06
-lastmod: 2026-11-09
+lastmod: 2026-11-12
 url: p/collection-lists/
 description: 配置目录、引用、条目图标和产品列表。
 ---
@@ -57,6 +57,65 @@ Powered by 由站点根 `content/powered-by/index*.md` 维护，使用 `page-art
 PWA 段落中的 `site-status "status"` 显示程序更新状态和检查按钮；`site-status "content"` 显示当前页面的内容版本状态；`params.site_status.labels` 与技术说明同存于 `content/powered-by/index*.md`。参考站和 Swaw 的各语言 Powered by 将预取诊断放在折叠区中，使用 `prefetch-debug-controls`、`prefetch-debug-links` 和 `prefetch-debug-state` 短代码；其 `serviceWorker.controlled` 只表示该诊断页是否受控，不代表其他标签页。
 
 面板自行读取 registration，显示检查、安装和等待状态；构建信息只在上方显示一次。检查按钮始终只检查，不激活或刷新。程序更新和激活由浏览器管理；普通链接、刷新、历史和锚点保持原生行为。
+
+## 普通栏目图片墙
+
+普通栏目的 `_index*.md` 使用 `page-collection-wall`，显示直属子栏目、文章及引用。目录在前，文章在后；文章按发布日期倒序。它与下方汇总图片墙共用 `params.wall` 配置。
+
+```yaml
+layout: page-collection-wall
+params:
+  slots: [breadcrumb]
+  wall:
+    size: {width: auto, height: 200}
+    details: title
+    scroll: horizontal
+```
+
+点击封面进入目录或文章；点击标题或细点打开同一种详情浮窗。目录用小图标区分，说明和文章数放在浮窗内。目录封面取包内 `cover.*`；无封面时显示该目录的 `description`，说明为空或与标题相同时，居中显示站点图标。
+
+只有当前列显示图片墙。进入子目录后，父列使用原有紧凑导航；子目录按自己的 layout 显示。要让下级栏目也使用图片墙，在 `cascade` 中为 `target: {kind: section}` 设置该 layout、`params.wall` 和 `params.slots: [breadcrumb]`。这些排列配置只给栏目，文章的 `params.wall` 仍用于封面。
+
+参考站“文章－分类”及下级栏目使用此布局；首页使用汇总图片墙。两者共用一份 CSS 和一份 JS，其他布局不加载图片墙资源。
+
+## 汇总图片墙
+
+首页或普通汇总栏目的 `_index*.md` 可使用 `page-collection-wall-all`。它读取 `aggregate` 栏目及下级文章、引用，去重后按发布日期倒序显示。不会显示子栏目卡片。
+
+```yaml
+layout: page-collection-wall-all
+params:
+  aggregate: /articles
+  wall:
+    size:
+      width: auto
+      height: 200
+    details: title
+    scroll: horizontal
+```
+
+| 配置 | 可选值 | 默认值 |
+| --- | --- | --- |
+| `size.width` | 目标宽度，CSS px；`auto` 按原图比例计算 | `200` |
+| `size.height` | 目标高度，CSS px；`auto` 按原图比例计算 | `auto` |
+| `details` | `title` 一行标题、`overlay` 图内细点常显、`overlay-hover` 悬停显示（触屏常显） | `title` |
+| `scroll` | `horizontal` 横向、`vertical` 竖向 | `vertical` |
+
+宽高均为数值时使用固定比例网格，例如 `300 × 200` 为 3:2；`200 × auto` 为等宽原图瀑布流；`auto × 200` 为等高原图瀑布流。图片尺寸不含标题与间距。两边为数值时居中裁剪，一边为 `auto` 时保留原图比例。布局会根据可用空间调整最终尺寸。size 是图片最大尺寸，不放大。规则行列可最多缩小 20% 来增加一行或一列；否则保持目标尺寸并留白。单张卡片仍放不下时继续缩小适配。两边均为数值时保持指定比例，auto 边按原图比例计算，原图瀑布流不强制齐边。点击图片进入文章；点击标题或图内细点展开完整标题、所属栏目的末级名称和发布日期。图片墙保持直角、统一间距，不显示排序栏或页面页脚。栏目正文不在图片墙内显示。
+
+文章叶子包放置 `cover.jpg`、`cover.png` 等栅格封面，或在文章 front matter 指定包内文件：
+
+```yaml
+params:
+  wall:
+    cover: photo.jpg
+    alt: 山间的雾
+    kind: image
+```
+
+未指定文件时读取包内 `cover.*`；没有封面时居中显示 `assets/site/favicon.link.svg`，缺少时使用 `assets/site/favicon.ico`。目录独立说明使用正文字号。`kind: video` 只显示三角标记，点击仍进入文章，视频由文章正文提供。封面由构建处理为带指纹的 WebP，不读取继承的分享图片。
+
+参考站首页使用风场，栏目使用列表；首页和栏目配置中保留了 300 × 125 图片墙参数注释。启用时改用注释所标明的图片墙 layout，取消 params.wall 的注释；首页还需启用 aggregate 并移除 home-art 短代码。切换艺术首页时，将 `layout` 改为 `page-home`，移除 `aggregate` 与 `wall`，恢复正文中的 `{{</* home-art "/_res/home-art/wind" */>}}`；切回图片墙时移除该短代码。`show_navigation` 在两种首页中均有效。各语言分别配置，风场资源包可以保留。
 
 ## 名称列表与公共样式
 

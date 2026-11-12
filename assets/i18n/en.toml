@@ -59,3 +59,21 @@ other = 'Hide'
 
 [skip_to_content]
 other = "Skip to content"
+
+[wall_video]
+other = "Video"
+
+[wall_details]
+other = "View details"
+
+[wall_close]
+other = "Close details"
+
+[wall_empty]
+other = "No posts yet."
+
+[wall_folder]
+other = "Section"
+
+[wall_folder_count]
+other = "Section · {{ .Count }} articles"

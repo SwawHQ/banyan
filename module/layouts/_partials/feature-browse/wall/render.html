@@ -1,0 +1,13 @@
+{{- $config := partial "./config.html" . -}}
+{{- $collection := partial "feature-browse/collection/config.html" (dict "page" .) -}}
+{{- $source := partial "feature-browse/collection/source.html" (dict "page" . "config" $collection) -}}
+{{- $rows := partial "feature-browse/collection/rows.html" (dict "page" . "config" $collection) -}}
+{{- $directory := partialCached "feature-browse/directory/index.html" .Site .Language.Lang -}}
+<section class="wall" data-wall data-wall-layout="{{ $config.layout }}" data-wall-width="{{ $config.size.width }}" data-wall-height="{{ $config.size.height }}" data-wall-details="{{ $config.details }}" data-wall-scroll="{{ $config.scroll }}" aria-label="{{ .Title }}">
+  <div class="wall-grid">
+  {{- range $index, $row := $rows -}}
+    {{- partial "./card.html" (dict "row" $row "source" $source "config" $config "directory" $directory "index" $index) -}}
+  {{- end -}}
+  </div>
+  {{- if not $rows }}<p class="wall-empty">{{ i18n "wall_empty" }}</p>{{ end -}}
+</section>

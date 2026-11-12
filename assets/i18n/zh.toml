@@ -59,3 +59,21 @@ other = '收起'
 
 [skip_to_content]
 other = "跳至正文"
+
+[wall_video]
+other = "视频"
+
+[wall_details]
+other = "查看详情"
+
+[wall_close]
+other = "关闭详情"
+
+[wall_empty]
+other = "暂无内容。"
+
+[wall_folder]
+other = "栏目"
+
+[wall_folder_count]
+other = "栏目 · {{ .Count }} 篇"

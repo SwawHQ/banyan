@@ -3,10 +3,15 @@ title: 未发布
 url: p/unreleased/
 description: Banyan 主题和 Skill 的未发布变更。
 date: 2026-11-06
-lastmod: 2026-11-11
+lastmod: 2026-11-12
 ---
 
 ## 新增
+
+- 图片墙无封面时优先居中显示站点 SVG 图标，缺少时回退 ICO；目录独立说明使用正文字号，不再重复填充标题。
+
+- 新增 `page-collection-wall` 与 `page-collection-wall-all`：普通栏目混排目录、文章和引用，首页与普通汇总栏目通过 `wall.size.width/height` 配置固定比例、等宽或等高图片墙，通过 `details` 配置详情入口，通过 `scroll` 配置滚动方向。点击标题展开详情，点击封面进入文章；支持栏目引用去重和首页浏览来源。目录卡片以小图标区分，共用详情浮窗显示说明与文章数；父列保持紧凑导航。
+- 参考站示例：首页使用风场，“文章－分类”及下级栏目使用列表。配置中保留 300 × 125 图片墙参数注释，并注明配套的图片墙 layout。
 
 - SVG favicon 必须显式声明 32×32 默认尺寸，否则构建报错；参考站新增 GitHub 页面，头像独立于站点 favicon。第一列导航将 GitHub 放在“关于”之前，“关于”排在最后。参考站 SVG、ICO、Apple touch 和 PWA 图标统一使用鲜叶绿 `#26861C`；ICO 保留单张 32×32、32 位 DIB 图像。Powered by 的主题名称后显示与首页入口同尺寸的站点图标；仅主题版本文字链接到项目 GitHub 首页。
 
@@ -262,6 +267,8 @@ lastmod: 2026-11-11
 
 ## 升级迁移
 
+- 使用图片墙旧配置的站点 → 栏目或首页 `_index*.md` 的 `params.wall` → 将 `layout` 和数值 `size` 合并为 `size.width/height`：等高为 `auto/原 size`，等宽为 `原 size/auto`，固定比例填写对应宽高；将 `caption`、`controls` 合并为 `details: title|overlay|overlay-hover`，移除旧字段。
+
 - 使用艺术包的站点 → `content/_res/home-art/<主题>/index*.md` 和包内模板 → 设置 `params.template: scene.html.tmpl`，移除正文中的场景短代码；将场景 HTML 和计算迁入该模板。文字及 HTML 属性值使用 `htmlEscape`；需要正文时由模板输出 `.Content`。风场可复制当前参考包的模板。
 
 - 使用风场艺术包的站点 → `content/_res/home-art/<主题>/index*.md` → 将 `params.home_signals` 改为 `params.signals`，`params.home_signal_*` 改为 `params.signal_*`，`params.home_wind_field_start_offset_rem` 改为 `params.wind_field_start_offset_rem`；信号对象使用 `name`、`url`、`primary`，将 `title` 或 `label` 合并到 `name`，将 `href` 改为 `url`。
@@ -276,6 +283,8 @@ lastmod: 2026-11-11
 - 本次产品列表及横向键盘操作调整无必需迁移。已有 `params.offer.version` 定义值可保留。
 
 ## 修复
+
+- 统一图片墙缩放：size 为最大尺寸，不放大；规则行列最多缩小 20% 以增加一行或一列，否则留白。单卡放不下时继续缩小适配；等高纵向布局只缩小超宽卡片，不再连带缩小整墙。图片墙封面统一发布到 `/media/content/`，使用已有指纹缓存规则。
 
 - 打印时各列适应纸张宽度，长代码和表格内容换行，避免右侧内容被裁切。独立代码行号列在打印时隐藏，避免与换行后的代码错位。
 - 正文标题与引用、表格、代码和图片保留文字行框的间距补偿，列表正文使用紧凑间距。响应式图片与普通图片使用相同间距，并与代码、引用的段落间距对齐；行内小图不再触发图片段落间距。文章标题间距不再受元信息或 JavaScript 开关影响；引用、代码、表格和图注字号随基础字号缩放。

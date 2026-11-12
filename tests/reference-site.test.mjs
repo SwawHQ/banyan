@@ -185,7 +185,8 @@ test('the reference site owns its columns and links to its local documentation',
     for(const name of ['notes','notes-all','discover','all','catalog','catalog-all','changelog'])
       assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'No retired or unconfigured column is published: '+name);
     const docs=(prefix==='zh/'?'/zh/':'/')+'articles/docs/';
-    assert.ok(extractStartTags(home,'a').some(tag=>extractTagAttribute(tag,'href')===docs),'Home links to the available documentation language.');
+    assert.match(home,/data-home-art-style=(?:"wind"|wind)/,'Reference home uses wind art.');
+    assert.doesNotMatch(home,/data-wall-width=/);
     assert.ok(fs.existsSync(path.join(output,docs,'index.html')));
   }
   assert.deepEqual((await inspectSitemap(output)).issues,[]);
@@ -358,9 +359,8 @@ test('Arabic pages use RTL and demonstrate mixed text without losing translation
   assert.ok(main.includes('https://example.com/docs/?lang=ar&amp;version=2'));
   assert.ok(extractStartTags(article,'link').some(tag=>extractTagAttribute(tag,'hreflang')==='en'));
   const home=fs.readFileSync(path.join(output,'ar/index.html'),'utf8');
-  const signals=extractStartTags(home,'a').filter(tag=>/\bdata-home-art-wind-signal(?:\s|=|>)/.test(tag));
-  assert.equal(signals.length,6);
-  assert.ok(signals.slice(0,4).every(tag=>extractTagAttribute(tag,'href').startsWith('/ar/')));
+  assert.match(home,/data-home-art-style=(?:"wind"|wind)/);
+  assert.doesNotMatch(home,/data-wall-width=/);
 });
 
 test('settings sections use choice controls without article collection capabilities',()=>{
@@ -486,7 +486,7 @@ test('Powered by contains translated diagnostics and same-language test links',(
       assert.ok(fs.existsSync(path.join(output,new URL(href,origin).pathname,'index.html')));
     }
     const collectionPath=new URL(extractTagAttribute(links[0],'href'),origin).pathname;
-    assert.match(extractBlocks(fs.readFileSync(path.join(output,collectionPath,'index.html'),'utf8'),'main')[0].inner,/data-sortable=(?:"true"|true)/);
+    assert.match(extractBlocks(fs.readFileSync(path.join(output,collectionPath,'index.html'),'utf8'),'main')[0].inner,/(?:data-sortable=(?:"true"|true)|data-wall-width=)/);
     const panel=extractBlocks(main,'span',tag=>tag.includes('data-site-status-panel'))[0];
     assert.equal(panel.html.includes('data-pwa-controlled'),false,'Page control state belongs to diagnostics');
     assert.ok(disclosure[0].index>=panel.index+panel.html.length,'Diagnostics follow the update controls');

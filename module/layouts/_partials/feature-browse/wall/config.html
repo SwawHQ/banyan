@@ -1,0 +1,37 @@
+{{- $page := . -}}
+{{- $raw := dict -}}
+{{- if isset $page.Params "wall" -}}{{- $raw = $page.Params.wall -}}{{- end -}}
+{{- if not (reflect.IsMap $raw) -}}{{- errorf "Wall %s params.wall must be a map." $page.Path -}}{{- $raw = dict -}}{{- end -}}
+{{- $config := dict "size" (dict "width" 200 "height" "auto") "details" "title" "scroll" "vertical" -}}
+{{- $choices := dict "details" (slice "title" "overlay" "overlay-hover") "scroll" (slice "horizontal" "vertical") -}}
+{{- range $key, $value := $raw -}}
+  {{- if not (isset $config $key) -}}
+    {{- errorf "Wall %s: unsupported params.wall.%s." $page.Path $key -}}
+  {{- else if eq $key "size" -}}
+    {{- if not (reflect.IsMap $value) -}}
+      {{- errorf "Wall %s: size must be a map with width and height." $page.Path -}}
+    {{- else -}}
+      {{- range $axis, $dimension := $value -}}
+        {{- if not (in (slice "width" "height") $axis) -}}
+          {{- errorf "Wall %s: unsupported params.wall.size.%s." $page.Path $axis -}}
+        {{- else if ne $dimension "auto" -}}
+          {{- if not (in (slice "int" "int64" "uint64" "float64") (printf "%T" $dimension)) -}}
+            {{- errorf "Wall %s: size.%s must be auto or a number from 40 to 640 CSS pixels." $page.Path $axis -}}
+          {{- else if or (lt (float $dimension) 40) (gt (float $dimension) 640) -}}
+            {{- errorf "Wall %s: size.%s must be auto or a number from 40 to 640 CSS pixels." $page.Path $axis -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if or (not (isset $value "width")) (not (isset $value "height")) -}}
+        {{- errorf "Wall %s: size requires both width and height." $page.Path -}}
+      {{- else if and (eq $value.width "auto") (eq $value.height "auto") -}}
+        {{- errorf "Wall %s: size width and height cannot both be auto." $page.Path -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else if not (in (index $choices $key) $value) -}}
+    {{- errorf "Wall %s: invalid params.wall.%s = %v." $page.Path $key $value -}}
+  {{- end -}}
+{{- end -}}
+{{- $config = merge $config $raw -}}
+{{- $layout := cond (eq $config.size.width "auto") "equal-height" (cond (eq $config.size.height "auto") "masonry" "grid") -}}
+{{- return (merge $config (dict "layout" $layout)) -}}

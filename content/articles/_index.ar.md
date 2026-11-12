@@ -5,6 +5,11 @@ weight: 40
 layout: page-collection-directory
 
 params:
+  # Use with layout: page-collection-wall; uncomment params.wall to enable the wall.
+  # wall:
+  #   size: {width: 300, height: 125}
+  #   details: title
+  #   scroll: horizontal
   slots: [breadcrumb]
 
 cascade:
@@ -15,5 +20,10 @@ cascade:
   - target: {kind: section}
     layout: page-collection-directory
     params:
+      # Use with layout: page-collection-wall; uncomment params.wall to enable the wall.
+      # wall:
+      #   size: {width: 300, height: 125}
+      #   details: title
+      #   scroll: horizontal
       slots: [breadcrumb]
 ---

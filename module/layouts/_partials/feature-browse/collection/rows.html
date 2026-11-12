@@ -12,12 +12,15 @@
 {{- $iconDefaults := partial "system-ui/list/icon-defaults.html" (dict "page" $page) -}}
 {{- range $row := $rows -}}
   {{- $node := $row.node -}}
+  {{- if and (eq $config.view "wall") (eq $row.kind "page") -}}
+    {{- $row = merge $row (dict "sort_date" ($node.Date.Format "20060102150405") "date_text" ($node.Date.Format "2006-01-02")) -}}
+  {{- end -}}
   {{- $icon := partial "system-ui/list/item-icon.html" (dict "page" $node "defaults" $iconDefaults "kind" (cond (eq $row.kind "page") "file" "folder")) -}}
   {{- $row = merge $row (dict "icon" $icon) -}}
   {{- if eq $config.view "products" -}}
     {{- $offer := partial "feature-browse/collection/products/offer.html" (dict "page" $node) -}}
     {{- $row = merge $row $offer -}}
-  {{- else if eq $config.view "all" -}}
+  {{- else if eq $config.sort_variant "all" -}}
     {{- $bytes := len $node.RawContent -}}
     {{- $row = merge $row (dict "sort_size" (printf "%v" $bytes) "size_text" (printf "%v" (div (add $bytes 1023) 1024)) "size_unit" "&thinsp;KB") -}}
   {{- end -}}
@@ -30,7 +33,12 @@
   {{- $byName = $byName | append (merge $row (dict "sort_name" (printf "%d" (add $index 1)))) -}}
 {{- end -}}
 {{- $ordered := $byName -}}
-{{- if in (slice "all" "products") $config.view -}}
+{{- if and (eq $config.view "wall") (eq $config.provider "section") -}}
+  {{- $byName = collections.Reverse $byName -}}
+  {{- $ordered = slice -}}
+  {{- range sort (where $byName "kind" "ne" "page") "sort_date" "desc" -}}{{- $ordered = $ordered | append . -}}{{- end -}}
+  {{- range sort (where $byName "kind" "page") "sort_date" "desc" -}}{{- $ordered = $ordered | append . -}}{{- end -}}
+{{- else if in (slice "all" "products" "wall") $config.view -}}
   {{- $ordered = sort (collections.Reverse $byName) "sort_date" "desc" -}}
 {{- else if eq $config.view "directory" -}}
   {{- $byName = collections.Reverse $byName -}}

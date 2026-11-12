@@ -3,10 +3,15 @@ title: Unreleased
 url: p/unreleased/
 description: Unreleased changes to the Banyan theme and Skill.
 date: 2026-11-06
-lastmod: 2026-11-11
+lastmod: 2026-11-12
 ---
 
 ## Added
+
+- Walls use a centered site SVG icon for missing covers, falling back to ICO. Independent section descriptions use body text size; titles are no longer repeated inside covers.
+
+- Added `page-collection-wall` for mixed child sections, articles and references, and `page-collection-wall-all` for homepages and aggregate sections, with fixed-ratio, equal-width or equal-height images configured by `wall.size.width/height`, detail entry points by `details`, and scroll direction by `scroll`. Titles open details; covers open articles. Membership deduplication and home browsing sources are supported. Section cards use an icon and the shared details popover for descriptions and article counts; ancestor columns retain compact navigation.
+- Reference site: the homepage uses wind art; Articles - Categories and its child sections use lists. Commented 300 × 125 wall settings identify the matching wall layouts.
 
 - SVG favicons must declare a 32×32 default size or the build fails. The reference site adds a GitHub page with independent avatars. The first navigation column places GitHub before About, with About last. Its SVG, ICO, Apple touch and PWA icons use leaf green `#26861C`; the ICO contains one 32×32, 32-bit DIB image. Powered by shows the site icon after the theme name, at the same size as the home navigation icon; only the theme version text links to the project GitHub homepage.
 
@@ -349,6 +354,8 @@ lastmod: 2026-11-11
 
 ## Upgrade migration
 
+- Sites with previous wall options → section or home `_index*.md`, `params.wall` → replace `layout` and numeric `size` with `size.width/height`: `auto/previous size` for equal height, `previous size/auto` for equal width, or two dimensions for a fixed ratio. Replace `caption` and `controls` with `details: title|overlay|overlay-hover`; remove the old fields.
+
 - Sites using art bundles → `content/_res/home-art/<theme>/index*.md` and bundle templates → set `params.template: scene.html.tmpl`, remove scene shortcodes from the body, and move scene HTML and calculations into that template. Use `htmlEscape` for text and HTML attribute values; output `.Content` where body content belongs. Wind sites can copy the current reference bundle template.
 
 - Sites using the wind art bundle → `content/_res/home-art/<theme>/index*.md` → rename `params.home_signals` to `params.signals`, `params.home_signal_*` to `params.signal_*`, and `params.home_wind_field_start_offset_rem` to `params.wind_field_start_offset_rem`. Signal objects use `name`, `url` and `primary`; merge `title` or `label` into `name`, and rename `href` to `url`.
@@ -363,6 +370,8 @@ lastmod: 2026-11-11
 - The product-list and horizontal keyboard changes require no site migration. Existing `params.offer.version` values can remain.
 
 ## Fixed
+
+- Unified wall sizing: size is the maximum, with no enlargement. Regular tracks may shrink by up to 20% to fit an extra row or column; otherwise space stays blank. A single oversized card may shrink further to fit. Equal-height vertical walls shrink only oversized cards, without reducing every other card. Wall covers now publish under `/media/content/` to use the configured fingerprint cache rules.
 
 - Printed columns fit the paper width. Long code and table contents wrap without clipping at the right edge. Separate code line-number columns are hidden in print because they cannot align with wrapped code.
 - Prose headings retain the spacing adjustment for text line boxes next to quotes, tables, code and images. Collection bodies use compact spacing. Responsive and ordinary images share the same spacing and match code and quote gaps next to paragraphs; inline images no longer trigger image-paragraph gaps. Article title spacing no longer depends on metadata or JavaScript. Quote, code, table and caption fonts scale with the base size.

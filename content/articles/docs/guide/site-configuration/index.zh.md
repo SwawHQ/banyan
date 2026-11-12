@@ -1,7 +1,7 @@
 ---
 title: 站点配置
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-12
 url: p/site-configuration/
 description: 设置根配置、语言、站点说明和主题覆盖文件。
 weight: 2
@@ -155,7 +155,7 @@ palette = "site/theme.css"
 
 ## 最小首页艺术包
 
-从 `content/_res/home-art/minimal/` 复制最小示例，修改各语言 `index*.md` 的标题、说明和正文，再修改包内模板与 CSS。首页将引用改为 `{{</* home-art "/_res/home-art/<包名>" */>}}`。最小示例无 JS；默认首页仍使用风场。
+从 `content/_res/home-art/minimal/` 复制最小示例，修改各语言 `index*.md` 的标题、说明和正文，再修改包内模板与 CSS。首页将引用改为 `{{</* home-art "/_res/home-art/<包名>" */>}}`。最小示例无 JS。参考首页使用 `page-home` 和风场，保留了[汇总图片墙](/zh/p/collection-lists/#汇总图片墙)的参数注释。启用图片墙时，将 layout 改为 `page-collection-wall-all`，取消 `params.aggregate` 和 `params.wall` 的注释，并移除首页的 `home-art` 短代码。
 
 `scene.html.tmpl` 用 `.Params.heading`、`.Params.description` 读取文字，用 `.Content` 输出 Markdown 正文。`style.css` 使用现有的 `--fg`、`--bg` 和 `--muted` 配色变量，支持浅色、深色与从右向左排版。
 

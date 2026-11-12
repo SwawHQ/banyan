@@ -1,0 +1,77 @@
+{{- $row := .row -}}
+{{- $source := .source -}}
+{{- $config := .config -}}
+{{- $directory := .directory -}}
+{{- $index := .index -}}
+{{- $folder := eq $row.kind "section" -}}
+{{- $item := $row.node -}}
+{{- $href := partial "feature-browse/collection/entry-href.html" (dict "row" $row "source" $source) -}}
+{{- $id := printf "wall-info-%s" (md5 $item.Path) -}}
+{{- $media := dict -}}
+{{- if and (not $folder) (isset $item.Params "wall") -}}{{- $media = $item.Params.wall -}}{{- end -}}
+{{- if not (reflect.IsMap $media) -}}{{- errorf "Wall item %s params.wall must be a map." $item.Path -}}{{- $media = dict -}}{{- end -}}
+{{- range $key, $value := $media -}}
+  {{- if not (in (slice "cover" "alt" "kind") $key) -}}
+    {{- errorf "Wall item %s: unsupported params.wall.%s." $item.Path $key -}}
+  {{- else if ne (printf "%T" $value) "string" -}}
+    {{- errorf "Wall item %s: params.wall.%s must be a string." $item.Path $key -}}
+  {{- end -}}
+{{- end -}}
+{{- $cover := false -}}
+{{- with $media.cover -}}
+  {{- $cover = $item.Resources.Get . -}}
+  {{- if not $cover -}}{{- errorf "Wall cover %q not found in %s." . $item.Path -}}{{- end -}}
+{{- else -}}
+  {{- $cover = $item.Resources.GetMatch "cover.*" -}}
+{{- end -}}
+{{- if $cover -}}
+  {{- if or (ne $cover.ResourceType "image") (not (in (slice "jpeg" "png" "webp" "gif" "tiff" "bmp") $cover.MediaType.SubType)) -}}
+    {{- errorf "Wall cover in %s must be a raster image." $item.Path -}}{{- $cover = false -}}
+  {{- end -}}
+{{- end -}}
+{{- $kind := $media.kind | default "image" -}}
+{{- if not (in (slice "image" "video") $kind) -}}{{- errorf "Wall item %s: kind must be image or video." $item.Path -}}{{- end -}}
+<article class="wall-card" data-wall-kind="{{ $row.kind }}" data-wall-date="{{ $item.Date.Unix }}">
+  <a class="wall-cover" href="{{ $href }}" aria-label="{{ $item.Title }}">
+  {{- if $cover -}}
+    {{- $pathInfo := partial "system-assets/page-output-path.html" $item -}}
+    {{- $image := $cover.Fit "960x960 webp q82" -}}
+    {{- $image = $image | resources.Copy (path.Join $pathInfo.targetDir $image.Name) | fingerprint -}}
+    <img src="{{ $image.RelPermalink }}" width="{{ $image.Width }}" height="{{ $image.Height }}" alt="{{ $media.alt | default $item.Title }}" decoding="async" {{ if lt $index 4 }}loading="eager"{{ else }}loading="lazy"{{ end }}>
+  {{- else -}}
+    {{- $text := "" -}}
+    {{- if $folder -}}{{- $text = $item.Description -}}{{- end -}}
+    <span class="wall-text-cover">
+    {{- if and $text (ne $text $item.Title) -}}{{ $text }}
+    {{- else -}}
+      {{- $icon := resources.Get "site/favicon.link.svg" | default (resources.Get "site/favicon.ico") -}}
+      {{- if not $icon -}}{{- errorf "Wall: provide assets/site/favicon.link.svg or assets/site/favicon.ico for missing covers." -}}
+      {{- else -}}{{- $icon = $icon | fingerprint -}}<img class="wall-placeholder-icon" src="{{ $icon.RelPermalink }}" width="32" height="32" alt="" decoding="async">{{- end -}}
+    {{- end -}}
+    </span>
+  {{- end -}}
+  {{- if eq $kind "video" }}<span class="wall-video" role="img" aria-label="{{ i18n "wall_video" }}"></span>{{ end -}}
+  {{- if and $folder (ne $config.details "title") }}<span class="wall-folder-marker">{{ partial "system-ui/icon/render.html" (dict "name" $row.icon "label" (i18n "wall_folder")) }}</span>{{ end -}}
+  </a>
+  <button class="wall-detail" type="button" popovertarget="{{ $id }}" aria-controls="{{ $id }}" aria-expanded="false" aria-label="{{ i18n "wall_details" }}: {{ $item.Title }}">
+    {{- if eq $config.details "title" -}}
+    {{- if $folder }}{{ partial "system-ui/icon/render.html" (dict "name" $row.icon "label" (i18n "wall_folder")) }}{{ end -}}
+    <span class="wall-card-title">{{ $item.Title }}</span>
+    {{- else -}}<span class="wall-dots" aria-hidden="true"></span>{{- end -}}
+  </button>
+  <section class="wall-info" id="{{ $id }}" popover aria-label="{{ $item.Title }}">
+    <button class="wall-info-close" type="button" aria-label="{{ i18n "wall_close" }}">×</button>
+    <h2><a href="{{ $href }}">{{ $item.Title }}</a></h2>
+    {{- if $folder -}}
+    {{- with $item.Description }}<p class="wall-description">{{ . }}</p>{{ end -}}
+    <p class="wall-categories">{{ i18n "wall_folder_count" (dict "Count" (int $row.count_text)) }}</p>
+    {{- else -}}
+    <p class="wall-categories">
+    {{- $parents := slice $item.Parent -}}
+    {{- range index $directory.incoming $item.Path -}}{{- $parents = $parents | append . -}}{{- end -}}
+    {{- range uniq $parents -}}<span>{{ .LinkTitle | default .Title }}</span>{{- end -}}
+    </p>
+    {{- if not $item.Date.IsZero }}<time datetime="{{ $item.Date.Format "2006-01-02" }}">{{ $item.Date.Format "2006-01-02" }}</time>{{ end -}}
+    {{- end -}}
+  </section>
+</article>

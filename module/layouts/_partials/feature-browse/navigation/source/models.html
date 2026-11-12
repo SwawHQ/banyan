@@ -2,7 +2,9 @@
 {{- $entries := slice -}}
 {{- $columnsByHref := dict -}}
 {{- $directory := partialCached "feature-browse/directory/index.html" $ctx.Site $ctx.Language.Lang -}}
-{{- range $page := sort $directory.sections "RelPermalink" -}}
+{{- $pages := $directory.sections -}}
+{{- if eq $ctx.Site.Home.Layout "page-collection-wall-all" -}}{{- $pages = $pages | append $ctx.Site.Home -}}{{- end -}}
+{{- range $page := sort $pages "RelPermalink" -}}
   {{- if partial "feature-browse/is-rendered-html.html" $page -}}
     {{- $config := partial "feature-browse/collection/config.html" (dict "page" $page) -}}
     {{- if not $config.sortable -}}{{- continue -}}{{- end -}}
