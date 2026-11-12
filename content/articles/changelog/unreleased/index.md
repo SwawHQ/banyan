@@ -291,9 +291,11 @@ lastmod: 2026-11-11
   to reference a hidden leaf bundle under `content/_res/home-art/<theme>/`.
   Translated art pages own scene copy and parameters; `params.styles` and
   `params.scripts` select CSS and JS from the bundle. Wind scenes use
-  `home-art/wind/scene`; the host homepage's `params.show_navigation` controls root
-  navigation. Override `layouts/_shortcodes/home-art/wind/scene.html` to change
-  the windsock shape; the selected palette controls colors.
+  a bundle-local `scene.html.tmpl`, selected by `params.template`. Keep scene
+  calculations, HTML, CSS and JS in the bundle; new scenes need no Module changes.
+  Copied bundles use their own resource publication paths.
+  Templates place Markdown body content with `.Content`. The host homepage's
+  `params.show_navigation` controls root navigation; the palette controls colors.
   Favicon sources use `assets/site/`. Prefer `favicon.link.svg` over `favicon.link.ico`
   and emit a fingerprinted icon link only for the selected file. Publish `favicon.ico`
   separately at its fixed root URL, without an automatic icon link. At least one
@@ -341,10 +343,16 @@ lastmod: 2026-11-11
   `item-control`; custom palettes use `--item-*` color roles. List field
   widths use `--item-*-inline` and `--item-field-gap`.
 
+## Reference site examples
+
+- Add a `minimal` home art bundle with English, Chinese and Arabic text, Markdown bodies, a small HTML template and CSS. No JS is needed. The default home still uses wind. This example requires no migration.
+
 ## Upgrade migration
 
+- Sites using art bundles → `content/_res/home-art/<theme>/index*.md` and bundle templates → set `params.template: scene.html.tmpl`, remove scene shortcodes from the body, and move scene HTML and calculations into that template. Use `htmlEscape` for text and HTML attribute values; output `.Content` where body content belongs. Wind sites can copy the current reference bundle template.
+
 - Sites using the wind art bundle → `content/_res/home-art/<theme>/index*.md` → rename `params.home_signals` to `params.signals`, `params.home_signal_*` to `params.signal_*`, and `params.home_wind_field_start_offset_rem` to `params.wind_field_start_offset_rem`. Signal objects use `name`, `url` and `primary`; merge `title` or `label` into `name`, and rename `href` to `url`.
-- Sites with custom wind styles or template overrides → art bundle CSS/JS, `assets/site/theme*.css` and `layouts/` → replace wind classes `.page-home` and `.page-home__*`, variables `--page-home-*` and the `data-page-home-signal` marker with the current reference bundle's `home-art-wind` names. Use `--home-art-wind-field-*` for the old `--page-home-wind-field-*` variables, and `--home-art-wind-signal-*` for `--signal-*`. Move the model override to `layouts/_partials/feature-home-art/wind/model.html`.
+- Sites with custom wind styles or template overrides → art bundle CSS/JS, `assets/site/theme*.css` and `layouts/` → replace wind classes `.page-home` and `.page-home__*`, variables `--page-home-*` and the `data-page-home-signal` marker with the current reference bundle's `home-art-wind` names. Use `--home-art-wind-field-*` for the old `--page-home-wind-field-*` variables, and `--home-art-wind-signal-*` for `--signal-*`. Merge custom shortcode and model code into the bundle's `scene.html.tmpl` and remove the old overrides.
 - Sites overriding page actions → `layouts/` and `assets/js/` → use `pages/back.js` for back links and `pages/reload.js` for reload links.
 - Sites overriding breadcrumb components → `layouts/`, `assets/js/` and custom CSS → match the current Module's `breadcrumb-*` scripts and `.breadcrumb-navigation` and `.breadcrumb-column` styles. Article directory chains use `.document-meta__row--breadcrumb` and `.document-meta__breadcrumb`. Use `feature-browse/navigation/breadcrumb/` for model overrides and `system-metadata/seo/breadcrumb-list.html` for the SEO template override. Column markers are `data-breadcrumb-column`, `data-breadcrumb-column-path` and `data-breadcrumb-collection-href`; sorting and failure markers are `data-breadcrumb-sort-toggle` and `data-breadcrumb-failed`; loading markers are `data-breadcrumb-pending` and `data-has-breadcrumb-columns`. Keep the `breadcrumb` value in `params.slots`.
 

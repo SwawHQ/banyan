@@ -31,7 +31,7 @@ An existing site must supply these files in its own root:
 | `assets/site/icons.toml` | Named SVG icons |
 | `assets/site/theme.css` | Complete site palette, selected by `params.appearance.palette` |
 | `assets/i18n/<language>.toml` | Interface dictionary for each enabled language |
-| `content/_res/home-art/<theme>/` | Hidden home art bundle: translated pages, CSS, JS and images |
+| `content/_res/home-art/<theme>/` | Hidden home art bundle: translated pages, template, CSS, JS and images |
 
 Copy the reference site's `assets/site/` into an existing site,
 then replace the images with its own identity and review the manifest and robots
@@ -79,9 +79,8 @@ complete manifest template; the Module reads and executes it to publish
 `assets/site/theme.css` and `assets/site/theme.high-contrast.css`; select a file with
 `params.appearance.palette`, using its path relative to `assets/`. The Module
 does not supply a default palette. Maintain the selected palette when upgrading.
-The homepage windsock is inline SVG in the `home-art/wind/scene` shortcode,
-without a separate image request. To change its shape, override
-`layouts/_shortcodes/home-art/wind/scene.html` in the site;
+The homepage windsock is inline SVG in the art bundle's `scene.html.tmpl`,
+without a separate image request. Edit that bundle template to change its shape;
 the selected CSS palette controls its colors.
 
 ## Inspect an existing site
@@ -365,6 +364,10 @@ params:
 The home page's `params.show_navigation` controls the first navigation column
 and defaults to `true`. It also applies to homes without a `home-art` shortcode.
 
+Start with `content/_res/home-art/minimal/`: copy it, edit each language's
+`index*.md`, template and CSS, then change the home's `home-art` path to the new
+bundle. It needs no JS. Use `wind/` for a complete animated example.
+
 Copy `content/_res/home-art/wind/` from the reference site. It is a hidden Hugo
 leaf bundle with `index.md`, `index.zh.md`, `index.ar.md`, `style.css` and
 `script.js`. Each home renders the selected bundle in its current language.
@@ -379,21 +382,22 @@ build:
   render: never
   publishResources: false
 params:
+  template: scene.html.tmpl
   styles: [style.css]
   scripts: [script.js]
   brand_line: Clear structure for exploratory publishing.
 ```
 
-Use `{{< home-art/wind/scene >}}` in the bundle page's body. Keep `signals`
-and scene settings in its `params`. `styles` and `scripts` select CSS and JS from
-the bundle; the framework loads them as same-origin fingerprinted external files.
+Set `params.template` to a local `.html.tmpl` resource. Keep scene calculations
+and HTML in that file, and `signals` and scene settings in `params`. `styles`
+and `scripts` select CSS and JS published as fingerprinted external files.
 
-To add an art theme, create another hidden leaf bundle and put its shortcode
-in the body. Write its HTML in `layouts/_shortcodes/`; shortcode templates read
-the bundle page's `.Page.Params` and `.Page.Resources`. The wind example uses
-`layouts/_shortcodes/home-art/wind/scene.html` and the helper
-`layouts/_partials/feature-home-art/wind/model.html`, supplied by the Module.
-Put a file at the same path in the site to override it.
+To add an art theme, copy or create a hidden leaf bundle with its template and
+resources. No scene-specific Module templates or shortcodes are needed.
+The template receives the art page: use `.Params`, `.Resources` and `.Content`.
+The wind template places Markdown body content after the scene. Resource
+templates do not auto-escape HTML: use `htmlEscape` for text and HTML attribute
+values. Rendered `.Content` can be output directly.
 
 Set each language's site name in its home page's `title`, not in `hugo.toml`.
 The shared PWA manifest uses the default language set by `defaultContentLanguage`.

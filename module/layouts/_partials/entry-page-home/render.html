@@ -1,0 +1,19 @@
+{{- /* Register the embedded page dependency before executing its resource template. */ -}}
+{{- $content := .Content -}}
+{{- $src := .Params.template -}}
+{{- if ne (printf "%T" $src) "string" -}}
+  {{- errorf "Build failed: home-art %s params.template must name a local .html.tmpl resource." .File.Path -}}
+{{- else if or (hasPrefix $src "/") (ne (path.Clean $src) $src) (in (split $src "/") "..") (findRE `[\\:?#]` $src) (not (strings.HasSuffix $src ".html.tmpl")) -}}
+  {{- errorf "Build failed: home-art %s params.template must name a local .html.tmpl resource." .File.Path -}}
+{{- else -}}
+  {{- with $source := .Resources.Get $src -}}
+    {{- $target := printf "home-art-render/%s/%s/%s.html" $.Language.Lang (strings.TrimPrefix "/" $.Path) (sha256 $src) -}}
+    {{- /* Preview must rerun template resource registration after a page rebuild. */ -}}
+    {{- if hugo.IsServer -}}{{- $target = printf "%s.%d" $target now.UnixNano -}}{{- end -}}
+    {{- /* ExecuteAsTemplate uses text templates; bundle authors escape HTML values. */ -}}
+    {{- $rendered := resources.ExecuteAsTemplate $target $ $source -}}
+    {{- $rendered.Content | safeHTML -}}
+  {{- else -}}
+    {{- errorf "Build failed: home-art %s cannot resolve template resource %q." .File.Path $src -}}
+  {{- end -}}
+{{- end -}}

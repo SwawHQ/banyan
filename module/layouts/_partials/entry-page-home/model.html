@@ -1,4 +1,4 @@
-{{- /* Render the art before the head so its shortcode can register resources. */ -}}
+{{- /* Render the art before the head so its template can register resources. */ -}}
 {{- if .HasShortcode "home-art" -}}{{- $content := .Content -}}{{- end -}}
 {{- $art := .Store.Get "homeArt" -}}
 {{- $assets := dict -}}

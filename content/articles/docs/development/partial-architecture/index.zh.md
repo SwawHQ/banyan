@@ -57,7 +57,6 @@ _partials/
 │
 ├─ feature-browse/
 ├─ feature-document/
-├─ feature-home-art/
 ├─ feature-preferences/
 ├─ feature-prefetch-debug/
 ├─ feature-site-status/
@@ -71,7 +70,7 @@ _partials/
 
 - `feature-browse/`：集合成员、统一 row、排序、第一列入口、面包屑列、浏览来源、目录引用、URL 状态和集合内部的产品展示适配。
 - `feature-document/`：正文外壳、标题契约、辅助列的元信息与章节目录、文章 schema、正文样式和 Markdown 图片渲染。
-- `feature-home-art/`：艺术包的专用计算模板；`wind/model.html` 生成风场信号条目和场景样式。
+- `entry-page-home/render.html`：校验并执行艺术包的 `params.template`；场景专用计算与 HTML 由包内模板维护。
 - `feature-preferences/`：语言上下文与语言选项模型。外观固定为 auto、light、dark 三项，由 `feature-preferences/render.html` 提供；通用返回和重新加载行为位于 `assets/js/pages/`。
 - `feature-prefetch-debug/`：预取诊断文案校验与诊断脚本装配。
 - `feature-site-status/`：站点状态文案；`site-status` 短代码输出构建信息、缓存配置、状态与原生按钮，浏览器控制器只读取页面数据。

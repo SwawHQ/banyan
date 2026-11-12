@@ -17,7 +17,7 @@ description: 约定页面列、列表、条目、样式类与行为标记的命�
 | 文档元信息与章节目录 | `document-aside.css`；负责 `.document-meta`、`.document-toc` 和辅助列内的列表条目适配，不属于正文组件 |
 | 正文右侧辅助列 | `page-shell.css` 控制 `.document-aside` 的尺寸与独立纵向滚动，`document-aside.css` 控制列内内容 |
 | 正文中的有序／无序列表 | `prose-lists.css`；只作用于正文 `ul/ol/li` |
-| 首页 | `layouts/page-home.html` 装配艺术包；站点艺术包维护正文、CSS、JS，`home-art/wind/scene` 输出风场 |
+| 首页 | `layouts/page-home.html` 装配艺术包；站点艺术包维护正文、模板、CSS、JS，`params.template` 选择包内模板 |
 | 区域开关 | `slot_flags`、`slotFlags`；值是布尔值，不再是 fragment 来源 |
 | 浏览来源与排序状态 | `browse/navigation-state.js`、`browse/navigation-state.contract.js` |
 | 语言和外观偏好 | `preferences/language-page.js` 仅用于选择页；`preferences/language-return.js` 与 `preferences/theme.js` 负责跨页面行为；静态选项和返回链接在模板输出 |
@@ -90,22 +90,22 @@ layout: page-collection-directory-name-only
 | `feature-browse/navigation/breadcrumb/` 与 `browse/breadcrumb-render.js` | `breadcrumb-navigation.css`：语义导航的 `display: contents`、列的待绘制状态、面包屑列头和列表适配，以及打印时的面包屑列横排 |
 | `feature-document/aside.html`、`meta.html`、`toc.html` | `document-aside.css`：元信息、章节目录及列内条目适配；列尺寸和滚动仍由 `page-shell.css` 统一控制 |
 | `feature-document/render-page.html` 与 Markdown 渲染 | 七个 `prose-*`：基础、行内、列表、引用、图片、代码、表格；所有正文页共用 |
-| `page-home.html` 与 `entry-page-home/` | 艺术包选择的 CSS，以及风场短代码生成的场景 CSS |
+| `page-home.html` 与 `entry-page-home/` | 艺术包选择的 CSS，以及风场包内模板生成的场景 CSS |
 | `_shortcodes/site-status.html`、`404.html` | `site-status.css`、`not-found.css`：各自的小型呈现规则 |
 
 `assets/css/page.css` 按“配色 → 基础与画幅 → 共享列表 → 功能适配”声明 `@import`，`system-ui/page-styles.html` 用 `css.Build` 构建。选中的配色通过 `importContext` 注入；正文入口 `assets/css/prose.css` 同样管理七个 `prose-*` 的导入顺序。共享文件定义组件默认外观，面包屑列和辅助列的特有规则放在各自文件。公共列表使用 `list-*` 与 `item-*`，供第一列、面包屑列、主列表、语言、外观和章节目录复用。`collection` 保留为集合模型、配置、来源与排序的领域名称。
 
-源码文件表达维护职责，发布文件表达缓存边界。`baseof.html` 通过上述入口装配公共 `page.css`；`feature-document/styles.html` 将七个 `prose-*` 源码合并成一个 `prose.css`，由确实输出 `.prose` 的页面加载；`site-status.css` 与 `not-found.css` 虽保留独立源码归属，也进入 `page.css`。首页只加载所引用艺术包声明的样式和脚本；风场短代码另生成对应语言的场景 CSS。资源数量由实际页面和艺术包决定。
+源码文件表达维护职责，发布文件表达缓存边界。`baseof.html` 通过上述入口装配公共 `page.css`；`feature-document/styles.html` 将七个 `prose-*` 源码合并成一个 `prose.css`，由确实输出 `.prose` 的页面加载；`site-status.css` 与 `not-found.css` 虽保留独立源码归属，也进入 `page.css`。首页只加载所引用艺术包声明的样式和脚本；风场包内模板另生成对应语言的场景 CSS。资源数量由实际页面和艺术包决定。
 
 ## 首页命名与资源
 
 `page-home.html` 是宿主首页，负责正文和艺术包资源。`entry-page-home/model.html` 返回 `art`、`assets` 和 `show_navigation`；`params.show_navigation` 只控制首页第一列。
 
-风场正文位于站点 `content/_res/home-art/wind/index*.md`，调用 `home-art/wind/scene`。CSS、JS 位于同一叶子包，通过 `params.styles` 和 `params.scripts` 选择。资源带指纹外链发布，资源节点使用 `data-home-art`，宿主使用 `data-home-art-source` 标识来源。
+风场正文和参数位于站点 `content/_res/home-art/wind/index*.md`，通过 `params.template: scene.html.tmpl` 选择包内模板。CSS、JS 位于同一叶子包，通过 `params.styles` 和 `params.scripts` 选择。资源带指纹外链发布，资源节点使用 `data-home-art`，宿主使用 `data-home-art-source` 标识来源。
 
-风场使用 `.home-art-wind`、`.home-art-wind__*`、`--home-art-wind-*` 和 `data-home-art-wind-signal`。`feature-home-art/wind/model.html` 从艺术页参数生成 `signals` 和 `sceneCSS`；短代码为当前语言发布 `css/home-art/wind/scene.*.css`。`brand_line`、`signals`、`signal_*` 和 `wind_field_start_offset_rem` 都属于艺术页。
+风场使用 `.home-art-wind`、`.home-art-wind__*`、`--home-art-wind-*` 和 `data-home-art-wind-signal`。包内 `scene.html.tmpl` 从艺术页参数计算信号和场景样式，为当前语言发布 `css/home-art/<包名>/scene.*.css`。`brand_line`、`signals`、`signal_*` 和 `wind_field_start_offset_rem` 都属于艺术页。
 
-风向袋 SVG 内联于 `layouts/_shortcodes/home-art/wind/scene.html`。站点可覆写该模板修改形状；CSS 和交互修改留在艺术包，无需替换宿主首页。
+风向袋 SVG 内联于艺术包的 `scene.html.tmpl`。修改形状、计算、CSS 和交互均在艺术包内完成，无需替换宿主首页或修改 Module。
 
 ## 站点状态模块
 

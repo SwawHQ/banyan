@@ -2,6 +2,7 @@
 title: Wind home
 
 params:
+  template: scene.html.tmpl
   styles: [style.css]
   scripts: [script.js]
   brand_line: Clear structure for exploratory publishing.
@@ -25,5 +26,3 @@ params:
     - name: GitHub
       url: https://github.com/SwawHQ/banyan
 ---
-
-{{< home-art/wind/scene >}}

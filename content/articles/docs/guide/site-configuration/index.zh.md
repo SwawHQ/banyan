@@ -153,6 +153,12 @@ palette = "site/theme.css"
 高亮行及其背景；固定的混色比例不能保证任意颜色组合都清晰。
 升级主题时，将新增角色补入站点的配色副本，并对照上游检查已有角色。
 
+## 最小首页艺术包
+
+从 `content/_res/home-art/minimal/` 复制最小示例，修改各语言 `index*.md` 的标题、说明和正文，再修改包内模板与 CSS。首页将引用改为 `{{</* home-art "/_res/home-art/<包名>" */>}}`。最小示例无 JS；默认首页仍使用风场。
+
+`scene.html.tmpl` 用 `.Params.heading`、`.Params.description` 读取文字，用 `.Content` 输出 Markdown 正文。`style.css` 使用现有的 `--fg`、`--bg` 和 `--muted` 配色变量，支持浅色、深色与从右向左排版。
+
 ## 首页信号
 
 宿主首页 `content/_index*.md` 使用 `layout: page-home`，保存标题、说明、导航图标和权重。`params.show_navigation` 控制第一列导航，默认为 `true`。首页正文引用艺术包：
@@ -163,12 +169,15 @@ palette = "site/theme.css"
 
 站点在 `content/_res/home-art/wind/` 维护隐藏叶子包。各语言 `index*.md` 保存场景正文与参数，同目录的 CSS、JS 通过 `params.styles`、`params.scripts` 选择并以带指纹的外链发布。共用 `content/_res/_index.md` 的 `build` cascade 关闭这些内部资源页的 HTML、导航和站点发现。
 
-例如艺术页的 front matter 和正文：
+艺术包的 `params.template` 选择包内模板。模板以艺术页为上下文，通过 `.Params` 读取参数、`.Resources` 读取资源、`.Content` 放置 Markdown 正文。风场模板将正文放在场景后。
+
+例如艺术页的 front matter：
 
 ```yaml
 ---
 title: 风场首页
 params:
+  template: scene.html.tmpl
   styles: [style.css]
   scripts: [script.js]
   brand_line: 为探索型发布提供清晰结构。
@@ -180,8 +189,6 @@ params:
     - name: GitHub
       url: https://github.com/SwawHQ/banyan
 ---
-
-{{</* home-art/wind/scene */>}}
 ```
 
 字符串显示为可选中的文字；对象的 `name` 为显示名称，`url` 提供链接。首次点击选中并暂停信号，再次点击链接才跳转。外部链接在新标签打开。`primary: true` 使该项漂移周期加倍。
@@ -204,7 +211,7 @@ params:
 已有站点接入前先补齐[图标和 manifest 清单](/zh/p/web-app/)；`assets/site/` 中的其它品牌素材为可选文件。
 站点直接维护 `assets/site/manifest.webmanifest.tmpl`；Module 只读取并执行，发布为 `/site/site.<hash>.webmanifest`。
 图像按指纹 URL 发布到 `/site/*`。完整配色也由站点维护，参考文件位于根 `assets/site/`。
-风场的 CSS、JS 由站点艺术包提供；风向袋 SVG 由 `layouts/_shortcodes/home-art/wind/scene.html` 内联输出。修改形状时覆写该短代码模板；颜色继续由所选 CSS 调色板控制。
+风场的计算、HTML 和风向袋 SVG 位于艺术包的 `scene.html.tmpl`，CSS、JS 也在包内。复制艺术包并修改包内文件，再把首页 `home-art` 的路径改为新包即可；无需修改 Module。模板通过 Hugo `resources.ExecuteAsTemplate` 执行；它不自动转义 HTML，文字与 HTML 属性值须使用 `htmlEscape`，已渲染的 `.Content` 可直接输出。颜色继续由所选 CSS 调色板控制。
 发布的主题只包含 Banyan 仓库的 `module/`，不包含演示内容和开发工具。文档与版本说明在 Banyan 仓库的 `content/articles/docs/` 和 `content/articles/changelog/` 维护，随参考站点发布到 `https://banyan.swaw.com/`。
 
 Banyan 仓库根 `hugo.toml` 配置最小演示站，根 `go.mod` 将主题依赖替换为 `./module`。Swaw 本地开发通过 `../banyan/module` 使用同一源码；发布部署时需使用已发布的固定 Module 版本。

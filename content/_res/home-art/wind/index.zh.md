@@ -2,6 +2,7 @@
 title: 风场首页
 
 params:
+  template: scene.html.tmpl
   styles: [style.css]
   scripts: [script.js]
   brand_line: 为探索型发布提供清晰结构。
@@ -25,5 +26,3 @@ params:
     - name: GitHub
       url: https://github.com/SwawHQ/banyan
 ---
-
-{{< home-art/wind/scene >}}

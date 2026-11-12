@@ -40,4 +40,4 @@ Manifest 与 SW 缓存独立。SW 设置见[交付与缓存](/zh/p/delivery/)。
 同目录中的其它品牌素材为可选文件，不会自动成为分享图。
 
 配色文件由站点维护，参考配色位于根 `assets/site/`。
-风场艺术包的 `home-art/wind/scene` 短代码内联风向袋 SVG，不发起独立图片请求。修改形状时覆写站点的 `layouts/_shortcodes/home-art/wind/scene.html`；样式与脚本放在 `content/_res/home-art/wind/`，颜色继续由所选 CSS 调色板控制。
+风场艺术包的 `content/_res/home-art/wind/scene.html.tmpl` 内联风向袋 SVG，不发起独立图片请求。直接修改包内模板、样式和脚本即可定制场景；颜色继续由所选 CSS 调色板控制。

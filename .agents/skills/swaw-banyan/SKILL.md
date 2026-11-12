@@ -42,7 +42,8 @@ Powered by 使用 `page-article-norss`；公共模板按 `site-status` 和 `page
 各语言设置页的 `params.language_icon` 提供该语言选项的图标；`params.icon` 提供设置页导航入口的图标。
 外观设置页的 `params.appearance_icons` 分别声明 `auto`、`light`、`dark` 选项图标，沿用 SVG 名称、文字和图片格式。
 各语言的站名和默认描述由对应首页的 `title`、`description` 提供；不在 `hugo.toml` 重复设置站名。页面可用自己的 `description` 覆盖默认描述。
-`page-home` 宿主首页的 `params.show_navigation` 控制第一列导航，默认为 `true`；没有引用艺术包时也适用。首页正文用 `{{< home-art "/_res/home-art/wind" >}}` 引用艺术页。站点在 `content/_res/home-art/<主题>/` 维护隐藏叶子包：各语言的 `index.md` 保存正文和 `params`，CSS、JS 放在同一包内。艺术包的 `params.styles` 和 `params.scripts` 选择指纹外链资源。风场正文使用 `{{< home-art/wind/scene >}}`，文字和场景参数也放在该页的 `params`。Module 提供短代码模板与计算模板；站点可用 `layouts` 下的同路径文件覆写。
+`page-home` 宿主首页的 `params.show_navigation` 控制第一列导航，默认为 `true`；没有引用艺术包时也适用。首页正文用 `{{< home-art "/_res/home-art/wind" >}}` 引用艺术页。站点在 `content/_res/home-art/<主题>/` 维护隐藏叶子包：各语言的 `index.md` 保存正文和 `params`，CSS、JS 放在同一包内。艺术包的 `params.styles` 和 `params.scripts` 选择指纹外链资源。艺术包的 `params.template` 选择包内 `scene.html.tmpl`；场景计算、HTML、CSS 和 JS 均随包维护，新增场景无需修改 Module。模板上下文是艺术页，使用 `.Params`、`.Resources` 和 `.Content`；风场把 Markdown 正文放在场景后。资源模板不自动转义 HTML，文字和 HTML 属性值使用 `htmlEscape`。
+最小示例位于 `content/_res/home-art/minimal/`，提供英、中、阿三语言、模板和 CSS，无需 JS。复制包、修改包内文件，再更新首页 `home-art` 引用即可；默认首页仍使用风场。
 第一列默认显示首页和已发布的直属子页。内部页放在 `content/_res/`，公开 URL 使用 `_res/…`；共用的 `_index.md` 统一隐藏其导航和站点发现入口。
 界面字典放在 `assets/i18n/`，由项目 `hugo.toml` 挂载到 Hugo 的 `i18n`。
 

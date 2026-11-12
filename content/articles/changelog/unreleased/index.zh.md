@@ -225,8 +225,7 @@ lastmod: 2026-11-11
   `site/theme.high-contrast.css` 的选中与悬停使用同一高对比底色，文字和单色图标同步反色，选中名称使用 700 粗体，条目采用直角。
   `page-home` 首页正文通过 `home-art` 引用 `content/_res/home-art/<主题>/` 下的隐藏叶子包。
   各语言艺术页维护场景文字和参数，包内 CSS、JS 由 `params.styles` 和 `params.scripts` 选择；
-  风场正文使用 `home-art/wind/scene`，宿主首页的 `params.show_navigation` 控制第一列导航。
-  自定义风向袋形状时覆写 `layouts/_shortcodes/home-art/wind/scene.html`；颜色由所选配色控制。
+  艺术包通过 `params.template` 选择包内 `scene.html.tmpl`，场景计算、HTML、CSS 和 JS 随包维护，新增场景无需修改 Module；复制后的包使用自己的资源发布路径。模板可通过 `.Content` 放置 Markdown 正文。宿主首页的 `params.show_navigation` 控制第一列导航；颜色由所选配色控制。
   favicon 源统一放在 `assets/site/`；`favicon.link.svg` 优先于 `favicon.link.ico`，
   只为选中的文件输出指纹图标链接。`favicon.ico` 独立发布为固定根地址，不自动追加链接。
   至少需要一种 favicon；四个 PWA PNG 和 manifest 模板仍必填。
@@ -257,10 +256,16 @@ lastmod: 2026-11-11
 - 列表显示日期和日期排序先读取 `lastmod`，再读取 `date`。
   Git 提交和文件系统时间不改变内容日期。
 
+## 参考站示例
+
+- 新增 `minimal` 首页艺术包，提供英文、中文、阿拉伯文参数与 Markdown 正文，以及最小 HTML 模板和 CSS；无需 JS。默认首页仍使用风场。新增示例无必需迁移。
+
 ## 升级迁移
 
+- 使用艺术包的站点 → `content/_res/home-art/<主题>/index*.md` 和包内模板 → 设置 `params.template: scene.html.tmpl`，移除正文中的场景短代码；将场景 HTML 和计算迁入该模板。文字及 HTML 属性值使用 `htmlEscape`；需要正文时由模板输出 `.Content`。风场可复制当前参考包的模板。
+
 - 使用风场艺术包的站点 → `content/_res/home-art/<主题>/index*.md` → 将 `params.home_signals` 改为 `params.signals`，`params.home_signal_*` 改为 `params.signal_*`，`params.home_wind_field_start_offset_rem` 改为 `params.wind_field_start_offset_rem`；信号对象使用 `name`、`url`、`primary`，将 `title` 或 `label` 合并到 `name`，将 `href` 改为 `url`。
-- 自行维护风场样式或模板覆写的站点 → 艺术包 CSS/JS、`assets/site/theme*.css` 和 `layouts/` → 将风场类名 `.page-home`、`.page-home__*`、变量 `--page-home-*` 和行为标记 `data-page-home-signal` 改用当前参考艺术包的 `home-art-wind` 名称；其中 `--page-home-wind-field-*` 改为 `--home-art-wind-field-*`，`--signal-*` 改为 `--home-art-wind-signal-*`。计算模板覆写移至 `layouts/_partials/feature-home-art/wind/model.html`。
+- 自行维护风场样式或模板覆写的站点 → 艺术包 CSS/JS、`assets/site/theme*.css` 和 `layouts/` → 将风场类名 `.page-home`、`.page-home__*`、变量 `--page-home-*` 和行为标记 `data-page-home-signal` 改用当前参考艺术包的 `home-art-wind` 名称；其中 `--page-home-wind-field-*` 改为 `--home-art-wind-field-*`，`--signal-*` 改为 `--home-art-wind-signal-*`。将专用短代码与计算模板中的定制合并到艺术包的 `scene.html.tmpl`，删除旧覆写。
 - 自行覆写页面动作的站点 → `layouts/`、`assets/js/` → 返回脚本改用 `pages/back.js`，重载脚本改用 `pages/reload.js`。
 - 自行覆写面包屑组件的站点 → `layouts/`、`assets/js/`、自定义 CSS → 同步当前 Module 的 `breadcrumb-*` 脚本与 `.breadcrumb-navigation`、`.breadcrumb-column` 样式；文章目录链样式使用 `.document-meta__row--breadcrumb`、`.document-meta__breadcrumb`。构建模型覆写使用 `feature-browse/navigation/breadcrumb/`，SEO 模板覆写使用 `system-metadata/seo/breadcrumb-list.html`。列标记使用 `data-breadcrumb-column`、`data-breadcrumb-column-path`、`data-breadcrumb-collection-href`；排序和失败标记使用 `data-breadcrumb-sort-toggle`、`data-breadcrumb-failed`；加载标记使用 `data-breadcrumb-pending`、`data-has-breadcrumb-columns`。`params.slots` 中的 `breadcrumb` 无需修改。
 

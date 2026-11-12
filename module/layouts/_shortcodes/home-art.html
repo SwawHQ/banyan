@@ -24,7 +24,7 @@
           {{- else -}}
             {{- $.Page.Store.Set "homeArtInvocation" $invocation -}}
             {{- $.Page.Store.Set "homeArt" $art -}}
-            {{- $art.Content -}}
+            {{- partial "entry-page-home/render.html" $art -}}
           {{- end -}}
         {{- end -}}
       {{- else -}}

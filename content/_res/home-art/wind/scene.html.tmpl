@@ -70,4 +70,56 @@
 {{- $items = $items | append (dict "name" $signalName "url" $signalURL "isExternalURL" $isExternalSignalURL "classes" (delimit $signalClasses " ")) -}}
 {{- $rules = $rules | append (printf ".home-art-wind__signal:nth-child(%d){--home-art-wind-signal-lift:%s;--home-art-wind-signal-duration:%ds;--home-art-wind-signal-delay:-%ds}" (add $index 1) $signalLift $signalDuration $delay) -}}
 {{- end -}}
-{{- return (dict "signals" $items "sceneCSS" (delimit $rules "")) -}}
+
+{{- $home := .Site.Home -}}
+
+{{- with (delimit $rules "") -}}
+  {{- $target := printf "css/%s/scene.%s.css" (strings.TrimPrefix "/_res/" $.Path) $home.Language.Lang -}}
+  {{- $sceneCSS := resources.FromString $target . -}}
+  {{- $sceneCSS = partial "system-assets/process-css.html" (dict "resource" $sceneCSS) -}}
+  {{- $home.Store.SetInMap "homeArtStyles" $target $sceneCSS -}}
+{{- end -}}
+<section class="home-art-wind" data-home-art-style="wind" aria-labelledby="home-art-wind-title">
+  <div class="home-art-wind__anchor">
+    <h1 id="home-art-wind-title" class="home-art-wind__anchor-title">{{ $home.Title | htmlEscape }}</h1>
+    {{- with .Params.brand_line }}
+    <p class="home-art-wind__anchor-line">{{ . | htmlEscape }}</p>
+    {{- end }}
+  </div>
+  <div class="home-art-wind__scene">
+    <span class="home-art-wind__horizon" aria-hidden="true">
+      <svg class="home-art-wind__horizon-arc" viewBox="0 0 100 6" preserveAspectRatio="none" focusable="false">
+        <path d="M0 4.6 C 28 1.8 72 1.8 100 4.6"></path>
+      </svg>
+    </span>
+    {{- with $items }}
+    <ul class="home-art-wind__signals">
+      {{- range . }}
+      {{- $signal := . -}}
+      <li class="{{ $signal.classes }}">
+        {{- with $signal.url -}}
+        {{- $url := urls.Parse (replaceRE `%25([0-9A-Fa-f]{2})` `%$1` (replace . "%" "%25")) -}}
+        <a href="{{ $url.String | htmlEscape }}"{{ if $signal.isExternalURL }} target="_blank" rel="noopener noreferrer"{{ end }} data-home-art-wind-signal>{{ $signal.name | htmlEscape }}</a>
+        {{- else -}}
+        <button data-home-art-wind-signal>{{ $signal.name | htmlEscape }}</button>
+        {{- end -}}
+      </li>
+      {{- end }}
+    </ul>
+    {{- end }}
+    <svg class="home-art-wind__windsock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" focusable="false">
+      <defs>
+        <clipPath id="home-art-wind-windsock-sock-clip">
+          <rect x="128" y="80" width="840" height="410"/>
+        </clipPath>
+      </defs>
+      <g class="home-art-wind__windsock-sock" clip-path="url(#home-art-wind-windsock-sock-clip)">
+        <path class="home-art-wind__windsock-body" d="M921 343c-19 25-56 27-84 34-106 26-219 40-327 58-67 11-135 24-202 36l-169-144v581l-15 16H94l-10-16V195c0-12 11-18 23-18 14-1 30 6 31 20l2 31L321 106l27-6c23 5 47 9 70 14 101 20 202 40 303 60 45 9 90 17 135 26 25 5 57 7 73 31 18 27 12 86-7 111z"/>
+        <path class="home-art-wind__windsock-stripes" d="M268 170L135 283l136 122-2-235zm65-41s-39-6-39 166c0 0 5 150 39 150 0 0 41 1 41-150 0 0-3-166-41-166zM643 213s-21-56-162-58c0 0 58 93 8 266 0 0 123 6 154-64 0 0 35-70 0-144zm230 29c-20-32-66-35-101-34 0 0 23 76-2 152 1-2 69-13 77-17 35-20 47-67 26-101z"/>
+      </g>
+      <path class="home-art-wind__windsock-pole" d="M139 327v581l-15 16H94l-10-16V195c0-12 11-18 23-18 14-1 30 6 31 20l2 31z"/>
+    </svg>
+  </div>
+</section>
+
+{{ .Content }}

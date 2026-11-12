@@ -2,6 +2,7 @@
 title: واجهة الرياح
 
 params:
+  template: scene.html.tmpl
   styles: [style.css]
   scripts: [script.js]
   brand_line: بنية واضحة لاكتشاف المحتوى ونشره.
@@ -20,5 +21,3 @@ params:
     - name: GitHub
       url: https://github.com/SwawHQ/banyan
 ---
-
-{{< home-art/wind/scene >}}

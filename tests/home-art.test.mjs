@@ -31,9 +31,9 @@ function artPage(title,params,body,extra='') {
   return '---\ntitle: '+JSON.stringify(title)+'\n'+extra+'params:\n'+params+'---\n\n'+body+'\n';
 }
 function windPage(index,prefix) {
-  return artPage('Art source '+index,'  styles: [style.css]\n  scripts: [script.js]\n'+
+  return artPage('Art source '+index,'  template: scene.html.tmpl\n  styles: [style.css]\n  scripts: [script.js]\n'+
     '  brand_line: "wind line '+index+'"\n  signal_drift_seconds: 80\n  signals:\n'+
-    '    - name: "wind signal '+index+'"\n      url: /'+prefix+'about/\n      primary: true\n','{{< home-art/wind/scene >}}');
+    '    - name: "wind signal '+index+'"\n      url: /'+prefix+'about/\n      primary: true\n','');
 }
 function prepare(name) {
   const source=path.join(work,name);fixtureSiteFiles(source);
@@ -90,16 +90,17 @@ test('home body selects a translated hidden bundle while root identity stays int
     for(const name of ['index.xml','llms.txt'])assert.equal(fs.readFileSync(path.join(output,prefix,name),'utf8').includes('/_res/home-art/'),false);
     assert.equal(fs.readFileSync(path.join(output,prefix||'en/','sitemap.xml'),'utf8').includes('/_res/home-art/'),false);
   }
-  const files=await filesUnder(output);assert.equal(files.some(file=>/unused|\.(?:md|toml)$/.test(file)),false);
+  const files=await filesUnder(output);assert.equal(files.some(file=>/unused|\.(?:md|toml|tmpl)$/.test(file)),false);
+  assert.equal(files.some(file=>file.includes('home-art-render')),false);
   await checked(output);
 });
 
-test('a site shortcode can render a different art with no wind assets or navigation',async()=>{
+test('a bundle template can render a different art with no wind assets or navigation',async()=>{
   const source='/_res/home-art/contract',bundle=path.join(site,'content',source);
   for(const [index,[,language]] of languages.entries())
     write(path.join(bundle,'index'+suffix(language)+'.md'),artPage('Source only '+index,
-      '  styles: [style.css]\n  scripts: [script.js]\n  brand_line: '+JSON.stringify('<em>Art '+index+'</em>')+'\n',
-      '{{< home-art/contract/scene >}}'));
+      '  template: scene.html.tmpl\n  styles: [style.css]\n  scripts: [script.js]\n  brand_line: '+JSON.stringify('<em>Art '+index+'</em>')+'\n',
+      '**Art body**'));
   write(path.join(bundle,'style.css'),'@import "./tokens.css";@font-face{font-family:ArtFixture;src:url("./font.woff2") format("woff2")}.contract-scene{display:block;background-image:url("./badge.svg");color:var(--contract-ink)}');
   write(path.join(bundle,'tokens.css'),':root{--contract-ink:currentColor}');
   write(path.join(bundle,'script.js'),'import {message} from "./message.js";document.documentElement.dataset.contractArt=message;');
@@ -108,10 +109,10 @@ test('a site shortcode can render a different art with no wind assets or navigat
   write(path.join(bundle,'font.woff2'),'font fixture bytes');
   write(path.join(bundle,'badge.svg'),'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1H0Z"/></svg>');
   write(path.join(bundle,'unused.svg'),'<svg xmlns="http://www.w3.org/2000/svg"/>');
-  write(path.join(site,'layouts/_shortcodes/home-art/contract/scene.html'),'<section class="contract-scene"><h1>{{ .Page.Site.Home.Title }}</h1>'+
-    '<p class="contract-line">{{ .Page.Params.brand_line }}</p><span data-art-language="{{ .Page.Language.Lang }}"></span>'+
+  write(path.join(bundle,'scene.html.tmpl'),'<section class="contract-scene"><h1>{{ .Site.Home.Title | htmlEscape }}</h1>'+
+    '<p class="contract-line">{{ .Params.brand_line | htmlEscape }}</p><span data-art-language="{{ .Language.Lang }}"></span>'+
     '{{ partial "system-ui/icon/render.html" (dict "name" "info") }}'+
-    '{{ $image := partial "system-assets/publish-page.html" (dict "ctx" . "src" "badge.svg") }}<img src="{{ $image.src }}" alt="Art badge"></section>');
+    '{{ $image := partial "system-assets/publish-page.html" (dict "ctx" . "src" "badge.svg") }}<img src="{{ $image.src | htmlEscape }}" alt="Art badge">{{ .Content }}</section>');
   const output=passed('contract',entry(source),site,'  show_navigation: false\n');
   for(const [index,[prefix,language]] of languages.entries()) {
     const html=htmlAt(output,prefix);assert.equal(artSource(html),source);
@@ -119,6 +120,7 @@ test('a site shortcode can render a different art with no wind assets or navigat
     assert.equal(extractStartTags(html,'nav').filter(tag=>tag.includes('data-root-navigation')).length,0);
     assert.equal(extractStartTags(html,'div').filter(tag=>extractTagAttribute(tag,'class').split(/\s+/).includes('page-rail')).length,0);
     assert.ok(html.includes('Home identity '+index));
+    assert.ok(html.includes('<strong>Art body</strong>'));
     assert.ok(extractStartTags(html,'span').some(tag=>extractTagAttribute(tag,'data-art-language')===language));
     const line=extractBlocks(html,'p',tag=>extractTagAttribute(tag,'class')==='contract-line')[0].inner;
     assert.equal(decodeHtmlAttribute(line),'<em>Art '+index+'</em>');assert.doesNotMatch(line,/<em>/);
@@ -128,7 +130,7 @@ test('a site shortcode can render a different art with no wind assets or navigat
   }
   const files=(await filesUnder(output)).map(file=>path.relative(output,file).replaceAll('\\','/'));
   assert.equal(files.some(file=>/^(?:css|js)\/home-art\/wind\//.test(file)),false);
-  assert.equal(files.some(file=>/unused|\.(?:md|toml)$/.test(file)),false);
+  assert.equal(files.some(file=>/unused|\.(?:md|toml|tmpl)$/.test(file)),false);
   await checked(output);
   const style=assetsIn(htmlAt(output,''),'link','href')[0].url,css=fs.readFileSync(path.join(output,style),'utf8');
   const dependencies=[...css.matchAll(/url\(["']?([^\s)"']+)["']?\)/g)].map(match=>match[1]);
@@ -152,6 +154,8 @@ test('copied bundles keep their own resource paths across languages',async()=>{
   const source=prepare('copied'),original=path.join(source,'content/_res/home-art/wind'),copy=path.join(source,'content/_res/home-art/breeze');
   fs.cpSync(original,copy,{recursive:true});fs.appendFileSync(path.join(copy,'style.css'),'\n.breeze-fixture{--art-fixture:1}\n');
   fs.appendFileSync(path.join(copy,'script.js'),'\ndocument.documentElement.dataset.breezeArt="selected";\n');
+  const template=path.join(copy,'scene.html.tmpl');
+  write(template,fs.readFileSync(template,'utf8').replace('<section class=','<section data-copy-template="breeze" class=').replace('$horizonOffsetRem := 31.2','$horizonOffsetRem := 30.2'));
   const output=passed('mixed',language=>entry(language==='en'?wind:'/_res/home-art/breeze'),source);
   function resource(prefix,tag,attribute,extension) {
     const row=assetsIn(htmlAt(output,prefix),tag,attribute).find(item=>item.url.includes('/home-art/')&&item.url.endsWith(extension));
@@ -161,11 +165,30 @@ test('copied bundles keep their own resource paths across languages',async()=>{
     const first=resource('',tag,attribute,extension),second=resource('zh/',tag,attribute,extension);
     assert.notEqual(first.url,second.url);assert.equal(first.text.includes(marker),false);assert.ok(second.text.includes(marker));
   }
+  const sceneStyle=assetsIn(htmlAt(output,'zh/'),'link','href').find(item=>item.url.includes('/home-art/breeze/scene.'));
+  assert.ok(sceneStyle);assert.ok(fs.readFileSync(path.join(output,sceneStyle.url),'utf8').includes('--home-art-wind-field-height:24.2rem'));
+  assert.equal(htmlAt(output,'').includes('data-copy-template'),false);
   assert.equal(fs.realpathSync(original),path.join(fs.realpathSync(source),'content','_res','home-art','wind'));
   fs.rmSync(original,{recursive:true,force:true});
   const renamed=passed('renamed',entry('/_res/home-art/breeze'),source);
-  for(const [prefix] of languages)assert.equal(artSource(htmlAt(renamed,prefix)),'/_res/home-art/breeze');
+  for(const [prefix] of languages) {
+    const html=htmlAt(renamed,prefix);assert.equal(artSource(html),'/_res/home-art/breeze');
+    assert.ok(extractStartTags(html,'section').some(tag=>extractTagAttribute(tag,'data-copy-template')==='breeze'));
+    for(const item of [...assetsIn(html,'link','href'),...assetsIn(html,'script','src')])assert.ok(item.url.includes('/home-art/breeze/'));
+  }
   await checked(output);await checked(renamed);
+});
+
+test('minimal art renders all translations without wind resources or scripts',async()=>{
+  const output=passed('minimal',entry('/_res/home-art/minimal'));
+  for(const [prefix,language] of languages) {
+    const html=htmlAt(output,prefix),heading={en:'A place to begin',zh:'从这里开始',ar:'ابدأ من هنا'}[language];
+    assert.equal(artSource(html),'/_res/home-art/minimal');assert.ok(html.includes(heading));
+    assert.ok(html.includes('<strong>'));assert.equal(html.includes('home-art-wind'),false);
+    const styles=assetsIn(html,'link','href');assert.equal(styles.length,1);assert.ok(styles[0].url.includes('/home-art/minimal/style.'));
+    assert.equal(assetsIn(html,'script','src').length,0);
+  }
+  await checked(output);
 });
 
 test('the host homepage controls navigation without an art and independently for each language',async()=>{
@@ -179,13 +202,12 @@ test('the host homepage controls navigation without an art and independently for
   await checked(output);
 });
 
-test('Hugo preview rebuilds art params, body, scene, model and assets and clears a removed entry',{timeout:120000},async()=>{
+test('Hugo preview rebuilds art params, body, template and assets and clears a removed entry',{timeout:120000},async()=>{
   const source=prepare('preview'),bundle=path.join(source,'content/_res/home-art/wind');
   for(const [index,[prefix,language]] of languages.entries())
     write(path.join(bundle,'index'+suffix(language)+'.md'),windPage(index,prefix));
   homes(source,entry(wind),'  show_navigation: false\n');
-  const scene='layouts/_shortcodes/home-art/wind/scene.html',model='layouts/_partials/feature-home-art/wind/model.html';
-  for(const relative of [scene,model])write(path.join(source,relative),fs.readFileSync(path.join(root,'module',relative),'utf8'));
+  const scene='content/_res/home-art/wind/scene.html.tmpl';
   const probe=net.createServer();await listenOnLoopback(probe);
   const port=probe.address().port;await new Promise((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
   const base='http://127.0.0.1:'+port,server=spawn(toolExecutable('hugo'),['server','--noBuildLock','--bind','127.0.0.1','--port',String(port),
@@ -216,6 +238,18 @@ test('Hugo preview rebuilds art params, body, scene, model and assets and clears
   }
   try {
     await until(async()=>artSource(await read('/zh/'))===wind);
+    homes(source,entry('/_res/home-art/minimal'));
+    for(const [prefix] of languages)await until(async()=>{
+      const html=await read('/'+prefix);return artSource(html)==='/_res/home-art/minimal'&&assetsIn(html,'link','href').length===1&&assetsIn(html,'script','src').length===0&&!html.includes('home-art-wind');
+    });
+    change('content/_res/home-art/minimal/index.zh.md',text=>text.replace('heading: 从这里开始','heading: MINIMAL_HEADING_PROBE')+'\nMINIMAL_BODY_PROBE\n');
+    await until(async()=>{const html=await read('/zh/');return html.includes('MINIMAL_HEADING_PROBE')&&html.includes('MINIMAL_BODY_PROBE');});
+    change('content/_res/home-art/minimal/scene.html.tmpl',text=>text.replace('<section class=','<section data-minimal-probe="yes" class='));
+    for(const [prefix] of languages)await until(async()=>(await read('/'+prefix)).includes('data-minimal-probe="yes"'));
+    change('content/_res/home-art/minimal/style.css',text=>text+'\n.home-art-minimal{--minimal-probe:1}\n');
+    await until(async()=>(await read(reference(await read('/zh/'),'link','href','/css/home-art/minimal/style.'))).includes('--minimal-probe:1'));
+    homes(source,entry(wind),'  show_navigation: false\n');
+    for(const [prefix] of languages)await until(async()=>{const html=await read('/'+prefix);return artSource(html)===wind&&assetsIn(html,'link','href').length===2&&assetsIn(html,'script','src').length===1&&!html.includes('home-art-minimal');});
     const initialScene=reference(await read('/zh/'),'link','href','/css/home-art/wind/scene.');
     change('content/_res/home-art/wind/index.zh.md',text=>text.replace('brand_line: "wind line 1"','brand_line: "ART_CONFIG_PROBE"').replace('signal_drift_seconds: 80','signal_drift_seconds: 78'));
     await until(async()=>(await read('/zh/')).includes('ART_CONFIG_PROBE'));
@@ -224,7 +258,7 @@ test('Hugo preview rebuilds art params, body, scene, model and assets and clears
     await until(async()=>(await read('/zh/')).includes('ART_BODY_PROBE'));
     change(scene,text=>text.replace('<section class="home-art-wind"','<section data-art-render-probe="yes" class="home-art-wind"'));
     await until(async()=>extractStartTags(await read('/zh/'),'section').some(tag=>extractTagAttribute(tag,'data-art-render-probe')==='yes'));
-    change(model,text=>text.replace('$horizonOffsetRem := 31.2','$horizonOffsetRem := 30.2'));
+    change(scene,text=>text.replace('$horizonOffsetRem := 31.2','$horizonOffsetRem := 30.2'));
     await until(async()=>(await read(reference(await read('/zh/'),'link','href','/css/home-art/wind/scene.'))).includes('--home-art-wind-field-height:24.2rem'));
     change('content/_res/home-art/wind/style.css',text=>text+'\n:root{--art-css-probe:1}\n');
     await until(async()=>(await read(reference(await read('/zh/'),'link','href','/css/home-art/wind/style.'))).includes('--art-css-probe:1'));
@@ -253,8 +287,8 @@ test('Hugo preview rebuilds art params, body, scene, model and assets and clears
 
 test('wind signals accept canonical objects and text, and reject unsupported fields',()=>{
   const source=prepare('signal-fields'),file=path.join(source,'content/_res/home-art/wind/index.md');
-  const params='  styles: [style.css]\n  scripts: [script.js]\n  signals:\n';
-  const body='{{< home-art/wind/scene >}}';
+  const params='  template: scene.html.tmpl\n  styles: [style.css]\n  scripts: [script.js]\n  signals:\n';
+  const body='';
   write(file,artPage('Signals',params+'    - Plain signal\n    - name: Canonical signal\n      url: /about/\n      primary: true\n',body));
   const output=passed('canonical-signals',entry(wind),source),html=htmlAt(output,'');
   assert.ok(html.includes('Plain signal'));assert.ok(html.includes('Canonical signal'));
@@ -267,6 +301,18 @@ test('wind signals accept canonical objects and text, and reject unsupported fie
   write(file,artPage('Signals',params+'    - url: /about/\n',body));
   const {result}=build('invalid-signal-name',entry(wind),source);
   assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,/signal objects require a non-empty name/);
+});
+
+test('wind templates escape text and quoted link attributes',()=>{
+  const source=prepare('escaped-wind'),file=path.join(source,'content/_res/home-art/wind/index.md');
+  const label='<em>Wind & "quoted"</em>',url='https://example.com/?q="quoted"&x=1';
+  write(file,artPage('Wind','  template: scene.html.tmpl\n  brand_line: '+JSON.stringify(label)+'\n  signals:\n    - name: '+JSON.stringify(label)+'\n      url: '+JSON.stringify(url)+'\n','**Body stays Markdown**'));
+  const html=htmlAt(passed('escaped-wind',entry(wind),source),'');
+  assert.doesNotMatch(html,/<em>/);assert.ok(html.includes('<strong>Body stays Markdown</strong>'));
+  const link=extractStartTags(html,'a').find(tag=>tag.includes('data-home-art-wind-signal'));
+  assert.equal(extractTagAttribute(link,'href'),url);
+  const line=extractBlocks(html,'p',tag=>extractTagAttribute(tag,'class')==='home-art-wind__anchor-line')[0].inner;
+  assert.equal(decodeHtmlAttribute(line),label);
 });
 
 test('invalid entries and bundle resource declarations fail during build',()=>{
@@ -286,6 +332,7 @@ test('invalid entries and bundle resource declarations fail during build',()=>{
     const {result}=build('invalid-'+name,body);assert.notEqual(result.status,0,name);assert.match(result.stdout+result.stderr,/home-art|home art/i);
   }
   const invalid=path.join(site,'content/_res/home-art/invalid');
+  write(path.join(invalid,'scene.html.tmpl'),'{{ .Content }}');
   const invalidNavigation=build('invalid-navigation-type',entry(wind),site,'  show_navigation: "false"\n').result;
   assert.notEqual(invalidNavigation.status,0);assert.match(invalidNavigation.stdout+invalidNavigation.stderr,/homepage.*show_navigation/);
   for(const [name,params,extra,body] of [
@@ -297,8 +344,12 @@ test('invalid entries and bundle resource declarations fail during build',()=>{
     ['visible','  styles: []\n','build: {render: link}\n','Invalid art.'],
     ['nested','  styles: []\n','',entry(wind)]
   ]) {
-    for(const [,language] of languages)write(path.join(invalid,'index'+suffix(language)+'.md'),artPage('Invalid art',params,body,extra));
+    for(const [,language] of languages)write(path.join(invalid,'index'+suffix(language)+'.md'),artPage('Invalid art','  template: scene.html.tmpl\n'+params,body,extra));
     const {result}=build('invalid-'+name,entry('/_res/home-art/invalid'));assert.notEqual(result.status,0,name);assert.match(result.stdout+result.stderr,/home-art|home art/i);
+  }
+  for(const value of [null,42,'','../scene.html.tmpl','/scene.html.tmpl','scene.html','missing.html.tmpl']) {
+    for(const [,language] of languages)write(path.join(invalid,'index'+suffix(language)+'.md'),artPage('Invalid template',value===null?'  styles: []\n':'  template: '+JSON.stringify(value)+'\n',''));
+    const {result}=build('invalid-template',entry('/_res/home-art/invalid'));assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,/home-art.*template/);
   }
   const article=path.join(site,'content/entry-article/index.md');
   write(article,'---\ntitle: Article entry\nurl: article-entry/\nlayout: page-article-norss\n---\n'+entry(wind));

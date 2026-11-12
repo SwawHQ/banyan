@@ -58,12 +58,13 @@ Front matter 中，`title`、`url`、`layout` 等 Hugo 原生字段保留在顶�
 第一列默认显示首页和 `content/` 中已发布的直属页面、栏目。
 各语言的默认描述由对应首页的 `description` 提供。
 首页保留 `layout: page-home`，在正文中写入 `{{< home-art "/_res/home-art/wind" >}}`。
-艺术页使用 `content/_res/home-art/` 下的隐藏叶子包，包含各语言的 `index.md` 和 CSS、JS 资源。
+艺术页使用 `content/_res/home-art/` 下的隐藏叶子包，包含各语言的 `index.md`、场景模板和 CSS、JS 资源。
 艺术内容嵌入首页，不单独发布页面。
 艺术包的文字和场景参数放在其 `params` 中。
 宿主首页的 `params.show_navigation` 控制第一列导航，默认为 `true`；没有引用艺术包时也适用。
 艺术包的 `styles` 和 `scripts` 选择包内资源，以指纹外链文件发布。
-风场包使用 `home-art/wind/scene` 短代码；站点可在 `layouts/_shortcodes/` 中覆写其 HTML。
+艺术包的 `params.template` 选择包内 `scene.html.tmpl`，其中包含场景计算与 HTML；新增场景无需修改 Module。
+从 `content/_res/home-art/minimal/` 复制最小示例，修改各语言 `index*.md` 的标题、说明和正文，再修改包内模板与 CSS。首页将引用改为 `{{< home-art "/_res/home-art/<包名>" >}}`。最小示例无 JS；默认首页仍使用风场。
 内部页面统一放在 `content/_res/`，共用的 `_index.md` 将此分支排除在导航和站点发现之外。
 其中的离线页和预取诊断页统一发布到 `_res/` 路径；可删除不需要的可选页面。
 SW 为 `enable` 时，构建要求每种已启用语言都发布 HTML 离线页。
