@@ -3,11 +3,11 @@
 Run from the site root:
 
 ```text
-swban base/hugo --minify --gc --cleanDestinationDir
-swban check/delivery
-swban check/csp
-swban check/llms
-swban check/robots
+swban base/hugo --minify --gc --cleanDestinationDir  #Build production output
+swban check/delivery                                 #Check platform output
+swban check/csp                                      #Check CSP
+swban check/llms                                     #Check llms.txt
+swban check/robots                                   #Check crawler rules
 ```
 
 Hugo builds minified production output in `public`. Checks inspect that output
@@ -26,7 +26,7 @@ Include the other required platform fields when making this override.
 For Git hosting, copy the generated config to the site root before committing:
 
 ```text
-swban deploy/edgeone/sync [dir]
+swban deploy/edgeone/sync [dir]  #Copy generated config to the site root
 ```
 
 Sync defaults to `public`; it only copies config bytes and does not build or
@@ -49,6 +49,3 @@ to its `edgeone/cli` command.
 
 Platform details: [Hugo hosting](https://pages.edgeone.ai/document/hugo) and
 [direct upload](https://pages.edgeone.ai/document/direct-upload).
-See [Hugo server configuration](https://gohugo.io/configuration/server/#404-errors)
-for local multilingual 404 routing. A default local `/404.html` response does
-not mean the translated 404 files rendered in English.

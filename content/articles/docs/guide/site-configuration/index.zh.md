@@ -58,7 +58,7 @@ Hugo 会自动发布内容包资源，包括 `_map.toml`。
 disableJS = true
 ```
 
-新站点使用 Skill 的[起始配置](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/install.md#configure-the-site-root)。
+新站点使用 Skill 的[起始配置](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/site-configuration.md#configure-the-site-root)。
 现有站点按需合并配置，保留自己的内容和 URL 规则。
 
 ## 站点说明与语言

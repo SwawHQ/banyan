@@ -1,4 +1,4 @@
-# Delivery checks
+# Delivery configuration and checks
 
 ```text
 swban base/hugo --minify --gc --cleanDestinationDir  #Build production output
@@ -50,6 +50,34 @@ its `fingerprinted` assets selected for warmup. Later SW and content updates
 tolerate unavailable offline pages.
 At runtime, unavailable pages fall back to the default language, then to a
 built-in HTTP 503 HTML notice with no external resources.
+
+## Prefetch and Service Worker settings
+
+`[prefetch]` and `[sw]` apply to all languages. Routes use independent `http`
+and `sw.bucket` fields; SW buckets are `versioned`, `fingerprinted` or `off`.
+For platform build fields, use `platform.edgeone.makers`; see [EdgeOne](edgeone.md).
+
+Enable prefetch with a complete table to use automatic native/SW/link selection:
+
+```toml
+[prefetch]
+enabled = true
+default = "conservative"
+
+prerender.default = "off"
+
+[sw]
+mode = "enable"
+content_check_interval = 5
+offline_notice_path = "_res/offline/"
+```
+
+`prefetch.prerender` settings control native prerender for selected icon scopes.
+The Banyan reference policy uses moderate prerender for tail folder links.
+Column scopes are `root`, `tail`, `"root+N"`, `"tail-N"`, and `all`.
+The example omits icon-specific settings; add icon scopes when needed.
+
+For status controls and diagnostic pages, read [Status and diagnostics](diagnostics.md).
 
 ## Checked output
 

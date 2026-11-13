@@ -14,7 +14,7 @@ Banyan 分为两部分：Hugo Module 提供主题，`swaw-banyan` Agent Skill
 
 本项目正在准备首次发布。下面的 `v0.1.0` 是首发版本示例；
 远程安装须等对应标签发布。发布前可按 Skill 的
-[本地 Module 示例](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/install.md#test-an-unpublished-module)
+[本地 Module 示例](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/upgrade.md#test-an-unpublished-module)
 验证临时站点，或[预览本仓库](/zh/p/local-development/)。
 
 主题要求 Hugo 0.168.0 或更新版本。Skill 命令行目前支持 Windows x64，

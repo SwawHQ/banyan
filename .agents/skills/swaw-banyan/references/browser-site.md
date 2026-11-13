@@ -1,68 +1,51 @@
 # Browser checks
 
-Read this when selecting browser coverage. Use a task's `--help` for its full
-parameters, defaults and examples.
+Read this when selecting browser coverage. Use each task's `--help` for arguments.
 
-## Prepare and choose coverage
+## Prepare and run
 
-Run `swban base/browser/ensure` for Chromium. Prepare `base/browser/ensure.webkit` only
-for a selected WebKit check. Dependencies stay in the Skill's
-`tasks/_shared/browser/node_modules`; browser binaries stay in `.tools/browser`.
-Both are ignored by Git. A Node runtime needs npm for browser preparation;
-if it has none, use `swban base/node/ensure --force` for the portable Node package.
+Prepare Chromium with `swban base/browser/ensure`. For a selected WebKit check,
+use `swban base/browser/ensure.webkit`. If Node has no npm, use
+`swban base/node/ensure --force` to prepare the portable Node package.
 
-Checks serve a completed build locally with its generated `_headers`, then
-inspect it in an isolated browser context. They do not inspect a running Hugo
-server. Use HTTP tasks for actual deployed responses.
-Without `_headers`, site coverage skips HTTP CSP; EdgeOne headers are not simulated.
+Checks serve a completed build locally and apply its generated `_headers`.
+They do not inspect a running Hugo server or simulate EdgeOne headers. Without
+`_headers`, site coverage skips HTTP CSP. Use HTTP tasks for deployed responses.
 
-Start with representative site coverage below. Add targeted checks for changed
-features; `.webkit` commands provide selected WebKit coverage. Use `--headed`
-to observe a run, `--out` to retain a report, and `--trace` for a trace.
-Requested reports/traces are retained; temporary builds are cleaned up.
+```text
+swban check/browser/site ./public                                  #Check representative pages
+swban check/browser/site ./public --updates                        #Also test a temporary SW update
+swban check/browser/site ./preview --updates --site ./site-source  #Use another source directory
+swban check/browser/site ./preview --trace --out ./browser-report  #Keep traces and reports
+```
 
 ## Representative site coverage
 
-```text
-swban check/browser/site ./public
-swban check/browser/site ./public --updates
-swban check/browser/site ./preview --updates --site ./site-source
-swban check/browser/site ./preview --trace --out ./browser-report
-swban check/browser/site --help
-```
+`check/browser/site` uses Chromium and samples published HTML by feature markers,
+language and native links. It covers the home, CSP, prose, contrast, sorting,
+speculation rules, runtime coordination, diagnostics and offline behavior where
+suitable pages exist. The report identifies selected pages and skipped coverage.
+This is representative coverage, not every task or every page/language combination.
+Use targeted `.webkit` checks for engine differences and site-owned suites for
+copy, accounts, branding and business expectations. Derived palette-role checks
+remain separate because custom fixed surfaces can be valid.
 
-Prepare Chromium with `base/browser/ensure`. The command samples published HTML by
-feature markers, language and native links. It checks the home, CSP, prose,
-contrast, a sortable collection, speculation rules, runtime coordination,
-diagnostics and SW offline behavior where suitable pages exist. Selected paths
-and skipped coverage appear in the report. It does not run every browser task
-or assert site copy, accounts, branding or every language/page combination.
-Palette roles remain separate because custom fixed surfaces can be valid.
+Ordinary checks reuse the supplied build without invoking Hugo. `--updates`
+requires an enabled SW and a versioned update panel with reciprocal native root
+links. It builds a temporary next version using the source site's normal config
+and selected Hugo, Go and Git. Source defaults to the current directory; `--site`
+selects another source. The source and supplied build must use the same site/config.
 
-Ordinary checks share the supplied build and one static server. They do not
-invoke Hugo. `--updates` requires an enabled SW and a versioned update panel
-with reciprocal native root links. It checks manual updates, native navigation
-and browser activation after old controlled pages close.
+The temporary build changes the content version and adds a comment to `sw.js`
+to exercise waiting-worker activation, including activation after old controlled
+pages close. It does not represent an actual source-code release. Output, cache
+and resources are isolated and cleaned up; source and supplied builds are preserved.
+For two actual code states or SW removal, use the explicit build pairs below.
 
-The command uses the selected Hugo, Go and Git to produce a temporary next
-production build. It reads the source site's normal config, changes the build
-version through the child environment, and adds a harmless SW revision probe
-comment to the temporary output. Content-only releases keep `sw.js` unchanged;
-the probe lets these checks exercise waiting-worker activation. Output, cache
-and resources are isolated. Source defaults to the caller's current directory; use `--site` for
-another source. Source and published build must use the same site/config.
-Generated files are removed after execution. Existing builds and content are
-preserved. To test two actual code states, pass explicit builds to the leaf
-PWA commands instead. SW disable uses `check/browser/pwa/disable` separately.
-
-Reports always use a new directory: the system temporary directory by default,
-or beneath `--out`. JSON includes discovery, browser/version, results and skipped
-reasons. Failures retain screenshots; `--trace` records each executed case.
-A failed case returns a nonzero exit code and later cases still run.
-
-This entry uses Chromium and production files with generated `_headers`.
-Use targeted `.webkit` tasks for engine-sensitive work, HTTP tasks for deployed
-responses, and consumer-owned suites for business expectations.
+Reports use a new directory under `--out`, or the system temporary directory
+by default. They include discovery, engine/version, results and skipped reasons.
+Failures retain screenshots; `--trace` records each executed case. A failed case
+returns a nonzero exit code, but later cases still run.
 
 ## Targeted checks: select suitable pages
 
@@ -92,22 +75,15 @@ actual site; default example routes may not exist in a customized site.
 
 ## Explicit SW build pairs
 
-For `pwa/check`, `lifecycle`, `native` and `language`,
-supply an initial build and `--next` with a second SW-enabled build whose
-`sw.js` bytes differ. The server switches files and headers at the same origin.
-Most update tasks need reciprocal links between the chosen page and source;
-language needs the actual target-language link. Use `--help` for each task.
+Pass two completed builds; the server switches files and headers at the same origin.
+Use each task's `--help` to select the actual page routes.
 
-Use `check/browser/site --updates` for a temporary program-update probe without
-editing content. To test two actual code states, build those states separately.
+| Task under `check/browser/` | Required pair |
+| --- | --- |
+| `pwa/check`, `pwa/lifecycle`, `pwa/native`, `pwa/language` | Two SW-enabled builds with different `sw.js` bytes; pass the second as `--next`. Most need reciprocal page/source links; language checks need the actual target-language link. |
+| `pwa/disable` | An enabled build followed by `sw.mode = "disable"`. `off` leaves workers installed. Disable prefetch in the second build when checking removal without prefetch hints. |
+| `pwa/content` | Identical `sw.js` bytes and different `sw-version.json` versions. Use `--page` for the version panel and `--from` for a second cached page. |
 
-`pwa/disable` needs an enabled build followed by one with
-`sw.mode = "disable"`. `off` does not perform cleanup.
-Disable prefetch in the second build when checking SW removal without prefetch hints.
-
-For `pwa/content`, supply two builds with identical `sw.js` bytes and different
-`sw-version.json` versions. The check covers concurrent navigation, independent
-version requests, cache replacement, fingerprint reuse and preserved readers. Content
-checks continue while a program waits for activation. Use `--page` for the build-version panel and `--from`
-for a second cached page. The check moves only the worker's clock backwards to
-trigger one check, then verifies that later navigations respect the configured interval.
+Content checks cover concurrent navigation, independent version requests, cache
+replacement, fingerprint reuse and preserved readers. They also check content
+updates while a program waits for activation and respect for the configured interval.

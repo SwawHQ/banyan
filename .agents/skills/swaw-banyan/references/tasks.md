@@ -1,140 +1,115 @@
 # Task maintenance
 
-Read this when adding tasks or composing a site's tests. For command discovery
-and arguments, use `swban help 1` and `swban help <path>`.
+Read this when adding commands or composing site tests. Use `swban help 1` and
+`swban help <path>` to discover existing commands before adding one.
 
 ## Place code by responsibility
 
-- Commands map to `tasks/<command>/entry.mjs`. Directories without an entry are
-  not commands; underscore prefixes identify supporting code.
-- Keep argument handling in the entry and inspection in its domain leaf.
-  Checks return issues; reports return measurements. A report may reuse a
-  parser without importing a CLI entry.
-- Put code used by one task in that task. Put shared mechanics in the
-  nearest owning group's `_shared/`; reserve `tasks/_shared/` for code used
-  across groups. Keep behavioral assertions in the owning leaf.
-  Avoid shared functions that dispatch by task name.
-  Shared methods used only by delivery checks stay in `check/delivery/_shared/`.
-  Keep platform parsing, policy comparison and file inspection in their own
-  `check/delivery/` subdirectories; they are not separate commands.
-- Generic checks belong in the Skill. Theme source tests and fixed demo
-  fixtures belong in the Banyan repository's `tests/`. Business expectations
-  and site-specific routes belong in the consuming site's tests.
-- Generated platform config sync lives in `deploy/<platform>/`. Cloud publication
-  belongs to the independent Swaw Clouds Skill.
+- A command lives at `tasks/<command>/entry.mjs`. Put argument handling there
+  and domain work in nearby modules. Checks return issues; reports return measurements.
+- Keep code used by one task with that task. Share mechanics in the nearest
+  owning group's `_shared/`; use `tasks/_shared/` only across groups. Keep tests
+  with the code they exercise. Avoid shared helpers that dispatch by task name.
+- Generic checks belong in the Skill. Theme source tests and fixed reference-site
+  fixtures belong in the repository's `tests/`. Business assertions belong in
+  the consuming site's tests.
+- Generated platform configuration belongs in `deploy/<platform>/`. Cloud CLI
+  preparation, authorization and upload belong to the separate Swaw Clouds Skill.
 
-Base tools use `base/<tool>`, `base/<tool>/check` and `base/<tool>/ensure`.
-The CLI runs with Node and prepares Node/npm when executing a task.
-Node package managers use `base/node/npm` and `base/node/npx`.
-Bun remains an independent tool through `base/bun`, `base/bun/check` and
-`base/bun/ensure`; it does not select the CLI runtime.
-Domain code uses `prepareTools` for missing tools; Hugo callers use
-`prepareHugo`, which prepares Git, Go and Hugo.
-Existing bindings stay selected.
-JSON task help, doctor and tool status checks do not prepare tools. Native help runs the tool.
-`help`, `help/en` and `help/zh` are separate tasks. `tasks/_cli/` owns
-dispatch and JS bootstrap. `bootstrap/windows.ps1` handles Windows cold start.
-Reusable tool APIs stay in ordinary modules, not CLI entries.
+## Reuse tool preparation
 
-Doctor checks selected tools and Banyan pairing. Ordinary tasks do not run
-pairing checks. Check switches and translated repair hints live in
-references/doctor.toml; check implementations stay in tasks/doctor/.
-Doctor reports problems without installing or repairing tools or packages.
+Use `prepareTools` for missing tools and `prepareHugo` for Hugo, Go and Git.
+Preserve selected bindings. Let Hugo resolve configuration, modules and content
+mounts; do not reproduce its resolver or inheritance rules.
 
-Core YAML and TOML packages use the Skill root's `package.json`,
-`package-lock.json` and ignored `node_modules/`. `sync/ext` and content checks
-prepare them when needed; `base/packages/ensure [--force]` prepares them explicitly.
-Help does not install packages. Doctor reports missing core packages before
-loading its TOML configuration. Each dependency group keeps one
-`package-lock.json`; the shared installer runs npm with Node and disables
-parent workspaces. Keep optional feature packages in their owning group.
-Cloud CLI preparation and authorization belong to the independent Swaw Clouds Skill.
-Keep site builds, delivery checks and generated EdgeOne config sync here.
+| Responsibility | Owner |
+| --- | --- |
+| Windows cold start | `bootstrap/windows.ps1` |
+| Dispatch and JS bootstrap | `tasks/_cli/` |
+| Tool commands | `base/<tool>`, `base/<tool>/check`, `base/<tool>/ensure` |
+| Node package managers | `base/node/npm`, `base/node/npx` |
+| Theme release metadata | `SKILL.md` |
+| Tool compatibility and downloads | `tools.json` |
+| Doctor switches and translated repair hints | `references/doctor.toml` |
+| Doctor implementation | `tasks/doctor/` |
 
-## Preserve the existing contracts
+The CLI uses Node; Bun is an independent tool, not a CLI runtime selector.
+JSON help, doctor and tool status checks do not prepare tools. Native help runs
+its tool. Doctor reports pairing and dependency problems without repairing them;
+ordinary tasks do not run pairing checks.
 
-Hugo resolves configuration, modules and content mounts. Do not reproduce its
-inheritance or module resolver. `doctor` reads release metadata from
-`SKILL.md`; tool compatibility and download definitions live in `tools.json`.
+Core YAML/TOML packages use the Skill root's package manifest, lockfile and ignored
+`node_modules/`. `sync/ext` and content checks prepare them on demand;
+`base/packages/ensure` prepares them explicitly. Doctor reports missing packages
+before reading its TOML configuration. Keep optional packages in their owning
+group, with one lockfile per group. Reuse the installer that runs npm through
+Node with parent workspaces disabled.
 
-Argument declarations stay in `tasks/check/browser/_shared/options.mjs` and
-each leaf's `options.mjs`. Use `browserCommand` and `parseArguments` for
-validation. Help must work before opening a site, loading tools or starting
-a browser.
+## Add browser checks
 
-Browser assertions live in the leaf's `check.mjs`. The shared runner owns
-browser/context lifecycle, reports and cleanup. The local server applies the
-build's generated `_headers`. Ordinary UI checks block service workers;
-checks that need worker transport select it explicitly.
+Use `browserCommand` from `tasks/check/browser/_shared/options.mjs` and
+`parseArguments` from `tasks/_shared/arguments.mjs`. Keep leaf arguments in
+`options.mjs` and assertions in `check.mjs`. Help must work before reading a
+site, preparing tools or starting a browser.
 
-Unsuffixed browser commands use Chromium. Add WebKit coverage for an actual
-engine-sensitive requirement. Each `.webkit` entry explicitly selects WebKit
-and reuses the check; the dispatcher does not interpret the suffix.
-Browser checks share mechanics in `check/browser/_shared/`. Runtime and
-Playwright dependencies stay in `tasks/_shared/browser/` for both preparation
-and checks. Only `base/browser/ensure` and `base/browser/ensure.webkit` install browser
-dependencies.
-Checks do not install or switch engines.
+The shared runner owns browser/context lifecycle, reports and cleanup. Its
+server applies the build's `_headers`. Ordinary UI checks block service workers;
+checks requiring worker transport select it explicitly.
+
+Unsuffixed commands use Chromium. Add `.webkit` only for a real engine-sensitive
+requirement; its entry explicitly selects WebKit and reuses the check. The
+dispatcher does not interpret suffixes. Both engines use the runtime and packages
+in `tasks/_shared/browser/`. Only `base/browser/ensure` and
+`base/browser/ensure.webkit` install browser dependencies; checks do not install
+or switch engines. Page requirements are in [Browser checks](browser-site.md).
 
 ## Maintain help
 
-Place a `help.json` beside every command entry and in every ancestor category.
-An entry makes a command executable; a help file does not create a command.
-Keep `en` and `zh` objects with `summary`, `usage` and `details` fields.
-`summary` is the one-line list description. `usage` is the invocation line.
-`details` is an array of lines for the full help. Keep validation in code.
+Place `help.json` beside each command entry and in every ancestor category.
+An entry creates an executable command; a help file alone does not. Keep `en`
+and `zh` objects with `summary`, `usage` and `details`. Use a one-line summary,
+one invocation line and concise details; keep validation in code.
 
-`help [depth|path [depth]]` uses the system language. `help/en` and `help/zh` select
-the language. With no argument, show the common commands from the help task's
-`tasks/help/help.json`, beside its `entry.mjs`. Its `en.details` and `zh.details`
-supply the shared home page for all three help commands. Keep each command and
-description on one line, with `#` markers aligned within each group.
-Help topics such as `upgrade/git` use only `tasks/<topic>/help.json`, with usage
-`swban help <topic>`. They are read by explicit path and excluded from command lists.
-Detailed Agent guidance stays in `references/`.
+`tasks/help/help.json` supplies the common-command page for `help`, `help/en`
+and `help/zh`. Align `#` descriptions within each command group. For a non-executable
+topic such as `upgrade/git`, use `tasks/<topic>/help.json` and usage
+`swban help <topic>`; topics are read by explicit path and excluded from lists.
+Detailed Agent guidance belongs in `references/`.
 
-A depth lists commands and categories, including all shallower levels.
-A path followed by a depth lists descendants below that path, keeping full
-paths. Depth starts below the selected path: `help check 2` includes
-`check/http/cache`; `help check/browser 3` lists three levels below `check/browser`.
-A path displays full help; categories also list their direct children.
-Only directories with an entry, and their ancestors, appear in these lists.
-Category paths end in `/`; executable commands have no suffix, including
-commands with children. Help queries accept a trailing `/` in a path.
-
-Help reads JSON without importing task entries. Ordinary task `--help` reads
-the same file through `helpFor`. Native tools keep their own help flags.
-Update help when changing arguments, defaults or examples. The Windows cold
-reader and JS reader use the same files and have output-parity tests.
+Help reads JSON without importing task entries. Ordinary `--help` uses the same
+file through `helpFor`; native tools retain their own flags. Update help with
+argument or default changes. Keep Windows cold-start and JS-reader output in
+parity. Discovery, depth and path behavior are defined by the existing help code
+and its tests; reuse them rather than adding a second listing mechanism.
 
 ## Compose a site suite
 
-Static site checks can import `inspectDocumentMetadata` from
-`check/html/metadata/document.mjs` and `inspectDocumentControls` from
-`check/html/scripts/controls.mjs`. Both accept HTML and return issues.
+For static HTML, reuse `inspectDocumentMetadata` from
+`tasks/check/html/metadata/document.mjs` and `inspectDocumentControls` from
+`tasks/check/html/scripts/controls.mjs`. Both accept HTML and return issues.
 
-Import `runScenarioSuite` from `tasks/check/browser/_shared/suite.mjs` through a
-site-owned entry, run with `swban base/node`. Supply scenarios,
-the published build and a report directory. Upgrade scenarios also need a
-build pair. Site paths, build selection and business assertions stay in that
-entry or its domain modules.
+For browser scenarios, import `runScenarioSuite` from
+`tasks/check/browser/_shared/suite.mjs` through a site-owned entry run with
+`swban base/node`. Supply scenarios, the build and a report directory; update
+scenarios also need a build pair. Keep site paths, build selection and business
+assertions in that entry or its domain modules.
 
-The suite reuses prepared browsers and the shared server, creates an isolated
-context per scenario, and records engine/version, failures and timeouts.
-A scenario may supply `launchOptions` for a specific requirement such as
-BFCache. Use the existing suite API and source examples when implementing it.
-
-`check/browser/site` discovers representative pages and composes existing
-checks. Add assertions to the owning leaf instead of duplicating them in the
-discovery command.
+The suite reuses prepared browsers and the server, isolates each scenario's
+context, and records engine/version, failures and timeouts. A scenario may supply
+`launchOptions`, for example for BFCache. Read the existing suite API and source
+examples when implementing it. `check/browser/site` composes existing checks;
+add assertions to their owning leaf rather than duplicating them in discovery.
 
 ## Validate changes
 
-Keep help independent of tools and input files. Test meaningful successful
-cases and faults, plus stream/exit behavior when changing dispatch. Fixtures
-use isolated system temporary directories and clean up on success or failure.
-Do not change the site's source or tool bindings as part of a check.
+Test meaningful successful and failing cases. Dispatch changes also need stream,
+exit-status and help-without-tools coverage. Checks must not change site source
+or tool bindings. Fixtures use isolated system temporary directories and clean
+up on success or failure.
 
-Source JS fixtures can use `tasks/_shared/hugo-js.mjs` for Hugo js.Build and
-source maps. Callers own their temporary directories. See the repository's
-`tests/README.md` for source suites; it is not required to use the installed Skill.
+JS fixtures can use `tasks/_shared/hugo-js.mjs` for Hugo js.Build and source maps;
+callers own their temporary directories. The repository's `tests/README.md`
+lists source suites but is not needed to use an installed Skill.
+
+After editing or moving installation examples, run the repository's
+`tests/install.test.mjs`. It builds consumer sites from those examples.

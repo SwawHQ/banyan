@@ -16,9 +16,18 @@ import {fixtureSiteFiles,fixtureSitePages,fixtureDelivery,serviceWorkerPolicy} f
 const repository=fileURLToPath(new URL('../',import.meta.url));
 const skill=path.join(repository,'.agents/skills/swaw-banyan'),moduleRoot=path.join(repository,'module');
 const release=readRelease(),version='v'+release.version,parent=path.join(fs.realpathSync.native(os.tmpdir()),'swaw/banyan');
-const guide=fs.readFileSync(path.join(skill,'references/install.md'),'utf8');
+const guide=['install.md','site-configuration.md','content.md']
+  .map(name=>fs.readFileSync(path.join(skill,'references',name),'utf8').replaceAll('\r\n','\n')).join('\n');
 const toml=[...guide.matchAll(/```toml\r?\n([\s\S]*?)```/g)].map(match=>match[1]);
 const markdown=[...guide.matchAll(/```markdown\r?\n([\s\S]*?)```/g)].map(match=>match[1]);
+// Product setup reuses the documented article example with the listed layout changes.
+const productRoot=markdown[1].replaceAll('Articles','Products').replaceAll('articles','products')
+  .replace('params:\n','params:\n  list_icon_file: product\n')
+  .replace('    layout: page-collection-directory\n','    layout: page-collection-products\n');
+const productSection=markdown[2].replaceAll('Sample','Free');
+const productAggregate=markdown[4].replaceAll('Articles','Products').replaceAll('articles','products')
+  .replace('page-collection-directory-all','page-collection-products-all')
+  .replace('params:\n','outputs: [HTML]\nparams:\n  list_icon_file: product\n');
 let work,installed,environment;
 function write(root,name,value) {
   const file=path.join(root,name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,value);
@@ -59,10 +68,10 @@ function consumer(name,{replacement='',multilingual=false}={}) {
       write(root,'content/articles/sample/'+name+'/index'+suffix+'.md',translated(markdown[3]
         .replaceAll('alpha',name).replaceAll('Alpha',title).replaceAll('2026-01-01',date)));
     write(root,'content/articles-all/_index'+suffix+'.md',translated(markdown[4]));
-    write(root,'content/products/_index'+suffix+'.md',translated(markdown[6]));
-    write(root,'content/products/free/_index'+suffix+'.md',translated(markdown[7]));
-    write(root,'content/products/featured/_index'+suffix+'.md',translated(markdown[7].replaceAll('Free','Featured')));
-    write(root,'content/products-all/_index'+suffix+'.md',translated(markdown[8]));
+    write(root,'content/products/_index'+suffix+'.md',translated(productRoot));
+    write(root,'content/products/free/_index'+suffix+'.md',translated(productSection));
+    write(root,'content/products/featured/_index'+suffix+'.md',translated(productSection.replaceAll('Free','Featured')));
+    write(root,'content/products-all/_index'+suffix+'.md',translated(productAggregate));
   }
   for(const directory of ['articles/related','products/free','products/featured'])
     write(root,'content/'+directory+'/_map.toml',toml[2]);
