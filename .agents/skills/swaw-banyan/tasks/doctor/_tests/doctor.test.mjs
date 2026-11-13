@@ -71,8 +71,6 @@ test('doctor checks selected tools, skips optional tools and leaves bindings and
   assert.equal(result.status,0,result.stdout+result.stderr);
   assert.match(result.stdout,/site\.banyan: matched/);
   assert.match(result.stdout,/tool\.gh: not_selected/);
-  assert.match(result.stdout,/tool\.uv: not_selected/);
-  assert.match(result.stdout,/tool\.python: not_selected/);
   for(const [file,before] of files)assert.deepEqual(fs.readFileSync(path.join(skill,file)),before);
   assert.deepEqual(fs.readFileSync(path.join(site,'themes/banyan/theme.toml')),theme);
 });
@@ -234,7 +232,7 @@ test('doctor help and an unprepared doctor do not create tools or install depend
   assert.match(cli('check/banyan').stderr,/unknown_command:check\/banyan/);
 });
 test('catalog rejects malformed TOML, unknown check IDs, invalid switches and translation templates',()=>{
-  assert.equal(Object.keys(parseCatalog(catalog).checks).length,10);
+  assert.equal(Object.keys(parseCatalog(catalog).checks).length,8);
   for(const text of ['{',catalog.replace('tool.runtime','tool.unknown'),catalog.replace('enabled = true','enabled = "true"'),
     catalog.replace('hint.zh =','hint.fr ='),catalog.replaceAll('{version}','{unknown}'),
     catalog.replace('schema_version = 1','schema_version = 2'),

@@ -14,7 +14,7 @@ export function definition(name, root = skillRoot) {
   const matches = release.tools.filter(tool => tool.name === name);
   if (matches.length !== 1) fail(`missing_or_duplicate_runtime:${name}`);
   const tool = {...matches[0], platform};
-  if (!['bun','node','hugo','go','git','gh','uv'].includes(name) || !/^\d+\.\d+\.\d+$/.test(tool.version) ||
+  if (!['bun','node','hugo','go','git','gh'].includes(name) || !/^\d+\.\d+\.\d+$/.test(tool.version) ||
       !/^[a-f0-9]{64}$/.test(tool.sha256) || !payloadName(tool.executable) || tool.archiveFormat !== 'zip' ||
       !Array.isArray(tool.requiredFiles) || !tool.requiredFiles.includes(tool.executable) ||
       !tool.requiredFiles.every(payloadName) || !tool.compatibility ||

@@ -31,7 +31,7 @@ export async function inspect(name, executable, env = process.env) {
   const patterns = {bun:/^(\d+\.\d+\.\d+)$/,node:/^v(\d+\.\d+\.\d+)$/,
     hugo:/^hugo v(\d+\.\d+\.\d+)(?:-[a-f0-9]+)?\+extended(?:\+withdeploy)?\s/,
     go:/^go version go(\d+\.\d+\.\d+)\s/,git:/^git version (\d+\.\d+\.\d+)(?:\s|\.|$)/,
-    gh:/^gh version (\d+\.\d+\.\d+)(?:\s|$)/,uv:/^uv (\d+\.\d+\.\d+)(?:\s|$)/};
+    gh:/^gh version (\d+\.\d+\.\d+)(?:\s|$)/};
   const version = result.ok && result.text.match(patterns[name])?.[1];
   if (!version || !compatible(version, tool.compatibility)) return null;
   const found = {path:fs.realpathSync(executable), version};

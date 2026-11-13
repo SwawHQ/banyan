@@ -62,23 +62,23 @@
 
 4. 部署\
     用你的 AI Agent 打开站点根目录。\
-    Cloudflare Pages 提示：
+    云部署使用独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds)；先将其中的 `skills/swaw-clouds/` 安装到 `.agents/skills/swaw-clouds/`。提示：
     ```
-    使用 .agents/skills/swaw-banyan 把当前站点先在本地编译，然后部署到 Cloudflare Pages，
-    需要授权时，运行 .\.agents\skills\swaw-banyan\swban.cmd deploy/auth/setup，提示我在授权管理界面录入凭据。
+    使用 .agents/skills/swaw-banyan 在本地构建并检查站点，再使用 .agents/skills/swaw-clouds 部署到 Cloudflare Pages。
+    需要授权时，运行 .\.agents\skills\swaw-clouds\swcl.cmd auth/setup，提示我在授权管理界面录入凭据。
     ```
 
     腾讯云 EdgeOne Makers：
     ```
-    使用 .agents/skills/swaw-banyan 把当前站点先在本地编译，然后部署到 EdgeOne Makers，
-    需要授权时，运行 .\.agents\skills\swaw-banyan\swban.cmd deploy/auth/setup，提示我在授权管理界面录入凭据。
+    使用 .agents/skills/swaw-banyan 在本地构建并检查站点，再使用 .agents/skills/swaw-clouds 的 edgeone/cli 部署到 EdgeOne Makers。
+    需要授权时，运行 .\.agents\skills\swaw-clouds\swcl.cmd edgeone/cli login，引导我完成官方登录。
     ```
 
     域名购买、域名解析、或混合使用 Cloudflare 与 EdgeOne Makers，并将中国大陆流量通过 DNS-ECS 路由到 EdgeOne Makers……也都可以提示 Agent 去完成。
 
     手动打开授权管理界面：
     ```powershell
-    .\.agents\skills\swaw-banyan\swban.cmd deploy/auth/setup
+    .\.agents\skills\swaw-clouds\swcl.cmd auth/setup
     ```
 
 

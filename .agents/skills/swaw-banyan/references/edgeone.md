@@ -43,9 +43,9 @@ and generated `edgeone.json`. The platform does not build it again. This path
 does not need config copied to the source-site root. EdgeOne uses only redirects,
 rewrites and headers from `edgeone.json` for direct upload.
 
-The Skill has no upload command yet. Future platform publication tasks will
-accept completed output and handle authentication, upload and the deployment
-result. They will not configure the hosted build environment.
+Use the independent [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill
+for authentication and upload. Pass the completed output directory as an absolute path
+to its `edgeone/cli` command.
 
 Platform details: [Hugo hosting](https://pages.edgeone.ai/document/hugo) and
 [direct upload](https://pages.edgeone.ai/document/direct-upload).

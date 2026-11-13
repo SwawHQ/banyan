@@ -127,35 +127,6 @@
             "min": "2.98.0",
             "before": "3.0.0"
           }
-        },
-        {
-          "name": "uv",
-          "version": "0.10.2",
-          "url": "https://github.com/astral-sh/uv/releases/download/0.10.2/uv-x86_64-pc-windows-msvc.zip",
-          "sha256": "493ebbe0e06128d6ee4905e1ed5e2a433fb0f7cfc08b0eaca9fab4ca76778ae1",
-          "archiveRoot": "",
-          "requiredFiles": [
-            "uv.exe",
-            "LICENSE-MIT",
-            "LICENSE-APACHE"
-          ],
-          "supplements": [
-            {
-              "name": "LICENSE-MIT",
-              "url": "https://raw.githubusercontent.com/astral-sh/uv/0.10.2/LICENSE-MIT",
-              "sha256": "860e3d7a86b84e6a7012c7a635fc64df475cebc6cce34dfeb73a5982ec58176c"
-            },
-            {
-              "name": "LICENSE-APACHE",
-              "url": "https://raw.githubusercontent.com/astral-sh/uv/0.10.2/LICENSE-APACHE",
-              "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-            }
-          ],
-          "archiveFormat": "zip",
-          "executable": "uv.exe",
-          "compatibility": {
-            "min": "0.10.2"
-          }
         }
       ]
     }

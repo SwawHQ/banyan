@@ -10,7 +10,7 @@ export function readBindings(root = toolsRoot) {
   if (!stat(file).isFile() || stat(file).size > 65536) fail('invalid_tool_bindings');
   const record = JSON.parse(fs.readFileSync(file, 'utf8'));
   if (record.schema !== 'swaw-banyan.bindings/v1' || !record.tools || typeof record.tools !== 'object' || Array.isArray(record.tools)
-      || Object.keys(record.tools).some(name => !['bun','node','hugo','go','git','gh','uv'].includes(name))
+      || Object.keys(record.tools).some(name => !['bun','node','hugo','go','git','gh'].includes(name))
       || (record.runtime !== undefined && record.runtime !== 'node')) fail('invalid_tool_bindings');
   for (const [name, tool] of Object.entries(record.tools)) {
     if (!tool || !['path','managed'].includes(tool.source) || !/^\d+\.\d+\.\d+$/.test(tool.version)

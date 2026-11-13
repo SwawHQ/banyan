@@ -3,7 +3,7 @@ title: 未发布
 url: p/unreleased/
 description: Banyan 主题和 Skill 的未发布变更。
 date: 2026-11-06
-lastmod: 2026-11-12
+lastmod: 2026-11-13
 ---
 
 ## 新增
@@ -46,8 +46,6 @@ lastmod: 2026-11-12
   `help upgrade/git` 提供 Git 比对命令，以及子目录、原生 pathspec 通配符和目录排除示例；
   来源未知时按目标版本参考站点全量核对，目录统一使用路径占位符。
   同时说明完整 Skill 的配套更新与升级后验证。
-  uv 和 Python 3.13 在 Skill 内隔离运行脚本和 CLI，支持站点已有 uv 项目，
-  不修改系统 PATH 或 Python 注册表。
   `sync/ext` 和内容检查用 npm 按需准备 Skill 内的解析依赖，与父工作区隔离；
   站点构建不需要 npm 依赖。
 - 新增 `page-collection-directory-name-only` 名称列表和产品列表，复用多列导航和排序。
@@ -75,51 +73,7 @@ lastmod: 2026-11-12
   子目录部署使用 `--base-path` 指定 URL 前缀；路径字符和 EdgeOne 域名重定向按平台语法处理。
 - `sync/ext` 同步声明的外部资源；`deploy/edgeone/sync`
   同步构建生成的部署配置。
-- `deploy/cloudflare/cli` 和 `deploy/cloudflare/wrangler` 运行固定版本的
-  Cloudflare CLI，透传原生参数；各自提供 `ensure [--force]` 和本地 `check`。
-  普通命令按需准备依赖，授权可使用各 CLI 的原生用户凭据，
-  或 Windows 凭据管理器中的共用 API Token。
-  原生配置、登录凭据及存储方式由 CLI 管理，可沿用系统中同一工具的已有登录。
-  `auth/token/check` 也可检查用户手工添加的凭据。
-  修复资源名称和显式布尔参数值导致的凭据误选。
-  `auth whoami` 与资源命令使用相同的凭据优先级。
-  原生 `CF_*` API 凭据优先于已保存的 API Token；
-  已设置的 `CLOUDFLARE_*` 变量优先于对应别名。
-  cf 和 Wrangler 命令及授权页的登录和状态检查，分别使用固定的
-  `%TEMP%/swaw/banyan/cf/` 和 `%TEMP%/swaw/banyan/wrangler/` 工作目录，
-  保留目录及缓存。本地路径以这些目录为基准；文件参数用绝对路径，
-  Wrangler 项目用原生 `--cwd` 指定绝对路径。
-  cf 资源管理命令使用空配置；开发和构建需要实际项目配置。
-- `deploy/tencent/cli` 在 Skill 独立环境中自动准备 uv/Python 和固定版本的 tccli，
-  提供 `ensure [--force]` 与本地只读 `check`，透传腾讯云和 EdgeOne 原生命令。
-  登录和凭据刷新强制校验 TLS 证书。
-  `auth/key/check` 在本机凭据缺失时返回非零退出码。
-  配置和登录沿用 tccli 原生规则；授权页说明登录凭据明文存储，
-  推荐使用 Windows 保管的 API 密钥。
-  tccli 命令及授权页的登录和状态检查使用固定的
-  `%TEMP%/swaw/banyan/tccli/` 目录并保留缓存；本地路径用绝对路径。
-- `deploy/auth/setup` 打开 Cloudflare 和腾讯云共用的本机授权页；
-  页内标题为“授权管理器”，下方显示可点击的 `Powered by banyan.swaw.com` 署名；
-  浏览器标签标题为“授权管理器 · Banyan”。
-  各平台的 `auth/setup` 入口直接选中对应选项卡。页面支持原生登录、
-  Windows 保管的 API 凭据和只读环境变量状态，识别 Cloudflare 原生 `CF_*` 别名，显示凭据优先级、
-  站点原色图标，并按系统语言显示中英文；标题栏可切换语言，保留输入和进度，
-  不保存语言选择，刷新后重新按系统语言显示。
-  授权页采用黑白灰配色，移除面板外框，保留两栏细分隔线；
-  优先级说明放在授权方式标签下方；关闭按钮放在语言切换右侧，与其同排。
-  补充说明统一放在操作区或变量表格后；登录和 API Token 说明用编号列表
-  列出设置步骤、授权范围和凭据保存方式。
-  进入登录授权页后后台准备工具，显示准备状态并支持重试；
-  准备完成后检查 cf 和 Wrangler 的已有登录，以及 tccli 原生凭据是否可用；
-  刷新或重开页面会重新检查，授权按钮即时显示请求进度。
-  tccli 登录与检查使用同一 profile，通过原生 STS 身份查询确认凭据可用；
-  不区分已保存的登录和密钥，也不检查业务权限。
-  下载和检查期间仍可设置 API Token，关闭页面会停止准备、检查和登录。
-  页面不再自动超时；各 CLI 的授权超时保持原生规则。
-  授权页避免使用浏览器禁用的端口。
-  保存连接断开时，取消仍会在凭据写入完成后结束会话。
-  窄屏上下排列，两个平台均使用 API Token 标签。腾讯云访问密钥使用
-  `swban/tencent/default`；`auth/key/check` 检查本机凭据是否存在。
+- 云平台 CLI、授权页及 Python/uv 工具改由独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 提供。Banyan 保留构建、检查和 EdgeOne 配置同步。
 - 仓库、Module 和 Skill 均包含 MIT 许可证，并保留第三方许可声明。
 
 ## 调整
@@ -155,9 +109,6 @@ lastmod: 2026-11-12
   Bun 保留为独立工具。移除 `base/ensure`。
   Hugo 和 Go 按需准备 Git；主题不再启用未使用的 Git 页面信息。
   GitHub CLI 在使用时准备；npm 和 npx 分别使用 `base/node/npm` 和 `base/node/npx`。
-  Python 命令使用 `base/uv/python`、`base/uv/python/check` 和
-  `base/uv/python/ensure`；常用帮助将 uv 标为 Python 工具管理器。
-  uv 支持前置全局参数，`run` 和 `pip` 仍使用独立的 Python 环境。
   离线使用前，可用 `base/packages/ensure` 准备解析依赖；加 `--force` 重新安装。
   `doctor` 只报告依赖缺失，不执行安装。
   浏览器准备改用 `base/browser/ensure` 和 `base/browser/ensure.webkit`。
@@ -234,7 +185,6 @@ lastmod: 2026-11-12
   favicon 源统一放在 `assets/site/`；`favicon.link.svg` 优先于 `favicon.link.ico`，
   只为选中的文件输出指纹图标链接。`favicon.ico` 独立发布为固定根地址，不自动追加链接。
   至少需要一种 favicon；四个 PWA PNG 和 manifest 模板仍必填。
-  授权页从同一目录依次选择链接 SVG、链接 ICO、固定 ICO；无图时不显示 Logo。
   站点还自行维护 `assets/site/icons.toml` 和 `assets/i18n/` 界面字典。
   项目 `hugo.toml` 原生挂载 `assets/i18n` 到 `i18n`。
   按需维护 `assets/site/external-resources.yaml`。
@@ -266,6 +216,10 @@ lastmod: 2026-11-12
 - 新增 `minimal` 首页艺术包，提供英文、中文、阿拉伯文参数与 Markdown 正文，以及最小 HTML 模板和 CSS；无需 JS。默认首页仍使用风场。新增示例无必需迁移。
 
 ## 升级迁移
+
+- 使用旧 Python/uv 入口 → 本站脚本中的 `swban base/uv*` 及 Skill 的 `.tools/bindings.json` → 改用 Swaw Clouds 对应入口，手动删除 `tools.uv` 绑定；已有运行时与缓存可保留。
+
+- 使用旧云 CLI 或授权页 → 本站脚本中的 `swban deploy/cloudflare/*`、`deploy/tencent/*`、`deploy/auth/setup` → 安装 Swaw Clouds，改用 `swcl cloudflare/*`、`tencent/*`、`auth/setup`；原 Windows 自有凭据需转存到 `swcl/cloudflare/default`、`swcl/tencent/default` 或重新授权。原生 CLI 登录态保持原位置。
 
 - 使用图片墙旧配置的站点 → 栏目或首页 `_index*.md` 的 `params.wall` → 将 `layout` 和数值 `size` 合并为 `size.width/height`：等高为 `auto/原 size`，等宽为 `原 size/auto`，固定比例填写对应宽高；将 `caption`、`controls` 合并为 `details: title|overlay|overlay-hover`，移除旧字段。
 
@@ -303,7 +257,6 @@ lastmod: 2026-11-12
 - 默认、高对比度和 Rose 配色统一取消导航首项、列表头及全部 `h1` 的底线和占位；各配色 CSS 提供恢复线条的注释示例。列表线和 `h1` 底线可分别定制。
   `.item-list` 的 `--list-header-border` 与 `.prose` 的 `--prose-heading-border` 改用完整声明，如 `1px solid #888`；`none` 取消线条和占位，`1px solid transparent` 保留占位。自有配色需同步修改原来的纯颜色值。集合布局检查接受无边框、透明边框和自定义列表头边框。
 - 已保存的外观偏好无效时，从首帧开始跟随系统主题。
-- 已准备好的 Python 环境支持并发运行命令，不再误报安装锁冲突，并接受管理目录内的 uv Python 别名。
 - 构建版本和浏览器预取检查接受版本 JSON 与合法的空内联规则。
 - 未注册 Service Worker 时，预取诊断页仍能显示配置和运行状态。
 - Cloudflare 缓存和 XML CSP 特例先删除继承的响应头，再设置新值，

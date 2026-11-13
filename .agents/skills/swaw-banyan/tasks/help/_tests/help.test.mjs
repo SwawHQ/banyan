@@ -235,3 +235,16 @@ test('cold help reports the same localized field errors and retains JSON parse r
   }
   assert.equal(fs.existsSync(path.join(work,'.tools')),false);
 });
+
+test('removed runtime and cloud commands fail in JS and cold bootstrap',()=>{
+  const skill=fileURLToPath(new URL('../../../',import.meta.url));
+  const commands=['base/uv','base/uv/check','base/uv/ensure','base/uv/python','base/uv/python/check','base/uv/python/ensure',
+    'deploy/auth/setup','deploy/cloudflare/cli','deploy/cloudflare/wrangler','deploy/tencent/cli'];
+  for(const command of commands) for(const cold of process.platform==='win32'?[false,true]:[false]) {
+    const executable=cold?path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe'):process.execPath;
+    const args=cold?['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(skill,'bootstrap/windows.ps1')]:[path.join(skill,'tasks/_cli/main.mjs')];
+    const result=spawnSync(executable,[...args,command,'--help'],{encoding:'utf8',timeout:10000,windowsHide:true});
+    assert.ifError(result.error);assert.equal(result.status,1);
+    assert.ok(result.stderr.includes('unknown_command:'+command),result.stderr);
+  }
+});

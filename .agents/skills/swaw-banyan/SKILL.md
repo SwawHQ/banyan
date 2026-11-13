@@ -1,6 +1,6 @@
 ---
 name: swaw-banyan
-description: 协助用户应用、定制、开发-测试、检查-部署、乃至日常运维基于 Swaw Banyan Hugo Theme 的站点，自带 Hugo、Go、Git、gh（GitHub CLI）、Node/npm、Bun、uv/Python、cloudflare cli(cf)/wrangler、tencent tccli 准备。
+description: 协助用户应用、定制、开发-测试、检查-部署、乃至日常运维基于 Swaw Banyan Hugo Theme 的站点，自带 Hugo、Go、Git、gh（GitHub CLI）、Node/npm、Bun 等工具准备。
 license: MIT
 metadata:
   version: "0.1.0"
@@ -17,15 +17,10 @@ swban help                #查看常用命令
 swban help/zh 1           #查看一级分类
 swban help/zh check 2     #查看 check 下两层命令
 swban <command> --help    #查看参数和默认值
-swban deploy/cloudflare/wrangler pages deploy <build-path> --project-name <name> --branch preview  #发布 Pages 预览
 ```
-Cloudflare 操作先读 [Cloudflare 工具](references/cloudflare.md)。`<build-path>` 使用绝对路径。
-腾讯云操作先读 [腾讯云工具](references/tencent.md)。
-
-云 CLI 子进程使用系统临时目录下固定的 `swaw/banyan/wrangler/`、
-`swaw/banyan/cf/` 和 `swaw/banyan/tccli/`，保留目录及缓存。
-`swban` 自身保留调用目录；云 CLI 的文件和目录参数使用绝对路径。
-Wrangler 项目使用原生 `--cwd <绝对项目路径>`。
+云平台 CLI 与授权使用独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 技能。
+将其 `skills/swaw-clouds/` 安装到项目的 `.agents/skills/swaw-clouds/`。
+Banyan 负责构建和检查；Swaw Clouds 负责云平台操作，上传使用构建产物的绝对路径。
 
 交付配置修改 `assets/site/delivery.toml`；`_headers` 和 `edgeone.json` 由 Hugo 生成。
 爬虫规则修改站点的 `assets/site/robots.txt.tmpl`；`enableRobotsTXT` 控制是否输出 `robots.txt`，参考站点默认开启。
@@ -72,9 +67,6 @@ Powered by 使用 `page-article-norss`；公共模板按 `site-status` 和 `page
 | 检查交付产物和指纹发布路径 | [交付检查](references/delivery.md) |
 | 用 `sync/ext` 下载已声明的外部资源 | [外部资源](references/external-resources.md) |
 | 同步生成的 EdgeOne 配置或规划部署 | [EdgeOne](references/edgeone.md) |
-| 准备 Cloudflare CLI、登录、发布静态站和管理资源 | [Cloudflare 工具](references/cloudflare.md) |
-| 准备 tccli、调用腾讯云或 EdgeOne API | [腾讯云工具](references/tencent.md) |
-| 使用隔离的 Python 环境和 CLI | [Python 工具](references/python.md) |
 | 添加任务或编排站点测试套件 | [任务维护](references/tasks.md) |
 
 托管构建使用平台自己的工具链；EdgeOne 任务只同步配置。

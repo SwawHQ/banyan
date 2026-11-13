@@ -20,8 +20,8 @@ and arguments, use `swban help 1` and `swban help <path>`.
 - Generic checks belong in the Skill. Theme source tests and fixed demo
   fixtures belong in the Banyan repository's `tests/`. Business expectations
   and site-specific routes belong in the consuming site's tests.
-- Platform tasks live in `deploy/<platform>/`. Config sync consumes generated
-  files. Publication tasks should consume completed output.
+- Generated platform config sync lives in `deploy/<platform>/`. Cloud publication
+  belongs to the independent Swaw Clouds Skill.
 
 Base tools use `base/<tool>`, `base/<tool>/check` and `base/<tool>/ensure`.
 The CLI runs with Node and prepares Node/npm when executing a task.
@@ -30,8 +30,7 @@ Bun remains an independent tool through `base/bun`, `base/bun/check` and
 `base/bun/ensure`; it does not select the CLI runtime.
 Domain code uses `prepareTools` for missing tools; Hugo callers use
 `prepareHugo`, which prepares Git, Go and Hugo.
-Existing bindings stay selected. Python uses `base/uv/python` and a Skill-owned
-environment; Python CLI packages use `base/uv tool run`. See [Python tools](python.md).
+Existing bindings stay selected.
 JSON task help, doctor and tool status checks do not prepare tools. Native help runs the tool.
 `help`, `help/en` and `help/zh` are separate tasks. `tasks/_cli/` owns
 dispatch and JS bootstrap. `bootstrap/windows.ps1` handles Windows cold start.
@@ -49,13 +48,8 @@ Help does not install packages. Doctor reports missing core packages before
 loading its TOML configuration. Each dependency group keeps one
 `package-lock.json`; the shared installer runs npm with Node and disables
 parent workspaces. Keep optional feature packages in their owning group.
-Cloudflare CLI packages belong to `deploy/cloudflare/cli/` and
-`deploy/cloudflare/wrangler/`. Their entries prepare locked packages on demand;
-their `check` commands inspect local installation without authentication.
-See [Cloudflare tools](cloudflare.md).
-Tencent Cloud's `deploy/tencent/cli` uses uv's isolated tool environment and
-pins its package in the leaf's `requirements.txt`; its `check` reads local files
-without running package code. See [Tencent Cloud tools](tencent.md).
+Cloud CLI preparation and authorization belong to the independent Swaw Clouds Skill.
+Keep site builds, delivery checks and generated EdgeOne config sync here.
 
 ## Preserve the existing contracts
 

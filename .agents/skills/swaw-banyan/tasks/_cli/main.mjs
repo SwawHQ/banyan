@@ -8,16 +8,14 @@ const [requested='help',...args]=process.argv.slice(2);
 const command=['--help','-h'].includes(requested)?'help':requested;
 try {
   taskEntry(command);
-  const preparing=/^base\/(?:bun|node|hugo|go|git|gh|uv)\/ensure$/.test(command);
+  const preparing=/^base\/(?:bun|node|hugo|go|git|gh)\/ensure$/.test(command);
   const showingHelp=args.length===1&&['--help','-h'].includes(args[0]);
-  const native=/^(?:base\/(?:bun|node|hugo|go|git|gh|uv(?:\/python)?)(?:\/(?:npm|npx))?|deploy\/(?:cloudflare\/(?:cli|wrangler)|tencent\/cli))$/.test(command);
-  const preparingPackages=/^deploy\/(?:cloudflare\/(?:cli|wrangler)|tencent\/cli)\/ensure$/.test(command);
-  if ((preparing||preparingPackages)&&!showingHelp&&(args.length>1||(args.length===1&&args[0]!=='--force'))) throw new Error('invalid_ensure_arguments');
-  if (command==='base/uv/python/ensure'&&!showingHelp&&args.length) throw new Error('invalid_ensure_arguments');
+  const native=/^(?:base\/(?:bun|node|hugo|go|git|gh)(?:\/(?:npm|npx))?)$/.test(command);
+  if (preparing&&!showingHelp&&(args.length>1||(args.length===1&&args[0]!=='--force'))) throw new Error('invalid_ensure_arguments');
   let executable=process.execPath;
   if (showingHelp&&!native&&!/^help(?:\/(?:en|zh))?$/.test(command)) { console.log(taskHelp(command)); }
   else {
-    if (command!=='doctor'&&!/^help(?:\/(?:en|zh))?$/.test(command)&&!/^(?:base\/(?:[^/]+|uv\/python)|deploy\/(?:cloudflare\/(?:cli|wrangler|auth\/token)|tencent\/(?:cli|auth\/key)))\/check$/.test(command)) {
+    if (command!=='doctor'&&!/^help(?:\/(?:en|zh))?$/.test(command)&&!/^(?:base\/[^/]+)\/check$/.test(command)) {
       const record=readBindings();
       if (!record.runtime||preparing) {
         const runtime=await prepareRuntime();

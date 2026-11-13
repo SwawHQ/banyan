@@ -1,6 +1,3 @@
-import fs from 'node:fs';
-import {pythonHome} from '../base/uv/environment.mjs';
-import {inspectPython} from '../base/uv/python/runtime.mjs';
 import {readBindings,resolveBinding} from '../_shared/tools/bindings.mjs';
 import {inspectBinding} from '../_shared/tools/selection.mjs';
 import {inspect,readRelease} from '../_shared/banyan.mjs';
@@ -40,11 +37,6 @@ export async function diagnose(site) {
     if (!bindings.tools[name]) return {state:'not_selected'};
     const tool=await inspectBinding(name);
     return {state:'ok',detail:tool.version+'; '+tool.path};
-  });
-  await check('tool.python',async()=>{
-    if (!fs.existsSync(pythonHome())) return {state:'not_selected'};
-    const python=await inspectPython();
-    return {state:'ok',detail:python.version+'; '+python.path};
   });
   await check('site.banyan',()=>{
     const unavailable=['git','go','hugo'].map(name=>'tool.'+name).filter(id=>checks.find(check=>check.id===id)?.state!=='ok');

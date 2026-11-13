@@ -7,7 +7,6 @@ target site's root. The entry runs with Node and prepares Node/npm and required
 tools on demand. `sync/ext` and content checks also prepare parser packages in
 the Skill's `node_modules/` with npm when needed. Use `swban base/packages/ensure`
 to prepare them before working offline.
-For isolated Python runtimes and CLI packages, see [Python tools](python.md).
 
 ## Start from the reference site
 
@@ -39,8 +38,7 @@ templates. The Module and traditional theme directory supply neither these icons
 nor these templates. At least one favicon source, the four PWA PNG files
 and the manifest template are required even when the Service Worker is off.
 The selected `favicon.link.*` file supplies the page icon link; `favicon.ico`
-publishes independently at the root URL. These files also supply the local
-authorization page; it prefers linked SVG, linked ICO, then the fixed ICO.
+publishes independently at the root URL.
 Importing the Module alone does not supply a complete site.
 
 The site also owns complete `assets/site/delivery.toml`, `assets/site/icons.toml`

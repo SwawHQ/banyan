@@ -3,7 +3,7 @@ title: Unreleased
 url: p/unreleased/
 description: Unreleased changes to the Banyan theme and Skill.
 date: 2026-11-06
-lastmod: 2026-11-12
+lastmod: 2026-11-13
 ---
 
 ## Added
@@ -51,8 +51,6 @@ lastmod: 2026-11-12
   and directory exclusions; unknown bases use a full review against the target reference site.
   Directory arguments use path placeholders. The help also explains how to update the complete
   matching Skill and verify the upgrade.
-  uv and Python 3.13 support isolated Python scripts and CLI packages in the Skill,
-  including sites that already use uv. The system PATH and Python registry stay unchanged.
   Portable downloads are checksum-verified. npm prepares parser packages
   on demand for `sync/ext` and content checks, isolated from parent workspaces;
   site builds need no npm dependencies.
@@ -91,59 +89,7 @@ lastmod: 2026-11-12
   retain their platform syntax.
 - `sync/ext` for declared external resources and `deploy/edgeone/sync`
   for generated deployment configuration.
-- `deploy/cloudflare/cli` and `deploy/cloudflare/wrangler` run pinned Cloudflare
-  CLIs with native arguments. Each has `ensure [--force]` and a local `check`;
-  normal commands prepare packages as needed. Authentication uses each CLI's
-  native per-user credentials or a shared API Token in Windows Credential Manager.
-  Native configuration, sign-in credentials and storage remain CLI-managed;
-  compatible sign-in from system installations can be reused.
-  `auth/token/check` also finds manually added credentials.
-  Resource names and explicit boolean flag values no longer change credential selection.
-  `auth whoami` uses the same credential priority as resource commands.
-  Native `CF_*` API credentials keep priority over the saved API Token;
-  present `CLOUDFLARE_*` variables take priority over their aliases.
-  cf and Wrangler commands, including page sign-in and status checks, use fixed
-  `%TEMP%/swaw/banyan/cf/` and `%TEMP%/swaw/banyan/wrangler/` directories.
-  The directories and caches persist. Local paths use these directories;
-  use absolute local paths. For a project, pass Wrangler's native `--cwd`
-  with an absolute project path.
-  cf resource-management commands use an empty configuration; development and
-  builds need an actual project configuration.
-- `deploy/tencent/cli` runs a pinned tccli with automatic uv/Python preparation
-  in an isolated Skill environment. It provides `ensure [--force]` and a local
-  read-only `check`, preserving native Tencent Cloud and EdgeOne commands.
-  Sign-in and credential refresh require TLS certificate verification.
-  `auth/key/check` returns a nonzero exit code when the local credential is absent.
-  Configuration and sign-in follow tccli's native rules. The page explains its
-  plaintext sign-in storage and recommends API keys saved in Windows Credential Manager.
-  tccli commands, including page sign-in and status checks, use the fixed
-  `%TEMP%/swaw/banyan/tccli/` directory and retain its caches. Use absolute local paths.
-- `deploy/auth/setup` opens one local authorization page for Cloudflare and Tencent
-  Cloud, headed “Authorization Manager”, with a linked `Powered by banyan.swaw.com`
-  credit below. The browser tab title is “Authorization Manager · Banyan”. Each platform's `auth/setup`
-  entry selects its tab. The page supports
-  native sign-in, Windows-stored API credentials and read-only environment status,
-  including Cloudflare's native `CF_*` aliases,
-  with credential priority, site icons in their original colors and system-language
-  text in English or Chinese. A title-bar language switch preserves inputs and
-  progress; reloading returns to the system language without saving the selection.
-  Platform navigation and method tabs use a monochrome layout with a thin column divider.
-  Credential priority sits below the authorization method tabs; Close follows the language selector on the same row.
-  Supplementary notes follow the controls or variable table. Sign-in and API Token
-  notes use numbered lists for setup, permissions and credential storage.
-  Sign-in tabs prepare tools in the background, show readiness and support retry,
-  then check existing cf and Wrangler sign-in and usable tccli native credentials,
-  including after reload or reopening. tccli uses a native STS identity query
-  with the same profile as sign-in;
-  it does not distinguish stored sign-in from keys or check product permissions.
-  Sign-in buttons show request progress immediately.
-  API Token setup stays available during downloads and checks; Close stops preparation, checks and sign-in.
-  The page no longer expires automatically; each CLI keeps its own authorization timeout.
-  The page avoids browser-blocked ports.
-  Cancellation still closes the session after a credential write if the save connection disconnects.
-  Narrow screens stack the columns.
-  Both platforms use the API Token tab label.
-  Tencent access keys use `swban/tencent/default`; `auth/key/check` checks local presence.
+- Cloud CLIs, authorization and Python/uv tools now belong to the independent [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill. Banyan retains builds, checks and EdgeOne configuration sync.
 - MIT licenses for the repository, Module and Skill, with third-party notices.
 
 ## Changed
@@ -190,9 +136,6 @@ lastmod: 2026-11-12
   Hugo and Go prepare Git as needed. The theme no longer enables unused Git page
   information. GitHub CLI is prepared when used.
   Run npm and npx with `base/node/npm` and `base/node/npx`.
-  Python commands use `base/uv/python`, `base/uv/python/check` and
-  `base/uv/python/ensure`; common help lists uv as the Python tool manager.
-  uv accepts global options before commands; `run` and `pip` retain the isolated Python environment.
   Prepare parser packages with `base/packages/ensure` before working offline;
   use `--force` to reinstall. Doctor reports missing packages without installing them.
   Prepare browsers with `base/browser/ensure` and `base/browser/ensure.webkit`.
@@ -354,6 +297,10 @@ lastmod: 2026-11-12
 
 ## Upgrade migration
 
+- Sites using the old Python/uv commands → site scripts calling `swban base/uv*` and the Skill’s `.tools/bindings.json` → use the matching Swaw Clouds commands and manually remove the `tools.uv` binding. Existing runtimes and caches may remain.
+
+- Sites using the old cloud CLI or authorization page → site scripts calling `swban deploy/cloudflare/*`, `deploy/tencent/*` or `deploy/auth/setup` → install Swaw Clouds and use `swcl cloudflare/*`, `tencent/*` or `auth/setup`. Transfer custom Windows credentials to `swcl/cloudflare/default` and `swcl/tencent/default`, or authorize again. Native CLI sign-in stays in its original location.
+
 - Sites with previous wall options → section or home `_index*.md`, `params.wall` → replace `layout` and numeric `size` with `size.width/height`: `auto/previous size` for equal height, `previous size/auto` for equal width, or two dimensions for a fixed ratio. Replace `caption` and `controls` with `details: title|overlay|overlay-hover`; remove the old fields.
 
 - Sites using art bundles → `content/_res/home-art/<theme>/index*.md` and bundle templates → set `params.template: scene.html.tmpl`, remove scene shortcodes from the body, and move scene HTML and calculations into that template. Use `htmlEscape` for text and HTML attribute values; output `.Content` where body content belongs. Wind sites can copy the current reference bundle template.
@@ -389,8 +336,6 @@ lastmod: 2026-11-12
   examples to restore the lines. List and `h1` borders can be configured separately.
   `--list-header-border` on `.item-list` and `--prose-heading-border` on `.prose` now use complete declarations such as `1px solid #888`. Use `none` to remove the line and its space, or `1px solid transparent` to retain the space. Update color-only values in custom palettes. Collection layout checks accept hidden, transparent and custom list-header borders.
 - Invalid saved theme preferences follow the system theme from the first paint.
-- Commands can reuse a prepared Python environment concurrently without installation-lock errors
-  and accept uv's Python aliases within the managed installation directory.
 - Build-version and browser prefetch checks accept the version JSON and valid empty inline rules.
 - Prefetch diagnostics display configuration and runtime state without a registered Service Worker.
 - Navigation sorting checks accept selectable text truncated by fixed field widths.

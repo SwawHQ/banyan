@@ -91,13 +91,9 @@ Run in PowerShell from the site root (Windows x64):
 The entry prepares Node/npm, Git, Go and Hugo as needed. It reuses compatible
 tools or downloads missing tools. Bun remains an optional tool under `base/bun`.
 GitHub CLI is prepared when you use `base/gh`.
-`base/uv/python` prepares an isolated Python environment; `base/uv tool run` runs
-Python CLI packages. See [Python tools](.agents/skills/swaw-banyan/references/python.md).
-Cloudflare's cf and Wrangler are available under `deploy/cloudflare/`.
-See [Cloudflare tools](.agents/skills/swaw-banyan/references/cloudflare.md).
-Tencent Cloud's tccli is available under `deploy/tencent/cli`, with automatic
-uv/Python preparation. See [Tencent Cloud tools](.agents/skills/swaw-banyan/references/tencent.md).
-`swban deploy/auth/setup` opens the shared Cloudflare and Tencent Cloud authorization page.
+Cloud CLI tools and authorization are provided by [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds).
+Install its `skills/swaw-clouds/` directory at `.agents/skills/swaw-clouds/`,
+then run `.\.agents\skills\swaw-clouds\swcl.cmd auth/setup`.
 Open <http://127.0.0.1:13241/>.
 
 To add Banyan to an existing site or update its theme separately, see

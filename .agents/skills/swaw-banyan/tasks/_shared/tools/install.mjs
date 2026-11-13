@@ -31,7 +31,7 @@ export function recover(root, tool) {
   else restoreBackup(root, tool);
 }
 export async function install(root, tool, {force = false, archivePath, receive = download} = {}) {
-  if (!['bun','node','hugo','go','git','gh','uv'].includes(tool.name)) fail('invalid_runtime_name');
+  if (!['bun','node','hugo','go','git','gh'].includes(tool.name)) fail('invalid_runtime_name');
   const target = inside(root, tool.name), stage = inside(root, `.cache/${tool.name}`);
   if (force && fs.existsSync(path.join(target,tool.executable)) &&
       fs.realpathSync(process.execPath) === fs.realpathSync(path.join(target,tool.executable))) {
