@@ -14,7 +14,7 @@
 
 **2.** 卡片墙、米勒列导航、产品列表、文章列表
 
-**3.** 多语言、主题切换、自定义外观、首页可插件化替换或自定义
+**3.** 多语言、主题切换、外观/首页可自定义
 
 **4.** 配套 Agent Skill，跨云部署、运维、运营——可直接托管给你的本地 Agent
 
@@ -61,8 +61,12 @@
 
 
 4. 部署\
-    用你的 AI Agent 打开站点根目录。\
-    云部署使用独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds)；先将其中的 `skills/swaw-clouds/` 安装到 `.agents/skills/swaw-clouds/`。提示：
+    在站点根目录用 PowerShell 安装 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill：
+    ```powershell
+    .\.agents\skills\swaw-banyan\swban.cmd base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #安装部署 Skill
+    ```
+
+    用你的 AI Agent 打开站点根目录，提示：
     ```
     使用 .agents/skills/swaw-banyan 在本地构建并检查站点，再使用 .agents/skills/swaw-clouds 部署到 Cloudflare Pages。
     需要授权时，运行 .\.agents\skills\swaw-clouds\swcl.cmd auth/setup，提示我在授权管理界面录入凭据。

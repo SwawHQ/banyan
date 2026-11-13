@@ -2,119 +2,113 @@
 
 English · [简体中文](README.zh-CN.md)
 
-A website template (Hugo theme) for browsing resources and articles by category,
-with Miller column navigation.
+**A website template and Hugo theme built for categorized content, database-free sites, and edge hosting.**
 
-[Demo](https://banyan.swaw.com/) ·
-[Documentation](https://banyan.swaw.com/articles/docs/) ·
-[Changelog](https://banyan.swaw.com/articles/changelog/)
 
-**1.** Miller column navigation
+[Demo site 1](https://banyan.swaw.com/) ·
+[Demo site 2](https://swaw.com/)
 
-**2.** Content directories with shared cross-directory references
+Features:
 
-**3.** Article and product list views
+**1.** Organize resources and articles across multiple categories and levels
 
-**4.** Companion Agent Skill
+**2.** Card walls, Miller column navigation, product lists, and article lists
 
-**5.** Static deployment, asset fingerprints, and CDN caching
+**3.** Multiple languages, theme switching, and customizable appearance and home page
 
-**6.** Multiple languages, theme switching, and custom appearance
+**4.** Companion Agent Skills for deployment across clouds, maintenance, and operations—managed by your local Agent
 
-**7.** PWA, Service Worker caching, and page prefetch
+**5.** Hugo-generated pages + optimized CDN caching + edge computing + object storage, with no database or self-hosted server
 
-**8.** Automatic CSP and SRI generation
+**6.** PWA, Service Worker caching, page prefetch, and automatic CSP/SRI generation
 
-**9.** RSS, social metadata, sitemap, robots.txt, and llms.txt
+**7.** RSS, social metadata, sitemap, robots.txt, and llms.txt
 
-The repository root owns article (`articles`, `articles-all`) and product (`products`, `products-all`) examples.
-The sample article in `content/articles/category1/example/` is also referenced by the product examples.
-Documentation and release notes are maintained in `content/articles/docs/` and `content/articles/changelog/`.
-The root also owns optional settings and information pages, including Powered by and prefetch diagnostics.
-The Module supplies reusable layouts, scripts and styles; it contains no site content.
+Backend features such as accounts, payments, and comments are not yet available. They are in development.
 
-## Get started
 
-Clone or extract this complete repository as the starting point for your site.
-The article template is site-owned `archetypes/banyan.md`.
-Keep Hugo fields such as `title`, `url` and `layout` at the top level of front
-matter. Put custom page fields under `params`, and inherited defaults under
-`cascade.params`.
-Use `page-article-rss` for RSS article items, and `page-article-norss` for other Markdown
-pages. The `meta` slot enables article metadata, chapters and BlogPosting.
-Use `page-offline` for offline fallback pages. This standalone layout keeps the
-Markdown content and retry action without navigation or SW management scripts.
-Collection layouts select their fields and behavior: `page-collection-directory-name-only`
-shows names, `page-collection-directory` shows directory metadata, and
-`page-collection-products` shows product values. The directory and product
-`-all` layouts require `params.aggregate` with a source section path. Sections
-publish HTML and RSS by default; set `outputs: [HTML]` on sections that need no feed.
-Language and appearance settings use `_index.md` with
-`page-collection-language` or `page-collection-appearance` and output HTML only.
-Keep root `assets/site/`, then replace the icons with your own
-and review `assets/site/manifest.webmanifest.tmpl` and `assets/site/robots.txt.tmpl`.
-The site maintains these templates; the Module and traditional theme directory
-do not include site icons or these templates.
-Keep complete configuration files in `assets/site/` and the enabled languages'
-`assets/i18n/` dictionaries. Keep the project's `assets/i18n` → `i18n` Hugo mount;
-the theme does not supply these files. Language changes require matching
-`hugo.toml` settings, interface dictionaries and content translations.
-Home and published direct children of `content/` appear in the first navigation
-column. Set each language's default description in its home page `description`.
-For `layout: page-home`, put `{{< home-art "/_res/home-art/wind" >}}` in the
-home page body. Keep the selected art in a hidden leaf bundle under
-`content/_res/home-art/`, with translated `index.md` files, a template and companion CSS/JS.
-The art renders inside the home and has no standalone page.
-Set its text and scene options in `params`. On the home page,
-`params.show_navigation` controls the first navigation column and defaults to
-`true`, with or without home art. The art bundle's `styles` and `scripts` select
-resources, published as fingerprinted external files. Set `params.template` to
-`scene.html.tmpl` in the bundle. Keep scene calculations and HTML in that file;
-new scenes need no Module changes.
-Start with `content/_res/home-art/minimal/`. Copy the bundle, edit each language's
-`index*.md`, then edit its template and CSS. Change the home's `home-art` path to
-the new bundle. Minimal needs no JS; the default home still uses wind.
-Keep internal pages in `content/_res/`; its shared `_index.md` hides this branch
-from navigation and discovery. Its Offline and prefetch diagnostic
-pages publish under `_res/`. Delete optional pages you do not need. SW `enable`
-requires a published HTML offline page for each enabled language at build time.
-First installation requires the default-language offline HTML and its
-`fingerprinted` assets selected for warmup.
-Later SW and content updates tolerate unavailable offline pages: use the default
-language, then a built-in offline notice.
-Run in PowerShell from the site root (Windows x64):
 
-```powershell
-.\.agents\skills\swaw-banyan\swban.cmd base/hugo server -D --disableFastRender --port 13241  #Start the preview
-```
 
-The entry prepares Node/npm, Git, Go and Hugo as needed. It reuses compatible
-tools or downloads missing tools. Bun remains an optional tool under `base/bun`.
-GitHub CLI is prepared when you use `base/gh`.
-Cloud CLI tools and authorization are provided by [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds).
-Install its `skills/swaw-clouds/` directory at `.agents/skills/swaw-clouds/`,
-then run `.\.agents\skills\swaw-clouds\swcl.cmd auth/setup`.
-Open <http://127.0.0.1:13241/>.
+## Set up a new site (with help from an AI Agent)
 
-To add Banyan to an existing site or update its theme separately, see
-[Getting started](https://banyan.swaw.com/zh/p/getting-started/).
-For builds and checks, see
-[Local development](https://banyan.swaw.com/zh/p/local-development/).
+
+1. Download **Source code (zip)** from the [latest stable release](https://github.com/SwawHQ/banyan/releases/latest). Extract it as your site directory.
+
+2. Start a local preview (Windows x64, run in PowerShell from the site root):
+    ```powershell
+    .\.agents\skills\swaw-banyan\swban.cmd base/hugo server -D --disableFastRender
+    ```
+
+3. Review these four items to understand the site structure:
+    ```
+    hugo.toml
+    archetypes/
+    assets/
+    content/
+    ```
+
+    Delete or replace these resources as needed:
+    ```
+    content/articles/changelog/  #Banyan release notes
+    content/articles/docs/       #Banyan documentation
+    content/articles/category1/  #Sample category for your own articles and categories
+    content/products/examples/   #Examples of cross-category references through _map.toml
+    content/products/            #Root directory for product categories
+    content/products-all/        #Product list directory
+    ```
+
+    Then set your own site name, domain, logo, and articles.
+
+
+4. Deploy\
+    Install the [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill in PowerShell from the site root:
+    ```powershell
+    .\.agents\skills\swaw-banyan\swban.cmd base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #Install the deployment Skill
+    ```
+
+    Open the site root in your AI Agent and use this prompt:
+    ```
+    Use .agents/skills/swaw-banyan to build and check the site locally, then use .agents/skills/swaw-clouds to deploy it to Cloudflare Pages.
+    When authorization is needed, run .\.agents\skills\swaw-clouds\swcl.cmd auth/setup and ask me to enter credentials in the authorization interface.
+    ```
+
+    For Tencent Cloud EdgeOne Makers:
+    ```
+    Use .agents/skills/swaw-banyan to build and check the site locally, then use edgeone/cli in .agents/skills/swaw-clouds to deploy it to EdgeOne Makers.
+    When authorization is needed, run .\.agents\skills\swaw-clouds\swcl.cmd edgeone/cli login and guide me through the official login process.
+    ```
+
+    You can also ask your Agent to purchase domains, configure DNS, or combine Cloudflare with EdgeOne Makers and route mainland China traffic to EdgeOne Makers through DNS-ECS.
+
+    To open the authorization interface manually:
+    ```powershell
+    .\.agents\skills\swaw-clouds\swcl.cmd auth/setup
+    ```
+
+
+## Upgrade an existing Banyan site
+1. Read the [Changelog](https://banyan.swaw.com/zh/articles/changelog/) and choose a version. The example below uses the latest release.
+
+2. Open the site root in your AI Agent and use this prompt:
+    ```
+    Use .agents/skills/swaw-banyan. First run .\.agents\skills\swaw-banyan\swban.cmd help upgrade/git to read the upgrade steps, then upgrade this site to the latest official Banyan release. Preserve this site's content, URLs, and customizations. If any changes are unclear, report them and wait for confirmation.
+    ```
+
+
 
 ## Documentation
 
-The guides are currently in Chinese.
 
 - [Site configuration](https://banyan.swaw.com/zh/p/site-configuration/)
 - [Lists and products](https://banyan.swaw.com/zh/p/collection-lists/)
-- [Layout slots](https://banyan.swaw.com/zh/p/layout-slots/)
+- [Page regions](https://banyan.swaw.com/zh/p/layout-slots/)
 - [Delivery and caching](https://banyan.swaw.com/zh/p/delivery/)
-- [Security and CSP](https://banyan.swaw.com/zh/p/security-csp/)
-- [Discovery and source links](https://banyan.swaw.com/zh/p/discovery/)
-- [Web app manifest and icons](https://banyan.swaw.com/zh/p/web-app/)
-- [Development and release guides](https://banyan.swaw.com/zh/articles/docs/development/)
+- [Security policies and CSP](https://banyan.swaw.com/zh/p/security-csp/)
+- [Site discovery and source links](https://banyan.swaw.com/zh/p/discovery/)
+- [Web App Manifest and icons](https://banyan.swaw.com/zh/p/web-app/)
+- [Development and release guide](https://banyan.swaw.com/zh/articles/docs/development/)
 
 ## License
 
 [MIT License](LICENSE)  
-Copyright (c) 2026 WY Swaw LLC (https://swaw.com, https://github.com/SwawHQ)
+Copyright (c) 2026 WY Swaw LLC (https://swaw.com)
