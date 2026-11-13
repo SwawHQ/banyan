@@ -2,99 +2,98 @@
 
 [English](README.md) · 简体中文
 
-一个网站模板（Hugo 主题），用于对资源、文章做分类、提供米勒列导航。
+**一个网站模板兼 Hugo 主题，强调分类、无数据库、边缘原生。**
 
 
-[演示](https://banyan.swaw.com/) ·
-[文档](https://banyan.swaw.com/zh/articles/docs/) ·
-[变更记录](https://banyan.swaw.com/zh/articles/changelog/)
+[演示站点 1](https://banyan.swaw.com/) ·
+[演示站点 2](https://swaw.com/)
 
+特性：
 
-**1.** 米勒列导航
+**1.** 可对资源/文章做多维、多层分类
 
-**2.** 多层、多维分类
+**2.** 卡片墙、米勒列导航、产品列表、文章列表
 
-**3.** 文章、产品列表视图
+**3.** 多语言、主题切换、自定义外观、首页可插件化替换或自定义
 
-**4.** 配套 Agent Skill，自动部署腾讯 EdgeOne pages、Cloudflare pages，自动日常运维
+**4.** 配套 Agent Skill，跨云部署、运维、运营——可直接托管给你的本地 Agent
 
-**5.** 纯静态部署、资源指纹与 CDN 缓存
+**5.** Hugo 预生成页面 + CDN 缓存优化 + 边缘计算 + 对象存储，无需数据库和自托管服务器
 
-**6.** 多语言、主题切换、自定义外观
+**6.** PWA、Service Worker 缓存、页面预取、自动生成 CSP/SRI
 
-**7.** PWA、SW 缓存、页面预取
+**7.** RSS、社交元数据、sitemap、robots.txt、llms.txt
 
-**8.** 自动生成 CSP 与 SRI
-
-**9.** RSS、社交元数据、sitemap、robots.txt、llms.txt
+账号系统、支付、评论等后端功能暂不提供，正在开发。
 
 
 
 
-仓库根目录维护文章（`articles`、`articles-all`）和产品（`products`、`products-all`）四个示例入口。产品示例引用 `content/articles/category1/example/` 中的示例文章。
-使用与开发文档在 `content/articles/docs/` 维护，变更记录在 `content/articles/changelog/` 维护。根目录还提供可选的设置和说明页面。
-Powered by 和预取诊断页面也由站点根 `content/` 维护。Module 只提供布局、脚本和样式，不提供站点内容。
+## 设置新站点（可让 AI Agent 协助）
 
-## 开始使用
 
-克隆或解压完整仓库，以根参考站点开始新站点。
-文章模板由站点根 `archetypes/banyan.md` 维护。
-Front matter 中，`title`、`url`、`layout` 等 Hugo 原生字段保留在顶层。
-自定义页面字段放在 `params` 下，继承默认值放在 `cascade.params` 下。
-`page-article-rss` 可作为 RSS 条目，`page-article-norss` 用于其他 Markdown 页面。
-`meta` 区域统一启用文章元信息、章节目录和 BlogPosting。
-集合布局直接决定字段和行为：`page-collection-directory-name-only` 只显示名称，
-`page-collection-directory` 显示目录信息，`page-collection-products` 显示产品信息。
-后两者的 `-all` 布局通过 `params.aggregate` 指定汇总来源栏目。
-栏目默认输出 HTML 和 RSS；不需要订阅源时设置 `outputs: [HTML]`。
-语言和外观设置使用 `_index.md`，布局分别为 `page-collection-language`、
-`page-collection-appearance`，只输出 HTML。
-保留根 `assets/site/`，再换成自己的图标，
-并检查 `assets/site/manifest.webmanifest.tmpl` 和 `assets/site/robots.txt.tmpl`。
-这些模板由站点维护；Module 和传统主题目录不包含站点图标或这些模板。
-保留 `assets/site/` 中的完整配置和已启用语言的 `assets/i18n/` 界面字典；主题不提供这些文件。
-保留项目中从 `assets/i18n` 到 `i18n` 的 Hugo 挂载。
-增删语言时，同步调整 `hugo.toml`、界面字典和所需的内容译文。
-第一列默认显示首页和 `content/` 中已发布的直属页面、栏目。
-各语言的默认描述由对应首页的 `description` 提供。
-首页保留 `layout: page-home`，在正文中写入 `{{< home-art "/_res/home-art/wind" >}}`。
-艺术页使用 `content/_res/home-art/` 下的隐藏叶子包，包含各语言的 `index.md`、场景模板和 CSS、JS 资源。
-艺术内容嵌入首页，不单独发布页面。
-艺术包的文字和场景参数放在其 `params` 中。
-宿主首页的 `params.show_navigation` 控制第一列导航，默认为 `true`；没有引用艺术包时也适用。
-艺术包的 `styles` 和 `scripts` 选择包内资源，以指纹外链文件发布。
-艺术包的 `params.template` 选择包内 `scene.html.tmpl`，其中包含场景计算与 HTML；新增场景无需修改 Module。
-从 `content/_res/home-art/minimal/` 复制最小示例，修改各语言 `index*.md` 的标题、说明和正文，再修改包内模板与 CSS。首页将引用改为 `{{< home-art "/_res/home-art/<包名>" >}}`。最小示例无 JS；默认首页仍使用风场。
-内部页面统一放在 `content/_res/`，共用的 `_index.md` 将此分支排除在导航和站点发现之外。
-其中的离线页和预取诊断页统一发布到 `_res/` 路径；可删除不需要的可选页面。
-SW 为 `enable` 时，构建要求每种已启用语言都发布 HTML 离线页。
-首次安装要求默认语言离线 HTML 及需预热的 `fingerprinted` 资源可用。
-此后的 SW 和内容更新不受离线页缺失影响。
-运行时离线页不可用，先使用默认语言，再使用内置提示。
-在站点根目录用 PowerShell 执行（Windows x64）：
+1. 从[最新正式版本](https://github.com/SwawHQ/banyan/releases/latest)下载 **Source code (zip)**，解压后作为你的站点目录。
 
-```powershell
-.\.agents\skills\swaw-banyan\swban.cmd base/hugo server -D --disableFastRender --port 13241  #启动预览
-```
+2. 启动本地预览（Windows x64，在站点根目录用 PowerShell 执行）：
+    ```powershell
+    .\.agents\skills\swaw-banyan\swban.cmd base/hugo server -D --disableFastRender
+    ```
 
-入口会按需准备 Node/npm、Git、Go 和 Hugo：优先复用兼容工具，缺少时自动下载。
-GitHub CLI 在使用 `base/gh` 时准备。
-`base/uv/python` 按需准备隔离的 Python 环境；`base/uv tool run` 运行 Python CLI。
-使用方法见 [Python 工具](.agents/skills/swaw-banyan/references/python.md)。
-`deploy/cloudflare/` 提供 cf 和 Wrangler，按需准备固定版本。
-使用方法见 [Cloudflare 工具](.agents/skills/swaw-banyan/references/cloudflare.md)。
-`deploy/tencent/cli` 提供 tccli，自动准备 uv/Python 和独立工具环境。
-使用方法见 [腾讯云工具](.agents/skills/swaw-banyan/references/tencent.md)。
-`swban deploy/auth/setup` 打开 Cloudflare 和腾讯云共用的授权页。
-打开 <http://127.0.0.1:13241/> 查看站点。
+3. 检查目录中这四项，以了解站点结构：
+    ```
+    hugo.toml
+    archetypes/
+    assets/
+    content/
+    ```
 
-已有站点接入或单独升级主题，见[开始使用](https://banyan.swaw.com/zh/p/getting-started/)；
-构建和检查，见[本地开发](https://banyan.swaw.com/zh/p/local-development/)。
+    这些资源可按需删除或替换：
+    ```
+    content/articles/changelog/  #Banyan 更新记录
+    content/articles/docs/       #Banyan 文档
+    content/articles/category1/  #示例分类，可参考它建立自己的文章与分类
+    content/products/examples/   #示例，通过 _map.toml 引用做多维分类
+    content/products/            #产品分类的根目录
+    content/products-all/        #产品列表的根目录
+    ```
+
+    然后设置你自己的站点名称、域名、Logo 和文章。
+
+
+4. 部署\
+    用你的 AI Agent 打开站点根目录。\
+    Cloudflare Pages 提示：
+    ```
+    使用 .agents/skills/swaw-banyan 把当前站点先在本地编译，然后部署到 Cloudflare Pages，
+    需要授权时，运行 .\.agents\skills\swaw-banyan\swban.cmd deploy/auth/setup，提示我在授权管理界面录入凭据。
+    ```
+
+    腾讯云 EdgeOne Makers：
+    ```
+    使用 .agents/skills/swaw-banyan 把当前站点先在本地编译，然后部署到 EdgeOne Makers，
+    需要授权时，运行 .\.agents\skills\swaw-banyan\swban.cmd deploy/auth/setup，提示我在授权管理界面录入凭据。
+    ```
+
+    域名购买、域名解析、或混合使用 Cloudflare 与 EdgeOne Makers，并将中国大陆流量通过 DNS-ECS 路由到 EdgeOne Makers……也都可以提示 Agent 去完成。
+
+    手动打开授权管理界面：
+    ```powershell
+    .\.agents\skills\swaw-banyan\swban.cmd deploy/auth/setup
+    ```
+
+
+## 已有基于 banyan 的站点，要升级
+1. 先查看：[Changelog](https://banyan.swaw.com/zh/articles/changelog/)，确定要升级到哪个版本，这里假设是要最新发布版。
+
+2. 用你的 AI Agent 打开站点根目录，提示：
+    ```
+    使用 .agents/skills/swaw-banyan，先运行 .\.agents\skills\swaw-banyan\swban.cmd help upgrade/git 查看升级步骤，再将当前站点升级到 Banyan 官方最新发布版。保留本站内容、URL、自定义项；不能明确处置的内容，先报告并等待确认。
+    ```
+
 
 
 ## 文档
 
-指南目前以中文提供。
 
 - [站点配置](https://banyan.swaw.com/zh/p/site-configuration/)
 - [列表与产品](https://banyan.swaw.com/zh/p/collection-lists/)
@@ -108,5 +107,5 @@ GitHub CLI 在使用 `base/gh` 时准备。
 ## 许可证
 
 [MIT 许可证](LICENSE)  
-Copyright (c) 2026 WY Swaw LLC (https://swaw.com, https://github.com/SwawHQ)
+Copyright (c) 2026 WY Swaw LLC (https://swaw.com)
 
