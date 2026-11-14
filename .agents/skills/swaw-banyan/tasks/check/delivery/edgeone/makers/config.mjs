@@ -1,12 +1,9 @@
 import {compilePath} from '../../_shared/path.mjs';
 import {checkDestination, checkHeaderName, checkObject, checkRedirectSource, checkString, parseJson} from '../../_shared/validation.mjs';
 
-const buildFields = ['installCommand', 'buildCommand', 'outputDirectory', 'nodeVersion', 'hugoVersion'];
-
 export function parseEdgeoneConfig(text) {
   const config = parseJson(text, 'edgeone.json');
-  checkObject(config, [...buildFields, 'headers', 'redirects'], 'edgeone.json');
-  for (const key of buildFields) checkString(config[key], 'edgeone.json ' + key);
+  checkObject(config, ['headers', 'redirects'], 'edgeone.json');
   if (!Array.isArray(config.headers) || config.headers.length > 30) throw new Error('edgeone.json headers must be an array with at most 30 rules.');
   for (const rule of config.headers) {
     checkObject(rule, ['source', 'headers'], 'edgeone.json header rule');

@@ -48,7 +48,7 @@ swban <command> --help    #查看参数和默认值
 | 修改 SW 状态或预取诊断页面 | [状态与诊断页](references/diagnostics.md) |
 | 配置交付策略或检查产物与指纹路径 | [交付检查](references/delivery.md) |
 | 用 `sync/ext` 下载已声明的外部资源 | [外部资源](references/external-resources.md) |
-| 同步生成的 EdgeOne 配置或规划部署 | [EdgeOne](references/edgeone.md) |
+| 准备 EdgeOne 交付配置 | [EdgeOne](references/edgeone.md) |
 | 添加任务或编排站点测试套件 | [任务维护](references/tasks.md) |
 
 ## 根据改动选择检查
@@ -62,6 +62,4 @@ swban <command> --help    #查看参数和默认值
 
 ## 云端部署
 
-Banyan 负责构建和检查。云平台 CLI、授权及上传由独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 技能负责；将其 `skills/swaw-clouds/` 安装到项目的 `.agents/skills/swaw-clouds/`。上传时使用构建产物的绝对路径。
-
-托管构建使用平台自己的工具链；Banyan 的 EdgeOne 任务只同步配置。
+Banyan 负责构建、交付配置和检查；支持 Cloudflare Pages、EdgeOne Makers 的产物上传与 Git 托管构建。用 `swban help/zh deploy` 查看各平台的 `git` 与 `upload` 专项。方式选择及其他静态托管的边界见[首次部署](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs/guide/deploying/index.zh.md)。云平台授权和发布操作由独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 技能指导。

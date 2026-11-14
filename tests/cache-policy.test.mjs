@@ -157,7 +157,6 @@ test('default policy generates explicit Cloudflare overrides and independent Edg
 test('platform values override common values only within their own route and platform',()=>{
   const tokenHeader="X!#$%&'*+.^_`|~-09Az";
   const policy='[platform.cloudflare.pages]\nenabled = true\n[platform.edgeone.makers]\nenabled = true\n'+
-    'installCommand = ""\nbuildCommand = "hugo --minify --gc --cleanDestinationDir"\noutputDirectory = "public"\nnodeVersion = "20.18.0"\n'+
     '[[routes]]\npath = "/*"\nhttp.headers.X-Common = "yes"\nhttp.headers.X-Value = "common"\n'+
     'http.headers.X_Request_ID = "request"\nhttp.headers.'+JSON.stringify(tokenHeader)+' = "token"\n'+
     'http.cloudflare.pages.headers.x-value = "cf"\nhttp.edgeone.makers.headers.X-Value = "eo"\n'+
@@ -177,7 +176,7 @@ test('platform values override common values only within their own route and pla
   assert.equal(edge.headers[0].headers.find(header=>header.key.toLowerCase()==='x-value').value,'eo');
   assert.ok(!edge.headers.some(route=>route.source==='/cf-only/*'||route.source==='/remove/*'));
   assert.ok(!rules.some(route=>route.source==='/eo-only/*'));
-  assert.equal(edge.nodeVersion,'20.18.0');assert.equal(edge.buildCommand,'hugo --minify --gc --cleanDestinationDir');
+  assert.deepEqual(Object.keys(edge).sort(),['headers','redirects']);
   assert.equal(worker(output).probe.SW_ROUTES.length,0);
 });
 
@@ -195,7 +194,6 @@ test('hash-prefixed headers remain valid outside Cloudflare header declarations'
   for(const cloudflare of [false,true]) {
     const field=cloudflare?'http.edgeone.makers.headers':'http.headers';
     const policy='[platform.cloudflare.pages]\nenabled = '+cloudflare+'\n[platform.edgeone.makers]\nenabled = true\n'+
-      'installCommand = ""\nbuildCommand = "hugo"\noutputDirectory = "public"\nnodeVersion = "22.11.0"\n'+
       '[[routes]]\npath = "/probe/*"\n'+field+'."#Trace" = "enabled"\nhttp.cloudflare.pages.unset = ["#Trace"]\n';
     const output=passed(build('comment-header-edgeone-'+cloudflare,policy));
     const edge=JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8'));
@@ -350,8 +348,7 @@ test('shared deployment files are published when the default language only outpu
 
 test('platform switches publish only their enabled artifacts and do not inherit omitted platforms',()=>{
   for(const cloudflare of [false,true])for(const edgeone of [false,true]) {
-    const policy='[platform.cloudflare.pages]\nenabled = '+cloudflare+'\n[platform.edgeone.makers]\nenabled = '+edgeone+'\n'+
-      (edgeone?'installCommand = ""\nbuildCommand = "hugo"\noutputDirectory = "public"\nnodeVersion = "22.11.0"\n':'');
+    const policy='[platform.cloudflare.pages]\nenabled = '+cloudflare+'\n[platform.edgeone.makers]\nenabled = '+edgeone+'\n';
     const output=passed(build('platform-switch-'+cloudflare+'-'+edgeone,policy));
     assert.equal(fs.existsSync(path.join(output,'_headers')),cloudflare);
     assert.equal(fs.existsSync(path.join(output,'_redirects')),cloudflare);
@@ -363,8 +360,10 @@ test('platform switches publish only their enabled artifacts and do not inherit 
   assert.equal(fs.existsSync(path.join(onlyCloudflare,'edgeone.json')),false);
   const none=passed(build('platform-empty','platform = {}\n'));
   for(const file of ['_headers','_redirects','edgeone.json'])assert.equal(fs.existsSync(path.join(none,file)),false);
-  const incomplete=build('platform-incomplete','[platform.edgeone.makers]\nenabled = true\nnodeVersion = "22.11.0"\n');
-  assert.notEqual(incomplete.status,0);assert.match(incomplete.log,/enabled platform.edgeone.makers requires installCommand/);
+  for(const field of ['installCommand','buildCommand','outputDirectory','nodeVersion','hugoVersion']) {
+    const invalid=build('platform-build-'+field,'[platform.edgeone.makers]\nenabled = true\n'+field+' = "unused"\n');
+    assert.notEqual(invalid.status,0);assert.match(invalid.log,/unsupported platform.edgeone.makers/);
+  }
   const cleaned=passed(build('platform-switch-true-true','platform = {}\n','',serviceWorkerPolicy('off')));
   for(const file of ['_headers','_redirects','edgeone.json','sw.js','sw-policy.json','sw-version.json'])
     assert.equal(fs.existsSync(path.join(cleaned,file)),false,'Clean builds remove the disabled artifact '+file);
@@ -619,7 +618,7 @@ test('the page entry only registers after load and prerender activation, without
     assert.equal(registrations.length,supported?1:0);
     if(supported){
       assert.equal(registrations[0][0],'/sw.js');
-      assert.deepEqual(JSON.parse(JSON.stringify(registrations[0][1])),{scope:'/',updateViaCache:'none'});
+      assert.deepEqual(JSON.parse(JSON.stringify(registrations[0][1])),{updateViaCache:'none'});
     }
     assert.deepEqual([...windowEvents.keys()],supported&&!loaded?['load']:[]);
     assert.deepEqual([...documentEvents.keys()],supported&&prerendering?['prerenderingchange']:[]);

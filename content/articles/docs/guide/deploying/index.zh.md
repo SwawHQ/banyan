@@ -7,7 +7,7 @@ description: 选择平台，构建和检查正式产物，再上传并检查线�
 weight: 3
 ---
 
-先完成[开始使用](/zh/p/getting-started/)。本页的 PowerShell 命令从站点根目录运行，并使用该页定义的 `swban` 简称。引号中的 `<项目名>`、`<正式网址>` 等是需要替换的占位符。
+先完成[开始使用](/zh/p/getting-started/)。本页的 PowerShell 命令从站点根目录运行，并使用该页定义的 `swban` 简称。引号中的 `<正式网址>` 是需要替换的占位符。
 
 ## 选择部署方式
 
@@ -16,7 +16,15 @@ weight: 3
 | 本地构建后上传 | 检查通过的 HTML 和资源目录 | 先在本机完成构建，再发布 |
 | Git 托管构建 | 站点源码仓库与平台构建配置 | 推送代码后由平台自动构建和发布 |
 
-下面先说明本地构建后上传。Cloudflare 的 Direct Upload 项目不能直接改成 Git 集成项目；需要自动构建时，应在创建项目时选择 Git 集成。见[平台说明](https://developers.cloudflare.com/pages/get-started/direct-upload/)。
+用 `swban help/zh deploy` 查看按平台和方式划分的准备专项。Banyan 提供静态站点构建、交付配置生成和检查；账号授权、云项目创建、上传及 Git 接入由 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 的专项说明指导。
+
+| 平台 | Banyan 提供的配置 | 平台操作说明 |
+| --- | --- | --- |
+| Cloudflare Pages | `_headers`、`_redirects` | [上传产物](https://github.com/SwawHQ/swaw-clouds/blob/main/skills/swaw-clouds/tasks/cloudflare/deploy/pages-upload/help.json) · [Git 托管构建](https://github.com/SwawHQ/swaw-clouds/blob/main/skills/swaw-clouds/tasks/cloudflare/deploy/pages-git/help.json) |
+| EdgeOne Makers | `edgeone.json` 交付规则 | [上传产物](https://github.com/SwawHQ/swaw-clouds/blob/main/skills/swaw-clouds/tasks/edgeone/deploy/upload/help.json) · [Git 托管构建](https://github.com/SwawHQ/swaw-clouds/blob/main/skills/swaw-clouds/tasks/edgeone/deploy/git/help.json) |
+| 其他静态托管、对象存储与 CDN | HTML、资源和浏览器端 SW 策略 | 按目标平台配置响应头、重定向和缓存；Banyan 暂不生成这些平台的专用配置 |
+
+两种方式使用同一套源码。上传方式交付产物目录；Git 方式交付源码和构建参数。切换前，按对应专项核对平台是否允许复用原项目。
 
 在所选平台建立账号并确定目标项目。将 `hugo.toml` 的 `baseURL` 设为要公开使用的网址；若首次上传后才取得平台域名，取得后回填该值，重新构建并上传。绑定自有域名后也要更新它。
 
@@ -45,53 +53,22 @@ swban base/browser/ensure                                             #准备浏
 swban check/browser/site "$build"                                      #检查代表页面
 ```
 
-每条命令成功后再执行下一条。构建不加 `-D`；草稿不会发布。产物目录应包含 `index.html`、各语言页面与资源。Cloudflare 还应有 `_headers`，EdgeOne 应有 `edgeone.json`；没有重定向规则时不要求 `_redirects`。
+每条命令成功后再执行下一条。构建不加 `-D`；草稿不会发布。产物目录应包含 `index.html`、各语言页面与资源。Cloudflare 还应有 `_headers` 和 `_redirects`，EdgeOne 应有 `edgeone.json`；没有重定向规则时，`_redirects` 为空文件。
 
 查看报告中的失败项和跳过项。代表页面检查不覆盖全部文章，仍需检查自己的首页、导航、图片、外链和新文章。启用 SW 后的专项检查见[浏览器检查](/zh/p/browser-regression/)。
 
-## 安装上传工具
+## 发布构建产物
 
-本地上传使用独立的 Swaw Clouds Skill。若站点已有 `.agents/skills/swaw-clouds/`，直接定义简称；否则先安装：
+两个平台都使用检查通过的产物目录。Banyan 生成的 EdgeOne 配置只含交付规则，上传前无需再调整构建字段。
+
+按上表的“上传产物”专项完成授权和发布，并提供 `$build` 的绝对路径。已有 Swaw Clouds 时可直接查看指导；尚未安装时先执行第一行：
 
 ```powershell
 swban base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #安装云平台 Skill
-function swcl { & .\.agents\skills\swaw-clouds\swcl.cmd @args }                 #在本终端定义简称
+function swcl { & .\.agents\skills\swaw-clouds\swcl.cmd @args }                 #定义命令简称
+swcl help/zh cloudflare/deploy/pages-upload                                   #查看 Pages 上传指导
+swcl help/zh edgeone/deploy/upload                                            #查看 Makers 上传指导
 ```
-
-授权由浏览器完成。不要把 Token 写入页面或站点配置。已有登录可以复用；授权和账号问题见 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds)。
-
-## 上传到 Cloudflare Pages
-
-先登录，再创建项目。已有目标项目时跳过创建命令。
-
-```powershell
-swcl cloudflare/wrangler login                                                        #浏览器授权
-swcl cloudflare/wrangler pages project create "<项目名>" --production-branch main       #创建项目
-swcl cloudflare/wrangler pages deploy "$build" --project-name "<项目名>" --branch main  #发布到生产环境
-```
-
-上例把生产分支设为 `main`。已有项目使用其实际生产分支；其他分支名会生成预览部署。复制命令返回的网址，继续下面的线上检查。命令和项目行为见 [Cloudflare 上传说明](https://developers.cloudflare.com/pages/get-started/direct-upload/)。
-
-## 上传到 EdgeOne Makers
-
-EdgeOne 上传产物时仍会读取其中的构建设置。打开本次 `$build` 目录中的 `edgeone.json`，只调整以下三个字段，保留响应头、重定向等其余内容：
-
-```json
-{
-  "installCommand": "",
-  "buildCommand": "",
-  "outputDirectory": "."
-}
-```
-
-这是修改片段，不是完整文件。不要用它覆盖整个 JSON，也不要把这些上传设置写回源码中的 Git 托管构建配置。每次重新构建后都要调整本次上传副本。
-
-```powershell
-swcl edgeone/cli login                                                        #浏览器授权
-swcl edgeone/cli makers deploy "$build" -n "<项目名>" -e production --site global  #上传生产产物
-```
-
-选择与账号和项目一致的站点；上例为 `global`，中国站使用 `china`。不存在的项目可能由命令创建，执行前核对名称。新项目先完成生产部署，再使用 `-e preview` 部署预览。命令参数见 [EdgeOne CLI](https://pages.edgeone.ai/document/edgeone-cli)，上传副本要求见 [Banyan EdgeOne 说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/edgeone.md#built-asset-upload)。
 
 ## 线上检查与后续更新
 
@@ -105,8 +82,25 @@ swban check/http/security "<正式网址>"  #检查线上响应头
 
 ## Git 托管构建
 
-若选择平台自动构建，上传的是源码仓库，不使用上述产物上传命令。平台需要 Hugo、Go 和 Git；构建命令为 `hugo --minify --gc --cleanDestinationDir`，输出目录为 `public`。
+平台从关联的仓库分支拉取源码，不使用上述产物上传命令，也不需要安装或调用 `swban`。
 
-部署源码应使用已发布的固定 Module 版本。按[版本维护](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/upgrade.md#change-the-version)处理本地 `replace`，避免云端找不到本机目录。平台 Hugo 版本应满足主题要求。
+| 构建设置 | Banyan 使用的值 |
+| --- | --- |
+| 根目录 | 站点在仓库中的目录；本参考站点为 `./` |
+| 构建命令 | `hugo --minify --gc --cleanDestinationDir` |
+| 输出目录 | `public` |
+| 工具 | 满足主题要求的 Hugo Extended；Hugo Modules 还需要 Go 和 Git |
 
-EdgeOne 还需先在本地构建，再运行 `swban deploy/edgeone/sync "$build"`，把生成的 Git 构建配置复制到站点根目录后提交。此处使用未改成上传模式的产物。该命令只同步配置，不上传；后续由平台从仓库执行构建。平台工具版本设置见 [Cloudflare Hugo](https://developers.cloudflare.com/pages/framework-guides/deploy-a-hugo-site/) 和 [EdgeOne Hugo](https://pages.edgeone.ai/document/hugo)。
+部署源码应使用已发布的固定 Module 版本。按[版本维护](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/upgrade.md#change-the-version)处理本地 `replace`，避免云端找不到本机目录。自有站点需要的安装步骤和环境变量也应交给平台配置。
+
+Cloudflare Pages 使用构建产物中的交付文件。EdgeOne Makers 的 Git 构建则需要项目根目录的 `edgeone.json`：先在本地构建并检查，再复制配置并提交。
+
+```powershell
+Copy-Item -LiteralPath (Join-Path $build "edgeone.json") -Destination ./edgeone.json  #复制交付配置到站点根目录
+```
+
+只有采用 EdgeOne Git 构建的站点，才需要提交根目录 `edgeone.json`。交付规则仍在 `delivery.toml` 中维护，不手工编辑生成文件。配置包含响应头及 CSP，相关内容变化后应重新构建、复制并提交。平台与本地应使用一致的源码、工具版本及构建参数。
+
+构建命令、输出目录和工具版本统一在平台设置；Banyan 不再将这些字段写入 `edgeone.json`。
+
+仓库授权、项目关联、构建参数设置及触发方式见上表的“Git 托管构建”专项。发布后核对部署的提交版本，并执行本页的线上检查。

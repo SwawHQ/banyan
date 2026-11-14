@@ -120,8 +120,7 @@ test('a published base path applies to file URLs and HTML aliases across policie
   await write('_redirects','');
   await write('sw-policy.json',JSON.stringify([{path:'/base/article/',bucket:'fingerprinted'},
     ...routes.map(rule=>({...rule,path:'/base'+rule.path}))]));
-  await write('edgeone.json',JSON.stringify({installCommand:'',buildCommand:'hugo',outputDirectory:'public',
-    nodeVersion:'22.11.0',hugoVersion:'0.157.0',redirects:[],headers:[{source:'/base/assets/*',
+  await write('edgeone.json',JSON.stringify({redirects:[],headers:[{source:'/base/assets/*',
       headers:[{key:'Cache-Control',value:'immutable'}]},{source:'/base/article/',headers:[{key:'Cache-Control',value:'immutable'}]}]}));
   await write('assets/'+image);
   for(const basePath of ['/base/','/base'])assert.deepEqual((await inspect(root,{basePath})).issues,[]);
@@ -168,7 +167,7 @@ test('empty rules, missing channels and incomplete CF output remain distinct',()
 }));
 
 test('EdgeOne overlap is reported as uncertain and redirects retain order',()=>fixture(async({root,write})=>{
-  const edge={installCommand:'',buildCommand:'hugo',outputDirectory:'public',nodeVersion:'22.11.0',hugoVersion:'0.157.0',
+  const edge={
     headers:[{source:'/*',headers:[{key:'Cache-Control',value:'max-age=900'}]},
       {source:'/assets/*',headers:[{key:'Cache-Control',value:'immutable'}]}],
     redirects:[{source:'/old/',destination:'/new/',statusCode:301}]};
@@ -191,7 +190,7 @@ test('invalid output is a format failure and large fault lists stay bounded',()=
 }));
 
 test('EdgeOne overlapping values with the same immutable classification still check filenames',()=>fixture(async({root,write})=>{
-  const edge={installCommand:'',buildCommand:'hugo',outputDirectory:'public',nodeVersion:'22.11.0',hugoVersion:'0.157.0',redirects:[],
+  const edge={redirects:[],
     headers:[{source:'/*',headers:[{key:'Cache-Control',value:'max-age=900, immutable'}]},
       {source:'/assets/*',headers:[{key:'Cache-Control',value:'max-age=31536000, immutable'}]}]};
   await write('edgeone.json',JSON.stringify(edge));await write('assets/raw.png');

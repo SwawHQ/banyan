@@ -38,8 +38,8 @@ makers.enabled = false
 ```
 
 Cloudflare Pages generates `_headers` and `_redirects` when enabled. EdgeOne Makers
-generates `edgeone.json` when enabled; include its required build fields in the
-site-owned table. SW `enable` also generates `sw-policy.json`, an exact copy
+generates `edgeone.json` with headers and redirects when enabled. Configure build
+commands and tool versions on the hosting platform. SW `enable` also generates `sw-policy.json`, an exact copy
 of its path/bucket array in matching order. SW `off` and `disable` omit that copy;
 `disable` still generates the cleanup worker.
 SW `enable` requires a published HTML page at `sw.offline_notice_path`
@@ -58,7 +58,8 @@ and `sw.bucket` fields. `versioned` selects the SW versioned cache bucket;
 `fingerprinted` selects the SW fingerprint cache bucket; `off` bypasses SW caching.
 The versioned bucket follows the site build version published in `sw-version.json`.
 The fingerprint bucket retains resources across builds by their fingerprint URLs.
-For platform build fields, use `platform.edgeone.makers`; see [EdgeOne](edgeone.md).
+For deployment preparation, use `swban help/en deploy`; see [EdgeOne](edgeone.md)
+for its Git-build configuration requirements.
 
 Enable prefetch with a complete table to use automatic native/SW/link selection:
 
@@ -102,6 +103,13 @@ Cloudflare matching includes inherited headers and explicit header removals.
 EdgeOne redirects also support `$host` to `$wwwhost` and the reverse pair.
 Conflicting overlapping EdgeOne cache headers are reported as undetermined,
 because the platform does not define that precedence in its configuration guide.
+
+A two-deployment check on 2026-11-14 (EdgeOne CLI 1.7.2, overseas area) found
+that matching rules merge by header name: later declarations replace earlier
+values, while other headers remain. Reversing the rules made the final `/*`
+rule override even more specific paths. The current general-first order worked
+for all sampled resources. This is observed behavior, not a documented platform
+guarantee; the static check therefore keeps its uncertainty warning.
 
 ## Limits
 

@@ -20,7 +20,7 @@ description: 配置部署平台、HTTP 响应头、Service Worker 缓存和重�
 
 `platform.cloudflare.pages.enabled` 控制 Cloudflare Pages 输出；`platform.edgeone.makers.enabled` 控制 EdgeOne Makers 输出。启用后分别生成 `_headers` 或 `edgeone.json`，有重定向规则时还会生成对应配置。
 
-EdgeOne 的构建命令和输出目录由同一文件中的 `platform.edgeone.makers` 字段提供。Git 托管构建与产物上传使用不同的构建设置，按首次部署中的对应步骤处理。
+构建命令、输出目录和工具版本在平台设置；Banyan 生成的 EdgeOne 配置只包含响应头和重定向。两种部署方式的准备步骤见[首次部署](/zh/p/deploying/)。
 
 ## 路由和 HTTP 响应头
 

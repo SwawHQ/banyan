@@ -1,4 +1,3 @@
-{{- $edgeone := .edgeone | default dict -}}
 {{- $routes := partial "./cache-header-routes.html" (dict "routes" (.routes | default slice) "platform" "edgeone" "product" "makers") -}}
 {{- $redirectRules := .redirects | default slice -}}
 {{- $redirects := slice -}}
@@ -28,11 +27,6 @@
 {{- end -}}
 
 {{- $config := dict
-    "installCommand" (printf "%v" (index $edgeone "installCommand" | default ""))
-    "buildCommand" (printf "%v" (index $edgeone "buildCommand" | default ""))
-    "outputDirectory" (printf "%v" (index $edgeone "outputDirectory" | default ""))
-    "nodeVersion" (printf "%v" (index $edgeone "nodeVersion" | default ""))
-    "hugoVersion" (printf "%v" (index $edgeone "hugoVersion" | default hugo.Version))
     "redirects" $redirects
     "headers" $headers
 -}}

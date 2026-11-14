@@ -16,7 +16,7 @@ lastmod: 2026-11-14
 - 支持多语言、从右向左排版、浅色与深色外观，以及自定义配色和首页艺术包。参考站提供英语、简体中文和阿拉伯语。
 - 支持 Web App Manifest、可选的 SW 缓存与离线页面、页面预取和原生预渲染。Manifest 地址和 SW 作用范围跟随部署子目录，SVG 浏览器图标支持原有尺寸及仅含 `viewBox` 的图形。Powered by 页面提供版本信息与诊断入口。
 - 生成站点地图、RSS、`llms.txt`、社交分享信息和结构化数据。
-- 从站点交付配置生成 Cloudflare Pages 或 EdgeOne Makers 的部署配置，并生成 CSP 与脚本完整性信息。Skill 提供内容、产物、HTTP 和浏览器检查。
+- 从站点交付配置生成 Cloudflare Pages 或 EdgeOne Makers 的部署配置，并生成 CSP 与脚本完整性信息。Skill 提供内容、产物、HTTP 和浏览器检查。EdgeOne 配置只包含交付规则，构建命令和工具版本在平台设置；Skill 按平台分别提供 Git 构建和产物上传指引。
 
 ## 使用要求
 

@@ -16,13 +16,8 @@
       {{- if or (ne $product $expectedProduct) (not (reflect.IsMap $settings)) -}}{{- errorf "Delivery config: unsupported platform.%s.%s; expected a %s table." $name $product $expectedProduct -}}{{- end -}}
       {{- if ne (printf "%T" $settings.enabled) "bool" -}}{{- errorf "Delivery config: platform.%s.%s.enabled must be a boolean." $name $product -}}{{- end -}}
       {{- range $key, $value := $settings -}}
-        {{- if and (ne $key "enabled") (or (ne $name "edgeone") (not (in (slice "installCommand" "buildCommand" "outputDirectory" "nodeVersion" "hugoVersion") $key)) (ne (printf "%T" $value) "string")) -}}
-          {{- errorf "Delivery config: unsupported platform.%s.%s.%s or non-string value." $name $product $key -}}
-        {{- end -}}
-      {{- end -}}
-      {{- if and (eq $name "edgeone") (eq $settings.enabled true) -}}
-        {{- range $key := slice "installCommand" "buildCommand" "outputDirectory" "nodeVersion" -}}
-          {{- if not (isset $settings $key) -}}{{- errorf "Delivery config: enabled platform.edgeone.makers requires %s." $key -}}{{- end -}}
+        {{- if ne $key "enabled" -}}
+          {{- errorf "Delivery config: unsupported platform.%s.%s.%s." $name $product $key -}}
         {{- end -}}
       {{- end -}}
     {{- end -}}

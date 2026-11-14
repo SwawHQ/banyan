@@ -44,13 +44,6 @@ cloudflare.pages.enabled = true
 
 # 生成 腾讯云 edgeone.json；响应头由下面的路由生成。
 edgeone.makers.enabled = true
-# 当前站点无额外依赖安装步骤；此值原样写入 edgeone.json。
-edgeone.makers.installCommand = ""
-edgeone.makers.buildCommand = "hugo --minify --gc --cleanDestinationDir"
-edgeone.makers.outputDirectory = "public"
-edgeone.makers.nodeVersion = "22.11.0"
-# 留空时，生成 edgeone.json 使用本次构建的 Hugo 版本。
-edgeone.makers.hugoVersion = ""
 
 # 路由使用 URL 路径，不含域名、查询参数或片段；* 可匹配任意路径字符。
 # 通用路由在前，例外在后；文件顶层的 routes = [] 表示不声明自定义路由。

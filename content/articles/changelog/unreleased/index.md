@@ -16,7 +16,7 @@ The first release is in preparation. This page describes its scope. After the re
 - Multiple languages, right-to-left layouts, light and dark appearance, custom palettes and home art bundles are supported. The reference site includes English, Simplified Chinese and Arabic.
 - Web App Manifest, optional SW caching and offline pages, page prefetch and native prerender are supported. Manifest URLs and SW scope follow the deployment subdirectory; SVG favicons accept intrinsic dimensions or a viewBox alone. The Powered by page provides version information and diagnostics.
 - Builds generate sitemaps, RSS, `llms.txt`, social metadata and structured data.
-- Site delivery settings generate Cloudflare Pages or EdgeOne Makers configuration, CSP and script integrity information. The Skill provides content, output, HTTP and browser checks.
+- Site delivery settings generate Cloudflare Pages or EdgeOne Makers configuration, CSP and script integrity information. The Skill provides content, output, HTTP and browser checks; EdgeOne output contains delivery rules only. Configure build commands and tool versions on the platform. The Skill provides separate Git-build and output-upload guides for each platform.
 
 ## Requirements
 

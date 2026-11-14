@@ -8,8 +8,7 @@ import {parseEdgeoneConfig} from '../edgeone/makers/config.mjs';
 import {parseSwPolicy} from '../sw/policy.mjs';
 
 function edgeone(overrides = {}) {
-  return {installCommand: '', buildCommand: 'hugo --minify', outputDirectory: 'public', nodeVersion: '22.11.0',
-    hugoVersion: '0.157.0', headers: [], redirects: [], ...overrides};
+  return {headers: [], redirects: [], ...overrides};
 }
 function edgeHeader(key = 'Cache-Control', value = 'public, max-age=31536000, immutable') {
   return {source: '/assets/*', headers: [{key, value}]};
@@ -119,6 +118,9 @@ test('EdgeOne parser preserves overlapping rules without assigning precedence', 
     redirects: [{source: '/old/*', destination: '/new/:splat', statusCode: 301}]});
   assert.deepEqual(readEdge(config), config);
   assert.deepEqual(readEdge(edgeone()), edgeone());
+  for(const key of ['installCommand','buildCommand','outputDirectory','nodeVersion','hugoVersion']) {
+    assert.throws(()=>readEdge(edgeone({[key]: 'unused'})),/unknown|unsupported/);
+  }
 });
 
 test('EdgeOne accepts host redirects without relaxing Cloudflare or ordinary destinations', () => {

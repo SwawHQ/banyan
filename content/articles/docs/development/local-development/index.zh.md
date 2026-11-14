@@ -89,13 +89,12 @@ Swaw 的业务文案、账号和专用路由预期留在 Swaw 仓库测试中。
 ```text
 swban sync/ext                     #同步全部外部资源
 swban sync/ext <resource-id>       #按声明 id 同步外部资源
-swban deploy/edgeone/sync <build>  #复制生成配置到站点根目录
+swban help/zh deploy              #查看各平台的部署准备方案
 ```
 
 外部资源由站点的 `assets/site/external-resources.yaml` 声明；演示站点默认为空列表。
 下载目标 `target` 相对站点根：全站资源放 `assets/site/`，正文资源放 `content/<页面>/` 内容包。
 同步任务自带依赖，不需要站点执行 `npm install`。
-EdgeOne 同步默认读取 `public/`，只复制配置，不构建或上传。
 EdgeOne 部署方式见
 [EdgeOne 说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/edgeone.md)。
 

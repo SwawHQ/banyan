@@ -30,7 +30,6 @@
 {{- end -}}
 {{- if eq $platform.edgeone.makers.enabled true -}}
 {{- $edgeoneConfig := partial "./edgeone-config.html" (dict
-  "edgeone" $platform.edgeone.makers
   "routes" $headerRoutes
   "redirects" $redirects
 ) -}}

@@ -1,16 +1,26 @@
 {
   "en": {
-    "summary": "Deployment tools and configuration",
+    "summary": "Deployment preparation and platform workflows",
     "usage": "swban help/en deploy",
     "details": [
-      "Choose a child command:"
+      "Banyan builds static output and generates delivery rules. Swaw Clouds guides account authorization, cloud project setup and publication through native platform tools.",
+      "Choose cloudflare or edgeone, then upload for built output or git for platform builds. These guides do not publish.",
+      "Other static hosts, object stores and CDNs can serve the output; configure their headers, redirects and caching separately.",
+      "",
+      "swban help/en deploy/cloudflare  #Cloudflare Pages",
+      "swban help/en deploy/edgeone     #EdgeOne Makers"
     ]
   },
   "zh": {
-    "summary": "部署工具和配置",
+    "summary": "部署准备与平台方案",
     "usage": "swban help/zh deploy",
     "details": [
-      "选择子命令："
+      "Banyan 构建静态产物并生成交付规则；Swaw Clouds 指导账号授权、云项目配置和原生工具发布。",
+      "选择 cloudflare 或 edgeone，再选择 upload（上传产物）或 git（平台构建）。这些入口提供说明，不执行发布。",
+      "其他静态托管、对象存储和 CDN 也可承载产物；响应头、重定向及缓存需按目标平台另行配置。",
+      "",
+      "swban help/zh deploy/cloudflare  #Cloudflare Pages",
+      "swban help/zh deploy/edgeone     #EdgeOne Makers"
     ]
   }
 }

@@ -1,0 +1,58 @@
+{
+  "en": {
+    "summary": "Prepare EdgeOne Makers Git builds",
+    "usage": "swban help/en deploy/edgeone/git",
+    "details": [
+      "The platform pulls source and builds it. It uses native Hugo, not swban.",
+      "Run these commands in PowerShell from the site root. Only sites using EdgeOne Git builds need a committed root edgeone.json; maintain delivery rules in delivery.toml.",
+      "",
+      "1. Prepare the source: set baseURL in hugo.toml and enable platform.edgeone.makers.enabled in assets/site/delivery.toml. Commit the site and its pinned theme version; remove local filesystem replace directives.",
+      "",
+      "2. Give the platform these build settings:",
+      "Root: site directory in the repository (./ for this reference site). Output: public.",
+      "Build command: hugo --minify --gc --cleanDestinationDir",
+      "Tools: Hugo Extended meeting the theme minimum; Hugo Modules also need Go and Git. Configure installation steps and private dependency access for the site.",
+      "",
+      "3. Build locally, check output and copy delivery rules before committing:",
+      "swban base/hugo --minify --gc --cleanDestinationDir                       #Build production output",
+      "swban check/delivery                                                      #Check delivery rules",
+      "swban check/csp                                                           #Check CSP and scripts",
+      "Copy-Item -LiteralPath ./public/edgeone.json -Destination ./edgeone.json  #Copy delivery config to the site root",
+      "Commit root edgeone.json. It contains headers and redirects, not build commands or tool versions; manage those on the platform.",
+      "A Git build tested on 2026-11-14 used root edgeone.json and ignored generated public/edgeone.json. Regenerate and copy when delivery rules or CSP change; keep local and hosted output consistent.",
+      "",
+      "4. Follow Swaw Clouds for Git authorization, project linkage, platform settings and build triggers:",
+      "swcl help/en edgeone/deploy/git  #Read platform Git build steps",
+      "https://github.com/SwawHQ/swaw-clouds/blob/main/skills/swaw-clouds/tasks/edgeone/deploy/git/help.json",
+      "Confirm the deployed commit and output in platform logs, then run swban check/http/security <url> and check changed pages."
+    ]
+  },
+  "zh": {
+    "summary": "准备 EdgeOne Makers Git 托管构建",
+    "usage": "swban help/zh deploy/edgeone/git",
+    "details": [
+      "平台拉取源码并构建，使用原生 Hugo，不调用 swban。",
+      "以下命令在站点根目录的 PowerShell 中执行。只有采用 EdgeOne Git 构建的站点，才需要提交根目录 edgeone.json；交付规则仍在 delivery.toml 中维护。",
+      "",
+      "1. 准备源码：在 hugo.toml 中设置 baseURL，并在 assets/site/delivery.toml 中启用 platform.edgeone.makers.enabled。提交站点及固定的主题版本，移除指向本机目录的 replace。",
+      "",
+      "2. 向平台提供构建设置：",
+      "根目录：站点在仓库中的目录，本参考站点为 ./。输出目录：public。",
+      "构建命令：hugo --minify --gc --cleanDestinationDir",
+      "工具：满足主题最低版本要求的 Hugo Extended；Hugo Modules 还需要 Go 和 Git。安装步骤和私有依赖权限按本站需要设置。",
+      "",
+      "3. 提交前先在本地构建、检查并复制交付规则：",
+      "swban base/hugo --minify --gc --cleanDestinationDir                       #构建正式产物",
+      "swban check/delivery                                                      #检查交付规则",
+      "swban check/csp                                                           #检查 CSP 与脚本",
+      "Copy-Item -LiteralPath ./public/edgeone.json -Destination ./edgeone.json  #复制交付配置到站点根目录",
+      "提交根目录 edgeone.json。它只含响应头和重定向，不含构建命令或工具版本；这些设置在平台管理。",
+      "2026-11-14 实测 Git 构建读取根目录 edgeone.json，不应用构建生成的 public/edgeone.json。交付规则或 CSP 变化后，重新构建并复制；本地与平台的构建结果应保持一致。",
+      "",
+      "4. 仓库授权、项目关联、平台设置和构建触发按 Swaw Clouds 专项操作：",
+      "swcl help/zh edgeone/deploy/git  #查看平台 Git 构建步骤",
+      "https://github.com/SwawHQ/swaw-clouds/blob/main/skills/swaw-clouds/tasks/edgeone/deploy/git/help.json",
+      "发布后核对日志中的提交版本和产物，运行 swban check/http/security <url>，并检查修改的页面。"
+    ]
+  }
+}

@@ -160,7 +160,7 @@ test('routing cannot leave the tasks directory through traversal or a directory 
 test('task execution leaves published output and tool bindings unchanged',() => {
   const files = snapshot(path.join(site,'public'));
   const bindings = snapshot(path.join(skill,'.tools'));
-  for (const command of ['check/csp','check/sri','check/html/metadata','check/html/headings','check/html/jsonld','check/html/scripts','check/html/styles','check/html/breadcrumb','check/sitemap','check/robots','check/llms','check/build-version','check/prefetch/payload','check/prefetch/rules','check/img/icons','check/img/share','check/img/responsive','report/size/html','report/size/js','report/size/assets','report/payload/breadcrumb','report/payload/prefetch','deploy/edgeone/sync','sync/ext']) {
+  for (const command of ['check/csp','check/sri','check/html/metadata','check/html/headings','check/html/jsonld','check/html/scripts','check/html/styles','check/html/breadcrumb','check/sitemap','check/robots','check/llms','check/build-version','check/prefetch/payload','check/prefetch/rules','check/img/icons','check/img/share','check/img/responsive','report/size/html','report/size/js','report/size/assets','report/payload/breadcrumb','report/payload/prefetch','sync/ext']) {
     const result = cli(command);
     assert.equal(result.status,0,result.stdout + result.stderr);
   }
@@ -217,30 +217,6 @@ test('output tasks reject duplicate directories and missing output',() => {
       assert.equal(cli(command,args).status,1);
     }
   }
-});
-
-test('EdgeOne sync accepts another build directory, copies exact bytes and preserves unchanged mtime',() => {
-  const directory = output('edgeone alternative');
-  const sourceBytes = fs.readFileSync(path.join(directory,'edgeone.json'));
-  const result = cli('deploy/edgeone/sync',[directory]);
-  assert.equal(result.status,0,result.stderr);
-  const target = path.join(site,'edgeone.json');
-  assert.deepEqual(fs.readFileSync(target),sourceBytes);
-  fs.utimesSync(target,new Date('2020-01-01'),new Date('2020-01-01'));
-  const before = fs.statSync(target).mtimeMs;
-  assert.match(cli('deploy/edgeone/sync',[directory]).stdout,/already in sync/);
-  assert.equal(fs.statSync(target).mtimeMs,before);
-});
-
-test('EdgeOne sync keeps the root config when a build is missing or JSON is invalid',() => {
-  const before = fs.readFileSync(path.join(site,'edgeone.json'));
-  const directory = output('edgeone invalid');
-  for (const invalid of ['not JSON','[]','null']) {
-    write(directory,'edgeone.json',invalid);
-    assert.equal(cli('deploy/edgeone/sync',[directory]).status,1);
-    assert.deepEqual(fs.readFileSync(path.join(site,'edgeone.json')),before);
-  }
-  assert.equal(cli('deploy/edgeone/sync',['absent-build']).status,1);
 });
 
 test('external sync uses Skill-local YAML, selects ids and preserves identical files without site npm',async () => {

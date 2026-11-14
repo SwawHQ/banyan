@@ -525,35 +525,25 @@ test('every declared task exposes help before consulting output, content or tool
       {cwd:work,env:fixtureEnvironment(work),encoding:'utf8',timeout:15000});
     assert.ifError(invalid.error);assert.equal(invalid.status,1,command);
   }
-  for (const command of ['check/html','report/html','report/assets','check/http','check/img','check/content','check/browser/settings','check/html/budget','check/browser/pwa/activate','check/browser/pwa/cancel','check/browser/pwa/error','check/browser/pwa/timeout','sync/edgeone','deploy/edgeone','deploy/edgeone/build']) {
+  for (const command of ['check/html','report/html','report/assets','check/http','check/img','check/content','check/browser/settings','check/html/budget','check/browser/pwa/activate','check/browser/pwa/cancel','check/browser/pwa/error','check/browser/pwa/timeout','sync/edgeone','deploy/edgeone/sync','deploy/edgeone','deploy/edgeone/build']) {
     const result = cli(command); assert.equal(result.status,1); assert.match(result.stderr,/unknown_command:/);
   }
 });
 
-test('native Hugo generates EdgeOne config and respects its Hugo version override',() => {
+test('native Hugo generates delivery-only EdgeOne config',() => {
   const theme = fileURLToPath(new URL('../module/',import.meta.url));
-  const toml = loadDependency('@iarna/toml');
-  const defaults = toml.parse(fs.readFileSync(new URL('../assets/site/delivery.toml',import.meta.url),'utf8'));
-  for (const override of ['', '0.156.0']) {
-    const policy = structuredClone(defaults);
-    if (override) policy.platform.edgeone.makers.hugoVersion = override;
-    const fixture = path.join(work,'edgeone '+(override || 'default'));
-    write(fixture,'hugo.toml','baseURL = "https://example.test/"\ndisableKinds = ["RSS","sitemap"]\n[taxonomies]\n');
-    write(fixture,'content/_index.md','---\ntitle: Fixture\n---\n');
-    write(fixture,'layouts/home.html','{{ $policy := resources.Get "site/policy.toml" | transform.Unmarshal }}{{ partial "system-delivery/deployment/edgeone-config.html" (dict "edgeone" $policy.platform.edgeone.makers) | jsonify }}');
-    write(fixture,'layouts/_partials/system-delivery/deployment/edgeone-config.html',fs.readFileSync(path.join(theme,
-      'layouts/_partials/system-delivery/deployment/edgeone-config.html')));
-    write(fixture,'layouts/_partials/system-delivery/deployment/cache-header-routes.html',fs.readFileSync(path.join(theme,
-      'layouts/_partials/system-delivery/deployment/cache-header-routes.html')));
-    write(fixture,'assets/site/policy.toml',toml.stringify(policy));
-    const result = spawnSync(toolExecutable('hugo'),['--minify'],{cwd:fixture,
-      env:hugoEnvironment({...process.env,GIT_OPTIONAL_LOCKS:'0',HUGO_CACHEDIR:path.join(fixture,'cache'),
-        HUGO_RESOURCEDIR:path.join(fixture,'resources')}),encoding:'utf8',timeout:30000});
-    assert.ifError(result.error); assert.equal(result.status,0,result.stdout+result.stderr);
-    const rendered = JSON.parse(fs.readFileSync(path.join(fixture,'public/index.html'),'utf8'));
-    assert.equal(rendered.hugoVersion,override || result.stdout.match(/hugo v(\d+\.\d+\.\d+)/)[1]);
-    assert.equal(rendered.buildCommand,'hugo --minify --gc --cleanDestinationDir');
-    assert.equal(rendered.installCommand,'');
-    assert.equal(rendered.outputDirectory,'public');
-  }
+  const fixture = path.join(work,'edgeone-delivery');
+  write(fixture,'hugo.toml','baseURL = "https://example.test/"\ndisableKinds = ["RSS","sitemap"]\n[taxonomies]\n');
+  write(fixture,'content/_index.md','---\ntitle: Fixture\n---\n');
+  write(fixture,'layouts/home.html','{{ partial "system-delivery/deployment/edgeone-config.html" dict | jsonify }}');
+  write(fixture,'layouts/_partials/system-delivery/deployment/edgeone-config.html',fs.readFileSync(path.join(theme,
+    'layouts/_partials/system-delivery/deployment/edgeone-config.html')));
+  write(fixture,'layouts/_partials/system-delivery/deployment/cache-header-routes.html',fs.readFileSync(path.join(theme,
+    'layouts/_partials/system-delivery/deployment/cache-header-routes.html')));
+  const result = spawnSync(toolExecutable('hugo'),['--minify'],{cwd:fixture,
+    env:hugoEnvironment({...process.env,GIT_OPTIONAL_LOCKS:'0',HUGO_CACHEDIR:path.join(fixture,'cache'),
+      HUGO_RESOURCEDIR:path.join(fixture,'resources')}),encoding:'utf8',timeout:30000});
+  assert.ifError(result.error); assert.equal(result.status,0,result.stdout+result.stderr);
+  const rendered = JSON.parse(fs.readFileSync(path.join(fixture,'public/index.html'),'utf8'));
+  assert.deepEqual(Object.keys(rendered).sort(),['headers','redirects']);
 });

@@ -385,8 +385,7 @@ test('site content, palette, translations and delivery data drive a fresh instal
     .replace('"background_color" "#ffffff"','"background_color" "#fefefe"'));
   write(root,'assets/site/external-resources.yaml','resources: []\n');
   write(root,'assets/site/delivery.toml',fixtureDelivery('[platform.cloudflare]\npages.enabled = true\n'+
-    '[platform.edgeone]\nmakers.enabled = true\nmakers.installCommand = ""\nmakers.buildCommand = "hugo --minify --gc --cleanDestinationDir"\n'+
-    'makers.outputDirectory = "public"\nmakers.nodeVersion = "22.11.0"\nmakers.hugoVersion = "0.156.0"\n'+
+    '[platform.edgeone]\nmakers.enabled = true\n'+
     '[[redirects]]\nsource = "/previous/"\ndestination = "/p/alpha/"\nstatus = 301\n'));
   const output=build(root,installed);checks(root,installed,output);
   const home=fs.readFileSync(path.join(output,'index.html'),'utf8');
@@ -403,7 +402,7 @@ test('site content, palette, translations and delivery data drive a fresh instal
   assert.ok(rss.includes('本站订阅'));assert.ok(rss.includes('/zh/index.xml'));
   const css=fs.readdirSync(path.join(output,'css')).filter(name=>name.endsWith('.css')).map(name=>fs.readFileSync(path.join(output,'css',name),'utf8')).join('');
   assert.ok(css.includes('--consumer-palette-marker'));
-  assert.equal(JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8')).hugoVersion,'0.156.0');
+  assert.deepEqual(Object.keys(JSON.parse(fs.readFileSync(path.join(output,'edgeone.json'),'utf8'))).sort(),['headers','redirects']);
   const mismatched=fs.readFileSync(path.join(installed,'SKILL.md'),'utf8').replace('version: "'+release.version+'"','version: "9.9.9"');
   fs.writeFileSync(path.join(installed,'SKILL.md'),mismatched);
   const mod=fs.readFileSync(path.join(root,'go.mod'),'utf8'),failure=command(root,installed,['doctor']);
