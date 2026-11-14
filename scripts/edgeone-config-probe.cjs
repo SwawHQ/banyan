@@ -1,0 +1,10 @@
+const fs=require('fs');
+const mode=fs.readFileSync('scripts/edgeone-probe-mode.txt','utf8').trim();
+const p='public/edgeone.json';
+const config=JSON.parse(fs.readFileSync(p,'utf8'));
+for(const key of ['buildCommand','installCommand','outputDirectory','hugoVersion','nodeVersion']) delete config[key];
+config.headers.push({source:'/*',headers:[{key:'X-Banyan-Output',value:mode},{key:'X-Banyan-Conflict',value:'output'},{key:'Cache-Control',value:'public, max-age=121'}]});
+config.redirects=[{source:'/probe-output-redirect',destination:'/probe-output-target',statusCode:302}];
+if(mode==='root-only') fs.unlinkSync(p); else fs.writeFileSync(p,JSON.stringify(config,null,2)+'\n');
+fs.writeFileSync('public/banyan-config-probe.txt',mode+'\n');
+console.log('BANYAN_PROBE '+JSON.stringify({mode,root:fs.existsSync('edgeone.json')?JSON.parse(fs.readFileSync('edgeone.json','utf8')):null,output:fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):null}));
