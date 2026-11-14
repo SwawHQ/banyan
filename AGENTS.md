@@ -5,9 +5,11 @@
    <command> <arguments>  #<description>
    <command> <arguments>  #<description>
    ```
-4. 开发和测试优先将临时过程文件放在系统临时目录下的 `swaw/banyan/<task>/`，完成后只清理本任务的过程文件；不要写仓库的 `.git`，CLI 之类工具自身固定使用的目录和缓存可以视情况保留或清理。
-5. 项目尚未发布，不要保留旧命令、配置或数据格式的兼容及自动迁移等逻辑；必要时一次性手动整理本机数据。
-6. Changelog 只记录用户可见的变化、配置要求和实际修复，合并同类条目；不记录测试细节、测试夹具、纯内部重构、文件整理或开发过程。
-7. 检测、测试用例方法脚本，先考虑是否可以通用化，放入 swaw-banyan skill，然后再考虑放站点 tests/
-8. 使用 PATH 命令 gitbw.cmd .help、  ghbw.cmd .help 替代 git、gh（GitHub CLI）命令操作当前仓库
+
+4. 使用 PATH 命令 gitbw.cmd .help、  ghbw.cmd .help 替代 git、gh（GitHub CLI）命令操作当前仓库
+
+5. 开发和测试优先将临时过程文件放在系统临时目录下的 `swaw/banyan/<task>/`，完成后只清理本任务的过程文件；不要写仓库的 `.git`，CLI 之类工具自身固定使用的目录和缓存可以视情况保留或清理。
+6. 项目尚未发布，不要保留旧命令、配置或数据格式的兼容及自动迁移等逻辑；必要时一次性手动整理本机数据。
+7. Changelog 只记录用户可见的变化、配置要求和实际修复，合并同类条目；不记录测试细节、测试夹具、纯内部重构、文件整理或开发过程。
+8. 检测、测试用例方法脚本，先考虑是否可以通用化，放入 swaw-banyan skill（并就近放在相关模块目录的 _tests/），然后再考虑放站点 tests/
 9. 项目对话和文档优先使用[项目术语表](content/articles/docs/guide/glossary/index.zh.md)中的名称；功能改变术语含义时，同步更新定义。
