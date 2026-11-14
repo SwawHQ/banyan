@@ -1,7 +1,7 @@
 ---
 title: 本地开发
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-14
 url: p/local-development/
 description: 预览最小演示和文档站点，并按改动选择检查。
 weight: 1
@@ -24,8 +24,8 @@ banyan/
 ├── content/{appearance,language,my,rss}/  #站点自有设置和说明页
 ├── assets/site/                           #站点资源和交付配置
 ├── assets/i18n/                           #由项目挂载的界面字典
-├── content/powered-by/                    #技术说明
-├── content/_res/                          #离线页、预取诊断和首页艺术包
+├── content/powered-by/                    #版本信息与预取诊断
+├── content/_res/                          #离线页和首页艺术包
 ├── module/                                #布局、脚本和样式，不含站点内容
 ├── .agents/skills/swaw-banyan/            #本地工具和通用检查任务
 └── tests/                                 #主题和工具源码测试

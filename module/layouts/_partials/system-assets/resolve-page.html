@@ -1,3 +1,4 @@
+{{- /* 定位不发布；分享图可只发布衍生图，避免额外公开未引用的源文件。 */ -}}
 {{- $ctx := .ctx -}}
 {{- $src := trim (printf "%v" (.src | default "")) " \r\n\t" -}}
 {{- $required := true -}}

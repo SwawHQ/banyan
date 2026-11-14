@@ -28,9 +28,7 @@ sitemap:
 `params.robots: noindex`、`params.robots: none`、翻译占位页和 404 页自动排除，
 也不会进入其他页面的替代语言链接。
 
-预览时使用 `hugo server --disableFastRender` 检查 sitemap 变化，
-快速预览可能保留旧输出。自定义 HTML 布局须继承 Banyan 的 `baseof.html`，
-由它登记已渲染页面。
+在完成的构建目录中检查 `sitemap.xml`。使用本地预览时，按[开始使用](/zh/p/getting-started/#本地预览)保留 `--disableFastRender`，避免快速重建保留旧输出。
 
 ## Agent 索引
 
@@ -81,11 +79,11 @@ branch = "main"
 ```
 
 此配置用于站点自有内容。页面有 Hugo 源文件且 `params.slots` 包含 `meta` 时，
-文章元信息显示 `GitHub` 链接。Module 默认不设置仓库；
+文章元信息显示 `GitHub` 链接。不需要显示源码链接时，删除 `params.content_source` 配置。
 `branch` 默认是 `main`，站点可只填写 `repository`。
 来源路径使用 `content/` 下的实际源文件路径。Banyan 的文档与变更记录因此链接到
 本仓库的 `content/articles/docs/` 和 `content/articles/changelog/`。
-链接使用配置的分支，使新页面在首次公开提交前也有稳定地址。
+链接指向配置的分支；文件尚未推送到该分支时，链接可能返回 404。
 页面的站点构建版本在 Powered by 中查看。
 
 ## 外部发布链接

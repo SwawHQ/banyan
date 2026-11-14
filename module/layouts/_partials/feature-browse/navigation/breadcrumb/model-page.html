@@ -9,6 +9,7 @@
     "kind" (cond $page.IsPage "page" "section")
     "current" (eq $page $ctx)
   -}}
+  {{- /* item 指向目标页，owner 提供同级条目；两者不能共用目标页作为来源。 */ -}}
   {{- $owner := false -}}
   {{- with $page.Parent -}}{{- if eq .Kind "section" -}}{{- $owner = . -}}{{- end -}}{{- end -}}
   {{- $items = $items | append $item -}}

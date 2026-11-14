@@ -9,6 +9,7 @@
     --main-column-inline: min(88ch, 100cqi);
 }
 
+/* 不在整页设置 touch-action: pan-x；它也会阻止子列的纵向触控。 */
 html {
     block-size: 100%;
     overflow-y: hidden;

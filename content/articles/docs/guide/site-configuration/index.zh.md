@@ -1,7 +1,7 @@
 ---
 title: 站点配置
 date: 2026-11-06
-lastmod: 2026-11-12
+lastmod: 2026-11-14
 url: p/site-configuration/
 description: 设置根配置、语言、站点说明和主题覆盖文件。
 weight: 2
@@ -9,89 +9,65 @@ weight: 2
 
 ## 根配置
 
-每个站点自行维护根 `hugo.toml`，包含站点信息、语言、构建设置和主题参数。
-Module 不提供 `hugo.toml` 默认配置。Banyan 仓库根 `hugo.toml` 是最小演示站的完整示例，
-新站点从完整根参考站点起步，并填写自己的 `baseURL` 和语言。
-所有页面由站点根 `content/` 维护，包括 Powered by 和预取诊断；根参考站点保留全部页面。
-Module 不提供内容默认页，只提供通用布局、脚本和样式。
-删除不需要的根页面即可移除页面和入口，Module 不回填。内容栏目、关于页和 GitHub 介绍也由站点维护。
+本页在完整参考站点上修改配置。安装和预览命令见[开始使用](/zh/p/getting-started/)。示例只展示相关字段：在已有表中修改对应项，不要把整段追加到文件末尾。
 
-根配置启用 `printPathWarnings = true` 和 `panicOnWarning = true`。
-Hugo 检测重复输出路径并中止构建，覆盖未列出的页面及各输出格式。
-
-生成 `llms.txt` 时，站点需声明输出格式，并在首页启用它：
+在 `hugo.toml` 开头修改正式网址：
 
 ```toml
-[outputFormats.LLMS]
-mediaType = "text/plain"
-baseName = "llms"
-isPlainText = true
-notAlternative = true
-
-[outputs]
-home = ["HTML", "RSS", "LLMS"]
+baseURL = "https://example.com/"
 ```
 
-普通页面在 front matter 中直接声明固定网址：
+把示例域名换成自己的完整网址；如果部署在子目录中，连同子目录一起填写，例如 `https://example.com/blog/`。它影响站点地图、订阅和规范地址。本地预览仍使用终端显示的本机网址。
 
-```yaml
-url: p/article-name/
-```
+初次配置时保留其余构建设置，尤其是：
 
-普通功能页可声明固定路径，例如 `url: my/`；`url` 不写开头的 `/`，
-让 Hugo 保留当前语言前缀。栏目页包括语言和外观设置，地址由目录决定，不填写 `url`。
-移动正文后保留 `url`，并更新 `_map.toml` 中的内容路径。
-站点无需为各正文栏目配置 `[permalinks.page]`。
+| 设置 | 保留它的原因 |
+| --- | --- |
+| `minify.disableJS = true` | 避免压缩改变脚本后，浏览器因 CSP 拒绝执行 |
+| `module.mounts` 中的界面字典挂载 | 让界面使用站点的 `assets/i18n/` 字典 |
+| `cascade` 中的 `build.publishResources = false` | 避免自动发布未使用的页面包文件，包括 `_map.toml` |
+| `printPathWarnings`、`panicOnWarning` | 在页面发布网址冲突时停止构建 |
 
-Banyan 演示中的 `content/articles/` 和 `content/products/` 都是普通目录。Swaw 的 `d`、`d-all`、`pr` 和 `pr-all` 入口是该站点的定制。跨栏目入口用 `_map.toml`
-声明。在根配置顶层保留 `taxonomies = {}`，关闭 Hugo 默认分类。根 `[cascade.build]` 的
-`publishResources = false` 默认让资源通过主题管线发布；设为 `true` 时，
-Hugo 会自动发布内容包资源，包括 `_map.toml`。
-
-`[build]`、`[minify]`、`[cascade]`、`[frontmatter]`、`[markup]`、`params`、
-语言参数和输出格式均保留在站点根。最低 Hugo 版本由 Module 的 `theme.toml` 声明，站点无需重复配置 `module.hugoVersion.min`。
-
-保留以下设置。它防止 HTML 压缩改变用于 CSP 哈希的内联 JS：
-
-```toml
-[minify]
-disableJS = true
-```
-
-新站点使用 Skill 的[起始配置](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/site-configuration.md#configure-the-site-root)。
-现有站点按需合并配置，保留自己的内容和 URL 规则。
+文章网址与栏目目录见[目录与引用](/zh/p/directories/)，索引开关见[站点发现](/zh/p/discovery/)，部署步骤见[首次部署](/zh/p/deploying/)。
 
 ## 站点说明与语言
 
-```toml
-[languages.en]
-label = "English"
-locale = "en-US"
+先编辑首页。参考站的 `content/_index.md` 是英文首页，`content/_index.zh.md` 是中文首页，`content/_index.ar.md` 是阿拉伯文首页。例如，在中文首页修改已有字段：
 
-[languages.zh]
-label = "中文"
-locale = "zh-Hans"
-
-[[module.mounts]]
-source = "assets/i18n"
-target = "i18n"
+```yaml
+title: 我的站点
+description: 介绍本站提供的内容。
 ```
 
-各语言 `content/_index*.md` 的 `title` 提供该语言的站名，不能为空；不在 `hugo.toml` 重复设置。导航文字可用 `linkTitle` 单独设置，浏览器标题可用 `params.browser_title` 覆盖。
+`title` 用作站名；`linkTitle` 可单独设置导航文字。参考首页还设有 `params.browser_title`，它会覆盖浏览器标签标题，应一并修改或删除。各篇文章的 `description` 可覆盖首页提供的默认说明。
 
-首页的 `description` 提供该语言的默认说明，不能为空。页面 front matter 的 `description` 优先，用于 SEO 和社交卡片。`llms.txt` 的介绍使用对应首页说明，页面条目只使用页面自己的 `description`，缺少时不补充说明。
+首页可见的风场文字来自它引用的艺术包，不是首页的 `title`。修改位置见下方“首页信号”；想先用简单文字首页，可按“最小首页艺术包”切换。
 
-`defaultContentLanguage` 选择默认语言；语言 `weight` 控制显示顺序，不改变默认站点。
-`label` 设置语言名称，原生 `locale` 用于本地化、RSS 和 Open Graph。
-参考站点使用英语 `en-US`、简体中文 `zh-Hans` 和阿拉伯语 `ar`；语言键为 `en`、`zh`、`ar`，阿拉伯语设置 `direction = "rtl"`。
-RSS 使用完整 `locale`。Open Graph 只输出有明确地区的语言标签，如 `en_US`；无地区时省略可选的语言标记。
-各语言设置页的 `params.language_icon` 设置语言选项图标，如 `{ text: "简" }`；未设置时使用语言图标。
-设置页的 `params.icon` 单独控制导航入口图标。
-增删语言时同步维护三处：根 `hugo.toml` 中的语言及启用设置、
-`assets/i18n/<语言代码>.toml` 界面字典，以及所需的 `content/` 译文（包括首页）。
-Banyan 根参考站点提供 `en`、`zh` 和 `ar` 字典；新增语言需补齐对应界面词条。
-项目通过上述原生挂载读取 `assets/i18n/`，不另设字典路径参数。页面内容译文与界面字典分别维护，互不替代。
-Module 不创建内容栏目。站点自行声明栏目根、布局和 `cascade`，再按需创建下级目录；Banyan 演示中的 `articles`、`articles-all`、`products` 和 `products-all` 可作参考。
+语言在 `hugo.toml` 的 `[languages]` 中设置：
+
+```toml
+[languages]
+en.label = "English"
+en.locale = "en-US"
+en.weight = 1
+zh.label = "中文"
+zh.locale = "zh-Hans"
+zh.weight = 2
+```
+
+`label` 是语言名称，`weight` 控制排列顺序；根配置的 `defaultContentLanguage` 决定默认语言。它不会随排列顺序改变。`defaultContentLanguageInSubdir` 决定默认语言是否也放在语言子目录中，调整后检查原有网址。
+
+暂时不提供某种语言时，可在文件顶部、任何 TOML 表之前设置：
+
+```toml
+disableLanguages = ["ar"]
+```
+
+此例停用阿拉伯语，保留内容文件以便以后恢复；不要停用当前默认语言。改变默认语言前，要核对无语言后缀文件的归属，并检查各语言首页和文章是否仍发布到预期地址。
+
+新增语言时，完成三处配置：在 `[languages]` 中声明语言，补齐 `assets/i18n/<语言代码>.toml` 界面字典，再添加同名页面的译文，如 `index.fr.md`、`_index.fr.md`。界面字典只翻译按钮等界面文字，不替代正文翻译。启用 SW 的站点还需要该语言的离线页。
+
+参考站的界面字典挂载已配置，无需重复添加。语言选项图标与设置页见[选择列表](/zh/p/collection-lists/#怎样声明选择列表)。
 
 ## 配色 {#palette}
 
@@ -103,9 +79,7 @@ palette = "site/theme.css"
 ```
 
 站点自行维护完整配色，Module 不提供默认配色。
-参考站点使用根 `assets/site/theme.css`：浅色 4%、深色 10% 的选中与悬停底色，当前列表项显示起始边线。
-默认配色的非当前排序箭头使用 50% 不透明度，当前箭头保持 100%。
-根 `assets/site/theme.high-contrast.css` 使用高对比选中和悬停同色、选中名称加粗及直角，文字与单色图标同步反色；设置 `palette = "site/theme.high-contrast.css"` 即可选择。
+默认使用 `site/theme.css`。需要高对比外观时，把上面的值改为 `site/theme.high-contrast.css`。
 三套参考配色（默认、高对比度、Rose）都包含浅色和深色，不改变彩色图片。导航首项、列表头和全部 `h1` 默认无底线，也不保留边框占位；各 CSS 文件在对应变量旁提供恢复线条的注释示例。
 自定义文件如 `assets/site/theme-custom.css`，配置为 `palette = "site/theme-custom.css"`。
 修改后重新构建并部署；外观页继续在所选配色中切换跟随系统、浅色和深色。
@@ -155,9 +129,14 @@ palette = "site/theme.css"
 
 ## 最小首页艺术包
 
-从 `content/_res/home-art/minimal/` 复制最小示例，修改各语言 `index*.md` 的标题、说明和正文，再修改包内模板与 CSS。首页将引用改为 `{{</* home-art "/_res/home-art/<包名>" */>}}`。最小示例无 JS。参考首页使用 `page-home` 和风场，保留了[汇总图片墙](/zh/p/collection-lists/#汇总图片墙)的参数注释。启用图片墙时，将 layout 改为 `page-collection-wall-all`，取消 `params.aggregate` 和 `params.wall` 的注释，并移除首页的 `home-art` 短代码。
+如果不需要风场，可先使用现成的文字首页：
 
-`scene.html.tmpl` 用 `.Params.heading`、`.Params.description` 读取文字，用 `.Content` 输出 Markdown 正文。`style.css` 使用现有的 `--fg`、`--bg` 和 `--muted` 配色变量，支持浅色、深色与从右向左排版。
+1. 打开各语言 `content/_index*.md`，保留 `layout: page-home`。
+2. 将正文中的 `home-art` 路径从 `/_res/home-art/wind` 改为 `/_res/home-art/minimal`。
+3. 编辑 `content/_res/home-art/minimal/index*.md` 中的 `params.heading`、`params.description` 和 Markdown 正文。
+4. 预览各语言首页，确认标题和内容都已替换。
+
+需要独立定制时，先复制整个 `minimal/` 目录，再将首页引用改为新目录名。颜色与排版在包内 `style.css` 中修改；只改文字时不需要编辑模板。首页改用图片墙的步骤见[汇总图片墙](/zh/p/collection-lists/#汇总图片墙)。
 
 ## 首页信号
 
@@ -167,11 +146,7 @@ palette = "site/theme.css"
 {{</* home-art "/_res/home-art/wind" */>}}
 ```
 
-站点在 `content/_res/home-art/wind/` 维护隐藏叶子包。各语言 `index*.md` 保存场景正文与参数，同目录的 CSS、JS 通过 `params.styles`、`params.scripts` 选择并以带指纹的外链发布。共用 `content/_res/_index.md` 的 `build` cascade 关闭这些内部资源页的 HTML、导航和站点发现。
-
-艺术包的 `params.template` 选择包内模板。模板以艺术页为上下文，通过 `.Params` 读取参数、`.Resources` 读取资源、`.Content` 放置 Markdown 正文。风场模板将正文放在场景后。
-
-例如艺术页的 front matter：
+修改 `content/_res/home-art/wind/index*.md`，设置首页标语与链接。每种语言分别修改，保留包内已有的模板、样式和脚本声明。以下是艺术页的页面元数据示例：
 
 ```yaml
 ---
@@ -202,23 +177,26 @@ params:
 
 ## 覆盖主题文件
 
-站点中的同路径布局和资源覆盖 Module 文件；正文和页面配置直接在站点根 `content/` 修改。
-站点自行维护完整 `assets/site/delivery.toml`、`assets/site/icons.toml` 与 `assets/i18n/` 界面字典，
-以 Banyan 根参考站点为来源；Module 和传统主题目录不提供这些配置或界面字典。
-升级主题后核对上游根文件差异，再修订自己的文件，不合并 Module 默认配置。
-品牌、账号和法律文本放在站点中；可复用主题行为放在 Module 中。
-根 `assets/site/` 中的图标和完整 manifest 模板由站点提供，Module 和传统主题目录不再提供。
-已有站点接入前先补齐[图标和 manifest 清单](/zh/p/web-app/)；`assets/site/` 中的其它品牌素材为可选文件。
-站点直接维护 `assets/site/manifest.webmanifest.tmpl`；Module 只读取并执行，发布为 `/site/site.<hash>.webmanifest`。
-图像按指纹 URL 发布到 `/site/*`。完整配色也由站点维护，参考文件位于根 `assets/site/`。
-风场的计算、HTML 和风向袋 SVG 位于艺术包的 `scene.html.tmpl`，CSS、JS 也在包内。复制艺术包并修改包内文件，再把首页 `home-art` 的路径改为新包即可；无需修改 Module。模板通过 Hugo `resources.ExecuteAsTemplate` 执行；它不自动转义 HTML，文字与 HTML 属性值须使用 `htmlEscape`，已渲染的 `.Content` 可直接输出。颜色继续由所选 CSS 调色板控制。
-发布的主题只包含 Banyan 仓库的 `module/`，不包含演示内容和开发工具。文档与版本说明在 Banyan 仓库的 `content/articles/docs/` 和 `content/articles/changelog/` 维护，随参考站点发布到 `https://banyan.swaw.com/`。
+站点中的同路径布局和资源覆盖 Module 文件。升级前保留本站定制，并对照目标版本检查覆盖文件。
 
-Banyan 仓库根 `hugo.toml` 配置最小演示站，根 `go.mod` 将主题依赖替换为 `./module`。Swaw 本地开发通过 `../banyan/module` 使用同一源码；发布部署时需使用已发布的固定 Module 版本。
-使用已发布 Module 的站点不应复制这个本地替换。
+站点配置、内容和品牌资源由站点维护，Module 不补齐这些文件。完整源码包可以使用随包附带的本地主题构建；改用远程 Module 或托管构建时，固定发布版本并处理本地 `replace`。源码开发方法见[本地开发](/zh/p/local-development/)。
 
-Powered by 的源码和变更记录链接在各语言 `content/powered-by/index*.md` 正文中维护，外链使用 `new-tab`。
-删除旧 `params.theme_changelog` 和 `params.theme_repo` 配置即可。
+首页艺术包的模板、CSS 和 JS 在包内修改。模板不会自动转义 HTML；文字和 HTML 属性值须使用 `htmlEscape`，已渲染的 `.Content` 可直接输出。
+
+## 站点状态页
+
+从参考站点复制各语言的 `content/powered-by/index*.md`，在正文中维护说明、源码和变更记录链接。该页通过短代码显示版本和诊断信息：
+
+| 短代码 | 显示内容 |
+| --- | --- |
+| `theme-version`、`hugo-version` | 主题与 Hugo 版本 |
+| `site-status "version"` | 当前页面的站点构建版本 |
+| `site-status "interval" "每 %d 分钟检查"` | 内容检查间隔 |
+| `site-status "policy"`、`site-status "offline"` | 缓存策略与当前语言离线页链接 |
+| `site-status "status"` | SW 程序状态与检查按钮 |
+| `site-status "content"` | 本页与服务器的站点构建版本比对 |
+
+`params.site_status.labels` 提供各语言文案。检查按钮只检查，不激活等待中的 SW，也不自动刷新页面。预取诊断见[预取配置](/zh/p/prefetch-stacks/#诊断)。
 
 按需继续配置[页面区域](/zh/p/layout-slots/)、
 [目录与引用](/zh/p/directories/)、[交付与缓存](/zh/p/delivery/)

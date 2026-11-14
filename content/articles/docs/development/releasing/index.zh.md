@@ -1,7 +1,7 @@
 ---
 title: 发布版本
 date: 2026-11-06
-lastmod: 2026-11-08
+lastmod: 2026-11-14
 url: p/releasing/
 description: 整理版本说明，为同一源码提交创建项目和 Go Module 标签，并发布 GitHub Release。
 ---
@@ -10,7 +10,7 @@ description: 整理版本说明，为同一源码提交创建项目和 Go Module
 
 在 Banyan 仓库的 `content/articles/changelog/unreleased/index.md`
 及其中文译文记录用户可见的变化、配置要求和实际修复。
-合并同类条目，不记录内部重构、测试细节或仅属于消费站点的变化。
+合并同类条目，不记录内部重构、测试细节或仅属于消费站点的变化。首次发布说明主要能力、使用要求和已知限制，不列开发期旧格式的迁移历史。后续版本只记录相对上一发布版的用户变化；需要操作时，说明受影响配置和处理步骤。
 
 发布时将该 bundle 移至 Banyan 仓库的
 `content/articles/changelog/vX.Y.Z/`，把 `title` 设为 `vX.Y.Z`、
@@ -33,18 +33,13 @@ swban deploy/release/tag --check  #校验并查看标签计划
 swban deploy/release/tag          #原子发布两个版本标签
 ```
 
-标签名取自已提交 Skill 的 `metadata.version`，`module/theme.toml` 的 `version`
-须与之相等。`module/go.mod` 使用 Go 原生解析，其模块路径须与 Skill 的
-`metadata.module` 相等。命令核对这些值，不改写版本文件；根 `go.mod` 是参考站点的依赖配置。
+命令读取已提交的版本文件。运行前提交本次源码和文档，并用 `--check` 核对版本与目标仓库。
 
 以版本 `0.1.0` 为例，`v0.1.0` 用于项目发布和提取 Skill；
 `module/v0.1.0` 供 Go 将子目录 Module 识别为 `v0.1.0`。
 因为 Module 根目录是 `module/`，仅有项目标签不能提供该 Module 的语义版本。
 这是 [Go 的子目录 Module 标签规则](https://go.dev/ref/mod#vcs-version)。
 GitHub Release 使用 `v0.1.0`，无需再为 `module/v0.1.0` 创建 Release。
-两个远程标签直接指向校验的同一提交；命令不创建本地标签。
-该提交 SHA 固定整仓库快照；`module/` 标签前缀供 Go 选取其中的 Module 子目录。
-Module 下载包的内容校验由 Go 的校验和机制处理，发布命令不另生成 ZIP 或 hash 文件。
 若附带 Skill ZIP，包含 Skill 目录和许可证，排除 `.tools`、`node_modules` 和缓存。
 
 ## GitHub Release

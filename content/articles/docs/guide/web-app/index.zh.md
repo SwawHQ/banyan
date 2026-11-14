@@ -1,42 +1,43 @@
 ---
 title: Web App Manifest 与图标
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-14
 url: p/web-app/
-description: 设置站点应用清单、favicon 和 PWA 图标。
+description: 替换浏览器和安装图标，设置应用名称、启动地址与颜色。
 ---
 
-## Manifest
-
-站点维护完整的 `assets/site/manifest.webmanifest.tmpl`。
-Module 读取并执行这份模板，生成 `/site/site.<hash>.webmanifest`，
-并在 `<head>` 中输出标准的 `<link rel="manifest">`。
-清单包含站点名称、启动地址和安装图标地址，不预取站点内容；浏览器按需读取清单和图标。
-清单名称取自 `defaultContentLanguage` 指定语言的首页 `title`。启动地址和颜色直接编辑站点模板。
-
-Manifest 与 SW 缓存独立。SW 设置见[交付与缓存](/zh/p/delivery/)。
+Manifest 是浏览器读取的应用清单，用于安装后的应用名称、启动地址和图标。它与 SW 缓存分别配置；关闭 SW 时仍需保留应用清单和图标文件。
 
 ## 站点图标
 
+在 `assets/site/` 中替换下列文件，保留原文件名：
+
 | 源文件 | 用途 |
 | --- | --- |
-| `assets/site/favicon.ico` | 发布为固定 `/favicon.ico` |
-| `assets/site/favicon.link.svg` | 优先使用的指纹图标链接 |
-| `assets/site/favicon.link.ico` | 没有链接 SVG 时使用的指纹图标链接 |
-| `assets/site/icon-180.png` | Apple touch 图标 |
-| `assets/site/icon-192.png`、`icon-256.png`、`icon-512.png` | Manifest 图标 |
-| `assets/site/manifest.webmanifest.tmpl` | 完整的站点 manifest 模板 |
+| `favicon.ico` | 固定地址的浏览器图标 |
+| `favicon.link.svg` | 页面优先使用的 SVG 图标 |
+| `favicon.link.ico` | 没有上述 SVG 时使用的 ICO 图标 |
+| `icon-180.png` | 180 × 180 的 Apple touch 图标 |
+| `icon-192.png`、`icon-256.png`、`icon-512.png` | 对应尺寸的安装图标 |
 
-表中的文件由站点维护。完整 Banyan 根参考站点已包含这些文件；
-新站点从完整参考站点起步，再换成自己的图标并检查 manifest 模板。
-已有站点接入 Module 或传统主题目录前，须把参考站点根 `assets/site/`
-补到自己的站点根目录。Module 和主题目录不提供图标或 manifest 模板。
+参考站已包含这些文件。先替换其中实际使用的图标，再检查浅色、深色和浏览器标签上的显示。SVG 保留与图形匹配的 `viewBox`，并声明 `width="32" height="32"`。
 
-`favicon.link.svg` 与 `favicon.link.ico` 同时存在时，只输出 SVG 的图标链接；
-选中的文件带指纹发布到 `/site/*`。`favicon.ico` 独立发布，不自动生成图标链接。
-至少需要一种 favicon 源；三种文件全部缺失时构建失败。
-四个 PWA PNG 图标也带指纹发布，缺失时构建失败；SW 关闭时仍需要它们和 manifest 模板。
-同目录中的其它品牌素材为可选文件，不会自动成为分享图。
+`favicon.link.svg` 与 `favicon.link.ico` 同时存在时使用 SVG；如果想改用 ICO，需要移除对应 SVG。`favicon.ico` 单独发布，不能只替换它就认为页面标签图标也已改变。
 
-配色文件由站点维护，参考配色位于根 `assets/site/`。
-风场艺术包的 `content/_res/home-art/wind/scene.html.tmpl` 内联风向袋 SVG，不发起独立图片请求。直接修改包内模板、样式和脚本即可定制场景；颜色继续由所选 CSS 调色板控制。
+四个 PNG 图标都要保留。图标缺失或格式不正确时，先按构建提示修复。它们不会自动成为文章分享图，分享图另见[站点发现](/zh/p/discovery/#分享图片)。
+
+## Manifest
+
+打开 `assets/site/manifest.webmanifest.tmpl`，修改已有值：
+
+| 内容 | 修改位置 |
+| --- | --- |
+| 应用名称 | 默认语言首页的 `title` |
+| 启动网址 | 模板中的 `start_url` |
+| 应用范围 | 模板中的 `scope` |
+| 应用标识 | 模板中的 `id` |
+| 启动背景和主题颜色 | 模板中的 `background_color`、`theme_color` |
+
+这是模板文件，不是普通 JSON。保留图标读取及名称生成部分，只修改需要的值。部署在子目录中时，要同时检查 `id`、`start_url` 和 `scope`，不要沿用指向域名根目录的 `"/"`。
+
+保存后重新构建。在浏览器开发者工具的 Application → Manifest 中检查应用名称、图标和启动地址；不支持该面板的浏览器可查看页面的 manifest 链接。完成正式部署后，再检查安装入口和已安装应用的显示。

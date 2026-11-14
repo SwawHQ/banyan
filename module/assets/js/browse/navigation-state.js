@@ -82,6 +82,7 @@ function readCurrentSortsTokens() {
     return normalizeSortSlots(rawValue.split(','));
 }
 
+// 从根级补齐缺省项，避免短排序数组被误当作尾列状态。
 export function readEffectiveSortsTokens(logicalPath) {
     const depth = getLogicalPathDepth(logicalPath);
     const rawTokens = readCurrentSortsTokens();
@@ -133,6 +134,7 @@ export function buildLineageSortsTokensForPath(lineageLogicalPath, targetLogical
     return slots;
 }
 
+// 用目标栏目的默认值判断是否省略；父子栏目的默认排序可以不同。
 export function buildDescendantSortsTokens(logicalPath, currentToken, defaultToken, descendantVariant, descendantDefault) {
     const normalizedCurrent = normalizeSortSlot(currentToken);
     const currentSlots = buildCurrentPageSortsTokens(logicalPath, normalizedCurrent, defaultToken);
@@ -151,6 +153,7 @@ export function applySortsTokensToUrl(url, tokens) {
         return applyFragmentField(url, LINEAGE_SORTS_FIELD, '');
     }
 
+    // 只裁尾部默认项；中间占位保留后续排序对应的栏目层级。
     const encoded = normalizedTokens.map((token) => (token === '' ? SORTS_PLACEHOLDER : token));
     return applyFragmentField(url, LINEAGE_SORTS_FIELD, encoded.join(','));
 }

@@ -1,3 +1,4 @@
+{{- /* fields 由调用功能生成，公共条目不反向读取集合配置。 */ -}}
 {{- $control := .control | default "link" -}}
 <div class="list-item" data-list-item{{ range $name, $value := .rowDataAttrs | default dict }} {{ printf "data-%s" $name | safeHTMLAttr }}="{{ $value }}"{{ end }}>
   {{- if eq $control "link" -}}

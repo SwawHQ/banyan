@@ -30,6 +30,7 @@
     --list-inline-size: calc(var(--navigation-column-inline) + var(--item-date-inline) + var(--item-count-inline) + 2 * var(--item-field-gap));
 }
 
+/* 表头和条目共用轨道，让截断文字与排序字段保持对齐。 */
 .list-item {
     display: grid;
     grid-template-columns: var(--list-field-tracks);

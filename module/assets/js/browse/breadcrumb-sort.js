@@ -100,6 +100,7 @@ export function initBreadcrumbSort() {
         const nextHref = buildBreadcrumbSortToggleHref(payload, window.location.href, visibleLineage(readBreadcrumbColumns()) || payload.logicalPath);
         if (!nextHref) return;
         event.preventDefault();
+        // replaceState 不触发 hashchange；主动刷新列与链接，让新标签也取得最新排序。
         window.history.replaceState(window.history.state, '', nextHref);
         refreshBreadcrumbColumns(payload.logicalPath);
         refreshMainCollectionNavigation();

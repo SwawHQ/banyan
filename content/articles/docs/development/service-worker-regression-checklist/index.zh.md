@@ -3,118 +3,56 @@ title: Service Worker 回归检查
 date: 2026-11-06
 lastmod: 2026-11-14
 url: p/service-worker-regression-checklist/
-description: 检查注册、缓存、浏览器激活、站点构建版本和停用行为。
+description: 定位 SW 源码，检查程序更新、内容版本与停用边界。
 ---
 
-本清单描述当前行为。使用根站点内容构建测试。
+配置方法见[交付与缓存](/zh/p/delivery/)。本文用于修改 SW 实现后的检查，不重复配置表与命令参数。
+
+## 源码入口
+
+| 位置（相对 `module/`） | 职责 |
+| --- | --- |
+| `layouts/_partials/system-delivery/pwa/` | 配置、离线页和程序资源装配 |
+| `assets/js/pwa/worker-enable.js.tmpl` | 缓存、程序生命周期和站点构建版本 |
+| `assets/js/pwa/manager-entry.js.tmpl` | 普通页面注册 |
+| `assets/js/site-status/` | Powered by 的程序与内容检查 |
+| `assets/js/pwa/worker-disable.js`、`manager-disable.js` | 停用与清理 |
+| `assets/js/pwa/cache-names.js` | 受管缓存名称 |
 
 ## 页面与程序更新
 
-- 普通页面只在 `load` 后注册 SW。预渲染页面等到激活后再注册。
-- 普通页面不装配更新面板、不补缓存，也不拦截链接或发送主动激活消息。
-- Powered by 页面自行读取 registration，显示状态并提供手动检查。
-  按钮只检查，不激活程序、不重载页面。
-- 程序自动更新检查和激活交给浏览器。waiting 程序保留默认等待行为，
-  不因站内链接、刷新或历史导航而提前激活。
-- 浏览器激活新程序时，不额外刷新已打开页面；滚动、历史和输入内容由页面与浏览器保留。
-- 已有活动程序时，新程序安装先准备离线页和指纹资源，不切换当前构建版本。
-  每次安装先清空本程序的暂存，并记录当时的构建版本；缺少版本时先请求 JSON。
-  激活时读取最终构建版本；仍无版本时，用暂存初始化。
-  等待期间站点构建版本已变化时，保留当前桶已有的有效离线页，仅从暂存补齐缺失路径。
-  站点构建版本未变化时，仍用暂存刷新离线页。
-  激活不等待网络；首次安装必须取得有效站点构建版本及默认离线页。
+普通页面加载完成后注册，预渲染页面在激活后注册。浏览器负责正常程序更新与激活；页面链接、刷新、历史导航和检查按钮不能提前激活 waiting 程序，也不能自动重载页面。
+
+检查首次安装、存在活动程序时的更新、等待期间的内容更新，以及停用后重新启用。首次安装须取得有效站点构建版本和默认语言离线页；后续更新须保留有效离线回退。安装与激活期间的暂存处理以 worker 源码及生命周期测试为准。
 
 ## 站点构建版本
 
-站点构建版本写入固定地址 `sw-version.json`。仅站点构建版本改变时，`sw.js` 字节不变，
-不触发程序安装或激活。版本 JSON 必须与该版本内容一同部署；
-若手动设置 `params.build.version`，每次内容发布都需更新该值。
+站点构建版本与 SW 程序版本分别变化。只改内容版本时，`sw.js` 字节应保持不变。版本 JSON 须与内容一同部署；手动设置 `params.build.version` 时，每次内容发布都要更新它。
 
-在站点的 `assets/site/delivery.toml` 中设置最小检查间隔：
+达到检查间隔后的首次受管导航应启动后台检查，不等待导航成功，不阻塞导航响应；并发导航共用一次请求。失败时保留原版本。waiting 程序存在时，活动程序仍可检查内容。
 
-```toml
-[sw]
-mode = "enable"
-content_check_interval = 5
-offline_notice_path = "_res/offline/"
-```
-
-此表由站点完整的交付配置维护，不继承 Module 数据。间隔单位为分钟，参考配置为 5 分钟。
-SW 为 `enable` 时，每种已启用语言必须发布 `offline_notice_path` 指向的 HTML 离线页；
-页面从根参考站点 `content/_res/offline/` 取得。`off` 和 `disable` 允许缺少离线页。
-达到间隔后的首次受管导航立即启动后台检查；导航响应与版本请求各自完成，
-慢速、失败或离线回退响应不推迟检查。并发导航共享同一次请求。没有导航时不启动自动检查。
-JSON 请求由 SW 发出，不依赖页面通知，不阻塞导航响应。
-
-- 当前构建版本与上次检查尝试时间持久保存；进行中的检查任务仅保存在内存中。
-- 请求超时、失败或 JSON 无效时，保留原版本；下次检查仍受最小间隔限制。
-- 检查时间缺失、无效或晚于当前时间时，允许重新检查。
-- 发现安装中的程序时，取消进行中的内容检查，并暂停新检查；程序进入 waiting 后，活动程序仍可检查内容。
-- 发现新版本后，切换到新构建版本的 SW 版本缓存桶，清理旧桶，再预热离线页。
-  首次安装必须准备默认离线页；其余离线预热失败不阻止版本切换。
-  进行中的旧版本请求不得重新创建已删除的缓存。
-- 构建版本切换不刷新当前页面；新版本只影响后续请求。`site-status "status"` 的按钮只检查 SW 程序；
-  `site-status "content"` 的按钮只读取服务器站点构建版本，不切换缓存或刷新页面。
-
-## 页面脚本边界
-
-- `assets/js/pwa/manager-entry.js.tmpl` 只负责注册。
-- `assets/js/site-status/page.js` 在使用 `site-status` 的页面按实际节点绑定程序状态与检查。
-  `site-status/content.js` 独立绑定站点构建版本显示；文案由对应页面的 `params.site_status.labels` 提供。
-- 页面不创建全局 `BanyanServiceWorkerManagerRuntime`。
-- 待更新程序直接读取 `registration.waiting`。
+发现新构建版本后，后续请求使用新缓存；已打开页面保持原状。版本切换清理旧版本缓存，保留指纹缓存。旧请求完成时不能重新创建已删除的缓存。
 
 ## 缓存契约
 
-- 缓存路径规则只来自 `assets/site/delivery.toml`。启用时，`sw-policy.json` 复制
-  `sw.js` 中实际使用的 path/bucket 数组，首个匹配项优先；关闭或停用时不输出副本。
-- SW 导航缓存：cache-first，缓存名按站点构建版本区分。
-- 导航缓存未命中时，HTTP 请求使用 `cache: no-cache` 重新验证，避免旧 HTTP HTML 写入新版 SW 缓存。
-- SW 资源缓存：cache-first，按路由进入 SW 版本缓存桶或 SW 指纹缓存桶。
-- `sw.js` 不进入 Cache Storage，`sw-version.json` 不进入页面或资源缓存桶；两者每次请求均校验。
-  `sw-content-state` 单独保存当前版本和上次检查时间。
-- 站点构建版本切换清理旧 navigation/versioned 缓存；SW 指纹缓存桶跨构建版本保留。
-- 首次访问发生在 SW 控制页面之前，页面不追加缓存预热。
-  后续受控导航由 SW 缓存 HTML，并预热其中引用的指纹 CSS/JS。
-- 未缓存页面离线时使用对应语言的离线页；缓存命中的页面离线可读。
-- navigation preload 保持关闭。
+缓存与 HTTP 响应头分别配置。版本缓存未命中时重新验证 HTTP 缓存，避免旧 HTML 写入新版本缓存。`sw.js` 与 `sw-version.json` 不进入页面或资源缓存桶。
 
-## 自动化场景
-
-对已启用 SW 的生产构建运行 `swban check/browser/site <build> --updates`。
-脚本自动发现更新面板及相互连接的根入口，临时构建不同版本，并生成程序修订以检查 SW 更新。
-站点构建版本变化单独检查。其他位置的源码通过 `--site` 指定。缺少合适页面或配置时明确失败。
-也可以直接调用下面的独立任务，按其 `--help` 指定实际路径及前后两份构建：
-
-| 场景 | 覆盖内容 |
-| --- | --- |
-| `check/browser/pwa/offline` | 首次访问不补缓存；受控导航后可离线刷新；sw.js 不缓存及响应头 |
-| `check/browser/pwa/lifecycle` | waiting 保持等待，关闭旧受控页面后由浏览器激活 |
-| `check/browser/pwa/content` | 导航立即检查、并发去重、构建版本切桶、SW 指纹缓存桶保留及 waiting 期间继续检查 |
-| `check/browser/pwa/native` | 链接、刷新、历史、锚点及新标签页使用原生导航，不主动激活 |
-| `check/browser/pwa/check` | 无页面启动、轮询及可见性检查；面板手动检查、离线重试，检查不激活或重载 |
-| `check/browser/pwa/language` | 等待更新时语言选项仍可操作；按需单独运行 |
-| `check/browser/canvas/open`、`canvas/history` | 来源、排序和原生滚动/历史行为；按需单独运行 |
-
-`check/browser/csp` 验证浏览器 CSP；`pwa/offline` 验证 SW 响应头和 navigation preload。
+首次访问尚未受 SW 控制，页面不追加缓存预热。受控导航缓存 HTML 并预热同源指纹资源。检查已缓存页面离线访问，以及未缓存页面的语言回退。
 
 ## disable 模式
 
-停用是独立功能。`worker-disable.js` 主动激活、清理受管缓存，`manager-disable.js` 注销根作用域注册；无关缓存必须保留。
-`off` 不加载管理脚本，也不清理已安装的 SW。
+`disable` 使用独立的清理程序注销本站 SW，删除受管缓存，保留无关缓存。`off` 不执行清理。正常更新不能调用停用流程。
 
-使用独立构建对运行 `swban check/browser/pwa/disable <enabled> --next <disabled>`。
-正常更新不调用这套停用流程，site 批量入口也不会额外生成停用版本。
+## 自动化场景
 
-## 检查流程
-
-在站点根目录调用已安装的 Skill，对已完成的构建运行检查：
+对已启用 SW 的生产构建运行代表检查；停用另行提供启用与停用两份实际构建：
 
 ```text
-swban check/delivery <build>                #检查交付配置与指纹发布路径
-swban check/csp <build>                     #检查内联哈希与发布响应头
-swban check/browser/site <build> --updates  #检查代表页面与 SW 更新
-swban check/http/security <url>             #部署后检查实际响应头
+swban check/browser/site <build> --updates                  #检查代表页面与 SW 更新
+swban check/browser/pwa/disable <enabled> --next <disabled>  #检查停用
+swban check/http/security <url>                             #部署后检查响应头
 ```
 
-按报告处理失败项与跳过项。测试停用功能时，另行提供启用与停用两份实际构建。
+准备方式、单项任务、页面要求和报告范围统一见 Skill 的[浏览器检查](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/browser-site.md)。两个实际代码版本的比较应使用实际构建对；临时生成的更新构建只用于检查更新机制。
+
+源码回归入口见 [tests/README.md](https://github.com/SwawHQ/banyan/blob/main/tests/README.md) 中的 PWA、内容更新与停用测试。报告失败项和跳过项，不把代表页面检查视为全部场景覆盖。

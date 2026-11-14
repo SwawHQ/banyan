@@ -1,3 +1,4 @@
+/* 正文组件合并为同一资源，供不同页面复用缓存。 */
 @import "./prose-base.css";
 @import "./prose-inline.css";
 @import "./prose-lists.css";

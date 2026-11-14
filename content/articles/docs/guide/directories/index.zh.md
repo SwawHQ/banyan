@@ -9,7 +9,7 @@ description: 用真实目录组织正文，用共享引用将文章加入其他�
 ## 用目录组织正文
 
 分类通过栏目层级和文章引用实现，栏目名称由站点定义。Banyan 最小演示用 `articles`、`articles-all` 展示文章分类与全部列表，
-用 `products`、`products-all` 展示产品分类与全部列表。列表与产品示例共用一篇正文和一份 `_map.toml`；文档和变更记录也在 `articles` 下维护。Swaw 的 `d`、`d-all`、`pr` 和 `pr-all` 是该站点的定制内容，Module 不提供这些入口。
+用 `products`、`products-all` 展示产品分类与全部列表。这些目录名可以按本站需要修改。
 
 正文放在所属目录中，栏目列表直接使用这些文件。需要把同一篇文章列入其他栏目时，
 在目标栏目放入 `_map.toml`，添加栏目文章引用。
@@ -41,10 +41,10 @@ content/
 文章模板由站点根 `archetypes/banyan.md` 维护，Module 和传统主题目录不提供。
 
 ```text
-swban base/hugo new content --kind banyan articles/my-post/index.md  #新建文章
+swban base/hugo new content --kind banyan articles/my-post/index.zh.md  #新建中文文章
 ```
 
-栏目布局和文章布局由上级 `cascade` 继承，无须为每篇文章再写分类字段。
+生成后编辑标题、说明和正文，发布前将 `draft` 改为 `false`。完整操作见[添加第一篇文章](/zh/p/getting-started/#添加第一篇文章)。栏目布局和文章布局由上级 `cascade` 继承，无须为每篇文章再写分类字段。
 列表配置见 [列表与产品声明](/zh/p/collection-lists/)。
 
 每篇正文直接声明固定网址，例如 `url: p/example-product/`。
@@ -53,16 +53,45 @@ swban base/hugo new content --kind banyan articles/my-post/index.md  #新建文�
 `panicOnWarning` 检查冲突。冲突时修改其中一篇的 `url`。
 栏目页仍使用目录网址。新增顶层正文栏目无需追加路由配置。
 
+## 新增栏目
+
+例如要在文章下新增“笔记”栏目：
+
+1. 创建 `content/articles/notes/`。
+2. 在其中创建 `_index.zh.md`，写入下方内容。它继承参考站 `articles/` 的列表与文章布局。
+3. 将中文文章放入该目录下的独立页面包，如 `notes/first-note/index.zh.md`，或用下一节的方法引用已有文章。
+4. 使用 `_map.toml` 时，同时创建默认语言的栏目首页。参考站默认语言为英文，因此还需 `_index.md`，内容见下方英文示例。
+5. 预览中文文章栏目，确认“笔记”入口与文章都能打开。
+
+```yaml
+---
+title: 笔记
+description: 收录日常笔记。
+---
+```
+
+默认语言栏目首页示例：
+
+```yaml
+---
+title: Notes
+description: Everyday notes.
+---
+```
+
+其他语言在同一目录创建对应的 `_index.<语言代码>.md`。新建顶层栏目时，还需配置布局及后代页面默认值，可复制参考站 `content/articles/_index*.md` 后修改标题、顺序与说明。
+
 ## 引用到其他栏目
 
-例如 `content/products/examples/_map.toml`：
+先确认目标栏目有默认语言的栏目首页，再创建 `_map.toml`。例如 `content/products/examples/_map.toml`：
+
 
 ```toml
 refs = ["/articles/category1/example"]
 ```
 
 路径指向内容，不写语言、域名或文件扩展名。一份 `_map.toml` 供同目录各语言栏目共用。
-主题按当前语言找到原文，再读取原文标题、描述、日期、图标和实际网址。
+列表使用当前语言的原文标题、描述、日期、图标和网址。
 该语言没有原文时，这一语言不显示该引用。
 
 文章默认归属由实际目录确定，额外归属由引用它的栏目确定。
@@ -73,9 +102,8 @@ refs = ["/articles/category1/example"]
 第一列默认显示已发布的直属页面。`_map.toml` 与其他资源一样遵循 Hugo 的
 `build.publishResources` 设置；设为 `true` 时也会发布该文件。
 
-目录数量、更新时间、汇总列表和栏目 RSS 使用同一份递归成员集合。
 同一篇文章经不同子栏目汇总到共同祖先时，只显示、计数和订阅一次。
-`sitemap.xml` 与 `llms.txt` 收录真实页面，不为引用创建新条目。
+引用不创建新页面地址。站点地图不会重复收录；`llms.txt` 可以在所属栏目和引用栏目中分别列出同一正文。
 
 ## 产品目录
 
@@ -84,7 +112,7 @@ refs = ["/articles/category1/example"]
 `layout: page-collection-products`；`products-all` 使用 `page-collection-products-all` 并通过 `params.aggregate: /products` 汇总产品目录。
 `articles-all` 使用 `page-collection-directory-all` 和 `params.aggregate: /articles`，汇总文章目录中的正文。
 
-目录名和汇总入口可以修改。Swaw 使用 `pr` 与 `pr-all` 实现相同行为。
+目录名和汇总入口可以修改。
 正文的 `params.offer` 提供价格，并可保留版本定义值，不控制收录。
 详见 [怎样收录产品](/zh/p/collection-lists/#怎样收录产品)。
 
