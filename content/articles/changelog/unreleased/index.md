@@ -3,7 +3,7 @@ title: Unreleased
 url: p/unreleased/
 description: Unreleased changes to the Banyan theme and Skill.
 date: 2026-11-06
-lastmod: 2026-11-13
+lastmod: 2026-11-14
 ---
 
 ## Added
@@ -107,7 +107,7 @@ lastmod: 2026-11-13
   Restore SRI integrity checks for the Service Worker registration script.
 - Always link the Web App Manifest through a standard head link; remove
   `params.web_app_manifest` and manual theme commit markers. Powered by and enabled
-  Service Workers share the content version in `sw-version.json` for cache changes.
+  Service Workers share the site build version in `sw-version.json` for cache changes.
   Build versions default to `v` plus a timestamp; `params.build.version` can set
   an explicit value. Remove the unused `version_prefix` and `timestamp_layout` settings.
 - Content sections use ordinary directories and shared `_map.toml` references.
@@ -271,14 +271,14 @@ lastmod: 2026-11-13
   The browser manages program update checks and activation. Links, refresh and
   history keep native behavior. The first visit does not receive extra cache warmup.
   Remove the `update_check_interval` and `update_visibility_throttle` settings.
-  Publish content versions at the fixed `sw-version.json` URL, so content-only
+  Publish site build versions at the fixed `sw-version.json` URL, so content-only
   releases do not change `sw.js`. The SW starts an independent background check
   on navigation. `sw.content_check_interval` sets the minimum
-  interval in minutes, with a default of 5. A new content version switches caches
+  interval in minutes, with a default of 5. A new site build version switches SW versioned cache buckets
   and removes old content caches without reloading the current page;
-  fingerprinted resource caches remain shared across versions. Waiting programs
+  the SW fingerprint cache bucket remains shared across builds. Waiting programs
   do not pause content checks. Program updates prepare offline pages before
-  activation. Re-enabling restores the content version; reinstalling the same
+  activation. Re-enabling restores the site build version; reinstalling the same
   program refreshes its offline pages. Activation preserves newer offline pages
   cached during the waiting period and fills missing paths from prepared pages.
   An updated program resets the content-check time on activation, so the next
@@ -318,7 +318,7 @@ lastmod: 2026-11-13
 
 ## Fixed
 
-- Unified wall sizing: size is the maximum, with no enlargement. Regular tracks may shrink by up to 20% to fit an extra row or column; otherwise space stays blank. A single oversized card may shrink further to fit. Equal-height vertical walls shrink only oversized cards, without reducing every other card. Wall covers now publish under `/media/content/` to use the configured fingerprint cache rules.
+- Unified wall sizing: size is the maximum, with no enlargement. Regular tracks may shrink by up to 20% to fit an extra row or column; otherwise space stays blank. A single oversized card may shrink further to fit. Equal-height vertical walls shrink only oversized cards, without reducing every other card. Wall covers now publish under `/media/content/` to use the configured SW fingerprint cache bucket rules.
 
 - Printed columns fit the paper width. Long code and table contents wrap without clipping at the right edge. Separate code line-number columns are hidden in print because they cannot align with wrapped code.
 - Prose headings retain the spacing adjustment for text line boxes next to quotes, tables, code and images. Collection bodies use compact spacing. Responsive and ordinary images share the same spacing and match code and quote gaps next to paragraphs; inline images no longer trigger image-paragraph gaps. Article title spacing no longer depends on metadata or JavaScript. Quote, code, table and caption fonts scale with the base size.

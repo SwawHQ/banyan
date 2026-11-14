@@ -1,14 +1,14 @@
 ---
 title: 列表与产品声明
 date: 2026-11-06
-lastmod: 2026-11-12
+lastmod: 2026-11-14
 url: p/collection-lists/
 description: 配置目录、引用、条目图标和产品列表。
 ---
 
 页面的 `layout` 选择列表字段和行为。普通目录的成员来自实际文章和本目录 `_map.toml` 的引用。选择页的选项由对应布局提供。入口归属由真实根页面及有效 `from` 决定，不在内容 front matter 中写菜单。自定义字段放在 `params`，继承默认值放在 `cascade.params`。
 
-第一列名称使用页面的 `linkTitle`，未声明时使用 `title`。语言、外观、我的的三语言站点页面直接使用无“系统－／系統－／System -”前缀的 `title`，入口与页内标题共用同一名称，无需重复声明 `linkTitle`。
+根导航列中的入口名称使用页面的 `linkTitle`，未声明时使用 `title`。语言、外观、我的的三语言站点页面直接使用无“系统－／系統－／System -”前缀的 `title`，入口与页内标题共用同一名称，无需重复声明 `linkTitle`。
 
 第一列默认显示当前语言首页及已发布的直属子页，按 `weight` 排序。无需额外的入口开关；`build.list: never` 的内部节点不显示。各语言分别维护自己的标题、图标和顺序。
 
@@ -50,11 +50,11 @@ layout: page-collection-products
 
 Powered by 由站点根 `content/powered-by/index*.md` 维护，使用 `page-article-norss` 展示技术总览，通过 `weight` 排序，并声明 `params.icon: code`。标题、说明、源码和变更记录链接在各语言 Markdown 正文维护；外链复用 `new-tab`。
 
-`theme-version` 只输出来自 `hugo.Deps` 的主题版本，接受 `label`、`local` 文案参数；`hugo-version` 读取 `hugo.Version`。`site-status "version"` 显示当前页面构建时的内容版本；启用 SW 时，`sw-version.json` 使用同一版本。`site-status "interval" "每 %d 分钟检查"` 显示检查间隔，`site-status "policy"` 提供缓存策略链接，`site-status "offline"` 按交付配置生成当前语言的离线页链接，保留部署子路径。
+`theme-version` 只输出来自 `hugo.Deps` 的主题版本，接受 `label`、`local` 文案参数；`hugo-version` 读取 `hugo.Version`。`site-status "version"` 显示当前页面的站点构建版本；启用 SW 时，`sw-version.json` 使用同一版本。`site-status "interval" "每 %d 分钟检查"` 显示检查间隔，`site-status "policy"` 提供缓存策略链接，`site-status "offline"` 按交付配置生成当前语言的离线页链接，保留部署子路径。
 
 文档和版本说明均继承 `articles` 的 `cascade`：栏目使用 `page-collection-directory`，正文使用 `page-article-rss` 和 `params.slots: [breadcrumb, meta]`，提供日期、来源链接、章节目录和 RSS。开发期间在 `content/articles/changelog/unreleased/index.md` 记录变化，发布时归档为 `content/articles/changelog/v版本号/index.md`。
 
-PWA 段落中的 `site-status "status"` 显示程序更新状态和检查按钮；`site-status "content"` 显示当前页面的内容版本状态；`params.site_status.labels` 与技术说明同存于 `content/powered-by/index*.md`。参考站和 Swaw 的各语言 Powered by 将预取诊断放在折叠区中，使用 `prefetch-debug-controls`、`prefetch-debug-links` 和 `prefetch-debug-state` 短代码；其 `serviceWorker.controlled` 只表示该诊断页是否受控，不代表其他标签页。
+PWA 段落中的 `site-status "status"` 显示程序更新状态和检查按钮；`site-status "content"` 显示当前页面与服务器的站点构建版本比对结果；`params.site_status.labels` 与技术说明同存于 `content/powered-by/index*.md`。参考站和 Swaw 的各语言 Powered by 将预取诊断放在折叠区中，使用 `prefetch-debug-controls`、`prefetch-debug-links` 和 `prefetch-debug-state` 短代码；其 `serviceWorker.controlled` 只表示该诊断页是否受控，不代表其他标签页。
 
 面板自行读取 registration，显示检查、安装和等待状态；构建信息只在上方显示一次。检查按钮始终只检查，不激活或刷新。程序更新和激活由浏览器管理；普通链接、刷新、历史和锚点保持原生行为。
 
@@ -165,7 +165,7 @@ GitHub 和备案页的目标链接使用 `{{</* new-tab href="https://example.co
 
 文章 front matter 显式填写 `date` 和 `lastmod`：`date` 记录发布日期，初始 `lastmod` 与 `date` 相同，后续有实质内容更新时再手动调整 `lastmod`。整理分类、格式或目录时无需改动这两个字段。`banyan` 新建文章模板会生成相同的初始日期；为已有文章补字段时复制其 `date`，保留原本已经填写的 `lastmod`。
 
-显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。`sorts` 中的 `date-asc`、`date-desc` 均按更新时间排序，产品表显示名称、更新时间、价格三列。正文中的发布日期继续使用 `.Date`，不改变其含义；本站内容版本使用构建标识，不参与文章日期排序。
+显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。`sorts` 中的 `date-asc`、`date-desc` 均按更新时间排序，产品表显示名称、更新时间、价格三列。正文中的发布日期继续使用 `.Date`，不改变其含义；站点构建版本用于识别构建产物，不参与文章日期排序。
 
 ## 怎样声明条目图标
 
@@ -193,7 +193,7 @@ Swaw 在 `content/pr/_index*.md` 和 `content/pr-all/_index*.md` 各声明 `list
 
 `aggregate` 只提供集合成员，不参与默认图标继承；`/pr-all/` 与 `/pr/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `_index.md` 声明的 `/d-all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。访问首页只选中首页，其他页面按真实入口或有效来源选中。
 
-图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。面包屑列从共享 HTML 片段克隆图标节点，保留相同图片地址、字符和 SVG 引用。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主表、共享导航 HTML 片段和面包屑列共用；站点列表与第一列也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
+图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。面包屑列从共享 HTML 片段克隆图标节点，保留相同图片地址、字符和 SVG 引用。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主列表、共享导航片段和面包屑列共用；站点列表与第一列也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
 
 ## 怎样声明选择列表
 
@@ -260,11 +260,11 @@ Swaw 的每个产品栏目使用 `content/pr/<目录>/_index.<lang>.md` 设置�
 ## 来源与排序
 
 从栏目进入文章时，面包屑导航保留该次来源；直接打开正文时，显示文章的实际目录路径。
-分类和聚合列表页使用自身路径，排序时不生成冗余的 `from`；文章链接在来源不同于默认归属时保留 `from`。
+分类和汇总列表页使用自身路径，排序时不生成冗余的 `from`；文章链接在来源不同于默认归属时保留 `from`。
 `sorts` 按路径保存各列排序，包含当前主列表；全部默认时省略该参数，尾部默认项也省略，其余默认位置用 `_` 保留。每列独立更新，新标签打开的链接也保留最新状态。
 排序和浏览器前进、后退会保留各自的来源与排序状态。
 
-同一名称顺序由 Hugo 生成，主表和面包屑列使用相同结果。更新时间相同时，名称作为后续排序依据。
+同一名称顺序由 Hugo 生成，主列表和面包屑列使用相同结果。更新时间相同时，名称作为后续排序依据。
 
 Swaw 的 `/pr/` 是产品栏目根，`/pr-all/` 是产品全部。Banyan 演示对应 `/products/` 和 `/products-all/`。两组入口均由各自站点声明，收录范围由目录和 `aggregate` 决定。
 技术说明见[面包屑模型](/zh/p/breadcrumb-models/)和[导航状态](/zh/p/navigation-state/)。

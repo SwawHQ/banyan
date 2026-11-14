@@ -1,14 +1,14 @@
 ---
 title: 交付与缓存
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-14
 url: p/delivery/
 description: 配置部署平台、HTTP 响应头、Service Worker 缓存和重定向。
 ---
 
 ## 配置来源
 
-站点根 `assets/site/delivery.toml` 是交付策略的唯一来源，须保留完整文件。
+站点根 `assets/site/delivery.toml` 是站点交付配置的唯一来源，须保留完整文件。
 新站点从 Banyan 根参考站点取得该文件；已有站点按参考文件补齐配置，
 保留自己的 SW、路由和平台值。Module 和传统主题目录不提供默认配置，
 不再合并或继承 Module 中的配置。`routes` 按声明顺序使用，
@@ -86,17 +86,17 @@ SW 为 `enable` 时，每种已启用语言都必须发布 `offline_notice_path`
 `content_check_interval` 单位为分钟。`mode = "disable"` 生成清理 worker，
 由客户端注销本站 SW 并清除受管缓存；`off` 不加载管理逻辑，不会自动注销已有 SW。
 
-`mode = "enable"` 生成正常程序 `sw.js` 和内容版本 `sw-version.json`；
+`mode = "enable"` 生成正常程序 `sw.js` 和站点构建版本文件 `sw-version.json`；
 后者是一个 JSON 字符串，与 Powered by 的本站构建区域使用同一次构建的版本。
-`disable` 生成清理程序 `sw.js`，不生成内容版本文件。
-达到 `content_check_interval` 最小间隔后，受管导航立即在后台检查内容版本，
+`disable` 生成清理程序 `sw.js`，不生成站点构建版本文件。
+达到 `content_check_interval` 最小间隔后，受管导航立即在后台检查站点构建版本，
 不等待导航成功，也不阻塞导航响应。并发导航共用一次检查。发现新版本后切换后续请求的缓存，
-不刷新已打开页面。此内容版本与 SW 程序本身的哈希不同。
+不刷新已打开页面。站点构建版本标识构建产物；SW 程序哈希标识程序代码。
 
 | `sw.bucket` | 行为 |
 | --- | --- |
-| `versioned` | 当前构建缓存，版本切换后删除旧缓存 |
-| `fingerprinted` | 跨构建复用内容指纹 URL |
+| `versioned` | SW 版本缓存桶：按站点构建版本保存资源，切换后删除旧桶 |
+| `fingerprinted` | SW 指纹缓存桶：跨构建复用指纹资源 |
 | `off` | 交给浏览器请求，不进入 SW 缓存 |
 
 两种缓存均对同源 GET 请求先读 SW 缓存。多条 SW 规则匹配时，最后声明者优先。

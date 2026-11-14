@@ -1,16 +1,16 @@
 ---
 title: UI 命名与职责
 date: 2026-11-06
-lastmod: 2026-11-09
+lastmod: 2026-11-14
 url: p/ui-naming/
 description: 约定页面列、列表、条目、样式类与行为标记的命名。
 ---
 
-名称按当前职责组织，不再描述已经退役的主菜单、顶部面包屑和下拉布局。
+名称按当前职责组织。概念定义见[项目术语表](/zh/p/glossary/)，本文说明对应的组件和实现位置。
 
 | 实体 | 名称与位置 |
 | --- | --- |
-| 第一列根入口 | `browse/root-navigation.js`、`feature-browse/navigation/root/model.html` 与 `root/render.html`；来自首页和已发布的直属子页 |
+| 根导航列 | `browse/root-navigation.js`、`feature-browse/navigation/root/model.html` 与 `root/render.html`；来自首页和已发布的直属子页 |
 | 可见面包屑列 | `browse/breadcrumb-render.js`、`breadcrumb-navigation.css`；语义导航 `nav.breadcrumb-navigation[data-slot="breadcrumb"]`、单列 `.breadcrumb-column` |
 | 集合页面 | `layouts/page-collection-directory-name-only.html`、`feature-browse/collection/render-page.html`；列表内容由 `feature-browse/collection/render.html` 渲染 |
 | 公共列表与条目 | `system-ui/list/render.html` 与 `item.html` 装配完整列表和条目；`item.css` 负责控件和状态，`list-layout.css` 负责列表与固定字段宽度 |
@@ -35,13 +35,13 @@ layout: page-collection-directory-name-only
 
 ## 面包屑数据与显示
 
-构建期的 `feature-browse/navigation/breadcrumb/` 生成真实结构面包屑，`navigation/source/` 生成共享 HTML 片段与本页列索引。`system-metadata/seo/breadcrumb-list.html` 输出 BreadcrumbList；`params.slots` 中的 `breadcrumb` 与网址 `from/sorts` 保持各自职责。
+构建期的 `feature-browse/navigation/breadcrumb/` 生成真实结构面包屑，`navigation/source/` 生成共享 HTML 片段与本页列索引。`system-metadata/seo/breadcrumb-list.html` 输出面包屑结构化数据（BreadcrumbList）；`params.slots` 中的 `breadcrumb` 与网址 `from/sorts` 保持各自职责。
 
 浏览器的 `browse/navigation-source.js` 读取 `data-navigation`，`breadcrumb-source.js` 加载片段，`breadcrumb-render.js` 复用滚动容器并克隆列头和条目。`prepareBreadcrumbColumns()` 维护列容器，`renderBreadcrumbColumn()` 填充单列；`selectedPathname` 表示当前项，最终输出 `.is-current` 与 `aria-current`。读取边界见 [导航状态](/zh/p/navigation-state/#内嵌-collection-payload)。
 
 `breadcrumb-entry.js` 装配面包屑导航事件，`breadcrumb-controller.js` 选择并加载列，`breadcrumb-links.js` 生成面包屑列链接，`breadcrumb-sort.js` 更新排序。列模型只通过 `payload` 提供已加载片段与元数据。配置、组件、样式和检查工具统一使用 `breadcrumb`；整体区域为 `.breadcrumb-navigation`，每一级为 `.breadcrumb-column`。`data-breadcrumb-column` 标识列容器，`data-breadcrumb-column-path` 保存栏目逻辑路径；加载标记使用 `data-breadcrumb-pending`、`data-has-breadcrumb-columns`。`logicalPath`、`pathname` 等名称继续表示实际路径值。
 
-`params.slots: [breadcrumb]` 同时装配面包屑区域和对应的 SEO 数据。SEO 模板 `system-metadata/seo/breadcrumb-list.html` 将构建期的结构面包屑转换为标准 `BreadcrumbList`，不输出列内的全部候选条目，也不随浏览器的 `from` 或排序变化。
+`params.slots: [breadcrumb]` 同时装配面包屑区域和面包屑结构化数据。SEO 模板 `system-metadata/seo/breadcrumb-list.html` 将构建期的结构面包屑转换为标准 `BreadcrumbList`，不输出列内的全部候选条目，也不随浏览器的 `from` 或排序变化。
 
 首页和普通页面分别使用 `model-home`、`model-page` 生成结构面包屑；Hugo Page 只留在构建模型，不写入浏览器索引。
 
@@ -51,7 +51,7 @@ layout: page-collection-directory-name-only
 
 | 角色 | 滚动容器 |
 | --- | --- |
-| 第一列根入口 | `.page-rail.page-column` |
+| 根导航列 | `.page-rail.page-column` |
 | 每个面包屑列 | `.breadcrumb-column.page-column` |
 | 主内容列 | `.page-content.page-column` |
 | 文档辅助列 | `.document-aside.page-column` |
@@ -115,7 +115,7 @@ layout: page-collection-directory-name-only
 
 `page-actions` 使用通用页面动作标记；`pages/back.js` 处理历史返回，`pages/reload.js` 处理重新加载。脚本名称不依赖使用这些动作的页面入口。
 
-`powered-by` 表示页面入口，`site-status` 表示可复用的信息控件，不依赖页面 URL。DOM 标记中，`data-site-build-version` 表示构建版本，`data-site-content-*` 表示内容版本与检查间隔，`data-site-sw-*` 表示 SW 状态与检查。实际更新函数和浏览器 API 保留 `update` 命名。
+`powered-by` 表示页面入口，`site-status` 表示可复用的信息控件，不依赖页面 URL。DOM 标记中，`data-site-build-version` 表示构建版本，`data-site-content-*` 表示站点构建版本比对与检查间隔，`data-site-sw-*` 表示 SW 状态与检查。实际更新函数和浏览器 API 保留 `update` 命名。
 
 普通页面的 `pwa/manager-entry.js.tmpl` 在加载后注册 SW，预渲染页面等到激活后注册。检查按钮不激活 waiting 程序，也不自动刷新已打开页面。离线页使用 `page-offline`，不加载普通导航、预取或 SW 管理脚本。
 

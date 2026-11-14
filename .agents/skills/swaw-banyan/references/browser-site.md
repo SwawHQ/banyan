@@ -36,7 +36,7 @@ links. It builds a temporary next version using the source site's normal config
 and selected Hugo, Go and Git. Source defaults to the current directory; `--site`
 selects another source. The source and supplied build must use the same site/config.
 
-The temporary build changes the content version and adds a comment to `sw.js`
+The temporary build changes the site build version and adds a comment to `sw.js`
 to exercise waiting-worker activation, including activation after old controlled
 pages close. It does not represent an actual source-code release. Output, cache
 and resources are isolated and cleaned up; source and supplied builds are preserved.

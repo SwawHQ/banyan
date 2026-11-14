@@ -99,6 +99,7 @@ Backend features such as accounts, payments, and comments are not yet available.
 ## Documentation
 
 
+- [Project glossary (Chinese)](content/articles/docs/guide/glossary/index.zh.md)
 - [Site configuration](https://banyan.swaw.com/zh/p/site-configuration/)
 - [Lists and products](https://banyan.swaw.com/zh/p/collection-lists/)
 - [Page regions](https://banyan.swaw.com/zh/p/layout-slots/)

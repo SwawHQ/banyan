@@ -30,9 +30,10 @@ SW status: {{< site-status "status" >}}
 
 Keep fixed labels in Markdown and changing messages in `params.site_status.labels`.
 Two trailing spaces make a line break. Shortcodes do not add code formatting.
-The local version and interval are fixed at build time; the interval comes from
-`sw.content_check_interval`. The server row reads `sw-version.json` after page load
-and on refresh. The version links to that JSON. A matching version adds
+The local row shows the site build version embedded in this page. The interval
+comes from `sw.content_check_interval`. The server row reads the published site
+build version from `sw-version.json` after page load and on refresh.
+The version links to that JSON. A matching version adds
 `content_current_icon`. Its refresh button
 does not switch cache buckets. The status row checks the SW program. Each row has
 its own refresh button; use `content_refresh` and `status_refresh` for their

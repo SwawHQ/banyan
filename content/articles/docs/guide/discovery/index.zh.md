@@ -1,10 +1,17 @@
 ---
 title: 站点发现与来源链接
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-14
 url: p/discovery/
 description: 控制 sitemap 收录，了解 llms.txt，并添加文章来源和外部发布链接。
 ---
+
+## 结构化数据
+
+页面使用 JSON-LD 向机器提供结构化数据。Schema.org 定义类型和字段：
+站点使用 `WebSite`，文章使用 `BlogPosting`，面包屑使用 `BreadcrumbList`，集合列表使用 `ItemList`。
+这些数据由模板随 HTML 生成。概念见[项目术语表](/zh/p/glossary/#结构化数据)，
+文章和面包屑数据的装配见[页面区域与布局](/zh/p/layout-slots/)。
 
 ## Sitemap
 
@@ -79,7 +86,7 @@ branch = "main"
 来源路径使用 `content/` 下的实际源文件路径。Banyan 的文档与变更记录因此链接到
 本仓库的 `content/articles/docs/` 和 `content/articles/changelog/`。
 链接使用配置的分支，使新页面在首次公开提交前也有稳定地址。
-准确的部署版本在 Powered by 中查看。
+页面的站点构建版本在 Powered by 中查看。
 
 ## 外部发布链接
 

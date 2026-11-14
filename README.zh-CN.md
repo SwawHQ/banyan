@@ -99,6 +99,7 @@
 ## 文档
 
 
+- [项目术语表](content/articles/docs/guide/glossary/index.zh.md)
 - [站点配置](https://banyan.swaw.com/zh/p/site-configuration/)
 - [列表与产品](https://banyan.swaw.com/zh/p/collection-lists/)
 - [页面区域](https://banyan.swaw.com/zh/p/layout-slots/)

@@ -10,3 +10,4 @@
 6. Changelog 只记录用户可见的变化、配置要求和实际修复，合并同类条目；不记录测试细节、测试夹具、纯内部重构、文件整理或开发过程。
 7. 检测、测试用例方法脚本，先考虑是否可以通用化，放入 swaw-banyan skill，然后再考虑放站点 tests/
 8. 使用 PATH 命令 gitbw.cmd .help、  ghbw.cmd .help 替代 git、gh（GitHub CLI）命令操作当前仓库
+9. 项目对话和文档优先使用[项目术语表](content/articles/docs/guide/glossary/index.zh.md)中的名称；功能改变术语含义时，同步更新定义。

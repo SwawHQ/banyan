@@ -54,7 +54,10 @@ built-in HTTP 503 HTML notice with no external resources.
 ## Prefetch and Service Worker settings
 
 `[prefetch]` and `[sw]` apply to all languages. Routes use independent `http`
-and `sw.bucket` fields; SW buckets are `versioned`, `fingerprinted` or `off`.
+and `sw.bucket` fields. `versioned` selects the SW versioned cache bucket;
+`fingerprinted` selects the SW fingerprint cache bucket; `off` bypasses SW caching.
+The versioned bucket follows the site build version published in `sw-version.json`.
+The fingerprint bucket retains resources across builds by their fingerprint URLs.
 For platform build fields, use `platform.edgeone.makers`; see [EdgeOne](edgeone.md).
 
 Enable prefetch with a complete table to use automatic native/SW/link selection:

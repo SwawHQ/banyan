@@ -75,7 +75,7 @@ node temp_workspace/demo/<topic>/preview.mjs  #启动预览并输出实际地址
 
 注意以下检查陷阱：
 
-- 手机布局先将主列按 `inline: 'start'` 对齐视口，再检查按钮边界。不要先点击控件或调用 `scrollIntoViewIfNeeded()`，自动横移会掩盖按钮原本不可见的问题。
+- 手机布局先将主内容列按 `inline: 'start'` 对齐视口，再检查按钮边界。不要先点击控件或调用 `scrollIntoViewIfNeeded()`，自动横移会掩盖按钮原本不可见的问题。
 - 检查图标在有色背景上是否实际可见。缺少 `.item-icon` 容器时，图标可能被背景盖住，仅检查计算颜色无法发现此问题。
 - 若方案涉及打印或无脚本阅读，检查站点构建的内容顺序和裁切。检查无脚本页面时，不调用依赖 `requestAnimationFrame` 的 `afterPaint()`；对照工具本身可以依赖 JavaScript。
 

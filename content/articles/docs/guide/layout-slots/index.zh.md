@@ -1,14 +1,14 @@
 ---
 title: 页面区域与布局
 date: 2026-11-06
-lastmod: 2026-11-12
+lastmod: 2026-11-14
 url: p/layout-slots/
 description: 配置根导航入口、面包屑区域和文章元信息。
 ---
 
 ## 当前约定
 
-第一列入口由内容树生成，页面无需声明菜单归属。`params.slots` 只控制面包屑及文章辅助内容是否装配；框架负责布局。正文 `main` 是内建区域，不通过 front matter 指向 fragment。
+根导航列的入口由内容树生成，页面无需声明菜单归属。`params.slots` 只控制面包屑及文章辅助内容是否装配；框架负责布局。正文 `main` 是内建区域，不通过 front matter 指向 fragment。
 
 `params.slots` 中的 `breadcrumb` 装配 shell 内的 `nav.slot.breadcrumb-navigation[data-slot="breadcrumb"]`，其子节点是面包屑列。`data-slot="breadcrumb"` 保留区域语义；屏幕上 nav 使用 `display: contents`，各列直接参与 `.page-shell` 的横向 Grid。列尺寸和打印分组见 [公共页面列](/zh/p/ui-naming/#公共页面列)。
 
@@ -37,10 +37,10 @@ description: 配置根导航入口、面包屑区域和文章元信息。
 
 | 名称 | 用途 |
 | --- | --- |
-| `breadcrumb` | 面包屑导航、各级栏目条目，以及构建期结构面包屑的 SEO 数据 |
-| `meta` | 文章元信息、章节目录和正文页的 BlogPosting |
+| `breadcrumb` | 面包屑导航、各级栏目条目，以及面包屑结构化数据（BreadcrumbList） |
+| `meta` | 文章元信息、章节目录和文章结构化数据（BlogPosting） |
 
-`meta` 统一控制文章元信息、章节目录和正文页的 BlogPosting。省略它会同时关闭这三部分，详见 [布局与章节定位](/zh/p/breadcrumb-models/#布局与维护边界)。`document-aside` 是布局 block，Markdown 内容不能将它声明为 slot。
+`meta` 统一控制文章元信息、章节目录和文章结构化数据（BlogPosting）。省略它会同时关闭这三部分，详见 [布局与章节定位](/zh/p/breadcrumb-models/#布局与维护边界)。`document-aside` 是布局 block，Markdown 内容不能将它声明为 slot。
 
 未知 slot 名和错误值类型会使构建失败。当前只接受 `breadcrumb` 和 `meta`，不接受字典或布尔值。
 
@@ -64,7 +64,7 @@ params:
 
 语言、外观页面由站点根 `content/` 维护，使用 `_index.md`，分别选择 `page-collection-language`、`page-collection-appearance`，并声明 `outputs: [HTML]`。布局提供选项，由语言、外观脚本处理操作。第一列不依赖 slot 声明。
 
-Powered by 总览由站点根 `content/powered-by/index*.md` 维护，使用 `page-article-norss`。`theme-version`、`hugo-version` 输出主题和 Hugo 版本；`site-status "version"` 输出构建版本，`"interval"` 输出检查间隔，`"policy"` 输出缓存策略链接，`"offline"` 输出当前语言的离线页链接，`"status"` 输出程序状态和检查按钮，`"content"` 输出本页内容版本状态。`params.site_status.labels` 提供文案，检查不激活或重载页面。公共模板按 `site-status` 和 `page-actions` 短代码各加载一次所需脚本。离线页使用 `page-offline`，不装配导航、SW 管理或预取脚本。
+Powered by 总览由站点根 `content/powered-by/index*.md` 维护，使用 `page-article-norss`。`theme-version`、`hugo-version` 输出主题和 Hugo 版本；`site-status "version"` 输出构建版本，`"interval"` 输出检查间隔，`"policy"` 输出缓存策略链接，`"offline"` 输出当前语言的离线页链接，`"status"` 输出程序状态和检查按钮，`"content"` 显示本页与服务器的站点构建版本比对结果。`params.site_status.labels` 提供文案，检查不激活或重载页面。公共模板按 `site-status` 和 `page-actions` 短代码各加载一次所需脚本。离线页使用 `page-offline`，不装配导航、SW 管理或预取脚本。
 
 各语言首页的 `description` 提供该语言的默认描述，页面可用自己的 `description` 覆盖。文章源码仓库使用 `hugo.toml` 中的 `params.content_source`。`params.slots` 中的 `meta` 控制当前文章元信息、章节目录和 BlogPosting。
 

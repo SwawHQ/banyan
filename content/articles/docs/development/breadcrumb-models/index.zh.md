@@ -1,14 +1,14 @@
 ---
 title: 面包屑导航模型
 date: 2026-11-06
-lastmod: 2026-11-07
+lastmod: 2026-11-14
 url: p/breadcrumb-models/
 description: 说明根导航、来源列和文章进入路径的构建及呈现模型。
 ---
 
 ## 第一列与进入路径
 
-第一列是当前语言站点的真实根页面列表。`feature-browse/navigation/root/pages.html` 将 Home 与 `Home.Pages` 取并集，再按页面 `weight` 排序，保留完整结构供归属与来源模型使用。
+根导航列是页面第一列，显示当前语言站点的根页面入口。`feature-browse/navigation/root/pages.html` 将 Home 与 `Home.Pages` 取并集，再按页面 `weight` 排序，保留完整结构供归属与来源模型使用。
 
 `feature-browse/navigation/root/model.html` 从结构根页面生成可见入口，负责已发布 HTML 页面过滤、名称、地址、图标和默认选中状态。名称取 `LinkTitle` / `Title`，地址取 `RelPermalink`；`build.list: local` 的系统页面也可以参与。`root/render.html` 只装配 `nav` 与公共列表。
 
@@ -18,7 +18,7 @@ description: 说明根导航、来源列和文章进入路径的构建及呈现�
 ## 选中规则
 
 `feature-browse/navigation/root/selected.html` 从当前页面及真实内容祖先中找根入口，提供静态 HTML 的默认选中项。
-公开 URL 可以与内容路径不同，因此不能根据 URL 前缀猜所属入口。文章默认使用真实目录祖先，例如 `content/articles/category1/example/index.zh.md` 的根入口为 `/articles/`，发布网址为 `/zh/p/example-product/`。`content/powered-by/` 是独立根页面，选中自己的入口，无子页面包屑列。
+发布网址可以与内容路径不同，因此不能根据 URL 前缀猜所属入口。文章默认使用真实目录祖先，例如 `content/articles/category1/example/index.zh.md` 的根入口为 `/articles/`，发布网址为 `/zh/p/example-product/`。`content/powered-by/` 是独立根页面，选中自己的入口，无子页面包屑列。
 
 有效的 `from` 指向当前页面已发布的来源集合。运行时根据列索引和有效来源路径调整第一列选中项，完整入口列表始终保留。
 在 Banyan 演示中，从“文章 - 分类”进入同一篇文章就选中“文章 - 分类”，从“产品 - 全部”进入就选中“产品 - 全部”。不存在或不属于当前文章的来源不参与选中，继续使用内容祖先。
@@ -33,7 +33,7 @@ description: 说明根导航、来源列和文章进入路径的构建及呈现�
 `feature-browse/navigation/breadcrumb/model.html` 根据普通页面或首页的真实结构生成构建期模型：
 
 - `root_item`：真实结构中的根入口。
-- `schema_items`：结构化数据中的页面路径。
+- `schema_items`：面包屑结构化数据（BreadcrumbList）中的页面路径。
 - `nodes`：根入口之后的 `{item, owner}` 节点。
 
 `item` 表示路径项，owner 是提供兄弟条目的 Hugo Page。例如示例文章的目标是 `/p/example-product/`，兄弟条目来自 `/articles/category1/`。Hugo Page 不进入浏览器。
@@ -53,7 +53,7 @@ description: 说明根导航、来源列和文章进入路径的构建及呈现�
 
 移动与桌面共用横向列布局。初始页面的 `nav.breadcrumb-navigation[data-slot="breadcrumb"]` 只保留容器；骨架脚本在 `#main` 之前按当前索引预留面包屑列，加载后在原列中填充共享 HTML。根导航、栏目主列表和正文保留原生 HTML。
 
-片段中的文章链接在来源不同于文章默认归属时携带 `from`，与排序后的链接规则一致。例如 `/articles/docs/guide/` 页面上的 docs 列，其文章链接使用 `#from=articles/docs`。分类和聚合列表链接使用集合自身地址，不生成冗余的 `from`；在列表页排序也沿用自身完整路径。
+片段中的文章链接在来源不同于文章默认归属时携带 `from`，与排序后的链接规则一致。例如 `/articles/docs/guide/` 页面上的 docs 列，其文章链接使用 `#from=articles/docs`。分类和汇总列表链接使用集合自身地址，不生成冗余的 `from`；在列表页排序也沿用自身完整路径。
 
 排序复用已加载的行，保留列头、图标、选中节点和列内滚动位置。主列表和面包屑列统一更新 `sorts` 中各自对应的一项，保留文章的 `from`、锚点和其他参数；生成链接时省略默认值和尾部默认项，中间默认项用 `_` 保留位置。子栏目行提供目标排序类型与默认值，页面加载不自动改写排序网址。排序不增加历史记录。主列表排序后同步刷新面包屑列链接，使新标签打开也保留最新排序。
 

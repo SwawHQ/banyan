@@ -100,7 +100,7 @@ cascade:
 
 Use `params.slots` to list enabled regions. The order does not change the layout.
 `breadcrumb` enables breadcrumb navigation. `meta` enables article metadata, chapters
-and BlogPosting on regular article pages. Omit `params.slots` to inherit it;
+and article structured data (`BlogPosting`, encoded as JSON-LD) on regular article pages. Omit `params.slots` to inherit it;
 use `params.slots: []` to disable them.
 
 Create `content/articles/sample/_index.md` for a nested directory. Its layouts come

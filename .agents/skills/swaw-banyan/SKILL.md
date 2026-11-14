@@ -11,6 +11,8 @@ metadata:
 
 使用本技能目录中的 `swban.cmd`；以下命令简称为 `swban`。目前支持 Windows x64。
 
+项目对话和文档用语见[项目术语表](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs/guide/glossary/index.zh.md)。
+
 ```text
 swban doctor [目录]       #检查工具和站点主题
 swban help                #查看常用命令
@@ -39,7 +41,7 @@ swban <command> --help    #查看参数和默认值
 | 修改首页或制作 home-art 艺术包 | [首页与艺术包](references/home-art.md) |
 | 配置图片墙、封面和滚动方式 | [图片墙](references/content.md#image-walls) |
 | 修改站名、描述或爬虫规则 | [站点信息与发现](references/site-configuration.md#site-identity-and-discovery) |
-| 配置栏目、汇总、时间范围、RSS 或页面 slots | [栏目与文章布局](references/content.md#collections-and-article-layouts) |
+| 配置栏目、汇总列表、汇总时间范围、RSS 或页面区域开关 | [栏目与文章布局](references/content.md#collections-and-article-layouts) |
 | 修改语言或外观设置页 | [设置页](references/site-configuration.md#language-and-appearance-pages) |
 | 调整环境诊断检查和修复提示 | [诊断配置](references/doctor.toml) |
 | 执行浏览器检查，包括 SW 更新 | [浏览器检查](references/browser-site.md) |
