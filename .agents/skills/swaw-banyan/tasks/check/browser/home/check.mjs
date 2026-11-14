@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-export async function check({page,baseUrl}) {
+export async function check({page,baseUrl,options={}}) {
   const errors = [], failedAssets = [];
   page.on('pageerror',error => errors.push(error.message));
   page.on('requestfailed',request => {
@@ -13,7 +13,7 @@ export async function check({page,baseUrl}) {
       failedAssets.push(response.status()+' '+response.url());
     }
   });
-  const response = await page.goto(baseUrl+'/',{waitUntil:'load'});
+  const response = await page.goto(baseUrl+(options.page||'/'),{waitUntil:'load'});
   assert.ok(response?.ok(),'Home page must return a successful response.');
   await page.locator('.slot-main').waitFor({state:'visible'});
   const title = (await page.title()).trim();

@@ -11,7 +11,7 @@ async function cacheState(page,assets,worker) {
     for(const key of keys)for(const request of await (await caches.open(key)).keys()) {
       const url=new URL(request.url);
       if(url.origin===script.origin&&url.pathname===script.pathname)cachedWorkers.push(key);
-      if(key!=='sw-content-state'&&url.origin===script.origin&&url.pathname==='/sw-version.json')cachedVersions.push(key);
+      if(key!=='sw-content-state'&&url.href===new URL('sw-version.json',script).href)cachedVersions.push(key);
     }
     return {keys,pages,cachedWorkers,cachedVersions};
   },worker);
@@ -50,7 +50,7 @@ export async function check({page,baseUrl,options}) {
     const workerResponse=await context.request.get(registration.worker);
     assert.ok(workerResponse.ok(),'The active worker script must be available.');
     assert.equal(workerResponse.headers()['cache-control'],'no-cache, max-age=0, must-revalidate','The worker script must revalidate on every request.');
-    const versionResponse=await context.request.get(new URL('/sw-version.json',baseUrl).href);
+    const versionResponse=await context.request.get(new URL('sw-version.json',registration.worker).href);
     assert.ok(versionResponse.ok(),'The content version JSON must be available.');
     assert.equal(versionResponse.headers()['cache-control'],'no-cache, max-age=0, must-revalidate','The content version JSON must revalidate on every request.');
     const contentVersion=await versionResponse.json();

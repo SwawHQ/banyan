@@ -62,6 +62,7 @@
       {{- $swManagerBuilt := $swManagerSource | js.Build (dict
         "targetPath" $swManagerTargetPath
         "minify" (not hugo.IsServer)
+        "params" (dict "swScope" ((urls.Parse hugo.Sites.Default.BaseURL).EscapedPath | default "/"))
       ) -}}
       {{- $swManager = $swManagerBuilt | fingerprint -}}
     {{- end -}}

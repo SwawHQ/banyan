@@ -8,12 +8,13 @@
 {{- if not $icon512 }}{{ errorf "Build failed: missing resource %q." "site/icon-512.png" }}{{ end -}}
 {{- $icon512 = $icon512 | fingerprint -}}
 {{- $siteTitle := partial "system-metadata/site/title.html" .Site -}}
+{{- $root := (urls.Parse .Site.BaseURL).EscapedPath | default "/" -}}
 {{- dict
-  "id" "/"
+  "id" $root
   "name" $siteTitle
   "short_name" $siteTitle
-  "start_url" "/"
-  "scope" "/"
+  "start_url" $root
+  "scope" $root
   "display" "standalone"
   "theme_color" "#000000"
   "background_color" "#ffffff"

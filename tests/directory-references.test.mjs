@@ -434,6 +434,61 @@ test('native taxonomy lists stay navigable while term RSS contains only articles
   }
 });
 
+test('shared refs work without a default-language section file',()=>{
+  const directory=path.join(source,'content/library/translated-only'),destination=path.join(work,'translated-only');
+  try {
+    write(path.join(directory,'_index.zh.md'),directoryPage('Chinese only'));
+    write(path.join(directory,'_map.toml'),refs(['/library/original/item']));
+    passed(build(source,destination));
+    const index=JSON.parse(read('zh','directory.json',destination));
+    assert.deepEqual(index.direct['/library/translated-only'].map(page=>page.path),['/library/original/item']);
+    assert.match(read('zh/library/translated-only','index.html',destination),/\/zh\/p\/translated-item\//);
+    assert.match(read('zh/library/translated-only','index.xml',destination),/\/zh\/p\/translated-item\//);
+    assert.ok(sources(read('zh/p/translated-item','index.html',destination),destination)
+      .some(item=>item.logicalPath==='/library/translated-only/'));
+    assert.equal(fs.existsSync(path.join(destination,'library/translated-only/index.html')),false);
+    for(const [value,message] of [['refs = [',/valid TOML/],[refs(['/missing']),/cannot resolve/]]) {
+      write(path.join(directory,'_map.toml'),value);
+      const result=build(source,destination);
+      assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,message);
+    }
+  } finally {fs.rmSync(directory,{recursive:true,force:true});}
+});
+
+test('translated-only shared refs respect content mounts',()=>{
+  const config=path.join(source,'hugo.toml'),original=fs.readFileSync(config,'utf8');
+  const directory=path.join(source,'translated-content'),destination=path.join(work,'mounted-translated');
+  const shadow=path.join(source,'library/mounted/_map.toml');let createdShadow=false;
+  try {
+    fs.mkdirSync(path.dirname(shadow),{recursive:true});
+    fs.writeFileSync(shadow,refs(['/library/original/second']),{flag:'wx'});createdShadow=true;
+    write(path.join(directory,'_index.zh.md'),directoryPage('Mounted Chinese'));
+    write(path.join(directory,'_map.toml'),refs(['/library/original/item']));
+    write(config,original+'\n[[module.mounts]]\nsource="translated-content"\ntarget="content/library/mounted"\n[[module.mounts]]\nsource="content"\ntarget="content"\n');
+    passed(build(source,destination));
+    const index=JSON.parse(read('zh','directory.json',destination));
+    assert.deepEqual(index.direct['/library/mounted'].map(page=>page.path),['/library/original/item']);
+    fs.unlinkSync(path.join(directory,'_map.toml'));
+    passed(build(source,destination));
+    assert.deepEqual(JSON.parse(read('zh','directory.json',destination)).direct['/library/mounted'],[]);
+  } finally {write(config,original);fs.rmSync(directory,{recursive:true,force:true});if(createdShadow)fs.unlinkSync(shadow);}
+});
+
+test('external translated-only mounts reject a shadowed reference source',()=>{
+  const config=path.join(source,'hugo.toml'),original=fs.readFileSync(config,'utf8');
+  const directory=fs.mkdtempSync(path.join(work,'external-map-')),destination=path.join(work,'external-map-build');
+  const shadow=path.join(source,'library/external-map/_map.toml');let createdShadow=false;
+  try {
+    write(path.join(directory,'_index.zh.md'),directoryPage('External Chinese'));
+    write(path.join(directory,'_map.toml'),refs(['/library/original/item']));
+    write(config,original+'\n[[module.mounts]]\nsource='+JSON.stringify(path.relative(source,directory).replaceAll('\\','/'))+'\ntarget="content/library/external-map"\n[[module.mounts]]\nsource="content"\ntarget="content"\n');
+    passed(build(source,destination));
+    assert.deepEqual(JSON.parse(read('zh','directory.json',destination)).direct['/library/external-map'].map(page=>page.path),['/library/original/item']);
+    fs.mkdirSync(path.dirname(shadow),{recursive:true});fs.writeFileSync(shadow,refs(['/library/original/second']),{flag:'wx'});createdShadow=true;
+    const result=build(source,destination);assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,/is shadowed/);
+  } finally {write(config,original);if(createdShadow)fs.unlinkSync(shadow);}
+});
+
 test('shared refs omit missing translations and permit explicit empty reference lists',()=>{
   const file=path.join(source,'content/library/references/_map.toml'),original=fs.readFileSync(file,'utf8');
   write(path.join(source,'content/library/original/en-only/index.md'),article('English only'));
@@ -726,6 +781,9 @@ test('preview rebuilds invalidate refs and target URLs; renamed section trees su
   const port=probe.address().port;await new Promise(resolve=>probe.close(resolve));
   const base='http://127.0.0.1:'+port,file=path.join(source,'content/library/second/_map.toml');
   const original=fs.readFileSync(file,'utf8'),target=path.join(source,'content/library/original/item/index.md'),originalTarget=fs.readFileSync(target,'utf8');
+  const translated=path.join(source,'content/library/preview-translated'),translatedMap=path.join(translated,'_map.toml');
+  write(path.join(translated,'_index.zh.md'),directoryPage('Chinese preview'));
+  write(translatedMap,refs(['/library/original/item']));
   let logs='';
   function start() {
     const server=spawn(toolExecutable('hugo'),['server','--noBuildLock','--enableGitInfo=false','--disableLiveReload','--disableFastRender','--bind','127.0.0.1','--port',String(port),'--baseURL',base,'--destination',path.join(work,'preview')],
@@ -750,6 +808,14 @@ test('preview rebuilds invalidate refs and target URLs; renamed section trees su
   }
   let llms;
   try {
+    async function translatedMembers() {return JSON.parse(await text('/zh/directory.json')).direct['/library/preview-translated']||[];}
+    await until(async()=>(await translatedMembers()).some(item=>item.path==='/library/original/item'));
+    write(translatedMap,refs(['/library/original/second']));
+    await until(async()=>{const items=await translatedMembers();return items.length===1&&items[0].path==='/library/original/second';});
+    fs.unlinkSync(translatedMap);
+    await until(async()=>(await translatedMembers()).length===0);
+    write(translatedMap,refs(['/library/original/item']));
+    await until(async()=>(await translatedMembers()).some(item=>item.path==='/library/original/item'));
     await until(async()=>((await state()).direct['/library/second']||[]).some(item=>item.path==='/library/original/item'));
     write(file,refs(['/library/original/second']));
     // The directory model can finish before deferred discovery output.
@@ -801,6 +867,7 @@ test('preview rebuilds invalidate refs and target URLs; renamed section trees su
     await until(async()=>!(await state()).incoming['/library/original/item']?.some(item=>item.path==='/library/renamed'));
   } finally {
     await stop();
+    fs.rmSync(translated,{recursive:true,force:true});
     write(target,originalTarget);
   }
 });

@@ -1,4 +1,4 @@
-{{- partial "feature-browse/directory/assert-map-resources.html" . -}}
+{{- $validated := partial "feature-browse/directory/assert-map-resources.html" . -}}
 {{- /* Validate layouts even when a page renders only RSS. */ -}}
 {{- $collectionConfig := partial "feature-browse/collection/config.html" (dict "page" .) -}}
 {{- /* Keep Hugo's RSS fields; directory feeds share the collection membership. */ -}}

@@ -1,6 +1,7 @@
 import { isManagedCacheKey } from './cache-names.js';
+import { swScope } from '@params';
 
-const SW_SCOPE = '/';
+const SW_SCOPE = swScope;
 
 function supportsServiceWorker() {
     return 'serviceWorker' in navigator;

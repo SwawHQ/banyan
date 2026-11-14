@@ -3,7 +3,9 @@ import {parseSwPolicy} from '../../../delivery/sw/policy.mjs';
 import {compilePath} from '../../../delivery/_shared/path.mjs';
 
 export async function pageResources(page,baseUrl,version) {
-  const response=await page.context().request.get(new URL('/sw-policy.json',baseUrl).href);
+  const worker=await page.evaluate(async()=>navigator.serviceWorker.controller?.scriptURL||(await navigator.serviceWorker.getRegistration())?.active?.scriptURL);
+  assert.ok(worker,'Resource checks need an active Service Worker.');
+  const response=await page.context().request.get(new URL('sw-policy.json',worker).href);
   assert.ok(response.ok(),'Resource checks need the published sw-policy.json.');
   const routes=parseSwPolicy(await response.text()).map(route=>({...route,pattern:compilePath(route.path)}));
   const urls=await page.locator('link[rel="stylesheet"][href],script[src]').evaluateAll(nodes=>nodes.map(node=>node.href||node.src));

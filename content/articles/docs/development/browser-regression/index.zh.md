@@ -1,7 +1,7 @@
 ---
 title: 浏览器检查
 date: 2026-11-06
-lastmod: 2026-11-06
+lastmod: 2026-11-14
 url: p/browser-regression/
 description: 使用 Skill 对已完成的站点构建运行代表页面和专项检查。
 ---
@@ -23,6 +23,8 @@ swban check/browser/site --help                              #查看参数
 检查服务已完成的构建，并应用其生成的 `_headers`。报告列出所选路径、失败项和
 跳过范围；代表页面检查不覆盖每个页面或全部任务。普通 UI 检查阻止 SW，
 需要实际 worker 的 PWA 和预取检查单独启用。
+
+检查会自动识别部署子目录和默认语言首页，无需为检查临时修改 `baseURL` 或语言设置。单页检查的 `--page` 使用实际访问路径，例如 `/blog/zh/p/example-product/`。
 
 `--updates` 读取源码站点的正常配置，只覆盖构建版本，临时构建新版。
 源码和受检产物须来自同一站点及配置。测试两次实际代码变化时，给单项 PWA

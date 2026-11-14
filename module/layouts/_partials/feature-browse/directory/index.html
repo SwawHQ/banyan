@@ -18,7 +18,7 @@
 {{- range $site.Pages -}}{{- $pages = $pages | append . -}}{{- end -}}
 {{- range $sections -}}{{- $pages = $pages | append . -}}{{- end -}}
 {{- range uniq $pages -}}
-  {{- partial "./assert-map-resources.html" . -}}
+  {{- $validated := partial "./assert-map-resources.html" . -}}
 {{- end -}}
 {{- $index := newScratch -}}
 {{- range slice "direct" "recursive" "incoming" -}}{{- $index.Set . dict -}}{{- end -}}
@@ -29,7 +29,7 @@
       {{- $members = $members | append . -}}
     {{- end -}}
   {{- end -}}
-  {{- with $section.Resources.GetMatch "_map.toml" -}}
+  {{- with partial "./assert-map-resources.html" $section -}}
     {{- $source := printf "%s/_map.toml" $section.Path -}}
     {{- $parsed := try (transform.Unmarshal (dict "format" "toml") .Content) -}}
     {{- if $parsed.Err -}}

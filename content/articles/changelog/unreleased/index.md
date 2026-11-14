@@ -10,11 +10,11 @@ The first release is in preparation. This page describes its scope. After the re
 
 ## Main features
 
-- A Hugo Module supplies layouts, scripts and styles. The companion `swaw-banyan` Agent Skill supplies local tools, build checks and version maintenance.
-- Sections and article references organize content across categories while keeping one published URL per article. Aggregate lists and section RSS feeds are supported.
+- A Hugo Module supplies layouts, scripts and styles. The companion `swaw-banyan` Agent Skill supplies local tools, build checks and version maintenance. Browser checks support deployment subdirectories and default-language subdirectories.
+- Sections and article references organize content across categories while keeping one published URL per article. Aggregate lists and section RSS feeds are supported. Shared references also work in sections with only a non-default-language index.
 - Directory lists, name lists, product lists and image walls present content. Breadcrumb columns retain the article's browsing source and support independent sorting.
 - Multiple languages, right-to-left layouts, light and dark appearance, custom palettes and home art bundles are supported. The reference site includes English, Simplified Chinese and Arabic.
-- Web App Manifest, optional SW caching and offline pages, page prefetch and native prerender are supported. The Powered by page provides version information and diagnostics.
+- Web App Manifest, optional SW caching and offline pages, page prefetch and native prerender are supported. Manifest URLs and SW scope follow the deployment subdirectory; SVG favicons accept intrinsic dimensions or a viewBox alone. The Powered by page provides version information and diagnostics.
 - Builds generate sitemaps, RSS, `llms.txt`, social metadata and structured data.
 - Site delivery settings generate Cloudflare Pages or EdgeOne Makers configuration, CSP and script integrity information. The Skill provides content, output, HTTP and browser checks.
 

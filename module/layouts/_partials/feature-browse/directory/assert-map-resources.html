@@ -1,12 +1,39 @@
 {{- $owner := . -}}
 {{- /* A recursive wildcard alone excludes resources in the current directory. */ -}}
-{{- range .Resources.Match "{_map.*,**/_map.*}" -}}
+{{- $maps := .Resources.Match "{_map.*,**/_map.*}" -}}
+{{- $direct := false -}}
+{{- /* Hugo can omit shared resources when a branch has no default-language index. */ -}}
+{{- if and .BundleType .File (not (.Resources.GetMatch "_map.toml")) -}}
+  {{- /* Use the index's physical directory, not a logical path shadowed by project files. */ -}}
+  {{- $root := printf "%s/" (path.Clean hugo.WorkingDir) -}}
+  {{- $expected := path.Join (path.Dir .File.Filename) "_map.toml" -}}
+  {{- /* shortcut: reject shadowed external mounts until Hugo exposes direct mounted-file reads. */ -}}
+  {{- if not (hasPrefix $expected $root) -}}
+    {{- $logical := path.Join .File.Dir "_map.toml" -}}
+    {{- with os.Stat $logical -}}
+      {{- if eq (path.Clean .Meta.Filename) $expected -}}
+        {{- $maps = $maps | append (dict "Name" "_map.toml" "Content" (os.ReadFile $logical)) -}}
+      {{- else -}}
+        {{- errorf "Build failed: %s is shadowed by %s; cannot resolve the mounted reference file safely." $logical .Meta.Filename -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $file := strings.TrimPrefix $root $expected -}}
+    {{- range os.ReadDir (path.Dir $file) -}}
+      {{- if and (not .IsDir) (eq .Name "_map.toml") -}}
+        {{- $maps = $maps | append (dict "Name" "_map.toml" "Content" (os.ReadFile $file)) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- range $maps -}}
   {{- $source := printf "%s/%s" (strings.TrimSuffix "/" $owner.Path) .Name -}}
   {{- if ne (path.Base .Name) "_map.toml" -}}
     {{- errorf "Build failed: %s is not supported; only _map.toml with refs = [...] is allowed." $source -}}
   {{- else if or (ne $owner.Kind "section") (not $owner.File) (ne .Name "_map.toml") -}}
     {{- errorf "Build failed: %s requires an ordinary section _index.md in the same directory; _map.toml cannot be nested under another bundle or placed in an article bundle." $source -}}
   {{- else -}}
+    {{- $direct = . -}}
     {{- range $branch := (slice $owner | append $owner.Ancestors) -}}
       {{- if eq (index ($branch.Params.build | default dict) "list") "never" -}}
         {{- errorf "Build failed: %s requires discoverable directories; %s has build.list: never. Set build.list: local or always on that directory." $source $branch.Path -}}
@@ -14,3 +41,4 @@
     {{- end -}}
   {{- end -}}
 {{- end -}}
+{{- return $direct -}}

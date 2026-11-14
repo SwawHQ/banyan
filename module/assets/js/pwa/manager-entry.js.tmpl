@@ -1,6 +1,5 @@
 if ('serviceWorker' in navigator) {
     const register = () => navigator.serviceWorker.register({{ printf "%q" .sw_url }}, {
-        scope: '/',
         updateViaCache: 'none'
     }).catch(() => { });
     const start = () => {

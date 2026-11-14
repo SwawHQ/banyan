@@ -19,6 +19,10 @@ import {filesUnder,localReference} from '../.agents/skills/swaw-banyan/tasks/_sh
 import {parseToml,parseYaml} from '../.agents/skills/swaw-banyan/tasks/_shared/parsers.mjs';
 import {readPages} from '../.agents/skills/swaw-banyan/tasks/_shared/html/read.mjs';
 import {inspectInternalLinks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/links.mjs';
+import {discoverSite} from '../.agents/skills/swaw-banyan/tasks/check/browser/site/discover.mjs';
+import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
+import {check as checkHome} from '../.agents/skills/swaw-banyan/tasks/check/browser/home/check.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),origin='https://banyan.swaw.com';
 const languages=['en','zh','ar'],prefixes=['','zh/','ar/'],suffixes=['','.zh','.ar'];
@@ -295,6 +299,20 @@ test('content links resolve pages and attachments across deployment and language
       '--baseURL',siteURL,'--destination',build],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
     assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
     const {pages}=await readPages(build),files=(await filesUnder(build)).map(file=>path.relative(build,file).replaceAll('\\','/'));
+    const discovered=await discoverSite(build);
+    assert.equal(discovered.home,baseHref+defaultPrefix);
+    if(index===1&&inSubdir) {
+      const server=await createStaticSiteServer(build);let browser;
+      try {
+        await server.start();const chromium=loadChromium();browser=await chromium.launch({headless:true,executablePath:chromium.executablePath()});
+        const page=await browser.newPage({serviceWorkers:'block'});
+        await checkHome({page,baseUrl:server.getBaseUrl(),options:{page:discovered.home}});
+        assert.equal(new URL(page.url()).pathname,baseHref+defaultPrefix);
+      } finally {await browser?.close();await server.stop();}
+    }
+    const manifestFile=files.find(file=>/^site\/site\.[a-f0-9]+\.webmanifest$/.test(file));
+    const manifest=JSON.parse(fs.readFileSync(path.join(build,manifestFile),'utf8'));
+    for(const field of ['id','start_url','scope'])assert.equal(new URL(manifest[field],siteURL).pathname,baseHref,field+' follows the deployment path');
     if(!basePath)assert.deepEqual((await inspectDelivery(build)).issues,[]);
     const targets=new Set([...prefixes.flatMap(prefix=>[(prefix||defaultPrefix)+'index.html',(prefix||defaultPrefix)+'powered-by/index.html']),
       ...documentation.map(page=>(page.language==='en'?defaultPrefix:'')+page.href.slice(1)+'index.html')]);

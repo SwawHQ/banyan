@@ -9,6 +9,8 @@ import {createHash} from 'node:crypto';
 import {discoverSite} from '../.agents/skills/swaw-banyan/tasks/check/browser/site/discover.mjs';
 import {fixtureEnvironment,fixtureContentDirectory,fixtureSiteFiles,fixtureSitePages,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
+import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),skill=path.join(root,'.agents/skills/swaw-banyan');
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-site');
@@ -102,6 +104,38 @@ test('site checks reuse one build, report skipped coverage and retain failures',
   assert.equal(failure.scenarios.find(item=>item.id==='prefetch-rules-home').status,'passed');
   const unavailable=cli(tiny,['--updates']);assert.equal(unavailable.status,1);assert.match(unavailable.stderr,/SW-enabled/);
   const nested=path.join(tiny,'reports');assert.equal(cli(tiny,['--out',nested]).status,1);assert.equal(fs.existsSync(nested),false);
+});
+
+test('site checks follow a deployment subdirectory and language home',{timeout:120000},async()=>{
+  const file=path.join(source,'assets/site/delivery.toml'),original=fs.readFileSync(file,'utf8');
+  const destination=path.join(work,'subdirectory-build');
+  let server,browser;
+  try {
+    fs.writeFileSync(file,original.replace(/^(\s*path\s*=\s*")\//gm,'$1/blog/'));
+    write(source,'subdirectory.toml','defaultContentLanguageInSubdir = true\n');
+    const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,subdirectory.toml',
+      '--baseURL','https://example.test/blog/','--destination',destination],
+      {cwd:source,env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true,timeout:60000});
+    assert.equal(result.status,0,result.stdout+result.stderr);
+    const checked=cli(destination,['--out',path.join(work,'subdirectory-report')]);
+    assert.equal(checked.status,0,checked.stdout+checked.stderr);
+    const summary=report(checked);assert.equal(summary.discovery.home,'/blog/en/');
+    assert.equal(summary.scenarios.find(result=>result.id==='pwa-offline').status,'passed');
+    server=await createStaticSiteServer(destination);await server.start();
+    const chromium=loadChromium();browser=await chromium.launch({headless:true,executablePath:chromium.executablePath()});
+    const page=await browser.newPage();await page.goto(server.getBaseUrl()+'/blog/en/');
+    await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller),null,{timeout:15000});
+    assert.equal(await page.evaluate(async()=>new URL((await navigator.serviceWorker.getRegistration()).scope).pathname),'/blog/');
+    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('mode = "enable"','mode = "disable"'));
+    const disabled=path.join(work,'subdirectory-disabled');
+    const disableBuild=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,subdirectory.toml',
+      '--baseURL','https://example.test/blog/','--destination',disabled],
+      {cwd:source,env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true,timeout:60000});
+    assert.equal(disableBuild.status,0,disableBuild.stdout+disableBuild.stderr);
+    await server.setRoot(disabled);
+    const next=await browser.newPage();await next.goto(server.getBaseUrl()+'/blog/en/');
+    await next.waitForFunction(async()=>!(await navigator.serviceWorker.getRegistration()),null,{timeout:15000});
+  } finally {await browser?.close();await server?.stop();fs.writeFileSync(file,original);fs.rmSync(path.join(source,'subdirectory.toml'),{force:true});}
 });
 
 test('site browser checks accept a published empty speculation-rules block',{timeout:30000},()=>{

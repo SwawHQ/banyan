@@ -60,8 +60,7 @@ swban base/hugo new content --kind banyan articles/my-post/index.zh.md  #新建�
 1. 创建 `content/articles/notes/`。
 2. 在其中创建 `_index.zh.md`，写入下方内容。它继承参考站 `articles/` 的列表与文章布局。
 3. 将中文文章放入该目录下的独立页面包，如 `notes/first-note/index.zh.md`，或用下一节的方法引用已有文章。
-4. 使用 `_map.toml` 时，同时创建默认语言的栏目首页。参考站默认语言为英文，因此还需 `_index.md`，内容见下方英文示例。
-5. 预览中文文章栏目，确认“笔记”入口与文章都能打开。
+4. 预览中文文章栏目，确认“笔记”入口与文章都能打开。
 
 ```yaml
 ---
@@ -70,21 +69,11 @@ description: 收录日常笔记。
 ---
 ```
 
-默认语言栏目首页示例：
-
-```yaml
----
-title: Notes
-description: Everyday notes.
----
-```
-
 其他语言在同一目录创建对应的 `_index.<语言代码>.md`。新建顶层栏目时，还需配置布局及后代页面默认值，可复制参考站 `content/articles/_index*.md` 后修改标题、顺序与说明。
 
 ## 引用到其他栏目
 
-先确认目标栏目有默认语言的栏目首页，再创建 `_map.toml`。例如 `content/products/examples/_map.toml`：
-
+在目标栏目创建 `_map.toml`。例如 `content/products/examples/_map.toml`：
 
 ```toml
 refs = ["/articles/category1/example"]

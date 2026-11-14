@@ -1,6 +1,7 @@
 import {readPages} from '../../../_shared/html/read.mjs';
 import path from 'node:path';
 import {isFile} from '../../../_shared/output.mjs';
+import {siteLocation,pageRoute} from '../_shared/location.mjs';
 import {extractStartTags,extractTagAttribute,extractInlineScriptTextById,extractCanonicalHref,
   extractExternalScriptSrcs,hasClassToken,isRedirectPage} from '../../../_shared/html/markup.mjs';
 
@@ -19,8 +20,8 @@ function localPath(href,route,canonical) {
   return ['http:','https:'].includes(url.protocol)&&url.origin===new URL(base).origin?url.pathname+url.search+url.hash:null;
 }
 
-function inspect(page) {
-  const route='/'+page.relativePath.split('/').map(encodeURIComponent).join('/').replace(/(?:^|\/)index\.html$/,'/').replace(/^\//,'');
+function inspect(page,basePath) {
+  const route=basePath.slice(0,-1)+pageRoute(page.relativePath);
   const text=page.text,body=extractStartTags(text,'body')[0]??'',canonical=extractCanonicalHref(text);
   const anchors=extractStartTags(text,'a').map(tag=>({tag,href:localPath(attr(tag,'href'),route,canonical)}));
   const roots=anchors.filter(({tag,href})=>href&&has(tag,'data-root-href')).map(({href})=>href);
@@ -49,9 +50,10 @@ function inspect(page) {
 
 export async function discoverSite(directory) {
   const {root,pages:html}=await readPages(directory);
-  const pages=html.filter(page=>!isRedirectPage(page.text)&&!/(?:^|\/)404\.html$/.test(page.relativePath)).map(inspect);
-  const home=pages.find(page=>page.route==='/');
-  if(!home)throw new Error('Build directory must contain a non-redirect index.html.');
+  const location=siteLocation(html);
+  const pages=html.filter(page=>!isRedirectPage(page.text)&&!/(?:^|\/)404\.html$/.test(page.relativePath)).map(page=>inspect(page,location.basePath));
+  const home=pages.find(page=>page.route===location.home);
+  if(!home)throw new Error('Build directory must contain a published home page.');
   pages.sort((a,b)=>Number(b.language===home.language)-Number(a.language===home.language)||a.route.length-b.route.length||a.route.localeCompare(b.route));
   const byRoute=new Map(pages.map(page=>[page.route,page]));
   const prose=pages.find(page=>page.prose),collection=pages.find(page=>page.sortable);

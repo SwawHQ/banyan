@@ -2,14 +2,14 @@
 {{- if ne $page.Kind "section" -}}
   {{- errorf "Directory members require an ordinary section, got %q (%s)." $page.Path $page.Kind -}}
 {{- end -}}
-{{- partial "./assert-map-resources.html" $page -}}
+{{- $map := partial "./assert-map-resources.html" $page -}}
 {{- $index := partialCached "./index.html" $page.Site $page.Language.Lang -}}
 {{- $direct := slice -}}
 {{- $recursive := slice -}}
 {{- if isset $index.direct $page.Path -}}
   {{- $direct = index $index.direct $page.Path -}}
   {{- $recursive = index $index.recursive $page.Path -}}
-{{- else if $page.Resources.GetMatch "_map.toml" -}}
+{{- else if $map -}}
   {{- errorf "Build failed: _map.toml on %s is outside the discoverable directory tree. Check build.list and build.render on this directory and its ancestors." $page.Path -}}
 {{- else -}}
   {{- range $page.RegularPages -}}

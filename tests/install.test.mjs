@@ -306,23 +306,26 @@ test('favicon files select SVG before ICO and keep the fixed icon independent',(
   assert.match(missing.stdout+missing.stderr,/missing favicon resource/);
 });
 
-test('SVG favicon requires a 32x32 default size',()=>{
+test('SVG favicon accepts intrinsic dimensions and viewBox-only artwork',()=>{
   const root=consumer('favicon dimensions',{replacement:moduleRoot}),file=path.join(root,'assets/site/favicon.link.svg');
   const original=fs.readFileSync(file,'utf8');
   for(const [name,source] of [
     ['missing width',original.replace(/ width="32"/,'')],
     ['missing height',original.replace(/ height="32"/,'')],
     ['wrong width',original.replace('width="32"','width="64"')],
-    ['wrong height',original.replace('height="32"','height="16"')],
-    ['missing root','<path width="32" height="32"/>']
+    ['different height',original.replace('height="32"','height="16"')],
+    ['viewBox only',original.replace('width="32" height="32"','')]
   ]) {
     fs.writeFileSync(file,source);
     const result=command(root,skill,['base/hugo','--minify','--noBuildLock']);
-    assert.notEqual(result.status,0,name);
-    assert.match(result.stdout+result.stderr,/favicon\.link\.svg must declare width=32 and height=32/,name);
+    assert.equal(result.status,0,name+'\n'+result.stdout+result.stderr);
   }
   fs.writeFileSync(file,original.replace('width="32" height="32"',"height='32px' width='32px'"));
   build(root,skill);
+  fs.writeFileSync(file,'<path width="32" height="32"/>');
+  const invalid=command(root,skill,['base/hugo','--minify','--noBuildLock']);
+  assert.notEqual(invalid.status,0);
+  assert.match(invalid.stdout+invalid.stderr,/must contain an svg root element/);
 });
 
 test('packaged Skill and versioned Module build from an isolated proxy',()=>{

@@ -5,6 +5,8 @@ import {randomInt} from 'node:crypto';
 import {once} from 'node:events';
 import {parseHeaders,cloudflareHeaders} from '../../../_shared/headers.mjs';
 import {readOptional} from '../../../_shared/output.mjs';
+import {readPages} from '../../../_shared/html/read.mjs';
+import {siteLocation} from './location.mjs';
 
 const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8',
   '.css':'text/css; charset=utf-8','.json':'application/json','.webmanifest':'application/manifest+json',
@@ -31,19 +33,25 @@ async function readRoot(directory) {
   if (!(await fs.stat(path.join(root,'index.html'))).isFile()) throw new Error('Build directory must contain index.html.');
   const rules = parseHeaders(await readOptional(path.join(root,'_headers'))).map(rule => ({...rule,
     pattern:new RegExp('^'+rule.source.split('*').map(part=>part.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*')+'$')}));
-  return {root,rules};
+  const location=siteLocation((await readPages(root)).pages);
+  return {root,rules,...location};
 }
 export async function createStaticSiteServer(directory) {
   let current = await readRoot(directory);
   const server = http.createServer(async (request,response) => {
     // A request keeps one build and its headers even if the next build is selected.
-    const {root,rules} = current;
+    const {root,rules,basePath,home} = current;
     try {
       if (!['GET','HEAD'].includes(request.method)) { response.writeHead(405); response.end(); return; }
       let pathname;
       try { pathname = decodeURIComponent(new URL(request.url,'http://localhost').pathname); }
       catch { response.writeHead(400); response.end(); return; }
       if (/[\\\0]/.test(pathname)) { response.writeHead(400); response.end(); return; }
+      const prefix=decodeURIComponent(basePath);
+      if(pathname==='/'&&prefix!=='/'){response.writeHead(302,{Location:home});response.end();return;}
+      if(!pathname.startsWith(prefix)){response.writeHead(404);response.end();return;}
+      if(pathname===prefix&&home!==basePath){response.writeHead(302,{Location:home});response.end();return;}
+      pathname='/'+pathname.slice(prefix.length);
       let file = path.resolve(root,'.'+pathname);
       if (!within(root,file)) { response.writeHead(403); response.end(); return; }
       if ((await fs.stat(file)).isDirectory()) file = path.join(file,'index.html');

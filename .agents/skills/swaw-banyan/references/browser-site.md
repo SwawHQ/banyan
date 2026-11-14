@@ -12,6 +12,10 @@ Checks serve a completed build locally and apply its generated `_headers`.
 They do not inspect a running Hugo server or simulate EdgeOne headers. Without
 `_headers`, site coverage skips HTTP CSP. Use HTTP tasks for deployed responses.
 
+Site discovery and the local server retain deployment subdirectories and follow
+the root language redirect locally. Do not change the site's URL or language
+configuration for checks. For targeted checks, pass the published path to `--page`.
+
 ```text
 swban check/browser/site ./public                                  #Check representative pages
 swban check/browser/site ./public --updates                        #Also test a temporary SW update
