@@ -1,0 +1,28 @@
+{
+  "headers": [
+    {
+      "source": "/*",
+      "headers": [
+        {
+          "key": "X-Banyan-Root",
+          "value": "root"
+        },
+        {
+          "key": "X-Banyan-Conflict",
+          "value": "root"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=61"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/probe-root-redirect",
+      "destination": "/probe-root-target",
+      "statusCode": 302
+    }
+  ]
+}
