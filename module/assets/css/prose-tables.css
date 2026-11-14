@@ -33,6 +33,10 @@
 }
 
 @media print {
+    .prose tr:where(:not(.chroma, .chroma *)) {
+        break-inside: avoid;
+    }
+
     .prose table:where(:not(.chroma, .chroma *)) {
         display: table;
         table-layout: fixed;

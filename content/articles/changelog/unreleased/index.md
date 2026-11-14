@@ -320,7 +320,7 @@ lastmod: 2026-11-14
 
 - Unified wall sizing: size is the maximum, with no enlargement. Regular tracks may shrink by up to 20% to fit an extra row or column; otherwise space stays blank. A single oversized card may shrink further to fit. Equal-height vertical walls shrink only oversized cards, without reducing every other card. Wall covers now publish under `/media/content/` to use the configured SW fingerprint cache bucket rules.
 
-- Printed columns fit the paper width. Long code and table contents wrap without clipping at the right edge. Separate code line-number columns are hidden in print because they cannot align with wrapped code.
+- Printed columns fit the paper width. Long code and table contents wrap without clipping at the right edge. Table rows that fit on one page stay together. Separate code line-number columns are hidden in print because they cannot align with wrapped code.
 - Prose headings retain the spacing adjustment for text line boxes next to quotes, tables, code and images. Collection bodies use compact spacing. Responsive and ordinary images share the same spacing and match code and quote gaps next to paragraphs; inline images no longer trigger image-paragraph gaps. Article title spacing no longer depends on metadata or JavaScript. Quote, code, table and caption fonts scale with the base size.
 
 - Content links resolve pages and attachments before adding the deployment subpath; default-language links follow their published directory. Bare percent signs in links no longer stop builds. Inline links preserve adjacent text without extra whitespace.
