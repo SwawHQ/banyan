@@ -65,7 +65,7 @@ Match pages by their layouts, fields and shortcodes; site directory names can di
 The four roots cover reference-site files. Also check the target's minimum Hugo version
 in `module/theme.toml`, theme/Skill pairing, and any local overrides of Module files.
 Reference-site language, palette or policy choices are not mandatory migrations.
-Preserve site content and branding. Exclude `content/articles/docs/`,
+Preserve site content and branding. Exclude `content/articles/docs-guide/`, `content/articles/docs-dev/`,
 `content/articles/changelog/` and `content/about/` from comparisons as needed.
 Actual changes are determined by source differences between the selected versions;
 documentation and release notes are references. Copying them into the site is optional.

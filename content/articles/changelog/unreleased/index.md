@@ -3,16 +3,16 @@ title: Unreleased
 url: p/unreleased/
 description: Main features, requirements and known limitations of the first Banyan release.
 date: 2026-11-06
-lastmod: 2026-11-14
+lastmod: 2026-11-15
 ---
 
 The first release is in preparation. This page describes its scope. After the release tags are available, follow [Getting started (Chinese)](/zh/p/getting-started/) to install it.
 
 ## Main features
 
-- A Hugo Module supplies layouts, scripts and styles. The companion `swaw-banyan` Agent Skill supplies local tools, build checks and version maintenance. Browser checks support deployment subdirectories and default-language subdirectories.
+- A Hugo Module supplies layouts, scripts and styles. The companion `swaw-banyan` Agent Skill supplies local tools, build checks and version maintenance. Browser checks support deployment subdirectories and default-language subdirectories; SW disable checks use the actual deployment scope.
 - Sections and article references organize content across categories while keeping one published URL per article. Aggregate lists and section RSS feeds are supported. Shared references also work in sections with only a non-default-language index.
-- Directory lists, name lists, product lists and image walls present content. Breadcrumb columns retain the article's browsing source and support independent sorting.
+- Directory lists, name lists, product lists and image walls present content. Breadcrumb columns retain the article's browsing source and support independent sorting. Sections can configure the default sort field and direction; child sections do not inherit the parent sort.
 - Multiple languages, right-to-left layouts, light and dark appearance, custom palettes and home art bundles are supported. The reference site includes English, Simplified Chinese and Arabic.
 - Web App Manifest, optional SW caching and offline pages, page prefetch and native prerender are supported. Manifest URLs and SW scope follow the deployment subdirectory; SVG favicons accept intrinsic dimensions or a viewBox alone. The Powered by page provides version information and diagnostics.
 - Builds generate sitemaps, RSS, `llms.txt`, social metadata and structured data.
@@ -33,4 +33,4 @@ The first release is in preparation. This page describes its scope. After the re
 - Prefetch and prerender depend on browser capabilities and settings. A configured level does not guarantee a download or render.
 - Deployment directory names cannot contain ambiguous literal percent encodings such as `a%20b`. Builds reject these names.
 
-See the [User guide (Chinese)](/zh/articles/docs/guide/) for configuration and the [Development reference (Chinese)](/zh/articles/docs/development/) for source maintenance and releases.
+See the [User guide (Chinese)](/zh/articles/docs-guide/) for configuration and the [Development reference (Chinese)](/zh/articles/docs-dev/) for source maintenance and releases.

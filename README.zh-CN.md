@@ -50,7 +50,8 @@
     这些资源可按需删除或替换：
     ```
     content/articles/changelog/  #Banyan 更新记录
-    content/articles/docs/       #Banyan 文档
+    content/articles/docs-guide/ #Banyan 使用指南
+    content/articles/docs-dev/   #Banyan 开发资料
     content/articles/category1/  #示例分类，可参考它建立自己的文章与分类
     content/products/examples/   #示例，通过 _map.toml 引用做多维分类
     content/products/            #产品分类的根目录
@@ -99,7 +100,7 @@
 ## 文档
 
 
-- [项目术语表](content/articles/docs/guide/glossary/index.zh.md)
+- [项目术语表](content/articles/docs-guide/glossary/index.zh.md)
 - [站点配置](https://banyan.swaw.com/zh/p/site-configuration/)
 - [列表与产品](https://banyan.swaw.com/zh/p/collection-lists/)
 - [页面区域](https://banyan.swaw.com/zh/p/layout-slots/)
@@ -107,7 +108,7 @@
 - [安全策略与 CSP](https://banyan.swaw.com/zh/p/security-csp/)
 - [站点发现与来源链接](https://banyan.swaw.com/zh/p/discovery/)
 - [Web App Manifest 与图标](https://banyan.swaw.com/zh/p/web-app/)
-- [开发与发布指南](https://banyan.swaw.com/zh/articles/docs/development/)
+- [开发与发布指南](https://banyan.swaw.com/zh/articles/docs-dev/)
 
 ## 许可证
 

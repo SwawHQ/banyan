@@ -50,7 +50,8 @@ Backend features such as accounts, payments, and comments are not yet available.
     Delete or replace these resources as needed:
     ```
     content/articles/changelog/  #Banyan release notes
-    content/articles/docs/       #Banyan documentation
+    content/articles/docs-guide/ #Banyan user guides
+    content/articles/docs-dev/   #Banyan development reference
     content/articles/category1/  #Sample category for your own articles and categories
     content/products/examples/   #Examples of cross-category references through _map.toml
     content/products/            #Root directory for product categories
@@ -99,7 +100,7 @@ Backend features such as accounts, payments, and comments are not yet available.
 ## Documentation
 
 
-- [Project glossary (Chinese)](content/articles/docs/guide/glossary/index.zh.md)
+- [Project glossary (Chinese)](content/articles/docs-guide/glossary/index.zh.md)
 - [Site configuration](https://banyan.swaw.com/zh/p/site-configuration/)
 - [Lists and products](https://banyan.swaw.com/zh/p/collection-lists/)
 - [Page regions](https://banyan.swaw.com/zh/p/layout-slots/)
@@ -107,7 +108,7 @@ Backend features such as accounts, payments, and comments are not yet available.
 - [Security policies and CSP](https://banyan.swaw.com/zh/p/security-csp/)
 - [Site discovery and source links](https://banyan.swaw.com/zh/p/discovery/)
 - [Web App Manifest and icons](https://banyan.swaw.com/zh/p/web-app/)
-- [Development and release guide](https://banyan.swaw.com/zh/articles/docs/development/)
+- [Development and release guide](https://banyan.swaw.com/zh/articles/docs-dev/)
 
 ## License
 

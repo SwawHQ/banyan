@@ -35,7 +35,7 @@ before(async()=>{
     {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
   documentation=[];
-  for(const branch of ['docs','changelog'])for(const file of await filesUnder(path.join(root,'content/articles',branch))) {
+  for(const branch of ['docs-guide','docs-dev','changelog'])for(const file of await filesUnder(path.join(root,'content/articles',branch))) {
     if(!file.endsWith('.md'))continue;
     const source=path.relative(root,file).replaceAll('\\','/'),section=path.basename(file).startsWith('_index');
     const fields=parseYaml(fs.readFileSync(file,'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)[1]);
@@ -188,7 +188,7 @@ test('the reference site owns its columns and links to its local documentation',
     assert.equal(roots.includes('/'+prefix+'github/'),true,'GitHub is available in every enabled language.');
     for(const name of ['notes','notes-all','discover','all','catalog','catalog-all','changelog'])
       assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'No retired or unconfigured column is published: '+name);
-    const docs=(prefix==='zh/'?'/zh/':'/')+'articles/docs/';
+    const docs=(prefix==='zh/'?'/zh/':'/')+'articles/docs-guide/';
     assert.match(home,/data-home-art-style=(?:"wind"|wind)/,'Reference home uses wind art.');
     assert.doesNotMatch(home,/data-wall-width=/);
     assert.ok(fs.existsSync(path.join(output,docs,'index.html')));
@@ -242,7 +242,7 @@ test('documentation and release notes publish article dates, sources and feeds',
     for(const item of feed.matchAll(/<item>([\s\S]*?)<\/item>/g))
       assert.ok(Number.isFinite(Date.parse(item[1].match(/<pubDate>([^<]+)<\/pubDate>/)?.[1])),'Every RSS article has a valid publication date.');
     assert.equal(fs.existsSync(path.join(output,prefix,'articles/changelog/index.xml')),['en','zh'].includes(language),'Release notes publish a feed in each available language.');
-    assert.equal(fs.existsSync(path.join(output,prefix,'articles/docs/index.html')),['en','zh'].includes(language),'Documentation exists only in its available languages.');
+    assert.equal(fs.existsSync(path.join(output,prefix,'articles/docs-guide/index.html')),['en','zh'].includes(language),'Documentation exists only in its available languages.');
   }
 });
 
@@ -356,7 +356,7 @@ test('Arabic pages use RTL and demonstrate mixed text without losing translation
     const source=path.relative(root,file).replaceAll('\\','/');
     return /(?:^|[\\/])(?:_index|index)\.md$/.test(file)
       &&!['content/_res/_index.md','content/_res/home-art/_index.md'].includes(source)
-      &&!/^content\/articles\/(?:docs|changelog)\//.test(source);
+      &&!/^content\/articles\/(?:docs-guide|docs-dev|changelog)\//.test(source);
   });
   for(const file of english)assert.ok(fs.existsSync(file.replace(/\.md$/,'.ar.md')),'Arabic counterpart: '+file);
   for(const [index,prefix] of prefixes.entries())for(const route of ['', 'language/', 'appearance/', 'articles-all/', 'p/example-product/', '_res/offline/', '404.html']) {
@@ -575,4 +575,19 @@ test('Powered by Markdown separates build information and update controls',async
     assert.ok(policyRow.replace(/<[^>]*>/g,'').trim(),'Policy availability is explicit.');
   }
   assert.deepEqual((await inspectBuildVersion(output)).issues,[]);
+});
+
+
+test('documentation sections are flat and begin with numbered tutorials in name order',()=>{
+  assert.equal(fs.existsSync(path.join(output,'zh/articles/docs/index.html')),false);
+  for(const [section,titles] of [['docs-guide',['01 开始使用','02 设置自己的站点','03 首次部署']],['docs-dev',['01 本地开发','02 项目结构与源码入口']]]) {
+    const html=fs.readFileSync(path.join(output,'zh/articles',section,'index.html'),'utf8');
+    const main=extractBlocks(html,'main')[0].html;
+    const list=extractStartTags(main).find(tag=>extractTagAttribute(tag,'data-sortable')==='true');
+    assert.equal(extractTagAttribute(list,'data-default-sort'),'name-asc');
+    const entries=extractBlocks(main,'a',tag=>/\bdata-list-entry(?:[\s=>])/.test(tag));
+    assert.deepEqual(entries.slice(0,titles.length).map(entry=>extractBlocks(entry.inner,'bdi')[0].inner.trim()),titles);
+    for(const page of documentation.filter(p=>!p.section&&p.source.startsWith('content/articles/'+section+'/')))
+      assert.match(page.fields.title,/^(?:0[1-3] |内容 · |外观 · |运行 · |发布 · |参考 · |约定 · |检查 · )/);
+  }
 });

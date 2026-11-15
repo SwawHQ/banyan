@@ -11,7 +11,7 @@ metadata:
 
 使用本技能目录中的 `swban.cmd`；以下命令简称为 `swban`。目前支持 Windows x64。
 
-项目对话和文档用语见[项目术语表](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs/guide/glossary/index.zh.md)。
+项目对话和文档用语见[项目术语表](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs-guide/glossary/index.zh.md)。
 
 ```text
 swban doctor [目录]       #检查工具和站点主题
@@ -62,4 +62,4 @@ swban <command> --help    #查看参数和默认值
 
 ## 云端部署
 
-Banyan 负责构建、交付配置和检查；支持 Cloudflare Pages、EdgeOne Makers 的产物上传与 Git 托管构建。用 `swban help/zh deploy` 查看各平台的 `git` 与 `upload` 专项。方式选择及其他静态托管的边界见[首次部署](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs/guide/deploying/index.zh.md)。云平台授权和发布操作由独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 技能指导。
+Banyan 负责构建、交付配置和检查；支持 Cloudflare Pages、EdgeOne Makers 的产物上传与 Git 托管构建。用 `swban help/zh deploy` 查看各平台的 `git` 与 `upload` 专项。方式选择及其他静态托管的边界见[首次部署](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs-guide/deploying/index.zh.md)。云平台授权和发布操作由独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 技能指导。
