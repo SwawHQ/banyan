@@ -32,5 +32,6 @@ export function normalizeCollectionSource(source) {
 
 export function readPageCollectionSource() {
     const logicalPath = normalizeFromPath(document.body?.dataset.collectionPath || '');
-    return logicalPath ? { logicalPath } : null;
+    const list = document.querySelector('.slot-main [data-sortable="true"]');
+    return logicalPath ? { logicalPath, defaultSort: list?.dataset.defaultSort || '' } : null;
 }

@@ -38,12 +38,30 @@
   {{- $ordered = slice -}}
   {{- range sort (where $byName "kind" "ne" "page") "sort_date" "desc" -}}{{- $ordered = $ordered | append . -}}{{- end -}}
   {{- range sort (where $byName "kind" "page") "sort_date" "desc" -}}{{- $ordered = $ordered | append . -}}{{- end -}}
-{{- else if in (slice "all" "products" "wall") $config.view -}}
+{{- else if eq $config.view "wall" -}}
   {{- $ordered = sort (collections.Reverse $byName) "sort_date" "desc" -}}
-{{- else if eq $config.view "directory" -}}
-  {{- $byName = collections.Reverse $byName -}}
-  {{- $ordered = slice -}}
-  {{- range sort (where $byName "kind" "page") "sort_date" "desc" -}}{{- $ordered = $ordered | append . -}}{{- end -}}
-  {{- range sort (where $byName "kind" "ne" "page") "sort_date" "desc" -}}{{- $ordered = $ordered | append . -}}{{- end -}}
+{{- else -}}
+  {{- $parts := split $config.default_sort "-" -}}
+  {{- $field := index $parts 0 -}}
+  {{- $order := index $parts 1 -}}
+  {{- if eq $order "desc" -}}{{- $byName = collections.Reverse $byName -}}{{- end -}}
+  {{- $ordered = $byName -}}
+  {{- if ne $field "name" -}}
+    {{- $key := printf "sort_%s" $field -}}
+    {{- /* Numeric keys match browser comparison for dates, counts, sizes and prices. */ -}}
+    {{- $numeric := slice -}}
+    {{- range $row := $byName -}}
+      {{- $numeric = $numeric | append (merge $row (dict "order_value" (float (index $row $key | default "0")))) -}}
+    {{- end -}}
+    {{- $ordered = sort $numeric "order_value" $order -}}
+    {{- if eq $field "price" -}}
+      {{- $ordered = (where $ordered "sort_price" "ne" "") | append (where $ordered "sort_price" "eq" "") -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if eq $config.view "directory" -}}
+    {{- $pages := where $ordered "kind" "eq" "page" -}}
+    {{- $sections := where $ordered "kind" "ne" "page" -}}
+    {{- $ordered = cond (eq $order "asc") ($sections | append $pages) ($pages | append $sections) -}}
+  {{- end -}}
 {{- end -}}
 {{- return $ordered -}}

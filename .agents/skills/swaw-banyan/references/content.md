@@ -229,7 +229,13 @@ article root's cascade above, but set the section layout to
 `page-collection-products`; keep page layout `page-article-rss`.
 Set `params.list_icon_file: product` on the product root.
 
-Product lists show `Lastmod` as update time and sort newest first. The article's
+Set `params.default_sort` on a section to choose a field and direction, for example
+`name-asc` or `date-desc`. Name lists support `name`; directories add `date` and
+`count`; aggregate article lists add `date` and `size`; product lists add `date`
+and `price`. Each section uses its own default when opened; parent sorting does
+not propagate to children. Existing URL state restores each column independently.
+
+Product lists show `Lastmod` as update time and default to newest first. The article's
 `params.offer` supplies its price; `offer.version` can remain as metadata.
 The same article can occur in several directories. For an aggregate, use
 `layout: page-collection-products-all`, `params.aggregate: /products` and

@@ -166,16 +166,12 @@ try {
         'Restoring the main default must not clear an ancestor with a different default.');
     assert.deepEqual(navState.buildLineageSortsTokensForPath('/d/wsl/', '/d/', 'date-desc', 'date-desc'), ['', 'date-asc'],
         'Restoring an ancestor default must preserve the main sort.');
-    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'date-desc', 'date-desc', 'section', 'date-desc'), ['name-asc', '', ''],
-        'A child default must be omitted when its link is built.');
-    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'name-asc', 'date-desc', 'name', 'name-asc'), ['name-asc', 'name-asc', ''],
-        'Omitting a child default must keep the same token when it is non-default in the parent.');
-    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'date-asc', 'date-desc', 'name', 'name-asc'), ['name-asc', 'date-asc', ''],
-        'An unsupported inherited field uses the child default without an explicit token.');
-    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'name-desc', 'date-desc', 'name', 'name-asc'), ['name-asc', 'name-desc', 'name-desc'],
-        'A supported non-default token must still be inherited by the child.');
-    assert.deepEqual(navState.buildDescendantSortsTokens('/d/wsl/', 'name-asc', 'name-asc', 'section', 'date-desc'), ['name-asc', '', 'name-asc'],
-        'An inherited parent default stays explicit when it is non-default in the child.');
+    const childUrl = new URL('https://example.test/d/wsl/child/');
+    navState.applySortsTokensToUrl(childUrl, navState.buildCurrentPageSortsTokens('/d/wsl/', 'name-desc', 'date-desc'));
+    window.location.hash = childUrl.hash;
+    assert.equal(navState.readSortTokenForPath('/d/wsl/', 'date-desc'), 'name-desc');
+    assert.equal(navState.readSortTokenForPath('/d/wsl/child/', 'date-asc'), 'date-asc',
+        'Parent state stays in its own slot; the child uses its own default.');
     window.location.hash = '#from=d/wsl';
     assert.deepEqual(
         navState.buildLineageSortsTokensForPath('/d/wsl/', '/d/', 'date-asc'),

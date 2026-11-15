@@ -31,7 +31,7 @@
 {{- end -}}
 {{- partial "system-ui/list/render.html" (dict
   "class" (printf "item-list--%s" $config.view)
-  "dataAttrs" (dict "sortable" "true" "sort-variant" $config.sort_variant)
+  "dataAttrs" (dict "sortable" "true" "sort-variant" $config.sort_variant "default-sort" $config.default_sort)
   "header" (partial "feature-browse/collection/sort/header.html" (dict "page" $page "config" $config))
   "items" $items
 ) -}}

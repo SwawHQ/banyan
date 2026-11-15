@@ -47,7 +47,7 @@ function applySortableList(list) {
     if (!variant) return;
 
     const pageCollectionSource = readPageCollectionSource();
-    const currentToken = readRequestedSortToken(variantName, pageCollectionSource?.logicalPath, variant.defaultToken);
+    const currentToken = readRequestedSortToken(variantName, pageCollectionSource?.logicalPath, pageCollectionSource?.defaultSort || variant.defaultToken);
     const current = parseSortToken(currentToken);
     if (!variant.fields[current.field]) return;
 
@@ -105,7 +105,9 @@ function initSortableLists() {
         const variant = SORT_VARIANTS[variantName];
         const field = (control.dataset.sortField || '').toLowerCase();
         const defaultOrder = (control.dataset.sortDefaultOrder || 'asc').toLowerCase();
-        const currentToken = readRequestedSortToken(variantName, readPageCollectionSource()?.logicalPath, variant?.defaultToken || '');
+        const source = readPageCollectionSource();
+        const defaultToken = source?.defaultSort || variant?.defaultToken || '';
+        const currentToken = readRequestedSortToken(variantName, source?.logicalPath, defaultToken);
         const current = parseSortToken(currentToken);
         const nextOrder = current.field === field ? toggleSortOrder(current.order) : defaultOrder;
         const nextToken = `${field}-${nextOrder}`;
@@ -113,7 +115,7 @@ function initSortableLists() {
         if (!variant || !variant.fields[field]) return;
 
         event.preventDefault();
-        writeSortToken(nextToken, variant.defaultToken);
+        writeSortToken(nextToken, defaultToken);
         applySortableLists();
         window.dispatchEvent(new Event('banyan:sortschange'));
     });

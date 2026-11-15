@@ -60,4 +60,17 @@
 {{- if $timeTree -}}{{- $view = "directory" -}}{{- end -}}
 {{- if eq $view "wall" -}}{{- $wall := partial "feature-browse/wall/config.html" $page -}}{{- end -}}
 {{- $variant := cond (eq $view "directory") "section" (cond (eq $view "wall") (cond (eq $provider "aggregate") "all" "section") $view) -}}
-{{- return (dict "view" $view "provider" $provider "script" $script "time_tree" $timeTree "sortable" (and (ne $view "") (ne $view "choice")) "sort_variant" $variant "default_sort" (cond (eq $view "name") "name-asc" "date-desc")) -}}
+{{- $defaultSort := cond (eq $view "name") "name-asc" "date-desc" -}}
+{{- if isset $page.Params "default_sort" -}}
+  {{- $fields := index (dict "name" (slice "name") "directory" (slice "name" "date" "count") "all" (slice "name" "date" "size") "products" (slice "name" "date" "price")) $view | default slice -}}
+  {{- $value := $page.Params.default_sort -}}
+  {{- $parts := split (printf "%v" $value) "-" -}}
+  {{- if or (ne (printf "%T" $value) "string") (ne (len $parts) 2) -}}
+    {{- errorf "Collection page %s: default_sort must be field-asc or field-desc." $page.RelPermalink -}}
+  {{- else if or (not (in $fields (index $parts 0))) (not (in (slice "asc" "desc") (index $parts 1))) -}}
+    {{- errorf "Collection page %s: default_sort %q is not supported by %s." $page.RelPermalink $value $page.Layout -}}
+  {{- else -}}
+    {{- $defaultSort = $value -}}
+  {{- end -}}
+{{- end -}}
+{{- return (dict "view" $view "provider" $provider "script" $script "time_tree" $timeTree "sortable" (and (ne $view "") (ne $view "choice")) "sort_variant" $variant "default_sort" $defaultSort) -}}

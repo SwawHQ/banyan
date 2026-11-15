@@ -6,14 +6,12 @@ import {
     toggleSortOrder,
 } from './sort-policy.js';
 import {
-    isCollectionRowKind,
     readRequestedSortToken,
 } from './collection-items.js';
 import {
     applyFromPathToUrl,
     applySortsTokensToUrl,
     buildCurrentPageSortsTokens,
-    buildDescendantSortsTokens,
     buildLineageSortsTokensForPath,
     normalizeFromPath,
     readCurrentFromPath,
@@ -120,14 +118,8 @@ export function buildCollectionPageHref(href, logicalPath, sortVariant, defaultS
     }
 }
 
-export function applyBreadcrumbRowSort(url, row, collectionSource, sortState = {}) {
-    const { sortToken = '', defaultSort = '', sortsTokens = [] } = sortState;
-    const logicalPath = collectionSource.logicalPath;
-    const isCollection = isCollectionRowKind(row.kind);
-    applySortsTokensToUrl(
-        url,
-        isCollection ? buildDescendantSortsTokens(logicalPath, sortToken, defaultSort, row.sort_variant, row.default_sort) : sortsTokens
-    );
+export function applyBreadcrumbRowSort(url, sortState = {}) {
+    applySortsTokensToUrl(url, sortState.sortsTokens || []);
 }
 
 export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
@@ -137,7 +129,7 @@ export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
 
     try {
         const url = new URL(row.href, window.location.origin);
-        applyBreadcrumbRowSort(url, row, collectionSource, sortState);
+        applyBreadcrumbRowSort(url, sortState);
         return toRelativeHref(url);
     } catch (error) {
         return row.href;

@@ -5,7 +5,6 @@ import {
     applyFragmentField,
     readFieldValue,
 } from './navigation-state.contract.js';
-import { getNormalizedSortToken } from './sort-policy.js';
 
 export { SORTS_PLACEHOLDER };
 
@@ -132,14 +131,6 @@ export function buildLineageSortsTokensForPath(lineageLogicalPath, targetLogical
     const normalizedTarget = normalizeSortSlot(targetToken);
     slots[targetSegments.length - 1] = normalizedTarget === normalizeSortSlot(defaultToken) ? '' : normalizedTarget;
     return slots;
-}
-
-// 用目标栏目的默认值判断是否省略；父子栏目的默认排序可以不同。
-export function buildDescendantSortsTokens(logicalPath, currentToken, defaultToken, descendantVariant, descendantDefault) {
-    const normalizedCurrent = normalizeSortSlot(currentToken);
-    const currentSlots = buildCurrentPageSortsTokens(logicalPath, normalizedCurrent, defaultToken);
-    const inherited = getNormalizedSortToken(normalizedCurrent, descendantVariant, descendantDefault);
-    return [...currentSlots, inherited === descendantDefault ? '' : inherited];
 }
 
 export function applyFromPathToUrl(url, fromPath) {

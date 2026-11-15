@@ -79,8 +79,3 @@ export function sortItemsRows(rows, sortVariant, logicalPath = '', defaultSort =
 
     return { rows: sortedRows, token, defaultToken };
 }
-
-export function isCollectionRowKind(kind) {
-    const normalized = `${kind ?? ''}`.trim().toLowerCase();
-    return normalized !== '' && normalized !== 'page';
-}

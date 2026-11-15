@@ -12,10 +12,13 @@ import {styleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/co
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
 import {loadChromium,loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {readColumns,columnSort} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/_shared/page.mjs';
+import {waitForBrowse,afterPaint} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/viewport.mjs';
 import {check as checkFirstPaint} from '../.agents/skills/swaw-banyan/tasks/check/browser/canvas/first-paint/check.mjs';
 import {check as checkCollectionLayout} from '../.agents/skills/swaw-banyan/tasks/check/browser/collection/layout/check.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan'),parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-collection');
+const sortCases=[['name','name'],['directory','name'],['directory','date'],['directory','count'],['all','name'],['all','date'],['all','size'],['products','name'],['products','date'],['products','price']].flatMap(([view,field])=>['asc','desc'].map(order=>({view,field,order,route:'/d/sort-'+view+'-'+field+'-'+order+'/'})));
 const article='/d/collection-fixture/one/#from=all';let work,skill,output;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(command,args=[],directory=output){
@@ -49,6 +52,19 @@ before(()=>{
   }
   write(path.join(content,'discover/tooling/_map.toml'),"refs = [\"/d/collection-fixture/one\",\"/d/collection-fixture/three\"]\n");
   write(path.join(content,'discover/tooling/devtools/_map.toml'),"refs = [\"/d/collection-fixture/two\",\"/d/collection-fixture/four\"]\n");
+  for(const {view,field,order,route} of sortCases) {
+    const layout={name:'page-collection-directory-name-only',directory:'page-collection-directory',all:'page-collection-directory-all',products:'page-collection-products'}[view];
+    write(path.join(content,route,'_index.md'),'---\ntitle: Sorting\nlayout: '+layout+'\nparams:\n  default_sort: '+field+'-'+order+'\n'+(view==='all'?'  aggregate: '+route+'\n':'')+'---\n');
+    for(const [i,title] of ['02 Alpha','01 Beta','03 Missing'].entries()) {
+      write(path.join(content,route,'item'+i+'.md'),'---\ntitle: '+title+'\nurl: '+route+'item'+i+'/\ndate: 2026-01-0'+(i+1)+'\nparams:\n  slots: [breadcrumb, meta]\n'+(i<2?'  offer: {amount: '+[2,10][i]+', currency: USD}\n':'')+'---\n'+'Text. '.repeat([10,200,30][i]));
+    }
+    if(view==='directory') {
+      for(const [i,title] of ['02 Folder','01 Folder'].entries()) {
+        write(path.join(content,route,'child'+i,'_index.md'),'---\ntitle: '+title+'\nparams:\n  default_sort: name-asc\n---\n');
+        for(let j=0;j<[2,10][i];j++)write(path.join(content,route,'child'+i,'item'+j+'.md'),'---\ntitle: '+String(20-j)+' Chapter\nurl: '+route+'child'+i+'/item'+j+'/\ndate: 2026-01-01\n---\nChild.');
+      }
+    }
+  }
   write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
@@ -209,4 +225,48 @@ test('checks reject unsuitable pages and mismatched source collections',{timeout
   const missing=cli('layout',['--page','/about/']);assert.equal(missing.status,1);assert.match(missing.stderr,/requested collection list/);
   const source=cli('layout',['--page','/discover/tooling/','--article',article,'--widths','390']);assert.equal(source.status,1);assert.match(source.stderr,/requested collection list/);
   const choices=cli('style',['--page',article,'--collection','/all/','--choices','/about/']);assert.equal(choices.status,1);assert.match(choices.stderr,/appearance page with light and dark/);
+});
+
+
+test('configured defaults agree before and after JS; child columns never inherit parent sorting',{timeout:90000},async()=>{
+  const server=await createStaticSiteServer(output);await server.start();let browser;
+  try {
+    const chromium=loadChromium();browser=await chromium.launch({headless:true,executablePath:chromium.executablePath()});
+    const staticContext=await browser.newContext({javaScriptEnabled:false,serviceWorkers:'block'});
+    const dynamicContext=await browser.newContext({serviceWorkers:'block'});
+    const plain=await staticContext.newPage(),page=await dynamicContext.newPage();
+    const snapshot=p=>p.locator('.slot-main [data-sortable]').evaluate(list=>({
+      token:list.dataset.defaultSort,
+      active:list.querySelector('[data-sort-active=true]').dataset.sortField,
+      rows:[...list.querySelectorAll('[data-list-item]')].map(row=>({name:row.querySelector('[data-list-entry]').textContent.trim(),kind:row.dataset.kind,value:row.dataset['sort'+list.dataset.defaultSort.split('-')[0].replace(/^./,c=>c.toUpperCase())]}))
+    }));
+    for(const {view,field,order,route} of sortCases) {
+      const url=server.getBaseUrl()+route;
+      await plain.goto(url);await page.goto(url);await waitForBrowse(page);await afterPaint(page);
+      const ssr=await snapshot(plain),live=await snapshot(page);
+      assert.deepEqual(live,ssr,route+' must not reorder on hydration');assert.equal(live.token,field+'-'+order);assert.equal(live.active,field);
+      const groups=view==='directory'?[live.rows.filter(r=>r.kind==='page'),live.rows.filter(r=>r.kind!=='page')]:[live.rows];
+      for(const rows of groups){const present=rows.filter(r=>r.value!=='');for(let i=1;i<present.length;i++)assert.ok(order==='asc'?Number(present[i-1].value)<=Number(present[i].value):Number(present[i-1].value)>=Number(present[i].value),route);}
+      if(field==='price')assert.equal(live.rows.at(-1).name,'03 Missing');
+      await page.locator('.slot-main [data-sort-active=true]').click();
+      await page.locator('.slot-main [data-sort-active=true]').click();
+      assert.equal(new URL(page.url()).hash,'','Restoring the default omits its URL state');
+      await page.locator('.slot-main [data-list-item][data-kind=page] [data-list-entry]').first().click();
+      await waitForBrowse(page);await afterPaint(page);
+      const column=(await readColumns(page)).find(c=>c.href===route);
+      assert.ok(column,route);assert.equal(columnSort(column),field+'-'+order);
+      assert.deepEqual(column.rows.map(r=>r.text),ssr.rows.map(r=>r.name),route+' breadcrumb uses the same default order');
+    }
+    const route='/d/sort-directory-date-desc/';await page.goto(server.getBaseUrl()+route);
+    await page.locator('.slot-main [data-sort-field=date]').click();
+    const parentUrl=page.url(),child=page.locator('.slot-main [data-list-entry][href*="/child0/"]');
+    const childHref=await child.getAttribute('href');
+    assert.equal(new URLSearchParams(new URL(childHref,server.getBaseUrl()).hash.slice(1)).get('sorts'),'_,date-asc');
+    await child.click();await page.waitForFunction(()=>document.querySelector('.slot-main [data-sort-active=true]')?.dataset.sortField==='name');
+    assert.equal((await snapshot(page)).token,'name-asc');
+    await page.locator('.slot-main [data-sort-field=name]').click();const childUrl=page.url();
+    await page.reload();assert.equal(await page.locator('.slot-main [data-sort-active=true] [data-sort-indicator]').textContent(),'↓');
+    const fresh=await dynamicContext.newPage();await fresh.goto(childUrl);assert.equal(await fresh.locator('.slot-main [data-sort-active=true] [data-sort-indicator]').textContent(),'↓');
+    await page.goBack();assert.equal(page.url(),parentUrl);await page.goForward();assert.equal(page.url(),childUrl);
+  } finally {await browser?.close();await server.stop();}
 });

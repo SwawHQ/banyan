@@ -205,3 +205,15 @@ test('preview rejects changing an article into a collection and recovers after r
     fs.rmSync(file);
   }
 });
+
+
+test('default_sort rejects malformed tokens and fields unsupported by the layout',()=>{
+  for(const [layout,value] of [
+    ['page-collection-directory','name-up'],['page-collection-directory','name'],
+    ['page-collection-directory','42'],['page-collection-directory','[name, asc]'],
+    ['page-collection-directory','price-asc'],['page-collection-directory-name-only','date-desc'],
+    ['page-collection-language','name-asc'],['page-collection-wall','name-asc']
+  ])changed(content('docs/_index.md'),collection(layout).replace('  slots: []','  slots: []\n  default_sort: '+value),result=>{
+    assert.ifError(result.error);assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,/default_sort/);
+  });
+});

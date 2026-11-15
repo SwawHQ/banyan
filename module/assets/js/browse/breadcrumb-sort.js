@@ -68,7 +68,7 @@ export function refreshBreadcrumbColumns(changedLogicalPath = '') {
             const link = rowElements[i].querySelector('a[data-list-entry]');
             const url = new URL(link.href);
             // Preserve the existing from, fragment and unrelated query fields.
-            applyBreadcrumbRowSort(url, row, payload, linkState);
+            applyBreadcrumbRowSort(url, linkState);
             const href = `${url.pathname}${url.search}${url.hash}`;
             if (link.getAttribute('href') !== href) link.setAttribute('href', href);
             const current = pathname(row.href) === pathname(column.selected);

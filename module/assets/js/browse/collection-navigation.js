@@ -6,7 +6,6 @@ import {
 import {
     applySortsTokensToUrl,
     buildCurrentPageSortsTokens,
-    buildDescendantSortsTokens,
 } from './navigation-state.js';
 import { readRequestedSortToken } from './collection-items.js';
 import { readPageCollectionSource } from './collection-source.js';
@@ -32,7 +31,7 @@ function updateCollectionEntryLinks(list, variantName, currentToken, pageCollect
     if (!variant) return;
 
     const currentSorts = pageCollectionSource?.logicalPath
-        ? buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, currentToken, variant.defaultToken)
+        ? buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, currentToken, pageCollectionSource?.defaultSort || variant.defaultToken)
         : [];
 
     list.querySelectorAll('[data-list-item] > [data-list-entry][href]').forEach((link) => {
@@ -48,19 +47,13 @@ function updateCollectionEntryLinks(list, variantName, currentToken, pageCollect
         if (url.origin !== window.location.origin) return;
 
         if (pageCollectionSource?.logicalPath) {
-            const row = link.parentElement.dataset;
-            applySortsTokensToUrl(
-                url,
-                row.kind === 'page' ? currentSorts : buildDescendantSortsTokens(
-                    pageCollectionSource.logicalPath, currentToken, variant.defaultToken, row.sortVariant, row.defaultSort
-                )
-            );
+            applySortsTokensToUrl(url, currentSorts);
         }
         link.href = buildRelativeHref(url);
     });
 }
 
-function updateCollectionSortControls(list, variantName, currentToken) {
+function updateCollectionSortControls(list, variantName, currentToken, defaultToken) {
     const variant = SORT_VARIANTS[variantName];
     const current = parseSortToken(currentToken);
     if (!variant || !current) return;
@@ -75,7 +68,7 @@ function updateCollectionSortControls(list, variantName, currentToken) {
         const indicator = control.querySelector('[data-sort-indicator]');
         const actionLabel = formatSortAction(copy, field, nextOrder);
 
-        control.href = buildSortHref(nextToken, variant.defaultToken);
+        control.href = buildSortHref(nextToken, defaultToken);
         control.dataset.sortActive = active ? 'true' : 'false';
         if (actionLabel) {
             control.title = actionLabel;
@@ -89,7 +82,7 @@ function updateCollectionSortControls(list, variantName, currentToken) {
 
 export function refreshCollectionNavigation(list, variantName, currentToken, pageCollectionSource) {
     if (!(list instanceof Element)) return;
-    updateCollectionSortControls(list, variantName, currentToken);
+    updateCollectionSortControls(list, variantName, currentToken, pageCollectionSource?.defaultSort || SORT_VARIANTS[variantName]?.defaultToken);
     updateCollectionEntryLinks(list, variantName, currentToken, pageCollectionSource);
 }
 
@@ -102,6 +95,6 @@ export function refreshMainCollectionNavigation() {
     if (!variant) return;
 
     const source = readPageCollectionSource();
-    const currentToken = readRequestedSortToken(variantName, source?.logicalPath, variant.defaultToken);
+    const currentToken = readRequestedSortToken(variantName, source?.logicalPath, source?.defaultSort || variant.defaultToken);
     refreshCollectionNavigation(list, variantName, currentToken, source);
 }
