@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {insideOutput,localReference} from '../../../../_shared/output.mjs';
+import {readPages} from '../../../../_shared/html/read.mjs';
+import {siteLocation} from '../../_shared/location.mjs';
 import {waitForState} from '../_shared/state.mjs';
 import {visit,observe,quiet} from '../_shared/update.mjs';
 import {pageResources,missingResources} from '../_shared/resources.mjs';
@@ -25,18 +27,21 @@ async function read(page) {
   }),{probes,storageKey});
 }
 
-function preserved(state,otherRegistrations) {
+function preserved(state,otherRegistrations,scope) {
   assert.deepEqual(state.probes,probes,'Cleanup must preserve unrelated cache contents and similar cache names.');
   assert.equal(state.local,'local preserved','Cleanup must preserve unrelated localStorage.');
   assert.equal(state.session,'session preserved','Cleanup must preserve unrelated sessionStorage.');
-  assert.deepEqual(state.registrations.filter(registration=>new URL(registration.scope).pathname!=='/'),otherRegistrations,
+  assert.deepEqual(state.registrations.filter(registration=>registration.scope!==scope),otherRegistrations,
     'Cleanup must preserve registrations in other scopes.');
 }
 
 async function selectedBuild(directory,page,manager) {
   const root=await fs.realpath(directory);
   assert.ok((await fs.stat(path.join(root,'index.html'))).isFile(),'Both builds must contain index.html.');
-  let file=insideOutput(root,localReference(page));
+  const location=siteLocation((await readPages(root)).pages);
+  const route=page==='/'?location.home:page;
+  assert.ok(new URL(route,'https://output.invalid').pathname.startsWith(location.basePath),'--page must belong to the deployment path.');
+  let file=insideOutput(root,localReference(route,{siteURL:'https://output.invalid'+location.basePath}));
   if((await fs.stat(file)).isDirectory())file=path.join(file,'index.html');
   const html=await fs.readFile(file,'utf8');
   const scripts=[...html.matchAll(/<script\b[^>]*\bsrc=["']?([^"'\s>]+)/gi)].map(value=>value[1]);
@@ -44,15 +49,17 @@ async function selectedBuild(directory,page,manager) {
     'The '+manager+' build must contain one '+manager+' manager on --page.');
   assert.equal(scripts.filter(src=>src.includes('sw-manager.'+(manager==='enable'?'disable':'enable')+'.')).length,0,
     'The build must not mix enable and disable managers.');
-  return {root,worker:await fs.readFile(path.join(root,'sw.js'))};
+  return {root,route,basePath:location.basePath,worker:await fs.readFile(path.join(root,'sw.js'))};
 }
 
 export async function check({page,server,baseUrl,options}) {
   assert.ok(options.dir&&options.next,'Cleanup requires an enabled build and --next disabled build.');
   const old=await selectedBuild(options.dir,options.page,'enable'),next=await selectedBuild(options.next,options.page,'disable');
   assert.notEqual(old.root,next.root,'Cleanup needs two different build directories.');
+  assert.equal(old.basePath,next.basePath,'Both builds must use the same deployment path.');
+  assert.equal(old.route,next.route,'Both builds must use the same page.');
   assert.ok(!old.worker.equals(next.worker),'Enable and disable builds must have different sw.js bytes.');
-  const timeout=options.timeout??15000,href=new URL(options.page,baseUrl).href,scope=baseUrl+'/',events=observe(page);
+  const timeout=options.timeout??15000,href=new URL(old.route,baseUrl).href,scope=baseUrl+old.basePath,events=observe(page);
   try {
     await server.setRoot(old.root);await visit(page,href,timeout);
     const controlled=await page.reload({waitUntil:'load'});
@@ -84,13 +91,13 @@ export async function check({page,server,baseUrl,options}) {
       if(!registration)throw new Error('No root worker to update.');await registration.update();
     },scope);
     // Validate the worker independently, before the new page manager can repair it.
-    await waitForState(()=>page.evaluate(async()=>{
-      const registration=await navigator.serviceWorker.getRegistration(location.origin+'/');
+    await waitForState(()=>page.evaluate(async scope=>{
+      const registration=await navigator.serviceWorker.getRegistration(scope);
       const keys=await caches.keys(),controller=navigator.serviceWorker.controller;
       return registration?.active?.state==='activated'&&controller===registration.active&&controller!==window.__swbanDisableController
         &&!keys.some(key=>['asset-fingerprint','sw-content-state'].includes(key)||['nav-html-','asset-versioned-','sw-program-offline-'].some(prefix=>key.startsWith(prefix)));
-    }),timeout,'The disable worker must take control and remove managed caches before reload.');
-    const worker=await read(page);preserved(worker,otherRegistrations);
+    },scope),timeout,'The disable worker must take control and remove managed caches before reload.');
+    const worker=await read(page);preserved(worker,otherRegistrations,scope);
     assert.equal(await page.evaluate(()=>window.__swbanDisableDocument),'preserved','Worker cleanup must keep the open document.');
     assert.equal(events.loads,0,'Worker cleanup must not reload the reading page.');
     assert.equal(page.url(),href,'Worker cleanup must preserve the reading URL.');
@@ -111,14 +118,14 @@ export async function check({page,server,baseUrl,options}) {
       const state=await read(page);
       return !state.registrations.some(registration=>registration.scope===scope)&&!state.cacheKeys.some(managed)?state:null;
     },timeout,'The disable manager must unregister the root worker and clear managed caches.');
-    preserved(manager,otherRegistrations);
+    preserved(manager,otherRegistrations,scope);
     await page.reload({waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
-    const after=await read(page);preserved(after,otherRegistrations);
+    const after=await read(page);preserved(after,otherRegistrations,scope);
     assert.equal(after.controller,'','A further reload must have no service worker controller.');
     assert.ok(!after.registrations.some(registration=>registration.scope===scope),'Disable mode must not re-register its root worker.');
     assert.ok(!after.cacheKeys.some(managed),'Disable mode must not recreate managed caches.');
     assert.equal(page.url(),href,'Disable reloads must preserve the requested URL.');
     assert.equal(events.loads,2,'Cleanup must perform only the two requested reloads.');quiet(events);
-    return {page:options.page,before,worker,manager,after};
+    return {page:old.route,before,worker,manager,after};
   }finally{events.stop();}
 }

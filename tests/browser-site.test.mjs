@@ -132,6 +132,10 @@ test('site checks follow a deployment subdirectory and language home',{timeout:1
       '--baseURL','https://example.test/blog/','--destination',disabled],
       {cwd:source,env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true,timeout:60000});
     assert.equal(disableBuild.status,0,disableBuild.stdout+disableBuild.stderr);
+    for(const pageArgs of [[],['--page','/blog/en/']]) {
+      const cleanup=spawnSync(process.execPath,[path.join(skill,'tasks/check/browser/pwa/disable/entry.mjs'),destination,'--next',disabled,...pageArgs,'--out',path.join(work,'subdirectory-cleanup')],{cwd:work,encoding:'utf8',timeout:60000,windowsHide:true});
+      assert.ifError(cleanup.error);assert.equal(cleanup.status,0,cleanup.stdout+cleanup.stderr);
+    }
     await server.setRoot(disabled);
     const next=await browser.newPage();await next.goto(server.getBaseUrl()+'/blog/en/');
     await next.waitForFunction(async()=>!(await navigator.serviceWorker.getRegistration()),null,{timeout:15000});
