@@ -18,7 +18,7 @@ export function compatible(version, rule) {
 }
 function pathCandidates(name, env = process.env) {
   const value = Object.entries(env).find(([key]) => key.toLowerCase() === 'path')?.[1] || '';
-  const executable = name + (process.platform === 'win32' ? '.exe' : '');
+  const executable = (name==='pagefind'?'pagefind_extended':name) + (process.platform === 'win32' ? '.exe' : '');
   return [...new Set(value.split(path.delimiter).map(part => part.replace(/^"(.*)"$/, '$1')).filter(path.isAbsolute)
     .map(directory => path.join(directory, executable)).filter(file => fs.existsSync(file) && fs.statSync(file).isFile()))];
 }
@@ -28,7 +28,7 @@ export async function inspect(name, executable, env = process.env) {
   const clean = Object.fromEntries(Object.entries(env).filter(([key]) => !/^(GOROOT|GOTOOLCHAIN)$/i.test(key)));
   if (name === 'go') clean.GOTOOLCHAIN = 'local';
   const result = await probe(executable, [name === 'go' || name === 'hugo' ? 'version' : '--version'], {env:clean});
-  const patterns = {bun:/^(\d+\.\d+\.\d+)$/,node:/^v(\d+\.\d+\.\d+)$/,
+  const patterns = {pagefind:/^pagefind(?:_extended)? (\d+\.\d+\.\d+)(?:\s|$)/i,bun:/^(\d+\.\d+\.\d+)$/,node:/^v(\d+\.\d+\.\d+)$/,
     hugo:/^hugo v(\d+\.\d+\.\d+)(?:-[a-f0-9]+)?\+extended(?:\+withdeploy)?\s/,
     go:/^go version go(\d+\.\d+\.\d+)\s/,git:/^git version (\d+\.\d+\.\d+)(?:\s|\.|$)/,
     gh:/^gh version (\d+\.\d+\.\d+)(?:\s|$)/};

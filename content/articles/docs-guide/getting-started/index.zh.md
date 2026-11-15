@@ -25,7 +25,7 @@ description: 取得参考站点，修改内容，在本地预览并准备首次�
 先运行一次：
 
 ```powershell
-function swban { & .\.agents\skills\swaw-banyan\swban.cmd @args }  #在本终端定义命令简称
+function swban { & .\swban.cmd @args }  #在本终端定义命令简称
 swban base/hugo version                                        #准备工具并显示 Hugo 版本
 swban base/packages/ensure                                     #准备 Skill 核心依赖
 swban doctor                                                   #检查工具、主题和 Skill
@@ -42,6 +42,8 @@ swban base/hugo server -D --disableFastRender  #启动含草稿的本地预览
 ```
 
 打开终端显示的本地网址，检查首页、导航和一篇文章。保存文件后，Hugo 会重新构建；浏览器通常会自动刷新。保持终端运行，结束预览时按 **Ctrl+C**。端口被占用时，在命令末尾加 `--port 13241`。
+
+`swban build` 构建站点和搜索索引。`hugo server` 预览不会自动更新搜索索引。
 
 `-D` 包含草稿，正式构建不包含草稿。预览地址只供本机检查，不是部署地址；Hugo 预览也不能验证云平台实际返回的响应头。
 

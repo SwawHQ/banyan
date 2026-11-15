@@ -232,7 +232,7 @@ test('doctor help and an unprepared doctor do not create tools or install depend
   assert.match(cli('check/banyan').stderr,/unknown_command:check\/banyan/);
 });
 test('catalog rejects malformed TOML, unknown check IDs, invalid switches and translation templates',()=>{
-  assert.equal(Object.keys(parseCatalog(catalog).checks).length,8);
+  assert.equal(Object.keys(parseCatalog(catalog).checks).length,9);
   for(const text of ['{',catalog.replace('tool.runtime','tool.unknown'),catalog.replace('enabled = true','enabled = "true"'),
     catalog.replace('hint.zh =','hint.fr ='),catalog.replaceAll('{version}','{unknown}'),
     catalog.replace('schema_version = 1','schema_version = 2'),

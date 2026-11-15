@@ -145,3 +145,29 @@ text, accounts, branding and legal content in the site's `content/`.
 
 For home and collection layouts, see [Content and layouts](content.md).
 For SW, prefetch and platform output, see [Delivery configuration](delivery.md).
+
+## Search
+
+Add a translated `content/search/_index.md` with `layout: page-search`,
+`outputs: [HTML]`, `params.icon: search`, `params.slots: []` and
+`params.robots: noindex, follow`. Copy its `params.labels` and the `search` icon
+from the reference site. The search page loads its own script and stylesheet.
+
+Run `swban build` to generate HTML and the Pagefind extended index.
+`base/hugo server` alone does not update the index. Set `params.index.source`
+on the search page: `rss` follows the language homepage RSS entries, including
+its item limit. A glob such as `"**/*.html"` selects HTML files recursively;
+`"*.html"` selects root files only. Arrays such as `["p/", "docs/**/*.html"]`
+combine directories and globs. Directory paths end in `/` and select HTML
+recursively. Paths are relative to the language output root, not `content/`.
+At the site root, recursive globs also include other language subdirectories;
+Pagefind still groups indexed content by its HTML language.
+The build passes the combined glob to Pagefind for file matching.
+All sources index full HTML text selected by `params.index.selector`, such as
+`.article .prose`. Use the same selector in all translations. No Pagefind HTML
+attributes are required. RSS follows RSS membership; file sources follow the
+glob and CSS selector, without additional sitemap or robots exclusions.
+An empty RSS selection still builds successfully. A search language without an
+index shows no results instead of using another language's index.
+Keep the reference `/pagefind/*` delivery route. Search pages and the Pagefind
+worker receive the generated WASM CSP permission.

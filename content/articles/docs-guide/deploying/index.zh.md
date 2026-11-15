@@ -45,7 +45,7 @@ edgeone.makers.enabled = false
 
 ```powershell
 $build = Join-Path $env:TEMP ("swaw/banyan/publish/" + [guid]::NewGuid())  #选择本次产物目录
-swban base/hugo --minify --destination "$build"                         #构建正式站点
+swban build --destination "$build"                                    #构建站点和搜索索引
 swban check/delivery "$build"                                          #检查交付产物
 swban check/csp "$build"                                               #检查 CSP 与脚本完整性
 swban base/browser/ensure                                             #准备浏览器检查工具
@@ -86,7 +86,7 @@ swban check/http/security "<正式网址>"  #检查线上响应头
 | 构建设置 | Banyan 使用的值 |
 | --- | --- |
 | 根目录 | 站点在仓库中的目录；本参考站点为 `./` |
-| 构建命令 | `hugo --minify --gc --cleanDestinationDir` |
+| 构建命令 | 搜索站点目前在 Windows 运行 `swban build` 后上传 `public`；Linux 托管构建待适配。 |
 | 输出目录 | `public` |
 | 工具 | 满足主题要求的 Hugo Extended；Hugo Modules 还需要 Go 和 Git |
 

@@ -29,6 +29,7 @@ $skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_shared/_tests
 
 | Suite | Responsibility |
 | --- | --- |
+| `search.test.mjs` | Full build, search resource isolation, CSP, realtime results, cancellation, languages and deployment subpaths |
 | `module.test.mjs`, `js-build.test.mjs` | Module/theme pairing, Hugo resolution and JS build inputs |
 | `install.test.mjs` | Documented starter, isolated Module/Skill packages and site overrides |
 | `cache-policy.test.mjs` | Delivery configuration, platform output, worker matching, versioned caching and controlled-navigation warmup |

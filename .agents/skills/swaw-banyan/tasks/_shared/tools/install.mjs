@@ -6,6 +6,7 @@ import { fail, inside, stat, tree, sha256, durableWrite, removeTree, installLock
 import { receipt, definitionMatches, versionMatches } from './managed.mjs';
 import { download } from './download.mjs';
 import { extractZip } from './archive.mjs';
+import {extractExecutable} from './tar.mjs';
 
 export function retireBackup(root, tool) {
   const backup = inside(root, `.cache/previous-${tool.name}`);
@@ -31,7 +32,7 @@ export function recover(root, tool) {
   else restoreBackup(root, tool);
 }
 export async function install(root, tool, {force = false, archivePath, receive = download} = {}) {
-  if (!['bun','node','hugo','go','git','gh'].includes(tool.name)) fail('invalid_runtime_name');
+  if (!['bun','node','hugo','go','git','gh','pagefind'].includes(tool.name)) fail('invalid_runtime_name');
   const target = inside(root, tool.name), stage = inside(root, `.cache/${tool.name}`);
   if (force && fs.existsSync(path.join(target,tool.executable)) &&
       fs.realpathSync(process.execPath) === fs.realpathSync(path.join(target,tool.executable))) {
@@ -59,7 +60,8 @@ export async function install(root, tool, {force = false, archivePath, receive =
     process.stderr.write(`Banyan download: ${tool.name} ${tool.version} ${tool.url}\n`);
     await receive(tool.url, archive, tool.sha256);
   }
-  await extractZip(archive, payload, tool);
+  if(tool.archiveFormat==='tar.gz') extractExecutable(archive,payload,tool);
+  else await extractZip(archive, payload, tool);
   for (const extra of tool.supplements || []) {
     if (!/^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$/.test(extra.name)) fail('invalid_supplement_name');
     await receive(extra.url, inside(payload, extra.name), extra.sha256);

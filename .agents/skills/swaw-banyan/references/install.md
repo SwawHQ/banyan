@@ -124,7 +124,7 @@ Run from the site root. Replace `<build>` with an absolute build path, preferabl
 
 ```text
 swban doctor                                                            #Check tools and theme pairing
-swban base/hugo --minify --destination "<build>" --cleanDestinationDir  #Build into a clean destination
+swban build --destination "<build>"                                    #Build pages and search index
 swban check/delivery "<build>"                                          #Check delivery output
 swban check/csp "<build>"                                               #Check CSP
 swban check/browser/site "<build>"                                      #Check representative pages

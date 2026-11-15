@@ -14,6 +14,7 @@ metadata:
 项目对话和文档用语见[项目术语表](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs-guide/glossary/index.zh.md)。
 
 ```text
+swban build              #构建站点和搜索索引
 swban doctor [目录]       #检查工具和站点主题
 swban help                #查看常用命令
 swban help/zh 1           #查看一级分类

@@ -1,4 +1,12 @@
 {{- $model := partial "./model.html" . -}}
 <nav class="column-panel" data-root-navigation data-default-root-href="{{ $model.default_href }}" aria-label="{{ partial "system-metadata/site/title.html" .Site }}">
-  {{- partial "system-ui/list/render.html" (dict "items" $model.items) -}}
+  <div class="item-list">
+  {{- range $model.items -}}
+    {{- if and (eq $.Layout "page-search") (eq .href $.RelPermalink) -}}
+      <div class="list-item" data-list-item><input class="search-input" data-search-input type="search" aria-label="{{ $.Title }}" placeholder="{{ $.Title }}…" autocomplete="off"></div>
+    {{- else -}}
+      {{- partial "system-ui/list/item.html" . -}}
+    {{- end -}}
+  {{- end -}}
+  </div>
 </nav>

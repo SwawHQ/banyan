@@ -22,6 +22,21 @@
   {{- $headerRoutes = (slice (dict "path" "/*" "http" (dict "headers" $generatedHeaders))) | append $headerRoutes -}}
 {{- end -}}
 {{- $files := dict -}}
+{{- /* Pagefind's same-origin worker uses its own response CSP. */ -}}
+{{- $searchCsp := replace $csp "script-src 'self'" "script-src 'self' 'wasm-unsafe-eval'" -}}
+{{- $searchPaths := slice -}}
+{{- range hugo.Sites -}}
+  {{- range .Pages -}}
+    {{- if eq .Layout "page-search" -}}
+      {{- $searchPaths = $searchPaths | append .RelPermalink -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if $searchPaths -}}{{- $searchPaths = $searchPaths | append ("pagefind/pagefind-worker.js" | relURL) -}}{{- end -}}
+{{- range $searchPaths -}}
+  {{- $http := dict "headers" (dict "Content-Security-Policy" $searchCsp) "cloudflare" (dict "pages" (dict "unset" (slice "Content-Security-Policy"))) -}}
+  {{- $headerRoutes = $headerRoutes | append (dict "path" . "http" $http) -}}
+{{- end -}}
 {{- if eq $platform.cloudflare.pages.enabled true -}}
   {{- $files = merge $files (dict
     "_headers" (partial "./cloudflare-headers.txt" (dict "routes" $headerRoutes))

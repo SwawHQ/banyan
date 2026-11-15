@@ -1,0 +1,25 @@
+{{- $groups := slice -}}
+{{- range hugo.Sites -}}
+  {{- $site := . -}}
+  {{- range where .Pages "Layout" "page-search" -}}
+    {{- $config := .Params.index -}}
+    {{- if not $config.source -}}
+      {{- errorf "Search page %s requires params.index.source." .RelPermalink -}}
+    {{- end -}}
+    {{- if not $config.selector -}}{{- errorf "Search page %s requires params.index.selector." .RelPermalink -}}{{- end -}}
+    {{- $pages := slice -}}
+    {{- if eq (printf "%v" $config.source) "rss" -}}
+      {{- if not ($site.Home.OutputFormats.Get "RSS") -}}{{- errorf "Search RSS source requires homepage RSS output." -}}{{- end -}}
+      {{- $pages = partial "system-metadata/rss/entries.html" $site.Home -}}
+    {{- end -}}
+    {{- $urls := slice -}}
+    {{- range $pages -}}
+      {{- if partial "feature-browse/is-rendered-html.html" . -}}
+        {{- $urls = $urls | append (.OutputFormats.Get "HTML").RelPermalink -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $groups = $groups | append (dict "source" $config.source "root" $site.Home.RelPermalink "selector" $config.selector "urls" $urls) -}}
+  {{- end -}}
+{{- end -}}
+{{- $resource := resources.FromString "site/search-index.json" (jsonify (dict "base" ("" | absURL) "groups" $groups)) -}}
+{{- $published := $resource.RelPermalink -}}

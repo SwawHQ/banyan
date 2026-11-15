@@ -88,13 +88,13 @@ try {
     $entry = Join-Path $directory 'entry.mjs'
     if (-not [IO.File]::Exists($entry)) { throw "unknown_command:$helpCommand; run swban help" }
     Assert-PlainBootstrapPath $entry
-    $native = $helpCommand -cmatch '^(?:base/(bun|node|hugo|go|git|gh)(?:/(npm|npx))?)$'
+    $native = $helpCommand -cmatch '^(?:base/(bun|node|hugo|go|git|gh|pagefind)(?:/(npm|npx))?)$'
     if (-not $native -and $args.Count -eq 2 -and $args[1] -in @('--help','-h')) {
         $language = if ([Globalization.CultureInfo]::CurrentUICulture.Name -match '^zh(?:-|$)') { 'zh' } else { 'en' }
         & (Join-Path $skillRoot 'tasks/help/cold.ps1') $language $helpCommand
         exit $LASTEXITCODE
     }
-    $preparing = $args[0] -match '^base/(bun|node|hugo|go|git|gh)/ensure$'
+    $preparing = $args[0] -match '^base/(bun|node|hugo|go|git|gh|pagefind)/ensure$'
     if ($preparing -and ($args.Count -gt 2 -or ($args.Count -eq 2 -and $args[1] -ne '--force'))) { throw 'invalid_ensure_arguments' }
     $force = $preparing -and $args.Count -eq 2
     $architecture = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }

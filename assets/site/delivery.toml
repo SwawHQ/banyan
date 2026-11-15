@@ -133,3 +133,9 @@ http.cloudflare.pages.unset = ["Content-Security-Policy"]
 # source = "/old/"
 # destination = "/new/"
 # status = 301
+
+[[routes]]
+path = "/pagefind/*"
+http.headers.Cache-Control = "no-cache, must-revalidate"
+http.cloudflare.pages.unset = ["Cache-Control"]
+sw.bucket = "versioned"

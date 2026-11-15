@@ -36,7 +36,7 @@
 
 2. 启动本地预览（Windows x64，在站点根目录用 PowerShell 执行）：
     ```powershell
-    .\.agents\skills\swaw-banyan\swban.cmd base/hugo server -D --disableFastRender
+    .\swban.cmd base/hugo server -D --disableFastRender
     ```
 
 3. 检查目录中这四项，以了解站点结构：
@@ -64,7 +64,7 @@
 4. 部署\
     在站点根目录用 PowerShell 安装 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill：
     ```powershell
-    .\.agents\skills\swaw-banyan\swban.cmd base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #安装部署 Skill
+    .\swban.cmd base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #安装部署 Skill
     ```
 
     用你的 AI Agent 打开站点根目录，提示：
@@ -92,7 +92,7 @@
 
 2. 用你的 AI Agent 打开站点根目录，提示：
     ```
-    使用 .agents/skills/swaw-banyan，先运行 .\.agents\skills\swaw-banyan\swban.cmd help upgrade/git 查看升级步骤，再将当前站点升级到 Banyan 官方最新发布版。保留本站内容、URL、自定义项；不能明确处置的内容，先报告并等待确认。
+    使用 .agents/skills/swaw-banyan，先运行 .\swban.cmd help upgrade/git 查看升级步骤，再将当前站点升级到 Banyan 官方最新发布版。保留本站内容、URL、自定义项；不能明确处置的内容，先报告并等待确认。
     ```
 
 

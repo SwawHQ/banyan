@@ -23,6 +23,7 @@ description: 统一项目用语，快速了解页面结构、内容分类、配�
 | 结构面包屑 | 按页面真实内容层级生成的路径数据，用于 SEO 等输出。 | `BreadcrumbList` |
 | 页面画幅 | 横向排列根导航列、面包屑列和阅读组的整体区域。 | `.page-shell` |
 | 阅读组 | 将主内容列和文档辅助列组合在一起的布局区域。 | `.reading-group` |
+| 搜索页 | 在根导航列输入关键词，并在正文宽度的主内容列显示当前语言的搜索结果。 | `page-search` |
 | 图片墙 | 用封面卡片呈现分类或文章的集合视图。 | `page-collection-wall`、`page-collection-wall-all` |
 
 区域配置见[页面区域与布局](/zh/p/layout-slots/)，组件和样式见 [UI 命名与职责](/zh/p/ui-naming/)。
@@ -87,6 +88,7 @@ JSON-LD 是表达格式，Schema.org 提供类型和字段，页面模板填入�
 | 页面预取 | 在用户打开目标页面前，按规则提前获取页面，缩短后续访问等待。 | `prefetch` |
 | 页面预渲染 | 在预取基础上提前加载资源并渲染目标页面，由浏览器的原生规则执行。 | `prefetch.prerender`、Speculation Rules |
 | 本站 Service Worker（SW） | 在浏览器后台处理本站受管请求、缓存和离线回退的程序。 | `sw.js` |
+| 搜索索引 | Pagefind 在 Hugo 构建后，按搜索页配置的 RSS 范围或文件匹配规则选取页面，再用 HTML 选择器提取内容所生成的全文检索数据。 | `swban build`、`/pagefind/` |
 | 站点构建版本 | 标识站点构建产物的版本，默认按构建时间生成，也可显式指定；用于页面版本显示和 SW 缓存切换。 | `params.build.version`、`sw-version.json` |
 | SW 版本缓存桶 | SW 按站点构建版本保存资源的缓存桶，版本切换后清理旧桶。 | `sw.bucket = "versioned"` |
 | 指纹资源 | 发布网址含内容哈希的资源，内容变化时网址随之变化。 | `fingerprint`、内容哈希文件名 |

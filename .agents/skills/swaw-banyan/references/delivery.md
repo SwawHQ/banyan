@@ -1,7 +1,7 @@
 # Delivery configuration and checks
 
 ```text
-swban base/hugo --minify --gc --cleanDestinationDir  #Build production output
+swban build                                       #Build pages and search index
 swban check/delivery [dir]                           #Check delivery output and fingerprint paths
 swban check/delivery ./public --base-path /base/     #Check a build published under /base/
 ```

@@ -10,6 +10,9 @@ The first release is in preparation. This page describes its scope. After the re
 
 ## Main features
 
+- A dedicated search page searches the current language as you type, with article-width results and bold titles. Each result is a full clickable row with the theme hover and keyboard focus styles. Search pages support RSS entries, HTML file globs or directory arrays, with existing HTML selectors to select content and no Pagefind-specific attributes. The root command launcher supports `swban build` to generate the site and Pagefind index.
+- Builds reject source directories and custom mount sources as output destinations. Sites without search pages or RSS entries do not prepare Pagefind. Empty RSS builds succeed, missing language indexes show no results, and search excerpts display escaped characters correctly.
+
 - A Hugo Module supplies layouts, scripts and styles. The companion `swaw-banyan` Agent Skill supplies local tools, build checks and version maintenance. Browser checks support deployment subdirectories and default-language subdirectories; SW disable checks use the actual deployment scope.
 - Sections and article references organize content across categories while keeping one published URL per article. Aggregate lists and section RSS feeds are supported. Shared references also work in sections with only a non-default-language index.
 - Directory lists, name lists, product lists and image walls present content. Breadcrumb columns retain the article's browsing source and support independent sorting. Sections can configure the default sort field and direction; child sections do not inherit the parent sort.

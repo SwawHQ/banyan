@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Prepare Pagefind extended",
+    "usage": "swban base/pagefind/ensure [--force]",
+    "details": []
+  },
+  "zh": {
+    "summary": "准备 Pagefind extended",
+    "usage": "swban base/pagefind/ensure [--force]",
+    "details": []
+  }
+}

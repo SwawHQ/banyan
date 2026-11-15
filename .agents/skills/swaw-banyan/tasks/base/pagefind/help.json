@@ -1,0 +1,12 @@
+{
+  "en": {
+    "summary": "Run Pagefind extended",
+    "usage": "swban base/pagefind [arguments...]",
+    "details": []
+  },
+  "zh": {
+    "summary": "运行 Pagefind extended",
+    "usage": "swban base/pagefind [arguments...]",
+    "details": []
+  }
+}

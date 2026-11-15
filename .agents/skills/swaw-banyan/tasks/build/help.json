@@ -1,0 +1,4 @@
+{
+  "en": {"summary":"Build the site and search index","usage":"swban build [--destination <directory>] [--baseURL <URL>]","details":["swban build                         #Build into public","swban build --destination ./preview #Build into preview"]},
+  "zh": {"summary":"构建站点和搜索索引","usage":"swban build [--destination <目录>] [--baseURL <URL>]","details":["swban build                         #构建到 public","swban build --destination ./preview #构建到 preview"]}
+}

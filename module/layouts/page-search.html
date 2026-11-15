@@ -1,0 +1,21 @@
+{{ define "head-extra" }}
+{{ partialCached "feature-search/manifest.html" . "search-index" }}
+{{ $css := resources.Get "css/search.css" | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}">
+{{ end }}
+{{ define "main" }}
+{{ range slice "prompt" "loading" "count" "empty" "error" "more" "no_script" }}
+  {{ $label := index $.Params.labels . }}
+  {{ if or (ne (printf "%T" $label) "string") (eq (trim (printf "%v" $label) " \r\n\t") "") }}
+    {{ errorf "Search page %s requires params.labels.%s." $.RelPermalink . }}
+  {{ end }}
+{{ end }}
+<section class="search-page" data-search-page data-search-bundle="{{ "pagefind/pagefind.js" | relURL }}" data-search-home="{{ .Site.Home.RelPermalink }}" data-search-copy="{{ .Params.labels | jsonify }}">
+  <h1 class="column-heading">{{ .Title }}</h1>
+  <p class="search-status" role="status" aria-live="polite">{{ .Params.labels.prompt }}</p>
+  <div class="search-results"></div>
+  <button class="item-control search-more" type="button" hidden>{{ .Params.labels.more }}</button>
+  <noscript><p>{{ .Params.labels.no_script }}</p></noscript>
+</section>
+{{ end }}
+{{ define "body-extra" }}{{ partial "system-assets/script.html" (dict "path" "js/search/page.js") }}{{ end }}

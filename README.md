@@ -36,7 +36,7 @@ Backend features such as accounts, payments, and comments are not yet available.
 
 2. Start a local preview (Windows x64, run in PowerShell from the site root):
     ```powershell
-    .\.agents\skills\swaw-banyan\swban.cmd base/hugo server -D --disableFastRender
+    .\swban.cmd base/hugo server -D --disableFastRender
     ```
 
 3. Review these four items to understand the site structure:
@@ -64,7 +64,7 @@ Backend features such as accounts, payments, and comments are not yet available.
 4. Deploy\
     Install the [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill in PowerShell from the site root:
     ```powershell
-    .\.agents\skills\swaw-banyan\swban.cmd base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #Install the deployment Skill
+    .\swban.cmd base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #Install the deployment Skill
     ```
 
     Open the site root in your AI Agent and use this prompt:
@@ -92,7 +92,7 @@ Backend features such as accounts, payments, and comments are not yet available.
 
 2. Open the site root in your AI Agent and use this prompt:
     ```
-    Use .agents/skills/swaw-banyan. First run .\.agents\skills\swaw-banyan\swban.cmd help upgrade/git to read the upgrade steps, then upgrade this site to the latest official Banyan release. Preserve this site's content, URLs, and customizations. If any changes are unclear, report them and wait for confirmation.
+    Use .agents/skills/swaw-banyan. First run .\swban.cmd help upgrade/git to read the upgrade steps, then upgrade this site to the latest official Banyan release. Preserve this site's content, URLs, and customizations. If any changes are unclear, report them and wait for confirmation.
     ```
 
 
