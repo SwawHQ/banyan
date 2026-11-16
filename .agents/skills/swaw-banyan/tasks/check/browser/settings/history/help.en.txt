@@ -1,0 +1,11 @@
+swban check/browser/settings/history [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> --pages <paths>  #Settings chains, native tabs and Back; Chromium
+
+  dir              Published site directory; default: public
+  --headed         Show the browser window
+  --trace          Save trace.zip; default output: system temporary directory
+  --out <dir>      Save JSON and screenshot in a new subdirectory
+  --timeout <ms>   Browser launch and individual action timeout; default: 15000
+  --from <path>    Source page, including query and fragment
+  --pages <paths>  Settings paths in visit order, separated by commas
+
+swban check/browser/settings/history ./preview --from /article/#from=all&anchor=details --pages /appearance/,/powered-by/,/language/

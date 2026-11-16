@@ -1,0 +1,11 @@
+swban check/browser/pwa/offline [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>]  #Registration, controlled navigation and offline reload; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   First page to cache and reload offline; default: /
+
+swban check/browser/pwa/offline ./preview
+swban check/browser/pwa/offline ./preview --page /zh/about/ --trace --out ./browser-report

@@ -1,0 +1,1 @@
+swban check/http/security <url>  #实际 HTTP 安全头

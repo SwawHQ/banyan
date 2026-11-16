@@ -1,0 +1,12 @@
+swban check/browser/canvas/wheel.webkit [dir] --page <path> --short <path> [--widths <list>] [--headed] [--trace] [--out <dir>] [--timeout <ms>]  #Horizontal wheel and keyboard mode, native input and tail space; WebKit
+
+  dir              Published site directory; default: public
+  --page <path>    Long article with metadata, overflowing code and a wide table
+  --short <path>   Short article with a local link to another page
+  --widths <list>  Viewport widths; default: 390,1440
+  --headed         Show the browser window
+  --trace          Save trace.zip
+  --out <dir>      Save JSON and screenshot in a new subdirectory
+  --timeout <ms>   Browser action timeout; default: 15000
+
+swban check/browser/canvas/wheel.webkit ./preview --page /long/ --short /short/  #Check horizontal wheel and keyboard mode

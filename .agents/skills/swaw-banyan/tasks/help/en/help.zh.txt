@@ -1,0 +1,11 @@
+swban help/en [depth|path [depth]]  #查看英文帮助
+
+不带参数时显示常用命令。
+路径末尾的 / 表示分类，其余为可执行命令。
+depth  从指定路径向下计算的最大层级；省略路径时从根目录计算
+path   查看指定命令、分类或主题的完整帮助
+
+swban help/en 2                #列出一至二级命令和分类
+swban help/en check 2          #列出 check 下两层命令和分类
+swban help/en check/browser 3  #列出 check/browser 下三层命令和分类
+swban help/en check/csp        #查看完整命令说明

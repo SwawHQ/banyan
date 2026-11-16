@@ -1,0 +1,1 @@
+swban base/pagefind/check  #检查 Pagefind extended

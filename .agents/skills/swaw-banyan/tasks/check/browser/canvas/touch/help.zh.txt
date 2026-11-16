@@ -1,0 +1,11 @@
+swban check/browser/canvas/touch [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> --next <path>  #原生触摸拖动、链接与历史；Chromium
+
+  dir             已完成的站点构建目录；默认：public
+  --headed        显示浏览器窗口
+  --trace         保存 trace.zip；默认输出到系统临时目录
+  --out <dir>     在新子目录保存 JSON 和截图
+  --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000
+  --page <path>   含文档侧栏的长文章
+  --next <path>   浏览器后退前访问的另一页面
+
+swban check/browser/canvas/touch ./preview --page /article/#from=all --next /appearance/

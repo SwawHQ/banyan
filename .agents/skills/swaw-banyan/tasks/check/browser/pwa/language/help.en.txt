@@ -1,0 +1,12 @@
+swban check/browser/pwa/language [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --next <dir> [--page <path>] --to <code>  #Native language links with a waiting update; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --next <dir>    Next SW-enabled build; sw.js must differ
+  --page <path>   Language settings path; default: /language/
+  --to <code>     Another published language
+
+swban check/browser/pwa/language ./old --next ./new --to zh

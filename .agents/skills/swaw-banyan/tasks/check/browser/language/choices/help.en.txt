@@ -1,0 +1,12 @@
+swban check/browser/language/choices [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>]  #Native language links and accessible choices; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Language settings page with translated choices; default: /language/
+
+swban check/browser/language/choices ./preview
+swban check/browser/language/choices ./preview --headed
+swban check/browser/language/choices ./preview --trace --out ./browser-report

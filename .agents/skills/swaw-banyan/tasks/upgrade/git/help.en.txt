@@ -1,0 +1,45 @@
+swban help upgrade/git  #Inspect official version changes for a theme upgrade
+
+Inspect changes between official versions, then plan the site upgrade. These examples call native Git through swban base/git.
+<official>: absolute checkout path; use swaw/banyan/upgrade/official/ under the system temporary directory.
+<old>/<new>: official base/target project tags or commit SHAs; <path>: a file, directory or pathspec in the official repository.
+
+1. Determine <old> (run from the site root):
+swban upgrade/version/current  #Report the current theme's official version or commit (old) and source
+If old is null or a previous migration is incomplete, review the site in full using the four roots listed below in the official version as the reference. Preserve site content and branding, and report differences in configuration.
+
+2. Prepare the official checkout and versions:
+swban base/git clone https://github.com/SwawHQ/banyan.git "<official>"      #Clone the official repository once
+swban base/git -C "<official>" fetch origin --tags                          #Update an existing checkout
+swban base/git -C "<official>" tag -l "v*" --sort=-version:refname          #List official versions
+swban base/git -C "<official>" rev-parse "<old>^{commit}" "<new>^{commit}"  #Resolve the confirmed baseline and target to commit SHAs
+
+3. Check the four site roots:
+swban base/git -C "<official>" diff <old> <new> -- hugo.toml                  #Read site configuration changes
+swban base/git -C "<official>" diff --name-status <old> <new> -- content/     #List content changes, including subdirectories
+swban base/git -C "<official>" diff --name-status <old> <new> -- assets/      #List asset changes, including subdirectories
+swban base/git -C "<official>" diff --name-status <old> <new> -- archetypes/  #List content-template changes
+
+4. Explore a directory, using content/ as an example:
+swban base/git -C "<official>" diff --name-status <old> <new> -- content/products/  #Narrow the scope to products and its subdirectories
+swban base/git -C "<official>" diff <old> <new> -- "<path>"                         #Read changes in a selected file or directory
+swban base/git -C "<official>" log --oneline <old>..<new> -- "<path>"               #Read commit messages for that path
+
+5. Filter by path or filename with native Git pathspecs: put these arguments after --; keep the quotes.
+":(glob)content/**/_index.md" ":(glob)content/**/index.md"      #Only pages without a language suffix; English in this reference site
+":(glob)content/**/_index.*.md" ":(glob)content/**/index.*.md"  #Only pages with a language suffix
+With :(glob), **/ matches any directory depth and * does not cross directories. Pathspecs do not support regular expressions.
+Start with English pages for shared structure changes. This filter omits CSS/JS, _map.toml and translation-only changes; check those as needed.
+Under content/_res/home-art/, review only bundles referenced by home-art shortcodes and their parent _index.md files; unused bundles may be excluded.
+
+Exclude guides, release notes, About and the GitHub entry page as needed. Source differences between the selected versions determine the changes; documentation is a reference.
+Append these native Git exclusions after selected directories or globs:
+":(exclude)content/articles/docs-*/**"     #Exclude user and developer guides
+":(exclude)content/articles/changelog/**"  #Exclude release-note pages
+":(exclude)content/about/**"               #Exclude About pages
+":(exclude)content/github/**"              #Exclude the GitHub entry page
+
+6. Upgrade the matching Skill and theme:
+Update the complete .agents/skills/swaw-banyan/ from target project tag vX.Y.Z for use with theme vX.Y.Z; changing metadata.version alone does not update the Skill.
+swban doctor  #Check theme and Skill pairing after the upgrade
+Then build the site. Check the minimum Hugo version, local template overrides and affected features.

@@ -1,0 +1,17 @@
+swban help/zh deploy/cloudflare/git  #准备 Cloudflare Pages Git 托管构建
+
+平台拉取源码并构建，使用原生 Hugo，不调用 swban。
+
+1. 准备源码：在 hugo.toml 中设置 baseURL，并在 assets/site/delivery.toml 中启用 platform.cloudflare.pages.enabled。提交站点及固定的主题版本，移除指向本机目录的 replace。
+
+2. 向平台提供构建设置：
+根目录：站点在仓库中的目录，本参考站点为 ./。输出目录：public。
+构建命令：hugo --minify --gc --cleanDestinationDir
+工具：满足主题最低版本要求的 Hugo Extended；Hugo Modules 还需要 Go 和 Git。安装步骤和私有依赖权限按本站需要设置。
+
+3. 先验证本地正式构建，并对产物运行 check/delivery 和 check/csp。Pages 读取 public 中的 _headers 和 _redirects，无需复制配置到源码根目录。
+
+4. 仓库授权、项目关联、平台设置和构建触发按 Swaw Clouds 专项操作：
+swcl help/zh cloudflare/deploy/pages-git  #查看平台 Git 构建步骤
+https://github.com/SwawHQ/swaw-clouds/blob/main/skills/swaw-clouds/tasks/cloudflare/deploy/pages-git/help.json
+发布后核对日志中的提交版本和产物，运行 swban check/http/security <url>，并检查修改的页面。

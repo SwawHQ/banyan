@@ -19,28 +19,16 @@ function directory(command,root) {
 }
 
 function readDocument(command,root,language) {
-  const file=path.join(directory(command,root),'help.json');
-  const stat=fs.lstatSync(file,{throwIfNoEntry:false});
-  if (!stat?.isFile()||stat.isSymbolicLink()) throw new Error('missing_help:'+command);
-  const invalid=(en,zh)=>{throw new Error(language==='zh'?`帮助文件格式错误：${file}\n${zh}`:`Invalid help file: ${file}\n${en}`);};
-  const source=fs.readFileSync(file,'utf8');
-  let document;
-  try { document=JSON.parse(source); }
-  catch (error) { invalid('Invalid JSON: '+error.message,'JSON 语法错误：'+error.message); }
+  const dir=directory(command,root),document={};
   for (const name of ['en','zh']) {
-    const item=document?.[name];
-    if (!item||typeof item!=='object'||Array.isArray(item)) invalid(`${name} must be an object.`,`${name} 必须是对象。`);
-    for (const key of ['summary','usage']) {
-      if (typeof item[key]!=='string'||!item[key].trim()||/[\r\n]/.test(item[key])) {
-        invalid(`${name}.${key} must be a non-empty single-line string.`,`${name}.${key} 必须是非空的单行字符串。`);
-      }
-    }
-    if (!Array.isArray(item.details)) invalid(`${name}.details must be an array of strings.`,`${name}.details 必须是字符串数组。`);
-    for (const [index,line] of item.details.entries()) {
-      if (typeof line!=='string'||/[\r\n]/.test(line)) {
-        invalid(`${name}.details[${index}] must be a single-line string.`,`${name}.details[${index}] 必须是单行字符串。`);
-      }
-    }
+    const file=path.join(dir,'help.'+name+'.txt');
+    const stat=fs.lstatSync(file,{throwIfNoEntry:false});
+    if (!stat?.isFile()||stat.isSymbolicLink()) throw new Error('missing_help:'+command);
+    const text=fs.readFileSync(file,'utf8').replace(/\n$/,'');
+    const first=text.split('\n',1)[0],index=first.indexOf('  #');
+    if (text.includes('\r')||text.startsWith('\uFEFF')||index<1||!first.slice(0,index).trim()||!first.slice(index+3).trim())
+      throw new Error((language==='zh'?'帮助文件格式错误：':'Invalid help file: ')+file+'\nExpected: usage  #summary');
+    document[name]={usage:first.slice(0,index),summary:first.slice(index+3),text};
   }
   return document;
 }
@@ -71,7 +59,7 @@ export function taskHelp(command,language=systemLanguage(),root=tasksRoot) {
   if (!['en','zh'].includes(language)) throw new Error('unsupported_help_language:'+language);
   command=command.replace(/\/$/,'');
   const document=readDocument(command,root,language)[language];
-  const lines=[document.usage+'  #'+document.summary,...(document.details.length?['',...document.details]:[])];
+  const lines=[document.text];
   if (!hasEntry(directory(command,root))) {
     const children=catalog(root,language).filter(item=>item.path.startsWith(command+'/')&&item.path.split('/').length===command.split('/').length+1);
     if (children.length) lines.push('',rows(children,language));

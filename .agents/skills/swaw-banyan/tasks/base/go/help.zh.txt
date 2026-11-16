@@ -1,0 +1,5 @@
+swban base/go [arguments...]  #运行 Go；help 查看原生帮助
+
+将参数传给已选工具。
+
+swban base/go --help

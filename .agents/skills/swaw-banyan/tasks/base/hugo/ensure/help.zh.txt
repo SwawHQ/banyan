@@ -1,0 +1,3 @@
+swban base/hugo/ensure [--force]  #准备 Hugo Extended
+
+  --force  安装固定版本的便携工具

@@ -1,0 +1,4 @@
+swban help upgrade  #主题升级工具
+
+swban upgrade/version/current  #识别当前官方比对起点
+swban help upgrade/git         #查看升级前的变动检查方法

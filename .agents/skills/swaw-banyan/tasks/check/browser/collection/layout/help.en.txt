@@ -1,0 +1,13 @@
+swban check/browser/collection/layout [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--article <path>] [--widths <list>]  #Name widths, headers and row alignment; Chromium
+
+  dir               Published site directory; default: public
+  --headed          Show the browser window
+  --trace           Save trace.zip; default output: system temporary directory
+  --out <dir>       Save JSON and screenshot in a new subdirectory
+  --timeout <ms>    Browser launch and individual action timeout; default: 15000
+  --page <path>     Collection page with entries and a name-column header
+  --article <path>  Article with this collection in its source path; also compare main and breadcrumb lists
+  --widths <list>   Comma-separated viewport widths; test height: 900 pixels; default: 390,1440
+
+swban check/browser/collection/layout ./preview --page /all/
+swban check/browser/collection/layout ./preview --page /all/ --article /article/#from=all --trace

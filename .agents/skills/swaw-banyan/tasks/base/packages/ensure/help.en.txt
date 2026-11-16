@@ -1,0 +1,1 @@
+swban base/packages/ensure [--force]  #Prepare Skill parser packages

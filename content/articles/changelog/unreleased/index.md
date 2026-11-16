@@ -3,7 +3,7 @@ title: Unreleased
 url: p/unreleased/
 description: Main features, requirements and known limitations of the first Banyan release.
 date: 2026-11-06
-lastmod: 2026-11-15
+lastmod: 2026-11-16
 ---
 
 The first release is in preparation. This page describes its scope. After the release tags are available, follow [Getting started (Chinese)](/zh/p/getting-started/) to install it.
@@ -23,6 +23,7 @@ The first release is in preparation. This page describes its scope. After the re
 
 ## Requirements
 
+- Command help uses `help.en.txt` and `help.zh.txt`. The first line is `usage  #summary`, followed by the body. Cold starts and normal runs read the same files.
 - The theme requires Hugo 0.168.0 or later. The Skill CLI currently supports Windows x64.
 - Start a new site from the complete root reference site. Each site owns `hugo.toml`, `content/`, `archetypes/`, `assets/site/` and `assets/i18n/`. The Module does not supply these files.
 - Keep `minify.disableJS = true` so HTML minification does not change scripts authorized by CSP.

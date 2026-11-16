@@ -1,0 +1,15 @@
+swban check/browser/canvas/open.webkit [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> --page <path> [--widths <list>] [--pan <px>] [--touch]  #Open articles, retain ancestry/sort and history; WebKit
+
+  dir              Published site directory; default: public
+  --headed         Show the browser window
+  --trace          Save trace.zip; default output: system temporary directory
+  --out <dir>      Save JSON and screenshot in a new subdirectory
+  --timeout <ms>   Browser launch and individual action timeout; default: 15000
+  --from <path>    Published source collection; include the desired sorting fragment
+  --page <path>    Article pathname linked from the source collection
+  --widths <list>  Comma-separated viewport widths; test height: 900 pixels; default: 390,1024,1440
+  --pan <px>       Canvas offset; default: keep the article link visible, pan narrow viewports
+  --touch          Use native taps in a mobile touch context
+
+swban check/browser/canvas/open.webkit ./preview --from /all/ --page /article/
+swban check/browser/canvas/open.webkit ./preview --from /all/#sorts=name-desc --page /article/ --touch

@@ -34,7 +34,7 @@ mounts; do not reproduce its resolver or inheritance rules.
 | Doctor implementation | `tasks/doctor/` |
 
 The CLI uses Node; Bun is an independent tool, not a CLI runtime selector.
-JSON help, doctor and tool status checks do not prepare tools. Native help runs
+Text help, doctor and tool status checks do not prepare tools. Native help runs
 its tool. Doctor reports pairing and dependency problems without repairing them;
 ordinary tasks do not run pairing checks.
 
@@ -65,22 +65,19 @@ or switch engines. Page requirements are in [Browser checks](browser-site.md).
 
 ## Maintain help
 
-Place `help.json` beside each command entry and in every ancestor category.
-An entry creates an executable command; a help file alone does not. Keep `en`
-and `zh` objects with `summary`, `usage` and `details`. Use a one-line summary,
-one invocation line and concise details; keep validation in code.
+Place `help.en.txt` and `help.zh.txt` beside each command entry and in every
+ancestor category. The first line is `usage  #summary` (two spaces before `#`).
+The remaining lines are displayed unchanged. Use UTF-8 without BOM and LF endings.
+Keep validation in code, and align command descriptions within each group.
 
-`tasks/help/help.json` supplies the common-command page for `help`, `help/en`
-and `help/zh`. Align `#` descriptions within each command group. For a non-executable
-topic such as `upgrade/git`, use `tasks/<topic>/help.json` and usage
-`swban help <topic>`; topics are read by explicit path and excluded from lists.
+An entry creates an executable command; help files alone do not. For a help-only
+topic, use `tasks/<topic>/help.<language>.txt` with usage `swban help <topic>`.
+Topics are available by explicit path and excluded from command lists.
 Detailed Agent guidance belongs in `references/`.
 
-Help reads JSON without importing task entries. Ordinary `--help` uses the same
-file through `helpFor`; native tools retain their own flags. Update help with
-argument or default changes. Keep Windows cold-start and JS-reader output in
-parity. Discovery, depth and path behavior are defined by the existing help code
-and its tests; reuse them rather than adding a second listing mechanism.
+JS, Windows cold help and Linux cold help read these same files without importing
+task entries. Update the files with argument or default changes. Keep all readers
+in parity through the help tests. Native tools retain their own help flags.
 
 ## Compose a site suite
 

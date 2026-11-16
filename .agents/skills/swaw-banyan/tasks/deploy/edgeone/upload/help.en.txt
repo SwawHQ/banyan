@@ -1,0 +1,20 @@
+swban help/en deploy/edgeone/upload  #Prepare EdgeOne Makers built-output upload
+
+Build on the local machine or in CI, then publish the completed directory. Run Banyan commands from the site root.
+<build>: absolute path to a dedicated output directory; <url>: public site URL.
+
+1. In assets/site/delivery.toml, set platform.edgeone.makers.enabled = true. Set hugo.toml baseURL to <url>.
+
+2. Build and check:
+swban base/hugo --minify --gc --cleanDestinationDir --destination "<build>"  #Build static output
+swban check/delivery "<build>"                                               #Check delivery rules
+swban check/csp "<build>"                                                    #Check CSP and scripts
+swban check/browser/site "<build>"                                           #Check representative pages
+The directory contains index.html, resources and edgeone.json.
+Upload the generated edgeone.json with the output directory; it contains delivery rules only. No source-root sync is needed.
+
+3. Follow the Swaw Clouds upload workflow with the absolute output path:
+swcl help/en edgeone/deploy/upload  #Read platform upload steps
+https://github.com/SwawHQ/swaw-clouds/blob/main/skills/swaw-clouds/tasks/edgeone/deploy/upload/help.json
+swban check/http/security <url>  #Check published response headers
+After publication, check the homepage, language entries and changed pages.

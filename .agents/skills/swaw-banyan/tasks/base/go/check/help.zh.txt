@@ -1,0 +1,1 @@
+swban base/go/check  #检查所选 Go SDK

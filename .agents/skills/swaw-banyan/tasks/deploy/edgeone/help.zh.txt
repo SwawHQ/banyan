@@ -1,0 +1,6 @@
+swban help/zh deploy/edgeone  #EdgeOne Makers 部署准备
+
+选择 upload 发布已构建产物，或选择 git 让平台拉取源码并构建。构建前设置正式 baseURL。
+
+swban help/zh deploy/edgeone/upload  #本地构建后上传产物
+swban help/zh deploy/edgeone/git     #平台拉取源码并构建

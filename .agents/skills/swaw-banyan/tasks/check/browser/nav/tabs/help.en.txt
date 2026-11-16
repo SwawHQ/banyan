@@ -1,0 +1,11 @@
+swban check/browser/nav/tabs [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--selector <css>]  #Native new tabs and opener isolation; Chromium
+
+  dir               Published site directory; default: public
+  --headed          Show the browser window
+  --trace           Save trace.zip; default output: system temporary directory
+  --out <dir>       Save JSON and screenshot in a new subdirectory
+  --timeout <ms>    Browser launch and individual action timeout; default: 15000
+  --page <path>     Published page containing new-tab links
+  --selector <css>  CSS selector for the anchors to activate; default: .slot-main .prose a[target="_blank"]
+
+swban check/browser/nav/tabs ./preview --page /powered-by/

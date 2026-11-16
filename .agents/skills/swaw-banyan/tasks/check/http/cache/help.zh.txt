@@ -1,0 +1,1 @@
+swban check/http/cache <url>  #实际资源缓存头

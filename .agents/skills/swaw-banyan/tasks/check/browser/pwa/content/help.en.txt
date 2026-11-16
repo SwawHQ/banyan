@@ -1,0 +1,13 @@
+swban check/browser/pwa/content [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --next <dir> [--page <path>] [--from <path>]  #Content versions change without replacing the active SW; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --next <dir>    Next build; same SW and different site build version
+  --page <path>   Build version panel; default: /powered-by/
+  --from <path>   Second cached page; default: /
+
+swban check/browser/pwa/content ./old --next ./new
+swban check/browser/pwa/content ./old --next ./new --trace --out ./browser-report

@@ -1,0 +1,5 @@
+swban base/node/npx [arguments...]  #Run npx; use --help for details
+
+Pass arguments to the selected tool.
+
+swban base/node/npx --help

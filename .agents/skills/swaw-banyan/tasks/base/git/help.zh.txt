@@ -1,0 +1,5 @@
+swban base/git [arguments...]  #运行 Git；--help 查看原生帮助
+
+将参数传给已选工具。
+
+swban base/git --help  #查看 Git 原生帮助

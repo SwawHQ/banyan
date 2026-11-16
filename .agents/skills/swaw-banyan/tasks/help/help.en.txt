@@ -1,0 +1,48 @@
+swban help [depth|path [depth]]  #Common commands and help
+
+swban help                  #List common commands and descriptions
+swban help check/csp        #(Example) Show full help for a command
+swban help 1                #List top-level commands (/ marks categories; other paths are executable)
+swban help 2                #List commands and categories through level 2; higher numbers are supported
+swban help check 2          #List commands and categories two levels below check
+swban help check/browser 3  #List commands and categories three levels below check/browser
+
+Site development and builds:
+swban base/hugo server -D --disableFastRender -p 5678 --bind localhost  #Start the development server
+swban build                                                          #Build the site and search index
+swban build --destination ./preview                                  #Build into a specified directory
+
+Tools:
+swban base/hugo/ensure            #Prepare Hugo
+swban base/pagefind/ensure        #Prepare Pagefind extended
+swban base/go/ensure              #Prepare Go
+swban base/git/ensure             #Prepare Git
+swban base/gh/ensure              #Prepare gh (GitHub CLI)
+swban base/node/ensure            #Prepare Node/npm
+swban base/bun/ensure             #Prepare optional Bun
+swban base/browser/ensure         #Prepare Playwright/Chromium
+swban base/<tool> [arguments...]  #Run bun/node/git/gh/go/hugo
+
+Cloud tools: https://github.com/SwawHQ/swaw-clouds
+
+Checks:
+swban doctor [directory]        #Check tools and the site theme
+swban check/delivery [dir]      #Check assets/site/delivery.toml and its rendered output
+swban check/csp [dir]           #Check CSP and inline hashes
+swban check/browser/site [dir]  #Run browser checks
+swban report/size/html [dir]    #Report page size and size on first load
+swban sync/ext [id...]          #Sync declared external resources
+
+Before a theme upgrade, check these four items in the official repository:
+swban help upgrade/git  #Run this command for detailed help before upgrading
+hugo.toml               #1 Site configuration
+content/                #2 Lists, article/product examples and functional pages
+assets/                 #3 Site resources and interface dictionaries
+archetypes/             #4 Content templates
+
+Theme developers:
+Tags use SemVer; project and Module tags must have the same version and commit.
+swban deploy/release/tag --check                               #Validate versions and preview tags first
+swban deploy/release/tag                                       #Publish both tags atomically after checks pass
+swban base/gh auth login --web                                 #Sign in to GitHub
+swban base/gh release create <tag> --verify-tag --notes <URL>  #Link release notes

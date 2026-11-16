@@ -1,0 +1,11 @@
+swban check/browser/nav/roots [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> --pages <paths>  #Root visits, selection and native history; Chromium
+
+  dir              Published site directory; default: public
+  --headed         Show the browser window
+  --trace          Save trace.zip; default output: system temporary directory
+  --out <dir>      Save JSON and screenshot in a new subdirectory
+  --timeout <ms>   Browser launch and individual action timeout; default: 15000
+  --from <path>    Published root page; fragment context is allowed
+  --pages <paths>  Other root page paths, separated by commas
+
+swban check/browser/nav/roots ./preview --from /powered-by/ --pages /about/,/rss/

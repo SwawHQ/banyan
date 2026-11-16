@@ -1,0 +1,12 @@
+swban check/browser/nav/keyboard [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>]  #Column focus and keyboard order; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Published page with root links and a tabbable control in the next column; default: /appearance/
+
+swban check/browser/nav/keyboard ./preview
+swban check/browser/nav/keyboard ./preview --headed
+swban check/browser/nav/keyboard ./preview --trace --out ./browser-report

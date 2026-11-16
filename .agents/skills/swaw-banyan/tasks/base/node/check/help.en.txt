@@ -1,0 +1,1 @@
+swban base/node/check  #Check selected Node

@@ -1,0 +1,1 @@
+swban base/pagefind [arguments...]  #Run Pagefind extended

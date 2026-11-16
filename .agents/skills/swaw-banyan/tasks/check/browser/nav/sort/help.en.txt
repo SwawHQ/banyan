@@ -1,0 +1,12 @@
+swban check/browser/nav/sort [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path>  #Name/date sort and source navigation; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Collection with distinct names and a navigable article
+
+swban check/browser/nav/sort ./preview --page /entries/
+swban check/browser/nav/sort ./preview --page /entries/ --headed
+swban check/browser/nav/sort ./preview --page /entries/ --trace --out ./browser-report

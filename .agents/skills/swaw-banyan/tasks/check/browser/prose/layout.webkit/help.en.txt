@@ -1,0 +1,12 @@
+swban check/browser/prose/layout.webkit [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path>  #Links, lists, quotes and table isolation; WebKit
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Published page with one prose container
+
+swban check/browser/prose/layout.webkit ./preview --page /p/article/
+swban check/browser/prose/layout.webkit ./preview --page /p/article/ --headed
+swban check/browser/prose/layout.webkit ./preview --page /p/article/ --trace --out ./browser-report

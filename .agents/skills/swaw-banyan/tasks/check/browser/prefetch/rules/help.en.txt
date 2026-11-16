@@ -1,0 +1,13 @@
+swban check/browser/prefetch/rules [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>] [--expect <mode>] [--eager <rules>]  #Browser rule acceptance; Chromium
+
+  dir              Published site directory; default: public
+  --headed         Show the browser window
+  --trace          Save trace.zip; default output: system temporary directory
+  --out <dir>      Save JSON and screenshot in a new subdirectory
+  --timeout <ms>   Browser launch and individual action timeout; default: 15000
+  --page <path>    Page that declares the rules; default: /
+  --expect <mode>  Expected rules mode: inline or off; default: inline
+  --eager <rules>  Expected eager prefetch rule IDs, separated by commas
+
+swban check/browser/prefetch/rules ./preview --page /all/ --eager folder/tail
+swban check/browser/prefetch/rules ./preview --expect off

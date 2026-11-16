@@ -1,0 +1,5 @@
+swban base/hugo [arguments...]  #运行 Hugo；--help 查看原生帮助
+
+将参数传给已选工具。
+
+swban base/hugo --help

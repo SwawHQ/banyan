@@ -77,7 +77,7 @@ try {
         $helpArgs = @()
         if ($args.Count -gt 1) { $helpArgs = @($args[1..($args.Count-1)]) }
         if ($helpArgs.Count -eq 1 -and $helpArgs[0] -in @('--help','-h')) { $helpArgs = @($helpCommand) }
-        & (Join-Path $skillRoot 'tasks/help/cold.ps1') $language @helpArgs
+        & (Join-Path $skillRoot 'platform/windows/help.ps1') $language (Join-Path $skillRoot 'tasks') @helpArgs
         exit $LASTEXITCODE
     }
     $directory = Join-Path $skillRoot 'tasks'
@@ -91,7 +91,7 @@ try {
     $native = $helpCommand -cmatch '^(?:base/(bun|node|hugo|go|git|gh|pagefind)(?:/(npm|npx))?)$'
     if (-not $native -and $args.Count -eq 2 -and $args[1] -in @('--help','-h')) {
         $language = if ([Globalization.CultureInfo]::CurrentUICulture.Name -match '^zh(?:-|$)') { 'zh' } else { 'en' }
-        & (Join-Path $skillRoot 'tasks/help/cold.ps1') $language $helpCommand
+        & (Join-Path $skillRoot 'platform/windows/help.ps1') $language (Join-Path $skillRoot 'tasks') $helpCommand
         exit $LASTEXITCODE
     }
     $preparing = $args[0] -match '^base/(bun|node|hugo|go|git|gh|pagefind)/ensure$'

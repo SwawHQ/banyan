@@ -1,0 +1,11 @@
+swban check/browser/nav/anchors.webkit [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path>  #Native anchors and skip link; WebKit
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Published article with a heading below the first screen
+
+swban check/browser/nav/anchors.webkit ./preview --page /article/
+swban check/browser/nav/anchors.webkit ./preview --page /article/ --trace --out ./browser-report

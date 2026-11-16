@@ -1,0 +1,13 @@
+swban check/browser/appearance.webkit [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>] [--from <path>]  #Appearance preferences; WebKit
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Published appearance settings page; default: /appearance/
+  --from <path>   Page whose settings link and history return are checked; default: /
+
+swban check/browser/appearance.webkit ./preview
+swban check/browser/appearance.webkit ./preview --headed
+swban check/browser/appearance.webkit ./preview --trace --out ./browser-report

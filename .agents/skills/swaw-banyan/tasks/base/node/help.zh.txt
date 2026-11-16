@@ -1,0 +1,5 @@
+swban base/node [arguments...]  #运行 Node；--help 查看原生帮助
+
+将参数传给已选工具。
+
+swban base/node --help

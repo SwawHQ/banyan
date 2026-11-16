@@ -1,0 +1,12 @@
+swban check/browser/aside/style.webkit [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--widths <list>]  #Aside control styles; WebKit
+
+  dir              Published site directory; default: public
+  --headed         Show the browser window
+  --trace          Save trace.zip; default output: system temporary directory
+  --out <dir>      Save JSON and screenshot in a new subdirectory
+  --timeout <ms>   Browser launch and individual action timeout; default: 15000
+  --page <path>    Published article with h2 chapters and a selected root entry
+  --widths <list>  Comma-separated viewport widths in pixels; default: 390,1800
+
+swban check/browser/aside/style.webkit ./preview --page /article/
+swban check/browser/aside/style.webkit ./preview --page /article/ --trace --out ./browser-report

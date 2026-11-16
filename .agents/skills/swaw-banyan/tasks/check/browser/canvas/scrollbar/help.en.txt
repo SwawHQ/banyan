@@ -1,0 +1,13 @@
+swban check/browser/canvas/scrollbar [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--widths <list>] [--touch]  #Scrollbar activity and resize; Chromium
+
+  dir              Published site directory; default: public
+  --headed         Show the browser window
+  --trace          Save trace.zip; default output: system temporary directory
+  --out <dir>      Save JSON and screenshot in a new subdirectory
+  --timeout <ms>   Browser launch and individual action timeout; default: 15000
+  --page <path>    Article with an aside and overflowing reading content at 900 pixels high
+  --widths <list>  Comma-separated viewport widths; returns to the first width after resizing; default: 390,768,1800
+  --touch          Use a mobile touch context with native scrollbar colors
+
+swban check/browser/canvas/scrollbar ./preview --page /article/
+swban check/browser/canvas/scrollbar ./preview --page /article/ --touch --widths 390,768

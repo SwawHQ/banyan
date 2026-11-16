@@ -1,0 +1,5 @@
+swban deploy/release/tag [--check]  #Validate and publish matching project and Module tags
+
+swban deploy/release/tag --check  #Validate HEAD and show the tag plan without publishing
+swban deploy/release/tag          #Atomically publish both version tags to origin
+Tags use SemVer: vX.Y.Z and module/vX.Y.Z point to the same commit and match its Theme and Skill versions.

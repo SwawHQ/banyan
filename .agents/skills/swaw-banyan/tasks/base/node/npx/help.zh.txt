@@ -1,0 +1,5 @@
+swban base/node/npx [arguments...]  #运行 npx；--help 查看原生帮助
+
+将参数传给已选工具。
+
+swban base/node/npx --help

@@ -1,0 +1,4 @@
+swban report/size/js [dir] [--top N]  #JS 体积、引用与重复
+
+  dir    已完成的站点构建目录；默认：public
+  --top  排行条数；默认：8

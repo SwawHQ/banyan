@@ -1,0 +1,1 @@
+swban base/gh/check  #Check selected GitHub CLI

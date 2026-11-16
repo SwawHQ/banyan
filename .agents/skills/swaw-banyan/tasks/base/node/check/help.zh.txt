@@ -1,0 +1,1 @@
+swban base/node/check  #检查所选 Node

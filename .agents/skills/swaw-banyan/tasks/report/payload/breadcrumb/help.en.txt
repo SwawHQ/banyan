@@ -1,0 +1,4 @@
+swban report/payload/breadcrumb [dir] [--top N]  #Breadcrumb payload sizes
+
+  dir    Published site directory; default: public
+  --top  Number of ranked results; default: 8

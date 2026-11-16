@@ -1,0 +1,8 @@
+swban help/zh deploy  #部署准备与平台方案
+
+Banyan 构建静态产物并生成交付规则；Swaw Clouds 指导账号授权、云项目配置和原生工具发布。
+选择 cloudflare 或 edgeone，再选择 upload（上传产物）或 git（平台构建）。这些入口提供说明，不执行发布。
+其他静态托管、对象存储和 CDN 也可承载产物；响应头、重定向及缓存需按目标平台另行配置。
+
+swban help/zh deploy/cloudflare  #Cloudflare Pages
+swban help/zh deploy/edgeone     #EdgeOne Makers

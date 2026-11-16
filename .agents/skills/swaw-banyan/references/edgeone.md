@@ -7,7 +7,7 @@ to platform settings.
 
 ## Git hosting
 
-Read [Git build preparation](../tasks/deploy/edgeone/git/help.json).
+Read [Git build preparation](../tasks/deploy/edgeone/git/help.en.txt).
 Only sites using EdgeOne Git builds need a committed root `edgeone.json`.
 Build and check locally, then copy `public/edgeone.json` to the site root
 with PowerShell `Copy-Item`, as shown in the guide. Maintain delivery rules
@@ -20,7 +20,7 @@ Keep local and platform builds consistent so the committed CSP matches output.
 
 ## Built-asset upload
 
-Read [Output upload preparation](../tasks/deploy/edgeone/upload/help.json).
+Read [Output upload preparation](../tasks/deploy/edgeone/upload/help.en.txt).
 Upload the checked output directory with its generated `edgeone.json`.
 No configuration transformation or source-root sync is needed.
 

@@ -1,0 +1,13 @@
+swban check/browser/canvas/first-paint [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--root <path|none>] [--widths <list>]  #Article/collection startup and retained columns; Chromium
+
+  dir                 Published site directory; default: public
+  --headed            Show the browser window
+  --trace             Save trace.zip; default output: system temporary directory
+  --out <dir>         Save JSON and screenshot in a new subdirectory
+  --timeout <ms>      Browser launch and individual action timeout; default: 15000
+  --page <path>       Published article, collection or settings page
+  --root <path|none>  Expected selected root; none means no selection
+  --widths <list>     Comma-separated viewport widths; test height: 900 pixels; default: 390,1440
+
+swban check/browser/canvas/first-paint ./preview --page /discover/topic/child/
+swban check/browser/canvas/first-paint ./preview --page /article/#from=all --trace --out ./browser-report

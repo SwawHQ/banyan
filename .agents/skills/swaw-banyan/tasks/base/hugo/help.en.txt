@@ -1,0 +1,5 @@
+swban base/hugo [arguments...]  #Run Hugo; use --help for details
+
+Pass arguments to the selected tool.
+
+swban base/hugo --help

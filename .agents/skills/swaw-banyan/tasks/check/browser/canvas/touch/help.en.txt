@@ -1,0 +1,11 @@
+swban check/browser/canvas/touch [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> --next <path>  #Native mobile drags and history; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Long article with a document aside
+  --next <path>   Different page visited before native Back
+
+swban check/browser/canvas/touch ./preview --page /article/#from=all --next /appearance/

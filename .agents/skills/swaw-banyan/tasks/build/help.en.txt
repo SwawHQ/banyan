@@ -1,0 +1,4 @@
+swban build [--destination <directory>] [--baseURL <URL>]  #Build the site and search index
+
+swban build                         #Build into public
+swban build --destination ./preview #Build into preview

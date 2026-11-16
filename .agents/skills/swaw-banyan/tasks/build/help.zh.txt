@@ -1,0 +1,4 @@
+swban build [--destination <目录>] [--baseURL <URL>]  #构建站点和搜索索引
+
+swban build                         #构建到 public
+swban build --destination ./preview #构建到 preview

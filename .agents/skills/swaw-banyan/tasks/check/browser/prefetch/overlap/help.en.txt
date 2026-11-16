@@ -1,0 +1,11 @@
+swban check/browser/prefetch/overlap [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path>  #Native selection suppresses custom prefetch; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Page with enabled prefetch candidates
+
+swban check/browser/prefetch/overlap ./preview --page /all/
+swban check/browser/prefetch/overlap ./preview --page /discover/topic/ --trace --out ./browser-report

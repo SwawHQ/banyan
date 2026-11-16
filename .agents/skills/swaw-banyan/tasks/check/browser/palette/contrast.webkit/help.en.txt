@@ -1,0 +1,13 @@
+swban check/browser/palette/contrast.webkit [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--min <ratio>]  #Prose/code contrast; WebKit
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Published page with prose styles
+  --min <ratio>   Minimum text contrast ratio in both themes; default: 4.5
+
+swban check/browser/palette/contrast.webkit ./preview --page /p/article/
+swban check/browser/palette/contrast.webkit ./preview --page /p/article/ --headed
+swban check/browser/palette/contrast.webkit ./preview --page /p/article/ --trace --out ./browser-report

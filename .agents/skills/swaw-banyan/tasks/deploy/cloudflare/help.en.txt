@@ -1,0 +1,6 @@
+swban help/en deploy/cloudflare  #Cloudflare Pages deployment preparation
+
+Choose upload to publish built output, or git to let the platform pull and build source. Configure the public baseURL before building.
+
+swban help/en deploy/cloudflare/upload  #Upload built output
+swban help/en deploy/cloudflare/git     #Build from Git on the platform

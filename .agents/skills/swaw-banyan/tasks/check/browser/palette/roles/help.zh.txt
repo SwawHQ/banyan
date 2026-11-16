@@ -1,0 +1,12 @@
+swban check/browser/palette/roles [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path>  #派生配色与覆盖；Chromium
+
+  dir             已完成的站点构建目录；默认：public
+  --headed        显示浏览器窗口
+  --trace         保存 trace.zip；默认输出到系统临时目录
+  --out <dir>     在新子目录保存 JSON 和截图
+  --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000
+  --page <path>   已构建且含正文样式的页面
+
+swban check/browser/palette/roles ./preview --page /p/article/
+swban check/browser/palette/roles ./preview --page /p/article/ --headed
+swban check/browser/palette/roles ./preview --page /p/article/ --trace --out ./browser-report

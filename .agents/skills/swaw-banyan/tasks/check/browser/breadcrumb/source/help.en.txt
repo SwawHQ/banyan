@@ -1,0 +1,12 @@
+swban check/browser/breadcrumb/source [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> --column <path> --article <path>  #Static/runtime source links; Chromium
+
+  dir               Published site directory; default: public
+  --headed          Show the browser window
+  --trace           Save trace.zip; default output: system temporary directory
+  --out <dir>       Save JSON and screenshot in a new subdirectory
+  --timeout <ms>    Browser launch and individual action timeout; default: 15000
+  --page <path>     Page containing the source column
+  --column <path>   Collection pathname of the source column
+  --article <path>  Another article linked by that column
+
+swban check/browser/breadcrumb/source ./preview --page /discover/topic/child/ --column /discover/topic/ --article /article/

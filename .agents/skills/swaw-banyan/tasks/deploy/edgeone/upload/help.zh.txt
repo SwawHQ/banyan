@@ -1,0 +1,20 @@
+swban help/zh deploy/edgeone/upload  #准备 EdgeOne Makers 产物上传
+
+在本地或 CI 完成构建，再发布整个产物目录。Banyan 命令从站点根目录执行。
+<build>：独立产物目录的绝对路径；<url>：正式站点网址。
+
+1. 在 assets/site/delivery.toml 中设置 platform.edgeone.makers.enabled = true，并将 hugo.toml 的 baseURL 设为 <url>。
+
+2. 构建并检查：
+swban base/hugo --minify --gc --cleanDestinationDir --destination "<build>"  #构建静态产物
+swban check/delivery "<build>"                                               #检查交付规则
+swban check/csp "<build>"                                                    #检查 CSP 与脚本
+swban check/browser/site "<build>"                                           #检查代表页面
+产物目录包含 index.html、资源及 edgeone.json。
+生成的 edgeone.json 只含交付规则，随产物目录上传即可，无需同步到源码根目录。
+
+3. 将产物绝对路径交给 Swaw Clouds 的上传专项：
+swcl help/zh edgeone/deploy/upload  #查看平台上传步骤
+https://github.com/SwawHQ/swaw-clouds/blob/main/skills/swaw-clouds/tasks/edgeone/deploy/upload/help.json
+swban check/http/security <url>  #检查线上响应头
+发布后检查首页、语言入口和本次修改的页面。

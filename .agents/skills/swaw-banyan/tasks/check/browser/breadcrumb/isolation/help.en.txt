@@ -1,0 +1,11 @@
+swban check/browser/breadcrumb/isolation [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path>  #Independent path and main sorts; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Page with two sortable breadcrumb columns, or a breadcrumb column and main collection
+
+swban check/browser/breadcrumb/isolation ./preview --page /article/#from=section/child
+swban check/browser/breadcrumb/isolation ./preview --page /section/child/#sorts=_,date-asc

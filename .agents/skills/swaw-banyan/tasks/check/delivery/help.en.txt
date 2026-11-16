@@ -1,0 +1,4 @@
+swban check/delivery [dir] [--base-path <path>]  #Delivery output and fingerprint paths
+
+  dir          Published site directory; default: public
+  --base-path  Published URL prefix; default: /

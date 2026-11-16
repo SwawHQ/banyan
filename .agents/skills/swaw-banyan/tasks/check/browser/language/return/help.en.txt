@@ -1,0 +1,13 @@
+swban check/browser/language/return [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> [--page <path>] --to <code>  #Language returns, missing translations and isolation; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --from <path>   Source page; retain its query and fragment
+  --page <path>   Language settings linked from the source page; default: /language/
+  --to <code>     Target language declared in translated settings
+
+swban check/browser/language/return ./preview --from /article/#from=all&anchor=details --to zh
+swban check/browser/language/return ./preview --from /zh/all/#sorts=name-asc --page /zh/language/ --to en --trace

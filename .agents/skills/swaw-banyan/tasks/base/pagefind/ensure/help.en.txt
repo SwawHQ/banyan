@@ -1,0 +1,1 @@
+swban base/pagefind/ensure [--force]  #Prepare Pagefind extended

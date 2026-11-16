@@ -1,0 +1,13 @@
+swban check/browser/pwa/panel [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> --from <path> [--widths <pixels>]  #Update panel display, locale and history; Chromium
+
+  dir                Published site directory; default: public
+  --headed           Show the browser window
+  --trace            Save trace.zip; default output: system temporary directory
+  --out <dir>        Save JSON and screenshot in a new subdirectory
+  --timeout <ms>     Browser launch and individual action timeout; default: 15000
+  --page <path>      Page containing the update panel
+  --from <path>      Page linked from the panel, with a root link back
+  --widths <pixels>  Comma-separated viewport widths; default: 390,1024
+
+swban check/browser/pwa/panel ./preview --page /powered-by/ --from /about/
+swban check/browser/pwa/panel ./preview --page /zh/powered-by/ --from /zh/about/ --trace

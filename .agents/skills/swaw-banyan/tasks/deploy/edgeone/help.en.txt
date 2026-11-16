@@ -1,0 +1,6 @@
+swban help/en deploy/edgeone  #EdgeOne Makers deployment preparation
+
+Choose upload to publish built output, or git to let the platform pull and build source. Configure the public baseURL before building.
+
+swban help/en deploy/edgeone/upload  #Upload built output
+swban help/en deploy/edgeone/git     #Build from Git on the platform

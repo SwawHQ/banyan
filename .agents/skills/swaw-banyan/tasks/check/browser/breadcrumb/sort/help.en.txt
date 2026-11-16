@@ -1,0 +1,12 @@
+swban check/browser/breadcrumb/sort [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--column <path>]  #Column sort, node reuse and prefetch markers; Chromium
+
+  dir              Published site directory; default: public
+  --headed         Show the browser window
+  --trace          Save trace.zip; default output: system temporary directory
+  --out <dir>      Save JSON and screenshot in a new subdirectory
+  --timeout <ms>   Browser launch and individual action timeout; default: 15000
+  --page <path>    Page with a sortable breadcrumb column
+  --column <path>  Collection pathname of the column; default: first sortable column
+
+swban check/browser/breadcrumb/sort ./preview --page /article/#from=all
+swban check/browser/breadcrumb/sort ./preview --page /discover/topic/child/ --column /discover/topic/

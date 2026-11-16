@@ -1,0 +1,4 @@
+swban report/payload/prefetch [dir] [--top N]  #预取数据体积
+
+  dir    已完成的站点构建目录；默认：public
+  --top  排行条数；默认：8

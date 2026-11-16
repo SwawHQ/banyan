@@ -1,0 +1,13 @@
+swban check/browser/pwa/content [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --next <dir> [--page <path>] [--from <path>]  #切换站点构建版本，保留活动 SW；Chromium
+
+  dir             已完成的站点构建目录；默认：public
+  --headed        显示浏览器窗口
+  --trace         保存 trace.zip；默认输出到系统临时目录
+  --out <dir>     在新子目录保存 JSON 和截图
+  --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000
+  --next <dir>    下一份构建，SW 相同而站点构建版本不同
+  --page <path>   构建版本面板；默认：/powered-by/
+  --from <path>   第二个缓存页面；默认：/
+
+swban check/browser/pwa/content ./old --next ./new
+swban check/browser/pwa/content ./old --next ./new --trace --out ./browser-report

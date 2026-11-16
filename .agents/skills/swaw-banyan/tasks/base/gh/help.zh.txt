@@ -1,0 +1,5 @@
+swban base/gh [arguments...]  #运行 GitHub CLI；--help 查看原生帮助
+
+将参数传给已选工具。
+
+swban base/gh --help

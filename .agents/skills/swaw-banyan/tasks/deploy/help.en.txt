@@ -1,0 +1,8 @@
+swban help/en deploy  #Deployment preparation and platform workflows
+
+Banyan builds static output and generates delivery rules. Swaw Clouds guides account authorization, cloud project setup and publication through native platform tools.
+Choose cloudflare or edgeone, then upload for built output or git for platform builds. These guides do not publish.
+Other static hosts, object stores and CDNs can serve the output; configure their headers, redirects and caching separately.
+
+swban help/en deploy/cloudflare  #Cloudflare Pages
+swban help/en deploy/edgeone     #EdgeOne Makers

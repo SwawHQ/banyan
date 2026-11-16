@@ -1,0 +1,11 @@
+swban help/en [depth|path [depth]]  #Show English help
+
+With no argument, show common commands.
+Paths ending in / are categories; other paths are executable commands.
+depth  Maximum depth below path, or below the root when path is omitted
+path   Command, category or topic for full help
+
+swban help/en 2                #List paths up to two levels
+swban help/en check 2          #List two levels below check
+swban help/en check/browser 3  #List three levels below check/browser
+swban help/en check/csp        #Show full command help

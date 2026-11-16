@@ -1,0 +1,4 @@
+swban report/size/js [dir] [--top N]  #JS bytes and references
+
+  dir    Published site directory; default: public
+  --top  Number of ranked results; default: 8

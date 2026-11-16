@@ -1,0 +1,5 @@
+swban base/node/npm [arguments...]  #Run npm; use --help for details
+
+Pass arguments to the selected tool.
+
+swban base/node/npm --help

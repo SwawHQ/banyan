@@ -1,0 +1,4 @@
+swban help upgrade  #Theme upgrade tools
+
+swban upgrade/version/current  #Identify the current official comparison base
+swban help upgrade/git         #Inspect changes before upgrading

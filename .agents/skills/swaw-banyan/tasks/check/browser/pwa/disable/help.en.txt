@@ -1,0 +1,12 @@
+swban check/browser/pwa/disable [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --next <dir> [--page <path>]  #Disable SW, clean theme state and preserve other data; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --next <dir>    Build with sw.mode = disable
+  --page <path>   Page to visit and reload during cleanup; default: /
+
+swban check/browser/pwa/disable ./enabled --next ./disabled
+swban check/browser/pwa/disable ./enabled --next ./disabled --page /zh/about/ --trace --out ./browser-report

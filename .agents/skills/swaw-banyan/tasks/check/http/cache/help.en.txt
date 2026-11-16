@@ -1,0 +1,1 @@
+swban check/http/cache <url>  #Resource cache headers

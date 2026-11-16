@@ -3,7 +3,7 @@ title: 未发布
 url: p/unreleased/
 description: Banyan 首版的主要能力、使用要求和已知限制。
 date: 2026-11-06
-lastmod: 2026-11-15
+lastmod: 2026-11-16
 ---
 
 本项目正在准备首次发布。以下说明首版交付范围；发布标签可用后，再按[开始使用](/zh/p/getting-started/)安装。
@@ -23,6 +23,7 @@ lastmod: 2026-11-15
 
 ## 使用要求
 
+- 命令帮助改用 `help.en.txt` 和 `help.zh.txt`；首行为“用法＋两个空格＋#说明”，后续为正文。冷启动与正常运行读取同一份帮助。
 - 主题要求 Hugo 0.168.0 或更新版本。Skill 命令行目前支持 Windows x64。
 - 新站点从完整根参考站点起步。站点自行维护 `hugo.toml`、`content/`、`archetypes/`、`assets/site/` 和 `assets/i18n/`；Module 不补充这些文件。
 - 保留 `minify.disableJS = true`，避免 HTML 压缩改变 CSP 授权的脚本正文。

@@ -1,0 +1,12 @@
+swban check/browser/canvas/scroll.webkit [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> [--widths <list>]  #Document pan and column scrolling; WebKit
+
+  dir              Published site directory; default: public
+  --headed         Show the browser window
+  --trace          Save trace.zip; default output: system temporary directory
+  --out <dir>      Save JSON and screenshot in a new subdirectory
+  --timeout <ms>   Browser launch and individual action timeout; default: 15000
+  --page <path>    Published page with overflowing columns
+  --widths <list>  Comma-separated viewport widths; test height: 300 pixels; default: 390,500,1440
+
+swban check/browser/canvas/scroll.webkit ./preview --page /article/
+swban check/browser/canvas/scroll.webkit ./preview --page /all/ --widths 390,1440

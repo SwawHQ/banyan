@@ -1,0 +1,12 @@
+swban check/browser/csp [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] [--page <path>]  #CSP enforcement; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   Page to load under enforced CSP; default: /
+
+swban check/browser/csp ./preview
+swban check/browser/csp ./preview --headed
+swban check/browser/csp ./preview --trace --out ./browser-report

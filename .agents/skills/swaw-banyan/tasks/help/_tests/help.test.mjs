@@ -14,31 +14,20 @@ function document(command,{entry=false,en=command,zh='中文 '+command,usage='sw
   const dir=path.join(root,command);
   fs.mkdirSync(dir,{recursive:true});
   if (entry) fs.writeFileSync(path.join(dir,'entry.mjs'),'throw new Error("Help must not execute entries");');
-  fs.writeFileSync(path.join(dir,'help.json'),JSON.stringify({
-    en:{summary:en,usage,details:['English details']},
-    zh:{summary:zh,usage,details:['完整中文说明']}
-  }));
+  fs.writeFileSync(path.join(dir,'help.en.txt'),usage+'  #'+en+'\n\nEnglish details\n');
+  fs.writeFileSync(path.join(dir,'help.zh.txt'),usage+'  #'+zh+'\n\n完整中文说明\n');
 }
 const names=text=>text.split('\n').map(line=>line.split(/\s+#/)[0].trim());
 function coldHelp(args,language) {
-  const script=path.join(root,'help/cold.ps1');
-  fs.copyFileSync(fileURLToPath(new URL('../cold.ps1',import.meta.url)),script);
-  const powershell=path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe');
-  const env={...process.env,PATH:'',PSModulePath:path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/Modules')};
-  const result=spawnSync(powershell,['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',script,language,...args],
-    {cwd:work,env,encoding:'utf8',timeout:10000,windowsHide:true});
+  const windows=process.platform==='win32';
+  const script=fileURLToPath(new URL('../../../platform/'+(windows?'windows/help.ps1':'linux/help.sh'),import.meta.url));
+  const executable=windows?path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe'):'/bin/sh';
+  const prefix=windows?['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File']:[];
+  const env={...process.env,PATH:windows?'':'/usr/bin:/bin'};
+  if(windows)env.PSModulePath=path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/Modules');
+  const result=spawnSync(executable,[...prefix,script,language,root,...args],{cwd:work,env,encoding:'utf8',timeout:10000,windowsHide:true});
   assert.ifError(result.error);return result;
 }
-const invalidFields=[
-  ['zh',value=>delete value.zh],
-  ['en',value=>{value.en=false;}],
-  ['en.summary',value=>{value.en.summary=' ';}],
-  ['zh.summary',value=>{value.zh.summary='two\nlines';}],
-  ['zh.usage',value=>{value.zh.usage='two\nlines';}],
-  ['en.details',value=>{value.en.details='not an array';}],
-  ['zh.details[0]',value=>{value.zh.details[0]=null;}],
-  ['en.details[0]',value=>{value.en.details[0]='two\nlines';}]
-];
 beforeEach(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-help-'));
   root=path.join(work,'tasks');
@@ -94,7 +83,7 @@ test('categories have a slash, executable parents do not, and listed paths can b
 });
 
 test('bare help shows the selected home page without scanning other commands',()=>{
-  fs.unlinkSync(path.join(root,'solo/help.json'));
+  fs.unlinkSync(path.join(root,'solo/help.en.txt'));
   for (const language of ['en','zh']) {
     assert.equal(help([],language,root),taskHelp('help',language,root));
     assert.doesNotMatch(help([],language,root),/alpha|solo/);
@@ -134,32 +123,18 @@ test('bad arguments and missing help files fail explicitly',()=>{
     ['alpha//'],['alpha//','2'],['alpha//nested/','2'],['/','1'],['1/'],['1/','2']]) {
     assert.throws(()=>help(args,'en',root));
   }
-  fs.unlinkSync(path.join(root,'solo/help.json'));assert.throws(()=>catalog(root),/missing_help:solo/);
+  fs.unlinkSync(path.join(root,'solo/help.en.txt'));assert.throws(()=>catalog(root),/missing_help:solo/);
 });
 
-test('invalid JSON reports its file and preserves the parser reason in the requested language',()=>{
-  const file=path.join(root,'help/help.json');fs.writeFileSync(file,'{');
+test('invalid TXT headers report the file in warm and cold help',()=>{
   for(const language of ['en','zh']) {
-    assert.throws(()=>help([],language,root),error=>{
-      assert.ok(error.message.includes(file));
-      assert.ok(error.message.includes(language==='zh'?'JSON 语法错误：':'Invalid JSON: '));
-      assert.doesNotMatch(error.message,/invalid_help:/);
-      return true;
-    });
-  }
-});
-
-test('field errors identify the file and exact field for bare and depth help',()=>{
-  const file=path.join(root,'help/help.json'),valid=fs.readFileSync(file,'utf8');
-  for(const [field,change] of invalidFields) {
-    const value=JSON.parse(valid);change(value);fs.writeFileSync(file,JSON.stringify(value));
-    for(const language of ['en','zh'])for(const args of [[],['2']]) {
-      assert.throws(()=>help(args,language,root),error=>{
-        assert.ok(error.message.includes(file));assert.ok(error.message.includes(field));
-        assert.ok(error.message.startsWith(language==='zh'?'帮助文件格式错误：':'Invalid help file: '));
-        return true;
-      });
+    const file=path.join(root,'help','help.'+language+'.txt'),valid=fs.readFileSync(file,'utf8');
+    for(const text of ['', 'swban help #one space\n', '  #missing usage\n','swban help  #   \n','\uFEFFswban help  #BOM\n','swban help  #CRLF\r\n']) {
+      fs.writeFileSync(file,text);
+      assert.throws(()=>help([],language,root),error=>error.message.includes(file));
+      const result=coldHelp([],language);assert.equal(result.status,1,result.stdout);assert.ok(result.stderr.includes(file),result.stderr);
     }
+    fs.writeFileSync(file,valid);
   }
 });
 
@@ -202,7 +177,7 @@ test('language entry points accept scoped depth and only translate a single help
   }
 });
 
-test('PowerShell cold help matches JS with no runtime on PATH',{skip:process.platform!=='win32',timeout:30000},()=>{
+test('native cold help matches JS without preparing a runtime',{timeout:60000},()=>{
   for(const language of ['en','zh'])for(const args of [[],['1'],['2'],['3'],['alpha'],['alpha/first'],['--help'],
     ['alpha','1'],['alpha','2'],['alpha/nested','3'],['solo','2'],
     ['alpha/'],['alpha/first/'],['alpha/','1'],['alpha/nested/','3'],['upgrade/git'],['upgrade/git/']]) {
@@ -212,26 +187,6 @@ test('PowerShell cold help matches JS with no runtime on PATH',{skip:process.pla
   for(const args of [['0'],['9007199254740992'],['1','2'],['../outside'],['alpha','0'],['alpha','two'],
     ['alpha','2','3'],['--help','2'],['../outside','2'],['absent','2'],['alpha//','2'],['upgrade/git','1']]) {
     assert.equal(coldHelp(args,'en').status,1);
-  }
-  assert.equal(fs.existsSync(path.join(work,'.tools')),false);
-});
-
-test('cold help reports the same localized field errors and retains JSON parse reasons',{skip:process.platform!=='win32',timeout:20000},()=>{
-  const file=path.join(root,'help/help.json'),valid=fs.readFileSync(file,'utf8');
-  for(const [field,change] of invalidFields) {
-    const value=JSON.parse(valid);change(value);fs.writeFileSync(file,JSON.stringify(value));
-    for(const language of ['en','zh']) {
-      let message;
-      assert.throws(()=>help([],language,root),error=>{message=error.message;return true;});
-      const result=coldHelp([],language);assert.equal(result.status,1);
-      assert.equal(result.stderr.replaceAll('\r\n','\n'),'[swban] '+message+'\n',field);
-    }
-  }
-  fs.writeFileSync(file,'{');
-  for(const language of ['en','zh']) {
-    const result=coldHelp([],language);assert.equal(result.status,1);
-    assert.ok(result.stderr.includes(file));
-    assert.ok(result.stderr.includes(language==='zh'?'JSON 语法错误：':'Invalid JSON: '));
   }
   assert.equal(fs.existsSync(path.join(work,'.tools')),false);
 });

@@ -1,0 +1,4 @@
+swban doctor [directory]  #Check tools and the site theme
+
+Check selected tools and Banyan version pairing.
+Default: current directory.

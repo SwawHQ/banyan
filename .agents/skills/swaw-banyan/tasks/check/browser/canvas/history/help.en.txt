@@ -1,0 +1,11 @@
+swban check/browser/canvas/history [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> --next <path>  #Native history and in-place sort; Chromium
+
+  dir             Published site directory; default: public
+  --headed        Show the browser window
+  --trace         Save trace.zip; default output: system temporary directory
+  --out <dir>     Save JSON and screenshot in a new subdirectory
+  --timeout <ms>  Browser launch and individual action timeout; default: 15000
+  --page <path>   First scrollable article path
+  --next <path>   Different scrollable article with a breadcrumb sort control, e.g. /article/#from=all
+
+swban check/browser/canvas/history ./preview --page /first/#from=all --next /second/#from=all

@@ -1,0 +1,14 @@
+swban check/browser/collection/style [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --page <path> --collection <path> [--choices <path>] [--widths <list>]  #Shared selection, hover and focus; Chromium
+
+  dir                  Published site directory; default: public
+  --headed             Show the browser window
+  --trace              Save trace.zip; default output: system temporary directory
+  --out <dir>          Save JSON and screenshot in a new subdirectory
+  --timeout <ms>       Browser launch and individual action timeout; default: 15000
+  --page <path>        Article with a selected source row and another path row, e.g. /article/#from=all
+  --collection <path>  Collection page with entry links for hover and focus checks
+  --choices <path>     Appearance settings page with light and dark choice buttons; default: /appearance/
+  --widths <list>      Comma-separated viewport widths; test height: 900 pixels; default: 1440
+
+swban check/browser/collection/style ./preview --page /article/#from=all --collection /all/
+swban check/browser/collection/style ./preview --page /zh/article/#from=all --collection /zh/all/ --choices /zh/appearance/ --widths 390,1440

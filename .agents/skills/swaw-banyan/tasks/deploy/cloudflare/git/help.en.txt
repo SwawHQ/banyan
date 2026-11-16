@@ -1,0 +1,17 @@
+swban help/en deploy/cloudflare/git  #Prepare Cloudflare Pages Git builds
+
+The platform pulls source and builds it. It uses native Hugo, not swban.
+
+1. Prepare the source: set baseURL in hugo.toml and enable platform.cloudflare.pages.enabled in assets/site/delivery.toml. Commit the site and its pinned theme version; remove local filesystem replace directives.
+
+2. Give the platform these build settings:
+Root: site directory in the repository (./ for this reference site). Output: public.
+Build command: hugo --minify --gc --cleanDestinationDir
+Tools: Hugo Extended meeting the theme minimum; Hugo Modules also need Go and Git. Configure installation steps and private dependency access for the site.
+
+3. Verify a local production build and run check/delivery and check/csp on its output. Pages reads _headers and _redirects from public; no source-root configuration copy is needed.
+
+4. Follow Swaw Clouds for Git authorization, project linkage, platform settings and build triggers:
+swcl help/en cloudflare/deploy/pages-git  #Read platform Git build steps
+https://github.com/SwawHQ/swaw-clouds/blob/main/skills/swaw-clouds/tasks/cloudflare/deploy/pages-git/help.json
+Confirm the deployed commit and output in platform logs, then run swban check/http/security <url> and check changed pages.
