@@ -36,7 +36,7 @@ function makeCatalog(command,parent) {
     parent=command
     while(parent!="") {
       active[parent]=1
-      if(!sub(/\/[^/]+$/,"",parent))parent=""
+      if(!sub(/\/[^\/]+$/,"",parent))parent=""
     }
   }
   for(command in active)document(command)
@@ -68,7 +68,7 @@ BEGIN {
   relative=substr(absolute,length(root)+2)
   if(kind=="d"){if(valid(relative))directories[relative]=1}
   else {
-    file=relative;sub(/\/[^/]+$/,"",file)
+    file=relative;sub(/\/[^\/]+$/,"",file)
     if(!valid(file))next
     files[absolute]=1
     if(relative==file "/entry.mjs")executable[file]=1

@@ -5,7 +5,8 @@ import {stat, fail, installLock} from './filesystem.mjs';
 import {probe} from './process.mjs';
 import {receipt, definitionMatches} from './managed.mjs';
 import {install, recover, retireBackup} from './install.mjs';
-import {readBindings, resolveBinding, bindingFor, writeBindings, launcherText} from './bindings.mjs';
+import {readBindings, resolveBinding, bindingFor, writeBindings, launcherText, launcherName} from './bindings.mjs';
+import {runtime} from './platform.mjs';
 
 const compare = (left, right) => {
   const a = left.split('.').map(Number), b = right.split('.').map(Number);
@@ -25,6 +26,7 @@ function pathCandidates(name, env = process.env) {
 export async function inspect(name, executable, env = process.env) {
   const tool = definition(name);
   if (!fs.existsSync(executable) || !fs.statSync(executable).isFile()) return null;
+  if (runtime.canProbe?.(name,executable) === false) return null;
   const clean = Object.fromEntries(Object.entries(env).filter(([key]) => !/^(GOROOT|GOTOOLCHAIN)$/i.test(key)));
   if (name === 'go') clean.GOTOOLCHAIN = 'local';
   const result = await probe(executable, [name === 'go' || name === 'hugo' ? 'version' : '--version'], {env:clean});
@@ -38,6 +40,7 @@ export async function inspect(name, executable, env = process.env) {
   if (name === 'node') {
     const directory = path.dirname(found.path);
     const candidates = [path.join(directory,'node_modules/npm/bin'),path.join(directory,'../node_modules/npm/bin')];
+    if (process.platform !== 'win32') candidates.push(path.join(directory,'../lib/node_modules/npm/bin'),path.join(directory,'../share/nodejs/npm/bin'));
     for (const part of (Object.entries(env).find(([key]) => key.toLowerCase() === 'path')?.[1] || '').split(path.delimiter)) {
       if (path.isAbsolute(part) && fs.existsSync(path.join(part,'npm.cmd'))) candidates.push(path.join(part,'node_modules/npm/bin'));
     }
@@ -84,7 +87,10 @@ async function prepared(name, record, root, env, {force = false, archivePath, re
   recover(root,tool);
   if (!force) {
     const existing = await selected(name,record,root,env) || await discover(name,root,env);
-    if (existing) return {binding:existing,action:'reused'};
+    if (existing) {
+      if(existing.source==='managed')runtime.finalizeInstallation?.(root,tool);
+      return {binding:existing,action:'reused'};
+    }
   }
   const action = await install(root,tool,{force,archivePath:name === 'node' ? archivePath : undefined,receive});
   const found = await inspect(name,path.join(root,name,tool.executable),env);
@@ -123,6 +129,8 @@ export async function inspectBinding(name, {root = toolsRoot, env = process.env}
   if (!current || current.version !== bound.version || ['path','root','npmDirectory'].some(field => current[field] !== record.tools[name][field])) {
     fail(`tool_binding_changed:${name}; run swban base/${name}/ensure`);
   }
-  if (record.runtime === name && (!stat(path.join(root,'cli.cmd')) || fs.readFileSync(path.join(root,'cli.cmd'),'utf8') !== launcherText(record))) fail(`runtime_launcher_changed; run swban base/${name}/ensure`);
+  if (record.runtime === name && (!stat(path.join(root,launcherName)) || fs.readFileSync(path.join(root,launcherName),'utf8') !== launcherText(record))) fail(`runtime_launcher_changed; run swban base/${name}/ensure`);
+  if (record.runtime === name && runtime.bootstrapBinding && (!stat(path.join(root,'bootstrap-node.txt')) ||
+      fs.readFileSync(path.join(root,'bootstrap-node.txt'),'utf8') !== runtime.bootstrapBinding(record))) fail(`runtime_bootstrap_changed; run swban base/${name}/ensure`);
   return {tool:name,...bound,action:'checked'};
 }

@@ -1,0 +1,141 @@
+{
+  "schema": "swaw-banyan.tools/v2",
+  "tools": [
+    {
+      "name": "bun",
+      "version": "1.4.2",
+      "url": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-x64.zip",
+      "sha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913",
+      "archiveRoot": "bun-linux-x64",
+      "archiveFormat": "zip",
+      "executable": "bun",
+      "requiredFiles": [
+        "bun",
+        "LICENSE.md"
+      ],
+      "supplements": [
+        {
+          "name": "LICENSE.md",
+          "url": "https://raw.githubusercontent.com/oven-sh/bun/bun-v1.4.2/LICENSE.md",
+          "sha256": "b9caf52728691b4057e371232c221a132883198be2f3d2ddf92c90404c984b1a"
+        }
+      ],
+      "compatibility": {
+        "min": "1.4.2",
+        "before": "2.0.0"
+      }
+    },
+    {
+      "name": "node",
+      "version": "24.20.0",
+      "url": "https://nodejs.org/dist/v24.20.0/node-v24.20.0-linux-x64.tar.gz",
+      "sha256": "855d581f8a4eb1a8117e3426de25fe02770592febcfb31369aee1ffbfee9e8ec",
+      "archiveRoot": "node-v24.20.0-linux-x64",
+      "archiveFormat": "tar.gz",
+      "executable": "bin/node",
+      "npmDirectory": "lib/node_modules/npm/bin",
+      "requiredFiles": [
+        "bin/node",
+        "bin/npm",
+        "bin/npx",
+        "lib/node_modules/npm/bin/npm-cli.js",
+        "lib/node_modules/npm/bin/npx-cli.js",
+        "LICENSE"
+      ],
+      "compatibility": {
+        "min": "24.19.0"
+      }
+    },
+    {
+      "name": "hugo",
+      "version": "0.168.0",
+      "url": "https://github.com/gohugoio/hugo/releases/download/v0.168.0/hugo_extended_0.168.0_linux-amd64.tar.gz",
+      "sha256": "787f100057328824f38c6ad7c87ff10d6451ae0a7bc39cedaad0dd2bcde17e53",
+      "archiveRoot": "",
+      "archiveFormat": "tar.gz",
+      "executable": "hugo",
+      "requiredFiles": [
+        "hugo",
+        "LICENSE"
+      ],
+      "compatibility": {
+        "exact": "0.168.0"
+      }
+    },
+    {
+      "name": "go",
+      "version": "1.27.1",
+      "url": "https://go.dev/dl/go1.27.1.linux-amd64.tar.gz",
+      "sha256": "63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445",
+      "archiveRoot": "go",
+      "archiveFormat": "tar.gz",
+      "executable": "bin/go",
+      "requiredFiles": [
+        "bin/go",
+        "bin/gofmt",
+        "pkg/tool/linux_amd64/compile",
+        "pkg/tool/linux_amd64/link",
+        "src/go.mod",
+        "src/runtime/runtime2.go",
+        "LICENSE",
+        "VERSION"
+      ],
+      "compatibility": {
+        "min": "1.21.0",
+        "before": "2.0.0"
+      }
+    },
+    {
+      "name": "git",
+      "version": "2.56.1",
+      "executable": "bin/git",
+      "requiredFiles": [
+        "bin/git",
+        "libexec/git-core/git",
+        "libexec/git-core/git-remote-http",
+        "libexec/git-core/git-remote-https",
+        "share/git-core/templates/description"
+      ],
+      "compatibility": {
+        "min": "2.31.0",
+        "before": "3.0.0"
+      },
+      "sha256": "e5bc3e8e80b57a5bcd8da18d59b23f5b39533d19019ac1d50b0bd34f051d111d",
+      "archiveRoot": "",
+      "archiveFormat": "tar.gz",
+      "url": "https://github.com/desktop/dugite-native/releases/download/v2.56.1/dugite-native-v2.56.1-238326e-ubuntu-x64.tar.gz"
+    },
+    {
+      "name": "gh",
+      "version": "2.98.0",
+      "url": "https://github.com/cli/cli/releases/download/v2.98.0/gh_2.98.0_linux_amd64.tar.gz",
+      "sha256": "3b8ac6b30336802fc1a858d7c084e11cdf24ac1a761ca90b68022d7d729208de",
+      "archiveRoot": "gh_2.98.0_linux_amd64",
+      "archiveFormat": "tar.gz",
+      "executable": "bin/gh",
+      "requiredFiles": [
+        "bin/gh",
+        "LICENSE"
+      ],
+      "compatibility": {
+        "min": "2.98.0",
+        "before": "3.0.0"
+      }
+    },
+    {
+      "name": "pagefind",
+      "version": "1.6.0",
+      "url": "https://github.com/Pagefind/pagefind/releases/download/v1.6.0/pagefind_extended-v1.6.0-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "20a992fd64af2ee4fbf39b99245a1135303b6813f79af7ac72a5e27247919b07",
+      "archiveRoot": "",
+      "archiveFormat": "tar.gz",
+      "executable": "pagefind_extended",
+      "requiredFiles": [
+        "pagefind_extended"
+      ],
+      "compatibility": {
+        "exact": "1.6.0"
+      }
+    }
+  ]
+}

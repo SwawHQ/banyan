@@ -2,9 +2,17 @@
 
 Use the `module` path and `version` from `SKILL.md` metadata. In the commands
 below, replace `<module>` with that path and `<version>` with that version
-without a leading `v`. `swban` means this Skill's `swban.cmd`, invoked from the
+without a leading `v`. `swban` means this Skill's `swban.cmd` on Windows x64,
+or `sh <skill>/swban` on Linux x64 or macOS x64, invoked from the
 target site's root. The entry prepares Node/npm and required tools on demand. Use
 `swban base/packages/ensure` to prepare core parser packages before working offline.
+
+Linux needs sh, basic system utilities, curl, tar and sha256sum. macOS uses its
+built-in utilities. Python, Homebrew and Xcode are not required. Git uses the
+GitHub Desktop portable distribution when no compatible Git is available.
+Tools use the selected binding, a managed installation, or a compatible PATH
+installation before downloading a verified official archive. Keep each platform's
+`.tools/` directory separate. From the reference site root, use `sh ./swban build`.
 
 ## Start from the reference site
 

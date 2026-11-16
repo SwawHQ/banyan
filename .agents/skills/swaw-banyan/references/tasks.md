@@ -24,16 +24,20 @@ mounts; do not reproduce its resolver or inheritance rules.
 
 | Responsibility | Owner |
 | --- | --- |
-| Windows cold start | `bootstrap/windows.ps1` |
+| Windows cold start | `platform/windows/bootstrap.ps1` |
+| Linux / macOS cold start | `platform/linux/bootstrap.sh`, `platform/mac/bootstrap.sh` |
+| Shared shell, help and archive handling | `platform/posix/` |
 | Dispatch and JS bootstrap | `tasks/_cli/` |
 | Tool commands | `base/<tool>`, `base/<tool>/check`, `base/<tool>/ensure` |
 | Node package managers | `base/node/npm`, `base/node/npx` |
 | Theme release metadata | `SKILL.md` |
-| Tool compatibility and downloads | `tools.json` |
+| Tool compatibility and downloads | `tools.<os>-<arch>.json` |
 | Doctor switches and translated repair hints | `references/doctor.toml` |
 | Doctor implementation | `tasks/doctor/` |
 
 The CLI uses Node; Bun is an independent tool, not a CLI runtime selector.
+macOS x64 and ARM64 share `platform/mac/` code. Their manifests, cold-start data
+and installation receipt platform IDs are separate; do not share `.tools/` between architectures.
 Text help, doctor and tool status checks do not prepare tools. Native help runs
 its tool. Doctor reports pairing and dependency problems without repairing them;
 ordinary tasks do not run pairing checks.
@@ -75,9 +79,15 @@ topic, use `tasks/<topic>/help.<language>.txt` with usage `swban help <topic>`.
 Topics are available by explicit path and excluded from command lists.
 Detailed Agent guidance belongs in `references/`.
 
-JS, Windows cold help and Linux cold help read these same files without importing
+JS, Windows cold help and POSIX cold help read these same files without importing
 task entries. Update the files with argument or default changes. Keep all readers
 in parity through the help tests. Native tools retain their own help flags.
+
+After changing a Linux or macOS Node definition, run
+`node platform/posix/bootstrap-data.mjs linux x64`,
+`node platform/posix/bootstrap-data.mjs mac x64` or `node platform/posix/bootstrap-data.mjs mac arm64` from the Skill directory. Its generated
+`node-<arch>.txt` supplies only the data needed before Node can read JSON. The tests
+check that it matches the platform manifest. Help text has no generated copy.
 
 ## Compose a site suite
 

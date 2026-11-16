@@ -20,7 +20,7 @@ function document(command,{entry=false,en=command,zh='中文 '+command,usage='sw
 const names=text=>text.split('\n').map(line=>line.split(/\s+#/)[0].trim());
 function coldHelp(args,language) {
   const windows=process.platform==='win32';
-  const script=fileURLToPath(new URL('../../../platform/'+(windows?'windows/help.ps1':'linux/help.sh'),import.meta.url));
+  const script=fileURLToPath(new URL('../../../platform/'+(windows?'windows/help.ps1':'posix/help.sh'),import.meta.url));
   const executable=windows?path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe'):'/bin/sh';
   const prefix=windows?['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File']:[];
   const env={...process.env,PATH:windows?'':'/usr/bin:/bin'};
@@ -197,7 +197,7 @@ test('removed runtime and cloud commands fail in JS and cold bootstrap',()=>{
     'deploy/auth/setup','deploy/cloudflare/cli','deploy/cloudflare/wrangler','deploy/tencent/cli'];
   for(const command of commands) for(const cold of process.platform==='win32'?[false,true]:[false]) {
     const executable=cold?path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe'):process.execPath;
-    const args=cold?['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(skill,'bootstrap/windows.ps1')]:[path.join(skill,'tasks/_cli/main.mjs')];
+    const args=cold?['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(skill,'platform/windows/bootstrap.ps1')]:[path.join(skill,'tasks/_cli/main.mjs')];
     const result=spawnSync(executable,[...args,command,'--help'],{encoding:'utf8',timeout:10000,windowsHide:true});
     assert.ifError(result.error);assert.equal(result.status,1);
     assert.ok(result.stderr.includes('unknown_command:'+command),result.stderr);

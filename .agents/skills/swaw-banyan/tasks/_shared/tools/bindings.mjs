@@ -4,6 +4,10 @@ import {randomUUID} from 'node:crypto';
 import {definition, toolsRoot} from './manifest.mjs';
 import {inside, plainPath, stat, payloadName, durableWrite, fail} from './filesystem.mjs';
 
+import {runtime} from './platform.mjs';
+export const {launcherName,launcherText}=runtime;
+const {launcherMarker}=runtime;
+
 export function readBindings(root = toolsRoot) {
   const file = inside(root, 'bindings.json');
   if (!stat(file)) return {schema:'swaw-banyan.bindings/v1', tools:{}};
@@ -50,20 +54,13 @@ function atomicWrite(file, text) {
   try { fs.renameSync(temporary, file); }
   finally { if (stat(temporary)) fs.unlinkSync(temporary); }
 }
-export function launcherText(record) {
-  const tool = record.tools[record.runtime];
-  const executable = tool.source === 'managed' ? '%~dp0' + tool.path.replaceAll('/', '\\') : tool.path.replaceAll('%','%%');
-  if (/["\r\n\0]/.test(executable)) fail('unsupported_runtime_path');
-  return '@echo off\r\nrem swaw-banyan.cli/v1\r\nsetlocal DisableDelayedExpansion\r\n' +
-    'if not exist "' + executable + '" (\r\n  echo [swban] runtime_binding_unusable; run swban base/' + record.runtime + '/ensure 1>&2\r\n  exit /b 1\r\n)\r\n' +
-    '"' + executable + '" %*\r\nexit /b %ERRORLEVEL%\r\n';
-}
 export function writeBindings(record, root = toolsRoot) {
   fs.mkdirSync(plainPath(root), {recursive:true});
-  const launcher = inside(root, 'cli.cmd');
-  if (record.runtime && stat(launcher) && !fs.readFileSync(launcher, 'utf8').includes('rem swaw-banyan.cli/v1\r\n')) fail('unknown_runtime_launcher');
+  const launcher = inside(root, launcherName);
+  if (record.runtime && stat(launcher) && !fs.readFileSync(launcher, 'utf8').includes(launcherMarker)) fail('unknown_runtime_launcher');
   atomicWrite(inside(root, 'bindings.json'), JSON.stringify(record, null, 2) + '\n');
   if (record.runtime) {
     atomicWrite(launcher, launcherText(record));
+    if (runtime.bootstrapBinding) atomicWrite(inside(root,'bootstrap-node.txt'),runtime.bootstrapBinding(record));
   }
 }

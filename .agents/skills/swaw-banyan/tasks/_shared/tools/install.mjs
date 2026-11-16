@@ -5,8 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { fail, inside, stat, tree, sha256, durableWrite, removeTree, installLock } from './filesystem.mjs';
 import { receipt, definitionMatches, versionMatches } from './managed.mjs';
 import { download } from './download.mjs';
-import { extractZip } from './archive.mjs';
-import {extractExecutable} from './tar.mjs';
+import {runtime} from './platform.mjs';
 
 export function retireBackup(root, tool) {
   const backup = inside(root, `.cache/previous-${tool.name}`);
@@ -60,8 +59,7 @@ export async function install(root, tool, {force = false, archivePath, receive =
     process.stderr.write(`Banyan download: ${tool.name} ${tool.version} ${tool.url}\n`);
     await receive(tool.url, archive, tool.sha256);
   }
-  if(tool.archiveFormat==='tar.gz') extractExecutable(archive,payload,tool);
-  else await extractZip(archive, payload, tool);
+  await runtime.extract(archive,payload,tool);
   for (const extra of tool.supplements || []) {
     if (!/^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$/.test(extra.name)) fail('invalid_supplement_name');
     await receive(extra.url, inside(payload, extra.name), extra.sha256);
@@ -80,6 +78,7 @@ export async function install(root, tool, {force = false, archivePath, receive =
     fs.renameSync(payload, target);
     if (!receipt(target, tool)) fail('published_integrity_failed');
   } catch (error) { restoreBackup(root, tool); throw error; }
+  runtime.finalizeInstallation?.(root,tool);
   removeTree(root, stage);
   return 'installed';
 }

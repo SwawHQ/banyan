@@ -1,3 +1,7 @@
+/swban text eol=lf
+/.agents/skills/swaw-banyan/swban text eol=lf
+/.agents/skills/swaw-banyan/**/*.sh text eol=lf
+/.agents/skills/swaw-banyan/**/*.awk text eol=lf
 /.agents/skills/swaw-banyan/**/help.*.txt text eol=lf
-/.agents/skills/swaw-banyan/platform/linux/help.sh text eol=lf
-/.agents/skills/swaw-banyan/platform/linux/help.awk text eol=lf
+# Empty final fields are part of the cold-bootstrap record.
+/.agents/skills/swaw-banyan/platform/*/node-*.txt text eol=lf whitespace=-blank-at-eof

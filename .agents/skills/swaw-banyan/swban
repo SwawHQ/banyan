@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+case "${1:-}" in
+  doctor|base/node/ensure) ;;
+  *) if [ -f "$root/.tools/cli" ]; then
+       exec sh "$root/.tools/cli" "$root/tasks/_cli/main.mjs" "$@"
+     fi ;;
+esac
+case "$(uname -s)" in
+  Linux) platform=linux;;
+  Darwin) platform=mac;;
+  *) printf '[swban] unsupported_platform\n' >&2; exit 1;;
+esac
+exec sh "$root/platform/$platform/bootstrap.sh" "$@"

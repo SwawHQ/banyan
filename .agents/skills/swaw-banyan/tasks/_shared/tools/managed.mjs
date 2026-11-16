@@ -33,7 +33,7 @@ export function receipt(root, tool, {allowDamaged = false} = {}) {
 }
 export async function versionMatches(root, tool) {
   const version = tool.version.replaceAll('.', '\\.');
-  const system = tool.platform.replace('windows-', 'windows/').replace('darwin-', 'darwin/').replace('linux-', 'linux/').replace(/x64$/, 'amd64');
+  const system = tool.platform.replace('windows-', 'windows/').replace('mac-', 'darwin/').replace('linux-', 'linux/').replace(/x64$/, 'amd64');
   const patterns = {pagefind:`^pagefind(?:_extended)? ${version}(?:\\s|$)`,bun:`^${version}$`, node:`^v${version}$`, hugo:`^hugo v${version}(?:-[a-f0-9]+)?\\+extended(?:\\+withdeploy)? ${system}(?:\\s|$)`, go:`^go version go${version} ${system}$`, git:`^git version ${(tool.reportedVersion || tool.version).replaceAll('.', '\\.')}$`, gh:`^gh version ${version}(?:\\s|$)`};
   const env = tool.name === 'go' ? {...process.env, GOROOT:root, GOTOOLCHAIN:'local'} : process.env;
   const result = await probe(path.join(root, tool.executable), [tool.name === 'go' || tool.name === 'hugo' ? 'version' : '--version'], {env});

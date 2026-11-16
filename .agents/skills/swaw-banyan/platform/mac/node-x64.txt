@@ -1,0 +1,9 @@
+swaw-banyan.bootstrap-release/v1
+24.20.0
+https://nodejs.org/dist/v24.20.0/node-v24.20.0-darwin-x64.tar.gz
+9e5b2644cf107befb6aefca676b96d3296bc10138096f022ed378d6233ed81f4
+node-v24.20.0-darwin-x64
+bin/node
+24.19.0
+
+

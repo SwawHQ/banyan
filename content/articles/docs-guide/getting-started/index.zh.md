@@ -1,7 +1,7 @@
 ---
 title: 01 开始使用
 date: 2026-11-06
-lastmod: 2026-11-15
+lastmod: 2026-11-16
 url: p/getting-started/
 description: 取得参考站点，修改内容，在本地预览并准备首次部署。
 ---
@@ -12,7 +12,7 @@ description: 取得参考站点，修改内容，在本地预览并准备首次�
 
 目前正在准备首次发布。发布标签可用前，可以使用当前仓库作本地预览；远程 Module 安装须等标签发布。
 
-以下命令用于 Windows x64 的 PowerShell。首次运行需要联网下载缺少的工具，完成后可以复用。不需要另在站点根目录执行 `npm install`。主题要求 Hugo 0.168.0 或更新版本，Skill 会准备匹配工具。
+支持 Windows x64、Linux x64 和 macOS x64。首次运行会复用兼容的已有工具，并下载缺少的工具。不需要另在站点根目录执行 `npm install`。主题要求 Hugo 0.168.0 或更新版本，Skill 会准备匹配工具。Linux 需有 sh、基础系统工具、curl、tar、sha256sum；macOS 使用系统自带工具。Git 等工具缺少时会下载到本地目录，无需 Python、Homebrew 或 Xcode。
 
 ## 取得站点
 
@@ -32,6 +32,15 @@ swban doctor                                                   #检查工具、�
 ```
 
 `swban` 是上面定义的 PowerShell 函数，不是自动加入 PATH 的命令。新开终端时重新定义，或使用完整的 `.\.agents\skills\swaw-banyan\swban.cmd` 路径。若命令报错，先按提示处理，再继续。
+
+Linux 和 macOS 在站点根目录打开终端，用以下函数代替 PowerShell 函数，后续 `swban` 命令相同：
+
+```sh
+swban() { sh ./swban "$@"; }  #在本终端定义命令简称
+swban build                  #构建站点和搜索索引
+```
+
+也可以直接运行 `sh ./swban build`。各平台使用独立的站点副本，不要共用 `.tools/` 工具目录。
 
 已有 Hugo 站点不要用参考站点整体覆盖。按 Skill 的[接入说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/install.md#add-the-module)添加主题，并合并缺少的配置、页面与资源。
 

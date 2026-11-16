@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {extractZip} from '../archive.mjs';
+import {extractZip} from '../../../../platform/windows/archive.mjs';
 import {zip} from './fixtures/zip.mjs';
+
+const windows = {skip:process.platform !== 'win32'};
 
 let work, sequence = 0;
 before(() => { work = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'swban-zip-')); });
@@ -17,7 +19,7 @@ function sample(entries) {
   return {archive, destination};
 }
 
-test('system ZIP extraction preserves nested, Unicode, empty files and archive roots', async () => {
+test('system ZIP extraction preserves nested, Unicode, empty files and archive roots', windows, async () => {
   const longName = 'a'.repeat(90) + '/' + 'b'.repeat(90) + '/' + 'c'.repeat(45);
   const {archive, destination} = sample([
     {name:'sdk/', mode:0x4000}, {name:'sdk/bin/', mode:0x4000},
@@ -29,7 +31,7 @@ test('system ZIP extraction preserves nested, Unicode, empty files and archive r
   assert.ok(fs.statSync(path.join(destination, longName)).isFile());
 });
 
-test('invalid ZIP metadata and encryption fail before writing any payload', async () => {
+test('invalid ZIP metadata and encryption fail before writing any payload', windows, async () => {
   const cases = [
     [[{name:'../escape'}], /unsafe_zip_entry/],
     [[{name:'a', mode:0xa000}], /unsupported_zip_entry_type/],
@@ -56,7 +58,7 @@ test('invalid ZIP metadata and encryption fail before writing any payload', asyn
   assert.deepEqual(fs.readdirSync(destination), []);
 });
 
-test('ZIP extraction rejects existing files and linked destination parents', async () => {
+test('ZIP extraction rejects existing files and linked destination parents', windows, async () => {
   const {archive, destination} = sample([{name:'file', bytes:Buffer.from('new')}]);
   fs.writeFileSync(path.join(destination, 'file'), 'keep');
   await assert.rejects(extractZip(archive, destination, {archiveRoot:''}));
@@ -67,7 +69,7 @@ test('ZIP extraction rejects existing files and linked destination parents', asy
   assert.equal(fs.readFileSync(path.join(destination, 'file'), 'utf8'), 'keep');
 });
 
-test('actual ZIP bytes must match the declared size', async () => {
+test('actual ZIP bytes must match the declared size', windows, async () => {
   for (const size of [1, 20]) {
     const {archive, destination} = sample([{name:'file', bytes:Buffer.from('payload'), size}]);
     await assert.rejects(extractZip(archive, destination, {archiveRoot:''}), /zip_entry_size_mismatch/);

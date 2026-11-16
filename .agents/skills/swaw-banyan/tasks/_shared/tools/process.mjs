@@ -61,6 +61,6 @@ export function probe(executable, args, {env = process.env, cwd = process.cwd(),
 export function withPath(directories, environment = process.env) {
   const env = {...environment};
   const key = process.platform === 'win32' ? Object.keys(env).find(key => key.toLowerCase() === 'path') || 'PATH' : 'PATH';
-  env[key] = [...directories, env[key] || ''].join(process.platform === 'win32' ? ';' : ':');
+  env[key] = [...directories, env[key] || ''].join(path.delimiter);
   return env;
 }

@@ -24,7 +24,7 @@ lastmod: 2026-11-16
 ## 使用要求
 
 - 命令帮助改用 `help.en.txt` 和 `help.zh.txt`；首行为“用法＋两个空格＋#说明”，后续为正文。冷启动与正常运行读取同一份帮助。
-- 主题要求 Hugo 0.168.0 或更新版本。Skill 命令行目前支持 Windows x64。
+- 主题要求 Hugo 0.168.0 或更新版本。Skill 命令行支持 Windows x64、Linux x64 和 macOS x64；Linux 和 macOS 使用 sh，无需 Python。Git 缺少时会准备便携工具，无需安装系统 Git、Homebrew 或 Xcode。`swban build` 会复用兼容的已有工具，并按需下载其他工具。
 - 新站点从完整根参考站点起步。站点自行维护 `hugo.toml`、`content/`、`archetypes/`、`assets/site/` 和 `assets/i18n/`；Module 不补充这些文件。
 - 保留 `minify.disableJS = true`，避免 HTML 压缩改变 CSP 授权的脚本正文。
 - 启用 SW 时，每种已启用语言都要提供 HTML 离线页。参考配置默认关闭 SW 和预取。

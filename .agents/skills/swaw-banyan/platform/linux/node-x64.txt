@@ -1,0 +1,9 @@
+swaw-banyan.bootstrap-release/v1
+24.20.0
+https://nodejs.org/dist/v24.20.0/node-v24.20.0-linux-x64.tar.gz
+855d581f8a4eb1a8117e3426de25fe02770592febcfb31369aee1ffbfee9e8ec
+node-v24.20.0-linux-x64
+bin/node
+24.19.0
+
+

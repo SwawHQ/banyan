@@ -24,7 +24,7 @@ The first release is in preparation. This page describes its scope. After the re
 ## Requirements
 
 - Command help uses `help.en.txt` and `help.zh.txt`. The first line is `usage  #summary`, followed by the body. Cold starts and normal runs read the same files.
-- The theme requires Hugo 0.168.0 or later. The Skill CLI currently supports Windows x64.
+- The theme requires Hugo 0.168.0 or later. The Skill CLI supports Windows x64, Linux x64 and macOS x64. Linux and macOS use sh without Python. Missing Git is prepared as a portable tool without installing system Git, Homebrew or Xcode. `swban build` reuses compatible tools and downloads missing tools as needed.
 - Start a new site from the complete root reference site. Each site owns `hugo.toml`, `content/`, `archetypes/`, `assets/site/` and `assets/i18n/`. The Module does not supply these files.
 - Keep `minify.disableJS = true` so HTML minification does not change scripts authorized by CSP.
 - When SW is enabled, provide an HTML offline page for each enabled language. The reference configuration disables SW and prefetch by default.

@@ -8,7 +8,7 @@ import {zip} from './fixtures/zip.mjs';
 import {definition, skillRoot} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/manifest.mjs';
 import {stat, sha256, tree, installLock, removeTree} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/filesystem.mjs';
 import {download} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/download.mjs';
-import {extractZip} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/archive.mjs';
+import {extractZip} from '../.agents/skills/swaw-banyan/platform/windows/archive.mjs';
 import {receipt, definitionMatches, versionMatches} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/managed.mjs';
 import {ensure, recover, retireBackup} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/install.mjs';
 import {probe, execute} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/process.mjs';
@@ -204,9 +204,9 @@ test('public execution preserves empty/quoted arguments, Unicode, streams, cwd a
 });
 test('an active managed Node cannot replace itself through the direct JS entry', async () => {
   const skill=copySkill('active-node'),root=path.join(skill,'.tools'),node=fixture('node');
-  const manifest=JSON.parse(fs.readFileSync(path.join(skill,'tools.json'),'utf8'));
-  manifest.platforms['windows-x64'].tools=manifest.platforms['windows-x64'].tools.map(tool=>tool.name==='node'?node.tool:tool);
-  fs.writeFileSync(path.join(skill,'tools.json'),JSON.stringify(manifest));
+  const manifest=JSON.parse(fs.readFileSync(path.join(skill,'tools.windows-x64.json'),'utf8'));
+  manifest.tools=manifest.tools.map(tool=>tool.name==='node'?node.tool:tool);
+  fs.writeFileSync(path.join(skill,'tools.windows-x64.json'),JSON.stringify(manifest));
   const module=await import(pathToFileURL(path.join(skill,'tasks/_shared/tools/selection.mjs')).href);
   await module.prepareRuntime([],{root,env:{PATH:''},receive:node.receive});
   const before=fs.readFileSync(path.join(root,'bindings.json'),'utf8');
@@ -333,9 +333,9 @@ test('explicit Git execution prepares Git and shares its selected environment wi
 
 test('automatic tool preparation downloads missing tools once and preserves existing bindings', async () => {
   const skill=copySkill('automatic-tools'),root=path.join(skill,'.tools'),git=fixture('git');
-  const fixtures={git,go,hugo},manifest=JSON.parse(fs.readFileSync(path.join(skill,'tools.json'),'utf8'));
-  manifest.platforms['windows-x64'].tools=manifest.platforms['windows-x64'].tools.map(tool=>fixtures[tool.name]?.tool??tool);
-  fs.writeFileSync(path.join(skill,'tools.json'),JSON.stringify(manifest));
+  const fixtures={git,go,hugo},manifest=JSON.parse(fs.readFileSync(path.join(skill,'tools.windows-x64.json'),'utf8'));
+  manifest.tools=manifest.tools.map(tool=>fixtures[tool.name]?.tool??tool);
+  fs.writeFileSync(path.join(skill,'tools.windows-x64.json'),JSON.stringify(manifest));
   const module=await import(pathToFileURL(path.join(skill,'tasks/_shared/tools/selection.mjs')).href);
   const receive=(url,target,hash)=>fixtures[path.basename(new URL(url).pathname,'.zip')].receive(url,target,hash);
   const counts=Object.fromEntries(Object.entries(fixtures).map(([name,item])=>[name,item.downloads]));
@@ -418,9 +418,9 @@ test('check detects a changed system version; explicit ensure records that versi
 });
 test('force replaces a system binding with an owned portable copy without changing the system tool', async () => {
   const skill = copySkill('force-node'), root = path.join(skill,'.tools'), node = fixture('node');
-  const manifest = JSON.parse(fs.readFileSync(path.join(skill,'tools.json'),'utf8'));
-  manifest.platforms['windows-x64'].tools = manifest.platforms['windows-x64'].tools.map(tool => tool.name === 'node' ? node.tool : tool);
-  fs.writeFileSync(path.join(skill,'tools.json'),JSON.stringify(manifest));
+  const manifest = JSON.parse(fs.readFileSync(path.join(skill,'tools.windows-x64.json'),'utf8'));
+  manifest.tools = manifest.tools.map(tool => tool.name === 'node' ? node.tool : tool);
+  fs.writeFileSync(path.join(skill,'tools.windows-x64.json'),JSON.stringify(manifest));
   const module = await import(pathToFileURL(path.join(skill,'tasks/_shared/tools/selection.mjs')).href);
   const externalBefore = sha256(path.join(externalNode,'node.exe'));
   const reused = await module.prepareTool('node',[],{root,env:{...process.env,PATH:externalNode}});
@@ -436,9 +436,9 @@ test('force replaces a system binding with an owned portable copy without changi
 
 test('Bun remains an explicit tool and never becomes the CLI runtime', async () => {
   const skill=copySkill('bun-tool-only',true),root=path.join(skill,'.tools'),node=fixture('node');
-  const manifest=JSON.parse(fs.readFileSync(path.join(skill,'tools.json'),'utf8'));
-  manifest.platforms['windows-x64'].tools=manifest.platforms['windows-x64'].tools.map(tool=>tool.name==='node'?node.tool:tool);
-  fs.writeFileSync(path.join(skill,'tools.json'),JSON.stringify(manifest));
+  const manifest=JSON.parse(fs.readFileSync(path.join(skill,'tools.windows-x64.json'),'utf8'));
+  manifest.tools=manifest.tools.map(tool=>tool.name==='node'?node.tool:tool);
+  fs.writeFileSync(path.join(skill,'tools.windows-x64.json'),JSON.stringify(manifest));
   const module=await import(pathToFileURL(path.join(skill,'tasks/_shared/tools/selection.mjs')).href);
   await module.prepareTool('bun',[],{root,env:{PATH:''}});
   expect(readBindings(root).runtime).toBeUndefined();
@@ -457,9 +457,9 @@ test('Bun remains an explicit tool and never becomes the CLI runtime', async () 
 
 test('temporary Node installs and force repairs from the one verified bootstrap archive', () => {
   const skill=copySkill('node-bootstrap'),root=path.join(skill,'.tools'),node=fixture('node');
-  const manifest=JSON.parse(fs.readFileSync(path.join(skill,'tools.json'),'utf8'));
-  manifest.platforms['windows-x64'].tools=manifest.platforms['windows-x64'].tools.map(tool=>tool.name==='node'?node.tool:tool);
-  fs.writeFileSync(path.join(skill,'tools.json'),JSON.stringify(manifest));
+  const manifest=JSON.parse(fs.readFileSync(path.join(skill,'tools.windows-x64.json'),'utf8'));
+  manifest.tools=manifest.tools.map(tool=>tool.name==='node'?node.tool:tool);
+  fs.writeFileSync(path.join(skill,'tools.windows-x64.json'),JSON.stringify(manifest));
   const temporary=mkdir('bootstrap-temporary'),executable=path.join(temporary,'node.exe');
   fs.writeFileSync(executable,binary);
   const run=(args)=>spawnSync(executable,[path.join(skill,'tasks/_cli/bootstrap-node.mjs'),path.join(work,'node.zip'),'base/node/ensure',...args],
@@ -481,9 +481,9 @@ test('temporary Node installs and force repairs from the one verified bootstrap 
 
 test('force installs portable GitHub CLI while preserving the external tool', async () => {
   const skill = copySkill('force-gh'), root = path.join(skill,'.tools'), gh = fixture('gh');
-  const manifest = JSON.parse(fs.readFileSync(path.join(skill,'tools.json'),'utf8'));
-  manifest.platforms['windows-x64'].tools = manifest.platforms['windows-x64'].tools.map(tool => tool.name === 'gh' ? gh.tool : tool);
-  fs.writeFileSync(path.join(skill,'tools.json'),JSON.stringify(manifest));
+  const manifest = JSON.parse(fs.readFileSync(path.join(skill,'tools.windows-x64.json'),'utf8'));
+  manifest.tools = manifest.tools.map(tool => tool.name === 'gh' ? gh.tool : tool);
+  fs.writeFileSync(path.join(skill,'tools.windows-x64.json'),JSON.stringify(manifest));
   const module = await import(pathToFileURL(path.join(skill,'tasks/_shared/tools/selection.mjs')).href);
   const external = mkdir('force-gh-external'), executable = path.join(external,'gh.exe');
   fs.writeFileSync(executable,binary); const before = sha256(executable);

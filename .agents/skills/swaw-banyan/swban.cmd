@@ -6,5 +6,5 @@ if not exist "%~dp0.tools\cli.cmd" goto bootstrap
 "%~dp0.tools\cli.cmd" "%~dp0tasks\_cli\main.mjs" %*
 :bootstrap
 set "PSModulePath=%SystemRoot%\System32\WindowsPowerShell\v1.0\Modules"
-"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%~dp0bootstrap\windows.ps1" %*
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%~dp0platform\windows\bootstrap.ps1" %*
 exit /b %ERRORLEVEL%

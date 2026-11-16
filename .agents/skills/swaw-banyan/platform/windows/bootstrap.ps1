@@ -1,7 +1,7 @@
 # Windows cold start only. All final installation and ownership rules live in JS.
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
-$skillRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$skillRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $skillItem = Get-Item -LiteralPath $skillRoot -Force
 if ($skillItem.LinkType -eq 'Junction') { $skillRoot = [IO.Path]::GetFullPath([string]$skillItem.Target[0]) }
 function Assert-PlainBootstrapPath([string]$Path) {
@@ -45,7 +45,7 @@ function Find-Node($Manifest, [bool]$SkipManaged, [bool]$Diagnosing) {
             if (-not $Diagnosing) { throw }
             continue
         }
-        $definition = @($Manifest.platforms.'windows-x64'.tools | Where-Object name -CEQ 'node')[0]
+        $definition = @($Manifest.tools | Where-Object name -CEQ 'node')[0]
         $process = New-Object Diagnostics.Process
         $process.StartInfo.FileName = $candidate
         $process.StartInfo.Arguments = '--version'
@@ -99,7 +99,7 @@ try {
     $force = $preparing -and $args.Count -eq 2
     $architecture = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
     if ($env:OS -ne 'Windows_NT' -or $architecture -ne 'AMD64') { throw 'supported_bootstrap_platform_is_windows_x64' }
-    $manifest = [IO.File]::ReadAllText((Join-Path $skillRoot 'tools.json')) | ConvertFrom-Json
+    $manifest = [IO.File]::ReadAllText((Join-Path $skillRoot 'tools.windows-x64.json')) | ConvertFrom-Json
     if ($manifest.schema -ne 'swaw-banyan.tools/v2') { throw 'invalid_tools_manifest' }
     $available = Find-Node $manifest ($force -and $helpCommand -ceq 'base/node/ensure') ($helpCommand -ceq 'doctor')
     if ($available) {
@@ -107,7 +107,7 @@ try {
         exit $LASTEXITCODE
     }
     if ($helpCommand -eq 'doctor' -or $helpCommand -cmatch '^(?:base/[^/]+)/check$') { throw 'runtime_not_ready; run swban base/node/ensure' }
-    $definitions = @($manifest.platforms.'windows-x64'.tools | Where-Object name -eq 'node')
+    $definitions = @($manifest.tools | Where-Object name -eq 'node')
     if ($definitions.Count -ne 1) { throw 'missing_or_duplicate_runtime:node' }
     $definition = $definitions[0]
     if ($definition.sha256 -cnotmatch '^[a-f0-9]{64}$' -or ([uri]$definition.url).Scheme -ne 'https' -or $definition.executable -ne 'node.exe') { throw 'invalid_node_definition' }
