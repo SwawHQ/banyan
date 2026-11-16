@@ -8,9 +8,11 @@ swban help check 2          #列出 check 下两层命令和分类
 swban help check/browser 3  #列出 check/browser 下三层命令和分类
 
 站点开发与构建：
-swban base/hugo server -D --disableFastRender -p 5678 --bind localhost  #启动开发服
-swban build                                                          #构建站点和搜索索引
-swban build --destination ./preview                                  #构建到指定目录
+swban dev                            #启动开发服并建立搜索索引
+swban dev/lan                        #允许局域网预览
+swban dev/pagefind.off               #跳过搜索索引
+swban build                          #构建站点和搜索索引
+swban build --destination ./preview  #构建到指定目录
 
 工具：
 swban base/hugo/ensure     #准备 Hugo

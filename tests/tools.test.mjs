@@ -172,7 +172,8 @@ test('installed JS entry supports help, relocation and read-only checks', () => 
   for (const command of ['base/bun/check --force','base/go/ensure --force --force','base/gh/ensure --force --force','invalid.ensure','help zh extra']) expect(cli(portable,command).status).not.toBe(0);
   expect(cli(portable,'build --help').stdout).toContain('swban build');
   expect(cli(portable,'build --help').status).toBe(0);
-  for (const command of ['base/ensure','dev','release','release.check','ensure','bun','node','npm','npx','git','gh','go','hugo',...['bun','node','git','gh','go','hugo'].flatMap(name=>[name+'.check',name+'.ensure'])]) {
+  for (const command of ['dev','dev/lan','dev/pagefind.off']) expect(cli(portable,command+' --help').stdout).toContain('swban '+command);
+  for (const command of ['base/ensure','release','release.check','ensure','bun','node','npm','npx','git','gh','go','hugo',...['bun','node','git','gh','go','hugo'].flatMap(name=>[name+'.check',name+'.ensure'])]) {
     const result = cli(portable, command);
     expect(result.status).toBe(1); expect(result.stderr).toContain(`unknown_command:${command}`);
   }

@@ -39,6 +39,9 @@ export async function build(options,{render=hugo,index=execute,prepare=prepareTo
   const {destination,args}=buildArguments(options,process.cwd(),await configuration());
   const status=await render(args);
   if(status!==0)return status;
+  return indexSite(destination,{index,prepare,executable,selection});
+}
+export async function indexSite(destination,{index=execute,prepare=prepareTools,executable=toolExecutable,selection=searchArguments}={}) {
   const search=selection(destination);
   if(!search)return 0;
   // The Hugo-to-indexer handoff is build input, not a public site resource.

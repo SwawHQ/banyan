@@ -1,7 +1,7 @@
 ---
 title: 01 本地开发
 date: 2026-11-06
-lastmod: 2026-11-15
+lastmod: 2026-11-16
 url: p/local-development/
 description: 预览最小演示和文档站点，并按改动选择检查。
 ---
@@ -38,17 +38,24 @@ Banyan 根 `go.mod` 使用 `replace ... => ./module`，直接读取随仓库提�
 
 进入要预览的站点根目录。下文 `swban` 代表 Banyan 仓库中的
 `.agents/skills/swaw-banyan/swban.cmd`，从其他站点调用时使用该入口的实际路径。
-命令行目前支持 Windows x64。首次准备工具见[开始使用](/zh/p/getting-started/#取得站点)。在当前终端定义入口：
+命令行支持 Windows x64、Linux x64 和 macOS x64。Linux 和 macOS 在仓库根目录使用 `sh swban`。首次准备工具见[开始使用](/zh/p/getting-started/#取得站点)。Windows 可在当前终端定义入口：
 
 ```powershell
 function swban { & .\.agents\skills\swaw-banyan\swban.cmd @args }  #从 Banyan 仓库根目录调用
 ```
 
 ```text
-swban base/hugo server -D --disableFastRender --port 13241  #预览当前站点
+swban dev                               #本机预览，启动时建立搜索索引
+swban dev/lan                           #供局域网和手机预览
+swban dev/pagefind.off                  #跳过搜索索引
+swban dev -p 13241                      #指定端口
+swban dev -D=false                      #不包含草稿
 ```
 
-打开 `http://127.0.0.1:13241/`。Hugo 监听本地 Module，模板和资源变化会触发重建。
+默认打开 `http://127.0.0.1:5678/`。Hugo 监听本地 Module，模板和资源变化会触发完整重建和浏览器刷新。
+每次启动建立一次搜索索引，修改内容后需重启命令更新索引。开发产物使用独立临时目录，退出后清理，不覆盖 `public/`。
+`dev/lan` 默认监听 `::`，系统支持时同时接收 IPv4。手机使用电脑的局域网地址和端口访问；可用 `--bind 0.0.0.0` 仅监听 IPv4。
+追加的参数传给 Hugo，并覆盖对应默认值。启动日志显示实际命令，保留 Hugo 和 Pagefind 输出。
 开发构建默认不压缩；若站点在开发环境也启用压缩，可用 `--minify=false` 关闭。
 不需要在站点安装 npm 包。工具选择和依赖位置见
 [Skill 使用说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/SKILL.md)。
@@ -60,15 +67,15 @@ swban base/hugo server -D --disableFastRender --port 13241  #预览当前站点
 `HUGO_RESOURCEDIR` 设置。完成后只清理本任务的过程文件，保留 CLI 固定目录与缓存。
 
 ```text
-swban base/hugo --minify --noBuildLock --destination <build>  #生产构建
-swban check/delivery <build>                                 #检查交付配置与发布路径
-swban check/csp <build>                                      #检查 CSP 和脚本完整性
-swban check/sri <build>                                      #检查资源 integrity
-swban check/html/metadata <build>                            #检查页面元数据
-swban check/html/styles <build>                              #检查样式契约
-swban check/llms <build>                                     #检查 Agent 索引
-swban report/size/html <build> --top 5                       #报告最大 HTML 页面
-swban report/size/assets <build>                             #报告资源体积
+swban build --destination <build>       #生产构建与搜索索引
+swban check/delivery <build>            #检查交付配置与发布路径
+swban check/csp <build>                 #检查 CSP 和脚本完整性
+swban check/sri <build>                 #检查资源 integrity
+swban check/html/metadata <build>       #检查页面元数据
+swban check/html/styles <build>         #检查样式契约
+swban check/llms <build>                #检查 Agent 索引
+swban report/size/html <build> --top 5  #报告最大 HTML 页面
+swban report/size/assets <build>        #报告资源体积
 ```
 
 按改动选择检查。检查违反契约时返回非零退出码；体积报告独立输出测量值。
@@ -85,9 +92,9 @@ swban report/size/assets <build>                             #报告资源体积
 ## 同步与部署准备
 
 ```text
-swban sync/ext                     #同步全部外部资源
-swban sync/ext <resource-id>       #按声明 id 同步外部资源
-swban help/zh deploy              #查看各平台的部署准备方案
+swban sync/ext                          #同步全部外部资源
+swban sync/ext <resource-id>            #按声明 id 同步外部资源
+swban help/zh deploy                    #查看各平台的部署准备方案
 ```
 
 外部资源由站点的 `assets/site/external-resources.yaml` 声明；演示站点默认为空列表。

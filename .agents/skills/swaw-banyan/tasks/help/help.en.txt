@@ -8,9 +8,11 @@ swban help check 2          #List commands and categories two levels below check
 swban help check/browser 3  #List commands and categories three levels below check/browser
 
 Site development and builds:
-swban base/hugo server -D --disableFastRender -p 5678 --bind localhost  #Start the development server
-swban build                                                          #Build the site and search index
-swban build --destination ./preview                                  #Build into a specified directory
+swban dev                            #Start development and index search
+swban dev/lan                        #Allow LAN previews
+swban dev/pagefind.off               #Skip search indexing
+swban build                          #Build the site and search index
+swban build --destination ./preview  #Build into a specified directory
 
 Tools:
 swban base/hugo/ensure            #Prepare Hugo

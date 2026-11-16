@@ -10,6 +10,8 @@ The first release is in preparation. This page describes its scope. After the re
 
 ## Main features
 
+- `swban dev` starts a development server with drafts, indexes search after the first render, and removes its separate temporary output on exit. `dev/lan` allows LAN previews; `dev/pagefind.off` skips indexing. Extra arguments pass to Hugo. Startup logs show the commands and preserve tool output. Restart the server to update search indexes.
+
 - A dedicated search page searches the current language as you type, with article-width results and bold titles. Each result is a full clickable row with the theme hover and keyboard focus styles. Search pages support RSS entries, HTML file globs or directory arrays, with existing HTML selectors to select content and no Pagefind-specific attributes. The root command launcher supports `swban build` to generate the site and Pagefind index.
 - Builds reject source directories and custom mount sources as output destinations. Sites without search pages or RSS entries do not prepare Pagefind. Empty RSS builds succeed, missing language indexes show no results, and search excerpts display escaped characters correctly.
 

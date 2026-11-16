@@ -1,0 +1,12 @@
+swban dev [Hugo arguments...]  #Start development and index search
+
+Defaults: drafts, localhost port 5678, full rebuilds, live reload, no HTTP cache.
+Search is indexed once at startup. Restart to index content changes.
+Development output uses a separate temporary directory, removed on exit.
+
+swban dev -p 8080              #Use port 8080
+swban dev -D=false             #Exclude drafts
+swban dev -N                   #Navigate to the changed page
+swban dev/lan                  #Allow LAN access
+swban dev/pagefind.off         #Skip search indexing
+swban base/hugo server --help  #Show Hugo server arguments

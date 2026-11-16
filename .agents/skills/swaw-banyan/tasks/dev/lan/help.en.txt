@@ -1,0 +1,7 @@
+swban dev/lan [Hugo arguments...]  #Start development for LAN access
+
+Same as dev, but listens on IPv6 wildcard ::, also accepting IPv4 where supported.
+Connect the phone to the same LAN and use the computer's LAN address and port.
+
+swban dev/lan --bind 0.0.0.0       #Listen on IPv4 only
+swban dev/lan -p 8080              #Use port 8080

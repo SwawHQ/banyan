@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import {execute} from '../_shared/tools/process.mjs';
 import {prepareRuntime} from '../_shared/tools/selection.mjs';
 import {readBindings,resolveBinding} from '../_shared/tools/bindings.mjs';
 import {runTask,taskEntry} from './dispatch.mjs';
@@ -24,6 +26,9 @@ try {
         throw new Error(`runtime_binding_unusable; run swban base/${record.runtime}/ensure`);
       }
     }
-    process.exitCode=await runTask(command,args,executable);
+    // Only a runtime change needs another Node process; tasks run in this process.
+    process.exitCode=fs.realpathSync(executable)!==fs.realpathSync(process.execPath)
+      ?await execute(executable,[fileURLToPath(import.meta.url),command,...args])
+      :await runTask(command,args);
   }
 } catch (error) { console.error(`[swban] ${error.message}`); process.exitCode=1; }

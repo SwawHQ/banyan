@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {skillRoot} from '../_shared/tools/manifest.mjs';
-import {execute} from '../_shared/tools/process.mjs';
+import {pathToFileURL} from 'node:url';
 
 export function taskEntry(command) {
   const unknown = () => { throw new Error(`unknown_command:${command}; run swban help`); };
@@ -14,4 +14,9 @@ export function taskEntry(command) {
   return entry;
 }
 
-export const runTask = (command,args,executable) => execute(executable,[taskEntry(command),...args]);
+export async function runTask(command,args) {
+  const entry=taskEntry(command);
+  process.argv=[process.execPath,entry,...args];
+  await import(pathToFileURL(entry).href);
+  return process.exitCode??0;
+}
