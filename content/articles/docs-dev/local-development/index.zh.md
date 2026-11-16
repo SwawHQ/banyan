@@ -38,7 +38,7 @@ Banyan 根 `go.mod` 使用 `replace ... => ./module`，直接读取随仓库提�
 
 进入要预览的站点根目录。下文 `swban` 代表 Banyan 仓库中的
 `.agents/skills/swaw-banyan/swban.cmd`，从其他站点调用时使用该入口的实际路径。
-命令行支持 Windows x64、Linux x64 和 macOS x64。Linux 和 macOS 在仓库根目录使用 `sh swban`。首次准备工具见[开始使用](/zh/p/getting-started/#取得站点)。Windows 可在当前终端定义入口：
+命令行支持 Windows x64、Linux x64 和 macOS x64/ARM64。Linux 和 macOS 在仓库根目录使用 `sh swban`。首次准备工具见[开始使用](/zh/p/getting-started/#取得站点)。Windows 可在当前终端定义入口：
 
 ```powershell
 function swban { & .\.agents\skills\swaw-banyan\swban.cmd @args }  #从 Banyan 仓库根目录调用

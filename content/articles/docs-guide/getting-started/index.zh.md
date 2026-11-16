@@ -12,7 +12,7 @@ description: 取得参考站点，修改内容，在本地预览并准备首次�
 
 目前正在准备首次发布。发布标签可用前，可以使用当前仓库作本地预览；远程 Module 安装须等标签发布。
 
-支持 Windows x64、Linux x64 和 macOS x64。首次运行会复用兼容的已有工具，并下载缺少的工具。不需要另在站点根目录执行 `npm install`。主题要求 Hugo 0.168.0 或更新版本，Skill 会准备匹配工具。Linux 需有 sh、基础系统工具、curl、tar、sha256sum；macOS 使用系统自带工具。Git 等工具缺少时会下载到本地目录，无需 Python、Homebrew 或 Xcode。
+支持 Windows x64、Linux x64 和 macOS x64/ARM64。首次运行会复用兼容的已有工具，并下载缺少的工具。不需要另在站点根目录执行 `npm install`。主题要求 Hugo 0.168.0 或更新版本，Skill 会准备匹配工具。Linux 需有 sh、基础系统工具、curl、tar、sha256sum；macOS 使用系统自带工具。Git 等工具缺少时会下载到本地目录，无需 Python、Homebrew 或 Xcode。
 
 ## 取得站点
 

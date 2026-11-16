@@ -9,7 +9,7 @@ metadata:
 
 # Swaw Banyan
 
-Windows x64 使用本技能目录中的 `swban.cmd`；Linux x64 和 macOS x64 使用 `sh swban`。以下命令简称为 `swban`。Linux 需有 sh、基础系统工具、curl、tar、sha256sum；macOS 使用系统自带工具。Git 等工具按需复用或下载到本地目录，无需 Python、Homebrew 或 Xcode。
+Windows x64 使用本技能目录中的 `swban.cmd`；Linux x64 和 macOS x64/ARM64 使用 `sh swban`。以下命令简称为 `swban`。Linux 需有 sh、基础系统工具、curl、tar、sha256sum；macOS 使用系统自带工具。Git 等工具按需复用或下载到本地目录，无需 Python、Homebrew 或 Xcode。
 
 项目对话和文档用语见[项目术语表](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs-guide/glossary/index.zh.md)。
 
