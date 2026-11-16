@@ -81,14 +81,19 @@ swban check/http/security "<正式网址>"  #检查线上响应头
 
 ## Git 托管构建
 
-平台从关联的仓库分支拉取源码，不使用上述产物上传命令，也不需要安装或调用 `swban`。
+平台从关联的仓库分支拉取源码。Cloudflare Pages 可直接使用仓库中的 `swban`，生成站点和搜索索引，不需要先在本机上传产物。
 
 | 构建设置 | Banyan 使用的值 |
 | --- | --- |
 | 根目录 | 站点在仓库中的目录；本参考站点为 `./` |
-| 构建命令 | 搜索站点目前在 Windows 运行 `swban build` 后上传 `public`；Linux 托管构建待适配。 |
+| 构建命令 | `sh swban build --baseURL "$CF_PAGES_URL"`（Cloudflare Pages） |
 | 输出目录 | `public` |
-| 工具 | 满足主题要求的 Hugo Extended；Hugo Modules 还需要 Go 和 Git |
+| 构建环境 | Cloudflare Pages v3；设置 `SKIP_DEPENDENCY_INSTALL=1` |
+| 工具 | swban 复用兼容的已有工具，按需下载 Node、Hugo Extended、Go、Git 和 Pagefind |
+
+提交根目录 `swban`、`.agents/skills/swaw-banyan` 和站点源码，不提交 `.tools`。`CF_PAGES_URL` 由 Pages 提供，作为本次部署的发布网址。正式站固定域名时，可将 `--baseURL` 改为该域名。
+
+也可用 Pages 的 `NODE_VERSION`、`HUGO_VERSION`、`GO_VERSION` 准备兼容版本；swban 会复用这些工具，Pagefind 缺少时仍按需下载。版本要求见 Skill 的 `tools.linux-x64.json`，无需在站点再维护一份安装脚本。
 
 完整源码仓库包含 `module/`，可保留 `replace ... => ./module` 参与托管构建。指向仓库外本机目录的替换路径在云端不可用；改用远程 Module 时，按[版本维护](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/upgrade.md#change-the-version)移除对应 `replace`，并固定已发布的版本。自有站点需要的安装步骤和环境变量也应交给平台配置。
 

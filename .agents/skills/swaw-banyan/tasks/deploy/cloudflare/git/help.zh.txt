@@ -1,15 +1,16 @@
 swban help/zh deploy/cloudflare/git  #准备 Cloudflare Pages Git 托管构建
 
-平台拉取源码并构建，使用原生 Hugo，不调用 swban。
+平台拉取源码，使用 swban 构建站点和 Pagefind 搜索索引。
 
-1. 准备源码：在 hugo.toml 中设置 baseURL，并在 assets/site/delivery.toml 中启用 platform.cloudflare.pages.enabled。提交站点及固定的主题版本，移除指向本机目录的 replace。
+1. 准备源码：提交 swban、.agents/skills/swaw-banyan 和站点源码，在 assets/site/delivery.toml 中启用 platform.cloudflare.pages.enabled。主题源码随仓库提供时可保留 replace 到 ./module；移除指向仓库外本机目录的 replace。不要提交 .tools。
 
 2. 向平台提供构建设置：
 根目录：站点在仓库中的目录，本参考站点为 ./。输出目录：public。
-构建命令：hugo --minify --gc --cleanDestinationDir
-工具：满足主题最低版本要求的 Hugo Extended；Hugo Modules 还需要 Go 和 Git。安装步骤和私有依赖权限按本站需要设置。
+构建命令：sh swban build --baseURL "$CF_PAGES_URL"
+构建镜像：v3。环境变量：SKIP_DEPENDENCY_INSTALL=1。
+swban 复用兼容的已有工具，并按需下载缺少的工具；私有依赖另行配置访问权限。
 
-3. 先验证本地正式构建，并对产物运行 check/delivery 和 check/csp。Pages 读取 public 中的 _headers 和 _redirects，无需复制配置到源码根目录。
+3. 先运行 swban build，并对产物运行 check/delivery 和 check/csp。Pages 读取 public 中的 _headers 和 _redirects，无需添加 Wrangler 配置。
 
 4. 仓库授权、项目关联、平台设置和构建触发按 Swaw Clouds 专项操作：
 swcl help/zh cloudflare/deploy/pages-git  #查看平台 Git 构建步骤
