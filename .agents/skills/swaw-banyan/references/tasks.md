@@ -7,9 +7,6 @@ Read this when adding commands or composing site tests. Use `swban help 1` and
 
 - A command lives at `tasks/<command>/entry.mjs`. Put argument handling there
   and domain work in nearby modules. Checks return issues; reports return measurements.
-- The CLI imports one task entry in its own Node process. The entry receives
-  its path and arguments in `process.argv` and sets `process.exitCode`.
-  A separate Node process is only needed when switching runtimes during bootstrap.
 - Keep code used by one task with that task. Share mechanics in the nearest
   owning group's `_shared/`; use `tasks/_shared/` only across groups. Keep tests
   with the code they exercise. Avoid shared helpers that dispatch by task name.
