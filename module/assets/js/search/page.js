@@ -1,3 +1,5 @@
+import {applyFragmentField, readFieldValue} from '../browse/navigation-state.contract.js';
+
 const page = document.querySelector('[data-search-page]');
 const input = document.querySelector('[data-search-input]');
 const results = page.querySelector('.search-results');
@@ -55,9 +57,7 @@ async function appendResults(id) {
 
 async function search(id) {
     const query = input.value.trim();
-    const url = new URL(location.href);
-    if (query) url.searchParams.set('q', query);
-    else url.searchParams.delete('q');
+    const url = applyFragmentField(new URL(location.href), 'q', query);
     history.replaceState(history.state, '', url);
     results.replaceChildren();
     matches = []; offset = 0; more.hidden = true;
@@ -122,7 +122,14 @@ document.addEventListener('keydown', event => {
     }
 });
 window.addEventListener('pageshow', event => { if (event.persisted) selected = false; });
-input.value = new URL(location.href).searchParams.get('q') || '';
+window.addEventListener('hashchange', () => {
+    const query = readFieldValue(location.hash, 'q');
+    if (query === input.value.trim()) return;
+    input.value = query;
+    clearTimeout(timer);
+    search(++sequence);
+});
+input.value = readFieldValue(location.hash, 'q');
 input.focus({preventScroll:true});
 try { navigator.virtualKeyboard?.show(); }
 catch { /* Keyboard availability must not interrupt search. */ }

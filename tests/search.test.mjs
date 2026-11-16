@@ -31,8 +31,12 @@ test('reference search: isolated assets, CSP, live results, history, languages a
     assert(!normal.headers()['content-security-policy'].includes('wasm-unsafe-eval'));
     await page.locator('[data-root-href$="/search/"]').click();
     const input=page.locator('[data-search-input]');await input.waitFor();
+    const historyLength=await page.evaluate(()=>history.length);
     assert.equal((await page.locator('.page-content').boundingBox()).width,originalWidth);
     await input.fill('配置');await page.locator('.search-result').first().waitFor();
+    assert.equal(new URL(page.url()).search,'');
+    assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('q'),'配置');
+    assert.equal(await page.evaluate(()=>history.length),historyLength);
     const first=page.locator('.search-result a').first();
     assert.equal(await first.evaluate(e=>getComputedStyle(e).fontWeight),'700');
     assert.equal(await first.locator('.search-excerpt').count(),1);
@@ -71,12 +75,32 @@ test('reference search: isolated assets, CSP, live results, history, languages a
     await input.fill('配置');await first.waitFor();
     await page.setViewportSize({width:390,height:844});
     assert((await page.locator('.page-content').boundingBox()).width<=390);
+    await page.goto(base+'/sub/zh/search/#q=配置&keep=value');
+    await first.waitFor();assert.equal(await input.inputValue(),'配置');
+    await page.reload();await first.waitFor();assert.equal(await input.inputValue(),'配置');
+    const requestCount=requests.length;
+    await page.evaluate(()=>{location.hash='q=Hugo&keep=value';});
+    await page.waitForFunction(()=>document.querySelector('[data-search-input]').value==='Hugo');
+    await first.waitFor();
+    await page.goBack();
+    await page.waitForFunction(()=>document.querySelector('[data-search-input]').value==='配置');
+    await first.waitFor();
+    await input.fill('中文 العربية + & # = /');await input.press('Enter');
+    assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('q'),'中文 العربية + & # = /');
+    await page.reload();assert.equal(await input.inputValue(),'中文 العربية + & # = /');
+    await input.fill('');await input.press('Enter');
+    assert.equal(new URL(page.url()).hash,'#keep=value');
+    assert.equal(await page.locator('.search-result').count(),0);
+    assert(!requests.slice(requestCount).some(url=>new URL(url).searchParams.has('q')));
+    await page.goto(base+'/sub/zh/search/?q=配置');
+    assert.equal(await input.inputValue(),'');
+    assert.equal(await page.locator('.search-result').count(),0);
     assert.deepEqual(errors,[]);
     await context.close();
     const missingLanguage=await browser.newPage();
     const languageRequests=[];missingLanguage.on('request',r=>languageRequests.push(r.url()));
     await missingLanguage.route('**/pagefind-entry.json',route=>route.fulfill({json:{languages:{zh:{page_count:23}}}}));
-    await missingLanguage.goto(base+'/sub/ar/search/?q=Hugo');
+    await missingLanguage.goto(base+'/sub/ar/search/#q=Hugo');
     await missingLanguage.waitForFunction(()=>document.querySelector('.search-status').textContent==='لا توجد نتائج.');
     assert.equal(await missingLanguage.locator('.search-result').count(),0);
     assert(!languageRequests.some(url=>url.endsWith('/pagefind.js')));
@@ -84,7 +108,7 @@ test('reference search: isolated assets, CSP, live results, history, languages a
     const escapedPage=await browser.newPage();
     await escapedPage.route('**/pagefind/pagefind.js',route=>route.fulfill({contentType:'text/javascript',body:
       'export async function search(){return {results:[{data:async()=>({url:"/sub/zh/p/glossary/",meta:{title:"test"},plain_excerpt:"&lt;img src=x onerror=alert(1)&gt; &amp;lt;literal&amp;gt;"})}]}}'}));
-    await escapedPage.goto(base+'/sub/zh/search/?q=test');
+    await escapedPage.goto(base+'/sub/zh/search/#q=test');
     await escapedPage.locator('.search-result').first().waitFor();
     assert.equal(await escapedPage.locator('.search-excerpt').textContent(),'<img src=x onerror=alert(1)> &lt;literal&gt;');
     assert.equal(await escapedPage.locator('.search-excerpt img').count(),0);
@@ -98,7 +122,7 @@ test('reference search: isolated assets, CSP, live results, history, languages a
           if(mode==='throws')throw new Error('Keyboard unavailable');
         }}});
       },mode);
-      await keyboardPage.goto(base+'/sub/zh/search/?q=配置');
+      await keyboardPage.goto(base+'/sub/zh/search/#q=配置');
       await keyboardPage.locator('.search-result').first().waitFor();
       if(mode!=='unsupported')assert.equal(await keyboardPage.evaluate(()=>window.keyboardFocused),true);
       assert.deepEqual(keyboardErrors,[]);
@@ -134,7 +158,7 @@ test('reference search: isolated assets, CSP, live results, history, languages a
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(output,'pagefind/pagefind-entry.json'),'utf8')),{languages:{}});
     assert(!fs.existsSync(path.join(output,'pagefind/pagefind.js')));
     const emptyPage=await browser.newPage();
-    await emptyPage.goto(base+'/sub/zh/search/?q=Hugo');
+    await emptyPage.goto(base+'/sub/zh/search/#q=Hugo');
     await emptyPage.waitForFunction(()=>document.querySelector('.search-status').textContent==='没有找到结果。');
     assert.equal(await emptyPage.locator('.search-result').count(),0);await emptyPage.close();
   } finally {
