@@ -1,7 +1,7 @@
 ---
 title: 参考 · 项目术语表
 date: 2026-11-13
-lastmod: 2026-11-15
+lastmod: 2026-11-17
 url: p/glossary/
 description: 统一项目用语，快速了解页面结构、内容分类、配置和交付机制。
 ---
@@ -22,6 +22,7 @@ description: 统一项目用语，快速了解页面结构、内容分类、配�
 | 主列表 | 当前集合页面在主内容列中显示的条目列表。 | `feature-browse/collection/render.html` |
 | 结构面包屑 | 按页面真实内容层级生成的路径数据，用于 SEO 等输出。 | `BreadcrumbList` |
 | 页面画幅 | 横向排列根导航列、面包屑列和阅读组的整体区域。 | `.page-shell` |
+| 页面画幅横向滚动锁定 | 将鼠标滚轮的纵向输入持续用于页面画幅的横向滚动，指针移入其他页面列后仍保持；单击或按 Esc 退出。 | `data-canvas-wheel="locked"` |
 | 阅读组 | 将主内容列和文档辅助列组合在一起的布局区域。 | `.reading-group` |
 | 搜索页 | 在根导航列输入关键词，并在正文宽度的主内容列显示当前语言的搜索结果。 | `page-search` |
 | 图片墙 | 用封面卡片呈现分类或文章的集合视图。 | `page-collection-wall`、`page-collection-wall-all` |
