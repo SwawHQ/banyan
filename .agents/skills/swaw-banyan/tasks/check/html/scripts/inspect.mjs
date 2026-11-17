@@ -13,7 +13,7 @@ export async function inspect(directory) {
   for (const page of pages.map(pageState)) {
     const references = extractExternalScriptSrcs(page.text);
     if (!page.isRedirect) {
-      const expected=extractStartTags(page.text,'body').some(tag=>hasMarker(tag,'navigation'))?1:0;
+      const expected=extractStartTags(page.text,'html').some(tag=>hasMarker(tag,'navigation'))?1:0;
       const count=references.filter(ref=>belongsTo(ref,'main')).length;
       if(count!==expected)issues.push(`Navigation controller main: expected ${expected}, found ${count} on ${page.relativePath}`);
     }

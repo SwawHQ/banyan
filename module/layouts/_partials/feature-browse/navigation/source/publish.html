@@ -1,4 +1,7 @@
 {{- $html := partial "./fragment.html" . -}}
 {{- $content := (resources.FromString (printf "navigation/%s.html" (sha256 $html)) $html | minify).Content -}}
-{{- $target := printf "site/navigation/%s.txt" (sha256 $content) -}}
+{{- /* 共享 HTML 包装为 JS，使加载过程可用 blocking="render" 推迟首屏，避免先显示空面包屑列。 */ -}}
+{{- /* This is an external script, so JSON needs no HTML embedding escapes. */ -}}
+{{- $content = printf "(document.banyanBreadcrumbFragments ||= new Map()).set(document.currentScript.src,%s);" ($content | jsonify (dict "noHTMLEscape" true)) -}}
+{{- $target := printf "site/navigation/%s.js" (sha256 $content) -}}
 {{- return (urls.Parse (resources.FromString $target $content).Permalink).EscapedPath -}}

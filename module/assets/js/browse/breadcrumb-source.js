@@ -78,7 +78,7 @@ export function readBreadcrumbColumn(logicalPath) {
     const navigation = readNavigation();
     const hash = navigation?.columns[key]?.hash;
     const url = typeof hash === 'string' && /^[a-f0-9]{64}$/.test(hash)
-        ? `${navigation.resources}${hash}.txt` : '';
+        ? `${navigation.resources}${hash}.js` : '';
     const cached = loadedColumns.get(url);
     const payload = cached?.logicalPath === key ? cached : null;
     return { key, url, payload };

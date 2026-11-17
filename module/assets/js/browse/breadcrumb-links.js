@@ -80,7 +80,7 @@ export function buildBreadcrumbSortToggleHref(
     try {
         const url = new URL(baseHref, window.location.origin);
         const currentLineagePath = readCurrentFromPath();
-        const defaultLineagePath = normalizeFromPath(document.body?.dataset.collectionPath)
+        const defaultLineagePath = normalizeFromPath(document.documentElement?.dataset.collectionPath)
             || readNavigation()?.default || '';
         const targetLogicalPath = state.collectionSource.logicalPath;
         const lineageLogicalPath = normalizeFromPath(lineagePathOverride)

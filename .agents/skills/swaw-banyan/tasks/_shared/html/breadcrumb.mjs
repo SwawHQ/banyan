@@ -5,6 +5,13 @@ import {decodeHtmlAttribute,extractCanonicalHref,extractStartTags,extractTagAttr
 import {extractBlocks} from './blocks.mjs';
 
 const textContent=html=>decodeHtmlAttribute(html.replace(/<[^>]*>/g,'')).trim();
+export function readNavigationResource(text,options) {
+  const prefix='(document.banyanBreadcrumbFragments ||= new Map()).set(document.currentScript.src,';
+  if(!text.startsWith(prefix)||!text.endsWith(');'))throw new Error('Invalid navigation resource wrapper');
+  const html=JSON.parse(text.slice(prefix.length,-2));
+  if(typeof html!=='string')throw new Error('Invalid navigation resource HTML');
+  return readNavigationFragment(html,options);
+}
 const localLink=(href,siteURL)=>{
   if(!href)return false;
   try {const url=new URL(href,siteURL);return ['http:','https:'].includes(url.protocol)&&url.origin===new URL(siteURL).origin;}
@@ -101,7 +108,7 @@ function readColumn(href,logicalPath,{directory,pagePath,cache}) {
     const remainder=path.relative(fs.realpathSync(root),real);
     if(remainder==='..'||remainder.startsWith('..'+path.sep)||path.isAbsolute(remainder))
       throw new Error('Breadcrumb column URL leaves the output directory: '+href);
-    try {cache.set(file,readNavigationFragment(fs.readFileSync(real,'utf8'),{siteURL}));} catch(cause) {
+    try {cache.set(file,readNavigationResource(fs.readFileSync(real,'utf8'),{siteURL}));} catch(cause) {
       throw new Error('Invalid breadcrumb column fragment '+href+': '+cause.message);
     }
   }
@@ -116,7 +123,7 @@ export function normalizeLogicalPath(value) {
 }
 
 export function readBreadcrumbData(text,{directory,pagePath,cache=new Map()}={}) {
-  const body=extractStartTags(text,'body')[0]||'',navigationText=extractTagAttribute(body,'data-navigation');
+  const root=extractStartTags(text,'html')[0]||'',navigationText=extractTagAttribute(root,'data-navigation');
   let sources=[],defaultColumns=[],columns={},columnURLs={},routes=[],navigation=null,error='';
   try {
     if(!navigationText)return {sources,defaultColumns,columns,columnURLs,routes,navigation,navigationText,error};
@@ -133,7 +140,7 @@ export function readBreadcrumbData(text,{directory,pagePath,cache=new Map()}={})
     const keys=new Map();
     for(const [logicalPath,hash] of Object.entries(navigation.columns)) {
       if(typeof hash!=='string'||!/^[a-f0-9]{64}$/.test(hash))throw new Error('Invalid breadcrumb column hash for '+logicalPath);
-      const href=navigation.resources+hash+'.txt';columnURLs[logicalPath]=href;
+      const href=navigation.resources+hash+'.js';columnURLs[logicalPath]=href;
       if(directory)columns[logicalPath]=readColumn(href,logicalPath,{directory,pagePath,cache});
       keys.set(normalizeLogicalPath(logicalPath),logicalPath);
     }
@@ -159,7 +166,7 @@ export function readBreadcrumbData(text,{directory,pagePath,cache=new Map()}={})
     };
     if(navigation.default&&!keys.has(normalizeLogicalPath(navigation.default)))throw new Error('Missing breadcrumb column URL for '+navigation.default);
     defaultColumns=navigation.default?routeFor(navigation.default).columns:[];
-    const currentCollection=normalizeLogicalPath(extractTagAttribute(body,'data-collection-path'));
+    const currentCollection=normalizeLogicalPath(extractTagAttribute(root,'data-collection-path'));
     // Sources are inspection data, recovered from terminal rows rather than an inline whitelist.
     for(const [logicalPath,payload] of Object.entries(columns)) {
       let contains=false;

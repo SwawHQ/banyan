@@ -15,7 +15,8 @@ export function checkReservedColumns(first,final) {
 
 export function checkInitialLayout(first,final,expectedX) {
   assert.ok(first.scriptsHeld>0,'Startup observation must hold external scripts until the initial sample.');
-  assert.ok(Math.abs(first.firstFrameX-expectedX)<=1,'The first animation frame must have the expected canvas position.');
+  if(first.renderBlocked)assert.equal(first.paints,0,'Pending navigation resources must block first paint.');
+  assert.ok(Math.abs((first.renderBlocked?final.firstFrameX:first.firstFrameX)-expectedX)<=1,'The first animation frame must have the expected canvas position.');
   assert.ok(Math.abs(first.canvasOffsetX-expectedX)<=1&&Math.abs(final.canvasOffsetX-expectedX)<=1,
     'Startup must preserve the expected canvas position.');
   assert.ok(Math.abs(first.mainDocumentX-final.mainDocumentX)<=1,'Main must not move while controllers load.');

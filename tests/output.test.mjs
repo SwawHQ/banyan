@@ -10,7 +10,7 @@ import {inspectHtmlBudget,inspectShareImageBudget,maxShareImageBytes} from './ou
 import {verifyRetiredOutput} from './output/retired.mjs';
 import {inspect as inspectShareImage} from '../.agents/skills/swaw-banyan/tasks/check/img/share/inspect.mjs';
 import {breadcrumbRows,inspect as inspectBreadcrumb} from '../.agents/skills/swaw-banyan/tasks/check/html/breadcrumb/inspect.mjs';
-import {readBreadcrumbData,readNavigationFragment} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {readBreadcrumbData,readNavigationFragment,readNavigationResource} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
@@ -18,6 +18,7 @@ import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/output-tests'),budget=fileURLToPath(new URL('./output/budget.mjs',import.meta.url));
 let work,count=0;
 function write(root,name,text) {
+  if(/^\/?site\/navigation\/[a-f0-9]{64}\.js$/.test(name)) text='(document.banyanBreadcrumbFragments ||= new Map()).set(document.currentScript.src,'+JSON.stringify(text)+');';
   const file=path.join(root,name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);
 }
 function fixture(body='') {
@@ -82,11 +83,11 @@ test('collection heads prefetch their own column and missing breadcrumb runtime 
         assert.equal(extractTagAttribute(executing[0],'integrity'),runtimeIntegrity);
       } else assert.equal(extractTagAttribute(scripts[0],'href'),runtimeUrl,'The next page uses the same fingerprinted runtime.');
       const href=extractTagAttribute(fragments[0],'href');
-      assert.match(href,/^\/site\/navigation\/[a-f0-9]{64}\.txt$/);
+      assert.match(href,/^\/site\/navigation\/[a-f0-9]{64}\.js$/);
       assert.ok(links.every(tag=>html.indexOf(tag)<html.indexOf('<body')),'The browser sees each hint in the head.');
-      const payload=readNavigationFragment(fs.readFileSync(path.join(output,href.slice(1)),'utf8'));
+      const payload=readNavigationResource(fs.readFileSync(path.join(output,href.slice(1)),'utf8'));
       assert.equal(payload.logicalPath,logicalPath);
-      const body=extractStartTags(html,'body')[0],navigation=JSON.parse(extractTagAttribute(body,'data-navigation'));
+      const body=extractStartTags(html,'html')[0],navigation=JSON.parse(extractTagAttribute(body,'data-navigation'));
       assert.equal(navigation.columns[logicalPath],undefined,'Prefetch does not add the current column to the path manifest.');
       if(route==='prefetch-name') {
         assert.equal(navigation.default,'');
@@ -99,9 +100,9 @@ test('collection heads prefetch their own column and missing breadcrumb runtime 
       const html=read(prefix,route);
       assert.deepEqual(prefetches(html),[],prefix+route+' is not a sortable collection.');
       if(!route.startsWith('p/'))continue;
-      const navigation=JSON.parse(extractTagAttribute(extractStartTags(html,'body')[0],'data-navigation'));
+      const navigation=JSON.parse(extractTagAttribute(extractStartTags(html,'html')[0],'data-navigation'));
       for(const [logicalPath,hash] of Object.entries(navigation.columns))if(urls[logicalPath])
-        assert.equal(urls[logicalPath],navigation.resources+hash+'.txt','The next page reuses the prefetched hash.');
+        assert.equal(urls[logicalPath],navigation.resources+hash+'.js','The next page reuses the prefetched hash.');
     }
   }
 });
@@ -112,7 +113,7 @@ const escape=value=>String(value).replaceAll('&','&amp;').replaceAll('"','&quot;
 function fixtureNavigation(resources='/site/navigation/') {
   return {home:'/',resources,columns:{'/shared/':columnHash},default:'/shared/'};
 }
-const navigationHtml=value=>'<html lang=en><link rel=canonical href="https://example.test/article/"><body data-navigation="'+encodeNavigation(value)+'"></body></html>';
+const navigationHtml=value=>'<html lang=en data-navigation="'+encodeNavigation(value)+'"><link rel=canonical href="https://example.test/article/"><body></body></html>';
 function fragment({logicalPath='/shared/',href='/shared/',label='Shared',sortVariant='section',defaultSort='date-desc',rows=[]}={}) {
   return '<div class="item-list item-list--breadcrumb-column" role="group" aria-label="'+escape(label)+'" data-collection-href="'+escape(href)+'" data-breadcrumb-column-path="'+escape(logicalPath)+'" data-sort-variant="'+sortVariant+'" data-default-sort="'+defaultSort+'">'+
     '<div class="list-item list-header list-header--breadcrumb" data-list-header>'+
@@ -139,7 +140,7 @@ test('empty navigation needs no resource directory while referenced columns stil
 
 test('breadcrumb index and collection source budgets remain repository contracts',async()=>{
   const directory=fixture(),navigation={home:'/',resources:'/site/navigation/',columns:{'/one/':columnHash,'/two/':'b'.repeat(64)},default:''};
-  for(const [logicalPath,hash] of Object.entries(navigation.columns))write(directory,'site/navigation/'+hash+'.txt',fragment({
+  for(const [logicalPath,hash] of Object.entries(navigation.columns))write(directory,'site/navigation/'+hash+'.js',fragment({
     logicalPath,href:logicalPath,label:'Source',rows:[{href:'/article/',text:'Article'}]}));
   for(const name of ['articles-all','articles','products-all','products']) {
     write(directory,name+'/index.html',navigationHtml(navigation));
@@ -150,7 +151,7 @@ test('breadcrumb index and collection source budgets remain repository contracts
 });
 
 test('breadcrumb references count inline bytes and shared external items once',async()=>{
-  const navigation=fixtureNavigation(),url=navigation.resources+columnHash+'.txt';
+  const navigation=fixtureNavigation(),url=navigation.resources+columnHash+'.js';
   const content=fragment({rows:[{href:'/article/',text:'Article'},{href:'/two/',text:'Literal &quot;quote&quot;'}]});
   const html=navigationHtml(navigation),directory=fixture();write(directory,url.slice(1),content);
   const [row]=breadcrumbRows([{text:html,relativePath:'article/index.html'}],{directory});
@@ -176,7 +177,7 @@ test('breadcrumb references count inline bytes and shared external items once',a
 test('breadcrumb readers validate external fragments, site paths and base URL prefixes',async()=>{
   const directory=fixture(),content=fragment({href:'/base/shared/',rows:[{href:'/one/',text:'One'}]});
   write(directory,'index.html','<link rel=canonical href="https://example.test/base/">');
-  write(directory,'site/navigation/'+columnHash+'.txt',content);
+  write(directory,'site/navigation/'+columnHash+'.js',content);
   const navigation=fixtureNavigation('/base/site/navigation/'),html=value=>navigationHtml({...navigation,resources:value});
   const resource='/base/site/navigation/',parsed=readBreadcrumbData(html(resource),{directory});
   assert.equal(parsed.error,'');assert.deepEqual(parsed.columns['/shared/'],readNavigationFragment(content),'The URL prefix is not a physical output directory.');
@@ -191,8 +192,11 @@ test('breadcrumb readers validate external fragments, site paths and base URL pr
     ['/base/%2e%2e/outside/',/leaves the published site/],
     ['/base/site/%2e%2e%5coutside/',/Invalid output reference/],
   ])assert.match(readBreadcrumbData(html(reference),{directory}).error,expected);
-  const file='site/navigation/'+columnHash+'.txt';write(directory,file,'{broken');
+  const file='site/navigation/'+columnHash+'.js';write(directory,file,'{broken');
   assert.match(readBreadcrumbData(html(resource),{directory}).error,/Invalid breadcrumb column fragment/);
+  const script=fs.readFileSync(path.join(directory,file),'utf8');
+  for(const invalid of [content,script+'void 0;',script.replace('"{broken"','{}')])
+    assert.throws(()=>readNavigationResource(invalid),'Resource inspection must reject raw HTML, extra code and non-string data.');
   write(directory,file,fragment({logicalPath:'/different/'}));
   assert.match(readBreadcrumbData(html(resource),{directory}).error,/Invalid breadcrumb column fragment for \/shared\//);
   write(directory,file,content);write(directory,'article/index.html',html(resource));
@@ -257,9 +261,9 @@ test('breadcrumb readers resolve the published root behind Hugo language redirec
     '<meta charset="utf-8">\n<meta http-equiv="refresh" content="0; url=https://example.test/base/en/">\n</head>\n</html>');
   for(const lang of ['en','zh']) {
     const hash=(lang==='en'?'a':'b').repeat(64),content=fragment({href:'/base/'+lang+'/shared/',rows:[{href:'/base/'+lang+'/one/',text:lang==='en'?'One':'一'}]});
-    write(directory,'site/navigation/'+hash+'.txt',content);
+    write(directory,'site/navigation/'+hash+'.js',content);
     const navigation=fixtureNavigation('/base/site/navigation/');navigation.columns['/shared/']=hash;
-    const html='<html lang="'+lang+'"><head><link rel="canonical" href="https://example.test/base/'+lang+'/article/"></head>'+navigationHtml(navigation).split('<body')[1].replace(/^/, '<body');
+    const html=navigationHtml(navigation).replace('lang=en','lang="'+lang+'"').replace('https://example.test/article/','https://example.test/base/'+lang+'/article/');
     write(directory,lang+'/article/index.html',html);
     const data=readBreadcrumbData(html,{directory});assert.equal(data.error,'');assert.deepEqual(data.columns['/shared/'],readNavigationFragment(content));
     assert.match(readBreadcrumbData(html.replace('/base/site/navigation/','/outside/'),{directory}).error,/leaves the published site/);

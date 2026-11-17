@@ -11,12 +11,18 @@ import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browse
 import {loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {visit} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
 import {afterPaint,waitForBrowse} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/viewport.mjs';
-import {readNavigationFragment} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {readNavigationResource} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {readColumns} from '../.agents/skills/swaw-banyan/tasks/check/browser/breadcrumb/_shared/page.mjs';
 import {assertRootLinks} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/_shared/links.mjs';
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
+const waitForCondition=(page,fn,arg)=>page.waitForFunction(fn,arg,{polling:20});
+async function afterPaintIfReady(page) {
+  const blocked=await page.evaluate(()=>document.createElement('script').blocking?.supports('render')
+    &&!!document.head.querySelector('script[blocking~=render][src*="/site/navigation/"]'));
+  if(!blocked)await afterPaint(page);
+}
 const root=fileURLToPath(new URL('../',import.meta.url));
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-nav-fragments');
 const article='/p/banyan/',slowSource='/products/themes/',fastSource='/articles-all/';
@@ -27,11 +33,11 @@ function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.w
 function routeFor(source){return article+'#from='+source.split('/').filter(Boolean).join('/');}
 async function breadcrumbData(page,logicalPath){
   const data=await page.evaluate(logicalPath=>{
-    const navigation=JSON.parse(document.body.dataset.navigation);
+    const navigation=JSON.parse(document.documentElement.dataset.navigation);
     const terminal=logicalPath===null?navigation.default:logicalPath;
     const segments=terminal.split('/').filter(Boolean),paths=segments.map((_,index)=>'/'+segments.slice(0,index+1).join('/')+'/');
     if(!paths.every(key=>navigation.columns[key]))throw new Error('Fixture column is missing '+terminal);
-    const url=key=>navigation.resources+navigation.columns[key]+'.txt';
+    const url=key=>navigation.resources+navigation.columns[key]+'.js';
     const columnUrls=paths.map(url);
     return {urls:[...new Set(columnUrls)],columnUrls,
       all:Object.keys(navigation.columns).map(url),paths,error:navigation.error};
@@ -86,8 +92,8 @@ before(()=>{
     {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
   for(const name of fs.readdirSync(path.join(output,'site/navigation'))){
-    assert.match(name,/^[a-f0-9]{64}\.txt$/,'The fixture must publish flat content-addressed HTML fragment files.');
-    const payload=readNavigationFragment(fs.readFileSync(path.join(output,'site/navigation',name),'utf8'));
+    assert.match(name,/^[a-f0-9]{64}\.js$/,'The fixture must publish flat content-addressed HTML fragment files.');
+    const payload=readNavigationResource(fs.readFileSync(path.join(output,'site/navigation',name),'utf8'));
     publishedColumns.set('/site/navigation/'+name,payload.logicalPath);
     publishedHrefs.set('/site/navigation/'+name,payload.href);
   }
@@ -99,7 +105,7 @@ test('default path HTML contains prefix resources without routes or sibling rows
   const navigation=extractBlocks(html,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb');
   assert.equal(navigation.length,1);
   assert.doesNotMatch(navigation[0].html,/\bdata-list-entry\b/,'Breadcrumb rows must be supplied by HTML fragments.');
-  const body=extractStartTags(html,'body')[0];
+  const body=extractStartTags(html,'html')[0];
   const data=JSON.parse(extractTagAttribute(body,'data-navigation')),segments=data.default.split('/').filter(Boolean);
   assert.ok(segments.length>=2);assert.ok(Object.values(data.columns).every(hash=>/^[a-f0-9]{64}$/.test(hash)));
   assert.equal(data.home,'/');assert.equal(data.resources,'/site/navigation/');
@@ -123,7 +129,8 @@ test('rendered default collection links omit sorting fragments and declare child
   const html=fs.readFileSync(path.join(output,'plain/index.html'),'utf8');
   const main=extractBlocks(html,'main')[0].inner;
   const column=[...publishedColumns].find(([,logicalPath])=>logicalPath==='/plain/')[0];
-  const fragment=fs.readFileSync(path.join(output,column),'utf8');
+  const resource=fs.readFileSync(path.join(output,column),'utf8');
+  const fragment=JSON.parse(resource.slice(resource.indexOf('document.currentScript.src,')+'document.currentScript.src,'.length,-2));
   for(const markup of [main,fragment]){
     const rows=extractBlocks(markup,'div',tag=>/\sdata-list-item(?:\s|=|>)/.test(tag));
     const names=rows.find(row=>extractStartTags(row.inner,'a').some(tag=>extractTagAttribute(tag,'href')==='/plain/names/'));
@@ -146,22 +153,22 @@ test('external navigation handles slow, stale, failed and offline column request
     try{
       await page.goto(baseUrl+article,{waitUntil:'domcontentloaded'});
       const expected=await defaultData(page);assert.ok(expected.hrefs.length>=2);
-      await page.waitForFunction(()=>document.documentElement.hasAttribute('data-breadcrumb-pending'));
+      await waitForCondition(page,()=>document.documentElement.hasAttribute('data-breadcrumb-pending'));
       await page.evaluate(()=>{window.reservedDefaultColumns=[...document.querySelector('[data-slot=breadcrumb]').children];});
-      await afterPaint(page);const held=await snapshot(page);
+      await afterPaintIfReady(page);const held=await snapshot(page);
       assert.equal(await page.locator('[data-slot=breadcrumb] [data-list-entry]').count(),0,
         'Default path rows must not be embedded in HTML or rendered before their fragments loads.');
       assert.equal(held.widths.length,expected.hrefs.length);
       assert.ok(await page.locator('[data-root-navigation] a').count());
       assert.ok(await page.locator('main').isVisible());
-      release();await waitForBrowse(page);await afterPaint(page);const ready=await snapshot(page);
+      release();await waitForBrowse(page);await afterPaintIfReady(page);const ready=await snapshot(page);
       assert.equal(ready.x,held.x);assert.equal(ready.scrollX,held.scrollX);assert.deepEqual(ready.widths,held.widths);
       assert.equal(await page.evaluate(()=>window.reservedDefaultColumns.every((node,index)=>
         node===document.querySelector('[data-slot=breadcrumb]').children[index])),true);
       assert.deepEqual([...requests].sort(),expected.urls.sort(),'Default paths must load only their own HTML columns, once each.');
       assert.deepEqual(ready.columns.map(column=>column.href),expected.hrefs);
       assert.ok(ready.columns.some(column=>column.entries.length>1),'Loaded HTML must supply the siblings absent from HTML.');
-      assert.equal(responses.length,expected.urls.length);assert.ok(responses.every(type=>type.startsWith('text/plain')),'The browser must parse HTML fragments served as plain text.');
+      assert.equal(responses.length,expected.urls.length);assert.ok(responses.every(type=>type.startsWith('text/javascript')),'The browser must load shared navigation scripts.');
       return {columns:expected.urls.length};
     }finally{release();}
   }},{id:'default-column-failures-keep-reserved-containers',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
@@ -169,10 +176,10 @@ test('external navigation handles slow, stale, failed and offline column request
     await page.route('**/site/navigation/**',async route=>{await gate;return route.fulfill({status:404,contentType:'text/plain',body:'{}'});});
     let held;
     try{
-      await page.goto(baseUrl+article,{waitUntil:'domcontentloaded'});await afterPaint(page);held=await snapshot(page);
+      await page.goto(baseUrl+article,{waitUntil:'domcontentloaded'});await afterPaintIfReady(page);held=await snapshot(page);
       await page.evaluate(()=>{window.reservedFailedColumns=[...document.querySelector('[data-slot=breadcrumb]').children];});
     }finally{release();}
-    await waitForBrowse(page);await afterPaint(page);
+    await waitForBrowse(page);await afterPaintIfReady(page);
     const expected=await defaultData(page),failed=await snapshot(page);
     assert.deepEqual(failed.columns.map(column=>column.path),expected.paths);
     assert.equal(failed.widths.length,expected.paths.length);assert.ok(failed.widths.every(width=>width>0));
@@ -199,16 +206,16 @@ test('external navigation handles slow, stale, failed and offline column request
       }
       await route.continue();
     });
-    await page.goto(baseUrl+'/p/fragment-readonly-a/',{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    await page.goto(baseUrl+'/p/fragment-readonly-a/',{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
     const column=page.locator('.breadcrumb-column[data-breadcrumb-column-path="/plain/readonly/"]');
     assert.equal(await column.locator('[data-list-entry]').count(),0);
     assert.notEqual(await column.getAttribute('data-breadcrumb-failed'),null);
     assert.equal(await column.locator('[data-breadcrumb-sort-toggle]').count(),0,'The ancestor must not expose a sort toggle.');
     failing=false;
     await page.evaluate(()=>{location.hash='sorts=name-desc';});
-    await page.waitForFunction(()=>document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="/plain/readonly/"]')
+    await waitForCondition(page,()=>document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="/plain/readonly/"]')
       &&!document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="/plain/readonly/"]').hasAttribute('data-breadcrumb-failed'));
-    await waitForBrowse(page);await afterPaint(page);
+    await waitForBrowse(page);await afterPaintIfReady(page);
     assert.equal(await column.locator('[data-list-entry]').count(),2,'A non-sortable column must also restore its complete rows after retry.');
     assert.equal(await column.locator('[data-breadcrumb-sort-toggle]').count(),0);
     assert.equal(attempts,2,'The sort-state change must retry the failed column once.');
@@ -216,10 +223,10 @@ test('external navigation handles slow, stale, failed and offline column request
   }},{id:'unicode-default-columns-load-fragments',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
     const requests=[],responses=[];page.on('request',request=>{const pathname=fragmentPath(request);if(pathname)requests.push(pathname);});
     page.on('response',response=>{const pathname=fragmentPath(response.request());if(pathname)responses.push({path:pathname,status:response.status()});});
-    await page.goto(baseUrl+'/p/fragment-unicode-a/',{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    await page.goto(baseUrl+'/p/fragment-unicode-a/',{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
     const expected=await defaultData(page),href=expected.hrefs.at(-1);
     const column=page.locator('[data-breadcrumb-collection-href='+JSON.stringify(href)+']');
-    const metadata=await page.evaluate(()=>JSON.parse(document.body.dataset.navigation));
+    const metadata=await page.evaluate(()=>JSON.parse(document.documentElement.dataset.navigation));
     const resources=expected.urls.map(url=>({url,logicalPath:publishedColumns.get(url),
       exists:fs.existsSync(path.join(output,url.slice(1)))}));
     assert.equal(await column.locator('[data-list-entry]').count(),2,
@@ -240,14 +247,14 @@ test('external navigation handles slow, stale, failed and offline column request
     try{
       await page.goto(baseUrl+routeFor(slowSource),{waitUntil:'domcontentloaded'});
       const expected=await sourceData(page,slowSource);
-      await page.waitForFunction(()=>document.documentElement.hasAttribute('data-breadcrumb-pending'));
+      await waitForCondition(page,()=>document.documentElement.hasAttribute('data-breadcrumb-pending'));
       const firstReady=expected.paths.find(key=>key!==delayed);
-      await page.waitForFunction(key=>{
+      await waitForCondition(page,key=>{
         const column=document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="'+key+'"]');
         return column?.querySelector('[data-list-entry]')&&getComputedStyle(column).opacity==='1'
           &&getComputedStyle(column).pointerEvents!=='none';
       },firstReady);
-      await afterPaint(page);const held=await snapshot(page);
+      await afterPaintIfReady(page);const held=await snapshot(page);
       assert.ok(await page.locator('main').isVisible(),'The article must remain visible while columns load.');
       assert.equal(held.widths.length,expected.hrefs.length,'All breadcrumb columns must be reserved before fragments arrive.');
       assert.equal(await page.locator('.breadcrumb-column[data-breadcrumb-column-path="'+delayed+'"]').getAttribute('tabindex'),null,
@@ -265,8 +272,8 @@ test('external navigation handles slow, stale, failed and offline column request
       assert.notEqual(tokens.at(-1),'_','An early header must omit trailing defaults.');
       await visible.evaluate(column=>{window.earlyColumnList=column.firstElementChild;});
       await page.evaluate(hash=>{location.hash=hash;},routeFor(slowSource).split('#')[1]+'&sorts=name-desc,name-desc');
-      await page.waitForFunction(key=>document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="'+key+'"] [data-sort-indicator]')?.textContent==='↓',firstReady);
-      release();await waitForBrowse(page);await afterPaint(page);
+      await waitForCondition(page,key=>document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="'+key+'"] [data-sort-indicator]')?.textContent==='↓',firstReady);
+      release();await waitForBrowse(page);await afterPaintIfReady(page);
       const ready=await snapshot(page);
       assert.equal(ready.x,held.x,'Filling columns must keep the article at its reserved position.');
       assert.equal(ready.scrollX,held.scrollX);assert.deepEqual(ready.widths,held.widths);
@@ -288,16 +295,16 @@ test('external navigation handles slow, stale, failed and offline column request
     try{
       await page.goto(baseUrl+routeFor(slowSource),{waitUntil:'domcontentloaded'});
       const slow=await sourceData(page,slowSource),fast=await sourceData(page,fastSource);
-      await page.waitForFunction(()=>document.documentElement.hasAttribute('data-breadcrumb-pending'));
+      await waitForCondition(page,()=>document.documentElement.hasAttribute('data-breadcrumb-pending'));
       await page.evaluate(hash=>{location.hash=hash;},routeFor(fastSource).split('#')[1]);
       await waitForBrowse(page);
       assert.deepEqual((await snapshot(page)).columns.map(column=>column.href),fast.hrefs);
       const finished=page.waitForResponse(response=>new URL(response.url()).pathname===slow.urls.at(-1));
       release();await finished;
-      await afterPaint(page);
+      await afterPaintIfReady(page);
       assert.deepEqual((await snapshot(page)).columns.map(column=>column.href),fast.hrefs,'An older response must not replace the new source.');
       await page.evaluate(hash=>{location.hash=hash;},routeFor(slowSource).split('#')[1]);
-      await waitForBrowse(page);await afterPaint(page);
+      await waitForBrowse(page);await afterPaintIfReady(page);
       assert.deepEqual((await snapshot(page)).columns.map(column=>column.href),slow.hrefs);
       for(const url of new Set([...slow.urls,...fast.urls]))assert.equal(requests.filter(value=>value===url).length,1,
         'A shared or previously loaded column must reuse the same request.');
@@ -318,7 +325,7 @@ test('external navigation handles slow, stale, failed and offline column request
       await ancestor.evaluate(node=>{window.sharedList=node.firstElementChild;window.sharedFocus=document.activeElement;});
       const held=await snapshot(page);
       await page.evaluate(hash=>{location.hash=hash;},routeFor(next).split('#')[1]);
-      await page.waitForFunction(path=>{
+      await waitForCondition(page,path=>{
         const link=document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="/products/"] [aria-current=page]');
         return link&&new URL(link.href).pathname===path;
       },next);
@@ -329,14 +336,14 @@ test('external navigation handles slow, stale, failed and offline column request
       assert.equal(new URLSearchParams(header.hash.slice(1)).get('from'),'products/another',
         'The preserved ancestor header must follow the new lineage before its terminal arrives.');
       assert.equal(await page.locator('[data-slot=breadcrumb] > .breadcrumb-column').last().locator('[data-list-entry]').count(),0);
-      release();await waitForBrowse(page);await afterPaint(page);
+      release();await waitForBrowse(page);await afterPaintIfReady(page);
       const ready=await snapshot(page);
       assert.deepEqual(ready.columns.map(column=>column.path),['/products/',next]);
       assert.equal(ready.x,held.x);assert.equal(ready.scrollX,held.scrollX);assert.deepEqual(ready.widths,held.widths);
       assert.equal(await ancestor.evaluate(node=>node.firstElementChild===window.sharedList&&document.activeElement===window.sharedFocus),true);
       assert.equal(ready.columns.at(-1).entries.filter(entry=>entry.current==='page').length,1);
       await page.evaluate(hash=>{location.hash=hash;},routeFor(slowSource).split('#')[1]);await waitForBrowse(page);
-      await page.waitForFunction(path=>{
+      await waitForCondition(page,path=>{
         const link=document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="/products/"] [aria-current=page]');
         return link&&new URL(link.href).pathname===path;
       },slowSource);
@@ -347,14 +354,14 @@ test('external navigation handles slow, stale, failed and offline column request
     }finally{release();}
   }},{id:'default-breadcrumb-after-source-change',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
     const sorts='sorts=name-asc,name-asc';
-    await page.goto(baseUrl+article+'#'+sorts,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
-    await page.waitForFunction(()=>[...document.querySelectorAll('[data-slot=breadcrumb] [data-sort-indicator]')]
+    await page.goto(baseUrl+article+'#'+sorts,{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
+    await waitForCondition(page,()=>[...document.querySelectorAll('[data-slot=breadcrumb] [data-sort-indicator]')]
       .every(node=>node.textContent==='↑'));
     const expected=(await snapshot(page)).columns;
     assert.ok(expected.length>0,'The fixture needs a default directory path.');
     for(const hash of [sorts,'from=missing&'+sorts,'from=articles&'+sorts]){
       await page.evaluate(hash=>{location.hash=hash;},routeFor(slowSource).split('#')[1]);await waitForBrowse(page);
-      await page.evaluate(hash=>{location.hash=hash;},hash);await waitForBrowse(page);await afterPaint(page);
+      await page.evaluate(hash=>{location.hash=hash;},hash);await waitForBrowse(page);await afterPaintIfReady(page);
       assert.deepEqual((await snapshot(page)).columns,expected,
         'Clearing or invalidating the source must restore the sorted default rows and their link state.');
     }
@@ -363,7 +370,7 @@ test('external navigation handles slow, stale, failed and offline column request
   scenarios.push({id:'missing-terminal-skips-candidate-request',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
     const requests=[];page.on('request',request=>{const pathname=fragmentPath(request);if(pathname)requests.push(pathname);});
     await page.goto(baseUrl+article+'?keep=%2F+value#anchor=reading&from=missing&sorts=name-asc,name-asc',{waitUntil:'load'});
-    await waitForBrowse(page);await afterPaint(page);
+    await waitForBrowse(page);await afterPaintIfReady(page);
     const expected=await defaultData(page),url=new URL(page.url()),fields=new URLSearchParams(url.hash.slice(1));
     assert.deepEqual((await snapshot(page)).columns.map(column=>column.path),expected.paths);
     assert.deepEqual(requests.sort(),expected.urls.sort(),'An unknown terminal must request only the default prefixes.');
@@ -379,13 +386,13 @@ test('external navigation handles slow, stale, failed and offline column request
     });
     try{
       await page.goto(baseUrl+article+'?keep=%2F+value#anchor=reading&from=products&sorts=name-asc,name-asc',{waitUntil:'domcontentloaded'});
-      await page.waitForFunction(()=>document.documentElement.hasAttribute('data-breadcrumb-pending'));
-      await afterPaint(page);
+      await waitForCondition(page,()=>document.documentElement.hasAttribute('data-breadcrumb-pending'));
+      await afterPaintIfReady(page);
       const candidate=await sourceData(page,'/products/');
       assert.deepEqual(requests,candidate.urls,'An existing terminal must be checked before its candidate is rejected.');
       assert.equal((await snapshot(page)).widths.length,1,'The candidate may reserve its own prefix count before validation.');
       assert.equal(await page.locator('[data-root-navigation] .is-current').getAttribute('data-root-href'),'/products/');
-      release();await waitForBrowse(page);await afterPaint(page);
+      release();await waitForBrowse(page);await afterPaintIfReady(page);
       const expected=await defaultData(page),ready=await snapshot(page),url=new URL(page.url()),fields=new URLSearchParams(url.hash.slice(1));
       assert.deepEqual(ready.columns.map(column=>column.path),expected.paths);
       assert.equal(ready.widths.length,expected.paths.length,'An invalid ancestor must restore the default prefix count.');
@@ -402,7 +409,7 @@ test('external navigation handles slow, stale, failed and offline column request
       for(const hash of ['','#from='+collection.slice(1,-1)]){
         await page.goto('about:blank');
         requests.length=0;
-        await page.goto(baseUrl+collection+hash,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+        await page.goto(baseUrl+collection+hash,{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
         assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).has('from'),false,'Collections must use their own path without from.');
         const expected=await defaultData(page);
         assert.deepEqual((await snapshot(page)).columns.map(column=>column.path),expected.paths);
@@ -414,32 +421,33 @@ test('external navigation handles slow, stale, failed and offline column request
         const toggle=page.locator('.breadcrumb-column[data-breadcrumb-column-path="'+parent+'"] [data-breadcrumb-sort-toggle]');
         assert.equal(new URLSearchParams(new URL(await toggle.getAttribute('href'),baseUrl).hash.slice(1)).has('from'),false,'Native sort links must not add from.');
         const initial=await toggle.locator('[data-sort-indicator]').textContent();
+        const targetSort=new URLSearchParams(new URL(await toggle.getAttribute('href'),baseUrl).hash.slice(1)).get('sorts').split(',')[0];
         await toggle.focus();await toggle.press('Enter');
-        await page.waitForFunction(({parent,before})=>document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="'+parent+'"] [data-sort-indicator]')?.textContent!==before,{parent,before:initial});
+        await waitForCondition(page,({parent,before})=>document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="'+parent+'"] [data-sort-indicator]')?.textContent!==before,{parent,before:initial});
         const fields=new URLSearchParams(new URL(page.url()).hash.slice(1)),tokens=(fields.get('sorts')||'').split(',');
         const slots=[...tokens,...Array(Math.max(0,2-tokens.length)).fill('_')];
         assert.equal(fields.has('from'),false,'Sorting a parent must retain the current collection lineage without from.');
-        assert.equal(slots[0],initial==='↓'?'date-asc':'date-desc','The parent sort must occupy its own lineage slot.');
+        assert.equal(slots[0],targetSort,'The parent sort must occupy its own lineage slot.');
         assert.ok(slots[1]==='_'||slots[1]==='date-desc','The current main collection must retain its default order.');
         assert.equal(await page.locator('main [data-sort-active="true"] [data-sort-indicator]').textContent(),'↓');
         const links=await page.locator('main [data-kind="page"] [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>node.href));
         assert.ok(links.length>0,'Each collection must contain an article.');
         for(const href of links)assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).get('from'),articleSource,'Article links must retain only their required source.');
         assert.deepEqual(requests.sort(),initialRequests,'Sorting a parent must not add fragment requests.');
-        await toggle.press('Enter');await afterPaint(page);
+        await toggle.press('Enter');await afterPaintIfReady(page);
         assert.equal(new URL(page.url()).hash,'','Returning to default sorting must leave a clean collection URL.');
       }
     }
     for(const collection of ['/plain/','/articles-all/']){
-      await page.goto(baseUrl+collection+'#from='+collection.slice(1,-1),{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+      await page.goto(baseUrl+collection+'#from='+collection.slice(1,-1),{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
       assert.equal(await page.locator('[data-slot=breadcrumb]').count(),0,'Root collections must also cover sorting without breadcrumb columns.');
       assert.equal(new URL(page.url()).hash,'','Collections without breadcrumb columns must remove redundant from.');
       const control=page.locator('main [data-sort-active="true"]');
       assert.equal(new URLSearchParams(new URL(await control.getAttribute('href'),baseUrl).hash.slice(1)).has('from'),false);
-      await control.click();await afterPaint(page);
+      await control.click();await afterPaintIfReady(page);
       assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).has('from'),false,'Main sorting must not retain a redundant collection source.');
     }
-    await page.goto(baseUrl+'/articles/product-info/nested/#from=articles&sorts=date-asc,_,_',{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    await page.goto(baseUrl+'/articles/product-info/nested/#from=articles&sorts=date-asc,_,_',{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
     const expected=await defaultData(page);
     assert.equal(expected.paths.length,2,'The nested collection must have two ancestor columns.');
     assert.deepEqual((await snapshot(page)).columns.map(column=>column.path),expected.paths,'An ancestor from must not shorten the collection path.');
@@ -454,8 +462,8 @@ test('external navigation handles slow, stale, failed and offline column request
     await page.route('**/*',async route=>{if(route.request().resourceType()==='script')await gate;await route.continue();});
     try{
       await page.goto(baseUrl+'/p/fragment-root-only/#from=articles-all',{waitUntil:'commit'});
-      await page.waitForFunction(()=>document.querySelector('[data-root-navigation] .is-current')?.dataset.rootHref==='/articles-all/');
-      const data=await page.evaluate(()=>JSON.parse(document.body.dataset.navigation));
+      await waitForCondition(page,()=>document.querySelector('[data-root-navigation] .is-current')?.dataset.rootHref==='/articles-all/');
+      const data=await page.evaluate(()=>JSON.parse(document.documentElement.dataset.navigation));
       assert.equal(data.default,'');assert.ok(data.columns['/articles-all/']);
       assert.equal(data.columns['/articles/'],undefined,'Root-only pages need only their direct candidate hashes.');
       assert.equal(await page.locator('[data-slot=breadcrumb]').count(),0);assert.deepEqual(requests,[]);
@@ -486,7 +494,7 @@ test('external navigation handles slow, stale, failed and offline column request
       const hash=routeFor(slowSource).split('#')[1]+'&sorts=name-asc,name-desc';
       await page.evaluate(hash=>{location.hash=hash;},hash);
       const latest=page.url(),finished=page.waitForResponse(response=>fragmentLogicalPath(response.request())===slowSource);
-      release();await finished;await waitForBrowse(page);await afterPaint(page);
+      release();await finished;await waitForBrowse(page);await afterPaintIfReady(page);
       assert.equal(page.url(),latest,'An older retry must not replace a newer URL state after its request completes.');
       assert.equal(await column.locator('[data-sort-indicator]').textContent(),'↓','The latest sort direction must win.');
       assert.equal(await column.locator('[data-list-entry]').count(),2,'The latest state must also restore complete column rows.');
@@ -503,14 +511,16 @@ test('external navigation handles slow, stale, failed and offline column request
         let body=fault==='404'?'{}':'{broken';
         if(fault==='nested-item'){
           const valid=fs.readFileSync(path.join(output,pathname.slice(1)),'utf8');
-          body=valid.replace(/(<a\b[^>]*\bdata-list-entry\b[^>]*>)/,'$1<div data-list-item>Extra marker</div>');
+          const start=valid.indexOf('document.currentScript.src,')+'document.currentScript.src,'.length;
+          const html=JSON.parse(valid.slice(start,-2));
+          body=valid.slice(0,start)+JSON.stringify(html.replace(/(<a\b[^>]*\bdata-list-entry\b[^>]*>)/,'$1<div data-list-item>Extra marker</div>'))+');';
           assert.notEqual(body,valid,'The fault must insert a nested item marker.');
         }
         return route.fulfill({status:fault==='404'?404:200,contentType:'text/plain',body});
       }
       await route.continue();
     });
-    await page.goto(baseUrl+routeFor(slowSource),{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    await page.goto(baseUrl+routeFor(slowSource),{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
     const expected=await sourceData(page,slowSource),failed=await snapshot(page);
     assert.deepEqual(failed.columns.map(column=>column.path),expected.paths,'Failures must keep every reserved column.');
     assert.ok(failed.widths.every(width=>width>0));
@@ -528,9 +538,9 @@ test('external navigation handles slow, stale, failed and offline column request
       window.successfulColumnFocus=document.activeElement;
     });
     await page.evaluate(hash=>{location.hash=hash;},routeFor(slowSource).split('#')[1]+'&sorts=name-asc,name-desc');
-    await page.waitForFunction(source=>document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="'+source+'"]')
+    await waitForCondition(page,source=>document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="'+source+'"]')
       &&!document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="'+source+'"]')?.hasAttribute('data-breadcrumb-failed'),slowSource);
-    await waitForBrowse(page);await afterPaint(page);
+    await waitForBrowse(page);await afterPaintIfReady(page);
     assert.equal(await column.locator('[data-list-entry]').count(),2,'A hash change must retry and restore the full column.');
     assert.equal(await column.evaluate(node=>node===window.failedNavigationColumn),true);
     assert.equal(await successful.evaluate(node=>node.firstElementChild===window.successfulColumnList
@@ -541,7 +551,7 @@ test('external navigation handles slow, stale, failed and offline column request
     assert.equal(await column.locator('[data-breadcrumb-sort-toggle]').evaluate(node=>node===document.activeElement),true,
       'Sorting after recovery must keep keyboard focus.');
     await page.evaluate(hash=>{location.hash=hash;},routeFor(fastSource).split('#')[1]);await waitForBrowse(page);
-    await page.evaluate(hash=>{location.hash=hash;},routeFor(slowSource).split('#')[1]);await waitForBrowse(page);await afterPaint(page);
+    await page.evaluate(hash=>{location.hash=hash;},routeFor(slowSource).split('#')[1]);await waitForBrowse(page);await afterPaintIfReady(page);
     assert.deepEqual((await snapshot(page)).columns.map(column=>column.href),expected.hrefs);
     const retried=expected.urls.find(value=>publishedColumns.get(value)===slowSource);
     assert.ok(retried,'The selected column must resolve through its published payload, not its filename.');
@@ -559,7 +569,7 @@ test('external navigation handles slow, stale, failed and offline column request
     const child=new URL(links.find(link=>link.kind==='section').href);
     assert.equal(new URLSearchParams(entry.hash.slice(1)).get('from'),null);
     assert.equal(new URLSearchParams(entry.hash.slice(1)).get('sorts'),'_,name-asc');
-    assert.equal(new URLSearchParams(child.hash.slice(1)).get('sorts'),'_,name-asc,name-asc');
+    assert.equal(new URLSearchParams(child.hash.slice(1)).get('sorts'),'_,name-asc','The child keeps ancestor state and uses its own default sort.');
     await page.goto(baseUrl+article+'?keep=1#anchor=reading',{waitUntil:'load'});await waitForBrowse(page);
     const selected=page.locator('[data-slot=breadcrumb] [aria-current=page]').last();
     assert.equal(new URLSearchParams(new URL(await selected.getAttribute('href'),baseUrl).hash.slice(1)).get('from'),null);
@@ -567,13 +577,13 @@ test('external navigation handles slow, stale, failed and offline column request
     await toggle.click();await waitForBrowse(page);
     const sorted=new URL(page.url()),fields=new URLSearchParams(sorted.hash.slice(1));
     assert.equal(fields.get('from'),null,'Default column sorting must not add from.');
-    assert.equal(fields.get('sorts'),'date-asc');
+    assert.equal(fields.get('sorts'),'name-desc');
     assert.equal(fields.get('anchor'),'reading');assert.equal(sorted.search,'?keep=1');
     return {articleSorts:entry.hash,childSorts:child.hash,sorted:sorted.hash};
   }});
   scenarios.push({id:'default-sort-links-are-compact',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){
     for(const pathname of ['/plain/','/plain/names/','/articles/product-info/','/articles/product-info/nested/']){
-      await page.goto(baseUrl+pathname,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+      await page.goto(baseUrl+pathname,{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
       assert.equal(page.url(),baseUrl+pathname);
       const links=await page.locator('main [data-list-entry], [data-slot=breadcrumb] [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>({
         href:node.href,kind:node.parentElement.dataset.kind
@@ -584,23 +594,29 @@ test('external navigation handles slow, stale, failed and offline column request
         if(kind==='section')assert.equal(url.hash,'','Default collection hrefs must not have a fragment.');
       }
     }
-    await page.locator('main [data-sort-field=name]').click();await afterPaint(page);
+    await page.locator('main [data-sort-field=name]').click();await afterPaintIfReady(page);
     assert.equal(new URL(page.url()).hash,'#sorts=_,_,name-asc','A third-column sort must keep both leading positions.');
     const restore=await page.locator('main [data-sort-field=date]').getAttribute('href');
     assert.equal(new URL(restore,baseUrl).hash,'','The restore-default href must already be clean.');
-    await page.locator('main [data-sort-field=date]').click();await afterPaint(page);
+    await page.locator('main [data-sort-field=date]').click();await afterPaintIfReady(page);
     assert.equal(new URL(page.url()).hash,'');
 
     const extra=await context.newPage();
     try{
-      for(const [sorts,expected] of [['',''],['name-asc','name-asc'],['date-asc','date-asc'],['name-desc','name-desc,name-desc']]){
+      for(const [sorts,expected] of [['',''],['name-asc','name-asc'],['date-asc','date-asc'],['name-desc','name-desc']]){
         await page.goto(baseUrl+'/plain/'+(sorts?'#sorts='+sorts:''),{waitUntil:'load'});await waitForBrowse(page);
+        // Same-document goto can return before hashchange updates the collection links.
+        await waitForCondition(page,token=>{
+          const active=document.querySelector('main [data-sort-active=true]');
+          return active?.dataset.sortField===token.split('-')[0]
+            &&active.querySelector('[data-sort-indicator]')?.textContent===(token.endsWith('-desc')?'↓':'↑');
+        },sorts||'date-desc');
         const href=await page.locator('main [data-list-entry][href^="/plain/names/"]').getAttribute('href');
         assert.equal(new URLSearchParams(new URL(href,baseUrl).hash.slice(1)).get('sorts')||'',expected,
-          'The main-list href must use the target default and supported fields before navigation.');
+          'The child link retains parent state without assigning a child sort.');
         await extra.goto(new URL(href,baseUrl).href,{waitUntil:'load'});await waitForBrowse(extra);await afterPaint(extra);
         assert.equal(extra.url(),new URL(href,baseUrl).href,'Opening a new tab must not require URL cleanup.');
-        assert.equal(await extra.locator('main [data-sort-field=name] [data-sort-indicator]').textContent(),sorts==='name-desc'?'↓':'↑');
+        assert.equal(await extra.locator('main [data-sort-field=name] [data-sort-indicator]').textContent(),'↑','The child keeps its own name-ascending default for every parent sort.');
         const breadcrumbHref=await extra.locator('[data-slot=breadcrumb] [data-list-entry][href^="/plain/names/"]').getAttribute('href');
         assert.equal(breadcrumbHref,href,'Breadcrumb-column hrefs must use the same target metadata as the main list.');
       }
@@ -615,7 +631,7 @@ test('external navigation handles slow, stale, failed and offline column request
     });
     for(const route of ['/plain/names/?keep=%2f+value#anchor=chapter&sorts=date-desc,name-asc',
       '/articles/product-info/nested/#sorts=_,_,date-desc','/plain/names/#sorts=name-asc,_,_']){
-      await page.goto(baseUrl+route,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+      await page.goto(baseUrl+route,{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
       assert.equal(page.url(),baseUrl+route,'Loading must read the supplied sorting without rewriting its URL.');
       assert.deepEqual(await page.evaluate(()=>window.sortUrlWrites),[]);
     }
@@ -623,8 +639,8 @@ test('external navigation handles slow, stale, failed and offline column request
   }});
   scenarios.push({id:'parent-entries-retain-expanded-column-sorts',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){
     const route=article+'#from=articles/product-info&sorts=name-desc,date-asc';
-    await page.goto(baseUrl+route,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
-    await page.locator('[data-slot=breadcrumb] [data-breadcrumb-sort-toggle]').first().click();await afterPaint(page);
+    await page.goto(baseUrl+route,{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
+    await page.locator('[data-slot=breadcrumb] [data-breadcrumb-sort-toggle]').first().click();await afterPaintIfReady(page);
     await assertRootLinks(page);
     const columns=await readColumns(page),url=page.url();
     assert.equal(columns.length,2);assert.deepEqual(columns.map(column=>column.field),['Name','Updated']);
@@ -643,12 +659,12 @@ test('external navigation handles slow, stale, failed and offline column request
           column.rows.map(row=>row.key),'Opening the parent entry in a new tab preserves the exact row order.');
       } finally {await tab.close();}
       await parent.evaluateAll((nodes,href)=>nodes.find(node=>node.href===href).click(),href);
-      await page.waitForURL(href);await waitForBrowse(page);await afterPaint(page);
+      await page.waitForURL(href);await waitForBrowse(page);await afterPaintIfReady(page);
       assert.deepEqual(await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname)),column.rows.map(row=>row.key));
-      await page.goto(url,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+      await page.goto(url,{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
     }
-    await page.evaluate(()=>location.hash='from=articles-all&sorts=name-desc');await waitForBrowse(page);await afterPaint(page);
-    await page.waitForFunction(()=>document.querySelector('[data-slot=breadcrumb] > .breadcrumb-column')?.dataset.breadcrumbColumnPath==='/articles-all/');
+    await page.evaluate(()=>location.hash='from=articles-all&sorts=name-desc');await waitForBrowse(page);await afterPaintIfReady(page);
+    await waitForCondition(page,()=>document.querySelector('[data-slot=breadcrumb] > .breadcrumb-column')?.dataset.breadcrumbColumnPath==='/articles-all/');
     assert.equal(await page.locator('[data-root-href="/articles/"]').getAttribute('href'),'/articles/','The old root entry must lose the previous lineage sort.');
     assert.equal(await page.locator('[data-root-href="/articles-all/"]').getAttribute('href'),'/articles-all/#sorts=name-desc');
     await assertRootLinks(page);
@@ -656,14 +672,14 @@ test('external navigation handles slow, stale, failed and offline column request
   }});
   scenarios.push({id:'mixed-defaults-and-native-sort-links',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){
     const collection='/plain/names/';
-    await page.goto(baseUrl+collection,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    await page.goto(baseUrl+collection,{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
     const parent=page.locator('[data-slot=breadcrumb] > [data-breadcrumb-column-path="/plain/"]');
     const parentToggle=parent.locator('[data-breadcrumb-sort-toggle]'),main=page.locator('main [data-sort-field=name]');
     assert.equal(await parent.locator('[data-sort-indicator]').textContent(),'↓','The directory parent defaults to descending dates.');
     assert.equal(await main.locator('[data-sort-indicator]').textContent(),'↑','The name-only main list has a different default.');
     const initialOrder=await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname));
     const source=page.url();
-    await main.click();await afterPaint(page);
+    await main.click();await afterPaintIfReady(page);
     assert.equal(new URL(page.url()).hash,'#sorts=_,name-desc');
     assert.deepEqual(await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname)),initialOrder.slice().reverse());
     const toggleHref=await parentToggle.getAttribute('href');
@@ -676,7 +692,7 @@ test('external navigation handles slow, stale, failed and offline column request
       assert.equal(await extra.locator('main [data-sort-field=name] [data-sort-indicator]').textContent(),'↓');
       assert.equal(new URL(page.url()).hash,'#sorts=_,name-desc','Opening the native link must leave its opener unchanged.');
     }finally{await extra.close();}
-    await parentToggle.click();await afterPaint(page);
+    await parentToggle.click();await afterPaintIfReady(page);
     assert.equal(new URL(page.url()).hash,'#sorts=date-asc,name-desc');
     const parentHref=await page.locator('[data-root-navigation] [data-root-href="/plain/"]').getAttribute('href');
     assert.equal(new URL(parentHref,baseUrl).pathname,'/plain/');
@@ -690,12 +706,12 @@ test('external navigation handles slow, stale, failed and offline column request
     const articleHref=await page.locator('main [data-list-entry]').first().getAttribute('href');
     assert.equal(new URLSearchParams(new URL(articleHref,baseUrl).hash.slice(1)).get('sorts'),'date-asc,name-desc');
     assert.equal(new URLSearchParams(new URL(articleHref,baseUrl).hash.slice(1)).has('sort'),false);
-    await main.click();await afterPaint(page);
+    await main.click();await afterPaintIfReady(page);
     assert.equal(new URL(page.url()).hash,'#sorts=date-asc','Restoring the main default must keep the parent sort.');
-    await parentToggle.click();await afterPaint(page);
+    await parentToggle.click();await afterPaintIfReady(page);
     assert.equal(page.url(),source,'Restoring both defaults must remove sorts.');
-    await page.goto(baseUrl+collection+'#sorts=name-asc,_',{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
-    await main.click();await afterPaint(page);await main.click();await afterPaint(page);
+    await page.goto(baseUrl+collection+'#sorts=name-asc,_',{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
+    await main.click();await afterPaintIfReady(page);await main.click();await afterPaintIfReady(page);
     assert.equal(new URL(page.url()).hash,'#sorts=name-asc','A main default must not erase the same token used as a non-default parent sort.');
     const links=await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>node.href));
     for(const href of links)assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).get('sorts'),'name-asc');
@@ -706,17 +722,8 @@ test('external navigation handles slow, stale, failed and offline column request
     let release,heldScripts=0;const gate=new Promise(resolve=>{release=resolve;}),requests=[],errors=[];
     page.on('pageerror',error=>errors.push(error.message));
     page.on('request',request=>{const url=fragmentPath(request);if(url)requests.push(url);});
-    await page.addInitScript(()=>{
-      window.navigationTextReads=[];
-      const text=Response.prototype.text;
-      Response.prototype.text=async function(){
-        const body=await text.call(this);
-        if(this.url&&new URL(this.url).pathname.startsWith('/site/navigation/'))window.navigationTextReads.push(new URL(this.url).pathname);
-        return body;
-      };
-    });
     await page.route('**/*',async route=>{
-      if(route.request().resourceType()==='script'){heldScripts++;await gate;}
+      if(route.request().resourceType()==='script'&&!fragmentPath(route.request())){heldScripts++;await gate;}
       await route.continue();
     });
     try{
@@ -726,18 +733,17 @@ test('external navigation handles slow, stale, failed and offline column request
       const expected=await defaultData(page),next=await page.locator('head link[rel=prefetch]').getAttribute('href');
       assert.equal(expected.paths.length,depth-1,'Every ancestor must have its own visible breadcrumb column.');
       assert.equal(publishedColumns.get(next),route,'The next-page prefetch must remain separate from the visible parent columns.');
-      await page.waitForFunction(urls=>urls.every(url=>window.navigationTextReads?.includes(url)),expected.urls);
-      assert.ok(heldScripts>0,'The controller must still be held when the head startup reads its parent fragments.');
-      const hints=await page.locator('head meta[name=banyan-navigation-fragment]').evaluateAll(nodes=>nodes.map(node=>new URL(node.content,location.href).pathname));
-      assert.deepEqual(hints.sort(),expected.urls.sort(),'Early fragment hints must select only the visible parent columns.');
+      // WebKit may defer async script execution while earlier deferred scripts are held.
+      await waitForCondition(page,urls=>urls.every(url=>document.banyanBreadcrumbRequests?.has(new URL(url,location.href).href)),expected.urls);
+      assert.ok(heldScripts>0,'The controller must still be held when the head startup requests its parent fragments.');
       assert.deepEqual(requests.filter(url=>url!==next).sort(),expected.urls.sort(),'Each visible parent must load once, independently of the next-page prefetch.');
       assert.equal(await page.locator('[data-slot=breadcrumb] [data-list-entry]').count(),0,'Reading fragments must not bypass runtime validation and rendering.');
       assert.equal(await page.evaluate(()=>document.documentElement.hasAttribute('data-breadcrumb-pending')),true);
-      release();await page.waitForLoadState('load');await waitForBrowse(page);await afterPaint(page);
+      release();await page.waitForLoadState('load');await waitForBrowse(page);await afterPaintIfReady(page);
       const ready=await snapshot(page);
       assert.deepEqual(ready.columns.map(column=>column.href),expected.hrefs);
       assert.deepEqual(requests.filter(url=>url!==next).sort(),expected.urls.sort(),'The controller must reuse the successful head requests.');
-      assert.deepEqual(await page.evaluate(()=>window.navigationTextReads.slice().sort()),expected.urls.sort(),'The controller must reuse the text without reading each body twice.');
+      assert.equal(await page.evaluate(()=>document.banyanBreadcrumbFragments.size),0,'The controller consumes the registered fragments.');
       assert.equal(await page.locator('.breadcrumb-column [aria-current=page]').count(),expected.paths.length);
       assert.deepEqual(await page.locator('.breadcrumb-column [data-sort-indicator]').allTextContents(),expected.paths.map(()=> '↓'),'Every parent column must retain its requested sort state.');
       assert.equal(await page.locator('main [data-sort-control][data-sort-active=true]').getAttribute('data-sort-field'),'name','The main column must retain its independent requested sort.');
@@ -749,7 +755,7 @@ test('external navigation handles slow, stale, failed and offline column request
     let release,attempts=0,failing=true;const gate=new Promise(resolve=>{release=resolve;}),errors=[];
     page.on('pageerror',error=>errors.push(error.message));
     await page.route('**/*',async route=>{
-      if(route.request().resourceType()==='script')await gate;
+      if(route.request().resourceType()==='script'&&!fragmentPath(route.request()))await gate;
       if(fragmentLogicalPath(route.request())==='/articles/'){
         attempts++;
         if(failing)return route.fulfill({status:404,contentType:'text/plain',body:'Missing fragment'});
@@ -759,8 +765,8 @@ test('external navigation handles slow, stale, failed and offline column request
     try{
       const failed=page.waitForResponse(response=>fragmentLogicalPath(response.request())==='/articles/');
       await page.goto(baseUrl+'/articles/product-info/',{waitUntil:'commit'});
-      const response=await failed;assert.equal(response.status(),404);await response.finished();
-      await page.locator('main').waitFor({state:'attached'});await afterPaint(page);
+      const response=await failed;assert.equal(response.status(),404);
+      await page.locator('main').waitFor({state:'attached'});
       assert.equal(attempts,1,'The head startup must attempt its parent fragment before external scripts run.');
       assert.deepEqual(errors,[],'The early rejection must remain handled while the controller is held.');
       release();await page.waitForLoadState('load');await waitForBrowse(page);
@@ -769,7 +775,7 @@ test('external navigation handles slow, stale, failed and offline column request
       assert.equal(attempts,1,'The controller must consume the head failure without an automatic duplicate request.');
       failing=false;
       await page.evaluate(()=>{location.hash='sorts=name-desc,name-desc';});
-      await page.waitForFunction(()=>!document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="/articles/"]').hasAttribute('data-breadcrumb-failed'));
+      await waitForCondition(page,()=>!document.querySelector('.breadcrumb-column[data-breadcrumb-column-path="/articles/"]').hasAttribute('data-breadcrumb-failed'));
       await waitForBrowse(page);
       assert.ok(await column.locator('[data-list-entry]').count());
       assert.equal(attempts,2,'A later state change must retry the consumed failed request once.');
@@ -778,10 +784,10 @@ test('external navigation handles slow, stale, failed and offline column request
     }finally{release();}
   }});
   for(const worker of [false,true])scenarios.push({id:'native-column-prefetch-'+(worker?'sw':'http'),kind:'single',serviceWorkers:worker?'allow':'block',async run({page,baseUrl}){
-    if(worker){await page.goto(baseUrl+'/',{waitUntil:'load'});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));}
+    if(worker){await page.goto(baseUrl+'/',{waitUntil:'load'});await waitForCondition(page,()=>Boolean(navigator.serviceWorker.controller));}
     const warmed=page.waitForResponse(response=>fragmentLogicalPath(response.request())==='/articles/product-info/');
     await page.goto(baseUrl+'/articles/product-info/',{waitUntil:'load'});await waitForBrowse(page);
-    const response=await warmed;assert.ok(response.ok());await response.finished();await afterPaint(page);
+    const response=await warmed;assert.ok(response.ok());await response.finished();await afterPaintIfReady(page);
     assert.equal(await page.locator('head link[rel=prefetch][href='+JSON.stringify(new URL(response.url()).pathname)+']').count(),1);
     await page.locator('main [data-list-entry][href='+JSON.stringify(article)+']').click();
     await page.waitForURL(baseUrl+article);await waitForBrowse(page);
@@ -807,7 +813,7 @@ test('external navigation handles slow, stale, failed and offline column request
       'The first collection must only prefetch the runtime, without executing it.');
     assert.equal(await page.locator('head link[rel=prefetch][as=script]').getAttribute('href'),new URL(runtime).pathname);
     assert.equal(await page.evaluate(runtime=>performance.getEntriesByName(runtime)[0]?.initiatorType,runtime),'link');
-    if(worker)await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
+    if(worker)await waitForCondition(page,()=>Boolean(navigator.serviceWorker.controller));
     const active=worker?context.serviceWorkers()[0]:null;
     const since=active?await active.evaluate(()=>performance.now()):0;
     const network=[];
@@ -819,7 +825,7 @@ test('external navigation handles slow, stale, failed and offline column request
       if(!link)throw new Error('The first collection must link to '+target);
       const href=link.href;link.click();return href;
     },target);
-    await page.waitForURL(actualTarget);await page.waitForLoadState('load');await waitForBrowse(page);await afterPaint(page);
+    await page.waitForURL(actualTarget);await page.waitForLoadState('load');await waitForBrowse(page);await afterPaintIfReady(page);
     context.off('request',record);
     assert.equal(await page.locator('script[src]').evaluateAll((nodes,runtime)=>nodes.filter(node=>node.src===runtime).length,runtime),1,
       'The target must execute the exact prefetched runtime.');
@@ -847,7 +853,7 @@ test('external navigation handles slow, stale, failed and offline column request
   scenarios.push({id:'visited-breadcrumb-offline-reload',kind:'single',async run({page,context,baseUrl}){
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     await visit(page,baseUrl+'/');
-    await page.goto(baseUrl+routeFor(slowSource),{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    await page.goto(baseUrl+routeFor(slowSource),{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
     const expected=await sourceData(page,slowSource),online=await snapshot(page);
     const cached=await page.evaluate(async urls=>Promise.all(urls.map(async url=>Boolean((await caches.match(new URL(url,location.href)))?.ok))),expected.urls);
     assert.deepEqual(cached,expected.urls.map(()=>true),'Every loaded path fragments must enter the worker cache.');
@@ -857,13 +863,42 @@ test('external navigation handles slow, stale, failed and offline column request
       'Candidate sources must not all be fetched for offline use.');
     await context.setOffline(true);
     const response=await page.reload({waitUntil:'load'});assert.ok(response?.ok()&&response.fromServiceWorker());
-    await waitForBrowse(page);await afterPaint(page);
+    await waitForBrowse(page);await afterPaintIfReady(page);
     assert.deepEqual((await snapshot(page)).columns,online.columns,'Offline reload must restore the same source rows and selection.');
     assert.deepEqual(errors,[]);
     return {columns:expected.urls.length,unused:unused.length};
   }});
+  scenarios.push({id:'navigation-integrity-rejects-modified-script',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
+    await page.route('**/site/navigation/**',async route=>{
+      const response=await route.fetch();
+      await route.fulfill({response,contentType:'text/javascript',body:'window.modifiedNavigationExecuted=true;'+await response.text()});
+    });
+    await page.goto(baseUrl+article,{waitUntil:'load'});await waitForBrowse(page);
+    assert.equal(await page.evaluate(()=>window.modifiedNavigationExecuted),undefined,'Integrity must reject code before it executes.');
+    assert.ok(await page.locator('[data-breadcrumb-failed]').count());
+  }});
+  for(const held of ['data','controller'])scenarios.push({id:'navigation-'+held+'-timeout-releases-paint',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
+    let release;const gate=new Promise(resolve=>{release=resolve;});
+    await page.addInitScript(()=>{
+      const timeout=window.setTimeout.bind(window);
+      window.setTimeout=(callback,delay,...args)=>timeout(callback,delay===8000?250:delay,...args);
+      requestAnimationFrame(()=>{window.navigationFirstFrame=performance.now();});
+    });
+    await page.route('**/*',async route=>{
+      const url=route.request().url();
+      if(held==='data'?!!fragmentPath(route.request()):url.includes('/breadcrumb-entry.'))await gate;
+      await route.continue();
+    });
+    try{
+      await page.goto(baseUrl+article,{waitUntil:'commit'});
+      await waitForCondition(page,()=>window.navigationFirstFrame>0);
+      if(await page.evaluate(()=>document.createElement('script').blocking?.supports('render')))
+        assert.ok(await page.evaluate(()=>window.navigationFirstFrame>=200),'First paint must wait until the bounded release.');
+      if(held==='data')assert.ok(await page.locator('[data-breadcrumb-failed]').count());
+      release();await page.waitForLoadState('load');await waitForBrowse(page);
+    }finally{release();}
+  }});
   const result=await runScenarioSuite({primaryBuildDir:output,outputDir:path.join(work,'reports'),timeout:15000,scenarios});
-  checkResult(result);
   const webkit=await runScenarioSuite({primaryBuildDir:output,outputDir:path.join(work,'reports-webkit'),timeout:15000,
     browserType:loadWebkit(),scenarios,onlyScenarioIds:['default-columns-load-from-fragments',
       'default-column-failures-keep-reserved-containers',
@@ -875,6 +910,8 @@ test('external navigation handles slow, stale, failed and offline column request
       'default-links-and-sort-toggles-stay-clean','default-sort-links-are-compact','loading-keeps-supplied-sort-url','mixed-defaults-and-native-sort-links',
       'parent-entries-retain-expanded-column-sorts',
       'collection-breadcrumb-text-before-controller-single','collection-breadcrumb-text-before-controller-deep',
-      'collection-head-failure-is-consumed-once-and-retried']});
+      'collection-head-failure-is-consumed-once-and-retried',
+      'navigation-integrity-rejects-modified-script','navigation-data-timeout-releases-paint','navigation-controller-timeout-releases-paint']});
+  checkResult(result);
   checkResult(webkit);
 });

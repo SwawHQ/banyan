@@ -29,7 +29,7 @@ swban <command> --help    #查看参数和默认值
 - 站点在根目录的 `content/` 维护全部页面，在 `assets/site/` 维护配置与品牌资源，在 `assets/i18n/` 维护界面字典。Module 提供布局、脚本和样式，不提供站点内容与配置的默认副本。
 - Hugo 原生 front matter 字段保留在顶层。自定义字段放在 `params` 中，继承默认值放在 `cascade.params` 中；模板通过 `.Params` 读取自定义字段。
 - 公共导航路径的每级栏目都使用 `_index.md`，并输出 HTML。内部页放在 `content/_res/`，由共用 `_index.md` 隐藏其导航和站点发现入口。
-- 面包屑列由浏览器加载共享的 `.txt` HTML 片段；根导航、栏目主列表和正文保留在页面 HTML 中。
+- 面包屑列由浏览器加载共享的 `.js` 导航片段；支持原生绘制阻塞的浏览器在正常加载路径中等待填充后首绘。根导航、栏目主列表和正文保留在页面 HTML 中。
 - 修改交付规则时，编辑 `assets/site/delivery.toml`；`_headers` 和 `edgeone.json` 是 Hugo 生成的产物。
 
 ## 根据任务读取说明

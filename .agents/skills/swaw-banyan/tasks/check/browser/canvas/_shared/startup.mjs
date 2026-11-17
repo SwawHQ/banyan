@@ -37,9 +37,13 @@ export async function observeStartup(page,navigate) {
   let first;
   try {
     await navigate();
-    await page.waitForFunction(()=>Number.isFinite(window.__swbanCanvasStartup?.firstFrameX)
-      &&!!document.getElementById('main')&&[...document.querySelectorAll('link[rel="stylesheet"]')].every(link=>link.disabled||link.sheet));
-    await afterPaint(page);first={...await readCanvas(page),scriptsHeld:held.length};
+    await page.waitForFunction(()=>!!window.__swbanCanvasStartup?.parsed
+      &&!!document.getElementById('main')&&[...document.querySelectorAll('link[rel="stylesheet"]')].every(link=>link.disabled||link.sheet),null,{polling:20});
+    const renderBlocked=await page.evaluate(()=>document.createElement('script').blocking?.supports('render')
+      &&!!document.head.querySelector('script[blocking~=render]'));
+    if(!renderBlocked)await afterPaint(page);
+    first={...await readCanvas(page),scriptsHeld:held.length,renderBlocked,
+      paints:await page.evaluate(()=>performance.getEntriesByType('paint').length)};
   } finally {
     release();
     try {await Promise.all(held);}finally{await page.unroute('**/*',handler);}

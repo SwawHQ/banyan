@@ -25,7 +25,8 @@ function inspect(page,basePath) {
   const text=page.text,body=extractStartTags(text,'body')[0]??'',canonical=extractCanonicalHref(text);
   const anchors=extractStartTags(text,'a').map(tag=>({tag,href:localPath(attr(tag,'href'),route,canonical)}));
   const roots=anchors.filter(({tag,href})=>href&&has(tag,'data-root-href')).map(({href})=>href);
-  const logicalPath=attr(body,'data-collection-path'),rawNavigation=attr(body,'data-navigation');
+  const root=extractStartTags(text,'html')[0]??'';
+  const logicalPath=attr(root,'data-collection-path'),rawNavigation=attr(root,'data-navigation');
   const navigation=rawNavigation?JSON.parse(rawNavigation):null;
   const rootHref=logicalPath&&navigation?.home?(logicalPath==='/'?navigation.home:navigation.home+logicalPath.replace(/^\/+/, '').split('/')[0]+'/'):'';
   const names=extractStartTags(text,'div').filter(tag=>has(tag,'data-list-item'))

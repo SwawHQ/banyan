@@ -33,6 +33,7 @@
 {{- end -}}
 <!DOCTYPE html>
 <html lang="{{ .Site.Language.Lang }}" dir="{{ .Site.Language.Direction | default "ltr" }}"
+    data-navigation="{{ $navigation.data | jsonify }}"{{ with $navigation.page_source.logicalPath }} data-collection-path="{{ . }}"{{ end }}
     {{- if .Sitemap.Disable }} data-sitemap-disabled="true"{{ end }}
     {{- if $navigation.has_breadcrumb }}
     data-has-breadcrumb-columns="{{ $navigation.has_breadcrumb_columns }}"
@@ -71,14 +72,15 @@
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
     {{- if $navigation.has_breadcrumb_columns -}}
-    <script src="{{ $navigation.runtime.RelPermalink }}" integrity="{{ $navigation.runtime.Data.Integrity }}" defer></script>
+    {{- /* 数据先到时仍需等待控制脚本；两者共同推迟首屏，直到正常路径的微任务填充完成。 */ -}}
+    <script src="{{ $navigation.runtime.RelPermalink }}" integrity="{{ $navigation.runtime.Data.Integrity }}" defer blocking="render" data-breadcrumb-runtime></script>
     {{- end -}}
     {{- partial "system-delivery/pwa/service-worker.html" (dict
       "config" $pwaConfig
       "sw_routes" $delivery.sw_routes
     ) -}}
 </head>
-<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }} data-language-return-missing="{{ i18n "language_return_missing" }}" data-navigation="{{ $navigation.data | jsonify }}"{{ with $navigation.page_source.logicalPath }} data-collection-path="{{ . }}"{{ end }}{{ if or $navigation.has_breadcrumb_columns $navigation.sortable }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
+<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }} data-language-return-missing="{{ i18n "language_return_missing" }}"{{ if or $navigation.has_breadcrumb_columns $navigation.sortable }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
     <div class="page">
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         <div class="page-shell">

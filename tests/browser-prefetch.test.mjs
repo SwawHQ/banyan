@@ -527,10 +527,10 @@ test('custom startup waits for navigation and recovers after a fragment failure'
     await page.addInitScript(recordRuntime);
     let release;const gate=new Promise(resolve=>{release=resolve;});
     const handler=async route=>{await gate;await (failed?route.abort('failed'):route.continue());};
-    await page.route('**/site/navigation/*.txt',handler);
-    const requested=page.waitForRequest('**/site/navigation/*.txt');
+    await page.route('**/site/navigation/*.js',handler);
+    const requested=page.waitForRequest('**/site/navigation/*.js');
     try {
-      await page.goto(baseUrl+article+'?prefetch-backend=link#from=d/prefetch-scopes/child&sorts=name-desc,date-asc,_',{waitUntil:'load'});
+      await page.goto(baseUrl+article+'?prefetch-backend=link#from=d/prefetch-scopes/child&sorts=name-desc,date-asc,_',{waitUntil:'domcontentloaded'});
       await requested;
       const pending=await runtimeState(page);
       assert.equal(pending.candidates.length,0,'Pending columns must not expose prefetch candidates.');
@@ -543,7 +543,7 @@ test('custom startup waits for navigation and recovers after a fragment failure'
         'Startup must capture links after navigation loads, once per URL.');
       await page.evaluate(()=>{const root=document.documentElement;root.setAttribute('data-breadcrumb-pending','true');root.removeAttribute('data-breadcrumb-pending');});
       assert.deepEqual(await page.evaluate(()=>window.__swbanPrefetchTrace.links),warmed,'Later navigation state changes must not restart prefetch.');
-    }finally{release();await page.unroute('**/site/navigation/*.txt',handler);}
+    }finally{release();await page.unroute('**/site/navigation/*.js',handler);}
   }})));
 });
 

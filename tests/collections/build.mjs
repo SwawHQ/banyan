@@ -196,7 +196,7 @@ try {
             for (const list of ['local', 'never']) {
                 const logicalPath = `/contract-all-${list}/`;
                 const html = fs.readFileSync(path.join(output, prefixes[index].slice(1), logicalPath, 'index.html'), 'utf8');
-                const body = extractStartTags(html, 'body')[0];
+                const body = extractStartTags(html, 'html')[0];
                 assert.equal(extractTagAttribute(body, 'data-collection-path'),logicalPath,`build.list: ${list} must publish its main collection path`);
                 const main = extractBlocks(html, 'main')[0];
                 assert.ok(main, `build.list: ${list} must render its main column`);

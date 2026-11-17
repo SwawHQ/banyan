@@ -215,7 +215,7 @@ test(name+' opening rejects wrong roots, sibling order, ancestor selection and s
     ['siblings',"const list=document.querySelector('.breadcrumb-column .item-list');list.append(list.querySelector('[data-list-item]'));",/retain every source column/],
     ['ancestor',"const link=document.querySelector('.breadcrumb-column [data-list-entry].is-current');link.classList.remove('is-current');link.removeAttribute('aria-current');",/Each source column must select/],
     ['sort',"const indicator=[...document.querySelectorAll('.breadcrumb-column [data-sort-indicator]')].at(-1);indicator.textContent=indicator.textContent==='↑'?'↓':'↑';",/retain the collection sort/],
-    ['home-prefix',"const navigation=JSON.parse(document.body.dataset.navigation);navigation.home='/wrong/';document.body.dataset.navigation=JSON.stringify(navigation);",/root|source column|ancestor/i]
+    ['home-prefix',"const navigation=JSON.parse(document.documentElement.dataset.navigation);navigation.home='/wrong/';document.documentElement.dataset.navigation=JSON.stringify(navigation);",/root|source column|ancestor/i]
   ]) {
     const broken=fixture('opening-'+id+'-'+name);
     const settled=['siblings','ancestor','sort'].includes(id);

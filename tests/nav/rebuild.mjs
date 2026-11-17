@@ -7,7 +7,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {extractElementText,extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
-import {readNavigationFragment} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {readNavigationResource} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {listenOnLoopback} from '../../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 
 import {fixtureEnvironment,fixtureSiteMounts,directoryPage} from '../_shared/hugo.mjs';
@@ -71,8 +71,8 @@ try {
         return extractElementText(link, 'a');
     }
     async function columnLabel(document) {
-        const body=extractStartTags(document,'body')[0],navigation=JSON.parse(extractTagAttribute(body,'data-navigation'));
-        return readNavigationFragment(await html(navigation.resources+navigation.columns['/d/']+'.txt')).label;
+        const body=extractStartTags(document,'html')[0],navigation=JSON.parse(extractTagAttribute(body,'data-navigation'));
+        return readNavigationResource(await html(navigation.resources+navigation.columns['/d/']+'.js')).label;
     }
     try {
         await until(async () => (await html('/zh/d/')).includes('Before rename'));

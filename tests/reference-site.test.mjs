@@ -319,7 +319,7 @@ test('content links resolve pages and attachments across deployment and language
       ...documentation.map(page=>(page.language==='en'?defaultPrefix:'')+page.href.slice(1)+'index.html')]);
     assert.deepEqual(inspectInternalLinks(pages.filter(page=>targets.has(page.relativePath)),{siteURL,files}),[]);
     for(const page of pages.filter(page=>targets.has(page.relativePath))) {
-      const navigation=JSON.parse(extractTagAttribute(extractStartTags(page.text,'body')[0],'data-navigation'));
+      const navigation=JSON.parse(extractTagAttribute(extractStartTags(page.text,'html')[0],'data-navigation'));
       for(const href of [navigation.home,navigation.resources].filter(Boolean))
         assert.ok(new URL(href,siteURL).pathname.startsWith(new URL(siteURL).pathname),'Navigation data must retain the encoded deployment prefix: '+href);
       for(const tag of extractStartTags(page.text,'a').filter(tag=>extractTagAttribute(tag,'data-root-href')))
@@ -384,7 +384,7 @@ test('Arabic pages use RTL and demonstrate mixed text without losing translation
 test('settings sections use choice controls without article collection capabilities',()=>{
   for(const prefix of prefixes)for(const name of ['language','appearance']) {
     const pathname='/'+prefix+name+'/',html=fs.readFileSync(path.join(output,prefix,name,'index.html'),'utf8');
-    const main=extractBlocks(html,'main')[0].inner,body=extractStartTags(html,'body')[0];
+    const main=extractBlocks(html,'main')[0].inner,body=extractStartTags(html,'html')[0];
     assert.equal(extractCanonicalHref(html),origin+pathname);
     assert.equal(fs.existsSync(path.join(output,prefix,name,'index.xml')),false,'Settings publish HTML without RSS.');
     assert.ok(extractStartTags(main,'div').some(tag=>extractTagAttribute(tag,'data-list-view')==='choice'));

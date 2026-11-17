@@ -8,7 +8,7 @@ export function parseWidths(value) {
 export const afterPaint = page => page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
 
 export async function waitForBrowse(page) {
-  await page.waitForFunction(()=>!document.documentElement.hasAttribute('data-breadcrumb-pending'));
+  await page.waitForFunction(()=>!document.documentElement.hasAttribute('data-breadcrumb-pending'),null,{polling:20});
 }
 
 export async function visiblePoint(locator) {

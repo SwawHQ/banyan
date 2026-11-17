@@ -25,7 +25,7 @@ let cachedValue;
 let cachedNavigation;
 
 export function readNavigation() {
-    const value = document.body?.dataset.navigation || '';
+    const value = document.documentElement?.dataset.navigation || '';
     if (value !== cachedValue) {
         cachedNavigation = parseNavigation(value);
         cachedValue = value;
@@ -50,5 +50,5 @@ export function selectNavigationRoute(navigation, fromPath, collectionPath = '')
 }
 
 export function readActiveNavigationRoute() {
-    return selectNavigationRoute(readNavigation(), readCurrentFromPath(), document.body?.dataset.collectionPath || '');
+    return selectNavigationRoute(readNavigation(), readCurrentFromPath(), document.documentElement?.dataset.collectionPath || '');
 }

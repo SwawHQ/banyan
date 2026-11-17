@@ -12,7 +12,7 @@ import {fixtureEnvironment,fixtureSiteMounts,fixtureSiteFiles,fixtureSitePages,d
 import {collectionPayload} from './_shared/navigation.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
-import {readBreadcrumbData,readNavigationFragment} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {readBreadcrumbData,readNavigationResource} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {decodeHtmlAttribute,extractStartTags,extractTagAttribute,extractCanonicalHref} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer,listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
@@ -55,7 +55,7 @@ function sources(html,directory=output){
   const data=readBreadcrumbData(html,{directory});assert.equal(data.error,'');return data.sources;
 }
 function collectionRows(html,route,directory=output){
-  const logicalPath=extractTagAttribute(extractStartTags(html,'body')[0],'data-collection-path');
+  const logicalPath=extractTagAttribute(extractStartTags(html,'html')[0],'data-collection-path');
   assert.equal(logicalPath,'/'+route+'/');
   const data=collectionPayload(directory,logicalPath,new URL(extractCanonicalHref(html)).pathname);
   return {source:{logicalPath:data.logicalPath,sortVariant:data.sortVariant,defaultSort:data.defaultSort,href:data.href,label:data.label},
@@ -138,14 +138,14 @@ test('navigation columns publish flat shared HTML fragments with stable content 
       assert.equal(typeof url,'string');
       if(second.columnURLs[logicalPath])assert.equal(second.columnURLs[logicalPath],url,'Articles reuse each column resource.');
       const text=fs.readFileSync(path.join(output,new URL(url,'https://example.test').pathname),'utf8');
-      assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.txt');
-      const fragment=readNavigationFragment(text);
+      assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.js');
+      const fragment=readNavigationResource(text);
       assert.equal(fragment.logicalPath,logicalPath);
       assert.doesNotMatch(text,/aria-current=|<script\b/,'Shared fragments omit per-page selection and embedded JSON.');
       for(const row of fragment.rows.filter(row=>row.kind==='page'))
         assert.equal(new URLSearchParams(new URL(row.href,'https://example.test').hash.slice(1)).get('from'),
           logicalPath==='/d/'?null:logicalPath.slice(1,-1),'Only non-default article sources carry from.');
-      assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.txt$/,'Navigation resources use a flat content-addressed namespace.');
+      assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.js$/,'Navigation resources use a flat content-addressed namespace.');
     }
     languageURLs.push(new Set(Object.values(article.columnURLs)));
   }
@@ -156,11 +156,11 @@ test('navigation columns publish flat shared HTML fragments with stable content 
   assert.equal(new Set(emptyPayloads.map(payload=>createHash('sha256').update(JSON.stringify(payload)).digest('hex'))).size,locales.length,
     'Language-specific header links remain part of the content fingerprint.');
   const resources=fs.readdirSync(path.join(output,'site/navigation'),{withFileTypes:true});
-  assert.ok(resources.every(entry=>entry.isFile()&&/^[a-f0-9]{64}\.txt$/.test(entry.name)),
+  assert.ok(resources.every(entry=>entry.isFile()&&/^[a-f0-9]{64}\.js$/.test(entry.name)),
     'Navigation resources contain no language, column path or items prefix.');
   for(const entry of resources){
     const content=fs.readFileSync(path.join(output,'site/navigation',entry.name));
-    assert.equal(entry.name,createHash('sha256').update(content).digest('hex')+'.txt');
+    assert.equal(entry.name,createHash('sha256').update(content).digest('hex')+'.js');
   }
 });
 
@@ -187,7 +187,7 @@ test('time-tree rows share directory counts, navigation and ItemList without des
       else assert.ok(!itemList||itemList.itemListElement.length===0);
     }
     const articleHtml=read('p/range-start',prefix),articleSources=sources(articleHtml),paths=articleSources.map(source=>source.logicalPath);
-    const body=extractStartTags(articleHtml,'body')[0];
+    const body=extractStartTags(articleHtml,'html')[0];
     const manifest=JSON.parse(extractTagAttribute(body,'data-navigation'));
     assert.equal(typeof manifest.default,'string');
     assert.ok(manifest.default,'The physical path retains its terminal owner.');
@@ -200,7 +200,7 @@ test('time-tree rows share directory counts, navigation and ItemList without des
       'Sources share the same ancestor payload.');
     for(const [logicalPath,url] of Object.entries(decoded.columnURLs)){
       assert.match(manifest.columns[logicalPath],/^[a-f0-9]{64}$/,'Inline columns contain only content hashes.');
-      assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.txt$/);
+      assert.match(url,/^\/site\/navigation\/[a-f0-9]{64}\.js$/);
       const data=decoded.columns[logicalPath];
       assert.deepEqual(data,collectionPayload(output,logicalPath,prefix+logicalPath),'Navigation and collection use one shared payload.');
       assert.equal(data.logicalPath,logicalPath);assert.equal(typeof data.label,'string');assert.equal(typeof data.href,'string');
@@ -405,9 +405,9 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
     const data=readBreadcrumbData(await html('p/range-start/'));assert.equal(data.error,'');
     const url=data.columnURLs['/'+route+'/'];assert.equal(typeof url,'string');
     const text=await html(url.replace(/^\//,''));
-    assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.txt',
+    assert.equal(url,'/site/navigation/'+createHash('sha256').update(text).digest('hex')+'.js',
       'Preview HTML references the current fragment content fingerprint.');
-    const payload=readNavigationFragment(text);assert.equal(payload.logicalPath,'/'+route+'/');
+    const payload=readNavigationResource(text);assert.equal(payload.logicalPath,'/'+route+'/');
     return payload.rows.map(row=>({...row,href:new URL(row.href,base).pathname}));
   }
   async function until(check){
@@ -425,7 +425,7 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
     assert.equal(childRows.some(row=>row.href==='/p/range-override/'),leaf==='archive/a/b');
     const articleHTML=await html('p/range-override/'),navigation=readBreadcrumbData(articleHTML);
     const paths=(await Promise.all(Object.entries(navigation.columnURLs).map(async([logicalPath,url])=>{
-      const payload=readNavigationFragment(await html(url.replace(/^\//,'')));
+      const payload=readNavigationResource(await html(url.replace(/^\//,'')));
       return payload.rows.some(row=>new URL(row.href,base).pathname==='/p/range-override/')?logicalPath:null;
     }))).filter(Boolean);
     assert.ok(paths.includes('/'+leaf+'/'));assert.ok(!paths.includes('/'+(leaf==='archive/a'?'archive/a/b':'archive/a')+'/'));

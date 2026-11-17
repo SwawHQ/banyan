@@ -6,7 +6,7 @@ import {toggleColumn} from '../sort/check.mjs';
 const readMain=page=>page.evaluate(()=>{
   const grid=document.querySelector('.slot-main [data-sortable]');if(!grid)return null;
   const control=grid.querySelector('[data-sort-active="true"]');
-  return {source:{logicalPath:document.body.dataset.collectionPath,defaultSort:grid.dataset.defaultSort},
+  return {source:{logicalPath:document.documentElement.dataset.collectionPath,defaultSort:grid.dataset.defaultSort},
     field:control?.dataset.sortField,indicator:control?.querySelector('[data-sort-indicator]')?.textContent.trim(),
     rows:[...grid.querySelectorAll('[data-list-entry]')].map(link=>({kind:link.parentElement.dataset.kind,key:new URL(link.href).pathname,href:link.href,text:link.textContent.trim()}))};
 });
@@ -56,7 +56,7 @@ export async function check({page,baseUrl,options}) {
   await page.setViewportSize({width:1440,height:960});
   const url=baseUrl+options.page;await openPage(page,url);
   const initial=await readColumns(page),main=await readMain(page),initialUrl=page.url(),targets=initial.filter(column=>column.toggle);
-  const isCollection=await page.evaluate(()=>Boolean(document.body.dataset.collectionPath));
+  const isCollection=await page.evaluate(()=>Boolean(document.documentElement.dataset.collectionPath));
   assert.ok(targets.length>=2||(targets.length>=1&&main),'Choose two sortable breadcrumb columns, or a breadcrumb column and main collection.');
   const cases=[];
   for(const target of targets) {

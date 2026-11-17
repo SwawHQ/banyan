@@ -16,7 +16,7 @@ function sourceLink(column,article,origin) {
 async function assertEffectiveSource(page,logicalPath) {
   const effective=await page.evaluate(()=>{
     const from=new URLSearchParams(location.hash.slice(1)).get('from');
-    return from||JSON.parse(document.body.dataset.navigation).default;
+    return from||JSON.parse(document.documentElement.dataset.navigation).default;
   });
   assert.equal(normalizeLogicalPath(effective),normalizeLogicalPath(logicalPath),'Article link must retain its declared column source.');
 }
@@ -37,7 +37,7 @@ export async function check({page,baseUrl,options}) {
     const sourceResponse=await staticPage.goto(baseUrl+options.column,{waitUntil:'load'});
     assert.ok(sourceResponse?.ok(),'The source collection must remain a native page.');
     const column=await staticPage.evaluate(()=>({
-      href:location.pathname,source:{logicalPath:document.body.dataset.collectionPath},
+      href:location.pathname,source:{logicalPath:document.documentElement.dataset.collectionPath},
       rows:[...document.querySelectorAll('main [data-list-entry]')].map(link=>({key:new URL(link.href).pathname,href:link.href,text:link.textContent.trim()}))
     }));
     raw=sourceLink(column,options.article,baseUrl);

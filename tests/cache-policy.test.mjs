@@ -477,13 +477,13 @@ test('bucket caching preserves query keys, validates versioned responses and war
 test('visited navigation fragments stays offline without warming unused source columns',async()=>{
   const output=contentOutput??=passed(build('content-version'));
   const urls={
-    '/articles/':'/site/navigation/'+'0'.repeat(64)+'.txt',
-    '/articles/tools/':'/site/navigation/'+'1'.repeat(64)+'.txt',
-    '/articles-all/':'/site/navigation/'+'2'.repeat(64)+'.txt',
+    '/articles/':'/site/navigation/'+'0'.repeat(64)+'.js',
+    '/articles/tools/':'/site/navigation/'+'1'.repeat(64)+'.js',
+    '/articles-all/':'/site/navigation/'+'2'.repeat(64)+'.js',
   };
   const encoded=JSON.stringify({home:'/',resources:'/site/navigation/',columns:Object.fromEntries(Object.keys(urls).map((key,index)=>[key,String(index).repeat(64)])),
     default:'/articles/tools/'}).replaceAll('"','&quot;');
-  const html='<html><body data-navigation="'+encoded+'">'+
+  const html='<html data-navigation="'+encoded+'"><body>'+
     '<script src="/js/shared.hash.js"></script><p>Article</p></body></html>';
   let offline=false;
   const runtime=cachedWorker(output,request=>{

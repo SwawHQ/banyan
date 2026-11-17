@@ -14,7 +14,7 @@ import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/
 import {extractTagAttribute,extractMetaContent,decodeHtmlAttribute,extractExternalScriptSrcs} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {inspect as inspectScripts} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/inspect.mjs';
 import {extractBlocks,stripRawText} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
-import {readBreadcrumbData,readNavigationFragment} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
+import {readBreadcrumbData,readNavigationResource} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {gotoAndWait} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/page.mjs';
@@ -206,7 +206,7 @@ test('non-sortable ancestors publish shared path rows without inline sibling lis
     assert.equal(column.payload.sortVariant,'');assert.equal(column.payload.rows.length,2);
     const navigation=extractBlocks(html,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb')[0];
     assert.equal(extractBlocks(navigation.html,'a').length,0);
-    const manifest=JSON.parse(extractTagAttribute(html.match(/<body\b[^>]*>/)[0],'data-navigation'));
+    const manifest=JSON.parse(extractTagAttribute(html.match(/<html\b[^>]*>/)[0],'data-navigation'));
     assert.equal(manifest.default,'/library/plain/');
     assert.ok(!['routes','from','paths'].some(key=>Object.hasOwn(manifest,key)));
   } finally {
@@ -710,9 +710,9 @@ test('dotted and Unicode references retain encoded source URLs on a site subpath
       const logicalPath=Object.keys(data.columnURLs).find(value=>decodeURIComponent(value)==='/library/'+name+'/');
       assert.ok(logicalPath,'Unicode ordinary and fallback columns publish resource URLs.');
       const url=data.columnURLs[logicalPath],relative=decodeURIComponent(new URL(url,'https://example.test').pathname).slice('/base/'.length);
-      assert.match(relative,/^site\/navigation\/[a-f0-9]{64}\.txt$/,'Unicode columns use the same flat content-addressed namespace.');
+      assert.match(relative,/^site\/navigation\/[a-f0-9]{64}\.js$/,'Unicode columns use the same flat content-addressed namespace.');
       assert.doesNotMatch(url,/%/,'Resource paths do not contain encoded language or column names.');
-      const payload=readNavigationFragment(fs.readFileSync(path.join(destination,relative),'utf8'));
+      const payload=readNavigationResource(fs.readFileSync(path.join(destination,relative),'utf8'));
       assert.equal(payload.logicalPath,logicalPath,'Decoded URL paths name the actual fragment file.');
     }
     write(path.join(directory,'_map.toml'),refs(['/library/node.js/index.md']));

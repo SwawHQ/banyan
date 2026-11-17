@@ -4,7 +4,7 @@ import {assertRootSelection,checkRootSelection} from '../../nav/_shared/root.mjs
 
 export async function readOpeningSource(page,canvas) {
   const state=await page.evaluate(()=>{
-    const navigation=JSON.parse(document.body.dataset.navigation),logicalPath=document.body.dataset.collectionPath;
+    const navigation=JSON.parse(document.documentElement.dataset.navigation),logicalPath=document.documentElement.dataset.collectionPath;
     const root=logicalPath?navigation.home+logicalPath.replace(/^\/+/, '').split('/')[0]+'/':'',active=document.querySelector('main [data-sort-control][data-sort-active="true"]');
     const indicator=active?.querySelector('[data-sort-indicator]')?.textContent.trim();
     return {source:root?{logicalPath,rootItem:{href:root}}:null,
@@ -24,7 +24,7 @@ export async function readOpeningSource(page,canvas) {
 export async function checkOpeningSource(page,source) {
   const url=new URL(page.url()),from=source.logicalPath.replace(/^\/+|\/+$/g,'');
   const state=await page.evaluate(logicalPath=>({
-    source:(()=>{const navigation=JSON.parse(document.body.dataset.navigation);return Object.hasOwn(navigation.columns,logicalPath)
+    source:(()=>{const navigation=JSON.parse(document.documentElement.dataset.navigation);return Object.hasOwn(navigation.columns,logicalPath)
       ?{root:navigation.home+logicalPath.replace(/^\/+/, '').split('/')[0]+'/',default:navigation.default}:null;})(),
     selections:[...document.querySelectorAll('[data-slot=breadcrumb] [data-breadcrumb-column]')].map(column=>({
       selected:[...column.querySelectorAll('[data-list-entry].is-current')].map(link=>new URL(link.href).pathname),
