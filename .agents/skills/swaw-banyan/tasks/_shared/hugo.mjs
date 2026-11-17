@@ -5,11 +5,14 @@ import {spawnSync} from 'node:child_process';
 import {toolExecutable} from './tools/operations.mjs';
 import {hugoEnvironment,prepareHugo} from '../base/hugo/run.mjs';
 
-export async function readHugoConfig(site = process.cwd(),language = '') {
+export async function readHugoConfig(site = process.cwd(),language = '',input = []) {
   await prepareHugo();
-  const temporary = fs.mkdtempSync(path.join(os.tmpdir(),'swban-config-'));
+  const parent = path.join(os.tmpdir(),'swaw/banyan/config');
+  fs.mkdirSync(parent,{recursive:true});
+  const temporary = fs.mkdtempSync(path.join(parent,'read-'));
   try {
     const args = ['config','--format','json','--printZero','--noBuildLock','--cacheDir',path.join(temporary,'cache')];
+    args.push(...input);
     if (language) args.push('--lang',language);
     const result = spawnSync(toolExecutable('hugo'),args,{cwd:path.resolve(site),
       env:hugoEnvironment({...process.env,HUGO_RESOURCEDIR:path.join(temporary,'resources')}),

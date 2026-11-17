@@ -3,11 +3,14 @@ import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
 import http from 'node:http';
+import https from 'node:https';
 import {setTimeout as delay} from 'node:timers/promises';
 import {prepareHugo,hugoEnvironment} from '../base/hugo/run.mjs';
 import {toolExecutable} from '../_shared/tools/operations.mjs';
 import {execute} from '../_shared/tools/process.mjs';
 import {indexSite} from '../build/run.mjs';
+import {readHugoConfig} from '../_shared/hugo.mjs';
+import {addressOptions,developmentAddress} from './address.mjs';
 
 export function serverArguments(input,destination,{lan=false}={}) {
   let port='5678',bind=lan?'::':'127.0.0.1';
@@ -39,10 +42,11 @@ export function listening(port,bind) {
   });
 }
 
-export function serving(port,bind) {
+export function serving(port,bind,tls=false) {
   const hostname=bind==='::'?'::1':bind==='0.0.0.0'?'127.0.0.1':bind;
   return new Promise(resolve=>{
-    const request=http.get({hostname,port,path:'/',timeout:500},response=>{
+    // Readiness probes connect locally, including servers with self-signed certificates.
+    const request=(tls?https:http).get({hostname,port,path:'/',timeout:500,...(tls?{rejectUnauthorized:false}:{})},response=>{
       response.resume();resolve(true);
     });
     request.once('timeout',()=>request.destroy());
@@ -68,12 +72,17 @@ export async function dev(input,options={}) {
     const {args,port,bind}=serverArguments(input,destination,options);
     if(await listening(port,bind))throw new Error(`Port ${port} is in use; choose another with --port.`);
     const executable=toolExecutable('hugo');
+    const addressSettings=addressOptions(input);
+    let address;
+    try {
+      address=developmentAddress(await readHugoConfig(process.cwd(),'',addressSettings.configArgs),addressSettings,port);
+    } catch(error) {console.error(`[swban] Could not determine development address: ${error.message}`);}
     printCommand(executable,args);
     let ended=false;
     server=execute(executable,args,{env:hugoEnvironment(),signal:controller.signal}).finally(()=>{ended=true;});
     server.catch(()=>{});
     // The TCP port is reserved early; HTTP responses start after the initial render.
-    while(!ended&&!controller.signal.aborted&&!await serving(port,bind))await delay(100);
+    while(!ended&&!controller.signal.aborted&&!await serving(port,bind,addressSettings.tls))await delay(100);
     if(ended||controller.signal.aborted)return await server;
     if(options.pagefind!==false) {
       const status=await indexSite(destination,{index:(exe,indexArgs,settings)=>{
@@ -88,6 +97,7 @@ export async function dev(input,options={}) {
       const addresses=Object.values(os.networkInterfaces()).flat().filter(item=>item&&!item.internal&&item.family==='IPv4');
       console.log(`[swban] LAN addresses: ${addresses.map(item=>item.address).join(', ')}; port ${port}`);
     }
+    if(address)console.log(`[swban] ${address}`);
     return await server;
   } finally {
     stop();
