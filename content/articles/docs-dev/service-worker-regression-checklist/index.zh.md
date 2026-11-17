@@ -1,5 +1,5 @@
 ---
-title: 检查 · Service Worker 回归
+title: 检查：Service Worker 回归
 date: 2026-11-06
 lastmod: 2026-11-14
 url: p/service-worker-regression-checklist/

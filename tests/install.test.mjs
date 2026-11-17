@@ -54,7 +54,7 @@ function consumer(name,{replacement='',multilingual=false}={}) {
   fixtureSiteFiles(root);
   fixtureSitePages(root,['appearance','language','my','_res','rss','powered-by']);
   for(const suffix of ['','.zh','.ar']) {
-    const href=(suffix==='.zh'?'/zh/':'/')+'articles/docs-guide/';
+    const href=(suffix==='.zh'?'/zh/':'/')+'articles/docs-start/';
     const file=path.join(root,'content/_res/home-art/wind','index'+suffix+'.md');
     fs.writeFileSync(file,fs.readFileSync(file,'utf8').replaceAll(href,'https://banyan.swaw.com'+href));
   }
@@ -109,11 +109,11 @@ function directoryDefaults(output,{prefix='',suffix=''}={}) {
   const category=fs.readFileSync(path.join(output,prefix,'products/free/index.html'),'utf8');
   assert.match(category,/data-sort-variant="?products\b/);
   assert.ok(category.includes('/'+prefix+'p/alpha/#from=products/free'));
-  for(const name of ['discover','all','catalog','catalog-all','about','github','articles/docs-guide','articles/docs-dev','articles/changelog'])
+  for(const name of ['discover','all','catalog','catalog-all','about','github',...['start','content','appearance','publish','features','dev','reference'].map(name=>'articles/docs-'+name),'articles/changelog'])
     assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'Module must not supply site-owned '+name+'.');
   const home=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
   assert.ok(extractStartTags(home,'a').some(tag=>extractTagAttribute(tag,'href')===
-    'https://banyan.swaw.com/'+(prefix==='zh/'?'zh/':'')+'articles/docs-guide/'),'A starter without documentation links to the official guides.');
+    'https://banyan.swaw.com/'+(prefix==='zh/'?'zh/':'')+'articles/docs-start/'),'A starter without documentation links to the official guides.');
 }
 before(async()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'install-'));

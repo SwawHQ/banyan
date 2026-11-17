@@ -11,7 +11,7 @@ metadata:
 
 Windows x64 使用本技能目录中的 `swban.cmd`；Linux x64 和 macOS x64/ARM64 使用 `sh swban`。以下命令简称为 `swban`。Linux 需有 sh、基础系统工具、curl、tar、sha256sum；macOS 使用系统自带工具。Git 等工具按需复用或下载到本地目录，无需 Python、Homebrew 或 Xcode。
 
-项目对话和文档用语见[项目术语表](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs-guide/glossary/index.zh.md)。
+项目对话和文档用语见[项目术语表](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs-reference/glossary/index.zh.md)。
 
 ```text
 swban dev                 #启动开发服并建立搜索索引
@@ -65,4 +65,4 @@ swban <command> --help    #查看参数和默认值
 
 ## 云端部署
 
-Banyan 负责构建、交付配置和检查；支持 Cloudflare Pages、EdgeOne Makers 的产物上传与 Git 托管构建。用 `swban help/zh deploy` 查看各平台的 `git` 与 `upload` 专项。方式选择及其他静态托管的边界见[首次部署](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs-guide/deploying/index.zh.md)。云平台授权和发布操作由独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 技能指导。
+Banyan 负责构建、交付配置和检查；支持 Cloudflare Pages、EdgeOne Makers 的产物上传与 Git 托管构建。用 `swban help/zh deploy` 查看各平台的 `git` 与 `upload` 专项。方式选择及其他静态托管的边界见[首次部署](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs-publish/deploying/index.zh.md)。云平台授权和发布操作由独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 技能指导。

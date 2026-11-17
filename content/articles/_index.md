@@ -6,6 +6,7 @@ weight: 40
 layout: page-collection-directory
 
 params:
+  default_sort: name-asc
   # Use with layout: page-collection-wall; uncomment params.wall to enable the wall.
   # wall:
   #   size: {width: 300, height: 125}

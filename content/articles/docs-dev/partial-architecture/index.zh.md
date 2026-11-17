@@ -20,7 +20,7 @@ description: 说明主题目录、模块所有权、依赖方向和维护入口�
 | `layouts/rss.xml`、`sitemap.xml`、`home.llms.txt` | 订阅与站点发现输出 |
 | `assets/js/`、`assets/css/` | 浏览器行为与样式 |
 
-`page-*` 是布局命名，不表示 Hugo 的 page 类型。集合布局用于普通栏目；首页另支持汇总图片墙。当前没有 taxonomy 和 term 的列表布局。配置方法见[列表与产品声明](/zh/p/collection-lists/)。
+`page-*` 是布局命名，不表示 Hugo 的 page 类型。集合布局用于普通栏目；首页另支持汇总图片墙。当前没有 taxonomy 和 term 的列表布局。配置方法见[列表显示方式](/zh/p/collection-lists/)。
 
 ## Partial 所有权
 
@@ -62,4 +62,4 @@ description: 说明主题目录、模块所有权、依赖方向和维护入口�
 
 ## 下一步
 
-按改动范围从[开发资料](/zh/articles/docs-dev/)选择约定和检查。局部实现说明在对应源码附近。
+按改动范围从[开发主题](/zh/articles/docs-dev/)选择约定和检查。局部实现说明在对应源码附近。

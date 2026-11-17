@@ -1,12 +1,12 @@
 ---
-title: 检查 · 浏览器检查
+title: 检查：浏览器检查
 date: 2026-11-06
-lastmod: 2026-11-15
+lastmod: 2026-11-17
 url: p/browser-regression/
 description: 使用 Skill 对已完成的站点构建运行代表页面和专项检查。
 ---
 
-在目标站点根目录调用已安装的 `swban.cmd`。参数、默认值和页面要求以任务的
+在目标站点根目录使用[开始使用](/zh/p/getting-started/#取得站点)中定义的 `swban` 简称，适用于 Windows、Linux 和 macOS。参数、默认值和页面要求以任务的
 `--help` 为准，检查范围见 Skill 的[浏览器说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/browser-site.md)。
 
 ```text
@@ -24,7 +24,7 @@ swban check/browser/site --help                              #查看参数
 跳过范围；代表页面检查不覆盖每个页面或全部任务。普通 UI 检查阻止 SW，
 需要实际 worker 的 PWA 和预取检查单独启用。
 
-检查会自动识别部署子目录和默认语言首页，无需为检查临时修改 `baseURL` 或语言设置。单页检查的 `--page` 使用实际访问路径，例如 `/blog/zh/p/example-product/`。SW 停用检查也使用实际部署范围；未指定 `--page` 时自动选择语言首页。
+检查会自动识别部署子目录和默认语言首页，无需为检查临时修改 `baseURL` 或语言设置。单页检查的 `--page` 使用实际访问路径，例如 `/blog/zh/p/banyan/`。SW 停用检查也使用实际部署范围；未指定 `--page` 时自动选择语言首页。
 
 `--updates` 使用源码站点的正常配置，改变构建版本并为 SW 添加注释，生成可触发程序更新的临时构建。
 源码和受检产物须来自同一站点及配置。测试两次实际代码变化时，给单项 PWA

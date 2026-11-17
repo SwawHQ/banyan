@@ -1,19 +1,19 @@
 ---
-title: 约定 · 导航状态协议
+title: 导航：浏览来源和排序状态
 date: 2026-11-06
 lastmod: 2026-11-14
 url: p/navigation-state/
 description: 说明浏览来源、排序、章节和历史记录的重要约定与源码入口。
 ---
 
-内容归属由内容树决定，本次浏览状态由网址保存。发布网址不能用来推断内容归属。构建模型见[面包屑导航模型](/zh/p/breadcrumb-models/)，页面配置见[页面区域与布局](/zh/p/layout-slots/)。
+内容归属由内容树决定，本次浏览状态由网址保存。发布网址不能用来推断内容归属。构建模型见[面包屑导航模型](/zh/p/breadcrumb-models/)，页面配置见[文章辅助内容](/zh/p/layout-slots/)。
 
 ## URL 状态
 
 `from`、`sorts` 和 `anchor` 放在 URL 片段中，不进入 HTTP 或 SW 缓存地址。真实查询参数仍保留在 `?` 后。
 
 ```text
-/p/example-product/#from=products/examples&sorts=_,name-desc&anchor=installation
+/p/banyan/#from=products/themes&sorts=_,name-desc&anchor=installation
 ```
 
 ### `from`

@@ -1,5 +1,5 @@
 ---
-title: 发布 · 主题版本
+title: 发布：主题版本
 date: 2026-11-06
 lastmod: 2026-11-14
 url: p/releasing/

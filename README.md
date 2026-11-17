@@ -34,10 +34,21 @@ Backend features such as accounts, payments, and comments are not yet available.
 
 1. Download **Source code (zip)** from the [latest stable release](https://github.com/SwawHQ/banyan/releases/latest). Extract it as your site directory.
 
-2. Start a local preview (Windows x64, run in PowerShell from the site root):
+2. Start a local preview from the site root. Banyan supports Windows x64, Linux x64, and macOS x64/ARM64.
+
+    Windows (PowerShell):
     ```powershell
-    .\swban.cmd base/hugo server -D --disableFastRender
+    .\swban.cmd dev  #Preview drafts and build the search index
     ```
+
+    Linux and macOS:
+    ```sh
+    sh ./swban dev  #Preview drafts and build the search index
+    ```
+
+    The root launchers prepare required tools on demand. Open the URL shown in the terminal. Restart `dev` after content changes to update the search index. Use `dev/lan` for LAN preview and `build` for a production build with search.
+
+    Linux requires sh, basic system utilities, curl, tar, and sha256sum. macOS uses its built-in utilities. See [Getting started](content/articles/docs-start/getting-started/index.zh.md) for setup and the `swban` command shorthand.
 
 3. Review these four items to understand the site structure:
     ```
@@ -50,10 +61,9 @@ Backend features such as accounts, payments, and comments are not yet available.
     Delete or replace these resources as needed:
     ```
     content/articles/changelog/  #Banyan release notes
-    content/articles/docs-guide/ #Banyan user guides
-    content/articles/docs-dev/   #Banyan development reference
-    content/articles/category1/  #Sample category for your own articles and categories
-    content/products/examples/   #Examples of cross-category references through _map.toml
+    content/articles/docs-*/     #Banyan documentation
+    content/articles/product-info/  #Banyan product information; replace with your products
+    content/products/themes/   #Website themes referencing product information via _map.toml
     content/products/            #Root directory for product categories
     content/products-all/        #Product list directory
     ```
@@ -62,7 +72,9 @@ Backend features such as accounts, payments, and comments are not yet available.
 
 
 4. Deploy\
-    Install the [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill in PowerShell from the site root:
+    The bundled [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill currently supports Windows x64. On Linux and macOS, use [Git builds or upload the build output](content/articles/docs-publish/deploying/index.zh.md) with your hosting platform's tools.
+
+    On Windows, install the Skill in PowerShell from the site root:
     ```powershell
     .\swban.cmd base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #Install the deployment Skill
     ```
@@ -92,7 +104,7 @@ Backend features such as accounts, payments, and comments are not yet available.
 
 2. Open the site root in your AI Agent and use this prompt:
     ```
-    Use .agents/skills/swaw-banyan. First run .\swban.cmd help upgrade/git to read the upgrade steps, then upgrade this site to the latest official Banyan release. Preserve this site's content, URLs, and customizations. If any changes are unclear, report them and wait for confirmation.
+    Use .agents/skills/swaw-banyan. First read help upgrade/git through the root launcher (.\swban.cmd on Windows; sh ./swban on Linux/macOS), then upgrade this site to the latest official Banyan release. Preserve this site's content, URLs, and customizations. If any changes are unclear, report them and wait for confirmation.
     ```
 
 
@@ -100,7 +112,8 @@ Backend features such as accounts, payments, and comments are not yet available.
 ## Documentation
 
 
-- [Project glossary (Chinese)](content/articles/docs-guide/glossary/index.zh.md)
+- [Project glossary (Chinese)](content/articles/docs-reference/glossary/index.zh.md)
+- [Getting started (Chinese)](content/articles/docs-start/getting-started/index.zh.md)
 - [Site configuration](https://banyan.swaw.com/zh/p/site-configuration/)
 - [Lists and products](https://banyan.swaw.com/zh/p/collection-lists/)
 - [Page regions](https://banyan.swaw.com/zh/p/layout-slots/)

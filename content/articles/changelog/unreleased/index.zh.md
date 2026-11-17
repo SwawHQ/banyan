@@ -25,7 +25,6 @@ lastmod: 2026-11-16
 
 ## 使用要求
 
-- 命令帮助改用 `help.en.txt` 和 `help.zh.txt`；首行为“用法＋两个空格＋#说明”，后续为正文。冷启动与正常运行读取同一份帮助。
 - 主题要求 Hugo 0.168.0 或更新版本。Skill 命令行支持 Windows x64、Linux x64 和 macOS x64/ARM64；Linux 和 macOS 使用 sh，无需 Python。Git 缺少时会准备便携工具，无需安装系统 Git、Homebrew 或 Xcode。`swban build` 会复用兼容的已有工具，并按需下载其他工具。
 - 新站点从完整根参考站点起步。站点自行维护 `hugo.toml`、`content/`、`archetypes/`、`assets/site/` 和 `assets/i18n/`；Module 不补充这些文件。
 - 保留 `minify.disableJS = true`，避免 HTML 压缩改变 CSP 授权的脚本正文。
@@ -39,4 +38,4 @@ lastmod: 2026-11-16
 - 预取和预渲染受浏览器能力与设置限制。配置档位不保证浏览器一定下载或渲染页面。
 - 部署目录名不能使用 `a%20b` 这类含歧义百分号编码的字面名称；构建会报错。
 
-配置方法见[使用指南](/zh/articles/docs-guide/)，源码维护与发布流程见[开发资料](/zh/articles/docs-dev/)。
+配置方法见[开始使用](/zh/articles/docs-start/)，源码维护与发布流程见[开发主题](/zh/articles/docs-dev/)。

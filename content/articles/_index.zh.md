@@ -6,6 +6,7 @@ weight: 40
 layout: page-collection-directory
 
 params:
+  default_sort: name-asc
   # 配套 layout: page-collection-wall 使用；启用图片墙时取消下方 params.wall 的注释。
   # wall:
   #   size: {width: 300, height: 125}

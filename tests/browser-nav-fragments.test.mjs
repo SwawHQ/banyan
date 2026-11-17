@@ -19,7 +19,7 @@ import {extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banya
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-nav-fragments');
-const article='/p/example-product/',slowSource='/products/examples/',fastSource='/articles-all/';
+const article='/p/banyan/',slowSource='/products/themes/',fastSource='/articles-all/';
 let work,output;
 const publishedColumns=new Map();
 const publishedHrefs=new Map();
@@ -56,14 +56,14 @@ function checkResult(result){assert.equal(result.totals.failed,0,JSON.stringify(
 before(()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));output=path.join(work,'public');
   const assets=path.join(work,'assets'),content=path.join(work,'content'),config=path.join(work,'fixture.toml');
-  write(path.join(content,'products/examples/other/_index.md'),'---\ntitle: Other products\n---\n');
+  write(path.join(content,'products/themes/other/_index.md'),'---\ntitle: Other products\n---\n');
   write(path.join(content,'products/another/_index.md'),'---\ntitle: Another product source\n---\n');
-  write(path.join(content,'products/another/_map.toml'),'refs = ["/articles/category1/example"]\n');
-  write(path.join(content,'articles/category1/nested/_index.md'),'---\ntitle: Nested category\n---\n');
+  write(path.join(content,'products/another/_map.toml'),'refs = ["/articles/product-info/banyan"]\n');
+  write(path.join(content,'articles/product-info/nested/_index.md'),'---\ntitle: Nested category\n---\n');
   for(const [suffix,section,titles] of [['','Another category',['Browser cache and requests','Navigation and sorting']],
     ['.zh','另一分类',['浏览器缓存与请求测试','栏目导航和排序说明']]]){
     write(path.join(content,'articles/navigation-example/_index'+suffix+'.md'),'---\ntitle: '+section+'\n---\n');
-    for(const [index,title] of titles.entries())write(path.join(content,'articles/category1/navigation-extra-'+index+'/index'+suffix+'.md'),
+    for(const [index,title] of titles.entries())write(path.join(content,'articles/product-info/navigation-extra-'+index+'/index'+suffix+'.md'),
       '---\ntitle: '+title+'\nurl: p/navigation-extra-'+index+'/\ndate: 2026-10-01\n---\nNavigation fixture.');
   }
   write(path.join(content,'plain/_index.md'),directoryPage('Plain directory'));
@@ -77,7 +77,7 @@ before(()=>{
   write(path.join(content,'plain/中文/_index.md'),directoryPage('中文栏目'));
   for(const name of ['a','b'])write(path.join(content,'plain/中文/'+name+'/index.md'),
     '---\ntitle: 中文 '+name+'\nurl: p/fragment-unicode-'+name+'/\ndate: 2026-10-01\n---\nUnicode directory article.');
-  write(path.join(content,'articles/category1/fragment-root-only/index.md'),
+  write(path.join(content,'articles/product-info/fragment-root-only/index.md'),
     '---\ntitle: Root-only article\nurl: p/fragment-root-only/\nparams:\n  slots: []\n---\nRoot navigation without breadcrumb columns.');
   write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy('enable')));
   write(config,[['content',content],['content','content'],['assets','assets'],['assets',assets]].map(([target,source])=>
@@ -228,7 +228,7 @@ test('external navigation handles slow, stale, failed and offline column request
     assert.deepEqual([...requests].sort(),expected.urls.sort(),'Unicode logical paths must resolve the published fragment URL.');
     assert.equal(await column.locator('[aria-current=page]').count(),1);
     return {href,requests:requests.length};
-  }},...['/products/examples/','/products/'].map(delayed=>({
+  }},...['/products/themes/','/products/'].map(delayed=>({
     id:delayed===slowSource?'slow-terminal-keeps-first-column-visible':'slow-ancestor-keeps-last-column-visible',
     kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
     let release;const gate=new Promise(resolve=>{release=resolve;}),requests=[];
@@ -257,7 +257,7 @@ test('external navigation handles slow, stale, failed and offline column request
       assert.equal(await page.locator('[data-slot=breadcrumb]').getAttribute('aria-hidden'),null);
       const visible=page.locator('.breadcrumb-column[data-breadcrumb-column-path="'+firstReady+'"]');
       const fields=new URLSearchParams(new URL(await visible.locator('[data-breadcrumb-sort-toggle]').getAttribute('href'),baseUrl).hash.slice(1));
-      assert.equal(fields.get('from'),'products/examples');
+      assert.equal(fields.get('from'),'products/themes');
       const tokens=fields.get('sorts').split(','),index=firstReady.split('/').filter(Boolean).length-1;
       const next=(await visible.getAttribute('data-default-sort')).replace(/-(asc|desc)$/,(_,order)=>order==='asc'?'-desc':'-asc');
       assert.equal(tokens[index],next,'An early header must target its own source slot.');
@@ -398,7 +398,7 @@ test('external navigation handles slow, stale, failed and offline column request
     }finally{release();}
   }},{id:'collection-sorting-keeps-source-free-urls',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
     const requests=[];page.on('request',request=>{const pathname=fragmentPath(request);if(pathname)requests.push(pathname);});
-    for(const [collection,parent,articleSource] of [['/articles/category1/','/articles/',null],['/plain/aggregate/','/plain/','plain/aggregate']]){
+    for(const [collection,parent,articleSource] of [['/articles/product-info/','/articles/',null],['/plain/aggregate/','/plain/','plain/aggregate']]){
       for(const hash of ['','#from='+collection.slice(1,-1)]){
         await page.goto('about:blank');
         requests.length=0;
@@ -439,7 +439,7 @@ test('external navigation handles slow, stale, failed and offline column request
       await control.click();await afterPaint(page);
       assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).has('from'),false,'Main sorting must not retain a redundant collection source.');
     }
-    await page.goto(baseUrl+'/articles/category1/nested/#from=articles&sorts=date-asc,_,_',{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
+    await page.goto(baseUrl+'/articles/product-info/nested/#from=articles&sorts=date-asc,_,_',{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
     const expected=await defaultData(page);
     assert.equal(expected.paths.length,2,'The nested collection must have two ancestor columns.');
     assert.deepEqual((await snapshot(page)).columns.map(column=>column.path),expected.paths,'An ancestor from must not shorten the collection path.');
@@ -550,12 +550,12 @@ test('external navigation handles slow, stale, failed and offline column request
     return {fault,retried};
   }});
   scenarios.push({id:'default-links-and-sort-toggles-stay-clean',kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
-    await page.goto(baseUrl+'/articles/category1/#sorts=_,name-asc',{waitUntil:'load'});
+    await page.goto(baseUrl+'/articles/product-info/#sorts=_,name-asc',{waitUntil:'load'});
     await waitForBrowse(page);
     const links=await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(link=>({
       kind:link.parentElement.dataset.kind,href:link.href
     })));
-    const entry=new URL(links.find(link=>new URL(link.href).pathname==='/p/example-product/').href);
+    const entry=new URL(links.find(link=>new URL(link.href).pathname==='/p/banyan/').href);
     const child=new URL(links.find(link=>link.kind==='section').href);
     assert.equal(new URLSearchParams(entry.hash.slice(1)).get('from'),null);
     assert.equal(new URLSearchParams(entry.hash.slice(1)).get('sorts'),'_,name-asc');
@@ -572,7 +572,7 @@ test('external navigation handles slow, stale, failed and offline column request
     return {articleSorts:entry.hash,childSorts:child.hash,sorted:sorted.hash};
   }});
   scenarios.push({id:'default-sort-links-are-compact',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){
-    for(const pathname of ['/plain/','/plain/names/','/articles/category1/','/articles/category1/nested/']){
+    for(const pathname of ['/plain/','/plain/names/','/articles/product-info/','/articles/product-info/nested/']){
       await page.goto(baseUrl+pathname,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
       assert.equal(page.url(),baseUrl+pathname);
       const links=await page.locator('main [data-list-entry], [data-slot=breadcrumb] [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>({
@@ -614,7 +614,7 @@ test('external navigation handles slow, stale, failed and offline column request
       history.replaceState=(...args)=>{const before=location.href;replace(...args);if(before!==location.href)window.sortUrlWrites.push(location.href);};
     });
     for(const route of ['/plain/names/?keep=%2f+value#anchor=chapter&sorts=date-desc,name-asc',
-      '/articles/category1/nested/#sorts=_,_,date-desc','/plain/names/#sorts=name-asc,_,_']){
+      '/articles/product-info/nested/#sorts=_,_,date-desc','/plain/names/#sorts=name-asc,_,_']){
       await page.goto(baseUrl+route,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
       assert.equal(page.url(),baseUrl+route,'Loading must read the supplied sorting without rewriting its URL.');
       assert.deepEqual(await page.evaluate(()=>window.sortUrlWrites),[]);
@@ -622,7 +622,7 @@ test('external navigation handles slow, stale, failed and offline column request
     return {urlWrites:0};
   }});
   scenarios.push({id:'parent-entries-retain-expanded-column-sorts',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){
-    const route=article+'#from=articles/category1&sorts=name-desc,date-asc';
+    const route=article+'#from=articles/product-info&sorts=name-desc,date-asc';
     await page.goto(baseUrl+route,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
     await page.locator('[data-slot=breadcrumb] [data-breadcrumb-sort-toggle]').first().click();await afterPaint(page);
     await assertRootLinks(page);
@@ -701,7 +701,7 @@ test('external navigation handles slow, stale, failed and offline column request
     for(const href of links)assert.equal(new URLSearchParams(new URL(href).hash.slice(1)).get('sorts'),'name-asc');
     return {toggleHref,parentHref,articleHref};
   }});
-  scenarios.push(...['/articles/category1/','/articles/category1/nested/'].map((route,index)=>({
+  scenarios.push(...['/articles/product-info/','/articles/product-info/nested/'].map((route,index)=>({
     id:'collection-breadcrumb-text-before-controller-'+(index?'deep':'single'),kind:'single',serviceWorkers:'block',async run({page,baseUrl}){
     let release,heldScripts=0;const gate=new Promise(resolve=>{release=resolve;}),requests=[],errors=[];
     page.on('pageerror',error=>errors.push(error.message));
@@ -758,7 +758,7 @@ test('external navigation handles slow, stale, failed and offline column request
     });
     try{
       const failed=page.waitForResponse(response=>fragmentLogicalPath(response.request())==='/articles/');
-      await page.goto(baseUrl+'/articles/category1/',{waitUntil:'commit'});
+      await page.goto(baseUrl+'/articles/product-info/',{waitUntil:'commit'});
       const response=await failed;assert.equal(response.status(),404);await response.finished();
       await page.locator('main').waitFor({state:'attached'});await afterPaint(page);
       assert.equal(attempts,1,'The head startup must attempt its parent fragment before external scripts run.');
@@ -779,8 +779,8 @@ test('external navigation handles slow, stale, failed and offline column request
   }});
   for(const worker of [false,true])scenarios.push({id:'native-column-prefetch-'+(worker?'sw':'http'),kind:'single',serviceWorkers:worker?'allow':'block',async run({page,baseUrl}){
     if(worker){await page.goto(baseUrl+'/',{waitUntil:'load'});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));}
-    const warmed=page.waitForResponse(response=>fragmentLogicalPath(response.request())==='/articles/category1/');
-    await page.goto(baseUrl+'/articles/category1/',{waitUntil:'load'});await waitForBrowse(page);
+    const warmed=page.waitForResponse(response=>fragmentLogicalPath(response.request())==='/articles/product-info/');
+    await page.goto(baseUrl+'/articles/product-info/',{waitUntil:'load'});await waitForBrowse(page);
     const response=await warmed;assert.ok(response.ok());await response.finished();await afterPaint(page);
     assert.equal(await page.locator('head link[rel=prefetch][href='+JSON.stringify(new URL(response.url()).pathname)+']').count(),1);
     await page.locator('main [data-list-entry][href='+JSON.stringify(article)+']').click();
@@ -813,7 +813,7 @@ test('external navigation handles slow, stale, failed and offline column request
     const network=[];
     const record=request=>{if(request.serviceWorker()&&urls.includes(request.url()))network.push(request.url());};
     context.on('request',record);
-    const target=source==='/products/'?'/products/examples/':routeFor(source);
+    const target=source==='/products/'?'/products/themes/':routeFor(source);
     const actualTarget=await page.locator('main [data-list-entry]').evaluateAll((nodes,target)=>{
       const link=nodes.find(node=>new URL(node.href).pathname===target.split('#')[0]);
       if(!link)throw new Error('The first collection must link to '+target);

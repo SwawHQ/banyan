@@ -1,7 +1,7 @@
 ---
-title: Documentation · Development
-description: Understand Banyan source structure, development contracts, checks and releases. Reference material is currently available in Chinese.
-weight: 6
+title: Docs6·Developing the theme
+description: Banyan documentation. Articles are available in Chinese.
+weight: 10
 params:
   default_sort: name-asc
 ---

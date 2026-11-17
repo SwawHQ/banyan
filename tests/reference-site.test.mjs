@@ -26,6 +26,7 @@ import {check as checkHome} from '../.agents/skills/swaw-banyan/tasks/check/brow
 
 const root=fileURLToPath(new URL('../',import.meta.url)),origin='https://banyan.swaw.com';
 const languages=['en','zh','ar'],prefixes=['','zh/','ar/'],suffixes=['','.zh','.ar'];
+const docSections=['docs-start','docs-content','docs-appearance','docs-publish','docs-features','docs-dev','docs-reference'];
 let work,output,documentation;
 before(async()=>{
   const parent=path.join(os.tmpdir(),'swaw/banyan/reference-site-tests');
@@ -35,7 +36,7 @@ before(async()=>{
     {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
   documentation=[];
-  for(const branch of ['docs-guide','docs-dev','changelog'])for(const file of await filesUnder(path.join(root,'content/articles',branch))) {
+  for(const branch of [...docSections,'changelog'])for(const file of await filesUnder(path.join(root,'content/articles',branch))) {
     if(!file.endsWith('.md'))continue;
     const source=path.relative(root,file).replaceAll('\\','/'),section=path.basename(file).startsWith('_index');
     const fields=parseYaml(fs.readFileSync(file,'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)[1]);
@@ -123,14 +124,14 @@ test('the reference site owns its delivery data, icons and interface translation
       assert.ok(value.other?.trim(),language+': '+key+' has display text');
       if(language==='ar')assert.match(value.other,/[\u0600-\u06ff]/,key+' has Arabic display text');
     }
-    const html=fs.readFileSync(path.join(output,prefixes[languages.indexOf(language)],'p/example-product/index.html'),'utf8');
+    const html=fs.readFileSync(path.join(output,prefixes[languages.indexOf(language)],'p/banyan/index.html'),'utf8');
     const body=extractStartTags(html,'body')[0],copy=JSON.parse(extractTagAttribute(body,'data-collection-sort-copy'));
     assert.deepEqual(Object.keys(copy.actions).sort(),['asc','desc'],'Sort actions use two translated templates.');
     for(const order of ['asc','desc']) {
       assert.equal(copy.actions[order],dictionary['list_sort_'+order].other);
       assert.ok(copy.actions[order].includes('{field}'),'Sort templates must retain their field placeholder.');
     }
-    for(const route of ['articles','articles/category1','articles-all','products/examples','products-all']) {
+    for(const route of ['articles','articles/product-info','articles-all','products/themes','products-all']) {
       const page=fs.readFileSync(path.join(output,prefixes[languages.indexOf(language)],route,'index.html'),'utf8');
       const shared=JSON.parse(extractTagAttribute(extractStartTags(page,'body')[0],'data-collection-sort-copy'));
       assert.deepEqual(shared,copy,'Main and breadcrumb columns share one translated copy, including root collections.');
@@ -188,7 +189,7 @@ test('the reference site owns its columns and links to its local documentation',
     assert.equal(roots.includes('/'+prefix+'github/'),true,'GitHub is available in every enabled language.');
     for(const name of ['notes','notes-all','discover','all','catalog','catalog-all','changelog'])
       assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'No retired or unconfigured column is published: '+name);
-    const docs=(prefix==='zh/'?'/zh/':'/')+'articles/docs-guide/';
+    const docs=(prefix==='zh/'?'/zh/':'/')+'articles/docs-start/';
     assert.match(home,/data-home-art-style=(?:"wind"|wind)/,'Reference home uses wind art.');
     assert.doesNotMatch(home,/data-wall-width=/);
     assert.ok(fs.existsSync(path.join(output,docs,'index.html')));
@@ -235,14 +236,14 @@ test('documentation and release notes publish article dates, sources and feeds',
   for(const prefix of prefixes) {
     const language=prefix?prefix.slice(0,-1):'en';
     const feed=fs.readFileSync(path.join(output,prefix,'index.xml'),'utf8');
-    const expected=['/'+prefix+'p/example-product/',...documentation.filter(page=>
+    const expected=['/'+prefix+'p/banyan/',...documentation.filter(page=>
       !page.section&&page.language===language).map(page=>page.href)];
     assert.deepEqual([...feed.matchAll(/<guid>([^<]+)<\/guid>/g)].map(match=>match[1]).sort(),
       expected.map(href=>origin+href).sort(),'Root RSS includes documentation and release notes.');
     for(const item of feed.matchAll(/<item>([\s\S]*?)<\/item>/g))
       assert.ok(Number.isFinite(Date.parse(item[1].match(/<pubDate>([^<]+)<\/pubDate>/)?.[1])),'Every RSS article has a valid publication date.');
     assert.equal(fs.existsSync(path.join(output,prefix,'articles/changelog/index.xml')),['en','zh'].includes(language),'Release notes publish a feed in each available language.');
-    assert.equal(fs.existsSync(path.join(output,prefix,'articles/docs-guide/index.html')),['en','zh'].includes(language),'Documentation exists only in its available languages.');
+    assert.equal(fs.existsSync(path.join(output,prefix,'articles/docs-start/index.html')),['en','zh'].includes(language),'Documentation exists only in its available languages.');
   }
 });
 
@@ -356,10 +357,10 @@ test('Arabic pages use RTL and demonstrate mixed text without losing translation
     const source=path.relative(root,file).replaceAll('\\','/');
     return /(?:^|[\\/])(?:_index|index)\.md$/.test(file)
       &&!['content/_res/_index.md','content/_res/home-art/_index.md'].includes(source)
-      &&!/^content\/articles\/(?:docs-guide|docs-dev|changelog)\//.test(source);
+      &&!/^content\/articles\/(?:docs-[^/]+|changelog)\//.test(source);
   });
   for(const file of english)assert.ok(fs.existsSync(file.replace(/\.md$/,'.ar.md')),'Arabic counterpart: '+file);
-  for(const [index,prefix] of prefixes.entries())for(const route of ['', 'language/', 'appearance/', 'articles-all/', 'p/example-product/', '_res/offline/', '404.html']) {
+  for(const [index,prefix] of prefixes.entries())for(const route of ['', 'language/', 'appearance/', 'articles-all/', 'p/banyan/', '_res/offline/', '404.html']) {
     const html=fs.readFileSync(path.join(output,prefix,route.endsWith('.html')?route:route+'index.html'),'utf8');
     const tag=extractStartTags(html,'html')[0];
     assert.equal(extractTagAttribute(tag,'lang'),languages[index]);
@@ -370,11 +371,10 @@ test('Arabic pages use RTL and demonstrate mixed text without losing translation
       assert.match(extractBlocks(html,'a',tag=>extractTagAttribute(tag,'class')==='skip-link')[0].inner,/[\u0600-\u06ff]/);
     }
   }
-  const article=fs.readFileSync(path.join(output,'ar/p/example-product/index.html'),'utf8');
+  const article=fs.readFileSync(path.join(output,'ar/p/banyan/index.html'),'utf8');
   const main=extractBlocks(article,'main')[0].inner;
-  for(const tag of ['ul','ol','blockquote','table','pre','code'])assert.ok(extractBlocks(main,tag).length,'Arabic example includes '+tag);
-  for(const value of ['Banyan','Hugo','v1.2.3','2026-10-28','19.95 USD','article-123.md','١٢٣'])assert.ok(main.includes(value),'Mixed text retains '+value);
-  assert.ok(main.includes('https://example.com/docs/?lang=ar&amp;version=2'));
+  for(const tag of ['ul','ol'])assert.ok(extractBlocks(main,tag).length,'Arabic product information includes '+tag);
+  for(const value of ['Banyan','Hugo','Pagefind','Windows x64','macOS x64/ARM64'])assert.ok(main.includes(value),'Mixed text retains '+value);
   assert.ok(extractStartTags(article,'link').some(tag=>extractTagAttribute(tag,'hreflang')==='en'));
   const home=fs.readFileSync(path.join(output,'ar/index.html'),'utf8');
   assert.match(home,/data-home-art-style=(?:"wind"|wind)/);
@@ -410,21 +410,21 @@ test('settings sections use choice controls without article collection capabilit
   }
 });
 
-test('the translated example supplies products while article lists also include documentation',async()=>{
+test('the translated Banyan overview supplies products while article lists also include documentation',async()=>{
   const files=await filesUnder(path.join(root,'content'));
   const maps=files.filter(file=>path.basename(file)==='_map.toml');
-  assert.deepEqual(maps.map(file=>path.relative(root,file).replaceAll('\\','/')),['content/products/examples/_map.toml']);
-  assert.equal(fs.readFileSync(maps[0],'utf8').trim(),'refs = ["/articles/category1/example"]');
+  assert.deepEqual(maps.map(file=>path.relative(root,file).replaceAll('\\','/')),['content/products/themes/_map.toml']);
+  assert.equal(fs.readFileSync(maps[0],'utf8').trim(),'refs = ["/articles/product-info/banyan"]');
   const articleFiles=files.filter(file=>file.startsWith(path.join(root,'content/articles')+path.sep)
     &&/\.md$/.test(file)&&!/^_index(?:\.|$)/.test(path.basename(file)));
   assert.deepEqual(articleFiles.map(file=>path.relative(root,file).replaceAll('\\','/')).sort(),
-    [...suffixes.map(suffix=>'content/articles/category1/example/index'+suffix+'.md'),
+    [...suffixes.map(suffix=>'content/articles/product-info/banyan/index'+suffix+'.md'),
       ...documentation.filter(page=>!page.section).map(page=>page.source)].sort());
   for(const prefix of prefixes) {
-    const href='/'+prefix+'p/example-product/';
+    const href='/'+prefix+'p/banyan/';
     const language=prefix?prefix.slice(0,-1):'en';
     const articles=documentation.filter(page=>!page.section&&page.language===language);
-    for(const [directory,variant] of [['articles/category1','section'],['articles-all','all'],['products/examples','products'],['products-all','products']]) {
+    for(const [directory,variant] of [['articles/product-info','section'],['articles-all','all'],['products/themes','products'],['products-all','products']]) {
       const html=fs.readFileSync(path.join(output,prefix,directory,'index.html'),'utf8');
       const main=extractBlocks(html,'main')[0].inner;
       const entries=extractStartTags(main,'a').filter(tag=>/\bdata-list-entry(?:\s|=|>)/.test(tag));
@@ -432,13 +432,14 @@ test('the translated example supplies products while article lists also include 
       assert.deepEqual(entries.map(tag=>extractTagAttribute(tag,'href').split('#')[0]).sort(),expected.sort(),directory+' keeps its own membership.');
       assert.match(main,new RegExp('data-sort-variant=["\']?'+variant+'\\b'));
     }
-    const article=fs.readFileSync(path.join(output,prefix,'p/example-product/index.html'),'utf8');
+    const article=fs.readFileSync(path.join(output,prefix,'p/banyan/index.html'),'utf8');
+    assert.equal(extractBlocks(article,'h1')[0].inner.trim(),'Banyan');
     assert.equal(extractCanonicalHref(article),origin+href);
-    assert.ok(article.includes('/'+prefix+'products/examples/'),'Article metadata exposes its reference directory');
+    assert.ok(article.includes('/'+prefix+'products/themes/'),'Article metadata exposes its reference directory');
     const llms=fs.readFileSync(path.join(output,prefix,'llms.txt'),'utf8');
     const entry='](<'+origin+href+'>)';
     assert.equal(llms.split(entry).length-1,2,'LLMS retains the article and product groups.');
-    for(const directory of ['articles/category1','products/examples']) {
+    for(const directory of ['articles/product-info','products/themes']) {
       const group=llms.split(/^## /m).find(text=>text.includes('](<'+origin+'/'+prefix+directory+'/>)'));
       assert.equal(group?.split(entry).length-1,1,directory+' lists the article once.');
     }
@@ -449,7 +450,7 @@ test('the translated example supplies products while article lists also include 
         expected.map(href=>origin+href).sort(),directory+' RSS keeps its article membership.');
     }
     assert.equal(fs.existsSync(path.join(output,prefix,'p/example-note')),false);
-    assert.equal(fs.existsSync(path.join(output,prefix,'products/examples/_map.toml')),false);
+    assert.equal(fs.existsSync(path.join(output,prefix,'products/themes/_map.toml')),false);
   }
 });
 
@@ -578,16 +579,39 @@ test('Powered by Markdown separates build information and update controls',async
 });
 
 
-test('documentation sections are flat and begin with numbered tutorials in name order',()=>{
+test('seven flat documentation sections and their parent use name order',()=>{
   assert.equal(fs.existsSync(path.join(output,'zh/articles/docs/index.html')),false);
-  for(const [section,titles] of [['docs-guide',['01 开始使用','02 设置自己的站点','03 首次部署']],['docs-dev',['01 本地开发','02 项目结构与源码入口']]]) {
+  assert.equal(fs.existsSync(path.join(output,'zh/articles/docs-guide/index.html')),false);
+  const titles=['文档1·开始使用','文档2·组织内容','文档3·定制外观','文档4·发布站点','文档5·配置功能','文档6·开发主题','文档7·查阅参考'];
+  const readingOrder={
+    'docs-content':['directories','article-references','aggregate-list','collection-lists','list-sorting','article-dates','products'],
+    'docs-appearance':['appearance-customization','home-minimal','home-wall','image-wall','wall-layout','palette','web-app','item-icons','choice-icons','navigation-entries','layout-slots'],
+    'docs-publish':['deploying','cloudflare-pages','edgeone-makers','custom-domain','publish-updates','url-redirects','upgrading'],
+  };
+  for(const section of ['',...docSections]) {
     const html=fs.readFileSync(path.join(output,'zh/articles',section,'index.html'),'utf8');
     const main=extractBlocks(html,'main')[0].html;
     const list=extractStartTags(main).find(tag=>extractTagAttribute(tag,'data-sortable')==='true');
     assert.equal(extractTagAttribute(list,'data-default-sort'),'name-asc');
     const entries=extractBlocks(main,'a',tag=>/\bdata-list-entry(?:[\s=>])/.test(tag));
-    assert.deepEqual(entries.slice(0,titles.length).map(entry=>extractBlocks(entry.inner,'bdi')[0].inner.trim()),titles);
-    for(const page of documentation.filter(p=>!p.section&&p.source.startsWith('content/articles/'+section+'/')))
-      assert.match(page.fields.title,/^(?:0[1-3] |内容 · |外观 · |运行 · |发布 · |参考 · |约定 · |检查 · )/);
+    const names=entries.map(entry=>extractBlocks(entry.inner,'bdi')[0].inner.trim());
+    if(!section)assert.deepEqual(names.filter(name=>/^文档\d·/.test(name)),titles);
+    else {
+      const pages=documentation.filter(p=>p.language==='zh'&&p.source.startsWith('content/articles/'+section+'/'));
+      assert.equal(pages.filter(p=>p.section).length,1,'No nested documentation sections.');
+      assert.deepEqual(names.toSorted(),pages.filter(p=>!p.section).map(p=>p.fields.title).toSorted());
+      assert.equal(pages.find(p=>p.section).fields.title,titles[docSections.indexOf(section)]);
+      if(section==='docs-start')assert.deepEqual(names,['01 在本地运行站点','02 设置自己的站点','03 写第一篇文章']);
+      if(readingOrder[section]) {
+        const expected=readingOrder[section].map(slug=>pages.find(p=>p.source.endsWith('/'+slug+'/index.zh.md')).fields.title);
+        assert.deepEqual(names,expected,'Recommended reading order: '+section);
+        names.forEach((name,index)=>assert.ok(name.startsWith(String(index+1).padStart(2,'0')+' '),name));
+      }
+      assert.equal(extractStartTags(main).some(tag=>extractTagAttribute(tag,'class').split(/\s+/).includes('collection-body')),false,
+        'Chinese documentation sections show only the list.');
+      const english=fs.readFileSync(path.join(output,'articles',section,'index.html'),'utf8');
+      assert.ok(extractStartTags(english,'a').some(tag=>extractTagAttribute(tag,'href')==='/zh/articles/'+section+'/'),
+        'English sections keep the Chinese reading link.');
+    }
   }
 });

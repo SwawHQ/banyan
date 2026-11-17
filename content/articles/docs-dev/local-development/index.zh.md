@@ -1,7 +1,7 @@
 ---
 title: 01 本地开发
 date: 2026-11-06
-lastmod: 2026-11-16
+lastmod: 2026-11-17
 url: p/local-development/
 description: 预览最小演示和文档站点，并按改动选择检查。
 ---
@@ -13,9 +13,9 @@ Banyan 仓库维护主题、Skill、源码测试、参考站点、使用指南�
 ```text
 banyan/
 ├── hugo.toml, go.mod                      #最小演示配置
+├── swban, swban.cmd                       #站点根目录命令入口
 ├── content/articles/                      #正文、文章分类、文档和版本说明
-├── content/articles/docs-guide/           #使用指南
-├── content/articles/docs-dev/             #开发资料
+├── content/articles/docs-*/              #七个文档栏目
 ├── content/articles/changelog/            #主题和 Skill 版本说明
 ├── content/articles-all/                  #文章汇总
 ├── content/products/                      #产品分类与一份引用
@@ -36,20 +36,17 @@ Banyan 根 `go.mod` 使用 `replace ... => ./module`，直接读取随仓库提�
 
 ## 预览
 
-进入要预览的站点根目录。下文 `swban` 代表 Banyan 仓库中的
-`.agents/skills/swaw-banyan/swban.cmd`，从其他站点调用时使用该入口的实际路径。
-命令行支持 Windows x64、Linux x64 和 macOS x64/ARM64。Linux 和 macOS 在仓库根目录使用 `sh swban`。首次准备工具见[开始使用](/zh/p/getting-started/#取得站点)。Windows 可在当前终端定义入口：
-
-```powershell
-function swban { & .\.agents\skills\swaw-banyan\swban.cmd @args }  #从 Banyan 仓库根目录调用
-```
+进入要预览的站点根目录。命令行支持 Windows x64、Linux x64 和 macOS x64/ARM64。
+Windows 使用根目录 `.\swban.cmd`，Linux 和 macOS 使用 `sh ./swban`。
+下文使用 `swban` 简称；定义方式和首次工具准备见[开始使用](/zh/p/getting-started/#取得站点)。
+仅安装 Skill 的其他站点，使用 `.agents/skills/swaw-banyan/` 中对应平台的入口。
 
 ```text
-swban dev                               #本机预览，启动时建立搜索索引
-swban dev/lan                           #供局域网和手机预览
-swban dev/pagefind.off                  #跳过搜索索引
-swban dev -p 13241                      #指定端口
-swban dev -D=false                      #不包含草稿
+swban dev               #本机预览，启动时建立搜索索引
+swban dev/lan           #供局域网和手机预览
+swban dev/pagefind.off  #跳过搜索索引
+swban dev -p 13241      #指定端口
+swban dev -D=false      #不包含草稿
 ```
 
 默认打开 `http://127.0.0.1:5678/`。Hugo 监听本地 Module，模板和资源变化会触发完整重建和浏览器刷新。
@@ -92,9 +89,9 @@ swban report/size/assets <build>        #报告资源体积
 ## 同步与部署准备
 
 ```text
-swban sync/ext                          #同步全部外部资源
-swban sync/ext <resource-id>            #按声明 id 同步外部资源
-swban help/zh deploy                    #查看各平台的部署准备方案
+swban sync/ext                #同步全部外部资源
+swban sync/ext <resource-id>  #按声明 id 同步外部资源
+swban help/zh deploy          #查看各平台的部署准备方案
 ```
 
 外部资源由站点的 `assets/site/external-resources.yaml` 声明；演示站点默认为空列表。
@@ -104,7 +101,7 @@ EdgeOne 部署方式见
 [EdgeOne 说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/edgeone.md)。
 
 Banyan 参考站点部署在 `https://banyan.swaw.com/`；文档入口为
-`https://banyan.swaw.com/articles/docs-guide/`，版本说明入口为
+`https://banyan.swaw.com/articles/docs-start/`，版本说明入口为
 `https://banyan.swaw.com/articles/changelog/`。构建时保留各站点自己的 `baseURL`。
 
 ## 下一步

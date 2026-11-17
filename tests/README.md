@@ -1,6 +1,8 @@
 # Source tests
 
-Run from the Banyan repository root with the installed Skill's `swban.cmd`.
+Run from the Banyan repository root. Use `.\swban.cmd` on Windows or
+`sh ./swban` on Linux x64 and macOS x64/ARM64. The commands below use the
+[`swban` shorthand](../content/articles/docs-start/getting-started/index.zh.md#取得站点).
 Run `swban base/packages/ensure` and prepare Hugo, Go and Git first.
 Browser suites also need the Skill's Chromium and WebKit. Tests use system
 temporary directories and remove their fixtures;
@@ -11,7 +13,7 @@ in PowerShell:
 
 ```powershell
 $taskTests = Get-ChildItem ./tests -Filter '*.test.mjs' -File | Where-Object Name -ne 'tools.test.mjs'
-.\.agents\skills\swaw-banyan\swban.cmd base/node --test $taskTests.FullName
+.\swban.cmd base/node --test $taskTests.FullName
 .\tests\tools.ps1
 ```
 
@@ -24,7 +26,7 @@ and asset-report tests ship with the Skill:
 
 ```powershell
 $skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_shared/_tests','./.agents/skills/swaw-banyan/tasks/_shared/tools/_tests','./.agents/skills/swaw-banyan/tasks/check/delivery/_tests','./.agents/skills/swaw-banyan/tasks/check/robots/_tests','./.agents/skills/swaw-banyan/tasks/doctor/_tests','./.agents/skills/swaw-banyan/tasks/help/_tests','./.agents/skills/swaw-banyan/tasks/upgrade/version/current/_tests','./.agents/skills/swaw-banyan/tasks/deploy/release/tag/_tests','./.agents/skills/swaw-banyan/tasks/report/size/assets/_tests') -Filter '*.test.mjs' -File
-.\.agents\skills\swaw-banyan\swban.cmd base/node --test $skillTests.FullName
+.\swban.cmd base/node --test $skillTests.FullName
 ```
 
 | Suite | Responsibility |

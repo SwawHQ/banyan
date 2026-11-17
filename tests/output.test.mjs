@@ -62,14 +62,14 @@ test('collection heads prefetch their own column and missing breadcrumb runtime 
   const read=(prefix,route)=>fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');
   for(const [,prefix] of languages) {
     const urls={};
-    const runtime=extractStartTags(read(prefix,'p/example-product'),'script').find(tag=>extractTagAttribute(tag,'src').includes('/browse/breadcrumb-entry.'));
+    const runtime=extractStartTags(read(prefix,'p/banyan'),'script').find(tag=>extractTagAttribute(tag,'src').includes('/browse/breadcrumb-entry.'));
     assert.ok(runtime,'The target article must load the breadcrumb runtime.');
     const runtimeUrl=extractTagAttribute(runtime,'src'),runtimeIntegrity=extractTagAttribute(runtime,'integrity');
     assert.match(runtimeUrl,/^\/js\/browse\/breadcrumb-entry\.[a-f0-9]{64}\.js$/);
     assert.equal(runtimeIntegrity,'sha256-'+createHash('sha256').update(fs.readFileSync(path.join(output,runtimeUrl.slice(1)))).digest('base64'));
-    for(const route of ['articles','articles/category1','articles-all','products','products/examples','products-all','prefetch-name','prefetch-unlisted']) {
+    for(const route of ['articles','articles/product-info','articles-all','products','products/themes','products-all','prefetch-name','prefetch-unlisted']) {
       const html=read(prefix,route),links=prefetches(html),logicalPath='/'+route+'/';
-      const hasBreadcrumb=['articles/category1','products/examples'].includes(route);
+      const hasBreadcrumb=['articles/product-info','products/themes'].includes(route);
       const fragments=links.filter(tag=>extractTagAttribute(tag,'href').startsWith('/site/navigation/'));
       const scripts=links.filter(tag=>extractTagAttribute(tag,'as')==='script');
       const executing=extractStartTags(html,'script').filter(tag=>extractTagAttribute(tag,'src').includes('/browse/breadcrumb-entry.'));
@@ -95,7 +95,7 @@ test('collection heads prefetch their own column and missing breadcrumb runtime 
       if(route==='prefetch-unlisted')assert.equal(navigation.default,'','Disabled slots keep their empty default path.');
       urls[logicalPath]=href;
     }
-    for(const route of ['','language','appearance','p/example-product','p/prefetch-name']) {
+    for(const route of ['','language','appearance','p/banyan','p/prefetch-name']) {
       const html=read(prefix,route);
       assert.deepEqual(prefetches(html),[],prefix+route+' is not a sortable collection.');
       if(!route.startsWith('p/'))continue;

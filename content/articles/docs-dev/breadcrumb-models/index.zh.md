@@ -1,5 +1,5 @@
 ---
-title: 约定 · 面包屑导航模型
+title: 导航：面包屑模型
 date: 2026-11-06
 lastmod: 2026-11-14
 url: p/breadcrumb-models/
@@ -10,7 +10,7 @@ description: 说明内容归属、构建模型与共享导航片段的边界。
 
 根导航列来自当前语言的首页和直属页面。结构根页面用于归属判断，可见入口只保留已发布 HTML 的页面；根入口可以是栏目，也可以是普通页面。
 
-内容声明见[页面区域与布局](/zh/p/layout-slots/)。构建入口为 `module/layouts/_partials/feature-browse/navigation/root/`。
+内容声明见[文章辅助内容](/zh/p/layout-slots/)。构建入口为 `module/layouts/_partials/feature-browse/navigation/root/`。
 
 ## 选中规则
 

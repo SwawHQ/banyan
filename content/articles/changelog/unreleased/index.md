@@ -25,7 +25,6 @@ The first release is in preparation. This page describes its scope. After the re
 
 ## Requirements
 
-- Command help uses `help.en.txt` and `help.zh.txt`. The first line is `usage  #summary`, followed by the body. Cold starts and normal runs read the same files.
 - The theme requires Hugo 0.168.0 or later. The Skill CLI supports Windows x64, Linux x64 and macOS x64/ARM64. Linux and macOS use sh without Python. Missing Git is prepared as a portable tool without installing system Git, Homebrew or Xcode. `swban build` reuses compatible tools and downloads missing tools as needed.
 - Start a new site from the complete root reference site. Each site owns `hugo.toml`, `content/`, `archetypes/`, `assets/site/` and `assets/i18n/`. The Module does not supply these files.
 - Keep `minify.disableJS = true` so HTML minification does not change scripts authorized by CSP.
@@ -39,4 +38,4 @@ The first release is in preparation. This page describes its scope. After the re
 - Prefetch and prerender depend on browser capabilities and settings. A configured level does not guarantee a download or render.
 - Deployment directory names cannot contain ambiguous literal percent encodings such as `a%20b`. Builds reject these names.
 
-See the [User guide (Chinese)](/zh/articles/docs-guide/) for configuration and the [Development reference (Chinese)](/zh/articles/docs-dev/) for source maintenance and releases.
+See the [User guide (Chinese)](/zh/articles/docs-start/) for configuration and the [Development reference (Chinese)](/zh/articles/docs-dev/) for source maintenance and releases.

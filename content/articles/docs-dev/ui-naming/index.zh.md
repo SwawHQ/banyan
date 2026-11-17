@@ -1,12 +1,12 @@
 ---
-title: 约定 · UI 命名与职责
+title: 界面：UI 命名与职责
 date: 2026-11-06
 lastmod: 2026-11-15
 url: p/ui-naming/
 description: 说明页面列、公共列表和样式的职责边界与源码入口。
 ---
 
-概念名称见[项目术语表](/zh/p/glossary/)。本文用于定位 UI 源码；配置示例见[使用指南](/zh/articles/docs-guide/)。
+概念名称见[项目术语表](/zh/p/glossary/)。本文用于定位 UI 源码；配置示例见[开始使用](/zh/articles/docs-start/)。
 
 ## 公共页面列
 
@@ -43,4 +43,4 @@ CSS 按视觉职责命名，不复制模板目录层级。源码职责与发布�
 | 站点状态控件 | `layouts/_shortcodes/site-status.html`、`assets/js/site-status/` |
 | 首页艺术包装配 | `layouts/page-home.html`、`layouts/_partials/entry-page-home/` |
 
-配色与艺术包由站点维护，修改方法见[配色与首页定制](/zh/p/appearance-customization/)。浏览来源与排序只在[导航状态协议](/zh/p/navigation-state/)中定义；不要用 UI 命名或样式类替代该协议。
+配色与艺术包由站点维护，修改方法见[首页和外观](/zh/articles/docs-appearance/)。浏览来源与排序只在[导航状态协议](/zh/p/navigation-state/)中定义；不要用 UI 命名或样式类替代该协议。
