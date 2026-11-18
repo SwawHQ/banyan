@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
@@ -8,11 +7,11 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {prepareHugo,hugoEnvironment} from '../base/hugo/run.mjs';
 import {toolExecutable} from '../_shared/tools/operations.mjs';
 import {execute} from '../_shared/tools/process.mjs';
-import {indexSite} from '../build/run.mjs';
+import {buildArguments,indexSite} from '../build/run.mjs';
 import {readHugoConfig} from '../_shared/hugo.mjs';
 import {addressOptions,developmentAddress} from './address.mjs';
 
-export function serverArguments(input,destination,{lan=false}={}) {
+export function serverArguments(input,{lan=false}={}) {
   let port='5678',bind=lan?'::':'127.0.0.1';
   for(let i=0;i<input.length;i++) {
     const arg=input[i];
@@ -29,7 +28,7 @@ export function serverArguments(input,destination,{lan=false}={}) {
     }
   }
   if(!/^\d+$/.test(port)||Number(port)<1||Number(port)>65535)throw new Error('dev requires a port between 1 and 65535.');
-  return {port:Number(port),bind,args:['server','--buildDrafts','--disableFastRender','--noHTTPCache','--port','5678','--bind',lan?'::':'127.0.0.1','--renderToMemory=false','--cleanDestinationDir=false','--destination',destination,...input]};
+  return {port:Number(port),bind,args:['server','--buildDrafts','--disableFastRender','--noHTTPCache','--port','5678','--bind',lan?'::':'127.0.0.1','--renderToMemory=false','--cleanDestinationDir=false',...input]};
 }
 
 export function listening(port,bind) {
@@ -60,22 +59,21 @@ export function printCommand(executable,args,{cwd=process.cwd()}={}) {
 }
 
 export async function dev(input,options={}) {
-  serverArguments(input,'',options);
+  const {args,port,bind}=serverArguments(input,options);
   const controller=new AbortController(),stop=()=>controller.abort();
-  let server,destination;
+  let server;
   process.on('SIGINT',stop);process.on('SIGTERM',stop);
   try {
     await prepareHugo();
     if(controller.signal.aborted)return 130;
-    const parent=path.join(os.tmpdir(),'swaw/banyan/dev');fs.mkdirSync(parent,{recursive:true});
-    destination=fs.mkdtempSync(path.join(parent,'site-'));
-    const {args,port,bind}=serverArguments(input,destination,options);
     if(await listening(port,bind))throw new Error(`Port ${port} is in use; choose another with --port.`);
     const executable=toolExecutable('hugo');
     const addressSettings=addressOptions(input);
+    const config=await readHugoConfig(process.cwd(),'',addressSettings.configArgs);
+    const {destination}=buildArguments({destination:config.publishdir||'public'},path.resolve(addressSettings.source||process.cwd()),config);
     let address;
     try {
-      address=developmentAddress(await readHugoConfig(process.cwd(),'',addressSettings.configArgs),addressSettings,port);
+      address=developmentAddress(config,addressSettings,port);
     } catch(error) {console.error(`[swban] Could not determine development address: ${error.message}`);}
     printCommand(executable,args);
     let ended=false;
@@ -103,7 +101,6 @@ export async function dev(input,options={}) {
     stop();
     if(server)await server.catch(()=>{});
     process.off('SIGINT',stop);process.off('SIGTERM',stop);
-    if(destination)fs.rmSync(destination,{recursive:true,force:true});
   }
 }
 

@@ -2,7 +2,7 @@ swban dev [Hugo arguments...]  #Start development and index search
 
 Defaults: drafts, localhost port 5678, full rebuilds, live reload, no HTTP cache.
 Search is indexed once at startup. Restart to index content changes.
-Development output uses a separate temporary directory, removed on exit.
+Output follows Hugo publishDir (default: public/) and remains after exit.
 
 swban dev -p 8080              #Use port 8080
 swban dev -D=false             #Exclude drafts
