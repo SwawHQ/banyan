@@ -14,11 +14,11 @@ description: 取得参考站点，准备工具并完成本地预览。
 
 ## 取得站点
 
-1. 在[项目 Releases](https://github.com/SwawHQ/banyan/releases)选择版本，下载 **Source code (zip)**。尚无发布版本时，在[仓库首页](https://github.com/SwawHQ/banyan)选择 **Code → Download ZIP**，取得当前开发版。
-2. 完整解压到自己的站点目录。确认其中有 `hugo.toml`、`go.mod`、`module/`、`content/`、`assets/` 和 `.agents/`，不要只取 `module/`。
+1. 在[项目 Releases](https://github.com/SwawHQ/banyan/releases)选择版本，下载 **Source code (zip)**。整仓首发前，在[仓库首页](https://github.com/SwawHQ/banyan)选择 **Code → Download ZIP**，取得当前开发版。
+2. 完整解压到自己的站点目录。保留 `hugo.toml`、`go.mod`、`go.sum`、`content/`、`assets/` 和 `.agents/`。
 3. 在包含 `hugo.toml` 的目录打开终端；Windows 使用 PowerShell。后面的命令都从这里运行。
 
-发布包的 `go.mod` 固定了主题 Module 版本。`swban server` 和 `swban build` 使用该版本。`module/` 供主题开发使用，见[本地开发](/zh/p/local-development/)。
+`swban server` 和 `swban build` 使用 `go.mod` 固定的主题版本。只使用已发布主题的新站点可以移除 `module/` 和 `hugo.work`。如果要修改主题源码，保留这两项并按[本地开发](/zh/p/local-development/)操作。
 
 完整源码包提供根目录入口：Windows 用 `.\swban.cmd`，Linux 和 macOS 用 `sh ./swban`。例如，启动预览分别运行 `.\swban.cmd server` 或 `sh ./swban server`。
 

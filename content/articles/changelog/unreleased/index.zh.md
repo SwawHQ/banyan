@@ -1,44 +1,9 @@
 ---
 title: 未发布
 url: p/unreleased/
-description: Banyan 首版的主要能力、使用要求和已知限制。
-date: 2026-11-06
-lastmod: 2026-11-18
+description: 记录 Banyan 下一版本的改动。
+date: 2026-11-19
+lastmod: 2026-11-19
 ---
 
-本项目正在准备首次发布。以下说明首版交付范围；发布标签可用后，再按[开始使用](/zh/p/getting-started/)安装。
-
-## 主要能力
-
-- 用 `swban deploy/release/tag <版本号>` 更新版本、发布 Module、核对下载源码并用正式主题构建参考站并发布项目标签。
-
-- `swban server` 启动含草稿的开发服，首次渲染后建立搜索索引，产物跟随 Hugo 的 `publishDir`（默认 `public/`）并在退出后保留。`server/lan` 支持局域网预览，`server/pagefind.off` 可跳过索引；追加参数传给 Hugo，启动时显示实际命令并保留工具输出，索引完成后补打单主机访问地址。搜索索引通过重启开发服更新。 在 Banyan 仓库运行 `swban dev` 或 `swban dev/build`，可用本地 Module 预览或构建站点。
-
-- 提供独立搜索页，按当前语言实时搜索正文，搜索词通过 `#q=` 保留在浏览器中，不随页面请求发送；结果使用正文列宽和加粗标题，整条结果可点击，并复用主题预选效果。搜索页支持 RSS 范围、HTML 文件匹配或目录数组，并用已有 HTML 选择器限定正文，无需添加 Pagefind 专用属性。根目录命令入口支持 `swban build`，一键生成站点和 Pagefind 索引。
-- 构建拒绝覆盖源码目录及自定义挂载目录；无搜索页或 RSS 收录为空时不准备 Pagefind。空 RSS 可正常构建，缺少当前语言索引时显示无结果，搜索摘要正确显示转义字符。
-
-- 通过 Hugo Module 提供页面布局、脚本和样式，配套 `swaw-banyan` Agent Skill 提供本地工具、构建检查和版本维护。浏览器检查支持部署子目录和默认语言子目录，SW 停用检查按实际部署范围执行。
-- 用栏目和文章引用组织内容。同一正文可以进入多个分类，保留一个发布网址；支持汇总列表和栏目 RSS。共享引用也适用于仅有非默认语言首页的栏目。
-- 提供目录列表、名称列表、产品列表和图片墙。面包屑列保留文章浏览来源，各列可独立排序；栏目可配置默认排序字段与升降序，进入子栏目时不继承父栏排序。支持原生绘制阻塞的浏览器可等待面包屑数据后统一显示首屏，减少切页闪烁；加载异常时限时放行。
-- 支持多语言、从右向左排版、浅色与深色外观，以及自定义配色和首页艺术包。参考站提供英语、简体中文和阿拉伯语。
-- 支持 Web App Manifest、可选的 SW 缓存与离线页面、页面预取和原生预渲染。Manifest 地址和 SW 作用范围跟随部署子目录，SVG 浏览器图标支持原有尺寸及仅含 `viewBox` 的图形。Powered by 页面提供版本信息与诊断入口。
-- 生成站点地图、RSS、`llms.txt`、社交分享信息和结构化数据。
-- 从站点交付配置生成 Cloudflare Pages 或 EdgeOne Makers 的部署配置，并生成 CSP 与脚本完整性信息。Skill 提供内容、产物、HTTP 和浏览器检查。EdgeOne 配置只包含交付规则，构建命令和工具版本在平台设置；Skill 按平台分别提供 Git 构建和产物上传指引。
-
-## 使用要求
-
-- 主题要求 Hugo 0.168.0 或更新版本。Skill 命令行支持 Windows x64、Linux x64 和 macOS x64/ARM64；Linux 和 macOS 使用 sh，无需 Python。Git 缺少时会准备便携工具，无需安装系统 Git、Homebrew 或 Xcode。`swban build` 会复用兼容的已有工具，并按需下载其他工具。
-- 新站点从完整根参考站点起步。站点自行维护 `hugo.toml`、`content/`、`archetypes/`、`assets/site/` 和 `assets/i18n/`；Module 不补充这些文件。
-- 保留 `minify.disableJS = true`，避免 HTML 压缩改变 CSP 授权的脚本正文。
-- 启用 SW 时，每种已启用语言都要提供 HTML 离线页。参考配置默认关闭 SW 和预取。
-- 云平台授权和上传由独立的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill 提供。
-
-## 已知限制
-
-- Firefox 等未支持原生绘制阻塞的浏览器仍以异步方式显示面包屑列。
-- 账号、支付和评论尚未提供。产品列表只展示产品信息。
-- SW 更新不会自动刷新已打开的页面。停用已有 SW 时应使用 `disable`；`off` 不清理已安装的 SW。
-- 预取和预渲染受浏览器能力与设置限制。配置档位不保证浏览器一定下载或渲染页面。
-- 部署目录名不能使用 `a%20b` 这类含歧义百分号编码的字面名称；构建会报错。
-
-配置方法见[开始使用](/zh/articles/docs-start/)，源码维护与发布流程见[开发主题](/zh/articles/docs-dev/)。
+下一版本的变更将在此记录。

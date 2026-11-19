@@ -32,7 +32,9 @@ Backend features such as accounts, payments, and comments are not yet available.
 ## Set up a new site (with help from an AI Agent)
 
 
-1. Download **Source code (zip)** from the [latest stable release](https://github.com/SwawHQ/banyan/releases/latest). Extract it as your site directory.
+1. Download **Source code (zip)** from the [latest stable release](https://github.com/SwawHQ/banyan/releases/latest). Extract it as your site directory. Before the first project release, use **Code → Download ZIP** from the repository.
+
+    Keep `go.mod` and `go.sum` for the pinned theme version. If you use the published theme as-is, you can remove `module/` and `hugo.work` from your new site.
 
 2. Start a local preview from the site root. Banyan supports Windows x64, Linux x64, and macOS x64/ARM64.
 
@@ -108,6 +110,17 @@ Backend features such as accounts, payments, and comments are not yet available.
     ```
 
 
+
+## Develop the Banyan theme
+
+Keep `module/` and `hugo.work` in your Banyan checkout. The examples use the same `swban` shorthand as the [local development guide](content/articles/docs-dev/local-development/index.zh.md).
+
+```text
+swban dev        #Preview changes to the local theme
+swban dev/build  #Build with the local theme
+swban server     #Preview with the version pinned in go.mod
+swban build      #Build with the version pinned in go.mod
+```
 
 ## Documentation
 

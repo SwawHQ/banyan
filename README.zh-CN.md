@@ -32,7 +32,9 @@
 ## 设置新站点（可让 AI Agent 协助）
 
 
-1. 从[最新正式版本](https://github.com/SwawHQ/banyan/releases/latest)下载 **Source code (zip)**，解压后作为你的站点目录。
+1. 从[最新正式版本](https://github.com/SwawHQ/banyan/releases/latest)下载 **Source code (zip)**，解压后作为你的站点目录。整仓首发前，可通过仓库首页的 **Code → Download ZIP** 下载。
+
+    保留 `go.mod` 和 `go.sum`，以使用固定的主题版本。只使用已发布主题的新站点可以移除 `module/` 和 `hugo.work`。
 
 2. 在站点根目录启动本地预览。Banyan 支持 Windows x64、Linux x64 和 macOS x64/ARM64。
 
@@ -108,6 +110,17 @@
     ```
 
 
+
+## 开发 Banyan 主题
+
+在 Banyan 仓库保留 `module/` 和 `hugo.work`。以下命令使用[本地开发指南](content/articles/docs-dev/local-development/index.zh.md)中的 `swban` 简称。
+
+```text
+swban dev        #预览本地主题改动
+swban dev/build  #用本地主题构建站点
+swban server     #用 go.mod 固定的版本预览
+swban build      #用 go.mod 固定的版本构建
+```
 
 ## 文档
 

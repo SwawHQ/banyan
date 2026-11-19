@@ -18,7 +18,7 @@ installation before downloading a verified official archive. Keep each platform'
 
 For a new site, clone or extract the complete Banyan repository. Use its root as
 your site, then replace its site information, content and identity images.
-The root contains the configuration, Skill and site files needed to start.
+Keep `go.mod` and `go.sum`. Use `swban server` to preview and `swban build` to build with the pinned Module. A new site that uses the published theme can remove `module/` and `hugo.work`. Keep both in a Banyan theme checkout for `swban dev` and `swban dev/build`.
 Upgrade the Module or theme code separately; review root-file differences
 between your starting version and the target version before changing site files.
 
@@ -112,7 +112,6 @@ Pin the matching release:
 swban base/hugo mod get <module>@v<version>
 ```
 
-The project release pins the Module in `go.mod`. Use `swban dev` in the Banyan checkout to preview local theme edits.
 Preserve existing imports, content, languages and URL rules when adapting a site.
 If upgrading a vendored site, regenerate its vendor tree with
 `swban base/hugo mod vendor` after updating the dependency, then check pairing again.

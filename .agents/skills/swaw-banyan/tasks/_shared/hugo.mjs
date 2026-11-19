@@ -11,7 +11,7 @@ export async function readHugoConfig(site = process.cwd(),language = '',input = 
   fs.mkdirSync(parent,{recursive:true});
   const temporary = fs.mkdtempSync(path.join(parent,'read-'));
   try {
-    const args = ['config','--format','json','--printZero','--noBuildLock','--cacheDir',path.join(temporary,'cache')];
+    const args = ['config','--quiet','--format','json','--printZero','--noBuildLock','--cacheDir',path.join(temporary,'cache')];
     args.push(...input);
     if (language) args.push('--lang',language);
     const result = spawnSync(toolExecutable('hugo'),args,{cwd:path.resolve(site),

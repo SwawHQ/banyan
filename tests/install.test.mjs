@@ -330,6 +330,12 @@ test('SVG favicon accepts intrinsic dimensions and viewBox-only artwork',()=>{
 
 test('packaged Skill and versioned Module build from an isolated proxy',()=>{
   const root=consumer('packaged consumer',{multilingual:true});
+  const readConfig=pathToFileURL(path.join(installed,'tasks/_shared/hugo.mjs')).href;
+  const probe=spawnSync(process.execPath,['--input-type=module','-e',
+    'import {readHugoConfig} from '+JSON.stringify(readConfig)+'; console.log((await readHugoConfig()).baseurl)'],
+    {cwd:root,env:environment,encoding:'utf8',timeout:30000});
+  assert.ifError(probe.error);assert.equal(probe.status,0,probe.stdout+probe.stderr);
+  assert.match(probe.stdout,/^https?:\/\//);
   assert.match(passed(root,installed,['doctor']),/site\.banyan: matched/);
   const output=build(root,installed);checks(root,installed,output);
   for(const [prefix,suffix,locale,label] of [

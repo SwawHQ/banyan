@@ -12,7 +12,8 @@ Banyan 仓库维护主题、Skill、源码测试、参考站点、使用指南�
 
 ```text
 banyan/
-├── hugo.toml, go.mod                      #最小演示配置
+├── hugo.toml, go.mod, go.sum              #站点配置和正式 Module 依赖
+├── hugo.work                              #本地主题开发 workspace
 ├── swban, swban.cmd                       #站点根目录命令入口
 ├── content/articles/                      #正文、文章分类、文档和版本说明
 ├── content/articles/docs-*/              #七个文档栏目
@@ -30,7 +31,7 @@ banyan/
 └── tests/                                 #主题和工具源码测试
 ```
 
-发布包的根 `go.mod` 固定正式 Module 版本。修改主题时，在 Banyan 根目录运行 `swban dev` 预览，或运行 `swban dev/build` 构建。这两个命令通过 `hugo.work` 加载 `./module`。
+根 `go.mod` 固定正式 Module 版本，`swban server` 和 `swban build` 默认加载该版本。修改主题时，在 Banyan 根目录运行 `swban dev` 预览，或运行 `swban dev/build` 构建。这两个命令通过 `hugo.work` 加载 `./module`。
 站点定制留在各站点根目录，可复用主题行为放入 Banyan 的 `module/`。
 
 ## 预览
