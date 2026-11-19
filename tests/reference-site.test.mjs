@@ -7,6 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
+import {indexSite} from '../.agents/skills/swaw-banyan/tasks/build/run.mjs';
 import {verifyCspOutput} from '../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 import {inspect as inspectSitemap} from '../.agents/skills/swaw-banyan/tasks/check/sitemap/inspect.mjs';
 import {inspect as inspectBuildVersion} from '../.agents/skills/swaw-banyan/tasks/check/build-version/inspect.mjs';
@@ -35,6 +36,7 @@ before(async()=>{
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',output],
     {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
+  assert.equal(await indexSite(output),0);
   documentation=[];
   for(const branch of [...docSections,'changelog'])for(const file of await filesUnder(path.join(root,'content/articles',branch))) {
     if(!file.endsWith('.md'))continue;
@@ -299,6 +301,7 @@ test('content links resolve pages and attachments across deployment and language
     const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,
       '--baseURL',siteURL,'--destination',build],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
     assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
+    assert.equal(await indexSite(build),0);
     const {pages}=await readPages(build),files=(await filesUnder(build)).map(file=>path.relative(build,file).replaceAll('\\','/'));
     const discovered=await discoverSite(build);
     assert.equal(discovered.home,baseHref+defaultPrefix);

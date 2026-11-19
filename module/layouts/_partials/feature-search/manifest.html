@@ -15,10 +15,10 @@
     {{- $urls := slice -}}
     {{- range $pages -}}
       {{- if partial "feature-browse/is-rendered-html.html" . -}}
-        {{- $urls = $urls | append (.OutputFormats.Get "HTML").RelPermalink -}}
+        {{- $urls = $urls | append (urls.Parse (.OutputFormats.Get "HTML").Permalink).EscapedPath -}}
       {{- end -}}
     {{- end -}}
-    {{- $groups = $groups | append (dict "source" $config.source "root" $site.Home.RelPermalink "selector" $config.selector "urls" $urls) -}}
+    {{- $groups = $groups | append (dict "source" $config.source "root" (urls.Parse $site.Home.Permalink).EscapedPath "selector" $config.selector "urls" $urls) -}}
   {{- end -}}
 {{- end -}}
 {{- $resource := resources.FromString "site/search-index.json" (jsonify (dict "base" ("" | absURL) "groups" $groups)) -}}
