@@ -34,6 +34,13 @@ swban deploy/release/tag 0.1.0          #发布或继续该版本
 
 Module 已发布时，重跑同一命令会核对主题源码并继续验证站点。站点问题修复后提交即可续发；已发布主题的修复使用新版本号。
 
+也可以分开运行两个阶段。先运行 Module 命令，确认正式版本可用后再运行整仓命令。两个命令都接受 `--check`。
+
+```text
+swban deploy/release/tag/module 0.1.0   #发布 Module 标签
+swban deploy/release/tag/project 0.1.0  #固定正式 Module、验证构建并发布整仓标签
+```
+
 用项目标签的提交部署参考站并核对版本页面。
 
 ## GitHub Release

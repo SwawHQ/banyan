@@ -45,6 +45,8 @@ assets/                 #3 站点资源与界面字典
 archetypes/             #4 内容模板
 
 主题开发者：
-swban deploy/release/tag <版本号> [--check]  #发布 Module，构建参考站并发布项目标签
+swban deploy/release/tag <版本号> [--check]              #发布 Module，构建参考站并发布项目标签
+swban deploy/release/tag/module <版本号> [--check]       #发布 Module 标签
+swban deploy/release/tag/project <版本号> [--check]      #验证正式 Module 并发布整仓标签
 swban base/gh auth login --web                                 #登录 GitHub
 swban base/gh release create <tag> --verify-tag --notes <URL>  #链接版本记录

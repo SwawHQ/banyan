@@ -1,0 +1,1 @@
+swban deploy/release/tag/project <版本号> [--check]  #用已发布的 Module 构建并发布整仓标签

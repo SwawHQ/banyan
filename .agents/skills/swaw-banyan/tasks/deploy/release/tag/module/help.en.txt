@@ -1,0 +1,1 @@
+swban deploy/release/tag/module <version> [--check]  #Build locally and publish the Module tag

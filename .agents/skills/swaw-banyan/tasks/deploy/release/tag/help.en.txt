@@ -1,4 +1,6 @@
 swban deploy/release/tag <version> [--check]  #Publish the Module, build the site and tag the project
+swban deploy/release/tag/module <version> [--check]   #Publish the Module tag
+swban deploy/release/tag/project <version> [--check]  #Verify the Module and publish the project tag
 
 swban deploy/release/tag 0.1.0 --check  #Check the version, branch and tags
 swban deploy/release/tag 0.1.0          #Publish or resume this version

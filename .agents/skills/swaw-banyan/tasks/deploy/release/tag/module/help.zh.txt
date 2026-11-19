@@ -1,0 +1,1 @@
+swban deploy/release/tag/module <版本号> [--check]  #用本地主题构建并发布 Module 标签

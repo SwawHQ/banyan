@@ -12,7 +12,7 @@ import {hugoEnvironment} from '../../../base/hugo/run.mjs';
 const skillFile='.agents/skills/swaw-banyan/SKILL.md',themeFile='module/theme.toml';
 const buildEntry=fileURLToPath(new URL('../../../build/entry.mjs',import.meta.url));
 
-export function release({version,check=false,cwd=process.cwd()}) {
+export function release({version,stage,check=false,cwd=process.cwd()}) {
   if (!versionPattern.test(version)) throw new Error('Use a SemVer version without v.');
   const env={...hugoEnvironment(),GOWORK:'off',GIT_OPTIONAL_LOCKS:'0',GIT_NO_REPLACE_OBJECTS:'1',
     GIT_GRAFT_FILE:process.platform==='win32'?'NUL':'/dev/null',GIT_TERMINAL_PROMPT:'0',GCM_INTERACTIVE:'Never',LC_ALL:'C'};
@@ -44,6 +44,8 @@ export function release({version,check=false,cwd=process.cwd()}) {
   if (!refs.has(branch)) throw new Error('Publish the release branch to origin first.');
   git(['merge-base','--is-ancestor',refs.get(branch),head]);
   const moduleCommit=refs.get(ref(moduleTag));
+  if (stage==='project' && !moduleCommit) throw new Error('Publish '+moduleTag+' before the project tag.');
+  if (stage==='module' && moduleCommit) throw new Error(moduleTag+' is already published.');
   if (refs.has(ref(tag))) throw new Error(tag+' is already published.');
   for (const name of [moduleTag,tag]) {
     const local=git(['tag','--list',name]);
@@ -67,10 +69,11 @@ export function release({version,check=false,cwd=process.cwd()}) {
         git(['rev-parse',moduleCommit+':module'])!==git(['rev-parse',head+':module']))
       throw new Error(moduleTag+' already exists with different source. Release the theme fix under a new version.');
   }
-  const files=[skillFile,themeFile,'go.mod','go.sum'];
-  const plan={version,head,branch:branch.slice(11),remote:'origin',tags:[moduleTag,tag],files,resume:!!moduleCommit};
+  const tags=[...(!moduleCommit?[moduleTag]:[]),...(stage!=='module'?[tag]:[])];
+  const files=[...(!moduleCommit?[skillFile,themeFile]:[]),...(stage!=='module'?['go.mod','go.sum']:[])];
+  const plan={version,head,branch:branch.slice(11),remote:'origin',tags,files,resume:!!moduleCommit};
   const push=['-c','remote.origin.mirror=false','push','--atomic','--no-follow-tags','--recurse-submodules=no'];
-  git([...push,'--dry-run','--no-verify','origin',head+':'+branch,...(moduleCommit?[]:[head+':'+ref(moduleTag)]),head+':'+ref(tag)]);
+  git([...push,'--dry-run','--no-verify','origin',head+':'+branch,...tags.map(name=>head+':'+ref(name))]);
   if (check) return {...plan,published:false};
 
   const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw','banyan','release-tag');
@@ -104,6 +107,7 @@ export function release({version,check=false,cwd=process.cwd()}) {
       commitFiles([skillFile,themeFile],'Release Module '+tag);
       build({...releaseEnv,...workspaceEnvironment,HUGO_CACHEDIR:path.join(temp,'local-hugo')},'local-public');
       publish(moduleTag);
+      if (stage==='module') return {...plan,commit:head,published:true};
     }
     const root=JSON.parse(go(['mod','edit','-json'],site,releaseEnv));
     const drops=(root.Replace||[]).filter(r=>r.Old.Path===module).map(r=>'-dropreplace='+module+(r.Old.Version?'@'+r.Old.Version:''));

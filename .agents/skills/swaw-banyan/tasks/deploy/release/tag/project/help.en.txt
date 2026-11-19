@@ -1,0 +1,1 @@
+swban deploy/release/tag/project <version> [--check]  #Build with the published Module and tag the project

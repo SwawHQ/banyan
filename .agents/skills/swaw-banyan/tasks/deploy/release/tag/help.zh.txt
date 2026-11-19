@@ -1,4 +1,6 @@
 swban deploy/release/tag <版本号> [--check]  #发布 Module，构建参考站并发布项目标签
+swban deploy/release/tag/module <版本号> [--check]       #发布 Module 标签
+swban deploy/release/tag/project <版本号> [--check]      #验证正式 Module 并发布整仓标签
 
 swban deploy/release/tag 0.1.0 --check  #预检版本、分支和标签
 swban deploy/release/tag 0.1.0          #发布或继续该版本

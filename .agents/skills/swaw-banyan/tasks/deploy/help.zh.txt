@@ -6,4 +6,6 @@ Banyan 构建静态产物并生成交付规则；Swaw Clouds 指导账号授权�
 
 swban help/zh deploy/cloudflare  #Cloudflare Pages
 swban help/zh deploy/edgeone     #EdgeOne Makers
-swban deploy/release/tag <版本号> [--check]  #发布 Module，构建参考站并发布项目标签
+swban deploy/release/tag <版本号> [--check]              #发布 Module，构建参考站并发布项目标签
+swban deploy/release/tag/module <版本号> [--check]       #发布 Module 标签
+swban deploy/release/tag/project <版本号> [--check]      #验证正式 Module 并发布整仓标签

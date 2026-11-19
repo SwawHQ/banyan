@@ -45,6 +45,8 @@ assets/                 #3 Site resources and interface dictionaries
 archetypes/             #4 Content templates
 
 Theme developers:
-swban deploy/release/tag <version> [--check]  #Publish the Module, build the site and tag the project
+swban deploy/release/tag <version> [--check]          #Publish the Module, build the site and tag the project
+swban deploy/release/tag/module <version> [--check]   #Publish the Module tag
+swban deploy/release/tag/project <version> [--check]  #Verify the Module and publish the project tag
 swban base/gh auth login --web                                 #Sign in to GitHub
 swban base/gh release create <tag> --verify-tag --notes <URL>  #Link release notes

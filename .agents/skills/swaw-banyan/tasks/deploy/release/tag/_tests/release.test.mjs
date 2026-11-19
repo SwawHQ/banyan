@@ -127,3 +127,20 @@ test('preflight inspects the rewritten push destination and ignores tags on the 
   assert.equal(run({check:true}).published,false);
   git(['push','origin','HEAD:refs/tags/'+tag]);assert.throws(()=>run({check:true}),/already published/);
 });
+
+test('separate commands publish one tag each and the Module step leaves root dependencies alone',()=>{
+  const invoke=(stage,...args)=>spawnSync(process.execPath,[path.join(path.dirname(entry),stage,'entry.mjs'),version,...args],{cwd:root,encoding:'utf8'});
+  const early=invoke('project','--check');
+  assert.equal(early.status,1);assert.match(early.stderr,/before the project tag/);
+  const original=fs.readFileSync(path.join(root,'go.mod'),'utf8');
+  const plan=invoke('module','--check');assert.equal(plan.status,0,plan.stderr);
+  assert.deepEqual(JSON.parse(plan.stdout).tags,['module/'+tag]);assert.deepEqual(remoteTags(),[]);
+  const first=invoke('module');assert.equal(first.status,0,first.stderr);
+  assert.deepEqual(remoteTags(),['module/'+tag]);
+  assert.equal(fs.readFileSync(path.join(root,'go.mod'),'utf8'),original);
+  const next=invoke('project','--check');assert.equal(next.status,0,next.stderr);
+  assert.deepEqual(JSON.parse(next.stdout).tags,[tag]);
+  const final=invoke('project');assert.equal(final.status,0,final.stderr);
+  assert.deepEqual(remoteTags(),['module/'+tag,tag]);
+  assert.equal(git(['rev-parse','module/'+tag],remote),JSON.parse(first.stdout).commit);
+});
