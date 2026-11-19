@@ -16,7 +16,7 @@ Features:
 
 **3.** Multiple languages, theme switching, and customizable appearance and home page
 
-**4.** Companion Agent Skills for deployment across clouds, maintenance, and operations—managed by your local Agent
+**4.** Bundled Swaw Banyan Skill for build and maintenance, with optional Swaw Clouds for deployment
 
 **5.** Hugo-generated pages + optimized CDN caching + edge computing + object storage, with no database or self-hosted server
 
@@ -32,9 +32,7 @@ Backend features such as accounts, payments, and comments are not yet available.
 ## Set up a new site (with help from an AI Agent)
 
 
-1. Download **Source code (zip)** from the [latest stable release](https://github.com/SwawHQ/banyan/releases/latest). Extract it as your site directory. Before the first project release, use **Code → Download ZIP** from the repository.
-
-    Keep `go.mod` and `go.sum` for the pinned theme version. If you use the published theme as-is, you can remove `module/` and `hugo.work` from your new site.
+1. Download **Source code (zip)** from the [latest stable release](https://github.com/SwawHQ/banyan/releases/latest). Extract it as your site directory.
 
 2. Start a local preview from the site root. Banyan supports Windows x64, Linux x64, and macOS x64/ARM64.
 
@@ -52,29 +50,35 @@ Backend features such as accounts, payments, and comments are not yet available.
 
     Linux requires sh, basic system utilities, curl, tar, and sha256sum. macOS uses its built-in utilities. See [Getting started](content/articles/docs-start/getting-started/index.zh.md) for setup and the `swban` command shorthand.
 
-3. Review these four items to understand the site structure:
-    ```
-    hugo.toml
-    archetypes/
-    assets/
-    content/
+3. Keep these files and directories when customizing your site.
+    ```text
+    hugo.toml                    #Site configuration
+    go.mod and go.sum            #Pinned theme version and checksums
+    swban and swban.cmd          #Site command launchers
+    .agents/skills/swaw-banyan/  #Bundled Swaw Banyan Skill
+    archetypes/                  #Content templates
+    assets/                      #Site assets
+    content/                     #Site pages
     ```
 
-    Delete or replace these resources as needed:
+    Remove or replace these files and resources as needed.
+    ```text
+    module/                         #Theme source, optional with the published Module
+    hugo.work                       #Local theme workspace, optional with the published Module
+    content/articles/changelog/     #Banyan release notes
+    content/articles/docs-*/        #Banyan documentation
+    content/articles/product-info/  #Example product information
+    content/products/               #Example product categories and references
+    content/products-all/           #Example product list
     ```
-    content/articles/changelog/  #Banyan release notes
-    content/articles/docs-*/     #Banyan documentation
-    content/articles/product-info/  #Banyan product information; replace with your products
-    content/products/themes/   #Website themes referencing product information via _map.toml
-    content/products/            #Root directory for product categories
-    content/products-all/        #Product list directory
-    ```
+
+    If you remove the documentation or release notes, update the corresponding links on Home and Powered by.
 
     Then set your own site name, domain, logo, and articles.
 
 
 4. Deploy\
-    The bundled [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill currently supports Windows x64. On Linux and macOS, use [Git builds or upload the build output](content/articles/docs-publish/deploying/index.zh.md) with your hosting platform's tools.
+    Install [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) separately on Windows x64 for cloud authorization and deployment. On Linux and macOS, use [Git builds or upload the build output](content/articles/docs-publish/deploying/index.zh.md) with your hosting platform's tools.
 
     On Windows, install the Skill in PowerShell from the site root:
     ```powershell

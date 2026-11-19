@@ -14,8 +14,8 @@ description: 取得参考站点，准备工具并完成本地预览。
 
 ## 取得站点
 
-1. 在[项目 Releases](https://github.com/SwawHQ/banyan/releases)选择版本，下载 **Source code (zip)**。整仓首发前，在[仓库首页](https://github.com/SwawHQ/banyan)选择 **Code → Download ZIP**，取得当前开发版。
-2. 完整解压到自己的站点目录。保留 `hugo.toml`、`go.mod`、`go.sum`、`content/`、`assets/` 和 `.agents/`。
+1. 在[项目 Releases](https://github.com/SwawHQ/banyan/releases)选择版本，下载 **Source code (zip)**。
+2. 完整解压到自己的站点目录。保留站点配置、`go.mod`、`go.sum`、站点命令入口和随包提供的 `.agents/skills/swaw-banyan/`。
 3. 在包含 `hugo.toml` 的目录打开终端；Windows 使用 PowerShell。后面的命令都从这里运行。
 
 `swban server` 和 `swban build` 使用 `go.mod` 固定的主题版本。只使用已发布主题的新站点可以移除 `module/` 和 `hugo.work`。如果要修改主题源码，保留这两项并按[本地开发](/zh/p/local-development/)操作。

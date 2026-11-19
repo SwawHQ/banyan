@@ -20,7 +20,7 @@ description: 构建正式产物，检查后交给托管平台发布。
 先停止本地预览，选择本次独立的临时目录。Windows（PowerShell）：
 
 ```powershell
-$build = Join-Path $env:TEMP ("swaw/banyan/publish/" + [guid]::NewGuid())  #选择本次产物目录
+$build = Join-Path $env:TEMP ("swaw/banyan/publish/" + [IO.Path]::GetRandomFileName())  #选择本次产物目录
 ```
 
 Linux 和 macOS：
@@ -46,7 +46,7 @@ swban check/browser/site "$build"   #检查代表页面
 
 ## 准备云平台工具
 
-Windows x64 可使用 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 管理授权和上传。已安装时从第二行开始：
+Windows x64 可另行安装 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) 管理授权和上传。已安装时从第二行开始：
 
 ```powershell
 swban base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #安装云平台 Skill
@@ -57,7 +57,7 @@ Linux 和 macOS 可使用平台控制台或原生工具，见对应平台教程�
 
 ## 准备 Git 源码
 
-提交 `swban`、`.agents/skills/swaw-banyan` 和站点源码，保留工具缓存 `.tools/` 在本机。
+提交 `swban`、`swban.cmd`、`.agents/skills/swaw-banyan/`、`go.mod`、`go.sum` 和站点源码。工具缓存 `.tools/` 保留在本机。
 
 发布包的托管构建使用根 `go.mod` 固定的主题版本。使用本地替换的独立站点可按[版本维护](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/upgrade.md#change-the-version)切换到正式 Module。自有站点需要的安装步骤和环境变量也应交给平台配置。
 

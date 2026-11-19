@@ -16,7 +16,7 @@
 
 **3.** 多语言、主题切换、外观/首页可自定义
 
-**4.** 配套 Agent Skill，跨云部署、运维、运营——可直接托管给你的本地 Agent
+**4.** 随包提供 Swaw Banyan Skill，用于构建和维护，可另装 Swaw Clouds 进行云端部署
 
 **5.** Hugo 预生成页面 + CDN 缓存优化 + 边缘计算 + 对象存储，无需数据库和自托管服务器
 
@@ -32,9 +32,7 @@
 ## 设置新站点（可让 AI Agent 协助）
 
 
-1. 从[最新正式版本](https://github.com/SwawHQ/banyan/releases/latest)下载 **Source code (zip)**，解压后作为你的站点目录。整仓首发前，可通过仓库首页的 **Code → Download ZIP** 下载。
-
-    保留 `go.mod` 和 `go.sum`，以使用固定的主题版本。只使用已发布主题的新站点可以移除 `module/` 和 `hugo.work`。
+1. 从[最新正式版本](https://github.com/SwawHQ/banyan/releases/latest)下载 **Source code (zip)**，解压后作为你的站点目录。
 
 2. 在站点根目录启动本地预览。Banyan 支持 Windows x64、Linux x64 和 macOS x64/ARM64。
 
@@ -52,29 +50,35 @@
 
     Linux 需有 sh、基础系统工具、curl、tar、sha256sum；macOS 使用系统自带工具。工具准备和 `swban` 命令简称见[开始使用](content/articles/docs-start/getting-started/index.zh.md)。
 
-3. 检查目录中这四项，以了解站点结构：
-    ```
-    hugo.toml
-    archetypes/
-    assets/
-    content/
+3. 定制站点时，保留以下文件和目录。
+    ```text
+    hugo.toml                    #站点配置
+    go.mod、go.sum               #固定主题版本及校验和
+    swban、swban.cmd             #站点命令入口
+    .agents/skills/swaw-banyan/  #随包提供的 Swaw Banyan Skill
+    archetypes/                  #内容模板
+    assets/                      #站点资源
+    content/                     #站点页面
     ```
 
-    这些资源可按需删除或替换：
+    以下文件和资源可按需删除或替换。
+    ```text
+    module/                         #主题源码，使用正式 Module 时可移除
+    hugo.work                       #本地主题 workspace，使用正式 Module 时可移除
+    content/articles/changelog/     #Banyan 变更记录
+    content/articles/docs-*/        #Banyan 文档
+    content/articles/product-info/  #示例产品说明
+    content/products/               #示例产品分类与引用
+    content/products-all/           #示例产品列表
     ```
-    content/articles/changelog/  #Banyan 更新记录
-    content/articles/docs-*/     #Banyan 文档
-    content/articles/product-info/  #Banyan 产品说明，可替换为自己的产品
-    content/products/themes/   #网站主题，通过 _map.toml 收录产品说明
-    content/products/            #产品分类的根目录
-    content/products-all/        #产品列表的根目录
-    ```
+
+    如果移除文档或变更记录，请同步更新首页和 Powered by 页面上的对应链接。
 
     然后设置你自己的站点名称、域名、Logo 和文章。
 
 
 4. 部署\
-    随仓库附带的 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill 目前支持 Windows x64。Linux 和 macOS 可使用 [Git 托管构建，或通过托管平台工具上传产物](content/articles/docs-publish/deploying/index.zh.md)。
+    Windows x64 可另行安装 [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill，管理授权和部署。Linux 和 macOS 可使用 [Git 托管构建，或通过托管平台工具上传产物](content/articles/docs-publish/deploying/index.zh.md)。
 
     Windows 用户在站点根目录用 PowerShell 安装该 Skill：
     ```powershell
