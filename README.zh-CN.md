@@ -38,15 +38,15 @@
 
     Windows（PowerShell）：
     ```powershell
-    .\swban.cmd dev  #预览草稿并建立搜索索引
+    .\swban.cmd server  #预览草稿并建立搜索索引
     ```
 
     Linux 和 macOS：
     ```sh
-    sh ./swban dev  #预览草稿并建立搜索索引
+    sh ./swban server  #预览草稿并建立搜索索引
     ```
 
-    根目录入口按需准备工具。打开终端显示的网址。修改内容后，重启 `dev` 更新搜索索引。用 `dev/lan` 供局域网预览，用 `build` 构建正式站点和搜索索引。
+    根目录入口按需准备工具。打开终端显示的网址。修改内容后，重启 `server` 更新搜索索引。用 `server/lan` 供局域网预览，用 `build` 构建正式站点和搜索索引。
 
     Linux 需有 sh、基础系统工具、curl、tar、sha256sum；macOS 使用系统自带工具。工具准备和 `swban` 命令简称见[开始使用](content/articles/docs-start/getting-started/index.zh.md)。
 

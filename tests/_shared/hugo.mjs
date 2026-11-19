@@ -37,6 +37,12 @@ export function fixturePairing(directory) {
   fs.writeFileSync(path.join(theme,'theme.toml'),'name="banyan"\nversion='+JSON.stringify(readRelease().version)+'\n');
 }
 
+export function previewWorkspace(source) {
+  const {module,version}=readRelease();
+  fs.copyFileSync(new URL('../../hugo.work',import.meta.url),path.join(source,'hugo.work'));
+  fs.writeFileSync(path.join(source,'go.mod'),'module example.test/preview\n\ngo 1.18\n\nrequire '+module+' v'+version+'\n');
+}
+
 export function fixtureEnvironment(work) {
   return hugoEnvironment({...process.env,
     HUGO_CACHEDIR:path.join(work,'cache'),

@@ -38,6 +38,6 @@ content/articles/notes/
 
 ## 检查结果
 
-运行 `swban dev`，打开中文文章栏目，确认“笔记”和其中的文章都可访问。
+运行 `swban server`，打开中文文章栏目，确认“笔记”和其中的文章都可访问。
 
 需要多维分类时，继续阅读[把文章加入多个栏目](/zh/p/article-references/)。列表呈现方式见[列表配置](/zh/p/collection-lists/)。

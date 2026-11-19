@@ -8,7 +8,7 @@ description: 按现有部署方式更新站点，并核对线上内容。
 
 ## 本地构建后上传
 
-1. 修改内容并运行 `swban dev` 预览。
+1. 修改内容并运行 `swban server` 预览。
 2. 按[构建和检查](/zh/p/deploying/#构建与检查)生成本次独立产物目录。
 3. 使用原项目上传产物：[Cloudflare Pages](/zh/p/cloudflare-pages/#上传产物)或 [EdgeOne Makers](/zh/p/edgeone-makers/#上传产物)。
 

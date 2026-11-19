@@ -1,0 +1,4 @@
+swban dev/build [--destination <directory>] [--baseURL <URL>]  #Build with the local Module and search index
+
+swban dev/build                         #Build into public
+swban dev/build --destination ./preview #Build into preview

@@ -14,8 +14,10 @@ Windows x64 使用本技能目录中的 `swban.cmd`；Linux x64 和 macOS x64/AR
 项目对话和文档用语见[项目术语表](https://github.com/SwawHQ/banyan/blob/main/content/articles/docs-reference/glossary/index.zh.md)。
 
 ```text
-swban dev                 #启动开发服并建立搜索索引
-swban dev/lan             #允许局域网预览
+swban dev                 #用本地 Module 启动开发服
+swban dev/build           #用本地 Module 构建站点
+swban server              #预览站点并建立搜索索引
+swban server/lan          #允许局域网预览
 swban build               #构建站点和搜索索引
 swban doctor [目录]       #检查工具和站点主题
 swban help                #查看常用命令

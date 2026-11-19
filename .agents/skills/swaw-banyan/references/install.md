@@ -112,7 +112,7 @@ Pin the matching release:
 swban base/hugo mod get <module>@v<version>
 ```
 
-Do not copy the demo's `replace ... => ./module` into a published-Module site.
+The project release pins the Module in `go.mod`. Use `swban dev` in the Banyan checkout to preview local theme edits.
 Preserve existing imports, content, languages and URL rules when adapting a site.
 If upgrading a vendored site, regenerate its vendor tree with
 `swban base/hugo mod vendor` after updating the dependency, then check pairing again.

@@ -1,94 +1,132 @@
-import {spawnSync} from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {parseRelease} from '../../../_shared/banyan.mjs';
+import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
+import {moduleFromGraph,parseRelease,versionPattern} from '../../../_shared/banyan.mjs';
 import {parseToml} from '../../../_shared/parsers.mjs';
 import {toolExecutable} from '../../../_shared/tools/operations.mjs';
-import {gitEnvironment} from '../../../base/git/environment.mjs';
-import {goEnvironment} from '../../../base/go/environment.mjs';
-import {systemLanguage} from '../../../help/run.mjs';
+import {workspaceEnvironment} from '../../../dev/workspace.mjs';
+import {hugoEnvironment} from '../../../base/hugo/run.mjs';
 
-export function release({check=false,cwd=process.cwd(),language=systemLanguage()}={}) {
-  const zh=language==='zh';
-  const retry=zh?'提交修改后，重试 swban deploy/release/tag --check。':'Commit the changes, then rerun swban deploy/release/tag --check.';
-  const newVersion=zh
-    ? '先核对该版本是否已发布；已发布则无需重复发布。发布新版时，将以下两处设为同一个未使用的版本号：\n  .agents/skills/swaw-banyan/SKILL.md: metadata.version\n  module/theme.toml: version\n'+retry
-    : 'Check whether this version is already published; a published version needs no repeat publication. For a new release, set both fields to the same unused version:\n  .agents/skills/swaw-banyan/SKILL.md: metadata.version\n  module/theme.toml: version\n'+retry;
-  const env={...gitEnvironment(),GIT_OPTIONAL_LOCKS:'0',GIT_NO_REPLACE_OBJECTS:'1',GIT_GRAFT_FILE:process.platform==='win32'?'NUL':'/dev/null',GIT_TERMINAL_PROMPT:'0',GCM_INTERACTIVE:'Never',LC_ALL:'C'};
-  function git(args,{optional=false,raw=false}={}) {
-    const result=spawnSync(toolExecutable('git'),args,{cwd,env,encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024,windowsHide:true});
+const skillFile='.agents/skills/swaw-banyan/SKILL.md',themeFile='module/theme.toml';
+const buildEntry=fileURLToPath(new URL('../../../build/entry.mjs',import.meta.url));
+
+export function release({version,check=false,cwd=process.cwd()}) {
+  if (!versionPattern.test(version)) throw new Error('Use a SemVer version without v.');
+  const env={...hugoEnvironment(),GOWORK:'off',GIT_OPTIONAL_LOCKS:'0',GIT_NO_REPLACE_OBJECTS:'1',
+    GIT_GRAFT_FILE:process.platform==='win32'?'NUL':'/dev/null',GIT_TERMINAL_PROMPT:'0',GCM_INTERACTIVE:'Never',LC_ALL:'C'};
+  function run(exe,args,dir=cwd,environment=env) {
+    const result=spawnSync(exe,args,{cwd:dir,env:environment,encoding:'utf8',windowsHide:true,timeout:600000,maxBuffer:16*1024*1024});
     if (result.error) throw result.error;
-    if (raw) return result;
-    if (result.status!==0) {
-      if (optional && result.status===1) return null;
-      throw new Error(result.stderr.trim()||'Git release operation failed.');
-    }
+    if (result.status!==0) throw new Error(result.stderr.trim()||result.stdout.trim()||'Command failed: '+args[0]);
     return result.stdout.trimEnd();
   }
+  const git=(args,dir)=>run(toolExecutable('git'),args,dir);
   cwd=git(['rev-parse','--show-toplevel']);
-  const commit=git(['rev-parse','--verify','HEAD^{commit}']);
-  if (git(['status','--porcelain','--untracked-files=all'])) throw new Error('Commit or remove pending changes before publishing version tags.');
-  const source=file=>git(['show',commit+':'+file]);
-  const {version,module}=parseRelease(source('.agents/skills/swaw-banyan/SKILL.md'));
-  const theme=parseToml(source('module/theme.toml'));
-  if (theme.name!=='banyan') throw new Error('Committed module/theme.toml must have name = "banyan".');
-  if (theme.version!==version) throw new Error([
-    zh?'发布已停止：提交中的版本号不一致。':'Release stopped: committed Theme and Skill versions differ.',
-    '  .agents/skills/swaw-banyan/SKILL.md: metadata.version = '+JSON.stringify(version),
-    '  module/theme.toml: version = '+(JSON.stringify(theme.version)??(zh?'未设置':'missing')),
-    zh?'请将这两处改为同一个待发布版本号。':'Set both fields to the same intended release version.',
-    retry
-  ].join('\n'));
-  const temporary=path.join(fs.realpathSync(os.tmpdir()),'swaw','banyan','release-tag');
-  fs.mkdirSync(temporary,{recursive:true});
-  const parent=fs.realpathSync(temporary),work=fs.mkdtempSync(path.join(parent,'module-'));
-  let modulePath;
-  try {
-    const file=path.join(work,'go.mod');
-    fs.writeFileSync(file,source('module/go.mod'));
-    const result=spawnSync(toolExecutable('go'),['mod','edit','-json',file],{cwd:work,env:{...goEnvironment(),GOWORK:'off'},encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024,windowsHide:true});
-    if (result.error) throw result.error;
-    if (result.status!==0) throw new Error(result.stderr.trim()||'Committed module/go.mod is invalid.');
-    modulePath=JSON.parse(result.stdout).Module?.Path;
-  } finally {
-    if (path.dirname(fs.realpathSync(work))!==parent) throw new Error('Temporary Module directory escaped its parent.');
-    fs.rmSync(work,{recursive:true,force:true});
+  const branch=git(['symbolic-ref','HEAD']);
+  let head=git(['rev-parse','HEAD']);
+  function cleanHead() {
+    if (git(['symbolic-ref','HEAD'])!==branch || git(['rev-parse','HEAD'])!==head ||
+        git(['status','--porcelain','--untracked-files=all'])) throw new Error('Release requires a clean working tree on the original branch and commit.');
   }
-  if (modulePath!==module) throw new Error('Committed module/go.mod and Skill module paths must match.');
-  const major=Number(version.split('.')[0]);
-  if (major>=2 && !module.endsWith('/v'+major)) throw new Error('Module major version requires a matching /v'+major+' path suffix.');
-  const tags=['v'+version,'module/v'+version];
-  const localTags=tags.filter(tag=>git(['show-ref','--verify','--quiet','refs/tags/'+tag],{optional:true})!==null);
-  if (localTags.length) throw new Error((zh?'发布已停止：本地已存在版本标签，不会覆盖：':'Release stopped: local release tags already exist and will not be overwritten:')+'\n  '+localTags.join('\n  ')+'\n'+newVersion);
-  const urls=git(['remote','get-url','--push','--all','origin']).split(/\r?\n/).filter(Boolean);
+  cleanHead();
+  const urls=git(['remote','get-url','--push','--all','origin']).split(/\r?\n/);
   if (urls.length!==1) throw new Error('origin must have exactly one push URL.');
-  const refs=tags.map(tag=>'refs/tags/'+tag);
-  const rejectRemoteTags=details=>{throw new Error((zh?'发布已停止：origin 上已存在版本标签，不会覆盖：':'Release stopped: release tags already exist on origin and will not be overwritten:')+'\n'+details+'\n'+newVersion);};
-  // Query through the remote name: reusing get-url's expanded URL would apply rewrites twice.
-  const fetch=git(['remote','get-url','origin'],{raw:true});
-  const remoteTags=fetch.status===0 && fetch.stdout.trimEnd()===urls[0]?git(['ls-remote','--tags','--','origin',...refs]):'';
-  if (remoteTags) {
-    const details=remoteTags.split(/\r?\n/).map(line=>{
-      const [hash,ref]=line.split(/\s+/);
-      return '  '+ref.replace(/^refs\/tags\//,'')+' ('+hash+')';
-    }).join('\n');
-    rejectRemoteTags(details);
+  const query=git(['remote','get-url','origin'])===urls[0]?['ls-remote','--symref','origin']:
+    ['-c','url.'+urls[0]+'.insteadOf=swban-release-probe:','ls-remote','--symref','swban-release-probe:'];
+  const tag='v'+version,moduleTag='module/'+tag;
+  const ref=name=>'refs/tags/'+name;
+  const targets=[branch,ref(moduleTag),ref(tag)];
+  const rows=git([...query,'HEAD',...targets]).split(/\r?\n/);
+  if (!rows.includes('ref: '+branch+'\tHEAD')) throw new Error('Check out the default branch of the origin push destination.');
+  const refs=new Map(rows.map(line=>line.split('\t').reverse()));
+  if (!refs.has(branch)) throw new Error('Publish the release branch to origin first.');
+  git(['merge-base','--is-ancestor',refs.get(branch),head]);
+  const moduleCommit=refs.get(ref(moduleTag));
+  if (refs.has(ref(tag))) throw new Error(tag+' is already published.');
+  for (const name of [moduleTag,tag]) {
+    const local=git(['tag','--list',name]);
+    if (local && git(['rev-parse',ref(name)])!==refs.get(ref(name))) throw new Error('Conflicting local tag: '+name);
   }
-  const push=['-c','remote.origin.mirror=false','push','--porcelain','--atomic','--no-follow-tags','--recurse-submodules=no'];
-  const refspecs=refs.map(ref=>commit+':'+ref);
-  // A dry run follows origin's push URL, including pushInsteadOf; skip hooks for the read-only check.
-  const preview=git([...push,'--dry-run','--no-verify','--','origin',...refspecs],{raw:true});
-  const existing=preview.stdout.split(/\r?\n/).flatMap(line=>{
-    const [flag,pair,summary]=line.split('\t'),ref=pair?.split(':')[1];
-    if (!refs.includes(ref)) return [];
-    if (flag.trim()==='=') return ['  '+ref.slice('refs/tags/'.length)+' ('+commit+')'];
-    if (flag.trim()==='!' && /\((already exists|would clobber existing tag)\)/.test(summary)) return ['  '+ref.slice('refs/tags/'.length)];
-    return [];
-  });
-  if (existing.length) rejectRemoteTags(existing.join('\n'));
-  if (preview.status!==0) throw new Error(preview.stderr.trim()||'Git release preview failed.');
-  // Push the captured commit directly so HEAD cannot move either tag between checks and publication.
-  if (!check) git([...push,'--','origin',...refspecs]);
-  return {version,commit,tags,remote:'origin',published:!check};
+  const read=file=>fs.readFileSync(path.join(cwd,file),'utf8');
+  const skill=read(skillFile),theme=read(themeFile);
+  const current=parseRelease(skill),themeMeta=parseToml(theme);
+  if (themeMeta.name!=='banyan') throw new Error('Expected the Banyan theme.');
+  const updatedSkill=skill.replace(/^(\uFEFF?---\r?\n(?:(?!^---)[\s\S])*?^metadata:[^\S\r\n]*\r?\n(?:(?:[ \t]+[^\r\n]*|)[\r]?\n)*?[ \t]+version:[ \t]*)(?:"[^"]*"|'[^']*'|[^\s#]+)/m,(_,prefix)=>prefix+JSON.stringify(version));
+  const updatedTheme=theme.replace(/^(version[ \t]*=[ \t]*)(?:"[^"]*"|'[^']*')/m,(_,prefix)=>prefix+JSON.stringify(version));
+  if (parseRelease(updatedSkill).version!==version || parseToml(updatedTheme).version!==version)
+    throw new Error('Could not update the Skill and Theme versions.');
+  const go=(args,dir,environment)=>run(toolExecutable('go'),args,dir,environment);
+  const module=current.module;
+  if (JSON.parse(go(['mod','edit','-json','module/go.mod'])).Module.Path!==module ||
+      (+version.split('.')[0]>=2 && !module.endsWith('/v'+version.split('.')[0]))) throw new Error('Module path does not match the release version or Skill.');
+  if (moduleCommit) {
+    git(['merge-base','--is-ancestor',moduleCommit,head]);
+    if (current.version!==version || themeMeta.version!==version ||
+        git(['rev-parse',moduleCommit+':module'])!==git(['rev-parse',head+':module']))
+      throw new Error(moduleTag+' already exists with different source. Release the theme fix under a new version.');
+  }
+  const files=[skillFile,themeFile,'go.mod','go.sum'];
+  const plan={version,head,branch:branch.slice(11),remote:'origin',tags:[moduleTag,tag],files,resume:!!moduleCommit};
+  const push=['-c','remote.origin.mirror=false','push','--atomic','--no-follow-tags','--recurse-submodules=no'];
+  git([...push,'--dry-run','--no-verify','origin',head+':'+branch,...(moduleCommit?[]:[head+':'+ref(moduleTag)]),head+':'+ref(tag)]);
+  if (check) return {...plan,published:false};
+
+  const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw','banyan','release-tag');
+  fs.mkdirSync(parent,{recursive:true});
+  const temp=fs.mkdtempSync(path.join(parent,'publish-')),site=path.join(temp,'site');
+  let attached=false;
+  const inSite=args=>git(args,site);
+  function commitFiles(paths,message) {
+    inSite(['add','--',...paths]);
+    if (inSite(['diff','--cached','--name-only'])) inSite(['commit','-m',message]);
+  }
+  function publish(name) {
+    cleanHead();
+    if (git(['remote','get-url','--push','--all','origin'])!==urls[0]) throw new Error('The origin push destination changed during release.');
+    const next=inSite(['rev-parse','HEAD']);
+    git(['merge','--ff-only','--no-overwrite-ignore',next]);
+    head=next;
+    cleanHead();
+    git([...push,'origin',next+':'+branch,next+':'+ref(name)]);
+  }
+  function build(environment,output) {
+    run(process.execPath,[buildEntry,'--destination',path.join(temp,output)],site,environment);
+  }
+  try {
+    git(['worktree','add','--detach',site,head]);attached=true;
+    const releaseEnv={...env,HUGO_MODULE_WORKSPACE:'off',HUGO_ENVIRONMENT:'production',
+      HUGO_CACHEDIR:path.join(temp,'hugo'),GOMODCACHE:path.join(temp,'modules'),GOFLAGS:'-modcacherw'};
+    if (!moduleCommit) {
+      fs.writeFileSync(path.join(site,skillFile),updatedSkill);
+      fs.writeFileSync(path.join(site,themeFile),updatedTheme);
+      commitFiles([skillFile,themeFile],'Release Module '+tag);
+      build({...releaseEnv,...workspaceEnvironment,HUGO_CACHEDIR:path.join(temp,'local-hugo')},'local-public');
+      publish(moduleTag);
+    }
+    const root=JSON.parse(go(['mod','edit','-json'],site,releaseEnv));
+    const drops=(root.Replace||[]).filter(r=>r.Old.Path===module).map(r=>'-dropreplace='+module+(r.Old.Version?'@'+r.Old.Version:''));
+    go(['mod','edit',...drops,'-require='+module+'@'+tag],site,releaseEnv);
+    const download=['mod','download','-json',module+'@'+tag];
+    const downloaded=JSON.parse(go(download,site,releaseEnv));
+    // A proxy may omit VCS metadata. Verify its checksums against the canonical Git tag.
+    const direct=releaseEnv.GOPROXY==='direct'?downloaded:JSON.parse(go(download,site,{
+      ...releaseEnv,GOPROXY:'direct',GOMODCACHE:path.join(temp,'source-check')
+    }));
+    const expected=inSite(['rev-parse',(moduleCommit||head)+'^{commit}']);
+    if (direct.Origin?.Hash!==expected || direct.Sum!==downloaded.Sum || direct.GoModSum!==downloaded.GoModSum)
+      throw new Error('Downloaded '+module+'@'+tag+' does not match published '+moduleTag+' at '+expected+'.');
+    const graph=run(toolExecutable('hugo'),['mod','graph'],site,releaseEnv);
+    const active=moduleFromGraph(graph,module);
+    if (!active || active.path!==module || active.version!==tag || active.vendored || graph.split(/\r?\n/).some(line=>line.includes(' '+module+'@') && line.includes(' => ')))
+      throw new Error('Hugo must resolve '+module+'@'+tag+' directly.');
+    build(releaseEnv,'release-public');
+    commitFiles(['go.mod','go.sum'].filter(f=>fs.existsSync(path.join(site,f))),'Pin Banyan Module '+tag);
+    publish(tag);
+    return {...plan,commit:head,published:true};
+  } finally {
+    if (attached) git(['worktree','remove','--force',site]);
+    fs.rmSync(temp,{recursive:true,force:true});
+  }
 }

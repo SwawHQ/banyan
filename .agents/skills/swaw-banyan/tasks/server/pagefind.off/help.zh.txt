@@ -1,0 +1,5 @@
+swban server/pagefind.off [Hugo 参数...]    #启动开发服，跳过搜索索引
+
+与 dev 相同，但不建立搜索索引；已有索引保持原样。
+
+swban server/pagefind.off --bind 0.0.0.0  #允许 IPv4 局域网访问

@@ -1,0 +1,5 @@
+swban server/pagefind.off [Hugo arguments...]  #Start development without search indexing
+
+Same as dev, but skips indexing. Existing indexes remain unchanged.
+
+swban server/pagefind.off --bind 0.0.0.0       #Allow IPv4 LAN access

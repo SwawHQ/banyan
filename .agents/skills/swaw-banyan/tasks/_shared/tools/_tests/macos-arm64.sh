@@ -30,7 +30,7 @@ SWBAN_TEST_DEV=1 "$node" --test "$skill"/tasks/_shared/tools/_tests/linux*.test.
   "$skill"/tasks/help/_tests/help.test.mjs \
   "$skill"/tasks/_cli/_tests/*.test.mjs \
   "$skill"/tasks/build/_tests/*.test.mjs \
-  "$skill"/tasks/dev/_tests/*.test.mjs
+  "$skill"/tasks/server/_tests/*.test.mjs
 sh swban base/node/ensure --force
 sh swban base/node/npm --version
 sh swban base/packages/ensure

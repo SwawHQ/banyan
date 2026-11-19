@@ -1,0 +1,4 @@
+swban dev/build [--destination <目录>] [--baseURL <URL>]  #用本地 Module 构建站点和搜索索引
+
+swban dev/build                         #构建到 public
+swban dev/build --destination ./preview #构建到 preview

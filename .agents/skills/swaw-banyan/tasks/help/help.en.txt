@@ -8,9 +8,11 @@ swban help check 2          #List commands and categories two levels below check
 swban help check/browser 3  #List commands and categories three levels below check/browser
 
 Site development and builds:
-swban dev                            #Start development and index search
-swban dev/lan                        #Allow LAN previews
-swban dev/pagefind.off               #Skip search indexing
+swban dev                            #Start the server with the local Module
+swban dev/build                      #Build with the local Module
+swban server                         #Preview the site and index search
+swban server/lan                     #Allow LAN previews
+swban server/pagefind.off            #Skip search indexing
 swban build                          #Build the site and search index
 swban build --destination ./preview  #Build into a specified directory
 
@@ -43,8 +45,6 @@ assets/                 #3 Site resources and interface dictionaries
 archetypes/             #4 Content templates
 
 Theme developers:
-Tags use SemVer; project and Module tags must have the same version and commit.
-swban deploy/release/tag --check                               #Validate versions and preview tags first
-swban deploy/release/tag                                       #Publish both tags atomically after checks pass
+swban deploy/release/tag <version> [--check]  #Publish the Module, build the site and tag the project
 swban base/gh auth login --web                                 #Sign in to GitHub
 swban base/gh release create <tag> --verify-tag --notes <URL>  #Link release notes

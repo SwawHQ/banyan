@@ -16,7 +16,7 @@ export function serverArguments(input,{lan=false}={}) {
   for(let i=0;i<input.length;i++) {
     const arg=input[i];
     if(/^--(?:destination|renderToMemory|renderStaticToDisk|cleanDestinationDir)(?:=|$)/.test(arg)||/^-[DEFNOwhv]*d/.test(arg))
-      throw new Error('dev manages its disk output; destination, memory rendering and output cleanup options are not supported.');
+      throw new Error('The server manages its disk output; destination, memory rendering and output cleanup options are not supported.');
     const match=/^--(port|bind)(?:=(.*))?$/.exec(arg);
     if(match) {
       const value=match[2]??input[++i];
@@ -27,7 +27,7 @@ export function serverArguments(input,{lan=false}={}) {
       if(short)port=short[1]?short[1].replace(/^=/,''):input[++i];
     }
   }
-  if(!/^\d+$/.test(port)||Number(port)<1||Number(port)>65535)throw new Error('dev requires a port between 1 and 65535.');
+  if(!/^\d+$/.test(port)||Number(port)<1||Number(port)>65535)throw new Error('The server requires a port between 1 and 65535.');
   return {port:Number(port),bind,args:['server','--buildDrafts','--disableFastRender','--noHTTPCache','--port','5678','--bind',lan?'::':'127.0.0.1','--renderToMemory=false','--cleanDestinationDir=false',...input]};
 }
 
@@ -89,7 +89,7 @@ export async function dev(input,options={}) {
         return execute(exe,indexArgs,{...settings,signal:controller.signal});
       }});
       if(status!==0){stop();await server;return status;}
-      console.log('[swban] Search index ready. Restart dev to index content changes.');
+      console.log('[swban] Search index ready. Restart the server to index content changes.');
     } else console.log('[swban] Pagefind skipped.');
     if(bind==='::'||bind==='0.0.0.0') {
       const addresses=Object.values(os.networkInterfaces()).flat().filter(item=>item&&!item.internal&&item.family==='IPv4');

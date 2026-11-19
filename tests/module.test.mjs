@@ -105,6 +105,21 @@ test('Skill release metadata matches the shipped theme and rejects malformed or 
   assert.equal(readRelease(root).version,'1.0.0-rc.1');
 });
 
+test('workspace diagnosis identifies the local checkout by the mounted Module directory',()=>{
+  const prior=process.env.HUGO_MODULE_WORKSPACE;
+  try {
+    const root=site(),workspace=path.join(root,'test.work');
+    write(workspace,'go 1.18\n\nuse .\nuse '+JSON.stringify(path.join(repository,'module').replaceAll('\\','/'))+'\n');
+    process.env.HUGO_MODULE_WORKSPACE=workspace;
+    const result=inspect(root);
+    assert.equal(result.state,'development');
+    assert.equal(result.module.directory,fs.realpathSync(path.join(repository,'module')));
+  } finally {
+    if(prior===undefined)delete process.env.HUGO_MODULE_WORKSPACE;
+    else process.env.HUGO_MODULE_WORKSPACE=prior;
+  }
+});
+
 test('real Hugo resolves a pinned version and CLI reports matching versions',() => {
   const root = site(), result = inspect(root);
   assert.equal(result.state,'matched');

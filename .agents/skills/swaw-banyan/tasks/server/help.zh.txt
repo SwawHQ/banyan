@@ -1,0 +1,12 @@
+swban server [Hugo 参数...]         #启动开发服并建立搜索索引
+
+默认包含草稿，监听本机 5678 端口，完整重建、实时刷新并禁用 HTTP 缓存。
+每次启动建立一次搜索索引；修改内容后，重启命令更新索引。
+开发产物跟随 Hugo 的 publishDir（默认 public/），退出后保留。
+
+swban server -p 8080              #改用 8080 端口
+swban server -D=false             #不包含草稿
+swban server -N                   #编辑后跳转到对应页面
+swban server/lan                  #允许局域网访问
+swban server/pagefind.off         #跳过搜索索引
+swban base/hugo server --help  #查看 Hugo 开发服参数

@@ -36,4 +36,4 @@ params:
 
 ## 检查结果
 
-运行 `swban dev`，确认产品列表显示名称、更新时间和价格，点击名称可打开产品正文。汇总下级产品时，在独立汇总栏目使用 `page-collection-products-all`，并把 `params.aggregate` 设为产品根栏目的内容路径，例如 `/products`。
+运行 `swban server`，确认产品列表显示名称、更新时间和价格，点击名称可打开产品正文。汇总下级产品时，在独立汇总栏目使用 `page-collection-products-all`，并把 `params.aggregate` 设为产品根栏目的内容路径，例如 `/products`。

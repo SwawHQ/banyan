@@ -31,7 +31,7 @@ params:
 
 ## 检查结果
 
-运行 `swban dev`，打开各语言首页，确认出现文章封面且链接可访问。`params.show_navigation` 继续控制首页根导航列。
+运行 `swban server`，打开各语言首页，确认出现文章封面且链接可访问。`params.show_navigation` 继续控制首页根导航列。
 
 ## 切回艺术首页
 

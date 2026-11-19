@@ -6,3 +6,4 @@ Other static hosts, object stores and CDNs can serve the output; configure their
 
 swban help/en deploy/cloudflare  #Cloudflare Pages
 swban help/en deploy/edgeone     #EdgeOne Makers
+swban deploy/release/tag <version> [--check]  #Publish the Module, build the site and tag the project

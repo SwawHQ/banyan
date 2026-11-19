@@ -10,8 +10,6 @@ description: 取得参考站点，准备工具并完成本地预览。
 
 ## 安装前
 
-目前正在准备首次发布。发布标签可用前，可以使用当前仓库作本地预览；远程 Module 安装须等标签发布。
-
 支持 Windows x64、Linux x64 和 macOS x64/ARM64。首次运行会复用兼容的已有工具，并下载缺少的工具。不需要另在站点根目录执行 `npm install`。主题要求 Hugo 0.168.0 或更新版本，Skill 会准备匹配工具。Linux 需有 sh、基础系统工具、curl、tar、sha256sum；macOS 使用系统自带工具。Git 等工具缺少时会下载到本地目录，无需 Python、Homebrew 或 Xcode。
 
 ## 取得站点
@@ -20,9 +18,9 @@ description: 取得参考站点，准备工具并完成本地预览。
 2. 完整解压到自己的站点目录。确认其中有 `hugo.toml`、`go.mod`、`module/`、`content/`、`assets/` 和 `.agents/`，不要只取 `module/`。
 3. 在包含 `hugo.toml` 的目录打开终端；Windows 使用 PowerShell。后面的命令都从这里运行。
 
-完整源码包通过 `go.mod` 中的本地替换使用随包附带的 `module/`，因此预览时要保留该目录。以后改用已发布的 Module 时，按[升级 Banyan](/zh/p/upgrading/)处理。
+发布包的 `go.mod` 固定了主题 Module 版本。`swban server` 和 `swban build` 使用该版本。`module/` 供主题开发使用，见[本地开发](/zh/p/local-development/)。
 
-完整源码包提供根目录入口：Windows 用 `.\swban.cmd`，Linux 和 macOS 用 `sh ./swban`。例如，启动预览分别运行 `.\swban.cmd dev` 或 `sh ./swban dev`。
+完整源码包提供根目录入口：Windows 用 `.\swban.cmd`，Linux 和 macOS 用 `sh ./swban`。例如，启动预览分别运行 `.\swban.cmd server` 或 `sh ./swban server`。
 
 为简化后续命令，在当前终端定义 `swban` 简称。Windows（PowerShell）：
 
@@ -51,14 +49,14 @@ swban doctor               #检查工具、主题和 Skill
 ## 本地预览
 
 ```powershell
-swban dev  #启动含草稿和搜索的本地预览
+swban server  #启动含草稿和搜索的本地预览
 ```
 
 打开终端显示的本地网址，检查首页、导航和一篇文章。保存文件后，Hugo 会重新构建；浏览器通常会自动刷新。保持终端运行，结束预览时按 **Ctrl+C**。端口被占用时，在命令末尾加 `-p 13241`。
 
-`swban dev` 每次启动建立一次搜索索引，修改内容后需重启命令更新索引。`swban build` 构建正式站点和搜索索引。
+`swban server` 每次启动建立一次搜索索引，修改内容后需重启命令更新索引。`swban build` 构建正式站点和搜索索引。
 
-开发服默认包含草稿，正式构建不包含草稿。使用 `swban dev/lan` 可供同一局域网内的手机预览。上线步骤见[发布站点](/zh/p/deploying/)。
+开发服默认包含草稿，正式构建不包含草稿。使用 `swban server/lan` 可供同一局域网内的手机预览。上线步骤见[发布站点](/zh/p/deploying/)。
 
 ## 下一步
 

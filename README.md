@@ -38,15 +38,15 @@ Backend features such as accounts, payments, and comments are not yet available.
 
     Windows (PowerShell):
     ```powershell
-    .\swban.cmd dev  #Preview drafts and build the search index
+    .\swban.cmd server  #Preview drafts and build the search index
     ```
 
     Linux and macOS:
     ```sh
-    sh ./swban dev  #Preview drafts and build the search index
+    sh ./swban server  #Preview drafts and build the search index
     ```
 
-    The root launchers prepare required tools on demand. Open the URL shown in the terminal. Restart `dev` after content changes to update the search index. Use `dev/lan` for LAN preview and `build` for a production build with search.
+    The root launchers prepare required tools on demand. Open the URL shown in the terminal. Restart `server` after content changes to update the search index. Use `server/lan` for LAN preview and `build` for a production build with search.
 
     Linux requires sh, basic system utilities, curl, tar, and sha256sum. macOS uses its built-in utilities. See [Getting started](content/articles/docs-start/getting-started/index.zh.md) for setup and the `swban` command shorthand.
 

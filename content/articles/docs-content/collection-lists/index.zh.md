@@ -30,6 +30,6 @@ layout: page-collection-directory-name-only
 
 ## 检查结果
 
-运行 `swban dev`，打开栏目，确认条目仍可访问且列内容已改变。栏目正文显示在列表之后。
+运行 `swban server`，打开栏目，确认条目仍可访问且列内容已改变。栏目正文显示在列表之后。
 
 后续设置：[默认排序](/zh/p/list-sorting/) · [文章日期](/zh/p/article-dates/) · [条目图标](/zh/p/item-icons/)。

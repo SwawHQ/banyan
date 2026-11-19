@@ -12,7 +12,7 @@ description: 在目标栏目引用已有文章，正文只维护一份。
 
 1. 按[创建栏目](/zh/p/directories/)准备目标栏目，例如 `content/articles/notes/`。
 2. 在目标栏目创建或编辑 `_map.toml`，将已有文章的内容路径加入 `refs`。
-3. 保存后运行 `swban dev`，打开目标栏目。
+3. 保存后运行 `swban server`，打开目标栏目。
 
 ```toml
 refs = ["/articles/product-info/banyan"]

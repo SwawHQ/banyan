@@ -59,7 +59,7 @@ Linux 和 macOS 可使用平台控制台或原生工具，见对应平台教程�
 
 提交 `swban`、`.agents/skills/swaw-banyan` 和站点源码，保留工具缓存 `.tools/` 在本机。
 
-完整源码仓库包含 `module/`，可保留 `replace ... => ./module` 参与托管构建。指向仓库外本机目录的替换路径在云端不可用；改用远程 Module 时，按[版本维护](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/upgrade.md#change-the-version)移除对应 `replace`，并固定已发布的版本。自有站点需要的安装步骤和环境变量也应交给平台配置。
+发布包的托管构建使用根 `go.mod` 固定的主题版本。使用本地替换的独立站点可按[版本维护](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/upgrade.md#change-the-version)切换到正式 Module。自有站点需要的安装步骤和环境变量也应交给平台配置。
 
 ## 发布后检查
 

@@ -8,9 +8,11 @@ swban help check 2          #列出 check 下两层命令和分类
 swban help check/browser 3  #列出 check/browser 下三层命令和分类
 
 站点开发与构建：
-swban dev                            #启动开发服并建立搜索索引
-swban dev/lan                        #允许局域网预览
-swban dev/pagefind.off               #跳过搜索索引
+swban dev                            #用本地 Module 启动开发服
+swban dev/build                      #用本地 Module 构建站点
+swban server                         #预览站点并建立搜索索引
+swban server/lan                     #允许局域网预览
+swban server/pagefind.off            #跳过搜索索引
 swban build                          #构建站点和搜索索引
 swban build --destination ./preview  #构建到指定目录
 
@@ -43,8 +45,6 @@ assets/                 #3 站点资源与界面字典
 archetypes/             #4 内容模板
 
 主题开发者：
-标签采用语义版本；项目与 Module 标签的版本号和提交须一致。
-swban deploy/release/tag --check                               #先校验版本并预览标签
-swban deploy/release/tag                                       #校验通过后，原子发布两个标签
+swban deploy/release/tag <版本号> [--check]  #发布 Module，构建参考站并发布项目标签
 swban base/gh auth login --web                                 #登录 GitHub
 swban base/gh release create <tag> --verify-tag --notes <URL>  #链接版本记录

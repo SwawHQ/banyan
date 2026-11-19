@@ -19,7 +19,7 @@ swban base/hugo new content --kind banyan articles/my-post/index.zh.md  #创建�
 1. 填写 `title` 和 `description`，在第二条 `---` 后写正文。正文小节从 `##` 开始。
 2. 检查 `url`，例如 `p/my-post/`。以后移动文件时保留它，可以保持发布网址。
 3. 准备公开时，将 `draft: true` 改为 `draft: false`，或删除 `draft` 字段。
-4. 运行 `swban dev`，在中文文章栏目中打开新文章。
+4. 运行 `swban server`，在中文文章栏目中打开新文章。
 
 图片放在文章同一目录中，例如 `photo.jpg`，正文可写 `![图片说明](photo.jpg)`。分类方法见[创建栏目](/zh/p/directories/)和[栏目文章引用](/zh/p/article-references/)。
 

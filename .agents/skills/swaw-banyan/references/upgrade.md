@@ -20,11 +20,9 @@ swban base/git -C "<theme-source>" --no-optional-locks status --short -- .  #Lis
 identifies that checkout, which may include site-specific commits; it is not proof
 of an official release. Without Git history, verify the archive or download source.
 `theme.toml` alone declares a version; it does not prove that the files still match it.
-An extracted project ZIP needs no `.git` directory. Its
-`.agents/skills/swaw-banyan/` and `module/` use `module/theme.toml` for version pairing.
+An extracted project ZIP pins the released Module in `go.mod`. Run `swban server` for site edits or `swban dev` to preview the bundled theme source.
 
-The project tag `vX.Y.Z` and Module tag `module/vX.Y.Z` point to the same
-repository commit. Go requires the `module/` tag prefix because the Module
+The Module tag `module/vX.Y.Z` marks the theme source. The project tag `vX.Y.Z` marks the tested site pinned to that Module version. Go requires the `module/` tag prefix because the Module
 root is the `module/` subdirectory. Sites still request `<module>@vX.Y.Z`.
 
 ## Change the version

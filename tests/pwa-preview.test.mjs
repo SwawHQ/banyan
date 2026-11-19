@@ -9,7 +9,7 @@ import net from 'node:net';
 import {spawn,spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {fixtureEnvironment,previewWorkspace} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
@@ -20,8 +20,9 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
   fs.mkdirSync(parent,{recursive:true});const work=fs.mkdtempSync(path.join(parent,'run-')),source=path.join(work,'site');
   fs.mkdirSync(source);let server,logs='',launchError;
   try {
-    for(const name of ['content','assets','module','hugo.toml','go.mod','go.sum','layouts'])
+    for(const name of ['content','assets','module','hugo.toml','layouts'])
       if(fs.existsSync(path.join(root,name)))fs.cpSync(path.join(root,name),path.join(source,name),{recursive:true});
+    previewWorkspace(source);
     const policyFile=path.join(source,'assets/site/delivery.toml'),originalPolicy=fs.readFileSync(policyFile,'utf8');
     const policy=(mode,interval=8)=>originalPolicy.replace(/^mode = .*$/m,'mode = "'+mode+'"').replace(/^content_check_interval = .*$/m,'content_check_interval = '+interval);
     fs.writeFileSync(policyFile,policy('enable'));
@@ -33,7 +34,7 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
     // Hugo's path warning counts accumulate across full configuration reloads.
     server=spawn(toolExecutable('hugo'),['server','--noBuildLock','--enableGitInfo=false','--disableLiveReload',...(disableFastRender?['--disableFastRender']:[]),'--printPathWarnings=false',
       '--bind','127.0.0.1','--port',String(port),'--baseURL',base,'--destination',path.join(work,'preview')],
-      {cwd:source,env:fixtureEnvironment(work),windowsHide:true,stdio:['ignore','pipe','pipe']});
+      {cwd:source,env:{...fixtureEnvironment(work),HUGO_MODULE_WORKSPACE:'hugo.work'},windowsHide:true,stdio:['ignore','pipe','pipe']});
     server.on('error',error=>{launchError=error;});server.stdout.on('data',chunk=>{logs+=chunk;});server.stderr.on('data',chunk=>{logs+=chunk;});
     const get=async route=>{const response=await fetch(base+route,{signal:AbortSignal.timeout(1500),headers:{Connection:'close'}});assert.equal(response.status,200,route);return response.text();};
     async function until(label,check) {

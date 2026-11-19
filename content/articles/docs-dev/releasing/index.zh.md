@@ -3,7 +3,7 @@ title: 发布：主题版本
 date: 2026-11-06
 lastmod: 2026-11-14
 url: p/releasing/
-description: 整理版本说明，为同一源码提交创建项目和 Go Module 标签，并发布 GitHub Release。
+description: 整理版本说明，依次发布 Go Module 和项目标签，并发布 GitHub Release。
 ---
 
 ## 变更记录
@@ -19,28 +19,22 @@ description: 整理版本说明，为同一源码提交创建项目和 Go Module
 版本说明发布在 `https://banyan.swaw.com/p/vX.Y.Z/`，中文在
 `https://banyan.swaw.com/zh/p/vX.Y.Z/`；内容目录移动不改变这些正文网址。
 
-## 配套标签
+## 发布主题版本
 
-在 Banyan 仓库更新 Skill 的 `metadata.version` 和 `module/theme.toml` 的 `version`，
-使用同一本次版本号，将源码、文档和版本说明提交到同一个 Banyan 提交。
-两个发布标签都创建在 Banyan 仓库，指向该提交。
-
-进入 Banyan 仓库根目录后执行。命令从当前提交读取版本，校验 Theme、Skill
-版本和 Module 标识，再向 `origin` 原子发布配套标签：
+先用 `swban dev` 验证本地主题，完成版本说明和功能检查，将待发布改动提交到 Banyan 发布分支。进入仓库根目录，使用不带前缀 v 的版本号。
 
 ```text
-swban deploy/release/tag --check  #校验并查看标签计划
-swban deploy/release/tag          #原子发布两个版本标签
+swban deploy/release/tag 0.1.0 --check  #查看分支、待更新文件和标签计划
+swban deploy/release/tag 0.1.0          #发布或继续该版本
 ```
 
-命令读取已提交的版本文件。运行前提交本次源码和文档，并用 `--check` 核对版本与目标仓库。
+1. 命令更新 Skill 和 Theme 版本，用本地 Module 构建参考站，再一起推送发布分支和 `module/v0.1.0`。
+2. 命令在临时工作目录关闭 workspace，固定根站点的 Module 版本，下载正式依赖，核对源码提交、下载校验和及 Hugo 的依赖图，再构建站点和搜索索引。
+3. 构建通过后，命令提交依赖文件，一起推送发布分支和 `v0.1.0`。
 
-以版本 `0.1.0` 为例，`v0.1.0` 用于项目发布和提取 Skill；
-`module/v0.1.0` 供 Go 将子目录 Module 识别为 `v0.1.0`。
-因为 Module 根目录是 `module/`，仅有项目标签不能提供该 Module 的语义版本。
-这是 [Go 的子目录 Module 标签规则](https://go.dev/ref/mod#vcs-version)。
-GitHub Release 使用 `v0.1.0`，无需再为 `module/v0.1.0` 创建 Release。
-若附带 Skill ZIP，包含 Skill 目录和许可证，排除 `.tools`、`node_modules` 和缓存。
+Module 已发布时，重跑同一命令会核对主题源码并继续验证站点。站点问题修复后提交即可续发；已发布主题的修复使用新版本号。
+
+用项目标签的提交部署参考站并核对版本页面。
 
 ## GitHub Release
 
@@ -51,7 +45,7 @@ ghbw.cmd .setup                #准备 GitHub CLI
 ghbw.cmd auth login --web      #登录 GitHub
 ```
 
-用该提交构建并发布 Banyan 参考站点，核对版本页面后，用上述命令发布标签，再创建 Release：
+使用已发布的项目标签创建 Release：
 
 ```text
 ghbw.cmd release create v0.1.0 --verify-tag --notes https://banyan.swaw.com/p/v0.1.0/  #链接发布说明

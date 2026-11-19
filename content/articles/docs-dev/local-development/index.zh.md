@@ -30,9 +30,8 @@ banyan/
 └── tests/                                 #主题和工具源码测试
 ```
 
-Banyan 根 `go.mod` 使用 `replace ... => ./module`，直接读取随仓库提供的主题源码，无需先发布 Module。其他站点可用本地 `replace` 指向这份源码。
+发布包的根 `go.mod` 固定正式 Module 版本。修改主题时，在 Banyan 根目录运行 `swban dev` 预览，或运行 `swban dev/build` 构建。这两个命令通过 `hugo.work` 加载 `./module`。
 站点定制留在各站点根目录，可复用主题行为放入 Banyan 的 `module/`。
-独立站点发布时通常固定 Module 版本。完整仓库随附的 `./module` 可参与托管构建；指向仓库外目录的本地替换路径则不可用。
 
 ## 预览
 
@@ -42,16 +41,16 @@ Windows 使用根目录 `.\swban.cmd`，Linux 和 macOS 使用 `sh ./swban`。
 仅安装 Skill 的其他站点，使用 `.agents/skills/swaw-banyan/` 中对应平台的入口。
 
 ```text
-swban dev               #本机预览，启动时建立搜索索引
-swban dev/lan           #供局域网和手机预览
-swban dev/pagefind.off  #跳过搜索索引
-swban dev -p 13241      #指定端口
-swban dev -D=false      #不包含草稿
+swban server               #本机预览，启动时建立搜索索引
+swban server/lan           #供局域网和手机预览
+swban server/pagefind.off  #跳过搜索索引
+swban server -p 13241      #指定端口
+swban server -D=false      #不包含草稿
 ```
 
-默认打开 `http://127.0.0.1:5678/`。Hugo 监听本地 Module，模板和资源变化会触发完整重建和浏览器刷新。
-每次启动建立一次搜索索引，修改内容后需重启命令更新索引。开发产物使用独立临时目录，退出后清理，不覆盖 `public/`。
-`dev/lan` 默认监听 `::`，系统支持时同时接收 IPv4。手机使用电脑的局域网地址和端口访问；可用 `--bind 0.0.0.0` 仅监听 IPv4。
+默认预览地址为 `http://127.0.0.1:5678/`。保存站点文件后，Hugo 会重新构建并刷新页面。
+每次启动建立一次搜索索引，修改内容后需重启命令更新索引。预览产物写入站点的 `publishDir`（默认 `public/`），退出后保留。
+`server/lan` 默认监听 `::`，系统支持时同时接收 IPv4。手机使用电脑的局域网地址和端口访问；可用 `--bind 0.0.0.0` 仅监听 IPv4。
 追加的参数传给 Hugo，并覆盖对应默认值。启动日志显示实际命令，保留 Hugo 和 Pagefind 输出。
 开发构建默认不压缩；若站点在开发环境也启用压缩，可用 `--minify=false` 关闭。
 不需要在站点安装 npm 包。工具选择和依赖位置见

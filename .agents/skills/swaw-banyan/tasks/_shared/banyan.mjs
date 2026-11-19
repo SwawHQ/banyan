@@ -7,7 +7,7 @@ import {toolExecutable} from './tools/operations.mjs';
 import {hugoEnvironment} from '../base/hugo/run.mjs';
 
 const skillRoot = fileURLToPath(new URL('../../',import.meta.url));
-const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$/;
+export const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$/;
 
 export function readRelease(root = skillRoot) {
   return parseRelease(fs.readFileSync(path.join(root,'SKILL.md'),'utf8'));
@@ -49,9 +49,16 @@ export function moduleFromGraph(graph,modulePath) {
   return distinct[0] ?? null;
 }
 
-export function themesFromMounts(output,modulePath) {
+function mountComponents(output) {
   // Hugo prints one indented JSON object per component, without an outer array.
-  const components = JSON.parse('['+output.trim().replace(/^}\s*(?=\{)/gm,'},\n')+']');
+  return JSON.parse('['+output.trim().replace(/^}\s*(?=\{)/gm,'},\n')+']');
+}
+
+export function themesFromMounts(output,modulePath) {
+  return directoryThemes(mountComponents(output),modulePath);
+}
+
+function directoryThemes(components,modulePath) {
   const themes = [];
   for (const component of components) {
     if (!component.owner || component.path === modulePath || component.version) continue;
@@ -114,7 +121,12 @@ export function inspect(site = process.cwd()) {
     return result.stdout;
   }
   const resolved = moduleFromGraph(hugo(['mod','graph']),release.module);
-  const themes = themesFromMounts(hugo(['config','mounts']),release.module);
+  const components=mountComponents(hugo(['config','mounts']));
+  if (resolved && !resolved.version && !resolved.directory) {
+    const mount=components.find(component=>component.owner && component.path===release.module && !component.version);
+    if (mount) resolved.directory=fs.realpathSync(mount.dir);
+  }
+  const themes = directoryThemes(components,release.module);
   if (resolved && themes.length || themes.length > 1) throw new Error('Hugo resolved multiple Banyan themes; cannot establish one version pair.');
   const module = resolved ?? themes[0] ?? null;
   return {release,module,...assess(module,release,{site})};

@@ -10,7 +10,9 @@ The first release is in preparation. This page describes its scope. After the re
 
 ## Main features
 
-- `swban dev` starts a development server with drafts, indexes search after the first render, and writes to Hugo’s `publishDir` (default: `public/`), retaining output on exit. `dev/lan` allows LAN previews; `dev/pagefind.off` skips indexing. Extra arguments pass to Hugo. Startup logs show the commands and preserve tool output. After indexing, single-host servers show the access URL again. Restart the server to update search indexes.
+- Run `swban deploy/release/tag <version>` to update versions, publish the Module, verify its source, build with the released theme and tag the project.
+
+- `swban server` starts a development server with drafts, indexes search after the first render, and writes to Hugo’s `publishDir` (default: `public/`), retaining output on exit. `server/lan` allows LAN previews; `server/pagefind.off` skips indexing. Extra arguments pass to Hugo. Startup logs show the commands and preserve tool output. After indexing, single-host servers show the access URL again. Restart the server to update search indexes. Use `swban dev` or `swban dev/build` in the Banyan repository to preview or build with the local Module.
 
 - A dedicated search page searches the current language as you type. Search terms use `#q=` and are not sent with page requests. Results appear with article-width results and bold titles. Each result is a full clickable row with the theme hover and keyboard focus styles. Search pages support RSS entries, HTML file globs or directory arrays, with existing HTML selectors to select content and no Pagefind-specific attributes. The root command launcher supports `swban build` to generate the site and Pagefind index.
 - Builds reject source directories and custom mount sources as output destinations. Sites without search pages or RSS entries do not prepare Pagefind. Empty RSS builds succeed, missing language indexes show no results, and search excerpts display escaped characters correctly.
