@@ -57,7 +57,7 @@ export async function check({page,baseUrl,options}) {
       await visit(page,baseUrl+options.choices);
       const choice=page.locator('[data-theme-choice='+JSON.stringify(theme)+']');
       assert.equal(await choice.count(),1,'Choose an appearance page with light and dark buttons.');
-      await choice.click();await page.waitForFunction(theme=>document.documentElement.dataset.theme===theme,theme);
+      await choice.click();await page.waitForURL(url=>url.href!==baseUrl+options.choices);await visit(page,baseUrl+options.choices);await page.waitForFunction(theme=>document.documentElement.dataset.theme===theme,theme);
       await setTheme(page,theme);await clearInput(page);
       assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme),theme,'HTML color-scheme must follow the selected theme.');
       const selected=await readPaint(rootCurrent(page)),choiceSelected=await readPaint(choice);

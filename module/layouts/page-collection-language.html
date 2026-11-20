@@ -1,3 +1,5 @@
 {{ define "head-extra" }}{{ partial "feature-browse/collection/styles.html" . }}{{ end }}
-{{ define "main" }}{{ partial "feature-browse/collection/render-page.html" . }}{{ end }}
-{{ define "body-extra" }}{{ partial "feature-browse/collection/script.html" . }}{{ end }}
+{{ define "main" }}
+  {{ partial "feature-browse/collection/script.html" . }}
+  {{ partial "feature-browse/collection/render-page.html" . }}
+{{ end }}

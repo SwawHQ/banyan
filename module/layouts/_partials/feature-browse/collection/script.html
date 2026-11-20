@@ -2,5 +2,5 @@
 {{- if $config.sortable -}}
   {{- partial "./sort/script.html" . -}}
 {{- else if $config.script -}}
-  {{- partial "system-assets/script.html" (dict "path" $config.script) -}}
+  {{- partial "system-assets/script.html" (dict "path" $config.script "beforeContent" true) -}}
 {{- end -}}

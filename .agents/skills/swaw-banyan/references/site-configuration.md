@@ -137,8 +137,9 @@ Language and appearance settings use `content/language/_index.md` with
 labels in `params.labels`; the layouts supply their choices and controls.
 Appearance pages define `params.appearance_icons.auto`, `.light` and `.dark`
 using SVG names, text or images; `params.icon` remains the navigation entry icon.
-Language links work without JavaScript. JavaScript keeps the selected language
-when returning to the previous page, and applies and saves appearance choices.
+From root navigation, selecting a language opens the translation of the source page.
+A direct visit or a visit without JavaScript offers the language home pages.
+Choosing an appearance saves it and returns to the source page, or to the language home on a direct visit.
 
 Site layouts and assets at the same paths override Module files. Keep page
 text, accounts, branding and legal content in the site's `content/`.

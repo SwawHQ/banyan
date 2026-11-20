@@ -27,9 +27,6 @@ other = "Time"
 [article_meta_directory]
 other = "Directory"
 
-[language_return_missing]
-other = "This page has no {lang} version. Showing the original content."
-
 [navigation_load_failed]
 other = "Navigation could not load."
 

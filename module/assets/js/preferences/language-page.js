@@ -1,23 +1,23 @@
-import '../pages/back.js';
-import { RETURN_LANGUAGE_KEY, RETURN_LANGUAGE_LABEL_KEY, languageMessage } from './language-state.js';
-
-const picker = document.querySelector('[data-language-settings]');
-
-picker?.addEventListener('click', (event) => {
-    const link = event.target instanceof Element ? event.target.closest('a[data-language-choice]') : null;
-    if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    const target = new URL(link.href);
-    if (target.origin !== window.location.origin) return;
+if (location.hash.startsWith('#languages&')) {
+    history.replaceState({...history.state, languageSource:location.hash.slice(11)}, '', location.pathname + location.search);
+}
+document.addEventListener('click', event => {
+    const choice = event.target.closest?.('a[data-language-choice]');
+    if (!choice || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-
-    const code = link.dataset.languageChoice;
-    const name = link.dataset.languageName;
-    if (link.dataset.hasTrans === 'false' && !window.confirm(languageMessage(picker.dataset.languageMissing, name))) return;
-    try {
-        // Store the choice first; an optional display label may fail separately.
-        sessionStorage.setItem(RETURN_LANGUAGE_KEY, code);
-        sessionStorage.setItem(RETURN_LANGUAGE_LABEL_KEY, JSON.stringify({ code, name }));
-    } catch { /* Static language links also work without storage. */ }
-    // All choices occupy the same history slot, so Back leaves language settings.
-    window.location.replace(target.pathname + target.search + target.hash);
+    const source = new URLSearchParams(history.state?.languageSource);
+    const path = source.get(choice.dataset.languageChoice);
+    if (path?.startsWith('/') && !path.startsWith('//') && !path.includes('\\')) {
+        const target = new URL(location.origin);
+        target.pathname = path;
+        target.search = source.get('_query') || '';
+        target.hash = source.get('_hash') || '';
+        location.replace(target.href);
+        return;
+    } else if (source.has(document.documentElement.lang)) {
+        const picker = choice.closest('[data-language-settings]');
+        const message = picker.dataset.languageMissing.replace(/\\n/g, '\n').replace(/\[?\{lang\}\]?/g, () => choice.querySelector('.item-title').textContent);
+        if (!window.confirm(message)) return;
+    }
+    location.replace(choice.href);
 });

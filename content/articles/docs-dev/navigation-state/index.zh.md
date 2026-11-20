@@ -36,9 +36,9 @@ description: 说明浏览来源、排序、章节和历史记录的重要约定�
 
 ### 系统页面与返回
 
-语言、外观等页面使用普通链接，返回使用浏览器历史，不另存原阅读网址。无上一条历史时返回当前语言首页。
+选择外观后返回来源页；直接打开外观页时，选择后进入当前语言首页。
 
-语言选择替换当前设置页历史。返回内容时，优先打开所选语言的真实译文；缺少译文时保留原内容并显示说明。这次选择只作用于当前标签页的一次返回，不成为全站语言偏好。会话存储不可用时，普通链接和返回仍可用。
+从根导航打开语言页后，选择语言会直接进入来源页的译文，保留查询参数和片段。缺少译文时，可选择前往该语言首页。直接打开语言页时，各语言入口指向对应首页。浏览器后退可回到原文。
 
 ## 源码入口
 
@@ -51,6 +51,6 @@ description: 说明浏览来源、排序、章节和历史记录的重要约定�
 | 选择有效来源 | `browse/navigation-source.js`、`breadcrumb-controller.js` |
 | 链接生成与排序刷新 | `browse/breadcrumb-links.js`、`breadcrumb-sort.js`、`collection-sort.js` |
 | 章节定位 | `document/anchors.js`、`document/toc.js` |
-| 设置页返回与译文选择 | `pages/back.js`、`preferences/language-page.js`、`preferences/language-return.js` |
+| 设置页返回与译文选择 | `pages/back.js`、`preferences/language-page.js`、`preferences/language-entry.js` |
 
 列索引与共享片段的构建入口见[面包屑模型](/zh/p/breadcrumb-models/#面包屑模型)。修改协议时，同时核对构建端、浏览器端及[导航检查](https://github.com/SwawHQ/banyan/blob/main/tests/README.md)。

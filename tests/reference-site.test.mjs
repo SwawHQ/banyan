@@ -398,11 +398,11 @@ test('settings sections use choice controls without article collection capabilit
     const schemas=extractBlocks(html,'script',tag=>extractTagAttribute(tag,'type')==='application/ld+json').map(block=>JSON.parse(block.inner));
     assert.ok(schemas.every(schema=>!['ItemList','BlogPosting'].includes(schema['@type'])),'Choices do not publish article collection schema.');
     const links=extractStartTags(main,'a'),back=links.filter(tag=>extractTagAttribute(tag,'data-page-action')==='back');
-    assert.equal(back.length,1);assert.equal(extractTagAttribute(back[0],'href'),'/'+prefix);
+    assert.equal(back.length,0);
     if(name==='language') {
       const choices=links.filter(tag=>extractTagAttribute(tag,'data-language-choice'));
       assert.deepEqual(choices.map(tag=>extractTagAttribute(tag,'data-language-choice')),languages);
-      assert.deepEqual(choices.map(tag=>extractTagAttribute(tag,'href')),prefixes.map(prefix=>'/'+prefix+'language/'));
+      assert.deepEqual(choices.map(tag=>extractTagAttribute(tag,'href')),prefixes.map(prefix=>'/'+prefix));
       assert.deepEqual(choices.filter(tag=>extractTagAttribute(tag,'aria-current')==='page').map(tag=>extractTagAttribute(tag,'data-language-choice')),[prefix?prefix.slice(0,-1):'en']);
     } else {
       const choices=extractStartTags(main,'button').filter(tag=>extractTagAttribute(tag,'data-theme-choice'));

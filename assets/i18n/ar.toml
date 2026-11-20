@@ -27,9 +27,6 @@ other = "التاريخ"
 [article_meta_directory]
 other = "التصنيف"
 
-[language_return_missing]
-other = "لا تتوفر نسخة من هذه الصفحة باللغة {lang}. يُعرض المحتوى الأصلي."
-
 [navigation_load_failed]
 other = "تعذر تحميل التنقل."
 

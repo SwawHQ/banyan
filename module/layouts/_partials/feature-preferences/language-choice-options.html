@@ -9,14 +9,12 @@
   {{- $href := .Home.RelPermalink -}}
   {{- $icon := "language" -}}
   {{- with index $translated $code -}}
-    {{- $href = .RelPermalink -}}
     {{- $value := "language" -}}
     {{- if isset .Params "language_icon" -}}{{- $value = .Params.language_icon -}}{{- end -}}
     {{- $icon = partial "system-ui/icon/page-value.html" (dict "value" $value "page" . "context" "params.language_icon") | default "language" -}}
   {{- end -}}
   {{- $options = $options | append (dict "code" $code "icon" $icon
     "name" (.Language.Label | default $code)
-    "href" $href
-    "translated" (isset $translated $code)) -}}
+    "href" $href) -}}
 {{- end -}}
 {{- return $options -}}

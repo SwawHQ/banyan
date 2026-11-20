@@ -22,9 +22,7 @@ export async function check({page,server,baseUrl,options}) {
     await page.locator('[data-language-settings] [data-language-choice]').nth(index).click();
     await page.waitForURL(before[index].href,{waitUntil:'load'});await active(page,options.timeout);
     await waiting(page,options.timeout);
-    await page.waitForSelector('[data-language-settings] [aria-current="page"]');
-    const current=(await links(page)).filter(link=>link.current==='page');
-    assert.deepEqual(current.map(link=>link.code),[options.to],'The destination must select its language.');
+    assert.equal(await page.locator('html').getAttribute('lang'),options.to,'The destination must use the selected language.');
     quiet(events);return {page:options.page,to:options.to,before,target:page.url()};
   }finally{events.stop();}
 }

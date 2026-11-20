@@ -67,17 +67,18 @@ export async function check({page,baseUrl,options}) {
   assert.ok(contract.buttons.every(button=>button.tag==='BUTTON'),'Appearance choices must be buttons.');
   await assertSelected('auto'); await theme('light');
 
-  await choice('dark').click(); await theme('dark'); await assertSelected('dark');
+  const reopen=async()=>{await page.locator('[data-root-href='+JSON.stringify(new URL(target).pathname)+']').click();await page.waitForURL(target);};
+  await choice('dark').click(); await page.waitForURL(origin); await theme('dark');
+  await reopen();await assertSelected('dark');
   assert.equal(await page.evaluate(()=>localStorage.getItem('theme-preference')),'dark');
   await page.reload({waitUntil:'load'}); await theme('dark'); await assertSelected('dark');
-  await choice('light').click(); await theme('light'); await assertSelected('light');
+  await choice('light').click(); await page.waitForURL(origin); await theme('light');
   assert.equal(await page.evaluate(()=>localStorage.getItem('theme-preference')),'light');
   await page.emulateMedia({colorScheme:'dark'});
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   await theme('light');
-  await choice('auto').click(); await theme('dark'); await assertSelected('auto');
+  await reopen();await assertSelected('light');await choice('auto').click();await page.waitForURL(origin);await theme('dark');
   assert.equal(await page.evaluate(()=>localStorage.getItem('theme-preference')),'auto');
-  await page.locator('[data-page-action="back"]').click();
   await page.waitForURL(origin);
   await page.emulateMedia({colorScheme:'light'}); await theme('light');
 

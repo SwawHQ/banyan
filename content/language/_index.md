@@ -6,7 +6,6 @@ weight: 70
 
 params:
   labels: #Translate values for this language; keep the keys.
-    back: "Back"
     missing_translation: "This page does not yet have a [{lang}] version.\nGo to the [{lang}] homepage?" #Keep {lang}; it is replaced with the selected language name.
   icon: language
   language_icon: { text: "EN" }

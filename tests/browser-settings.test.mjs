@@ -7,6 +7,8 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
+import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
+import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {urlCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/settings/url/options.mjs';
 import {historyCommand,pageList} from '../.agents/skills/swaw-banyan/tasks/check/browser/settings/history/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -85,10 +87,41 @@ test('settings URL checks retain unknown query, fragment and state through visit
 test('settings chains use one-step native history and language homes without prior history',{timeout:20000},()=>{
   const state=report(cli('history',['--from',article,'--pages',pages.join(','),'--trace','--out',path.join(work,'reports')]));
   assert.equal(state.details.returned,article);assert.deepEqual(state.details.steps,pages);
-  assert.equal(state.details.empty.length,3);assert.ok(state.details.empty.every(item=>item.home==='/'));
+  assert.equal(state.details.empty.length,1);assert.ok(state.details.empty.every(item=>item.home==='/'));
   const translated=report(cli('history',['--from','/zh/all/#sorts=name-asc&anchor=reading-position','--pages',pages.map(page=>'/zh'+page).join(','),'--out',path.join(work,'reports')]));
   assert.equal(translated.details.returned,'/zh/all/#sorts=name-asc&anchor=reading-position');
   assert.ok(translated.details.empty.every(item=>item.home==='/zh/'));
+});
+
+test('appearance choices and cached pages apply their colors immediately',async()=>{
+  const server=await createStaticSiteServer(output),chromium=loadChromium();
+  let browser;
+  try {
+    await server.start();
+    browser=await chromium.launch({executablePath:chromium.executablePath(),ignoreDefaultArgs:['--disable-back-forward-cache']});
+    const page=await browser.newPage({colorScheme:'light',serviceWorkers:'block'});
+    await page.goto(server.getBaseUrl()+article);
+    await page.evaluate(()=>addEventListener('pageshow',event=>{
+      if(event.persisted)window.restoredColors={
+        theme:document.documentElement.dataset.theme,
+        body:getComputedStyle(document.body).backgroundColor,
+        root:getComputedStyle(document.documentElement).backgroundColor,
+        transitions:document.body.getAnimations({subtree:true}).filter(a=>a instanceof CSSTransition).length
+      };
+    }));
+    await page.locator('[data-root-href="/prefs-appearance/"]').click();
+    const animated=await page.locator('[data-theme-choice="dark"]').evaluate(button=>{
+      button.click();
+      return document.body.getAnimations({subtree:true}).some(a=>['background-color','color'].includes(a.transitionProperty));
+    });
+    assert.equal(animated,false);
+    await page.waitForURL(server.getBaseUrl()+article,{waitUntil:'commit'});
+    await page.waitForFunction(()=>window.restoredColors);
+    const colors=await page.evaluate(()=>window.restoredColors);
+    assert.equal(colors.theme,'dark');
+    assert.equal(colors.body,colors.root);
+    assert.equal(colors.transitions,0);
+  } finally {await browser?.close();await server.stop();}
 });
 
 test('URL checks detect stripped queries, fragments and caller history state',{timeout:20000},()=>{
@@ -116,7 +149,7 @@ test('history checks reject rewritten root links and duplicated visits',{timeout
 
 test('history checks detect wrong Back, lost source state and broken no-history fallback',{timeout:20000},()=>{
   for(const [name,code,routes,message] of [
-    ['wrong-back','document.addEventListener("click",event=>{if(event.target.closest("[data-page-action=back]")){event.preventDefault();event.stopImmediatePropagation();location.assign("/");}},true);',['prefs-language'],/Timeout/],
+    ['wrong-back','document.addEventListener("click",event=>{if(event.target.closest("[data-page-action=back]")){event.preventDefault();event.stopImmediatePropagation();location.assign("/");}},true);',['prefs/one'],/Timeout/],
     ['lost-source-state','if(performance.getEntriesByType("navigation")[0]?.type==="back_forward")history.replaceState(null,"",location.href);',['d/settings-fixture'],/restore caller history state/],
     ['broken-empty-back','document.addEventListener("click",event=>{if(history.length===1&&event.target.closest("[data-page-action=back]")){event.preventDefault();event.stopImmediatePropagation();}},true);',['prefs/one'],/Timeout/]
   ]) {

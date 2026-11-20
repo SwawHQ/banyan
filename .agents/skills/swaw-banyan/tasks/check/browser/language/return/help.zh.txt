@@ -1,4 +1,4 @@
-swban check/browser/language/return [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> [--page <path>] --to <code>  #语言返回、缺失翻译与状态隔离；Chromium
+swban check/browser/language/return [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> [--page <path>] --to <code>  #选择译文与缺少译文时的首页提示；Chromium
 
   dir             已完成的站点构建目录；默认：public
   --headed        显示浏览器窗口

@@ -6,7 +6,6 @@ weight: 80
 
 params:
   labels: #Translate values for this language; keep the keys.
-    back: "Back"
     auto: "Follow system"
     light: "Light"
     dark: "Dark"

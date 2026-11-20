@@ -1,4 +1,4 @@
-swban check/browser/language/return [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> [--page <path>] --to <code>  #Language returns, missing translations and isolation; Chromium
+swban check/browser/language/return [dir] [--headed] [--trace] [--out <dir>] [--timeout <ms>] --from <path> [--page <path>] --to <code>  #Language choices and missing-translation fallback; Chromium
 
   dir             Published site directory; default: public
   --headed        Show the browser window

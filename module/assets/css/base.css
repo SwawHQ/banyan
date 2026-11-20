@@ -12,7 +12,6 @@ body {
     text-size-adjust: 100% !important;
     background: var(--bg);
     color: var(--fg);
-    transition: background 0.3s, color 0.3s;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
@@ -22,7 +21,6 @@ a {
     text-decoration-thickness: 1px;
     text-underline-offset: 0.08rem;
     text-decoration-skip-ink: auto;
-    transition: color 0.3s;
 }
 
 :is(a, button):focus-visible {

@@ -9,6 +9,6 @@
     {{ $buildParams := .params | default dict }}
     {{ $resource = $resource | js.Build (dict "params" $buildParams "minify" (not hugo.IsServer)) }}
     {{ $resource = $resource | fingerprint }}
-<script src="{{ $resource.RelPermalink }}" integrity="{{ $resource.Data.Integrity }}" defer fetchpriority="low"></script>
+<script src="{{ $resource.RelPermalink }}" integrity="{{ $resource.Data.Integrity }}"{{ if not .beforeContent }} defer fetchpriority="low"{{ end }}></script>
   {{ end }}
 {{ end }}

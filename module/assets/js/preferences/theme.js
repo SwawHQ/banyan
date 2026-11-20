@@ -24,6 +24,11 @@ export function initThemePreference() {
         mode = option.dataset.themeChoice;
         writeStorage(PREFERENCE_KEY, mode);
         apply();
+        const picker = option.closest('[data-appearance-home]');
+        if (picker) {
+            if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) history.back();
+            else location.replace(picker.dataset.appearanceHome);
+        }
     });
     media.addEventListener('change', apply);
     window.addEventListener('storage', (event) => {
@@ -33,7 +38,8 @@ export function initThemePreference() {
         }
     });
     window.addEventListener('pageshow', (event) => {
-        if (event.persisted) mode = readMode();
+        if (!event.persisted) return;
+        mode = readMode();
         apply();
     });
     apply();

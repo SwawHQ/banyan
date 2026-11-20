@@ -6,7 +6,6 @@ weight: 80
 
 params:
   labels: #按当前语言翻译值；保留键名。
-    back: "返回"
     auto: "跟随系统"
     light: "浅色"
     dark: "深色"

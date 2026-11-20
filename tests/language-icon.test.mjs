@@ -89,7 +89,7 @@ test('translated setting pages with different paths resolve image icons from the
     write(path.join(site,'content/preferences/choice.zh.svg'),image);
     const output=build(),sources=new Set();
     for(const [prefix,page] of [['','language'],['zh','preferences']]) {
-      const option=choices(read(output,prefix,page)).get('zh');assert.equal(attr(option.open,'href'),'/zh/preferences/');
+      const option=choices(read(output,prefix,page)).get('zh');assert.equal(attr(option.open,'href'),'/zh/');
       const icons=extractStartTags(option.inner,'img');assert.equal(icons.length,1);
       const source=attr(icons[0],'src');sources.add(source);assert.match(source,/\/media\/content\/preferences\/choice\.zh\.[a-f0-9]{64}\.svg$/);
       assert.equal(fs.readFileSync(path.join(output,new URL(source,configuration.baseURL).pathname),'utf8'),image);

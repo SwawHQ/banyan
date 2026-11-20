@@ -27,9 +27,6 @@ other = "时间"
 [article_meta_directory]
 other = "目录"
 
-[language_return_missing]
-other = "本页尚无{lang}版本，继续显示原内容。"
-
 [navigation_load_failed]
 other = "导航加载失败。"
 

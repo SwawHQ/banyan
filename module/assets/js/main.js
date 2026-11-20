@@ -1,5 +1,5 @@
 import { initRootNavigation } from './browse/root-navigation.js';
-import { initLanguageReturn } from './preferences/language-return.js';
+import './preferences/language-entry.js';
 import { initThemePreference } from './preferences/theme.js';
 import { initAutoScrollbar } from './browse/auto-scrollbar.js';
 import { initCanvasWheel } from './browse/canvas-wheel.js';
@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initDocumentAnchors();
     initCanvasWheel();
     initThemePreference();
-    initLanguageReturn();
     initAutoScrollbar(document.scrollingElement);
     document.querySelectorAll('.page-column')
         .forEach(initAutoScrollbar);

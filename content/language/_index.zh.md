@@ -6,7 +6,6 @@ weight: 70
 
 params:
   labels: #按当前语言翻译值；保留键名。
-    back: "返回"
     missing_translation: "本页尚未提供 [{lang}] 版本。\n前往该语言首页吗？" #保留 {lang}；它会替换为所选语言名称。
   icon: language
   language_icon: { text: "简" }

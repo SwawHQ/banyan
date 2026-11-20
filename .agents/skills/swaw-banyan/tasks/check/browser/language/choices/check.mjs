@@ -8,7 +8,7 @@ async function readChoices(page) {
       sortable:Boolean(list?.hasAttribute('data-sortable')||list?.querySelector('[data-sortable]')),
       choices:[...(picker?.querySelectorAll('[data-language-choice]')||[])].map(link=>({
         code:link.dataset.languageChoice,href:link.getAttribute('href'),tag:link.tagName,
-        translated:link.dataset.hasTrans==='true',disabled:link.hasAttribute('disabled')||link.getAttribute('aria-disabled')==='true',
+        disabled:link.hasAttribute('disabled')||link.getAttribute('aria-disabled')==='true',
         current:link.getAttribute('aria-current')||'',selected:link.classList.contains('is-current'),
         label:link.querySelector('.item-title')?.textContent.trim(),
         start:link.querySelector('.item-title')?.getBoundingClientRect()[getComputedStyle(picker).direction==='rtl'?'right':'left'],
@@ -49,14 +49,14 @@ export async function chooseLanguage(page,baseUrl,code) {
   // Selecting the current language also loads a new document at the same URL.
   await Promise.all([page.waitForNavigation({waitUntil:'load'}),link.click()]);
   assert.equal(page.url(),expected,'Choice must navigate to its native href.');
-  const state=await assertChoices(page,baseUrl);assert.equal(state.language,code,'Choice must load its declared language.');
-  return state;
+  const language=await page.locator('html').getAttribute('lang');
+  assert.equal(language,code,'Choice must load its declared language.');
+  return {language,href:page.url()};
 }
 
 export async function check({page,baseUrl,options}) {
   await page.goto(baseUrl+options.page,{waitUntil:'load'});await afterPaint(page);
   const initial=await assertChoices(page,baseUrl);
-  assert.ok(initial.choices.every(choice=>choice.translated),'Choose settings with translations for every language.');
   const context=await page.context().browser().newContext({javaScriptEnabled:false,serviceWorkers:'block',viewport:page.viewportSize()});
   context.setDefaultTimeout(options.timeout??15000);context.setDefaultNavigationTimeout(options.timeout??15000);
   const staticCases=[];
@@ -76,8 +76,9 @@ export async function check({page,baseUrl,options}) {
     await page.goto(probe.href,{waitUntil:'load'});await afterPaint(page);
     assert.equal(page.url(),probe.href,'Settings must preserve unknown queries and fragments.');
     assert.equal(await page.evaluate(()=>history.state.banyanLanguageProbe),true,'Settings must preserve history state.');
-    const length=await page.evaluate(()=>history.length);
     for(const choice of initial.choices) {
+      await page.goto(probe.href);
+      const length=await page.evaluate(()=>history.length);
       runtimeCases.push(await chooseLanguage(page,baseUrl,choice.code));
       assert.equal(await page.evaluate(()=>history.length),length,'Language choices must replace the settings history entry.');
     }

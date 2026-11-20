@@ -6,7 +6,6 @@ weight: 80
 
 params:
   labels:
-    back: "رجوع"
     auto: "حسب إعدادات النظام"
     light: "فاتح"
     dark: "داكن"
