@@ -63,9 +63,10 @@ export async function observeColumns(page,url) {
   try {
     const response=await page.goto(url,{waitUntil:'commit'});
     assert.ok(response?.ok(),'Page must return a successful response.');
+    // Held navigation scripts can block rendering, so sample the DOM without waiting for a frame.
     await page.waitForFunction(()=>!!window.__swbanParsedColumns
-      &&[...document.querySelectorAll('link[rel="stylesheet"]')].every(link=>link.disabled||link.sheet));
-    await afterPaint(page);initial={columns:await readColumns(page),sourcePending:await page.evaluate(()=>document.documentElement.hasAttribute('data-breadcrumb-pending'))};
+      &&[...document.querySelectorAll('link[rel="stylesheet"]')].every(link=>link.disabled||link.sheet),null,{polling:20});
+    initial={columns:await readColumns(page),sourcePending:await page.evaluate(()=>document.documentElement.hasAttribute('data-breadcrumb-pending'))};
   } finally {
     release();try {await Promise.all(held);}finally {await page.unroute('**/*',handler);}
   }
