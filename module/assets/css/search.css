@@ -2,7 +2,7 @@
     appearance: none;
     box-sizing: border-box;
     inline-size: 100%;
-    block-size: calc(1em * var(--column-line-height));
+    block-size: calc(1rem * var(--column-line-height));
     min-inline-size: 0;
     margin: 0;
     padding: 0 .3em;

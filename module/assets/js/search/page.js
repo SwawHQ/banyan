@@ -1,4 +1,4 @@
-import {applyFragmentField, readFieldValue} from '../browse/navigation-state.contract.js';
+import {applyFragmentField, readFieldValue, readFragment} from '../browse/navigation-state.contract.js';
 
 const page = document.querySelector('[data-search-page]');
 const input = document.querySelector('[data-search-input]');
@@ -121,6 +121,14 @@ document.addEventListener('keydown', event => {
         event.preventDefault(); results.querySelector('a')?.focus();
     }
 });
+const queryKey = 'banyan:search:' + location.pathname;
+window.addEventListener('pagehide', () => {
+    try {
+        const query = input.value.trim();
+        if (query) sessionStorage.setItem(queryKey, query);
+        else sessionStorage.removeItem(queryKey);
+    } catch { /* Search also works without session storage. */ }
+});
 window.addEventListener('pageshow', event => { if (event.persisted) selected = false; });
 window.addEventListener('hashchange', () => {
     const query = readFieldValue(location.hash, 'q');
@@ -129,8 +137,14 @@ window.addEventListener('hashchange', () => {
     clearTimeout(timer);
     search(++sequence);
 });
-input.value = readFieldValue(location.hash, 'q');
+const linkedQuery = readFragment(location.hash).get('q');
+input.value = linkedQuery ?? '';
+if (linkedQuery === null) {
+    try { input.value = sessionStorage.getItem(queryKey) || ''; }
+    catch { /* Leave the field empty when storage is unavailable. */ }
+}
 input.focus({preventScroll:true});
+if (linkedQuery === null && input.value) input.select();
 try { navigator.virtualKeyboard?.show(); }
 catch { /* Keyboard availability must not interrupt search. */ }
 document.querySelector('.page-rail').scrollIntoView({inline:'start', block:'nearest'});

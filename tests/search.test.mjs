@@ -55,13 +55,17 @@ test('reference search: isolated assets, CSP, live results, history, languages a
     assert(!await page.locator('.search-result a[href*="/powered-by/"]').count());
     await input.press('Escape');await page.waitForURL('**/sub/zh/p/glossary/');
     await page.locator('[data-root-href$="/search/"]').click();await input.waitFor();
+    assert.equal(await input.inputValue(),'配置');
+    assert.deepEqual(await input.evaluate(e=>[document.activeElement===e,e.selectionStart,e.selectionEnd]),[true,0,2]);
+    await first.waitFor();
     await input.evaluate(e=>e.blur());await page.waitForURL('**/sub/zh/p/glossary/');
-    await page.locator('[data-root-href$="/search/"]').click();await input.fill('配置');await first.waitFor();
+    await page.locator('[data-root-href$="/search/"]').click();await first.waitFor();
     await first.click();await page.waitForURL(url=>!url.pathname.endsWith('/search/'));
     assert.notEqual(new URL(page.url()).pathname,'/sub/zh/');
     for(const [lang,query] of [['en','Hugo'],['ar','المقال']]){
       const prefix=lang==='en'?'':lang+'/';
-      await page.goto(base+'/sub/'+prefix+'search/');await input.fill(query);await first.waitFor();
+      await page.goto(base+'/sub/'+prefix+'search/');assert.equal(await input.inputValue(),'');
+      await input.fill(query);await first.waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),lang);
       const links=await page.locator('.search-result a').evaluateAll(nodes=>nodes.map(n=>n.pathname));
       assert(links.every(link=>link.startsWith('/sub/'+prefix)));
