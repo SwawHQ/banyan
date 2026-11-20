@@ -13,6 +13,10 @@
     color: var(--fg);
 }
 .search-input:focus-visible { outline: 1px solid var(--focus-ring); outline-offset: -1px; }
+/* Keep iOS from zooming the canvas when the search field receives focus. */
+@media (pointer: coarse) {
+    .search-input { font-size: max(1rem, 16px); }
+}
 .search-status, .search-excerpt { color: var(--muted); font-size: .875rem; }
 .search-result { margin-block: 0 1rem; }
 .search-result a { display: block; font-weight: 700; text-decoration: none; }
