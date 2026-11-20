@@ -8,7 +8,7 @@ export function columnSort(column) {
   const url=new URL(column.toggle),depth=column.source.logicalPath.split('/').filter(Boolean).length;
   const tokens=(new URLSearchParams(url.hash.slice(1)).get('sorts')||'').split(',');
   const next=tokens[depth-1],token=next&&next!=='_'?next:column.source.defaultSort;
-  return token.replace(/-(asc|desc)$/,'')+'-'+(column.indicator==='↑'?'asc':'desc');
+  return token.replace(/-(asc|desc)$/,'')+'-'+(column.indicator==='↓'?'asc':'desc');
 }
 
 export async function openPage(page,url) {

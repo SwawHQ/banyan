@@ -8,7 +8,7 @@ export async function readOpeningSource(page,canvas) {
     const root=logicalPath?navigation.home+logicalPath.replace(/^\/+/, '').split('/')[0]+'/':'',active=document.querySelector('main [data-sort-control][data-sort-active="true"]');
     const indicator=active?.querySelector('[data-sort-indicator]')?.textContent.trim();
     return {source:root?{logicalPath,rootItem:{href:root}}:null,
-      sort:active?active.dataset.sortField+'-'+(indicator==='↑'?'asc':'desc'):'',
+      sort:active?active.dataset.sortField+'-'+(indicator==='↓'?'asc':'desc'):'',
       rows:[...document.querySelectorAll('main [data-list-entry][href]')].map(link=>({path:new URL(link.href).pathname,text:link.textContent.trim()}))};
   });
   const source=state.source;

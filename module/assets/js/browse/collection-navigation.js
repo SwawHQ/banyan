@@ -75,7 +75,7 @@ function updateCollectionSortControls(list, variantName, currentToken, defaultTo
             control.setAttribute('aria-label', actionLabel);
         }
         if (indicator) {
-            indicator.textContent = active ? (current.order === 'asc' ? '↑' : '↓') : '↨';
+            indicator.textContent = active ? (current.order === 'asc' ? '↓' : '↑') : '↨';
         }
     });
 }

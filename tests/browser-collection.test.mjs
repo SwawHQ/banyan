@@ -265,8 +265,8 @@ test('configured defaults agree before and after JS; child columns never inherit
     await child.click();await page.waitForFunction(()=>document.querySelector('.slot-main [data-sort-active=true]')?.dataset.sortField==='name');
     assert.equal((await snapshot(page)).token,'name-asc');
     await page.locator('.slot-main [data-sort-field=name]').click();const childUrl=page.url();
-    await page.reload();assert.equal(await page.locator('.slot-main [data-sort-active=true] [data-sort-indicator]').textContent(),'↓');
-    const fresh=await dynamicContext.newPage();await fresh.goto(childUrl);assert.equal(await fresh.locator('.slot-main [data-sort-active=true] [data-sort-indicator]').textContent(),'↓');
+    await page.reload();assert.equal(await page.locator('.slot-main [data-sort-active=true] [data-sort-indicator]').textContent(),'↑');
+    const fresh=await dynamicContext.newPage();await fresh.goto(childUrl);assert.equal(await fresh.locator('.slot-main [data-sort-active=true] [data-sort-indicator]').textContent(),'↑');
     await page.goBack();assert.equal(page.url(),parentUrl);await page.goForward();assert.equal(page.url(),childUrl);
   } finally {await browser?.close();await server.stop();}
 });

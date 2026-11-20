@@ -9,7 +9,7 @@
 {{ $nextOrder := $defaultOrder }}
 {{ if $isActive }}{{ $nextOrder = cond (eq $currentOrder "asc") "desc" "asc" }}{{ end }}
 {{ $indicator := "↨" }}
-{{ if $isActive }}{{ $indicator = cond (eq $currentOrder "asc") "↑" "↓" }}{{ end }}
+{{ if $isActive }}{{ $indicator = cond (eq $currentOrder "asc") "↓" "↑" }}{{ end }}
 {{ $actionLabel := replace (index .actions $nextOrder) "{field}" $label }}
 {{ $href := partial "./url.html" (dict "ctx" $ctx "baseHref" .baseHref "token" (printf "%s-%s" $field $nextOrder) "defaultToken" (printf "%s-%s" $currentField $currentOrder) "fragment" .fragment) }}
 <span class="item-field {{ $class }}" data-item-field="{{ $field }}">

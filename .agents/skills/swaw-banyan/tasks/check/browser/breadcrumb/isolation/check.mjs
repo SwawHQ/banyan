@@ -30,7 +30,7 @@ function checkMainLinks(main,columns) {
   if(!main)return;
   assert.ok(main.source?.logicalPath,'Main collection must declare its source.');
   const defaults=main.source.defaultSort,depth=main.source.logicalPath.split('/').filter(Boolean).length;
-  const active=main.field+'-'+(main.indicator==='↑'?'asc':'desc');
+  const active=main.field+'-'+(main.indicator==='↓'?'asc':'desc');
   const links=main.rows.filter(row=>row.kind==='page');
   assert.ok(links.length>0,'Main collection must contain an article.');
   for(const row of links) {

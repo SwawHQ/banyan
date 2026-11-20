@@ -548,7 +548,7 @@ try {
                         ['d', 'd/contract-inherit'].includes(list) ? null : list, 'Only reference lists need an explicit source.');
                     assert.deepEqual(await paths(`${column} .item-control`), descending, 'Article path uses the same name list order');
                     assert.deepEqual(await paths(`${column} .item-control.is-current`), [articlePath]);
-                    assert.match(await namesPage.locator(`${column} .breadcrumb-column-sort`).textContent(), /↓/);
+                    assert.match(await namesPage.locator(`${column} .breadcrumb-column-sort`).textContent(), /↑/);
                     assert.equal(await namesPage.locator(`${column} .breadcrumb-column-sort`).getAttribute('aria-label'), ascendingAction);
                     assert.equal(await namesPage.locator(`${column} .breadcrumb-column-sort`).getAttribute('title'), ascendingAction);
                 };
@@ -564,7 +564,7 @@ try {
                 await waitForBrowse(namesPage);
                 await assertNameColumn();
                 await namesPage.locator(`${column} .breadcrumb-column-sort`).click();
-                await namesPage.waitForFunction(selector => document.querySelector(selector)?.textContent.includes('↑'), `${column} .breadcrumb-column-sort`);
+                await namesPage.waitForFunction(selector => document.querySelector(selector)?.textContent.includes('↓'), `${column} .breadcrumb-column-sort`);
                 assert.deepEqual(await paths(`${column} .item-control`), expected, 'Breadcrumb-column toggle uses name sorting too');
                 assert.equal(await namesPage.locator(`${column} .breadcrumb-column-sort`).getAttribute('aria-label'), descendingAction);
                 assert.equal(await namesPage.locator(`${column} .breadcrumb-column-sort`).getAttribute('title'), descendingAction);
@@ -577,7 +577,7 @@ try {
         });
         const literalSort = namesPage.locator('[data-slot=breadcrumb] [data-breadcrumb-collection-href="/ar/contract-name-reference/"] .breadcrumb-column-sort');
         await literalSort.click();
-        await namesPage.waitForFunction(() => document.querySelector('[data-breadcrumb-collection-href="/ar/contract-name-reference/"] [data-sort-indicator]')?.textContent === '↓');
+        await namesPage.waitForFunction(() => document.querySelector('[data-breadcrumb-collection-href="/ar/contract-name-reference/"] [data-sort-indicator]')?.textContent === '↑');
         assert.equal(await literalSort.getAttribute('aria-label'), 'ترتيب Literal <b>$& {field}</b> تصاعديًا');
         assert.equal(await literalSort.locator('.breadcrumb-sort-label').textContent(), 'Literal <b>$& {field}</b>');
         assert.equal(await literalSort.locator('b').count(), 0, 'Field names must remain literal text.');

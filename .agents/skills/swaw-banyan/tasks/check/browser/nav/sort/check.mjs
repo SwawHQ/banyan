@@ -23,7 +23,7 @@ export async function check({page,baseUrl,options}) {
     return {rows,descending:rows.every((row,i)=>!i||rows[i-1].group!==row.group||rows[i-1].name.localeCompare(row.name,undefined,{numeric:true,sensitivity:'base'})>=0)};
   });
   const dates=await checkDates(page,grid,readRows);
-  const ascending = () => control.evaluate(node=>node.dataset.sortActive==='true' && node.querySelector('[data-sort-indicator]')?.textContent==='↑');
+  const ascending = () => control.evaluate(node=>node.dataset.sortActive==='true' && node.querySelector('[data-sort-indicator]')?.textContent==='↓');
   if (!(await ascending())) {
     const target = new URL(await control.getAttribute('href'),page.url());
     await control.click(); await page.waitForURL(target.href);
@@ -88,10 +88,10 @@ export async function check({page,baseUrl,options}) {
   page.on('request',record);
   try {
     await page.evaluate(hash=>{location.hash=hash;},ascendingUrl.hash);
-    await page.waitForFunction(()=>document.querySelector('[data-sort-field="name"] [data-sort-indicator]')?.textContent==='↑');
+    await page.waitForFunction(()=>document.querySelector('[data-sort-field="name"] [data-sort-indicator]')?.textContent==='↓');
     assert.deepEqual((await readRows()).rows.map(row=>row.key),before.map(row=>row.key),'A fragment change must apply the requested main sort.');
     await page.goBack();await page.waitForURL(descendingUrl);
-    await page.waitForFunction(()=>document.querySelector('[data-sort-field="name"] [data-sort-indicator]')?.textContent==='↓');
+    await page.waitForFunction(()=>document.querySelector('[data-sort-field="name"] [data-sort-indicator]')?.textContent==='↑');
     assert.deepEqual((await readRows()).rows.map(row=>row.key),after.rows.map(row=>row.key),'Back must restore the previous main sort.');
     assert.equal(await page.evaluate(()=>window.__swbanSortMarker),marker,'Fragment sort history must retain the document.');
     assert.deepEqual(requests,[],'Fragment sorting must not request another document.');

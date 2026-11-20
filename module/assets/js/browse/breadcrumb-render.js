@@ -18,7 +18,7 @@ export function updateBreadcrumbColumnHeader(header, source, state, lineageLogic
     toggle.title = actionLabel;
     toggle.setAttribute('aria-label', actionLabel);
     toggle.querySelector('.breadcrumb-sort-label').textContent = fieldLabel;
-    toggle.querySelector('[data-sort-indicator]').textContent = state.order === 'asc' ? '↑' : '↓';
+    toggle.querySelector('[data-sort-indicator]').textContent = state.order === 'asc' ? '↓' : '↑';
 }
 
 export function renderBreadcrumbColumn(column, payload, { selectedPathname = '', lineageLogicalPath = '' } = {}) {

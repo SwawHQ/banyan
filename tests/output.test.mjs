@@ -117,7 +117,7 @@ const navigationHtml=value=>'<html lang=en data-navigation="'+encodeNavigation(v
 function fragment({logicalPath='/shared/',href='/shared/',label='Shared',sortVariant='section',defaultSort='date-desc',rows=[]}={}) {
   return '<div class="item-list item-list--breadcrumb-column" role="group" aria-label="'+escape(label)+'" data-collection-href="'+escape(href)+'" data-breadcrumb-column-path="'+escape(logicalPath)+'" data-sort-variant="'+sortVariant+'" data-default-sort="'+defaultSort+'">'+
     '<div class="list-item list-header list-header--breadcrumb" data-list-header>'+
-    (sortVariant?'<a class="breadcrumb-column-sort" data-breadcrumb-sort-toggle="true" href="'+escape(href)+'"><span class="breadcrumb-sort-label">Date</span><span data-sort-indicator>↓</span></a>':'')+'</div>'+
+    (sortVariant?'<a class="breadcrumb-column-sort" data-breadcrumb-sort-toggle="true" href="'+escape(href)+'"><span class="breadcrumb-sort-label">Date</span><span data-sort-indicator>↑</span></a>':'')+'</div>'+
     rows.map(row=>'<div class="list-item" data-list-item data-kind="'+escape(row.kind||'page')+'"'+
       Object.entries(row).filter(([key])=>key.startsWith('sort_')).map(([key,value])=>' data-'+key.replaceAll('_','-')+'="'+escape(value)+'"').join('')+'>'+
       '<a class="item-control item-field item-field--name" data-list-entry href="'+escape(row.href)+'"'+(row.title?' title="'+escape(row.title)+'"':'')+'>'+

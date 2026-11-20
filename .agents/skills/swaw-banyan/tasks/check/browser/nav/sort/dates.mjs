@@ -10,7 +10,7 @@ export async function checkDates(page,grid,readRows) {
   const control=grid.locator('[data-sort-field="date"]');
   if(!await control.count())return null;
   assert.equal(await control.count(),1,'The collection must have one date sort control.');
-  const descending=()=>control.evaluate(node=>node.dataset.sortActive==='true'&&node.querySelector('[data-sort-indicator]')?.textContent==='↓');
+  const descending=()=>control.evaluate(node=>node.dataset.sortActive==='true'&&node.querySelector('[data-sort-indicator]')?.textContent==='↑');
   const activate=async()=>{
     const target=new URL(await control.getAttribute('href'),page.url());
     await control.click();await page.waitForURL(target.href);await afterPaint(page);
@@ -34,7 +34,7 @@ export async function checkDates(page,grid,readRows) {
       await activate();
       const rows=(await readRows()).rows;
       assert.deepEqual(rows.map(row=>row.key),expected,'Date sorting must follow the complete group/date/name/href tuple: '+direction);
-      assert.equal(await control.evaluate(node=>node.querySelector('[data-sort-indicator]').textContent),direction==='asc'?'↑':'↓');
+      assert.equal(await control.evaluate(node=>node.querySelector('[data-sort-indicator]').textContent),direction==='asc'?'↓':'↑');
       assert.deepEqual([...rows].sort((a,b)=>a.key.localeCompare(b.key)),[...before].sort((a,b)=>a.key.localeCompare(b.key)),
         'Date sorting must keep every row, key and cell value.');
       assert.equal(await page.evaluate(()=>sessionStorage.getItem('banyan:canvas-navigation')),null,

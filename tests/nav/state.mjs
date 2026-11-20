@@ -585,7 +585,7 @@ try {
                 + '" data-sort-variant="' + (sortable ? 'section' : '') + '" data-default-sort="' + (sortable ? 'date-desc' : '') + '">'
                 + '<div class="list-item list-header list-header--breadcrumb" data-list-header><span class="item-field item-field--name" data-item-field="name">'
                 + (sortable ? '<a class="breadcrumb-column-sort" data-breadcrumb-sort-toggle="true" href="'
-                    + esc(href) + '"><span class="breadcrumb-sort-label">Date</span><span class="list-sort-indicator" data-sort-indicator aria-hidden="true">↓</span></a>' : '')
+                    + esc(href) + '"><span class="breadcrumb-sort-label">Date</span><span class="list-sort-indicator" data-sort-indicator aria-hidden="true">↑</span></a>' : '')
                 + '</span></div>' + rows.map(rowHTML).join('') + '</div>';
             const fragments = {
                 discover: columnHTML('/discover/', 'Discover', '/zh/discover/', [

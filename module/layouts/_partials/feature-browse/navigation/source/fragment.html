@@ -20,7 +20,7 @@
         {{- $next := cond (eq $order "asc") "desc" "asc" -}}
         {{- $label := index $copy.fields $field -}}
         {{- $action := replace (index $copy.actions $next) "{field}" $label -}}
-        <a class="breadcrumb-column-sort" data-breadcrumb-sort-toggle="true" href="{{ $source.href }}" title="{{ $action }}" aria-label="{{ $action }}"><span class="breadcrumb-sort-label">{{ $label }}</span><span class="list-sort-indicator" data-sort-indicator aria-hidden="true">{{ cond (eq $order "asc") "↑" "↓" }}</span></a>
+        <a class="breadcrumb-column-sort" data-breadcrumb-sort-toggle="true" href="{{ $source.href }}" title="{{ $action }}" aria-label="{{ $action }}"><span class="breadcrumb-sort-label">{{ $label }}</span><span class="list-sort-indicator" data-sort-indicator aria-hidden="true">{{ cond (eq $order "asc") "↓" "↑" }}</span></a>
       {{- else -}}
         <bdi>{{ $source.label }}</bdi>
       {{- end -}}
