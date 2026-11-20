@@ -15,7 +15,7 @@ export async function check({page,baseUrl,options={}}) {
   });
   const response = await page.goto(baseUrl+(options.page||'/'),{waitUntil:'load'});
   assert.ok(response?.ok(),'Home page must return a successful response.');
-  await page.locator('.slot-main').waitFor({state:'visible'});
+  await page.getByRole('main').waitFor({state:'visible'});
   const title = (await page.title()).trim();
   assert.ok(title,'Home page title is empty.');
   assert.deepEqual(failedAssets,[],'Home page has failed script or stylesheet responses.');

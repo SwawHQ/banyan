@@ -9,7 +9,9 @@ import {spawn,spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
 import {fixtureEnvironment,fixtureSiteFiles} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
-import {listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {createStaticSiteServer,listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
+import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
+import {check as checkHome} from '../.agents/skills/swaw-banyan/tasks/check/browser/home/check.mjs';
 import {inspect as inspectStyles} from '../.agents/skills/swaw-banyan/tasks/check/html/styles/inspect.mjs';
 import {inspect as inspectSri} from '../.agents/skills/swaw-banyan/tasks/check/sri/inspect.mjs';
 import {inspect as inspectDelivery} from '../.agents/skills/swaw-banyan/tasks/check/delivery/inspect.mjs';
@@ -197,7 +199,11 @@ test('the host homepage controls navigation without an art and independently for
     const html=htmlAt(output,prefix),visible=language!=='en';
     assert.equal(artSource(html),'');
     if(visible) {
-      assert.equal(extractBlocks(html,'main')[0].inner.trim(),'');
+      assert.ok(!html.includes('reading-group'));
+      assert.ok(!extractStartTags(html,'div').some(tag=>extractTagAttribute(tag,'class').split(/\s+/).includes('page-content')));
+      const [main]=extractBlocks(html,'div',tag=>extractTagAttribute(tag,'id')==='main');
+      assert.equal(extractTagAttribute(main.open,'role'),'main');
+      assert.ok(main.inner.includes('data-root-navigation'));
       assert.equal(extractStartTags(html,'nav').filter(tag=>tag.includes('data-root-navigation')).length,1);
       assert.deepEqual(assetsIn(html,'link','href'),[]);
       assert.deepEqual(assetsIn(html,'script','src'),[]);
@@ -206,6 +212,22 @@ test('the host homepage controls navigation without an art and independently for
     assert.equal(extractStartTags(html,'div').filter(tag=>extractTagAttribute(tag,'class').split(/\s+/).includes('page-rail')).length,visible?1:0);
   }
   await checked(output);
+});
+
+test('navigation-only home passes the browser check and the skip link reaches navigation',async()=>{
+  const server=await createStaticSiteServer(passed('navigation-only','')),chromium=loadChromium();
+  let browser;
+  try {
+    await server.start();
+    browser=await chromium.launch({executablePath:chromium.executablePath()});
+    const page=await browser.newPage();
+    await checkHome({page,baseUrl:server.getBaseUrl()});
+    assert.ok(await page.locator('#main [data-root-navigation]').isVisible());
+    assert.equal(await page.locator('.page-content').count(),0);
+    await page.locator('.skip-link').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(()=>document.activeElement.id),'main');
+  } finally {await browser?.close();await server.stop();}
 });
 
 test('Hugo preview rebuilds art params, body, template and assets and clears a removed entry',{timeout:120000},async()=>{

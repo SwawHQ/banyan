@@ -42,7 +42,7 @@ description: 介绍本站提供的内容。
 
 `title` 用作站名；`linkTitle` 可单独设置导航文字。参考首页还设有 `params.browser_title`，它会覆盖浏览器标签标题，应一并修改或删除。各篇文章的 `description` 可覆盖首页提供的默认说明。
 
-首页可见的风场文字在首页艺术包中设置，修改步骤见[首页定制](/zh/p/appearance-customization/#修改步骤)。也可切换到[文字首页](/zh/p/home-minimal/)。
+首页的风场文字在艺术包中设置，步骤见[修改风场](/zh/p/appearance-customization/#修改风场)。也可切换到[文字首页](/zh/p/home-minimal/)。
 
 语言在 `hugo.toml` 的 `[languages]` 中设置：
 

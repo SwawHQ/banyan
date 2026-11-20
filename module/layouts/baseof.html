@@ -8,6 +8,7 @@
 {{- end -}}
 {{- $homeArt := $home.art -}}
 {{- $showHomeNavigation := $home.show_navigation -}}
+{{- $navigationOnly := and .IsHome (eq .Layout "page-home") $showHomeNavigation (eq (strings.TrimSpace .RawContent) "") -}}
 {{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
 {{- $pwaConfig := partialCached "system-delivery/pwa/config.html" (dict "delivery" $delivery) "pwa" ($delivery.sw | jsonify) -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}
@@ -83,7 +84,7 @@
 <body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }} data-language-return-missing="{{ i18n "language_return_missing" }}"{{ if or $navigation.has_breadcrumb_columns $navigation.sortable }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
     <div class="page">
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        <div class="page-shell">
+        <div class="page-shell"{{ if $navigationOnly }} role="main" id="main" tabindex="-1"{{ end }}>
             {{- if $showHomeNavigation -}}
             <div class="page-column page-rail" tabindex="0" role="group" aria-label="{{ partial "system-metadata/site/title.html" .Site }}">
                 {{- partial "feature-browse/navigation/root/render.html" . -}}
@@ -97,6 +98,7 @@
             {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
             <script>{{ $navigationStartupInline | safeJS }}</script>
             {{- end -}}
+            {{- if not $navigationOnly -}}
             <div class="reading-group">
                 <div class="page-column page-content" tabindex="0" role="group" aria-label="{{ .Title }}">
                 <main id="main" class="slot slot-main{{ if $navigation.sortable }} slot-main--collection{{ end }}" data-slot="main" tabindex="-1">
@@ -108,6 +110,7 @@
                 </div>
                 {{- partial "feature-document/aside.html" (partialCached "feature-document/aside-model.html" . .RelPermalink) -}}
             </div>
+            {{- end -}}
         </div>
     </div>
     <div data-canvas-wheel-status role="status">{{ i18n "canvas_wheel_help" }}</div>
