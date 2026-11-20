@@ -5,6 +5,7 @@ description: موقع مرجعي بسيط لقالب Banyan المبني على 
 layout: page-home
 
 params:
+  # لعرض عمود التنقل الرئيسي فقط، أبقِ page-home و show_navigation: true واترك متن الصفحة فارغًا.
   # To use the wall: change layout, enable aggregate and wall, and remove the home-art shortcode.
   # aggregate: /articles #قسم المصدر؛ يشمل المقالات الفرعية والمراجع دون تكرار.
   # Use with layout: page-collection-wall-all; uncomment params.wall to enable the wall.

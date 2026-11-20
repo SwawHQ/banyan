@@ -192,10 +192,16 @@ test('minimal art renders all translations without wind resources or scripts',as
 });
 
 test('the host homepage controls navigation without an art and independently for each language',async()=>{
-  const output=passed('plain-home','Plain home.',site,language=>language==='en'?'  show_navigation: false\n':'');
+  const output=passed('plain-home',language=>language==='en'?'Plain home.':'',site,language=>language==='en'?'  show_navigation: false\n':'');
   for(const [prefix,language] of languages) {
     const html=htmlAt(output,prefix),visible=language!=='en';
-    assert.equal(artSource(html),'');assert.ok(html.includes('Plain home.'));
+    assert.equal(artSource(html),'');
+    if(visible) {
+      assert.equal(extractBlocks(html,'main')[0].inner.trim(),'');
+      assert.equal(extractStartTags(html,'nav').filter(tag=>tag.includes('data-root-navigation')).length,1);
+      assert.deepEqual(assetsIn(html,'link','href'),[]);
+      assert.deepEqual(assetsIn(html,'script','src'),[]);
+    } else assert.ok(html.includes('Plain home.'));
     assert.equal(extractTagAttribute(extractStartTags(html,'body')[0],'data-home-navigation'),String(visible));
     assert.equal(extractStartTags(html,'div').filter(tag=>extractTagAttribute(tag,'class').split(/\s+/).includes('page-rail')).length,visible?1:0);
   }

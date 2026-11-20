@@ -6,6 +6,7 @@ description: Banyan Hugo 主题的最小参考站点。
 layout: page-home
 
 params:
+  # 只显示根导航列：保留 page-home 和 show_navigation: true，将正文留空。
   # 切换图片墙时：修改 layout，启用 aggregate 与 wall，并移除正文 home-art 短代码。
   # aggregate: /articles #来源栏目：包含下级文章及引用，同一篇只显示一次。
   # 配套 layout: page-collection-wall-all 使用；启用图片墙时取消下方 params.wall 的注释。

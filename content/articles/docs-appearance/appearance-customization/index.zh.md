@@ -1,14 +1,18 @@
 ---
 title: 01 怎么修改首页内容？
 date: 2026-11-15
-lastmod: 2026-11-17
+lastmod: 2026-11-20
 url: p/appearance-customization/
-description: 修改风场首页的标语、文字和链接。
+description: 在首页只显示根导航列，或修改风场的标语、文字和链接。
 ---
 
 参考站使用风场首页。文字首页见[切换到文字首页](/zh/p/home-minimal/)，全站颜色见[修改配色](/zh/p/palette/)。
 
-## 修改步骤
+## 只显示根导航列
+
+打开对应语言的 `content/_index*.md`，保留 `layout: page-home` 和 `params.show_navigation: true`，将第二个 `---` 之后的正文留空。要恢复风场，把下方短代码放回正文即可。
+
+## 修改风场
 
 首页 `content/_index*.md` 使用 `layout: page-home`，保存标题、说明、导航图标和权重。`params.show_navigation` 控制第一列导航，默认为 `true`。首页正文引用艺术包：
 
