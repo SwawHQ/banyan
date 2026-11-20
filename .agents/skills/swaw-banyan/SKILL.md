@@ -3,7 +3,7 @@ name: swaw-banyan
 description: 协助安装、定制、开发、测试和部署基于 Swaw Banyan Hugo Theme 的站点，并准备所需的本地工具。
 license: MIT
 metadata:
-  version: "0.1.1"
+  version: "0.1.2"
   module: "github.com/SwawHQ/banyan/module"
 ---
 
