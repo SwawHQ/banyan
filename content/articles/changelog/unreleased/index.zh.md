@@ -6,4 +6,4 @@ date: 2026-11-19
 lastmod: 2026-11-20
 ---
 
-- 首页可只显示根导航列。配置方法见[怎么修改首页内容？](/zh/p/appearance-customization/)。
+暂无待发布的改动。
