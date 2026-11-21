@@ -50,10 +50,3 @@ a {
         display: none;
     }
 }
-
-@media (prefers-reduced-motion: reduce) {
-    body,
-    a {
-        transition-duration: 0.01ms !important;
-    }
-}
