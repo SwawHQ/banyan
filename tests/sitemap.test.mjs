@@ -132,7 +132,8 @@ test('full preview rebuilds remove disabled, unrendered, renamed and deleted pag
   await listenOnLoopback(probe);
   const port=probe.address().port;await new Promise(resolve=>probe.close(resolve));
   const base=`http://127.0.0.1:${port}`, target=path.join(content,'sitemap-local/index.md');
-  const server=spawn(toolExecutable('hugo'),['server',...args(path.join(work,'preview')),
+  const preview=path.join(work,'preview');
+  const server=spawn(toolExecutable('hugo'),['server',...args(preview),'--renderToMemory=false',
     '--bind','127.0.0.1','--port',String(port),'--baseURL',base,'--disableLiveReload','--disableFastRender'],
     {cwd:root,env:referenceSiteEnvironment(work),windowsHide:true,stdio:['ignore','pipe','pipe']});
   let logs='';server.stdout.on('data',chunk=>{logs+=chunk;});server.stderr.on('data',chunk=>{logs+=chunk;});
@@ -141,17 +142,20 @@ test('full preview rebuilds remove disabled, unrendered, renamed and deleted pag
     while(Date.now()<deadline) {
       assert.equal(server.exitCode,null,logs);
       try {
-        const [response,llms]=await Promise.all([`/${language}/sitemap.xml`,`/${language==='en'?'':language+'/'}llms.txt`].map(file=>fetch(base+file,{signal:AbortSignal.timeout(1000),headers:{Connection:'close'}})));
-        if(response.ok&&llms.ok) {
-          const pageURLs=urls(await response.text()),text=await llms.text();
-          const locs=pageURLs.map(url=>new URL(url).pathname);
-          const links=llmsUrls(text).map(url=>new URL(url).pathname);
-          state=JSON.stringify({present,absent,sitemap:locs,llms:links});
-          if(present.every(url=>locs.includes(url)) && absent.every(url=>!locs.includes(url))) {
-            assertLlmsMatchesSitemap(text,pageURLs);
-            return;
-          }
-        } else state=`HTTP sitemap=${response.status}, llms=${llms.status}`;
+        const pageURLs=urls(fs.readFileSync(path.join(preview,language,'sitemap.xml'),'utf8'));
+        const text=fs.readFileSync(path.join(preview,language==='en'?'':language,'llms.txt'),'utf8');
+        const locs=pageURLs.map(url=>new URL(url).pathname);
+        state=JSON.stringify({present,absent,sitemap:locs});
+        if(present.every(url=>locs.includes(url)) && absent.every(url=>!locs.includes(url))) {
+          assertLlmsMatchesSitemap(text,pageURLs);
+          const sitemap=await fetch(base+'/'+language+'/sitemap.xml');
+          assert.equal(sitemap.status,200);
+          const llms=await fetch(base+'/'+(language==='en'?'':language+'/')+'llms.txt');
+          assert.equal(llms.status,200);
+          assert.deepEqual(urls(await sitemap.text()),pageURLs);
+          assert.equal(await llms.text(),text);
+          return;
+        }
       } catch(error) {state=String(error.cause||error);}
       await delay(100);
     }
