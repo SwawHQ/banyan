@@ -1,6 +1,6 @@
 # Browser checks
 
-Read this when selecting browser coverage. Use each task's `--help` for arguments.
+Read this when selecting browser coverage. Use `swban <command>/help` for arguments.
 
 ## Prepare and run
 
@@ -80,7 +80,7 @@ actual site; default example routes may not exist in a customized site.
 ## Explicit SW build pairs
 
 Pass two completed builds; the server switches files and headers at the same origin.
-Use each task's `--help` to select the actual page routes.
+Use `swban <command>/help` to select the actual page routes.
 
 | Task under `check/browser/` | Required pair |
 | --- | --- |

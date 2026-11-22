@@ -11,29 +11,45 @@ plain() {
   done
 }
 command=${1:-help}
-case "$command" in -h|--help) command=help;; esac
+suffix_help=false
+case "$command" in
+  -h|--help) command=help;;
+  ?*/help) if [ "$#" -eq 1 ]; then command=${command%/help}; suffix_help=true; fi;;
+esac
+help_flag=false
+if [ "$#" -eq 2 ]; then
+  case "$2" in -h|--help) help_flag=true; command=${command%/};; esac
+fi
 case "${LC_ALL:-${LC_MESSAGES:-${LANG:-en}}}" in zh|zh_*|zh-*) language=zh;; *) language=en;; esac
 case "$command" in
   help|help/en|help/zh)
     case "$command" in help/en) language=en;; help/zh) language=zh;; esac
+    [ "$help_flag" = false ] || fail "Unknown option: $2. See swban $command/help"
     [ "$#" -eq 0 ] || shift
-    if [ "$#" -eq 1 ]; then case "$1" in -h|--help) set -- "$command";; esac; fi
+    if [ "$suffix_help" = true ]; then set -- "$command"; fi
+    export SWBAN_HELP_COMMAND="$command"
     exec sh "$root/platform/posix/help.sh" "$language" "$root/tasks" "$@";;
 esac
-printf '%s\n' "$command" | awk -F/ '{for(i=1;i<=NF;i++)if($i!~/^[a-z_][a-z0-9_-]*(\.[a-z_][a-z0-9_-]*)*$/)exit 1}' || fail "unknown_command:$command; run swban help"
-if [ ! -f "$root/tasks/$command/entry.mjs" ] || ! plain "$root/tasks/$command/entry.mjs"; then
-  fail "unknown_command:$command; run swban help"
-fi
+unknown_command() {
+  printf '[swban] unknown_command:%s\n' "$command" >&2
+  sh "$root/platform/posix/help.sh" "$language" "$root/tasks"
+  exit 1
+}
+printf '%s\n' "$command" | awk -F/ '{for(i=1;i<=NF;i++)if($i!~/^[a-z_][a-z0-9_-]*(\.[a-z_][a-z0-9_-]*)*$/)exit 1}' || unknown_command
 native=false
 case "$command" in base/bun|base/node|base/hugo|base/go|base/git|base/gh|base/pagefind|base/node/npm|base/node/npx) native=true;; esac
-if [ "$native" = false ] && [ "$#" -eq 2 ]; then
-  case "$2" in -h|--help) exec sh "$root/platform/posix/help.sh" "$language" "$root/tasks" "$command";; esac
+entry=$root/tasks/$command/entry.mjs
+plain "$entry" || unknown_command
+if [ ! -f "$entry" ]; then
+  { [ "$suffix_help" = true ] || [ "$help_flag" = true ]; } && [ -f "$root/tasks/$command/help.$language.txt" ] || unknown_command
 fi
+if [ "$help_flag" = true ] && [ "$native" = false ]; then fail "Unknown option: $2. See swban $command/help"; fi
+if [ "$suffix_help" = true ]; then exec sh "$root/platform/posix/help.sh" "$language" "$root/tasks" "$command"; fi
 force=false
 case "$command" in
   base/bun/ensure|base/node/ensure|base/hugo/ensure|base/go/ensure|base/git/ensure|base/gh/ensure|base/pagefind/ensure)
-    [ "$#" -le 2 ] || fail invalid_ensure_arguments
-    if [ "$#" -eq 2 ]; then [ "$2" = --force ] || fail invalid_ensure_arguments; force=true; fi;;
+    [ "$#" -le 2 ] || fail "invalid_ensure_arguments. See swban $command/help"
+    if [ "$#" -eq 2 ]; then [ "$2" = --force ] || fail "invalid_ensure_arguments. See swban $command/help"; force=true; fi;;
 esac
 # Each platform module sets architecture and supplies the checksum/version functions.
 architecture=

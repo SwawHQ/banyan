@@ -1,5 +1,10 @@
-swban server/pagefind.off [Hugo 参数...]    #启动开发服，跳过搜索索引
+swban server/pagefind.off [Hugo 参数...]  #启动开发服，跳过搜索索引
 
-与 dev 相同，但不建立搜索索引；已有索引保持原样。
+hugo server --buildDrafts --disableFastRender --noHTTPCache --port 5678 --bind 127.0.0.1 --renderToMemory=false --cleanDestinationDir=false
+预览包含草稿，实时刷新。产物保存在 Hugo 的 publishDir（默认 public/）。附加参数传给 Hugo。
+跳过 Pagefind，保留已有索引。
 
-swban server/pagefind.off --bind 0.0.0.0  #允许 IPv4 局域网访问
+swban server/pagefind.off -p 8080         #改用 8080 端口
+swban server/pagefind.off -D=false        #排除草稿
+swban server/pagefind.off --bind 0.0.0.0  #监听所有 IPv4 地址
+swban base/hugo server --help             #查看 Hugo 开发服参数

@@ -1,5 +1,6 @@
 ---
 title: My
+draft: true
 url: my/ #Keep this route when renaming the content directory.
 layout: page-my #Render the Markdown body with back-button behavior.
 weight: 20

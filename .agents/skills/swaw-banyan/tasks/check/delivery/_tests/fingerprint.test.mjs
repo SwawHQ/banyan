@@ -142,7 +142,7 @@ test('file URL encoding preserves reserved path characters and escapes percent a
 test('delivery CLI accepts a base path and rejects malformed or repeated arguments',()=>fixture(async({root,write})=>{
   const entry=fileURLToPath(new URL('../entry.mjs',import.meta.url));
   const cli=args=>spawnSync(process.execPath,[entry,...args],{cwd:root,encoding:'utf8',timeout:10000});
-  const help=cli(['--help']);assert.equal(help.status,0);assert.match(help.stdout,/--base-path/);
+  const help=cli(['--help']);assert.equal(help.status,1);assert.match(help.stderr,/check\/delivery\/help/);
   await write('sw-policy.json',JSON.stringify([{path:'/base/assets/*',bucket:'fingerprinted'}]));
   await write('assets/'+image);
   for(const args of [[root,'--base-path','/base/'],['--base-path=/base/',root]]) {

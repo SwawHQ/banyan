@@ -1,5 +1,10 @@
-swban server/pagefind.off [Hugo arguments...]  #Start development without search indexing
+swban server/pagefind.off [Hugo arguments...]  #Preview the site without indexing search
 
-Same as dev, but skips indexing. Existing indexes remain unchanged.
+hugo server --buildDrafts --disableFastRender --noHTTPCache --port 5678 --bind 127.0.0.1 --renderToMemory=false --cleanDestinationDir=false
+Preview includes drafts and live reload. Output stays in Hugo’s publishDir (default public/). Additional arguments go to Hugo.
+Pagefind is skipped. Existing indexes are kept.
 
-swban server/pagefind.off --bind 0.0.0.0       #Allow IPv4 LAN access
+swban server/pagefind.off -p 8080         #Use port 8080
+swban server/pagefind.off -D=false        #Exclude drafts
+swban server/pagefind.off --bind 0.0.0.0  #Listen on all IPv4 addresses
+swban base/hugo server --help             #Show Hugo server options

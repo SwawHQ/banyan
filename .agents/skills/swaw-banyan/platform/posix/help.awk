@@ -1,4 +1,9 @@
-function fail(message) { print "[swban] " message > "/dev/stderr"; failed=1; exit 1 }
+function fail(message) {
+  print "[swban] " message > "/dev/stderr"
+  if (message ~ /^(invalid_help_arguments|invalid_help_depth|unknown_help:)/ && ENVIRON["SWBAN_HELP_COMMAND"]!="")
+    print "See swban " ENVIRON["SWBAN_HELP_COMMAND"] "/help" > "/dev/stderr"
+  failed=1; exit 1
+}
 function valid(command, parts,n,i) {
   n=split(command,parts,"/")
   for(i=1;i<=n;i++)if(parts[i]!~/^[a-z_][a-z0-9_-]*(\.[a-z_][a-z0-9_-]*)*$/)return 0
@@ -77,7 +82,7 @@ BEGIN {
 END {
   if(failed)exit 1
   scoped=argc==2
-  if(!scoped&&(argc==0||query=="--help"||query=="-h"))query="help"
+  if(!scoped&&argc==0)query="help"
   if(!scoped&&query!~/^[0-9]+$/){
     sub(/\/$/,"",query)
     output=document(query)

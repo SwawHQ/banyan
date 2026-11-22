@@ -1,3 +1,4 @@
+import {usageError} from '../usage.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {definition, toolsRoot} from './manifest.mjs';
@@ -99,7 +100,7 @@ async function prepared(name, record, root, env, {force = false, archivePath, re
   return {binding:bindingFor(name,found,'managed',root),action};
 }
 export async function prepareTool(name, args, {root = toolsRoot, env = process.env, archivePath, receive} = {}) {
-  if (args.length > 1 || (args.length === 1 && args[0] !== '--force')) fail('invalid_ensure_arguments');
+  if (args.length > 1 || (args.length === 1 && args[0] !== '--force')) throw usageError('invalid_ensure_arguments');
   const unlock = installLock(root);
   try {
     const record = readBindings(root), result = await prepared(name,record,root,env,{force:args.length === 1,archivePath,receive});
@@ -113,7 +114,7 @@ export async function prepareTools(names, options = {}) {
   for (const name of names) if (!record.tools[name]) await prepareTool(name,[],options);
 }
 export async function prepareRuntime(args = [], {root = toolsRoot, env = process.env, archivePath, receive} = {}) {
-  if (args.length > 1 || (args.length === 1 && args[0] !== '--force')) fail('invalid_ensure_arguments');
+  if (args.length > 1 || (args.length === 1 && args[0] !== '--force')) throw usageError('invalid_ensure_arguments');
   const unlock = installLock(root);
   try {
     const record = readBindings(root);

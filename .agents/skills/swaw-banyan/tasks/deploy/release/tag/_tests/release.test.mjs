@@ -56,7 +56,7 @@ test('check and invalid input leave files, history and tags unchanged',()=>{
   assert.equal(git(['rev-parse','HEAD']),head);assert.deepEqual(remoteTags(),[]);assert.equal(git(['status','--porcelain']),'');
   write('untracked','pending');assert.throws(()=>run(),/clean working tree/);
   const help=spawnSync(process.execPath,[entry,'--help'],{cwd:root,encoding:'utf8'});
-  assert.equal(help.status,0);assert.match(help.stdout,/deploy\/release\/tag/);
+  assert.equal(help.status,1);assert.match(help.stderr,/deploy\/release\/tag\/help/);
 });
 test('publishes the branch with each immutable tag and builds using the downloaded Module',()=>{
   git(['config','remote.origin.mirror','true']);git(['config','push.recurseSubmodules','only']);

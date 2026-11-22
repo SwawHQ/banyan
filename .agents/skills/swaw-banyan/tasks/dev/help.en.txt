@@ -1,1 +1,15 @@
-swban dev [Hugo arguments...]  #Start the server and index search with the local Module
+swban dev [Hugo arguments...]  #Preview and index search with the local Module
+
+The local Module uses HUGO_MODULE_WORKSPACE=hugo.work and HUGO_IGNOREVENDORPATHS=github.com/SwawHQ/banyan/module.
+
+hugo server --buildDrafts --disableFastRender --noHTTPCache --port 5678 --bind 127.0.0.1 --renderToMemory=false --cleanDestinationDir=false
+Preview includes drafts and live reload. Output stays in Hugo’s publishDir (default public/). Additional arguments go to Hugo.
+
+Pagefind reads a temporary pagefind.json. site is the Hugo output directory and output_subdir is pagefind.
+The search page’s index.source sets glob (files to index). Its index.selector sets root_selector (content within each file).
+Indexing runs once at startup. Restart to index content changes.
+
+swban dev -p 8080              #Use port 8080
+swban dev -D=false             #Exclude drafts
+swban dev -N                   #Navigate to the changed page
+swban base/hugo server --help  #Show Hugo server options

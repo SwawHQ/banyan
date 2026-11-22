@@ -1,5 +1,6 @@
 ---
 title: مساحتي
+draft: true
 url: my/
 layout: page-my
 weight: 20

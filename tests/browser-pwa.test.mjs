@@ -62,7 +62,9 @@ before(()=>{
     '[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+fixtureSiteMounts;
   const build=(configuration,destination,mode='enable')=>{
     const assets=path.join(work,'delivery-assets');
-    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(mode)));
+    // Cache the fixture page, but leave its child paths outside the worker.
+    const routes=`\n[[routes]]\npath = "${from}*"\nsw.bucket = "off"\n[[routes]]\npath = "${from}"\nsw.bucket = "versioned"\n`;
+    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(mode))+routes);
     write(config,configuration+'\n[[module.mounts]]\nsource = '+
       JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n');
     const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],{cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',timeout:60000});

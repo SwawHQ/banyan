@@ -168,6 +168,8 @@ test('the reference site owns its columns and links to its local documentation',
       assert.ok(roots.includes(pathname),'Direct child pages appear without an opt-in field: '+pathname);
     }
     assert.ok(roots.includes('/'+prefix),'The homepage remains a root entry.');
+    assert.ok(!roots.includes('/'+prefix+'my/'));
+    assert.equal(fs.existsSync(path.join(output,prefix,'my/index.html')),false);
     for(const pathname of roots)assert.ok(!pathname.includes('/_res/'),'Resource pages stay out of root navigation.');
     assert.equal(fs.existsSync(path.join(output,prefix,'_res/index.html')),false,'The resource branch has no landing page.');
     assert.equal(fs.existsSync(path.join(output,prefix,'offline/index.html')),false,'The old offline URL has no output.');

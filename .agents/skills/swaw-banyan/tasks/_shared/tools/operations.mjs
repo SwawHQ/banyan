@@ -1,5 +1,5 @@
+import {usageError} from '../usage.mjs';
 import path from 'node:path';
-import { fail } from './filesystem.mjs';
 import { resolveBinding } from './bindings.mjs';
 import { prepareTool, prepareTools, inspectBinding } from './selection.mjs';
 import { execute, withPath } from './process.mjs';
@@ -15,6 +15,6 @@ export async function ensureTool(name, args) {
   console.log(JSON.stringify(await prepareTool(name,args)));
 }
 export async function checkTool(name, args) {
-  if (args.length) fail('check_is_read_only; no additional arguments accepted');
+  if (args.length) throw usageError('check_is_read_only; no additional arguments accepted');
   console.log(JSON.stringify(await inspectBinding(name)));
 }

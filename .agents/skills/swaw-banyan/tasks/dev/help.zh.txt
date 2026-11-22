@@ -1,1 +1,15 @@
 swban dev [Hugo 参数...]  #用本地 Module 启动开发服并建立搜索索引
+
+本地 Module 使用 HUGO_MODULE_WORKSPACE=hugo.work 和 HUGO_IGNOREVENDORPATHS=github.com/SwawHQ/banyan/module。
+
+hugo server --buildDrafts --disableFastRender --noHTTPCache --port 5678 --bind 127.0.0.1 --renderToMemory=false --cleanDestinationDir=false
+预览包含草稿，实时刷新。产物保存在 Hugo 的 publishDir（默认 public/）。附加参数传给 Hugo。
+
+Pagefind 读取临时 pagefind.json。site 为 Hugo 输出目录，output_subdir 为 pagefind。
+搜索页的 index.source 决定 glob（索引文件），index.selector 决定 root_selector（页内索引范围）。
+启动时建立一次索引。修改内容后，重启命令更新索引。
+
+swban dev -p 8080              #改用 8080 端口
+swban dev -D=false             #排除草稿
+swban dev -N                   #编辑后跳转到对应页面
+swban base/hugo server --help  #查看 Hugo 开发服参数

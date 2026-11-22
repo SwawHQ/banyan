@@ -1,14 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import {parseArguments,helpFor} from '../../../_shared/arguments.mjs';
+import {parseArguments} from '../../../_shared/arguments.mjs';
 import {printCheck} from '../../../_shared/cli.mjs';
 import {createStaticSiteServer} from './server.mjs';
 import {assertReportOutsideBuilds} from './artifacts.mjs';
 
 export async function runBrowserCheck(spec,check,loadBrowser,args=process.argv.slice(2),launchOptions={},contextOptions={}) {
   const options = parseArguments(spec,args);
-  if (options === null) { console.log(helpFor(spec)); return; }
   const root = path.resolve(options.dir);
   if (!(await fs.stat(path.join(root,'index.html'))).isFile()) throw new Error('Build directory must contain index.html.');
   const browserType = loadBrowser();

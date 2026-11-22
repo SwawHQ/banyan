@@ -1,4 +1,10 @@
 swban build [--destination <目录>] [--baseURL <URL>]  #构建站点和搜索索引
 
-swban build                         #构建到 public
-swban build --destination ./preview #构建到 preview
+hugo --minify --noBuildLock --cleanDestinationDir --destination <输出目录>
+输出目录默认为 public/。指定 --baseURL 时将其传给 Hugo，否则使用站点配置。
+
+Pagefind 读取临时 pagefind.json。site 为 Hugo 输出目录，output_subdir 为 pagefind。
+搜索页的 index.source 决定 glob（索引文件），index.selector 决定 root_selector（页内索引范围）。
+
+swban build --destination ./preview         #构建到 preview
+swban build --baseURL https://example.org/  #指定站点地址

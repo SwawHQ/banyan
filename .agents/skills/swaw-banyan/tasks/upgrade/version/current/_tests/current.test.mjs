@@ -245,7 +245,7 @@ test('CLI emits usable JSON, help works without a site, and upgrade is discovera
   assert.match(help(['upgrade','3'],'zh'),/upgrade\/version\/current/);
   for (const args of [['--help'],['-h']]) {
     const result=run(process.execPath,[entry,...args],work,{...process.env,PATH:''});
-    assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/swban upgrade\/version\/current/);
+    assert.equal(result.status,1);assert.match(result.stderr,/swban upgrade\/version\/current\/help/);
   }
   for (const args of [['--bad'],['one','two'],['']]) assert.equal(run(process.execPath,[entry,...args],work,process.env).status,1);
 });

@@ -1,9 +1,10 @@
 swban help [depth|path [depth]]  #常用命令与帮助
 
 swban help                  #列出常用命令和说明
-swban help check/csp        #(示例)查看具体命令说明
-swban help 1                #列出所有一级命令（含/结尾的是分类，否则为可执行，下同）
-swban help 2                #列出所有一至二级命令和分类,数字可以大于2
+swban server/help           #查看开发服参数和默认值
+swban base/hugo/help        #查看工具入口说明，swban base/hugo --help 查看 Hugo 原生帮助
+swban help 1                #列出一级命令和分类（分类以 / 结尾）
+swban help 2                #列出前两级命令和分类
 swban help check 2          #列出 check 下两层命令和分类
 swban help check/browser 3  #列出 check/browser 下三层命令和分类
 
@@ -17,25 +18,25 @@ swban build                          #构建站点和搜索索引
 swban build --destination ./preview  #构建到指定目录
 
 工具：
-swban base/hugo/ensure     #准备 Hugo
-swban base/pagefind/ensure        #准备 Pagefind extended
-swban base/go/ensure       #准备 Go
-swban base/git/ensure      #准备 Git
-swban base/gh/ensure       #准备 gh (GitHub CLI)
-swban base/node/ensure     #准备 Node/npm
-swban base/bun/ensure      #准备可选 Bun
-swban base/browser/ensure  #准备 Playwright/Chromium
+swban base/hugo/ensure       #准备 Hugo
+swban base/pagefind/ensure   #准备 Pagefind extended
+swban base/go/ensure         #准备 Go
+swban base/git/ensure        #准备 Git
+swban base/gh/ensure         #准备 gh (GitHub CLI)
+swban base/node/ensure       #准备 Node/npm
+swban base/bun/ensure        #准备可选 Bun
+swban base/browser/ensure    #准备 Playwright/Chromium
 swban base/<tool> [参数...]  #运行 bun/node/git/gh/go/hugo
 
 云工具：https://github.com/SwawHQ/swaw-clouds
 
 检测：
-swban doctor [目录]            #检查工具和站点主题
-swban check/delivery [dir]     #检查 assets/site/delivery.toml 及其渲染产物
-swban check/csp [dir]          #检查 CSP 与内联哈希
-swban check/browser/site [dir] #执行浏览器检查
-swban report/size/html [dir]   #统计页面与首次加载体积
-swban sync/ext [id...]         #同步已声明的外部资源
+swban doctor [目录]             #检查工具和站点主题
+swban check/delivery [dir]      #检查 assets/site/delivery.toml 及其渲染产物
+swban check/csp [dir]           #检查 CSP 与内联哈希
+swban check/browser/site [dir]  #执行浏览器检查
+swban report/size/html [dir]    #统计页面与首次加载体积
+swban sync/ext [id...]          #同步已声明的外部资源
 
 主题升级，先检查官方仓库以下四项的变动：
 swban help upgrade/git  #具体升级时，务必执行此命令查看详细帮助
@@ -45,8 +46,8 @@ assets/                 #3 站点资源与界面字典
 archetypes/             #4 内容模板
 
 主题开发者：
-swban deploy/release/tag <版本号> [--check]              #发布 Module，构建参考站并发布项目标签
-swban deploy/release/tag/module <版本号> [--check]       #发布 Module 标签
-swban deploy/release/tag/project <版本号> [--check]      #验证正式 Module 并发布整仓标签
+swban deploy/release/tag <版本号> [--check]                    #发布 Module，构建参考站并发布项目标签
+swban deploy/release/tag/module <版本号> [--check]             #发布 Module 标签
+swban deploy/release/tag/project <版本号> [--check]            #验证正式 Module 并发布整仓标签
 swban base/gh auth login --web                                 #登录 GitHub
 swban base/gh release create <tag> --verify-tag --notes <URL>  #链接版本记录

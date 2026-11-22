@@ -3,7 +3,24 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {build,buildArguments} from '../run.mjs';
+
+test('build argument errors name the invoked command, including dev/build',()=>{
+  for(const command of ['build','dev/build']) {
+    const entry=fileURLToPath(new URL('../../'+command+'/entry.mjs',import.meta.url));
+    for(const [args,message] of [
+      [['--typo'],'Unknown or repeated option: --typo'],
+      [['--destination','content'],'Build destination must not contain site source.']
+    ]) {
+      const result=spawnSync(process.execPath,[entry,...args],{encoding:'utf8'});
+      assert.equal(result.status,1);
+      assert.ok(result.stderr.includes(message),result.stderr);
+      assert.ok(result.stderr.includes('swban '+command+'/help'),result.stderr);
+    }
+  }
+});
 
 test('build passes one destination to Hugo and Pagefind, and stops on failure',async()=>{
   const calls=[];

@@ -1,4 +1,10 @@
 swban build [--destination <directory>] [--baseURL <URL>]  #Build the site and search index
 
-swban build                         #Build into public
-swban build --destination ./preview #Build into preview
+hugo --minify --noBuildLock --cleanDestinationDir --destination <output directory>
+The output directory defaults to public/. Hugo uses the site base URL unless you pass --baseURL.
+
+Pagefind reads a temporary pagefind.json. site is the Hugo output directory and output_subdir is pagefind.
+The search page’s index.source sets glob (files to index). Its index.selector sets root_selector (content within each file).
+
+swban build --destination ./preview         #Build into preview
+swban build --baseURL https://example.org/  #Set the site URL

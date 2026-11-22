@@ -80,7 +80,7 @@ swban report/size/assets <build>        #报告资源体积
 产物任务默认读取 `public/`，第一个参数可指定其他目录。
 安装或调整主题、工具后，运行 `swban doctor`；普通任务不检查版本配对。
 内容字段和响应式图片检查读取 Hugo 解析后的配置。
-用 `swban help` 查找任务，用 `swban <command> --help` 查看参数。
+用 `swban help` 查找任务，用 `swban <command>/help` 查看参数。
 
 浏览器检查需要先运行 `swban base/browser/ensure`，见[浏览器检查](/zh/p/browser-regression/)。
 源码测试和故障 fixture 留在 Banyan 仓库，见

@@ -1,7 +1,8 @@
+import {usageError} from '../../../_shared/usage.mjs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {parseArguments,helpFor} from '../../../_shared/arguments.mjs';
+import {parseArguments} from '../../../_shared/arguments.mjs';
 import {assertReportOutsideBuilds} from '../_shared/artifacts.mjs';
 import {loadChromium} from '../../../_shared/browser/runtime.mjs';
 import {runScenarioSuite} from '../_shared/suite.mjs';
@@ -13,11 +14,10 @@ import {command} from './options.mjs';
 
 export async function run(args=process.argv.slice(2)) {
   const spec=command(),options=parseArguments(spec,args);
-  if(options===null){console.log(helpFor(spec));return;}
   const site=await discoverSite(options.dir);
   if(options.updates&&(!site.offline||!site.panel||!site.from))
     throw new Error('--updates requires an SW-enabled build and a versioned update panel with reciprocal root links.');
-  if(!options.updates&&options.site!=='.')throw new Error('--site is only used with --updates.');
+  if(!options.updates&&options.site!=='.')throw usageError('--site is only used with --updates.');
   const browserType=loadChromium(),parent=path.resolve(options.out||os.tmpdir());
   await assertReportOutsideBuilds(parent,[site.root]);
   await fs.mkdir(parent,{recursive:true});

@@ -1,3 +1,4 @@
+import {usageError} from '../_shared/usage.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -8,12 +9,12 @@ export const systemLanguage=()=>/^zh(?:-|$)/i.test(Intl.DateTimeFormat().resolve
 const hasEntry=dir=>fs.statSync(path.join(dir,'entry.mjs'),{throwIfNoEntry:false})?.isFile()??false;
 
 function directory(command,root) {
-  if (!command.split('/').every(part=>segment.test(part))) throw new Error('unknown_help:'+command);
+  if (!command.split('/').every(part=>segment.test(part))) throw usageError('unknown_help:'+command);
   let current=fs.realpathSync(root);
   for (const part of command.split('/')) {
     current=path.join(current,part);
     const stat=fs.lstatSync(current,{throwIfNoEntry:false});
-    if (!stat?.isDirectory()||stat.isSymbolicLink()) throw new Error('unknown_help:'+command);
+    if (!stat?.isDirectory()||stat.isSymbolicLink()) throw usageError('unknown_help:'+command);
   }
   return current;
 }
@@ -69,19 +70,19 @@ export function taskHelp(command,language=systemLanguage(),root=tasksRoot) {
 
 export function help(args=[],language=systemLanguage(),root=tasksRoot) {
   if (!['en','zh'].includes(language)) throw new Error('unsupported_help_language:'+language);
-  if (args.length>2) throw new Error('invalid_help_arguments');
+  if (args.length>2) throw usageError('invalid_help_arguments');
   let [query,levels]=args;
   const scoped=levels!==undefined;
-  if (!scoped&&(query===undefined||['--help','-h'].includes(query))) return taskHelp('help',language,root);
+  if (!scoped&&query===undefined) return taskHelp('help',language,root);
   if (!scoped&&!/^\d+$/.test(query)) return taskHelp(query,language,root);
-  if (scoped&&(/^\d+$/.test(query)||['--help','-h'].includes(query))) throw new Error('invalid_help_arguments');
+  if (scoped&&(/^\d+$/.test(query)||['--help','-h'].includes(query))) throw usageError('invalid_help_arguments');
   const value=scoped?levels:query;
-  if (!/^\d+$/.test(value)) throw new Error('invalid_help_depth');
+  if (!/^\d+$/.test(value)) throw usageError('invalid_help_depth');
   const depth=Number(value);
-  if (!Number.isSafeInteger(depth)||depth<1) throw new Error('invalid_help_depth');
+  if (!Number.isSafeInteger(depth)||depth<1) throw usageError('invalid_help_depth');
   if (scoped) { query=query.replace(/\/$/,''); readDocument(query,root,language); }
   const items=catalog(root,language);
-  if (scoped&&!items.some(item=>item.path===query)) throw new Error('unknown_help:'+query);
+  if (scoped&&!items.some(item=>item.path===query)) throw usageError('unknown_help:'+query);
   const offset=scoped?query.split('/').length:0;
   return rows(items.filter(item=>(!scoped||item.path.startsWith(query+'/'))&&item.path.split('/').length-offset<=depth),language);
 }

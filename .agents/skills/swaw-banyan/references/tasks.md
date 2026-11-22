@@ -81,7 +81,8 @@ Detailed Agent guidance belongs in `references/`.
 
 JS, Windows cold help and POSIX cold help read these same files without importing
 task entries. Update the files with argument or default changes. Keep all readers
-in parity through the help tests. Native tools retain their own help flags.
+in parity through the help tests. Use `swban <command>/help` for task help.
+Argument errors point to the invoked task's help. Native tools receive their own help arguments.
 
 After changing a Linux or macOS Node definition, run
 `node platform/posix/bootstrap-data.mjs linux x64`,

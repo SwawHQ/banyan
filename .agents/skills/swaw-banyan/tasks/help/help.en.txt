@@ -1,7 +1,8 @@
 swban help [depth|path [depth]]  #Common commands and help
 
 swban help                  #List common commands and descriptions
-swban help check/csp        #(Example) Show full help for a command
+swban server/help           #Show server options and defaults
+swban base/hugo/help        #Show wrapper help. Use swban base/hugo --help for Hugo's own help
 swban help 1                #List top-level commands (/ marks categories; other paths are executable)
 swban help 2                #List commands and categories through level 2; higher numbers are supported
 swban help check 2          #List commands and categories two levels below check
@@ -45,8 +46,8 @@ assets/                 #3 Site resources and interface dictionaries
 archetypes/             #4 Content templates
 
 Theme developers:
-swban deploy/release/tag <version> [--check]          #Publish the Module, build the site and tag the project
-swban deploy/release/tag/module <version> [--check]   #Publish the Module tag
-swban deploy/release/tag/project <version> [--check]  #Verify the Module and publish the project tag
+swban deploy/release/tag <version> [--check]                   #Publish the Module, build the site and tag the project
+swban deploy/release/tag/module <version> [--check]            #Publish the Module tag
+swban deploy/release/tag/project <version> [--check]           #Verify the Module and publish the project tag
 swban base/gh auth login --web                                 #Sign in to GitHub
 swban base/gh release create <tag> --verify-tag --notes <URL>  #Link release notes

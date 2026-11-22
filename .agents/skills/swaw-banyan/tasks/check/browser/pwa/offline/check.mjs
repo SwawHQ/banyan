@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
 import {afterPaint,waitForBrowse} from '../../_shared/viewport.mjs';
 import {waitForState} from '../_shared/state.mjs';
 import {pageResources,missingResources} from '../_shared/resources.mjs';
@@ -93,7 +94,9 @@ export async function check({page,baseUrl,options}) {
     assert.deepEqual(after.cachedWorkers,[],'Offline reload must not cache the worker script.');
     assert.deepEqual(after.cachedVersions,[],'Offline reload must not cache the content version JSON.');
     assert.deepEqual(errors,[],'The first visit and offline reload must not raise uncaught errors.');
-    const uncached=await page.goto(new URL('__banyan_offline_probe__/',expected).href);
+    const probe=new URL(expected);
+    probe.searchParams.set('__banyan_offline_probe__',randomUUID());
+    const uncached=await page.goto(probe.href);
     assert.equal(uncached.status(),503,'An uncached offline navigation must return 503.');
     assert.ok(uncached.fromServiceWorker());
     assert.equal(await page.title(),'No internet');

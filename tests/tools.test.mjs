@@ -147,7 +147,7 @@ test('localized help matches the command catalog without preparing tools', () =>
   }
   expect(stat(path.join(fresh,'.tools'))).toBeNull();
 });
-test.each(['check/csp --help','doctor --help','base/browser/ensure --help','base/browser/ensure.webkit --help','base/hugo/ensure --help','base/bun/ensure --help'])('%s prints help without a JS runtime',command=>{
+test.each(['check/csp/help','doctor/help','base/browser/ensure/help','base/browser/ensure.webkit/help','base/hugo/ensure/help','base/bun/ensure/help'])('%s prints help without a JS runtime',command=>{
   expect(cli(fresh,command,{env:{...process.env,PATH:''}}).status).toBe(0);
   expect(stat(path.join(fresh,'.tools'))).toBeNull();
 });
@@ -175,9 +175,9 @@ test('installed JS entry supports help, relocation and read-only checks', () => 
   expect(JSON.parse(checked.stdout).path).toBe(path.join(portable,'.tools/bun/bun.exe'));
   expect(JSON.parse(cli(portable,'base/bun/ensure').stdout).action).toBe('reused');
   for (const command of ['base/bun/check --force','base/go/ensure --force --force','base/gh/ensure --force --force','invalid.ensure','help zh extra']) expect(cli(portable,command).status).not.toBe(0);
-  expect(cli(portable,'build --help').stdout).toContain('swban build');
-  expect(cli(portable,'build --help').status).toBe(0);
-  for (const command of ['dev','dev/build','server','server/lan','server/pagefind.off']) expect(cli(portable,command+' --help').stdout).toContain('swban '+command);
+  expect(cli(portable,'build/help').stdout).toContain('swban build');
+  expect(cli(portable,'build/help').status).toBe(0);
+  for (const command of ['dev','dev/build','server','server/lan','server/pagefind.off']) expect(cli(portable,command+'/help').stdout).toContain('swban '+command);
   for (const command of ['base/ensure','release','release.check','ensure','bun','node','npm','npx','git','gh','go','hugo',...['bun','node','git','gh','go','hugo'].flatMap(name=>[name+'.check',name+'.ensure'])]) {
     const result = cli(portable, command);
     expect(result.status).toBe(1); expect(result.stderr).toContain(`unknown_command:${command}`);
@@ -197,6 +197,8 @@ test('public execution preserves empty/quoted arguments, Unicode, streams, cwd a
   for (const name of ['npm','npx']) fs.writeFileSync(path.join(npm,`${name}-cli.js`),'fixture');
   const env = {...process.env,PATH:node};
   expect(cli(portable,'base/node/ensure',{env}).status).toBe(0);
+  // The native fixture returns 90 for each of these arguments.
+  for(const arg of ['-h','--help','help']) expect(cli(portable,'base/node '+arg,{env}).status).toBe(90);
   const values = ['value with spaces','','trailing\\','unicode-树','literal ! & | < > ^','quote"value'];
   const input = 'stdin line one\nstdin line two';
   const result = cli(portable,['base/node','--probe',...values].map(quote).join(' '),{cwd:site,input});

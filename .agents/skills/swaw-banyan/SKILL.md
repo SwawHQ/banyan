@@ -23,7 +23,7 @@ swban doctor [目录]       #检查工具和站点主题
 swban help                #查看常用命令
 swban help/zh 1           #查看一级分类
 swban help/zh check 2     #查看 check 下两层命令
-swban <command> --help    #查看参数和默认值
+swban <command>/help      #查看入口说明，包括原生工具入口
 ```
 
 ## 站点与 Module 的边界
@@ -64,7 +64,7 @@ swban <command> --help    #查看参数和默认值
 - 浏览器检查从 `check/browser/site <build>` 开始，准备方式和测试页面要求见浏览器检查文档。默认使用 Chromium；涉及内核差异时，选择已有的 `.webkit` 检查。
 - 站点特有的文案、账号、路由和业务预期留在站点测试中。
 
-参数见各任务的 `--help`。报告失败项和跳过的检查范围。
+参数见各任务的 `<command>/help`。报告失败项和跳过的检查范围。
 
 ## 云端部署
 

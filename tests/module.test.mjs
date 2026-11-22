@@ -226,8 +226,8 @@ test('missing or disabled imports do not pass based on go.mod alone',() => {
 test('help works without a site; bad arguments and resolution errors fail',() => {
   for (const flag of ['--help','-h']) {
     const result = cli(work,[flag]);
-    assert.equal(result.status,0,result.stderr);
-    assert.match(result.stdout,/swban doctor/);
+    assert.equal(result.status,1);
+    assert.match(result.stderr,/swban doctor\/help/);
   }
   assert.equal(cli(work,['--unknown']).status,1);
   assert.equal(cli(work,['one','two']).status,1);

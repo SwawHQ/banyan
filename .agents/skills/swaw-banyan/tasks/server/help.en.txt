@@ -1,12 +1,15 @@
-swban server [Hugo arguments...]  #Start development and index search
+swban server [Hugo arguments...]  #Preview the site and index search
 
-Defaults: drafts, localhost port 5678, full rebuilds, live reload, no HTTP cache.
-Search is indexed once at startup. Restart to index content changes.
-Output follows Hugo publishDir (default: public/) and remains after exit.
+hugo server --buildDrafts --disableFastRender --noHTTPCache --port 5678 --bind 127.0.0.1 --renderToMemory=false --cleanDestinationDir=false
+Preview includes drafts and live reload. Output stays in Hugo’s publishDir (default public/). Additional arguments go to Hugo.
 
-swban server -p 8080              #Use port 8080
-swban server -D=false             #Exclude drafts
-swban server -N                   #Navigate to the changed page
-swban server/lan                  #Allow LAN access
-swban server/pagefind.off         #Skip search indexing
-swban base/hugo server --help  #Show Hugo server arguments
+Pagefind reads a temporary pagefind.json. site is the Hugo output directory and output_subdir is pagefind.
+The search page’s index.source sets glob (files to index). Its index.selector sets root_selector (content within each file).
+Indexing runs once at startup. Restart to index content changes.
+
+swban server -p 8080           #Use port 8080
+swban server -D=false          #Exclude drafts
+swban server -N                #Navigate to the changed page
+swban server/lan               #Allow LAN access
+swban server/pagefind.off      #Skip search indexing
+swban base/hugo server --help  #Show Hugo server options

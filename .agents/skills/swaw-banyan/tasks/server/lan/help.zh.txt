@@ -1,7 +1,14 @@
-swban server/lan [Hugo 参数...]    #启动供局域网访问的开发服
+swban server/lan [Hugo 参数...]  #启动供局域网访问的开发服
 
-与 dev 相同，默认监听 IPv6 通配地址 ::；系统支持时同时接收 IPv4。
-手机与电脑连接同一局域网，用电脑的局域网地址和端口访问。
+hugo server --buildDrafts --disableFastRender --noHTTPCache --port 5678 --bind :: --renderToMemory=false --cleanDestinationDir=false
+预览包含草稿，实时刷新。产物保存在 Hugo 的 publishDir（默认 public/）。附加参数传给 Hugo。
+同一局域网中的设备可通过电脑的局域网地址和端口访问。
 
-swban server/lan --bind 0.0.0.0  #仅监听 IPv4
+Pagefind 读取临时 pagefind.json。site 为 Hugo 输出目录，output_subdir 为 pagefind。
+搜索页的 index.source 决定 glob（索引文件），index.selector 决定 root_selector（页内索引范围）。
+启动时建立一次索引。修改内容后，重启命令更新索引。
+
 swban server/lan -p 8080         #改用 8080 端口
+swban server/lan -D=false        #排除草稿
+swban server/lan --bind 0.0.0.0  #监听所有 IPv4 地址
+swban base/hugo server --help    #查看 Hugo 开发服参数

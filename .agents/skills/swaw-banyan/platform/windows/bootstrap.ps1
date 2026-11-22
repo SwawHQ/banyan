@@ -71,31 +71,38 @@ function Find-Node($Manifest, [bool]$SkipManaged, [bool]$Diagnosing) {
 }
 try {
     $helpCommand = if ($args.Count) { [string]$args[0] } else { 'help' }
-    if ($helpCommand -in @('--help','-h')) { $helpCommand = 'help' }
+    $language = if ([Globalization.CultureInfo]::CurrentUICulture.Name -match '^zh(?:-|$)') { 'zh' } else { 'en' }
+    $suffixHelp = $args.Count -eq 1 -and $helpCommand -cmatch '^(.+)/help$'
+    if ($suffixHelp) { $helpCommand = $Matches[1] }
+    elseif ($helpCommand -cin @('--help','-h')) { $helpCommand = 'help' }
+    elseif ($args.Count -eq 2 -and $args[1] -cin @('--help','-h')) { $helpCommand = $helpCommand -creplace '/$','' }
+    $helpFlag = $args.Count -eq 2 -and $args[1] -cin @('--help','-h')
     if ($helpCommand -cmatch '^help(?:/(en|zh))?$') {
-        $language = if ($Matches[1]) { $Matches[1] } elseif ([Globalization.CultureInfo]::CurrentUICulture.Name -match '^zh(?:-|$)') { 'zh' } else { 'en' }
+        if ($Matches[1]) { $language = $Matches[1] }
         $helpArgs = @()
         if ($args.Count -gt 1) { $helpArgs = @($args[1..($args.Count-1)]) }
-        if ($helpArgs.Count -eq 1 -and $helpArgs[0] -in @('--help','-h')) { $helpArgs = @($helpCommand) }
+        if ($helpFlag) { throw "Unknown option: $($args[1]). See swban $helpCommand/help" }
+        if ($suffixHelp) { $helpArgs = @($helpCommand) }
         & (Join-Path $skillRoot 'platform/windows/help.ps1') $language (Join-Path $skillRoot 'tasks') @helpArgs
         exit $LASTEXITCODE
     }
     $directory = Join-Path $skillRoot 'tasks'
     foreach ($part in $helpCommand.Split('/')) {
-        if ($part -cnotmatch '^[a-z_][a-z0-9_-]*(?:\.[a-z_][a-z0-9_-]*)*$') { throw "unknown_command:$helpCommand; run swban help" }
+        if ($part -cnotmatch '^[a-z_][a-z0-9_-]*(?:\.[a-z_][a-z0-9_-]*)*$') { throw "unknown_command:$helpCommand" }
         $directory = Join-Path $directory $part
     }
     $entry = Join-Path $directory 'entry.mjs'
-    if (-not [IO.File]::Exists($entry)) { throw "unknown_command:$helpCommand; run swban help" }
+    $native = $helpCommand -cmatch '^base/(?:bun|node|hugo|go|git|gh|pagefind|node/(?:npm|npx))$'
+    $showHelp = $suffixHelp -or (-not $native -and $helpFlag)
+    if (-not [IO.File]::Exists($entry) -and -not ($showHelp -and [IO.File]::Exists((Join-Path $directory "help.$language.txt")))) { throw "unknown_command:$helpCommand" }
     Assert-PlainBootstrapPath $entry
-    $native = $helpCommand -cmatch '^(?:base/(bun|node|hugo|go|git|gh|pagefind)(?:/(npm|npx))?)$'
-    if (-not $native -and $args.Count -eq 2 -and $args[1] -in @('--help','-h')) {
-        $language = if ([Globalization.CultureInfo]::CurrentUICulture.Name -match '^zh(?:-|$)') { 'zh' } else { 'en' }
+    if ($helpFlag -and -not $native) { throw "Unknown option: $($args[1]). See swban $helpCommand/help" }
+    if ($suffixHelp) {
         & (Join-Path $skillRoot 'platform/windows/help.ps1') $language (Join-Path $skillRoot 'tasks') $helpCommand
         exit $LASTEXITCODE
     }
     $preparing = $args[0] -match '^base/(bun|node|hugo|go|git|gh|pagefind)/ensure$'
-    if ($preparing -and ($args.Count -gt 2 -or ($args.Count -eq 2 -and $args[1] -ne '--force'))) { throw 'invalid_ensure_arguments' }
+    if ($preparing -and ($args.Count -gt 2 -or ($args.Count -eq 2 -and $args[1] -ne '--force'))) { throw "invalid_ensure_arguments. See swban $helpCommand/help" }
     $force = $preparing -and $args.Count -eq 2
     $architecture = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
     if ($env:OS -ne 'Windows_NT' -or $architecture -ne 'AMD64') { throw 'supported_bootstrap_platform_is_windows_x64' }
@@ -172,5 +179,8 @@ try {
     exit $result
 } catch {
     [Console]::Error.WriteLine("[swban] $($_.Exception.Message)")
+    if ($_.Exception.Message.StartsWith('unknown_command:')) {
+        & (Join-Path $skillRoot 'platform/windows/help.ps1') $language (Join-Path $skillRoot 'tasks')
+    }
     exit 1
 }

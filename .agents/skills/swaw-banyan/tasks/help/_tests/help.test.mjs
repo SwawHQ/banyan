@@ -100,7 +100,7 @@ test('detailed help reads the requested language and category children without r
   const group=help(['alpha'],'en',root);
   assert.match(group,/alpha\/first/);assert.match(group,/alpha\/nested/);
   assert.doesNotMatch(group,/alpha\/nested\/deep/);
-  assert.match(help(['--help'],'zh',root),/swban help/);
+  assert.throws(()=>help(['--help'],'zh',root),/unknown_help/);
   assert.match(taskHelp('solo','en',root),/English details/);
 });
 
@@ -163,42 +163,94 @@ test('shipped metadata covers every command and every ancestor in both languages
   for(const item of items)for(const language of ['en','zh'])assert.ok(item.document[language].summary.length);
 });
 
-test('language entry points accept scoped depth and only translate a single help flag',()=>{
+test('language entry points accept scoped depth and reject help flags',()=>{
   for(const language of ['en','zh']) {
     const entry=fileURLToPath(new URL('../'+language+'/entry.mjs',import.meta.url));
     const run=args=>spawnSync(process.execPath,[entry,...args],{cwd:work,encoding:'utf8',timeout:10000,windowsHide:true});
     const scoped=run(['check/','2']);assert.equal(scoped.status,0,scoped.stderr);
     assert.ok(names(scoped.stdout.trimEnd()).includes('check/http/cache'));
     assert.ok(names(scoped.stdout.trimEnd()).every(name=>name.startsWith('check/')&&name.replace(/\/$/,'').split('/').length<=3));
-    const flag=run(['--help']);assert.equal(flag.status,0,flag.stderr);
-    assert.ok(flag.stdout.startsWith('swban help/'+language+' '));
+    const flag=run(['--help']);assert.equal(flag.status,1);
     const invalid=run(['--help','2']);assert.equal(invalid.status,1);
     assert.match(invalid.stderr,/invalid_help_arguments/);
   }
 });
 
 test('native cold help matches JS without preparing a runtime',{timeout:60000},()=>{
-  for(const language of ['en','zh'])for(const args of [[],['1'],['2'],['3'],['alpha'],['alpha/first'],['--help'],
+  for(const language of ['en','zh'])for(const args of [[],['1'],['2'],['3'],['alpha'],['alpha/first'],
     ['alpha','1'],['alpha','2'],['alpha/nested','3'],['solo','2'],
     ['alpha/'],['alpha/first/'],['alpha/','1'],['alpha/nested/','3'],['upgrade/git'],['upgrade/git/']]) {
     const result=coldHelp(args,language);assert.equal(result.status,0,result.stderr);
     assert.equal(result.stdout,help(args,language,root)+'\n');
   }
-  for(const args of [['0'],['9007199254740992'],['1','2'],['../outside'],['alpha','0'],['alpha','two'],
+  for(const args of [['--help'],['0'],['9007199254740992'],['1','2'],['../outside'],['alpha','0'],['alpha','two'],
     ['alpha','2','3'],['--help','2'],['../outside','2'],['absent','2'],['alpha//','2'],['upgrade/git','1']]) {
     assert.equal(coldHelp(args,'en').status,1);
   }
   assert.equal(fs.existsSync(path.join(work,'.tools')),false);
 });
 
-test('removed runtime and cloud commands fail in JS and cold bootstrap',()=>{
+function dispatch(args,cold) {
   const skill=fileURLToPath(new URL('../../../',import.meta.url));
+  const windows=process.platform==='win32';
+  const executable=!cold?process.execPath:windows?path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe'):'/bin/sh';
+  const prefix=!cold?[path.join(skill,'tasks/_cli/main.mjs')]:windows
+    ?['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(skill,'platform/windows/bootstrap.ps1')]
+    :[path.join(skill,'platform',process.platform==='darwin'?'mac':'linux','bootstrap.sh')];
+  const result=spawnSync(executable,[...prefix,...args],{cwd:work,encoding:'utf8',timeout:10000,windowsHide:true});
+  assert.ifError(result.error);
+  return result;
+}
+
+test('help aliases render the same command, category and root help in both dispatchers',()=>{
+  for(const cold of [false,true]) {
+    for(const command of ['dev','dev/build','build','server','server/lan','server/pagefind.off','check','help/zh']) {
+      const expected=dispatch(['help',command],cold);
+      assert.equal(expected.status,0,expected.stderr);
+      const result=dispatch([command+'/help'],cold);
+      assert.equal(result.status,0,result.stderr);
+      assert.equal(result.stdout,command==='help/zh'?taskHelp(command,'zh')+'\n':expected.stdout);
+      for(const flag of ['--help','-h']) {
+        const invalid=dispatch([command,flag],cold);
+        assert.equal(invalid.status,1);
+        assert.equal(invalid.stdout,'');
+        assert.ok(invalid.stderr.includes('swban '+command+'/help'),invalid.stderr);
+      }
+    }
+    const home=dispatch(['help'],cold);
+    const listed=names(dispatch(['help','1'],cold).stdout).find(name=>name==='check/');
+    assert.equal(listed,'check/');
+    const category=dispatch(['help',listed],cold);
+    assert.equal(category.status,0,category.stderr);
+    for(const flag of ['-h','--help']) {
+      const result=dispatch([listed,flag],cold);
+      assert.equal(result.status,1);
+      assert.ok(result.stderr.includes('swban check/help'),result.stderr);
+    }
+    assert.equal(dispatch(['check//','--help'],cold).status,1);
+    const separated=dispatch([listed,'/help'],cold);
+    assert.equal(separated.status,1);
+    assert.equal(separated.stdout,home.stdout);
+    for(const args of [[],['-h'],['--help']]) {
+      const result=dispatch(args,cold);
+      assert.equal(result.status,0,result.stderr);
+      assert.equal(result.stdout,home.stdout);
+    }
+    const slash=dispatch(['/help'],cold);
+    assert.equal(slash.status,1);assert.match(slash.stderr,/unknown_command:\/help/);
+    assert.equal(slash.stdout,home.stdout);
+    assert.equal(dispatch(['base/hugo/help'],cold).stdout,dispatch(['help','base/hugo'],cold).stdout);
+    const unknown=dispatch(['missing/help'],cold);
+    assert.equal(unknown.status,1);assert.match(unknown.stderr,/unknown_command:missing/);
+    assert.equal(unknown.stdout,home.stdout);
+  }
+});
+
+test('removed runtime and cloud commands fail in JS and cold bootstrap',()=>{
   const commands=['base/uv','base/uv/check','base/uv/ensure','base/uv/python','base/uv/python/check','base/uv/python/ensure',
     'deploy/auth/setup','deploy/cloudflare/cli','deploy/cloudflare/wrangler','deploy/tencent/cli'];
   for(const command of commands) for(const cold of process.platform==='win32'?[false,true]:[false]) {
-    const executable=cold?path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe'):process.execPath;
-    const args=cold?['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(skill,'platform/windows/bootstrap.ps1')]:[path.join(skill,'tasks/_cli/main.mjs')];
-    const result=spawnSync(executable,[...args,command,'--help'],{encoding:'utf8',timeout:10000,windowsHide:true});
+    const result=dispatch([command,'--help'],cold);
     assert.ifError(result.error);assert.equal(result.status,1);
     assert.ok(result.stderr.includes('unknown_command:'+command),result.stderr);
   }

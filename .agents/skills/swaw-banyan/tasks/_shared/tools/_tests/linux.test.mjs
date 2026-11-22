@@ -55,7 +55,7 @@ test('POSIX Node PATH binding locates npm and writes an argument-safe launcher',
 });
 test('POSIX cold help matches Node help without PATH tools',linux,()=>{
   const skill=fileURLToPath(new URL('../../../../',import.meta.url));
-  for (const args of [['help/en'],['help/zh','1'],['help/en','base','2'],['build','--help']]) {
+  for (const args of [['help/en'],['help/zh','1'],['help/en','base','2'],['build/help']]) {
     const cold=spawnSync('/bin/sh',[path.join(skill,'platform/'+platform+'/bootstrap.sh'),...args],{env:{...process.env,PATH:'/usr/bin:/bin',LANG:'en_US.UTF-8'},encoding:'utf8'});
     const warm=spawnSync(process.execPath,[path.join(skill,'tasks/_cli/main.mjs'),...args],{env:{...process.env,LANG:'en_US.UTF-8'},encoding:'utf8'});
     assert.equal(cold.status,0,cold.stderr);assert.equal(warm.status,0,warm.stderr);assert.equal(cold.stdout,warm.stdout);

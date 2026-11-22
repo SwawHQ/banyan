@@ -55,7 +55,7 @@ try {
     if ($args.Count -gt 2) { throw 'invalid_help_arguments' }
     $query = if ($args.Count) { [string]$args[0] } else { $null }
     $scoped = $args.Count -eq 2
-    if (-not $scoped -and ($null -eq $query -or $query -in @('--help','-h'))) { $query = 'help' }
+    if (-not $scoped -and $null -eq $query) { $query = 'help' }
     if (-not $scoped -and $query -notmatch '^\d+$') {
         $query = $query -creplace '/$',''
         $text = (Read-HelpDocument $query).$Language
@@ -84,4 +84,10 @@ try {
         [Array]::Sort($names,[StringComparer]::Ordinal)
         [Console]::Write((Help-Rows $names $items) + "`n")
     }
-} catch { [Console]::Error.WriteLine("[swban] $($_.Exception.Message)"); exit 1 }
+} catch {
+    [Console]::Error.WriteLine("[swban] $($_.Exception.Message)")
+    if ($helpCommand -and $_.Exception.Message -match '^(invalid_help_arguments|invalid_help_depth|unknown_help:)') {
+        [Console]::Error.WriteLine("See swban $helpCommand/help")
+    }
+    exit 1
+}

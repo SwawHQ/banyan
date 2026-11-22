@@ -1,5 +1,6 @@
 ---
 title: 我的
+draft: true
 url: my/ #重命名内容目录时保留此网址。
 layout: page-my #显示 Markdown 正文，并提供返回操作。
 weight: 20

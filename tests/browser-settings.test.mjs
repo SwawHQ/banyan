@@ -53,7 +53,7 @@ before(()=>{
     for(const [name,route] of [['my','one'],['appearance','appearance'],['language','language']]) {
       const filename=(name==='my'?'index':'_index')+suffix+'.md';
       const text=fs.readFileSync(path.join(root,'content',name,filename),'utf8');
-      if(name==='my')write(path.join(content,name,filename),text.replace(/^url:.*$/m,'url: '+prefix+'/prefs/'+route+'/\n'));
+      if(name==='my')write(path.join(content,name,filename),text.replace(/^draft: true\r?\n/m,'').replace(/^url:.*$/m,'url: '+prefix+'/prefs/'+route+'/\n'));
       else write(path.join(content,'prefs-'+route,filename),text.replace(/^url:.*\r?\n/m,''));
     }
     write(path.join(content,'settings-plain/index'+suffix+'.md'),

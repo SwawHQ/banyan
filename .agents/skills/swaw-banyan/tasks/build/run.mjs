@@ -7,6 +7,7 @@ import {toolExecutable} from '../_shared/tools/operations.mjs';
 import {execute} from '../_shared/tools/process.mjs';
 import {searchArguments} from './search.mjs';
 import {readHugoConfig} from '../_shared/hugo.mjs';
+import {usageError} from '../_shared/usage.mjs';
 
 function resolvedPath(value) {
   let parent=value;
@@ -29,7 +30,7 @@ export function buildArguments(options,cwd=process.cwd(),config={}) {
   if(contains(resolved,root)||sources.some(value=>{
     const source=resolvedPath(path.resolve(root,value));return contains(source,resolved)||contains(resolved,source);
   })||['hugo.toml','hugo.yaml','hugo.yml','hugo.json','config.toml','config.yaml','config.yml','config.json'].some(file=>fs.existsSync(path.join(destination,file))))
-    throw new Error('Build destination must not contain site source.');
+    throw usageError('Build destination must not contain site source.');
   const args=['--minify','--noBuildLock','--cleanDestinationDir','--destination',destination];
   if(options.baseURL)args.push('--baseURL',options.baseURL);
   return {destination,args};

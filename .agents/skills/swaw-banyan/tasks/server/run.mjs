@@ -1,3 +1,4 @@
+import {usageError} from '../_shared/usage.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
@@ -16,18 +17,18 @@ export function serverArguments(input,{lan=false}={}) {
   for(let i=0;i<input.length;i++) {
     const arg=input[i];
     if(/^--(?:destination|renderToMemory|renderStaticToDisk|cleanDestinationDir)(?:=|$)/.test(arg)||/^-[DEFNOwhv]*d/.test(arg))
-      throw new Error('The server manages its disk output; destination, memory rendering and output cleanup options are not supported.');
+      throw usageError('The server manages its disk output; destination, memory rendering and output cleanup options are not supported.');
     const match=/^--(port|bind)(?:=(.*))?$/.exec(arg);
     if(match) {
       const value=match[2]??input[++i];
-      if(!value||value.startsWith('-'))throw new Error(`--${match[1]} requires a value.`);
+      if(!value||value.startsWith('-'))throw usageError(`--${match[1]} requires a value.`);
       if(match[1]==='port')port=value;else bind=value;
     } else {
       const short=/^-[DEFNOwhv]*p(.*)$/.exec(arg);
       if(short)port=short[1]?short[1].replace(/^=/,''):input[++i];
     }
   }
-  if(!/^\d+$/.test(port)||Number(port)<1||Number(port)>65535)throw new Error('The server requires a port between 1 and 65535.');
+  if(!/^\d+$/.test(port)||Number(port)<1||Number(port)>65535)throw usageError('The server requires a port between 1 and 65535.');
   return {port:Number(port),bind,args:['server','--buildDrafts','--disableFastRender','--noHTTPCache','--port','5678','--bind',lan?'::':'127.0.0.1','--renderToMemory=false','--cleanDestinationDir=false',...input]};
 }
 

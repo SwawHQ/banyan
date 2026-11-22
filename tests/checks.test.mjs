@@ -516,11 +516,9 @@ test('every declared task exposes help before consulting output, content or tool
   const tasksRoot = path.join(skill,'tasks');
   const commands = fs.readdirSync(tasksRoot,{recursive:true}).filter(name => path.basename(name) === 'entry.mjs').map(name => path.dirname(name).split(path.sep).join('/'));
   for (const command of commands.filter(command=>command!=='help'&&!/^(?:base\/(?:bun|node|git|gh|go|hugo|pagefind)(?:\/(?:npm|npx))?)$/.test(command))) {
-    for (const arg of ['--help','-h']) {
-      const result=cli(command,[arg],work);
-      assert.equal(result.status,0,command);
-      assert.ok(result.stdout.includes('swban '+command),'Help must identify its task: '+command);
-    }
+    const result=cli(command+'/help',[],work);
+    assert.equal(result.status,0,result.stderr);
+    assert.ok(result.stdout.includes('swban '+command),'Help must identify its task: '+command);
     const invalid=spawnSync(process.execPath,[path.join(skill,'tasks',command,'entry.mjs'),'--unknown'],
       {cwd:work,env:fixtureEnvironment(work),encoding:'utf8',timeout:15000});
     assert.ifError(invalid.error);assert.equal(invalid.status,1,command);

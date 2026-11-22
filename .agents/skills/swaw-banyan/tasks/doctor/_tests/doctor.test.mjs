@@ -134,7 +134,7 @@ test('public doctor bypasses damaged launchers and preserves unknown files until
     const damaged='@echo off\r\n'+(owned?'rem swaw-banyan.cli/v1\r\n':'')+'exit /b 42\r\n';
     fs.writeFileSync(file,damaged);
     try {
-      const help=publicCli('doctor --help');assert.equal(help.status,0,help.stdout+help.stderr);
+      const help=publicCli('doctor/help');assert.equal(help.status,0,help.stdout+help.stderr);
       const result=publicCli('doctor');
       assert.equal(result.status,1,result.stdout+result.stderr);
       assert.match(result.stderr,/runtime_launcher_changed/);
@@ -220,7 +220,7 @@ test('doctor help and an unprepared doctor do not create tools or install depend
   const fresh=path.join(work,'fresh');
   fs.cpSync(skill,fresh,{recursive:true,filter:file=>!file.split(path.sep).some(part=>['.tools','node_modules'].includes(part))});
   const manifest=fs.readFileSync(path.join(fresh,'package.json')),lock=fs.readFileSync(path.join(fresh,'package-lock.json'));
-  assert.equal(cli('doctor',['--help'],site,fresh).status,0);
+  assert.equal(cli('doctor/help',[],site,fresh).status,0);
   const result=cli('doctor',[],site,fresh);
   assert.equal(result.status,1);assert.match(result.stdout,/packages\.core: missing/);
   assert.match(result.stderr,/swban base\/packages\/ensure/);

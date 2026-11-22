@@ -1,7 +1,14 @@
-swban server/lan [Hugo arguments...]  #Start development for LAN access
+swban server/lan [Hugo arguments...]  #Preview the site on the LAN
 
-Same as dev, but listens on IPv6 wildcard ::, also accepting IPv4 where supported.
-Connect the phone to the same LAN and use the computer's LAN address and port.
+hugo server --buildDrafts --disableFastRender --noHTTPCache --port 5678 --bind :: --renderToMemory=false --cleanDestinationDir=false
+Preview includes drafts and live reload. Output stays in Hugo’s publishDir (default public/). Additional arguments go to Hugo.
+Devices on the same LAN can connect to the computer’s LAN address and port.
 
-swban server/lan --bind 0.0.0.0       #Listen on IPv4 only
-swban server/lan -p 8080              #Use port 8080
+Pagefind reads a temporary pagefind.json. site is the Hugo output directory and output_subdir is pagefind.
+The search page’s index.source sets glob (files to index). Its index.selector sets root_selector (content within each file).
+Indexing runs once at startup. Restart to index content changes.
+
+swban server/lan -p 8080         #Use port 8080
+swban server/lan -D=false        #Exclude drafts
+swban server/lan --bind 0.0.0.0  #Listen on all IPv4 addresses
+swban base/hugo server --help    #Show Hugo server options

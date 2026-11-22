@@ -1,3 +1,4 @@
+import {usageError} from '../../_shared/usage.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {parseYaml as parse} from '../../_shared/parsers.mjs';
@@ -31,7 +32,7 @@ export async function readResources(siteRoot, requestedIds) {
   const targets = new Set();
   for (const id of ids) {
     const entry = byId.get(id);
-    if (!entry) throw new Error('Unknown resource id: ' + id);
+    if (!entry) throw usageError('Unknown resource id: ' + id);
     const file = await siteFile(siteRoot,entry.target);
     const key = process.platform === 'win32' ? file.toLowerCase() : file;
     if (targets.has(key)) throw new Error('Duplicate resource target: ' + entry.target);

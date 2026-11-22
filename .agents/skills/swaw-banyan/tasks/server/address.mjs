@@ -1,3 +1,4 @@
+import {usageError} from '../_shared/usage.mjs';
 const configFlags=new Set(['baseURL','source','environment','config','configDir','cacheDir','themesDir','theme','contentDir','ignoreVendorPaths']);
 const shortFlags={b:'baseURL',s:'source',e:'environment',t:'theme',c:'contentDir'};
 
@@ -15,7 +16,7 @@ export function addressOptions(input) {
       values[name]=inline===undefined||['true','1','t','TRUE','True','T'].includes(inline);
     } else {
       const value=inline??input[++i];
-      if(value===undefined)throw new Error(`--${name} requires a value.`);
+      if(value===undefined)throw usageError(`--${name} requires a value.`);
       values[name]=value;
       if(configFlags.has(name))configArgs.push(`--${name}`,value);
     }
