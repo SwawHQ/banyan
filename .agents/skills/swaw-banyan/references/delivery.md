@@ -42,14 +42,7 @@ generates `edgeone.json` with headers and redirects when enabled. Configure buil
 commands and tool versions on the hosting platform. SW `enable` also generates `sw-policy.json`, an exact copy
 of its path/bucket array in matching order. SW `off` and `disable` omit that copy;
 `disable` still generates the cleanup worker.
-SW `enable` requires a published HTML page at `sw.offline_notice_path`
-for each enabled language at build time. The reference site's
-`content/_res/offline/` supplies these pages; SW `off` and `disable` allow them to
-be absent. First installation requires the default-language offline HTML and
-its `fingerprinted` assets selected for warmup. Later SW and content updates
-tolerate unavailable offline pages.
-At runtime, unavailable pages fall back to the default language, then to a
-built-in HTTP 503 HTML notice with no external resources.
+When a managed navigation misses the cache and the network fails, the worker returns a self-contained English 503 page.
 
 ## Prefetch and Service Worker settings
 
@@ -73,7 +66,6 @@ prerender.default = "off"
 [sw]
 mode = "enable"
 content_check_interval = 5
-offline_notice_path = "_res/offline/"
 ```
 
 `prefetch.prerender` settings control native prerender for selected icon scopes.

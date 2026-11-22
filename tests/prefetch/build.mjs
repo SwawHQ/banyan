@@ -108,7 +108,6 @@ try {
                     }
                 }
             }
-            verifyNoEngine(page(output,prefix,'_res/offline'));
         }
         verifyCspOutput(output);
         return sharedBody;
@@ -221,7 +220,7 @@ try {
         assert.equal(verifyNative(build('language-'+parameter,enabledConfig,undefined,'',
             '\n[languages.zh.params.'+parameter+']\nenabled = false\n'),true),body,
             'Language params do not change data-owned delivery rules');
-    console.log('Unified prefetch build contracts passed: inline rules, exact CSP hashes, scopes, strict disabled validation and diagnostic/offline boundaries.');
+    console.log('Unified prefetch build contracts passed: inline rules, exact CSP hashes, scopes, strict disabled validation and diagnostic boundaries.');
 } finally {
     assert.equal(path.dirname(fs.realpathSync(work)),temporaryRoot);
     fs.rmSync(work,{recursive:true,force:true});

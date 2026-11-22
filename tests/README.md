@@ -8,6 +8,12 @@ Browser suites also need the Skill's Chromium and WebKit. Tests use system
 temporary directories and remove their fixtures;
 Hugo caches and resources stay there. They do not change site content or Git state.
 
+Run the SW acceptance suite from the Banyan repository root. The fixtures build the local Module and cover cache policy, offline navigation, content updates, worker activation and disable cleanup.
+
+```powershell
+.\swban.cmd base/node --test --test-concurrency=2 tests/cache-policy.test.mjs tests/browser-pwa.test.mjs tests/browser-content.test.mjs tests/browser-update.test.mjs tests/browser-disable.test.mjs
+```
+
 Run root suites with Node, except `tools.test.mjs`. Select the files explicitly
 in PowerShell:
 
@@ -44,7 +50,7 @@ $skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_shared/_tests
 | `locale.test.mjs` | Script locales, RSS language tags and region-only Open Graph metadata |
 | `responsive-images.test.mjs` | Image processing, browser selection, original links and build-cache reuse |
 | `home-art.test.mjs` | Hidden home-art bundles, translated shortcode content, host navigation, resource isolation and preview rebuilds |
-| `browser-{pwa,offline-update,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
+| `browser-{pwa,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
 | `browser-nav-fragments.test.mjs` | Shared column loading, slow responses, source races, failure retries and visited-path offline reload |
 | `output.test.mjs` | Repository budgets and retired-output faults |
 | `sitemap.test.mjs` | Sitemap/LLMS parity, native exclusions, language routing and rebuilds |

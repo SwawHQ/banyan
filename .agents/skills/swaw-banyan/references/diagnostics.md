@@ -7,9 +7,7 @@ pages. These pages belong to the site. For cache policy, see
 ## Page layouts
 
 Powered by uses `page-article-norss`. The base template loads the required script
-once per page when it uses `site-status` or `page-actions`. Offline pages use
-`page-offline`: Markdown, theme styles and the retry script, without navigation,
-SW management or prefetch scripts.
+once per page when it uses `site-status` or `page-actions`.
 
 ## Status controls
 

@@ -9,6 +9,7 @@ import {spawn,spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
 import {fixtureEnvironment,fixtureSiteFiles,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
+import {readNavigationResource} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {extractCanonicalHref,extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 
@@ -140,7 +141,7 @@ test('shared navigation fragments register icons only on consuming pages',()=>{
     const link=extractStartTags(html,'a').find(tag=>extractTagAttribute(tag,'id')==='source-fragment');
     const payload=extractTagAttribute(link,'href').replace(/^\/base\//,'');
     const fragment=fs.readFileSync(path.join(output,payload),'utf8');
-    assert.ok(extractStartTags(fragment,'use').some(tag=>extractTagAttribute(tag,'href')==='#icon-appearance-light'));
+    assert.ok(readNavigationResource(fragment).rows.some(row=>row.icon==='appearance-light'));
   } finally {
     write(item,original);fs.rmSync(probe);fs.rmSync(layout);
   }

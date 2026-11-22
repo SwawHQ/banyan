@@ -127,11 +127,3 @@
 
 </html>
 {{- .Site.Store.SetInMap "banyan.sitemap.pages" .Path . -}}
-{{- if eq $swMode "enable" -}}
-  {{- /* Check hidden pages after rendering; the site dependency invalidates server rebuilds. */ -}}
-  {{- /* shortcut: fast previews may skip this check; use --disableFastRender for validation. */ -}}
-  {{- $offlineData := dict "site" .Site "path" $delivery.sw.offline_notice_path -}}
-  {{- with (templates.Defer (dict "key" "banyan.offline-pages" "data" $offlineData)) -}}
-    {{- partial "system-delivery/pwa/assert-offline-pages.html" . -}}
-  {{- end -}}
-{{- end -}}

@@ -3,7 +3,7 @@ title: 离线：怎么设置离线访问？
 date: 2026-11-17
 lastmod: 2026-11-17
 url: p/offline-access/
-description: 启用本站 Service Worker，设置离线提示并检查停用结果。
+description: 启用本站 Service Worker，验证断网浏览并检查停用结果。
 ---
 
 离线访问使用本站 Service Worker（SW）缓存已访问的受管资源。首次启用后先联网访问页面，使缓存就绪。
@@ -12,8 +12,7 @@ description: 启用本站 Service Worker，设置离线提示并检查停用结�
 
 1. 打开 `assets/site/delivery.toml`。
 2. 在已有 `[sw]` 中将 `mode` 改为 `"enable"`，保留原有路由配置。
-3. 检查 `content/_res/offline/`，为每种启用语言提供离线页。
-4. 按[发布教程](/zh/p/deploying/)构建、检查并部署到 HTTPS 站点。
+3. 按[发布教程](/zh/p/deploying/)构建、检查并部署到 HTTPS 站点。
 
 配置示例：
 
@@ -21,10 +20,9 @@ description: 启用本站 Service Worker，设置离线提示并检查停用结�
 [sw]
 mode = "enable"
 content_check_interval = 5
-offline_notice_path = "_res/offline/"
 ```
 
-此例在间隔至少 5 分钟后的页面导航中检查内容版本。离线说明在 `content/_res/offline/index*.md` 中修改。参考站已有英语、中文和阿拉伯语页面，使用 `layout: page-offline`。
+此例在间隔至少 5 分钟后的页面导航中检查内容版本。断网打开未缓存的受管页面时，SW 直接返回英文提示。
 
 缓存范围由各路由的 `sw.bucket` 控制，字段含义见[交付配置](/zh/p/delivery/#service-worker)。
 

@@ -75,7 +75,7 @@ actual site; default example routes may not exist in a customized site.
 | `canvas/wheel` | Horizontal wheel and keyboard input. A long article with metadata and overflowing code/table samples; `--short` needs a short article with a local prose link. |
 | `prefetch/rules`, `prefetch/overlap`, `prefetch/debug` | Match inline rules to each page; overlap requires automatic native selection and candidates. Debug checks its five backend choices and published state. |
 | `pwa/panel` | Two pages with reciprocal root links. This tests panel UI with workers blocked, not real updates. |
-| `pwa/offline` | An SW-enabled build. The first visit only registers; a later controlled navigation supplies the HTML and resources for offline reload. |
+| `pwa/offline` | An SW-enabled build. The first visit only registers; a later controlled navigation supplies the HTML and resources for offline reload. An uncached navigation must show the built-in 503 notice. |
 
 ## Explicit SW build pairs
 

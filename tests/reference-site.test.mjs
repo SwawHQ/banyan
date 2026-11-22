@@ -52,17 +52,11 @@ after(()=>{if(work){assert.equal(path.basename(path.dirname(fs.realpathSync(work
 
 test('functional pages keep their shortcode scripts without article metadata, chapters or BlogPosting',async()=>{
   assert.deepEqual((await inspectScripts(output)).issues,[]);
-  for(const prefix of prefixes)for(const [route,family] of [['powered-by','site-status/page'],['_res/offline','pages/reload']]) {
-    const html=fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');
+  for(const prefix of prefixes){
+    const html=fs.readFileSync(path.join(output,prefix,'powered-by','index.html'),'utf8');
     const scripts=extractStartTags(html,'script').map(tag=>extractTagAttribute(tag,'src')||'');
-    assert.equal(scripts.filter(src=>src.includes('/js/'+family+'.')).length,1,prefix+route+' loads its controller once.');
+    assert.equal(scripts.filter(src=>src.includes('/js/site-status/page.')).length,1,prefix+'powered-by loads its controller once.');
     assert.doesNotMatch(html,/document-meta|document-toc|document-aside-toggle|"@type"\s*:\s*"BlogPosting"/);
-    if(route==='_res/offline') {
-      assert.deepEqual(scripts.filter(Boolean),scripts.filter(src=>src.includes('/js/pages/reload.')),
-        'The standalone offline layout loads only its retry controller.');
-      assert.doesNotMatch(html,/\bdata-navigation=|\bdata-prefetch|site-prefetch|speculationrules/);
-      assert.equal(extractBlocks(html,'nav').length,0,'The offline layout has no navigation columns.');
-    }
   }
 });
 
@@ -154,7 +148,7 @@ test('the reference site owns its delivery data, icons and interface translation
 
 test('the reference site owns its columns and links to its local documentation',async()=>{
   assert.equal(fs.existsSync(path.join(root,'module/content')),false,'All site content stays outside the Module');
-  for(const name of ['my','_res/offline','rss','powered-by'])for(const suffix of suffixes)
+  for(const name of ['my','rss','powered-by'])for(const suffix of suffixes)
     assert.ok(fs.existsSync(path.join(root,'content',name,'index'+suffix+'.md')),'Reference page: '+name+suffix);
   for(const name of ['appearance','language'])for(const suffix of suffixes) {
     assert.ok(fs.existsSync(path.join(root,'content',name,'_index'+suffix+'.md')),'Reference section: '+name+suffix);
@@ -180,12 +174,6 @@ test('the reference site owns its columns and links to its local documentation',
     assert.equal(fs.existsSync(path.join(output,prefix,'powered-by.debug/index.html')),false,'The old diagnostic URL has no output.');
     assert.equal(fs.existsSync(path.join(output,prefix,'_res/powered-by.debug/index.html')),false,'The renamed diagnostic URL has no output.');
     assert.equal(fs.existsSync(path.join(output,prefix,'_res/debug/index.html')),false,'Diagnostics have no standalone output.');
-    const offlinePath='/'+prefix+'_res/offline/';
-    const offline=fs.readFileSync(path.join(output,offlinePath,'index.html'),'utf8');
-    assert.equal(extractCanonicalHref(offline),origin+offlinePath);
-    assert.ok(extractStartTags(offline,'meta').some(tag=>extractTagAttribute(tag,'name')==='robots'&&extractTagAttribute(tag,'content')==='noindex, follow'));
-    assert.equal(extractBlocks(offline,'aside').length,0,'Resource pages do not inherit the document sidebar.');
-    assert.equal(extractBlocks(offline,'nav',tag=>extractTagAttribute(tag,'data-slot')==='breadcrumb').length,0,'Resource pages do not inherit breadcrumb columns.');
     for(const file of [path.join(output,prefix||'en/','sitemap.xml'),path.join(output,prefix,'llms.txt')])
       assert.ok(!fs.readFileSync(file,'utf8').includes('/_res/'),'Resource pages stay out of discovery outputs.');
     assert.equal(roots.includes('/'+prefix+'github/'),true,'GitHub is available in every enabled language.');
@@ -363,7 +351,7 @@ test('Arabic pages use RTL and demonstrate mixed text without losing translation
       &&!/^content\/articles\/(?:docs-[^/]+|changelog)\//.test(source);
   });
   for(const file of english)assert.ok(fs.existsSync(file.replace(/\.md$/,'.ar.md')),'Arabic counterpart: '+file);
-  for(const [index,prefix] of prefixes.entries())for(const route of ['', 'language/', 'appearance/', 'articles-all/', 'p/banyan/', '_res/offline/', '404.html']) {
+  for(const [index,prefix] of prefixes.entries())for(const route of ['', 'language/', 'appearance/', 'articles-all/', 'p/banyan/', '404.html']) {
     const html=fs.readFileSync(path.join(output,prefix,route.endsWith('.html')?route:route+'index.html'),'utf8');
     const tag=extractStartTags(html,'html')[0];
     assert.equal(extractTagAttribute(tag,'lang'),languages[index]);
@@ -546,25 +534,21 @@ test('Powered by Markdown separates build information and update controls',async
     const copy=JSON.parse(extractTagAttribute(panel.open,'data-site-sw-copy'));
     for(const key of ['build','status','check'])assert.equal(key in copy,false,'Static text stays in Markdown.');
     const rows=extractBlocks(html,'p').flatMap(row=>row.inner.split(/<br\s*\/?>/i));
-    const markers=['site-build-version','site-content-status','site-content-interval','site-sw-policy','site-offline-page','site-sw-status'];
+    const markers=['site-build-version','site-content-status','site-content-interval','site-sw-policy','site-sw-status'];
     const indexes=markers.map(marker=>rows.findIndex(row=>row.includes('data-'+marker)));
     assert.ok(indexes.every(index=>index>=0));
-    assert.equal(new Set(indexes).size,6,'Each value has its own Markdown line.');
+    assert.equal(new Set(indexes).size,5,'Each value has its own Markdown line.');
     for(const index of indexes) {
       assert.doesNotMatch(rows[index],/<code\b/,'Shortcodes do not add inline-code formatting.');
       assert.match(rows[index],/^<strong>[^<]+<\/strong>/,'Each information line keeps its emphasized Markdown label.');
     }
     const information=extractBlocks(html,'p').find(row=>row.inner.includes('data-site-build-version'));
-    assert.ok(markers.every(marker=>information.inner.includes('data-'+marker)),'The six information lines stay adjacent.');
+    assert.ok(markers.every(marker=>information.inner.includes('data-'+marker)),'The five information lines stay adjacent.');
     for(const action of extractBlocks(information.inner,'button'))assert.equal(action.inner,copy.refresh_icon,'Refresh controls share the configured icon.');
-    const contentRow=rows[indexes[1]],policyRow=rows[indexes[3]],offlineRow=rows[indexes[4]],statusRow=rows[indexes[5]];
+    const contentRow=rows[indexes[1]],policyRow=rows[indexes[3]],statusRow=rows[indexes[4]];
     assert.ok(contentRow.includes('data-site-content-action'),'Server refresh stays on its own line.');
     assert.ok(statusRow.includes('data-site-sw-action'),'Program refresh stays on its own line.');
     assert.ok(!policyRow.includes('<button'),'The policy link is static.');
-    const offlineLink=extractStartTags(offlineRow,'a')[0],offlineUrl='/'+prefix+parseToml(fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8')).sw.offline_notice_path.replace(/^\/+|\/+$/g,'')+'/';
-    assert.equal(extractTagAttribute(offlineLink,'href'),offlineUrl,'The offline link follows the language and delivery configuration.');
-    assert.ok(fs.existsSync(path.join(output,offlineUrl,'index.html')),'The offline link targets a published page.');
-    assert.ok(!offlineRow.includes('<button'),'The offline link is static.');
     const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-content-interval'))[0];
     const enabled=fs.existsSync(path.join(output,'sw-version.json'));
     if(enabled)assert.ok(interval.inner.includes(String(parseToml(fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8')).sw.content_check_interval)));

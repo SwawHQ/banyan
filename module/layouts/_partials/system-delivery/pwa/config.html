@@ -1,5 +1,5 @@
 {{- $swConfig := .delivery.sw -}}
-{{- range $key := slice "mode" "content_check_interval" "offline_notice_path" -}}
+{{- range $key := slice "mode" "content_check_interval" -}}
   {{- if not (isset $swConfig $key) -}}{{- errorf "Build failed: delivery.sw requires %s." $key -}}{{- end -}}
 {{- end -}}
 {{- $swModeRaw := index $swConfig "mode" -}}
@@ -13,25 +13,7 @@
   {{- errorf "Build failed: delivery.sw.content_check_interval must be a positive integer in minutes; got %v." $contentCheckInterval -}}
 {{- end -}}
 
-{{- $offlinePathRaw := index $swConfig "offline_notice_path" -}}
-{{- if ne (printf "%T" $offlinePathRaw) "string" -}}{{- errorf "Build failed: delivery.sw.offline_notice_path must be a string." -}}{{- end -}}
-{{- $offlinePath := trim $offlinePathRaw "/" -}}
-{{- if eq $offlinePath "" -}}
-  {{- errorf "Build failed: delivery.sw.offline_notice_path cannot be empty." -}}
-{{- end -}}
-
-{{- $offlineFallbacks := slice -}}
-{{- range sort hugo.Sites "Language.Weight" -}}
-  {{- $offlineRelPermalink := printf "%s%s/" .Home.RelPermalink $offlinePath -}}
-  {{- $offlineFallbacks = $offlineFallbacks | append (dict
-    "path_prefix" (printf "%v" .Home.RelPermalink)
-    "url" $offlineRelPermalink
-  ) -}}
-{{- end -}}
-
 {{- return (dict
   "sw_mode" $swMode
   "content_check_interval_ms" (mul $contentCheckInterval 60000)
-  "offline_fallbacks" $offlineFallbacks
-  "default_offline_fallback" (printf "%s%s/" hugo.Sites.Default.Home.RelPermalink $offlinePath)
 ) -}}

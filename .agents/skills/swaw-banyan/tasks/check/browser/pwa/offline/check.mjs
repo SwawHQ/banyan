@@ -93,6 +93,12 @@ export async function check({page,baseUrl,options}) {
     assert.deepEqual(after.cachedWorkers,[],'Offline reload must not cache the worker script.');
     assert.deepEqual(after.cachedVersions,[],'Offline reload must not cache the content version JSON.');
     assert.deepEqual(errors,[],'The first visit and offline reload must not raise uncaught errors.');
+    const uncached=await page.goto(new URL('__banyan_offline_probe__/',expected).href);
+    assert.equal(uncached.status(),503,'An uncached offline navigation must return 503.');
+    assert.ok(uncached.fromServiceWorker());
+    assert.equal(await page.title(),'No internet');
+    assert.equal(await page.locator('main svg').count(),1);
+    assert.equal(await page.locator('a,button,script').count(),0);
     return {page:options.page,registration,navigationCache:before.pages[0].key,assets:[...assets].map(url=>new URL(url).pathname),assetBuckets:Object.fromEntries(resources.map(resource=>[new URL(resource.url).pathname,resource.bucket])),initialDocumentCached,controlledNavigation:true,offlineDocument:true,offlineAssets:responses.size};
   }finally{
     if(offline)await context.setOffline(false);

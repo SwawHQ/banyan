@@ -247,4 +247,4 @@ one `_map.toml` across languages. The Module provides no pages. Copy optional
 settings and information pages from the reference root when needed.
 
 For language and appearance pages, see [Settings pages](site-configuration.md#language-and-appearance-pages).
-For Powered by and offline page behavior, see [Status and diagnostics](diagnostics.md).
+For Powered by, see [Status and diagnostics](diagnostics.md).

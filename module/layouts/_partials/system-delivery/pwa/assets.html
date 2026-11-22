@@ -13,8 +13,6 @@
       {{- $swScriptContext := dict
         "content_check_interval_ms" .config.content_check_interval_ms
         "version_url" ("sw-version.json" | relURL)
-        "offline_fallbacks" .config.offline_fallbacks
-        "default_offline_fallback" .config.default_offline_fallback
         "sw_routes" .sw_routes
       -}}
       {{- /* ExecuteAsTemplate caches by target path, so include the configuration in that path. */ -}}
@@ -24,8 +22,7 @@
         "targetPath" "sw.js"
         "minify" (not hugo.IsServer)
       ) -}}
-      {{- $swProgram := $swScript.Content -}}
-      {{- $files = merge $files (dict "sw.js" (replace $swProgram "__BANYAN_SW_PROGRAM_HASH__" (sha256 $swProgram))) -}}
+      {{- $files = merge $files (dict "sw.js" $swScript.Content) -}}
     {{- end -}}
     {{- $swManagerEntryPath := "js/pwa/manager-entry.js.tmpl" -}}
     {{- $swManagerEntryTemplate := resources.Get $swManagerEntryPath -}}

@@ -52,7 +52,6 @@ params:
 **الخادم**: {{< site-status "content" >}}  
 **بدء المزامنة**: {{< site-status "interval" "عند الانتقال إلى صفحة وفاصل زمني ≥ %d دقائق" >}}  
 **سياسة SW**: {{< site-status "policy" >}}  
-**صفحة إشعار عدم الاتصال**: {{< site-status "offline" >}}\
 **حالة SW**: {{< site-status "status" >}}
 
 {{< details-start summary="**مزيد من معلومات التشخيص**" >}}

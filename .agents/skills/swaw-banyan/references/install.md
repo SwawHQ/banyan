@@ -50,9 +50,7 @@ Additional brand media is optional. Configure redirects in
 [External resources](external-resources.md).
 
 All pages belong to root `content/`; the Module provides no fallback pages.
-Copy the functional pages the site needs. When SW mode is `enable`, each
-enabled language needs a published offline page; see
-[Delivery configuration](delivery.md#configuration) for the requirements.
+Copy the functional pages the site needs.
 Home art is optional; see [Home art](home-art.md) when using it.
 
 Copy `archetypes/banyan.md` when using the article generator; the Module does

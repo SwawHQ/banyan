@@ -64,7 +64,6 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
           const code=await get(src);assert.equal(extractTagAttribute(tags[0],'integrity'),'sha256-'+createHash('sha256').update(code).digest('base64'));
           if(main)assert.equal(code,main,'All languages must load the same manager.');main=code;
         }
-        assert.doesNotMatch(await get(prefix+'/_res/offline/'),/\/js\/sw-manager\./);
       }
       return main;
     }

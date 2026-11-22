@@ -130,7 +130,7 @@ test('page descriptions override localized home defaults and missing defaults fa
     for(const home of homes)write(home.file,home.original.replace(/^description:.*$/m,'description: '+home.description));
     passed(build(source,destination));
     for(const home of homes) {
-      for(const route of ['','library','_res/offline'])
+      for(const route of ['','library'])
         assert.equal(extractMetaContent(read(home.prefix+'/'+route,'index.html',destination),'description'),home.description);
       const articlePath=home.prefix==='/zh'?'p/translated-item':'p/item';
       assert.equal(extractMetaContent(read(home.prefix+'/'+articlePath,'index.html',destination),'description'),
@@ -185,7 +185,7 @@ test('meta controls article metadata, chapters and schema independently of bread
         assert.ok(defaults.defaultColumns.every(column=>column.selected?.href&&column.payload), 'Every physical breadcrumb column has shared data.');
       }
       assert.equal(schemas(html,'BreadcrumbList').length,breadcrumb?1:0,'The breadcrumb slot must control breadcrumb schema.');
-      for(const route of ['language','appearance','powered-by','_res/offline'])
+      for(const route of ['language','appearance','powered-by'])
         assert.deepEqual(schemas(read(route,'index.html',destination)),[],route+' must not emit BlogPosting.');
     }
   } finally {write(file,original);}

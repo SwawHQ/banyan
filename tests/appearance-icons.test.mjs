@@ -40,7 +40,7 @@ before(()=>{
   write(path.join(site,'hugo.toml'),toml.stringify(configuration));
   write(path.join(site,'go.mod'),'module fixture.invalid/appearance-icons\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\n'+
     'replace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(repository,'module').replaceAll('\\','/'))+'\n');
-  write(path.join(site,'assets/site/delivery.toml'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\noffline_notice_path="_res/offline/"\n'));
+  write(path.join(site,'assets/site/delivery.toml'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\n'));
   for(const suffix of ['', '.zh'])write(path.join(site,'content/_index'+suffix+'.md'),'---\ntitle: Appearance fixture\ndescription: Appearance icon fixture.\nlayout: page-home\n---\nHome.\n');
   write(path.join(site,'content/appearance/_index.md'),settings('English',icons.en));
   write(path.join(site,'content/appearance/_index.zh.md'),settings('中文',icons.zh));

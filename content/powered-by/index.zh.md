@@ -52,7 +52,6 @@ params:
 **服务器**：{{< site-status "content" >}}  
 **触发同步**：{{< site-status "interval" "页面加载时 且 间隔 ≥ %d 分钟" >}}  
 **sw-策略**：{{< site-status "policy" >}}  
-**离线提示页**：{{< site-status "offline" >}}\
 **sw-状态**：{{< site-status "status" >}}
 
 {{< details-start summary="**更多诊断信息**" >}}

@@ -37,7 +37,7 @@ before(()=>{
   write(path.join(site,'hugo.toml'),toml.stringify(config));
   write(path.join(site,'go.mod'),'module fixture.invalid/site-title\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\n'+
     'replace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(root,'module').replaceAll('\\','/'))+'\n');
-  write(path.join(site,'assets/site/delivery.toml'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\noffline_notice_path="_res/offline/"\n'));
+  write(path.join(site,'assets/site/delivery.toml'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\n'));
   for(const language of languages) {
     write(path.join(site,'content/_index'+language.suffix+'.md'),home(language));
     write(path.join(site,'content/articles/_index'+language.suffix+'.md'),'---\ntitle: Collection '+language.label+'\nlayout: page-collection-directory\n---\n');

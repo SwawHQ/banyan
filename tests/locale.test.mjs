@@ -33,7 +33,7 @@ before(()=>{
   for(const [code,locale] of languages)configuration.languages[code].locale=locale;
   write(path.join(site,'go.mod'),'module fixture.invalid/locale\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\n'+
     'replace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(repository,'module').replaceAll('\\','/'))+'\n');
-  write(path.join(site,'assets/site/delivery.toml'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\noffline_notice_path="_res/offline/"\n'));
+  write(path.join(site,'assets/site/delivery.toml'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\n'));
   for(const [code] of languages) {
     write(path.join(site,'content/_index.'+code+'.md'),'---\ntitle: Locale '+code+'\ndescription: Locale fixture.\nlayout: page-home\n---\nHome.\n');
     write(path.join(site,'content/article.'+code+'.md'),'---\ntitle: Article '+code+'\nurl: p/locale-probe/\nlayout: page-article-rss\nparams:\n  slots: []\n---\nArticle.\n');

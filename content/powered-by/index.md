@@ -52,7 +52,6 @@ params:
 **Server**: {{< site-status "content" >}}  
 **Sync trigger**: {{< site-status "interval" "On page navigation and interval ≥ %d minutes" >}}  
 **SW policy**: {{< site-status "policy" >}}  
-**Offline notice page**: {{< site-status "offline" >}}\
 **SW status**: {{< site-status "status" >}}
 
 {{< details-start summary="**More diagnostics**" >}}

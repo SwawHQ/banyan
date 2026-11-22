@@ -66,7 +66,7 @@ disableLanguages = ["ar"]
 
 此例停用阿拉伯语，保留内容文件以便以后恢复；不要停用当前默认语言。改变默认语言前，要核对无语言后缀文件的归属，并检查各语言首页和文章是否仍发布到预期地址。
 
-新增语言时，完成三处配置：在 `[languages]` 中声明语言，补齐 `assets/i18n/<语言代码>.toml` 界面字典，再添加同名页面的译文，如 `index.fr.md`、`_index.fr.md`。界面字典只翻译按钮等界面文字，不替代正文翻译。启用 SW 的站点还需要该语言的离线页。
+新增语言时，完成三处配置：在 `[languages]` 中声明语言，补齐 `assets/i18n/<语言代码>.toml` 界面字典，再添加同名页面的译文，如 `index.fr.md`、`_index.fr.md`。界面字典只翻译按钮等界面文字，不替代正文翻译。
 
 参考站的界面字典挂载已配置，无需重复添加。语言选项图标与设置页见[选择列表](/zh/p/choice-icons/)。
 
@@ -79,7 +79,7 @@ disableLanguages = ["ar"]
 | `theme-version`、`hugo-version` | 主题与 Hugo 版本 |
 | `site-status "version"` | 当前页面的站点构建版本 |
 | `site-status "interval" "每 %d 分钟检查"` | 内容检查间隔 |
-| `site-status "policy"`、`site-status "offline"` | 缓存策略与当前语言离线页链接 |
+| `site-status "policy"` | 缓存策略链接 |
 | `site-status "status"` | SW 程序状态与检查按钮 |
 | `site-status "content"` | 本页与服务器的站点构建版本比对 |
 

@@ -11,9 +11,6 @@ import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/
 import {panelCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/panel/options.mjs';
 import {offlineCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/offline/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
-import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
-import {active} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/state.mjs';
-import {update,naturallyActivate} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),source=path.join(root,'.agents/skills/swaw-banyan');
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/browser-pwa-tests');
@@ -87,8 +84,7 @@ before(()=>{
     variants[name]=path.join(work,name);
     build(mounts+'[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n',variants[name]);
   }
-  // These page-specific assets are absent from install-time offline fallbacks.
-  // Their cache entries therefore belong to the controlled page.
+  // Only the controlled fixture page references these assets.
   const samples=[['css','.offline-fixture { color: inherit; }'],['js','document.documentElement.dataset.offlineFixture="loaded";']];
   for(const directory of [enabled,...Object.values(variants)]) {
     const tags=[];
@@ -192,72 +188,6 @@ test('real workers cache a controlled navigation and its assets before an offlin
     assert.equal(state.details.registration.updateViaCache,'none');assert.equal(state.details.registration.preload.enabled,false);
     if(page!=='/')for(const type of ['css','js'])assert.ok(state.details.assets.some(url=>url.includes('/'+type+'/offline-fixture.')));
   }
-});
-
-test('first installation rejects a missing default offline page and succeeds after it is restored',{timeout:20000},async()=>{
-  const result=await runScenarioSuite({primaryBuildDir:enabled,outputDir:path.join(work,'first-install-reports'),timeout:15000,
-    scenarios:[{id:'first-install-default-required',kind:'single',async run({page,server,baseUrl}){
-      const directory=fixture('first-install-default-missing',enabled);
-      fs.unlinkSync(path.join(directory,'_res/offline/index.html'));
-      await server.setRoot(directory);
-      const response=await page.goto(baseUrl+'/zh'+from,{waitUntil:'load'});
-      assert.equal(response.status(),200);assert.equal(response.fromServiceWorker(),false);
-      const state=await page.evaluate(async()=>{
-        const registration=await navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'});
-        const worker=registration.installing||registration.waiting||registration.active;
-        if(!worker)return 'absent';
-        return new Promise(resolve=>{
-          const check=()=>{if(['redundant','installed','activated'].includes(worker.state))resolve(worker.state);};
-          worker.addEventListener('statechange',check);check();
-        });
-      });
-      assert.equal(state,'redundant');
-      assert.equal(await page.evaluate(()=>Boolean(navigator.serviceWorker.controller)),false);
-      assert.deepEqual(await page.evaluate(async()=>(await caches.keys()).filter(name=>/^(nav-html-|asset-versioned-)/.test(name))),[]);
-      await server.setRoot(enabled);
-      await page.evaluate(()=>navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}));
-      await active(page);
-      return {initialPageStatus:response.status(),failedInstallState:state,retryActivated:true};
-    }}]});
-  assert.equal(result.totals.failed,0,result.scenarios.map(value=>value.message).join('\n'));
-});
-
-test('missing translated offline pages allow installation and missing all pages allow program updates',{timeout:30000},async()=>{
-  const cases=[['translated',[],200,'zh'],['default',['zh'],200,'en'],['built-in',['','zh','ar'],503,'en']];
-  const scenarios=cases.map(([id,missing,status,language])=>({id:'offline-fallback-'+id,kind:'single',async run({page,context,baseUrl,server}){
-    const directory=fixture('offline-fallback-'+id,enabled);
-    for(const prefix of missing)fs.unlinkSync(path.join(directory,prefix,'_res/offline/index.html'));
-    await server.setRoot(status===503?enabled:directory);
-    await page.goto(baseUrl+'/zh'+from,{waitUntil:'load'});
-    await active(page);
-    if(status===503) {
-      // Simulate cached offline pages being evicted before a deployment omits every language.
-      await page.evaluate(async()=>{
-        for(const name of await caches.keys())if(name.startsWith('nav-html-')) {
-          const cache=await caches.open(name);
-          for(const request of await cache.keys())if(new URL(request.url).pathname.endsWith('/_res/offline/'))await cache.delete(request);
-        }
-      });
-      fs.appendFileSync(path.join(directory,'sw.js'),'\n// Offline-missing program update probe.\n');
-      await server.setRoot(directory);await update(page);
-      page=await naturallyActivate(page);
-      await page.goto(baseUrl+'/zh'+from,{waitUntil:'load'});await active(page);
-    }
-    await context.setOffline(true);
-    const response=await page.goto(baseUrl+'/zh/never-cached-offline-probe/',{waitUntil:'load'});
-    assert.equal(response.status(),status);assert.equal(response.fromServiceWorker(),true);
-    assert.equal(await page.locator('html').getAttribute('lang'),language);
-    assert.equal(await page.locator('main').isVisible(),true);
-    if(status===503) {
-      assert.equal(response.headers()['cache-control'],'no-store');
-      assert.equal(await page.locator('script,link[href],img,iframe,video,audio,source').count(),0,
-        'The built-in notice must not depend on network resources.');
-    }
-    return {status,language};
-  }}));
-  const result=await runScenarioSuite({primaryBuildDir:enabled,outputDir:path.join(work,'offline-fallback-reports'),scenarios,timeout:15000});
-  assert.equal(result.totals.failed,0,result.scenarios.map(value=>value.message).join('\n'));
-  assert.equal(result.totals.passed,cases.length);
 });
 
 test('disabled and broken workers cannot pass the controlling-worker boundary',{timeout:15000},()=>{
