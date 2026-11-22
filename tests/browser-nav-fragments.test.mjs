@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy,directoryPage} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
 import {loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
@@ -89,7 +89,7 @@ before(()=>{
   write(config,[['content',content],['content','content'],['assets','assets'],['assets',assets]].map(([target,source])=>
     '[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+fixtureSiteMounts);
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],
-    {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
+    {cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
   for(const name of fs.readdirSync(path.join(output,'site/navigation'))){
     assert.match(name,/^[a-f0-9]{64}\.js$/,'The fixture must publish flat content-addressed HTML fragment files.');

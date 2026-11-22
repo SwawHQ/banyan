@@ -16,7 +16,7 @@ import {extractBlocks} from '../../.agents/skills/swaw-banyan/tasks/_shared/html
 import {readBreadcrumbData} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {decodeHtmlAttribute,extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
-import {fixtureEnvironment,fixtureSiteMounts,directoryPage,fixtureContentDirectory} from '../_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,directoryPage,fixtureContentDirectory} from '../_shared/hugo.mjs';
 import {collectionPayload} from '../_shared/navigation.mjs';
 
 const root = process.cwd();
@@ -125,7 +125,7 @@ try {
         }
         const output = path.join(work, name);
         const result = spawnSync(hugo, ['--noBuildLock','--config', `hugo.toml,${rel(config)}`, '--minify', '--destination', rel(output)],
-            { cwd: root, env: fixtureEnvironment(work), encoding: 'utf8', windowsHide: true });
+            { cwd: root, env: referenceSiteEnvironment(work), encoding: 'utf8', windowsHide: true });
         assert.equal(result.status, 0, result.stdout + result.stderr);
         verifyCspOutput(output);
         assert.equal(fs.existsSync(path.join(output, '__fragments')), false, 'collection rows stay in HTML instead of duplicate fragment output');
@@ -595,7 +595,7 @@ try {
     const auditFile=path.join(overlay,'contract-icon-audit/index.ar.md');
     write(auditFile,'---\ntitle: Translated icon audit\nurl: contract-icon-audit/\nlayout: page-article-norss\nbuild: {render: never, list: always}\nparams:\n  icon: audit-ar-missing\n---\n');
     const auditResult=spawnSync(hugo,['--noBuildLock','--config',`hugo.toml,${rel(config)}`,'--destination',rel(path.join(work,'invalid-translated-icon'))],
-        {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true});
+        {cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',windowsHide:true});
     assert.ifError(auditResult.error);
     assert.notEqual(auditResult.status,0,'A non-default language must still validate unrendered page icons.');
     assert.match(auditResult.stdout+auditResult.stderr,/undefined icon "audit-ar-missing"/);
@@ -627,7 +627,7 @@ try {
         write(path.join(overlay, 'd/contract-priced/not-an-image.txt'), 'Not an image.');
         write(invalidFile, content);
         const result = spawnSync(hugo, ['--noBuildLock','--config', `hugo.toml,${rel(config)}`, '--destination', rel(path.join(work, `invalid-${name}`))],
-            { cwd: root, env: fixtureEnvironment(work), encoding: 'utf8', windowsHide: true });
+            { cwd: root, env: referenceSiteEnvironment(work), encoding: 'utf8', windowsHide: true });
         assert.notEqual(result.status, 0, `invalid ${name} must fail the build`);
         assert((result.stdout + result.stderr).includes(message));
     }

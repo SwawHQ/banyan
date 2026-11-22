@@ -51,6 +51,10 @@ export function fixtureEnvironment(work) {
   });
 }
 
+export function referenceSiteEnvironment(work) {
+  return {...fixtureEnvironment(work),HUGO_MODULE_WORKSPACE:'hugo.work'};
+}
+
 export function serviceWorkerPolicy(mode,contentCheckInterval=5,offlineNoticePath='_res/offline/') {
   return '[sw]\nmode = '+JSON.stringify(mode)+'\ncontent_check_interval = '+contentCheckInterval+
     '\noffline_notice_path = '+JSON.stringify(offlineNoticePath)+'\n';

@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureSiteFiles,fixtureSitePages} from './_shared/hugo.mjs';
+import {fixtureEnvironment,referenceSiteEnvironment,fixtureSiteFiles,fixtureSitePages} from './_shared/hugo.mjs';
 import {verifyRetiredOutput} from './output/retired.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {contrastCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/palette/contrast/options.mjs';
@@ -53,7 +53,7 @@ before(async () => {
   fs.symlinkSync(path.join(source,'tasks/_shared/browser/node_modules'),path.join(skill,'tasks/_shared/browser/node_modules'),'junction');
   fs.symlinkSync(path.join(source,'.tools/browser'),path.join(skill,'.tools/browser'),'junction');
   const build = spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',output],{
-    cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000
+    cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',timeout:60000
   });
   assert.ifError(build.error); assert.equal(build.status,0,build.stdout+build.stderr);
   await verifyRetiredOutput(output);

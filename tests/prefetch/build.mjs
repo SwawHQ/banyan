@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
-import {fixtureEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from '../_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from '../_shared/hugo.mjs';
 import {extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 const siteRoot = process.cwd(), temporaryRoot = path.join(fs.realpathSync(os.tmpdir()), 'swaw/banyan/prefetch-build-tests');
@@ -15,7 +15,7 @@ fs.mkdirSync(temporaryRoot, {recursive:true});
 const work = fs.mkdtempSync(path.join(temporaryRoot, 'run-'));
 
 try {
-    const hugo = toolExecutable('hugo'), env = fixtureEnvironment(work);
+    const hugo = toolExecutable('hugo'), env = referenceSiteEnvironment(work);
     const rel = file => path.relative(siteRoot, file).replaceAll('\\', '/');
     const read = file => fs.readFileSync(file, 'utf8');
     const enabledConfig = [

@@ -10,7 +10,7 @@ import {extractElementText,extractStartTags,extractTagAttribute} from '../../.ag
 import {readNavigationResource} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {listenOnLoopback} from '../../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 
-import {fixtureEnvironment,fixtureSiteMounts,directoryPage} from '../_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,directoryPage} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
 const temporaryRoot=path.join(os.tmpdir(),'swaw/banyan/nav-rebuild');
@@ -41,7 +41,7 @@ try {
         'server', '--config', `hugo.toml,${relative(config)}`, '--bind', '127.0.0.1',
         '--port', String(port), '--baseURL', base, '--disableLiveReload',
         '--enableGitInfo=false', '--destination', relative(path.join(work, 'public')),
-    ], { cwd: root, env:fixtureEnvironment(work), windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    ], { cwd: root, env:referenceSiteEnvironment(work), windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
     let logs = '';
     let launchError;
     server.on('error', (error) => { launchError = error; });

@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureSiteMounts,fixtureContentDirectory} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,fixtureContentDirectory} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {anchorsCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/anchors/options.mjs';
 import {sortCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/nav/sort/options.mjs';
@@ -57,7 +57,7 @@ before(()=>{
   const config=path.join(work,'fixture.toml');
   write(config,`[[module.mounts]]\nsource = ${JSON.stringify(content.replaceAll('\\','/'))}\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`+fixtureSiteMounts);
   const build=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{
-    cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000
+    cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',timeout:60000
   });
   assert.ifError(build.error);assert.equal(build.status,0,build.stdout+build.stderr);
 });

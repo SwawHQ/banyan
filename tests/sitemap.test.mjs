@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {spawn,spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
-import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
 import {inspect} from '../.agents/skills/swaw-banyan/tasks/check/sitemap/inspect.mjs';
 import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/llms/inspect.mjs';
 import {decodeHtmlAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
@@ -75,7 +75,7 @@ after(()=>{if(work){assert.equal(path.dirname(fs.realpathSync(work)),parent);fs.
 test('sitemap and grouped LLMS share rendered HTML pages, exclusions and metadata',async()=>{
   const output=path.join(work,'public');
   const result=spawnSync(toolExecutable('hugo'),[...args(output),'--minify','--baseURL','https://example.test/'],
-    {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:30000,windowsHide:true});
+    {cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',timeout:30000,windowsHide:true});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
   for(const [,prefix] of languages) {
     const xml=fs.readFileSync(path.join(output,prefix||'/en','sitemap.xml'),'utf8'), locs=urls(xml);
@@ -134,7 +134,7 @@ test('full preview rebuilds remove disabled, unrendered, renamed and deleted pag
   const base=`http://127.0.0.1:${port}`, target=path.join(content,'sitemap-local/index.md');
   const server=spawn(toolExecutable('hugo'),['server',...args(path.join(work,'preview')),
     '--bind','127.0.0.1','--port',String(port),'--baseURL',base,'--disableLiveReload','--disableFastRender'],
-    {cwd:root,env:fixtureEnvironment(work),windowsHide:true,stdio:['ignore','pipe','pipe']});
+    {cwd:root,env:referenceSiteEnvironment(work),windowsHide:true,stdio:['ignore','pipe','pipe']});
   let logs='';server.stdout.on('data',chunk=>{logs+=chunk;});server.stderr.on('data',chunk=>{logs+=chunk;});
   async function waitFor(present,absent,language='en') {
     const deadline=Date.now()+15000;let state='No response';
@@ -202,7 +202,7 @@ test('LLMS supports site subpaths, language routing, independent weights and dis
     write(overlay,variant.config);
     const result=spawnSync(toolExecutable('hugo'),['--noBuildLock','--config',`hugo.toml,${relative(config)},${relative(overlay)}`,
       '--enableGitInfo=false','--destination',destination,'--baseURL',variant.base||'https://example.test/'],
-      {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:30000,windowsHide:true});
+      {cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',timeout:30000,windowsHide:true});
     assert.ifError(result.error);assert.equal(result.status,0,variant.name+'\n'+result.stdout+result.stderr);
     for(const file of variant.files) {
       const text=fs.readFileSync(path.join(destination,file),'utf8');

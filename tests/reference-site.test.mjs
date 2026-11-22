@@ -6,7 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
-import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
 import {indexSite} from '../.agents/skills/swaw-banyan/tasks/build/run.mjs';
 import {verifyCspOutput} from '../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
 import {inspect as inspectSitemap} from '../.agents/skills/swaw-banyan/tasks/check/sitemap/inspect.mjs';
@@ -34,7 +34,7 @@ before(async()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));
   output=path.join(work,'build');
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',output],
-    {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
+    {cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
   assert.equal(await indexSite(output),0);
   documentation=[];
@@ -299,7 +299,7 @@ test('content links resolve pages and attachments across deployment and language
       '\ntarget = "assets"\n'+fixtureSiteMounts+'\n[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+
       '\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n');
     const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,
-      '--baseURL',siteURL,'--destination',build],{cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
+      '--baseURL',siteURL,'--destination',build],{cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',timeout:60000});
     assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
     assert.equal(await indexSite(build),0);
     const {pages}=await readPages(build),files=(await filesUnder(build)).map(file=>path.relative(build,file).replaceAll('\\','/'));

@@ -11,7 +11,7 @@ import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/cs
 import {inspect as inspectSri} from '../../.agents/skills/swaw-banyan/tasks/check/sri/inspect.mjs';
 import {verifyRetiredOutput} from '../output/retired.mjs';
 
-import {fixtureEnvironment,fixtureSiteMounts} from '../_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'banyan-csp-contract-'));
@@ -19,7 +19,7 @@ const work = fs.mkdtempSync(path.join(os.tmpdir(), 'banyan-csp-contract-'));
 try {
     const rel = file => path.relative(root, file).replaceAll('\\', '/');
     const hugo = toolExecutable('hugo');
-    const env = fixtureEnvironment(work);
+    const env = referenceSiteEnvironment(work);
     const read = file => fs.readFileSync(file, 'utf8');
 
     function build(name, extraConfig = '', flags = ['--minify']) {

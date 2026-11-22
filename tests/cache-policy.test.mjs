@@ -7,7 +7,7 @@ import vm from 'node:vm';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {fixtureEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {parseHeaders,cloudflareHeaders} from '../.agents/skills/swaw-banyan/tasks/_shared/headers.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
@@ -25,7 +25,7 @@ function build(name,policy,config='',workerConfig=serviceWorkerPolicy('enable'))
   const configFile=path.join(directory,'fixture.toml'),output=path.join(directory,'public');
   write(configFile,mounts+config);
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--cleanDestinationDir','--config','hugo.toml,'+configFile,'--destination',output],
-    {cwd:root,env:fixtureEnvironment(directory),encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024});
+    {cwd:root,env:referenceSiteEnvironment(directory),encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024});
   assert.ifError(result.error);
   return {...result,log:result.stdout+result.stderr,output};
 }

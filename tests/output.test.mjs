@@ -13,7 +13,7 @@ import {breadcrumbRows,inspect as inspectBreadcrumb} from '../.agents/skills/swa
 import {readBreadcrumbData,readNavigationFragment,readNavigationResource} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
-import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
 
 const parent=path.join(fs.realpathSync(os.tmpdir()),'swaw/banyan/output-tests'),budget=fileURLToPath(new URL('./output/budget.mjs',import.meta.url));
 let work,count=0;
@@ -57,7 +57,7 @@ test('collection heads prefetch their own column and missing breadcrumb runtime 
   const config=path.join(work,'prefetch.toml');
   fs.writeFileSync(config,mount(content,'content')+mount('content','content')+fixtureSiteMounts);
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],
-    {cwd:root,env:fixtureEnvironment(work),encoding:'utf8',timeout:60000});
+    {cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',timeout:60000});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);
   const prefetches=html=>extractStartTags(html,'link').filter(tag=>extractTagAttribute(tag,'rel').split(/\s+/).includes('prefetch'));
   const read=(prefix,route)=>fs.readFileSync(path.join(output,prefix,route,'index.html'),'utf8');

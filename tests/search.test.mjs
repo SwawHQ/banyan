@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment} from './_shared/hugo.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 
@@ -14,7 +14,7 @@ test('reference search: isolated assets, CSP, live results, history, languages a
   let server,browser;
   try {
     const build=spawnSync(process.execPath,['.agents/skills/swaw-banyan/tasks/build/entry.mjs','--destination',output,'--baseURL','http://localhost/sub/'],
-      {env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true});
+      {env:referenceSiteEnvironment(work),encoding:'utf8',windowsHide:true});
     assert.equal(build.status,0,build.stdout+build.stderr);
     assert(!fs.existsSync(path.join(output,'site/search-index.json')));
     for(const relative of fs.readdirSync(output,{recursive:true}).filter(file=>file.endsWith('.html'))){
@@ -138,7 +138,7 @@ test('reference search: isolated assets, CSP, live results, history, languages a
       if(file.endsWith('.md'))fs.writeFileSync(target,fs.readFileSync(target,'utf8').replace('source: rss','source: ["p/", "search/**/*.html"]'));
     }
     const selected=spawnSync(process.execPath,['.agents/skills/swaw-banyan/tasks/build/entry.mjs','--destination',path.join(work,'selector-site')],
-      {env:{...fixtureEnvironment(work),HUGO_CONTENTDIR:content},encoding:'utf8',windowsHide:true});
+      {env:{...referenceSiteEnvironment(work),HUGO_CONTENTDIR:content},encoding:'utf8',windowsHide:true});
     assert.equal(selected.status,0,selected.stdout+selected.stderr);
     assert(!fs.existsSync(path.join(work,'selector-site/site/search-index.json')));
     assert.match(selected.stdout,/p\/\*\*\/\*\.html/);
@@ -148,7 +148,7 @@ test('reference search: isolated assets, CSP, live results, history, languages a
       if(file.endsWith('.md'))fs.writeFileSync(target,fs.readFileSync(target,'utf8').replace('source: ["p/", "search/**/*.html"]','source: "**/*.html"'));
     }
     const globbed=spawnSync(process.execPath,['.agents/skills/swaw-banyan/tasks/build/entry.mjs','--destination',path.join(work,'glob-site')],
-      {env:{...fixtureEnvironment(work),HUGO_CONTENTDIR:content},encoding:'utf8',windowsHide:true});
+      {env:{...referenceSiteEnvironment(work),HUGO_CONTENTDIR:content},encoding:'utf8',windowsHide:true});
     assert.equal(globbed.status,0,globbed.stdout+globbed.stderr);
     assert.match(globbed.stdout,/Indexed 3 languages/);
     for(const directory of ['articles','products','search'])for(const file of fs.readdirSync(path.join(content,directory))){
@@ -157,7 +157,7 @@ test('reference search: isolated assets, CSP, live results, history, languages a
       fs.writeFileSync(target,fs.readFileSync(target,'utf8').replaceAll('layout: page-article-rss','layout: page-article-norss').replace('source: "**/*.html"','source: rss'));
     }
     const empty=spawnSync(process.execPath,['.agents/skills/swaw-banyan/tasks/build/entry.mjs','--destination',output,'--baseURL','http://localhost/sub/'],
-      {env:{...fixtureEnvironment(work),HUGO_CONTENTDIR:content},encoding:'utf8',windowsHide:true});
+      {env:{...referenceSiteEnvironment(work),HUGO_CONTENTDIR:content},encoding:'utf8',windowsHide:true});
     assert.equal(empty.status,0,empty.stdout+empty.stderr);
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(output,'pagefind/pagefind-entry.json'),'utf8')),{languages:{}});
     assert(!fs.existsSync(path.join(output,'pagefind/pagefind.js')));

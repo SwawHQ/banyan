@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {loadChromium,loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
@@ -20,7 +20,7 @@ const layouts=Object.keys(sizes);
 let work,content,output,config,server;
 const write=(file,text)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);};
 const section=(layout='equal-height',scroll='horizontal',extra='')=>'---\ntitle: Wall fixture\ndescription: Wall integration fixture.\nlayout: page-collection-wall-all\nparams:\n  aggregate: /wall-source\n  slots: [breadcrumb]\n  wall:\n    size: '+JSON.stringify(sizes[layout])+'\n    details: title\n    scroll: '+scroll+'\n'+extra+'---\n';
-function build(){return spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{encoding:'utf8',env:fixtureEnvironment(work),windowsHide:true,timeout:90000});}
+function build(){return spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],{encoding:'utf8',env:referenceSiteEnvironment(work),windowsHide:true,timeout:90000});}
 const passed=r=>{assert.ifError(r.error);assert.equal(r.status,0,r.stdout+r.stderr);};
 before(async()=>{
  fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));console.log('Wall artifacts: '+work);

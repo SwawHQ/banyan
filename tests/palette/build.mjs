@@ -13,7 +13,7 @@ import {check as checkContrast} from '../../.agents/skills/swaw-banyan/tasks/che
 import {check as checkRoles} from '../../.agents/skills/swaw-banyan/tasks/check/browser/palette/roles/check.mjs';
 import {check as checkAsideStyle} from '../../.agents/skills/swaw-banyan/tasks/check/browser/aside/style/check.mjs';
 
-import {fixtureEnvironment,fixtureSiteMounts} from '../_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts} from '../_shared/hugo.mjs';
 
 const root = process.cwd();
 const workRoot = path.join(os.tmpdir(), 'swaw/banyan/module-organization-fixes/palette');
@@ -30,7 +30,7 @@ try {
         const output = path.join(work, name);
         write(configFile, config);
         const result = spawnSync(hugo, ['--noBuildLock','--config', `hugo.toml,${rel(configFile)}`, '--minify', '--destination', rel(output)],
-            { cwd: root, env: fixtureEnvironment(work), encoding: 'utf8', windowsHide: true });
+            { cwd: root, env: referenceSiteEnvironment(work), encoding: 'utf8', windowsHide: true });
         assert.ifError(result.error);
         const log = result.stdout + result.stderr;
         if (expectedError) {
