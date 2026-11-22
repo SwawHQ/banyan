@@ -4,6 +4,7 @@ import {parseDirectory,printCheck} from '../../.agents/skills/swaw-banyan/tasks/
 import {formatByteMetric} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/format.mjs';
 import {readPages} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/read.mjs';
 import {gzipBytes} from '../../.agents/skills/swaw-banyan/tasks/_shared/size.mjs';
+import {extractBlocks} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {extractTagAttribute,extractStartTags} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {breadcrumbRows} from '../../.agents/skills/swaw-banyan/tasks/check/html/breadcrumb/inspect.mjs';
 import {imagePages,imageBytes,generatedImage} from '../../.agents/skills/swaw-banyan/tasks/_shared/img.mjs';
@@ -96,20 +97,24 @@ function buildGuardrailIssues(rowsByPath) {
             continue;
         }
         for (const row of matchingRows) {
+            const main = guardrail.rootCollectionSlug && extractBlocks(row.text, 'main')[0];
+            const publishedRows = main
+                ? extractStartTags(main.inner, 'div').filter(tag => /\sdata-list-item(?:\s|=|>)/.test(tag)).length
+                : 0;
             const maxRawBytes = Number.isFinite(guardrail.maxRawBytes)
                 ? guardrail.maxRawBytes
-                : guardrail.rawBaseBytes + row.breadcrumbItemCount * guardrail.rawPerItemBytes;
+                : guardrail.rawBaseBytes + publishedRows * guardrail.rawPerItemBytes;
             const maxGzipBytes = Number.isFinite(guardrail.maxGzipBytes)
                 ? guardrail.maxGzipBytes
-                : guardrail.gzipBaseBytes + row.breadcrumbItemCount * guardrail.gzipPerItemBytes;
+                : guardrail.gzipBaseBytes + publishedRows * guardrail.gzipPerItemBytes;
             if (row.rawBytes > maxRawBytes) {
                 issues.push(
-                    `${guardrail.label} raw HTML exceeded budget: ${formatByteMetric(row.rawBytes)} > ${formatByteMetric(maxRawBytes)} (${row.relativePath}, items=${row.breadcrumbItemCount})`
+                    `${guardrail.label} raw HTML exceeded budget: ${formatByteMetric(row.rawBytes)} > ${formatByteMetric(maxRawBytes)} (${row.relativePath}, items=${publishedRows})`
                 );
             }
             if (row.gzipBytes > maxGzipBytes) {
                 issues.push(
-                    `${guardrail.label} gzip HTML exceeded budget: ${formatByteMetric(row.gzipBytes)} > ${formatByteMetric(maxGzipBytes)} (${row.relativePath}, items=${row.breadcrumbItemCount})`
+                    `${guardrail.label} gzip HTML exceeded budget: ${formatByteMetric(row.gzipBytes)} > ${formatByteMetric(maxGzipBytes)} (${row.relativePath}, items=${publishedRows})`
                 );
             }
             const maxBreadcrumbPayloadBytes = Number.isFinite(guardrail.maxBreadcrumbPayloadBytes)

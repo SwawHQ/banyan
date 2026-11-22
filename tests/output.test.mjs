@@ -45,6 +45,16 @@ test('repository HTML budgets keep raw and gzip failures outside published check
   }
 });
 
+test('collection HTML budgets count published rows within main',async()=>{
+  const directory=fixture(),row='<div data-list-item></div>';
+  for(const [main,aside] of [[row,''],['',row]]) {
+    write(directory,'articles-all/index.html','<html lang=en><main>'+main+'x'.repeat(28500)+'</main><aside>'+aside+'</aside></html>');
+    const {issues}=await inspectHtmlBudget(directory);
+    if(main)assert.deepEqual(issues,[]);
+    else assert.match(issues.join('\n'),/articles-all raw HTML exceeded budget.*items=0/);
+  }
+});
+
 test('collection heads prefetch their own column and missing breadcrumb runtime without adding a visible path',{timeout:60000},()=>{
   const root=fileURLToPath(new URL('../',import.meta.url)),content=path.join(work,'prefetch-content'),output=path.join(work,'prefetch-build');
   const languages=[['',''],['.zh','zh/'],['.ar','ar/']];
