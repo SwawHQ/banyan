@@ -6,7 +6,7 @@ url: p/service-worker-regression-checklist/
 description: 定位 SW 源码，检查程序更新、内容版本与停用边界。
 ---
 
-配置方法见[交付与缓存](/zh/p/delivery/)。本文用于修改 SW 实现后的检查，不重复配置表与命令参数。
+在 Banyan 源码仓库修改 `assets/site/delivery.toml` 或生成 `sw.js` 的逻辑后，运行 [SW 验收夹具](https://github.com/SwawHQ/banyan/blob/main/tests/README.md#sw-acceptance)。夹具自动构建程序更新和内容更新所需的两组产物。站点配置见[交付与缓存](/zh/p/delivery/)。
 
 ## 源码入口
 
@@ -37,7 +37,7 @@ description: 定位 SW 源码，检查程序更新、内容版本与停用边界
 
 缓存与 HTTP 响应头分别配置。版本缓存未命中时重新验证 HTTP 缓存，避免旧 HTML 写入新版本缓存。`sw.js` 与 `sw-version.json` 不进入页面或资源缓存桶。
 
-首次访问尚未受 SW 控制，页面不追加缓存预热。受控导航缓存 HTML 并预热同源指纹资源。检查已缓存页面离线访问，以及未缓存页面的语言回退。
+首次访问尚未受 SW 控制，页面不追加缓存预热。受控导航缓存 HTML 并预热同源指纹资源。断网后，已缓存页面可重载，未缓存的受管页面返回内置英文 503 提示。
 
 ## disable 模式
 
@@ -54,5 +54,3 @@ swban check/http/security <url>                             #部署后检查响�
 ```
 
 准备方式、单项任务、页面要求和报告范围统一见 Skill 的[浏览器检查](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/browser-site.md)。两个实际代码版本的比较应使用实际构建对；临时生成的更新构建只用于检查更新机制。
-
-源码回归入口见 [tests/README.md](https://github.com/SwawHQ/banyan/blob/main/tests/README.md) 中的 PWA、内容更新与停用测试。报告失败项和跳过项，不把代表页面检查视为全部场景覆盖。

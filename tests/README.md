@@ -8,11 +8,15 @@ Browser suites also need the Skill's Chromium and WebKit. Tests use system
 temporary directories and remove their fixtures;
 Hugo caches and resources stay there. They do not change site content or Git state.
 
-Run the SW acceptance suite from the Banyan repository root. The fixtures build the local Module and cover cache policy, offline navigation, content updates, worker activation and disable cleanup.
+## SW acceptance
+
+Run this suite from the Banyan repository root after changing `assets/site/delivery.toml` or the code that generates `sw.js`. The fixtures build the local Module, check both platforms' generated cache headers, and use Chromium to verify controlled offline navigation, cache buckets, content updates, worker activation and disable cleanup. They prepare both builds for each update scenario.
 
 ```powershell
 .\swban.cmd base/node --test --test-concurrency=2 tests/cache-policy.test.mjs tests/browser-pwa.test.mjs tests/browser-content.test.mjs tests/browser-update.test.mjs tests/browser-disable.test.mjs
 ```
+
+## Full source tests
 
 Run root suites with Node, except `tools.test.mjs`. Select the files explicitly
 in PowerShell:

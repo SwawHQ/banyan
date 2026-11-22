@@ -10,6 +10,7 @@ import {fileURLToPath} from 'node:url';
 import {referenceSiteEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {parseHeaders,cloudflareHeaders} from '../.agents/skills/swaw-banyan/tasks/_shared/headers.mjs';
+import {compilePath} from '../.agents/skills/swaw-banyan/tasks/check/delivery/_shared/path.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {extractTagAttribute,decodeHtmlAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
@@ -138,8 +139,11 @@ test('default policy generates explicit Cloudflare overrides and independent Edg
     ['/js/main.hash.js','public, max-age=31536000, immutable'],
     ['/site/app.hash.webmanifest','public, max-age=31536000, immutable'],
     ['/favicon.ico','public, max-age=86400, must-revalidate'],
-    ['/sw.js','no-cache, max-age=0, must-revalidate'],['/sw-version.json','no-cache, max-age=0, must-revalidate']])
+    ['/sw.js','no-cache, max-age=0, must-revalidate'],['/sw-version.json','no-cache, max-age=0, must-revalidate']]) {
     assert.equal(cloudflareHeaders(rules,url)['cache-control'],expected,url);
+    const matchingHeaders=edge.headers.filter(rule=>compilePath(rule.source).test(url)).flatMap(rule=>rule.headers);
+    assert.equal(matchingHeaders.findLast(header=>header.key.toLowerCase()==='cache-control')?.value,expected,'EdgeOne '+url);
+  }
   assert.equal(cloudflareHeaders(rules,'/site/app.hash.webmanifest')['content-type'],'application/manifest+json; charset=utf-8');
   const xml=cloudflareHeaders(rules,'/zh/index.xml')['content-security-policy'];
   assert.match(xml,/^default-src 'none';/);assert.ok(!xml.includes('script-src'));

@@ -59,6 +59,7 @@ swban <command> --help    #查看参数和默认值
 ## 根据改动选择检查
 
 - 修改交付配置或资源发布路径后，运行 `check/delivery`。
+- 在 Banyan 源码仓库修改 `assets/site/delivery.toml` 或生成 `sw.js` 的逻辑后，运行 [SW 验收夹具](https://github.com/SwawHQ/banyan/blob/main/tests/README.md#sw-acceptance)。
 - 修改脚本或安全响应头后，运行 `check/csp`。
 - 浏览器检查从 `check/browser/site <build>` 开始，准备方式和测试页面要求见浏览器检查文档。默认使用 Chromium；涉及内核差异时，选择已有的 `.webkit` 检查。
 - 站点特有的文案、账号、路由和业务预期留在站点测试中。
