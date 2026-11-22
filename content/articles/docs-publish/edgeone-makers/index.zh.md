@@ -71,6 +71,8 @@ cp "$build/edgeone.json" ./edgeone.json  #复制交付规则
 
 Makers 从项目根目录读取 `edgeone.json`。交付规则仍在 `assets/site/delivery.toml` 中维护；规则、脚本或 CSP 变化后，重新构建并复制生成文件。本地和平台使用相同源码、工具版本和构建参数，以保持 CSP 一致。配置位置见 [edgeone.json 说明](https://pages.edgeone.ai/document/edgeone-json)。
 
+多条 `headers` 规则命中同一路径时，Makers 按数组顺序合并，同名响应头取最后声明的值。把通用的 `/*` 放在前面，才能让后面的例外规则覆盖它。
+
 构建参数统一在平台设置。Git 仓库接入步骤见[导入仓库](https://pages.edgeone.ai/document/importing-a-git-repository)，Windows 命令行指导见：
 
 ```text

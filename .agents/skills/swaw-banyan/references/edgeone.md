@@ -5,6 +5,17 @@ Enable `platform.edgeone.makers.enabled` in the site-owned
 `edgeone.json`; build commands, output directory and tool versions belong
 to platform settings.
 
+## Response header order
+
+Makers applies matching `headers` rules in array order. For each header name,
+the last matching declaration wins. Other header names retain their values.
+Place `/*` before exceptions such as `/sw.js` and `/css/*`.
+
+Two overseas deployments on 2026-11-14 verified both orders with 90 requests
+across 15 paths. With `/*` first, `/sw.js` received `no-cache, max-age=0, must-revalidate`.
+With `/*` last, the same URL received `public, max-age=900, must-revalidate`.
+Two rules with identical paths also used the later value.
+
 ## Git hosting
 
 Read [Git build preparation](../tasks/deploy/edgeone/git/help.en.txt).

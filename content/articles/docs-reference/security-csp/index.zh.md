@@ -36,4 +36,4 @@ swban check/browser/csp <build> --page <path>  #检查浏览器实际 CSP 违规
 swban check/http/security <url>               #检查已部署的响应头
 ```
 
-本地检查不能代替部署后检查。尤其在 EdgeOne 上，应检查真实 HTTP 响应中的重叠规则结果。检查范围和准备步骤见[浏览器检查](/zh/p/browser-regression/)及 Skill 的[交付检查](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/delivery.md)。
+部署后可用真实 HTTP 响应验证线上 CSP。检查范围和准备步骤见[浏览器检查](/zh/p/browser-regression/)及 Skill 的[交付检查](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/delivery.md)。

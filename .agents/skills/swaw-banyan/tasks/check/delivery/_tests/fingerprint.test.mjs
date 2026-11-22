@@ -166,15 +166,21 @@ test('empty rules, missing channels and incomplete CF output remain distinct',()
   assert.ok((await inspect(root)).issues.some(value=>value.includes('both _headers and _redirects')));
 }));
 
-test('EdgeOne overlap is reported as uncertain and redirects retain order',()=>fixture(async({root,write})=>{
+test('EdgeOne uses the last matching Cache-Control in either order and preserves other headers',()=>fixture(async({root,write})=>{
   const edge={
     headers:[{source:'/*',headers:[{key:'Cache-Control',value:'max-age=900'}]},
-      {source:'/assets/*',headers:[{key:'Cache-Control',value:'immutable'}]}],
+      {source:'/assets/*',headers:[{key:'cache-control',value:'immutable'}]}],
     redirects:[{source:'/old/',destination:'/new/',statusCode:301}]};
-  await write('edgeone.json',JSON.stringify(edge));await write('assets/raw.png');
+  edge.headers.push({source:'/assets/*',headers:[{key:'X-Test',value:'yes'}]});
+  await write('edgeone.json',JSON.stringify(edge));await write('assets/raw.png');await write('assets/'+image);
   const result=await inspect(root);
-  assert.equal(result.summary.uncertainPaths,1);assert.equal(result.summary.missingFingerprint,0);
-  assert.ok(result.warnings.some(value=>value.includes('overlapping Cache-Control')));
+  assert.equal(result.summary.missingFingerprint,1);assert.equal(result.summary.outsideFingerprint,0);
+  assert.equal(result.summary.uncertainPaths,0);
+  assert.ok(!result.warnings.some(value=>value.includes('EdgeOne')));
+  edge.headers.reverse();await write('edgeone.json',JSON.stringify(edge));
+  const reversed=await inspect(root);
+  assert.equal(reversed.summary.missingFingerprint,0);assert.equal(reversed.summary.outsideFingerprint,1);
+  assert.ok(!reversed.warnings.some(value=>value.includes('EdgeOne')));
   await write('_headers',headers);await write('_redirects','/old/ /other/ 301');
   assert.ok((await inspect(root)).issues.some(value=>value.includes('redirects differ')));
 }));
@@ -197,7 +203,7 @@ test('EdgeOne overlapping values with the same immutable classification still ch
   const result=await inspect(root);
   assert.equal(result.summary.missingFingerprint,2);assert.equal(result.summary.uncertainPaths,0);
   assert.ok(result.issues.some(value=>value.startsWith('assets/raw.png:')));
-  assert.ok(result.warnings.some(value=>value.includes('merge not verified')));
+  assert.ok(!result.warnings.some(value=>value.includes('EdgeOne')));
 }));
 
 test('static CSP verifies either HTTP platform and still rejects differences',()=>fixture(async({root,write})=>{

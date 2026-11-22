@@ -93,15 +93,9 @@ The check uses browser URL paths, preserving characters such as `+` and encoding
 spaces and non-ASCII characters. It does not assume fixed resource directories.
 Cloudflare matching includes inherited headers and explicit header removals.
 EdgeOne redirects also support `$host` to `$wwwhost` and the reverse pair.
-Conflicting overlapping EdgeOne cache headers are reported as undetermined,
-because the platform does not define that precedence in its configuration guide.
-
-A two-deployment check on 2026-11-14 (EdgeOne CLI 1.7.2, overseas area) found
-that matching rules merge by header name: later declarations replace earlier
-values, while other headers remain. Reversing the rules made the final `/*`
-rule override even more specific paths. The current general-first order worked
-for all sampled resources. This is observed behavior, not a documented platform
-guarantee; the static check therefore keeps its uncertainty warning.
+For EdgeOne, the check uses the last matching declaration of `Cache-Control`.
+Put the default rule first and exceptions after it. See the
+[EdgeOne header order test](edgeone.md#response-header-order).
 
 ## Limits
 

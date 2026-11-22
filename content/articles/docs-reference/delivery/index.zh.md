@@ -51,7 +51,7 @@ SW 匹配区分大小写的 URL pathname，保留百分号编码，不含查询�
 `http.headers` 应用于两个平台。同一路由的
 `http.cloudflare.pages.headers` 和 `http.edgeone.makers.headers` 覆盖通用值。
 Cloudflare 的 `unset` 在设置当前值前移除此前匹配的响应头。
-HTTP 路由保留声明顺序，由各平台按自己的规则处理。
+EdgeOne Makers 按声明顺序合并匹配规则。同名响应头取最后一次声明的值，其他响应头保留。将 `/*` 写在前面，再写 `/sw.js`、`/sw-version.json` 和指纹资源的例外规则。
 CSP 根据实际内联脚本生成，详见[安全策略与 CSP](/zh/p/security-csp/)。
 
 ## Service Worker
