@@ -139,17 +139,22 @@ test('a junction inside an SDK is rejected without following or deleting it', ()
   } finally { fs.unlinkSync(source); fs.renameSync(moved,source); }
 });
 const fresh = copySkill('uninitialized');
-test('help and tool checks never prepare tools, including without a JS runtime', () => {
+test('localized help matches the command catalog without preparing tools', () => {
   for (const language of ['en','zh']) {
     const expected = helpText([],language,path.join(fresh,'tasks'))+'\n';
     const result = cli(fresh,`help/${language}`);
     expect(result.status).toBe(0); expect(result.stdout).toBe(expected);
   }
-  const env={...process.env,PATH:''};
-  for (const command of ['check/csp --help','doctor --help','base/browser/ensure --help','base/browser/ensure.webkit --help','base/hugo/ensure --help','base/bun/ensure --help']) expect(cli(fresh,command,{env}).status).toBe(0);
-  for (const command of ['help en','help zh','help xx','help zh extra','base/ensure','check/module','ensure/browser','ensure/browser.webkit','doctor','base/bun/check','base/node/check','base/gh/check','base/bun/ensure --invalid','base/gh/ensure --invalid']) expect(cli(fresh,command,{env}).status).not.toBe(0);
   expect(stat(path.join(fresh,'.tools'))).toBeNull();
-}, 15000);
+});
+test.each(['check/csp --help','doctor --help','base/browser/ensure --help','base/browser/ensure.webkit --help','base/hugo/ensure --help','base/bun/ensure --help'])('%s prints help without a JS runtime',command=>{
+  expect(cli(fresh,command,{env:{...process.env,PATH:''}}).status).toBe(0);
+  expect(stat(path.join(fresh,'.tools'))).toBeNull();
+});
+test.each(['help en','help zh','help xx','help zh extra','base/ensure','check/module','ensure/browser','ensure/browser.webkit','doctor','base/bun/check','base/node/check','base/gh/check','base/bun/ensure --invalid','base/gh/ensure --invalid'])('%s fails without preparing tools',command=>{
+  expect(cli(fresh,command,{env:{...process.env,PATH:''}}).status).not.toBe(0);
+  expect(stat(path.join(fresh,'.tools'))).toBeNull();
+});
 let portable = copySkill('便携 skill ! with spaces',true);
 const site = mkdir('caller site'), externalNode = mkdir('external-node');
 fs.writeFileSync(path.join(externalNode,'node.exe'),binary);
