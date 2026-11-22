@@ -1,6 +1,8 @@
 # Banyan minimal reference site.
 # Sites own their complete configuration. Use this file as a reference.
 baseURL = "https://banyan.swaw.com/"
+# Optional Hugo cache directory for downloaded modules and other cached files. Windows default: %LOCALAPPDATA%/hugo_cache
+# cacheDir = ""
 timeZone = "Asia/Shanghai"
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false

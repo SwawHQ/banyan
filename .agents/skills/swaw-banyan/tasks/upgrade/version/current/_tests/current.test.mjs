@@ -6,6 +6,7 @@ import os from 'node:os';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {current,identify} from '../inspect.mjs';
+import {readHugoConfig} from '../../../../_shared/hugo.mjs';
 import {readRelease} from '../../../../_shared/banyan.mjs';
 import {toolExecutable} from '../../../../_shared/tools/operations.mjs';
 import {hugoEnvironment} from '../../../../base/hugo/run.mjs';
@@ -67,6 +68,18 @@ before(()=>{
 after(()=>{
   for (const [key,value] of Object.entries(previous??{})) if (value===undefined) delete process.env[key]; else process.env[key]=value;
   if (work) {assert.equal(path.dirname(fs.realpathSync(work)),parent);assert.ok(path.basename(work).startsWith('case-'));fs.rmSync(work,{recursive:true,force:true});}
+});
+
+test('config stays valid JSON during a cold module download',async()=>{
+  const root=site();
+  const config=await readHugoConfig(root);
+  assert.equal(config.baseurl,'https://example.test/');
+  assert.equal(path.resolve(config.cachedir),path.resolve(process.env.HUGO_CACHEDIR));
+  const proxy=process.env.HUGO_MODULE_PROXY;
+  process.env.HUGO_MODULE_PROXY='off';
+  try {
+    assert.equal((await readHugoConfig(root)).baseurl,config.baseurl);
+  } finally {process.env.HUGO_MODULE_PROXY=proxy;}
 });
 
 test('Hugo resolves published versions and effective remote replacements, without forcing the Skill version',()=>{

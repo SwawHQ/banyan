@@ -68,3 +68,19 @@ test('native dev indexes once, serves edits, skips indexing and retains output',
     }
   } finally {fs.rmSync(root,{recursive:true,force:true});}
 });
+
+
+test('missing development workspace reports the site commands',{skip:!process.env.SWBAN_TEST_DEV},async t=>{
+  const parent=path.join(os.tmpdir(),'swaw/banyan/dev-tests');fs.mkdirSync(parent,{recursive:true});
+  const site=fs.mkdtempSync(path.join(parent,'workspace-'));
+  t.after(()=>fs.rmSync(site,{recursive:true,force:true}));
+  fs.writeFileSync(path.join(site,'hugo.toml'),'title = "Example"');
+  const previous=process.env.HUGO_MODULE_WORKSPACE;
+  process.env.HUGO_MODULE_WORKSPACE='hugo.work';
+  try {
+    await assert.rejects(readHugoConfig(site),/hugo\.work" does not exist[\s\S]*development\.\nPreview this site: swban server\nBuild this site: +swban build/);
+  } finally {
+    if(previous===undefined)delete process.env.HUGO_MODULE_WORKSPACE;
+    else process.env.HUGO_MODULE_WORKSPACE=previous;
+  }
+});

@@ -1,4 +1,4 @@
-const configFlags=new Set(['baseURL','source','environment','config','configDir','themesDir','theme','contentDir','ignoreVendorPaths']);
+const configFlags=new Set(['baseURL','source','environment','config','configDir','cacheDir','themesDir','theme','contentDir','ignoreVendorPaths']);
 const shortFlags={b:'baseURL',s:'source',e:'environment',t:'theme',c:'contentDir'};
 
 export function addressOptions(input) {
