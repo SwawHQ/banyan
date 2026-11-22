@@ -205,9 +205,6 @@ export async function check({page,baseUrl,options}) {
   for(const width of options.widths.split(',').map(Number)) {
     stage=width+' layout';
     await page.setViewportSize({width,height:900});await visit(page,baseUrl+options.page);
-    stage=width+' first wheel after keyboard';
-    const firstKeyboardWheel=await checkFirstKeyboardWheel(page,baseUrl+options.page);await visit(page,baseUrl+options.page);
-    stage=width+' layout';
     await page.setViewportSize({width:width+160,height:900});await afterPaint(page);
     const resized=await tailState(page);
     assert.ok(Math.abs(resized.tail-Math.max(0,resized.width-resized.readingWidth))<=1,'Resizing must update the tail space.');
@@ -219,6 +216,8 @@ export async function check({page,baseUrl,options}) {
     assert.ok(geometry.scrollWidth+1>=geometry.lastRight+geometry.tail,'The document scroll range must include the full tail space.');
     assert.equal(geometry.snap,'none','Normal browsing must retain native scrolling without added snapping.');
     assert.ok(geometry.align.every(value=>value==='none'),'Normal columns must retain native scrollIntoView alignment.');
+    stage=width+' first wheel after keyboard';
+    const firstKeyboardWheel=await checkFirstKeyboardWheel(page,baseUrl+options.page);await visit(page,baseUrl+options.page);
     stage=width+' horizontal keyboard';
     const keyboard=await checkKeyboard(page);await visit(page,baseUrl+options.page);
     stage=width+' native horizontal scrollbar';

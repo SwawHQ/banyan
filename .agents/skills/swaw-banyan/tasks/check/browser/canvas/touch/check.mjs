@@ -30,7 +30,8 @@ export async function check({page,context,baseUrl,options}) {
   const record=request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())documents.push(request.url());};
   page.on('request',record);
   try {
-    const swipe=async(x,dx,dy=0,y=180)=>{
+    // Start over the article body, below the fixture's horizontally scrollable examples.
+    const swipe=async(x,dx,dy=0,y=page.viewportSize().height/2)=>{
       const drag=await touchDrag(page,cdp,{x:initial.direction===-1?width-x:x,dx:dx*initial.direction,dy,y});
       drags.push(drag);
       if(!dy)assert.equal(drag.after.y,drag.before.y,'Horizontal touch input must preserve the vertical reading position.');
