@@ -6,6 +6,7 @@ import {once} from 'node:events';
 import {parseHeaders,cloudflareHeaders} from '../../../_shared/headers.mjs';
 import {readOptional} from '../../../_shared/output.mjs';
 import {readPages} from '../../../_shared/html/read.mjs';
+import {isRedirectPage} from '../../../_shared/html/markup.mjs';
 import {siteLocation} from './location.mjs';
 
 const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8',
@@ -33,7 +34,8 @@ async function readRoot(directory) {
   if (!(await fs.stat(path.join(root,'index.html'))).isFile()) throw new Error('Build directory must contain index.html.');
   const rules = parseHeaders(await readOptional(path.join(root,'_headers'))).map(rule => ({...rule,
     pattern:new RegExp('^'+rule.source.split('*').map(part=>part.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*')+'$')}));
-  const location=siteLocation((await readPages(root)).pages);
+  const entry={relativePath:'index.html',text:await fs.readFile(path.join(root,'index.html'),'utf8')};
+  const location=siteLocation(isRedirectPage(entry.text)?(await readPages(root)).pages:[entry]);
   return {root,rules,...location};
 }
 export async function createStaticSiteServer(directory) {
