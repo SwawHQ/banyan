@@ -103,6 +103,12 @@ test(name+' rejects an aside gap, mismatched control styles and clipped print',{
   const printed=cli('aside/print'+suffix,['--page',route],print);assert.equal(printed.status,1);assert.match(printed.stderr,/without clipping/);
 });
 
+test(name+' rejects an invisible expanded menu icon',()=>{
+  const hidden=fixture('hidden-menu-'+name);css(hidden,'#document-aside-toggle[aria-expanded=true] .icon{opacity:0}');
+  const result=cli('aside/style'+suffix,['--page',route,'--widths','390'],hidden);
+  assert.equal(result.status,1);assert.match(result.stderr,/expanded icon must remain visible/);
+});
+
 test(name+' rejects divergent canvas widths and accepts translated paths',{timeout:15000},()=>{
   const broken=fixture('canvas-'+name);css(broken,'.breadcrumb-column{inline-size:100px!important}');
   const canvas=cli('canvas/layout'+suffix,['--page',route,'--widths','390'],broken);assert.equal(canvas.status,1);assert.match(canvas.stderr,/share a width/);

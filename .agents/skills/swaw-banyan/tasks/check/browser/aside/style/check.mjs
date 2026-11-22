@@ -63,11 +63,27 @@ export async function check({page,baseUrl,options}) {
       assert.deepEqual(await paint(toggle),await paint(selected),'The expanded toggle must reuse selected navigation styles.');
       const icon=toggle.locator('.icon');
       assert.equal(await icon.evaluate(node=>getComputedStyle(node).color),(await paint(toggle)).color,'The icon must inherit the control color.');
-      const visible=await toggle.screenshot({animations:'disabled'});
-      let hidden;
-      try {await icon.evaluate(node=>{node.style.visibility='hidden';});hidden=await toggle.screenshot({animations:'disabled'});}
-      finally {await icon.evaluate(node=>{node.style.removeProperty('visibility');});}
-      assert.ok(!visible.equals(hidden),'The expanded icon must remain visible above the control background.');
+      await toggle.scrollIntoViewIfNeeded();
+      // Chromium element screenshots can miss the control when RTL scrollX is negative.
+      const bounds=await toggle.boundingBox();
+      const pixels=async()=>{
+        const png=await page.screenshot({animations:'disabled',scale:'css'});
+        return page.evaluate(async({png,bounds})=>{
+          const bytes=Uint8Array.from(atob(png),c=>c.charCodeAt(0));
+          const image=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
+          const {x,y,width,height}=bounds;
+          const canvas=document.createElement('canvas');
+          canvas.width=Math.ceil(width);canvas.height=Math.ceil(height);
+          const ctx=canvas.getContext('2d');
+          ctx.drawImage(image,-Math.floor(x),-Math.floor(y));image.close();
+          return canvas.toDataURL();
+        },{png:png.toString('base64'),bounds});
+      };
+      const visible=await pixels();
+      try {
+        await icon.evaluate(node=>{node.style.visibility='hidden';});
+        assert.ok(await pixels()!==visible,'The expanded icon must remain visible above the control background.');
+      } finally {await icon.evaluate(node=>{node.style.removeProperty('visibility');});}
       assert.equal(await toggle.evaluate(node=>getComputedStyle(node).borderTopWidth),'0px');
       assert.ok(await page.evaluate(()=>{
         const edge=getComputedStyle(document.documentElement).direction==='rtl'?'right':'left';
