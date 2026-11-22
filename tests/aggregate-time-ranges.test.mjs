@@ -391,7 +391,7 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
   const probe=net.createServer();await listenOnLoopback(probe);
   const port=probe.address().port;await new Promise((resolve,reject)=>probe.close(error=>error?reject(error):resolve()));
   const base='http://127.0.0.1:'+port;
-  const server=spawn(toolExecutable('hugo'),['server','--noBuildLock','--bind','127.0.0.1','--port',String(port),
+  const server=spawn(toolExecutable('hugo'),['server',...(process.platform==='win32'?['--poll','500ms']:[]),'--noBuildLock','--bind','127.0.0.1','--port',String(port),
     '--baseURL',base,'--disableLiveReload','--enableGitInfo=false','--destination',path.join(work,'preview')],
     {cwd:source,env:fixtureEnvironment(work),windowsHide:true,stdio:['ignore','pipe','pipe']});
   let logs='',launchError;server.on('error',error=>{launchError=error;});
@@ -421,8 +421,8 @@ test('preview rebuilds update time membership, counts, feeds and source paths',{
   async function state(direct,leaf,count){
     const parentRows=await liveRows('archive/a'),childRows=await liveRows('archive/a/b');
     assert.equal(parentRows.find(row=>row.href==='/archive/a/b/').sort_count,String(count));
-    assert.equal(parentRows.some(row=>row.href==='/p/range-override/'),direct);
-    assert.equal(childRows.some(row=>row.href==='/p/range-override/'),leaf==='archive/a/b');
+    assert.equal(parentRows.some(row=>row.href==='/p/range-override/'),direct,'Article membership in archive/a for '+leaf);
+    assert.equal(childRows.some(row=>row.href==='/p/range-override/'),leaf==='archive/a/b','Article membership in archive/a/b for '+leaf);
     const articleHTML=await html('p/range-override/'),navigation=readBreadcrumbData(articleHTML);
     const paths=(await Promise.all(Object.entries(navigation.columnURLs).map(async([logicalPath,url])=>{
       const payload=readNavigationResource(await html(url.replace(/^\//,'')));
