@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {toolExecutable} from '../../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import { verifyCspOutput } from '../../.agents/skills/swaw-banyan/tasks/check/csp/verify.mjs';
-import {referenceSiteEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from '../_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,writeDelivery,fixtureDelivery,serviceWorkerPolicy} from '../_shared/hugo.mjs';
 import {extractStartTags,extractTagAttribute} from '../../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 const siteRoot = process.cwd(), temporaryRoot = path.join(fs.realpathSync(os.tmpdir()), 'swaw/banyan/prefetch-build-tests');
@@ -29,7 +29,7 @@ try {
     function build(name, policy, output = path.join(work, name), expectedError = '', config = '') {
         const configFile = path.join(work, name + '.toml'), assets = path.join(work, name + '-assets');
         fs.mkdirSync(path.join(assets,'site'),{recursive:true});
-        fs.writeFileSync(path.join(assets,'site/delivery.toml'),fixtureDelivery(policy,serviceWorkerPolicy('disable')));
+        writeDelivery(assets,fixtureDelivery(policy,serviceWorkerPolicy('disable')));
         fs.writeFileSync(configFile,config+'\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n[[module.mounts]]\nsource = '+
             JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n'+fixtureSiteMounts);
         const result = spawnSync(hugo, ['--noBuildLock',
@@ -114,7 +114,7 @@ try {
     }
 
     verifyNative(build('off','[prefetch]\nenabled = false\n'),false);
-    const referenceConfig=read(path.join(siteRoot,'assets/site/delivery.toml'));
+    const referenceConfig=fixtureDelivery();
     const referenceBody=verifyNative(build('reference',referenceConfig),false);
     assert.equal(verifyNative(build('reference-enabled',referenceConfig.replace(/^enabled = false$/m,'enabled = true')),true),referenceBody,
         'The reference configuration enables its published diagnostic rules by changing only the switch');

@@ -7,7 +7,7 @@ import vm from 'node:vm';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {referenceSiteEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,writeDelivery,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {parseHeaders,cloudflareHeaders} from '../.agents/skills/swaw-banyan/tasks/_shared/headers.mjs';
 import {compilePath} from '../.agents/skills/swaw-banyan/tasks/check/delivery/_shared/path.mjs';
@@ -20,7 +20,7 @@ let work;
 function write(file,body) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,body);}
 function build(name,policy,config='',workerConfig=serviceWorkerPolicy('enable')) {
   const directory=path.join(work,name),overlay=path.join(directory,'assets'),assets=path.join(work,'assets');
-  write(path.join(overlay,'site/delivery.toml'),fixtureDelivery(policy,workerConfig));
+  writeDelivery(overlay,fixtureDelivery(policy,workerConfig));
   const mounts=[['assets','assets'],['assets',assets],['assets',overlay]]
     .map(([target,source])=>'[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+fixtureSiteMounts;
   const configFile=path.join(directory,'fixture.toml'),output=path.join(directory,'public');

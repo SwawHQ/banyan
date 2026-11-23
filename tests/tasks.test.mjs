@@ -45,7 +45,7 @@ function cliAsync(command,args=[],options={}) {
 }
 function externalSite(name,text) {
   const root = path.join(site,name);
-  write(root,'assets/site/external-resources.yaml',text.replaceAll('ORIGIN',origin));
+  write(root,'assets/site/external-resources.toml',text.replaceAll('ORIGIN',origin));
   fixturePairing(root);
   return root;
 }
@@ -92,7 +92,7 @@ before(async () => {
   write(site,'public/robots.txt','User-agent: *\nSitemap: https://example.test/sitemap.xml');
   write(site,'public/llms.txt','# Fixture\nCanonical site: https://example.test/\nSitemap: https://example.test/sitemap.xml\n## Pages\n- [Home](<https://example.test/>)');
   write(site,'public/index.html',`<!doctype html><html lang=en><head><title>Fixture</title><meta name=description content="Fixture home"><link rel=canonical href="https://example.test/"><link rel=stylesheet href="/css/page.0123456789abcdef.css"></head><body><h1>Fixture</h1><time data-site-build-version title=v20261008120000 datetime=2026-10-08T12:00:00Z>v20261008120000</time><script>${inline}</script><script src="/js/site-status/page.0123456789abcdef.js" integrity="sha256-${hash(external)}"></script></body></html>`);
-  write(site,'assets/site/external-resources.yaml','resources: []');
+  write(site,'assets/site/external-resources.toml','resources = []');
   server = createServer((request,response) => {
     requests++;
     response.setHeader('Content-Type','application/json');
@@ -160,7 +160,7 @@ test('routing cannot leave the tasks directory through traversal or a directory 
 test('task execution leaves published output and tool bindings unchanged',() => {
   const files = snapshot(path.join(site,'public'));
   const bindings = snapshot(path.join(skill,'.tools'));
-  for (const command of ['check/csp','check/sri','check/html/metadata','check/html/headings','check/html/jsonld','check/html/scripts','check/html/styles','check/html/breadcrumb','check/sitemap','check/robots','check/llms','check/build-version','check/prefetch/payload','check/prefetch/rules','check/img/icons','check/img/share','check/img/responsive','report/size/html','report/size/js','report/size/assets','report/payload/breadcrumb','report/payload/prefetch','sync/ext']) {
+  for (const command of ['check/csp','check/sri','check/html/metadata','check/html/headings','check/html/jsonld','check/html/scripts','check/html/styles','check/html/breadcrumb','check/sitemap','check/robots','check/llms','check/build-version','check/prefetch/payload','check/prefetch/rules','check/img/icons','check/img/share','check/img/responsive','report/size/html','report/size/js','report/size/assets','report/payload/breadcrumb','report/payload/prefetch','sync/resources']) {
     const result = cli(command);
     assert.equal(result.status,0,result.stdout + result.stderr);
   }
@@ -219,20 +219,20 @@ test('output tasks reject duplicate directories and missing output',() => {
   }
 });
 
-test('external sync uses Skill-local YAML, selects ids and preserves identical files without site npm',async () => {
-  const root = externalSite('external success',`resources:
-  - id: first
-    source: >-
-      ORIGIN/json
-    target: content/files/data.json
-    validators: ["json:details.version", "min-size:2KiB", "max-size:1MB"]
-  - id: second
-    source: ORIGIN/json
-    target: assets/second.json
-    validators: [json]
+test('external sync uses Skill-local TOML, selects ids and preserves identical files without site npm',async () => {
+  const root = externalSite('external success',`[[resources]]
+id = "first"
+source = "ORIGIN/json"
+target = "content/files/data.json"
+validators = ["json:details.version", "min-size:2KiB", "max-size:1MB"]
+[[resources]]
+id = "second"
+source = "ORIGIN/json"
+target = "assets/second.json"
+validators = ["json"]
 `);
   const beforeRequests = requests;
-  const result = await cliAsync('sync/ext',['first'],{cwd:root});
+  const result = await cliAsync('sync/resources',['first'],{cwd:root});
   assert.equal(result.status,0,result.stderr);
   assert.equal(requests,beforeRequests+1);
   assert.equal(fs.existsSync(path.join(root,'assets/second.json')),false);
@@ -242,28 +242,41 @@ test('external sync uses Skill-local YAML, selects ids and preserves identical f
   assert.equal(JSON.parse(fs.readFileSync(target)).details.version,1);
   fs.utimesSync(target,new Date('2020-01-01'),new Date('2020-01-01'));
   const mtime = fs.statSync(target).mtimeMs;
-  const unchanged = await cliAsync('sync/ext',['first'],{cwd:root});
+  const unchanged = await cliAsync('sync/resources',['first'],{cwd:root});
   assert.equal(unchanged.status,0,unchanged.stderr);
   assert.match(unchanged.stdout,/already up to date/);
   assert.equal(fs.statSync(target).mtimeMs,mtime);
-  assert.equal((await cliAsync('sync/ext',[],{cwd:root})).status,0);
+  assert.equal((await cliAsync('sync/resources',[],{cwd:root})).status,0);
   assert.equal(fs.existsSync(path.join(root,'assets/second.json')),true);
   assert.equal(fs.readdirSync(path.dirname(target)).some(name => name.startsWith('.swban-')),false);
 });
 
+test('build downloads missing external resources and preserves local files on the next build',async () => {
+  const root=externalSite('build resources','[[resources]]\nid="catalogue"\nsource="ORIGIN/json"\ntarget="assets/catalogue.json"\nvalidators=["json"]\n');
+  write(root,'layouts/home.html','{{ (resources.Get "catalogue.json").Content | safeHTML }}');
+  const start=requests;
+  const first=await cliAsync('build',[],{cwd:root});assert.equal(first.status,0,first.stderr);
+  assert.equal(requests,start+1);
+  assert.ok(fs.readFileSync(path.join(root,'public/index.html'),'utf8').includes('ModernDistributions'));
+  write(root,'assets/catalogue.json','{"local":true}');
+  const second=await cliAsync('build',[],{cwd:root});assert.equal(second.status,0,second.stderr);
+  assert.equal(requests,start+1);
+  assert.ok(fs.readFileSync(path.join(root,'public/index.html'),'utf8').includes('local'));
+});
+
 test('download or content validation failures leave the existing resource untouched',async () => {
   for (const [index,source,validators] of [
-    [0,'/bad-json','[json]'],[1,'/empty','[]'],[2,'/small','["min-size:2KiB"]'],
-    [3,'/json','["max-size:2KiB"]'],[4,'/fail','[json]'],[5,'/json','["json:absent"]']
+    [0,'/bad-json','["json"]'],[1,'/empty','[]'],[2,'/small','["min-size:2KiB"]'],
+    [3,'/json','["max-size:2KiB"]'],[4,'/fail','["json"]'],[5,'/json','["json:absent"]']
   ]) {
-    const root = externalSite('external failure '+index,`resources:
-  - id: item
-    source: ORIGIN${source}
-    target: content/item.json
-    validators: ${validators}
+    const root = externalSite('external failure '+index,`[[resources]]
+id = "item"
+source = "ORIGIN${source}"
+target = "content/item.json"
+validators = ${validators}
 `);
     write(root,'content/item.json','original bytes');
-    const result = await cliAsync('sync/ext',[],{cwd:root});
+    const result = await cliAsync('sync/resources',[],{cwd:root});
     assert.equal(result.status,1,result.stdout + result.stderr);
     assert.equal(fs.readFileSync(path.join(root,'content/item.json'),'utf8'),'original bytes');
     assert.deepEqual(fs.readdirSync(path.join(root,'content')),['item.json']);
@@ -271,19 +284,19 @@ test('download or content validation failures leave the existing resource untouc
 });
 
 test('invalid declarations fail before downloading or writing any selected resource',async () => {
-  const item = `id: item\n    source: ORIGIN/json\n    target: content/item.json`;
+  const item = `id = "item"\n    source = "ORIGIN/json"\n    target = "content/item.json"`;
   const cases = [
-    ['duplicate id',`resources:\n  - ${item}\n  - ${item}`],
-    ['duplicate target',`resources:\n  - ${item}\n  - id: other\n    source: ORIGIN/json\n    target: content/item.json`],
-    ['duplicate yaml key',`resources:\n  - ${item}\n    id: other`],
-    ['invalid validator',`resources:\n  - ${item}\n    validators: ["max-size:2x"]`],
-    ['unsupported field',`resources:\n  - ${item}\n    validator: json`],
-    ['unknown id',`resources:\n  - ${item}`,'absent']
+    ['duplicate id',`[[resources]]\n${item}\n[[resources]]\n${item}`],
+    ['duplicate target',`[[resources]]\n${item}\n[[resources]]\nid = "other"\n    source = "ORIGIN/json"\n    target = "content/item.json"`],
+    ['duplicate TOML key',`[[resources]]\n${item}\n    id = "other"`],
+    ['invalid validator',`[[resources]]\n${item}\nvalidators = ["max-size:2x"]`],
+    ['unsupported field',`[[resources]]\n${item}\n    validator = "json"`],
+    ['unknown id',`[[resources]]\n${item}`,'absent']
   ];
   for (const [name,text,id] of cases) {
     const root = externalSite('declaration '+name,text);
     const before = requests;
-    const result = await cliAsync('sync/ext',id ? [id] : [],{cwd:root});
+    const result = await cliAsync('sync/resources',id ? [id] : [],{cwd:root});
     assert.equal(result.status,1,result.stdout + result.stderr);
     assert.equal(requests,before);
     assert.equal(fs.existsSync(path.join(root,'content')),false);
@@ -292,22 +305,22 @@ test('invalid declarations fail before downloading or writing any selected resou
 
 test('external targets cannot escape the site or modify generated output and tool directories',async () => {
   for (const [index,target] of ['../escape.json','public/item.json','.git/item','.agents/item','node_modules/item'].entries()) {
-    const root = externalSite('target rejection '+index,`resources:
-  - id: item
-    source: ORIGIN/json
-    target: ${target}
+    const root = externalSite('target rejection '+index,`[[resources]]
+id = "item"
+source = "ORIGIN/json"
+target = "${target}"
 `);
     const files=snapshot(root);
     const before = requests;
-    const result = await cliAsync('sync/ext',[],{cwd:root});
+    const result = await cliAsync('sync/resources',[],{cwd:root});
     assert.equal(result.status,1,result.stdout + result.stderr);
     assert.equal(requests,before);
     assert.deepEqual(snapshot(root),files);
   }
-  const root = externalSite('target link',`resources:
-  - id: item
-    source: ORIGIN/json
-    target: content/link/item.json
+  const root = externalSite('target link',`[[resources]]
+id = "item"
+source = "ORIGIN/json"
+target = "content/link/item.json"
 `);
   const outside = path.join(work,'external target');
   write(outside,'item.json','keep outside');
@@ -315,7 +328,7 @@ test('external targets cannot escape the site or modify generated output and too
   fs.symlinkSync(outside,path.join(root,'content/link'),process.platform === 'win32' ? 'junction' : 'dir');
   try {
     const before = requests;
-    assert.equal((await cliAsync('sync/ext',[],{cwd:root})).status,1);
+    assert.equal((await cliAsync('sync/resources',[],{cwd:root})).status,1);
     assert.equal(requests,before);
     assert.equal(fs.readFileSync(path.join(outside,'item.json'),'utf8'),'keep outside');
   } finally { fs.unlinkSync(path.join(root,'content/link')); }

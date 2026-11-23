@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {discoverSite} from '../.agents/skills/swaw-banyan/tasks/check/browser/site/discover.mjs';
-import {fixtureEnvironment,fixtureContentDirectory,fixtureSiteFiles,fixtureSitePages,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureContentDirectory,fixtureSiteFiles,fixtureSitePages,writeDelivery,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {createStaticSiteServer} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
 import {loadChromium} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
@@ -32,7 +32,7 @@ before(()=>{
   fixtureSitePages(source,['appearance','language','my','_res','rss','powered-by']);
   const config='disableLanguages = ["ar"]\n'+fs.readFileSync(path.join(root,'hugo.toml'),'utf8');
   write(source,'hugo.toml',config);
-  write(source,'assets/site/delivery.toml',fixtureDelivery(serviceWorkerPolicy('enable')));
+  writeDelivery(path.join(source,'assets'),fixtureDelivery(serviceWorkerPolicy('enable')));
   write(source,'go.mod','module fixture.invalid/site\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\nreplace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(root,'module').replaceAll('\\','/'))+'\n');
   let panel=fs.readFileSync(path.join(root,'content/powered-by/index.md'),'utf8');
   panel=panel.replace(/^url:.*$/m,'url: /prefs/update/\n');
@@ -107,7 +107,7 @@ test('site checks reuse one build, report skipped coverage and retain failures',
 });
 
 test('site checks follow a deployment subdirectory and language home',{timeout:120000},async()=>{
-  const file=path.join(source,'assets/site/delivery.toml'),original=fs.readFileSync(file,'utf8');
+  const file=path.join(source,'assets/deploy/policy.toml'),original=fs.readFileSync(file,'utf8');
   const destination=path.join(work,'subdirectory-build');
   let server,browser;
   try {
@@ -168,7 +168,7 @@ test('site --updates builds a temporary program revision, runs real SW checks an
 
 test('site discovers enabled automatic prefetch and runs browser rule and diagnostic checks',{timeout:60000},async()=>{
   const directory=path.join(work,'prefetch-build');
-  write(source,'assets/site/delivery.toml',fixtureDelivery(serviceWorkerPolicy('enable')+
+  writeDelivery(path.join(source,'assets'),fixtureDelivery(serviceWorkerPolicy('enable')+
     '[prefetch]\nenabled = true\ndefault = "conservative"\n[prefetch.prerender]\ndefault = "off"\n'));
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',directory],
     {cwd:source,env:fixtureEnvironment(path.join(work,'prefetch-work')),

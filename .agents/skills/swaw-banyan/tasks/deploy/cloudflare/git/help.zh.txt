@@ -2,7 +2,7 @@ swban help/zh deploy/cloudflare/git  #准备 Cloudflare Pages Git 托管构建
 
 平台拉取源码，使用 swban 构建站点和 Pagefind 搜索索引。
 
-1. 准备源码：提交 swban、.agents/skills/swaw-banyan 和站点源码，在 assets/site/delivery.toml 中启用 platform.cloudflare.pages.enabled。主题源码随仓库提供时可保留 replace 到 ./module；移除指向仓库外本机目录的 replace。不要提交 .tools。
+1. 准备源码：提交 swban、.agents/skills/swaw-banyan 和站点源码，在 assets/deploy/settings.toml 中启用 platform.cloudflare.pages.enabled。主题源码随仓库提供时可保留 replace 到 ./module；移除指向仓库外本机目录的 replace。不要提交 .tools。
 
 2. 向平台提供构建设置：
 根目录：站点在仓库中的目录，本参考站点为 ./。输出目录：public。

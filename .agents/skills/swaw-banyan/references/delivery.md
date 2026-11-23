@@ -13,14 +13,7 @@ set `--base-path` to that prefix, as in the example above.
 
 ## Configuration
 
-Each site owns a complete `assets/site/delivery.toml`. Start from the Banyan root
-reference file, retain the site's own values and update this file directly.
-The Module and traditional theme directory do not supply configuration defaults.
-The `routes` array contains the site's ordered rules; `routes = []` declares none.
-Top-level `[[redirects]]` entries in the same file declare URL redirects with
-`source`, `destination` and `status`. Omit this array when there are no redirects.
-The Banyan reference file provides a fully commented example. Rules retain their
-declaration order in the enabled platforms' output.
+Choose platforms, SW mode and prefetch in `assets/deploy/settings.toml`. Add ordered URL redirects to the optional `assets/deploy/redirects.toml`. The Module supplies `assets/deploy/policy.toml` with cache routes, the content check interval and prefetch profiles. To customize these rules, copy the complete policy to the same path in the site.
 
 Keep general routes first and exceptions last. HTTP output retains declaration
 order. SW uses only routes with `sw`, reverses them and takes the first match.
@@ -54,17 +47,20 @@ The fingerprint bucket retains resources across builds by their fingerprint URLs
 For deployment preparation, use `swban help/en deploy`; see [EdgeOne](edgeone.md)
 for its Git-build configuration requirements.
 
-Enable prefetch with a complete table to use automatic native/SW/link selection:
+Set the switches in settings.toml:
 
 ```toml
 [prefetch]
 enabled = true
-default = "conservative"
-
-prerender.default = "off"
 
 [sw]
 mode = "enable"
+```
+
+Set the check interval in the policy override:
+
+```toml
+[sw]
 content_check_interval = 5
 ```
 

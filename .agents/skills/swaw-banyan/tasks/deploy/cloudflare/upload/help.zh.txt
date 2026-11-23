@@ -3,7 +3,7 @@ swban help/zh deploy/cloudflare/upload  #准备 Cloudflare Pages 产物上传
 在本地或 CI 完成构建，再发布整个产物目录。Banyan 命令从站点根目录执行。
 <build>：独立产物目录的绝对路径；<url>：正式站点网址。
 
-1. 在 assets/site/delivery.toml 中设置 platform.cloudflare.pages.enabled = true，并将 hugo.toml 的 baseURL 设为 <url>。
+1. 在 assets/deploy/settings.toml 中设置 platform.cloudflare.pages.enabled = true，并将 hugo.toml 的 baseURL 设为 <url>。
 
 2. 构建并检查：
 swban base/hugo --minify --gc --cleanDestinationDir --destination "<build>"  #构建静态产物

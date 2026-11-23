@@ -6,7 +6,7 @@ baseURL = "https://banyan.swaw.com/"
 timeZone = "Asia/Shanghai"
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
-# Render assets/site/robots.txt.tmpl; false disables Hugo's robots.txt output.
+# Default rules allow all crawlers and list the sitemap. To customize, create assets/site/robots.txt.tmpl in your site.
 enableRobotsTXT = true
 panicOnWarning = true
 printPathWarnings = true
@@ -41,7 +41,6 @@ LLMS.notAlternative = true
 
 [module]
 imports = [{ path = "github.com/SwawHQ/banyan/module" }]
-mounts = [{ source = "assets/i18n", target = "i18n" }]
 
 [languages]
 en.label = "English"
@@ -60,6 +59,8 @@ ar.weight = 3
 
 # Banyan output format and parameters.
 [params]
+# Publish the web app manifest and its install icons.
+manifest.enabled = true
 # Complete color-role file, relative to assets/. Select at build time.
 appearance.palette = "site/theme.css"
 # The largest width caps generated variants; smaller source images are not enlarged.

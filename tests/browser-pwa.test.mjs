@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {referenceSiteEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,writeDelivery,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {panelCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/panel/options.mjs';
 import {offlineCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/offline/options.mjs';
@@ -64,7 +64,7 @@ before(()=>{
     const assets=path.join(work,'delivery-assets');
     // Cache the fixture page, but leave its child paths outside the worker.
     const routes=`\n[[routes]]\npath = "${from}*"\nsw.bucket = "off"\n[[routes]]\npath = "${from}"\nsw.bucket = "versioned"\n`;
-    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(mode))+routes);
+    writeDelivery(assets,fixtureDelivery(serviceWorkerPolicy(mode))+routes);
     write(config,configuration+'\n[[module.mounts]]\nsource = '+
       JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n');
     const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],{cwd:root,env:referenceSiteEnvironment(work),encoding:'utf8',timeout:60000});

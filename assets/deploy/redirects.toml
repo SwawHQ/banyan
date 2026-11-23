@@ -1,0 +1,5 @@
+# 按需取消下例注释以声明重定向；支持 301 或 302，按声明顺序发布。
+# [[redirects]]
+# source = "/old/"
+# destination = "/new/"
+# status = 301

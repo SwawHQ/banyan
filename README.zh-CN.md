@@ -18,7 +18,7 @@
 
 ### 2. 交付级静态工程
 - **轻量快速**：Hugo 预生成静态页面，零前端框架、零外部字体，内置 Pagefind 全文搜索。
-- **缓存、离线与预取**：通过 `assets/site/delivery.toml` 统一配置双桶 Service Worker 缓存、PWA 与 Speculation Rules 页面预取/预渲染。
+- **缓存、离线与预取**：在 `assets/deploy/settings.toml` 选择部署平台、SW 模式和预取开关。Module 提供缓存路由和预取规则。
 - **安全与双平台交付**：构建期自动生成内联脚本 SHA-256 CSP 与 SRI，同时输出 Cloudflare Pages（`_headers`、`_redirects`）与腾讯云 EdgeOne Makers（`edgeone.json`）配置。
 - **内容发现与 AI 友好**：内置 RSS、JSON-LD 结构化数据、社交分享图、sitemap、`robots.txt` 与 `llms.txt`。
 
@@ -58,8 +58,8 @@ Banyan 专注静态内容发布与边缘交付；账号、支付、评论等后�
    go.mod、go.sum               #固定的 Banyan 主题版本与校验和
    swban、swban.cmd             #站点命令入口
    .agents/skills/swaw-banyan/  #随包提供的 Swaw Banyan Skill
-   archetypes/                  #内容模板
    assets/                      #站点配置、样式与品牌资源
+   i18n/                        #界面字典
    content/                     #站点页面内容
    ```
 

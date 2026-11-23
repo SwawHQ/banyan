@@ -20,12 +20,13 @@ test('deployment preview follows configuration and inline scripts with a standal
   fs.mkdirSync(parent,{recursive:true});const work=fs.mkdtempSync(path.join(parent,'run-')),source=path.join(work,'site');
   fs.mkdirSync(source);let server,logs='',launchError;
   try {
-    for(const name of ['content','assets','module','hugo.toml','layouts'])
+    for(const name of ['content','assets','i18n','module','hugo.toml','layouts'])
       if(fs.existsSync(path.join(root,name)))fs.cpSync(path.join(root,name),path.join(source,name),{recursive:true});
     previewWorkspace(source);
     fs.mkdirSync(path.join(source,'layouts'),{recursive:true});
     fs.writeFileSync(path.join(source,'layouts/page-home.en.html'),'<!doctype html><html lang="en"><head><title>Standalone</title></head><body>STANDALONE_DEPLOYMENT</body></html>');
-    const policyFile=path.join(source,'assets/site/delivery.toml'),originalPolicy=fs.readFileSync(policyFile,'utf8');
+    const policyFile=path.join(source,'assets/deploy/policy.toml'),originalPolicy=fs.readFileSync(path.join(source,'module/assets/deploy/policy.toml'),'utf8');
+    fs.writeFileSync(policyFile,originalPolicy);
     const inlineFile=path.join(source,'module/assets/js/inline/theme-boot.js'),originalInline=fs.readFileSync(inlineFile,'utf8');
     const probe=net.createServer();await listenOnLoopback(probe);const port=probe.address().port;
     await new Promise(resolve=>probe.close(resolve));const base='http://127.0.0.1:'+port;
@@ -63,8 +64,9 @@ test('deployment preview follows configuration and inline scripts with a standal
     let initial;
     await until('initial publication',async()=>{assert.match(await get('/'),/STANDALONE_DEPLOYMENT/);initial=await state();return true;});
     const changed=originalPolicy.replace('icons.folder.root = "moderate"','icons.folder.root = "immediate"')+
-      '\n[[routes]]\npath = "/deployment-probe/*"\nhttp.headers.X-Deployment-Probe = "updated"\n'+
-      '\n[[redirects]]\nsource = "/deployment-old/"\ndestination = "/deployment-new/"\nstatus = 301\n';
+      '\n[[routes]]\npath = "/deployment-probe/*"\nhttp.headers.X-Deployment-Probe = "updated"\n';
+    const redirectsFile=path.join(source,'assets/deploy/redirects.toml');
+    fs.writeFileSync(redirectsFile,'\n[[redirects]]\nsource = "/deployment-old/"\ndestination = "/deployment-new/"\nstatus = 301\n');
     assert.notEqual(changed,originalPolicy);fs.writeFileSync(policyFile,changed);
     let configured;
     await until('delivery and prefetch edits',async()=>{
@@ -79,7 +81,7 @@ test('deployment preview follows configuration and inline scripts with a standal
       const updated=await state();assert.ok(updated.pages.every(html=>html.includes('DEPLOYMENT_INLINE_PROBE')));
       assert.notEqual(updated.csp,configured.csp);return true;
     });
-    fs.writeFileSync(policyFile,originalPolicy);
+    fs.writeFileSync(policyFile,originalPolicy);fs.writeFileSync(redirectsFile,'');
     await until('restored policy removes obsolete rules',async()=>{
       const restored=await state();assert.ok(restored.modes.every(mode=>mode==='moderate'));
       assert.ok(!restored.headers.includes('X-Deployment-Probe'));assert.ok(!restored.redirects.includes('/deployment-old/'));

@@ -43,7 +43,7 @@ its tool. Doctor reports pairing and dependency problems without repairing them;
 ordinary tasks do not run pairing checks.
 
 Core YAML/TOML packages use the Skill root's package manifest, lockfile and ignored
-`node_modules/`. `sync/ext` and content checks prepare them on demand;
+`node_modules/`. `sync/resources` and content checks prepare them on demand;
 `base/packages/ensure` prepares them explicitly. Doctor reports missing packages
 before reading its TOML configuration. Keep optional packages in their owning
 group, with one lockfile per group. Reuse the installer that runs npm through

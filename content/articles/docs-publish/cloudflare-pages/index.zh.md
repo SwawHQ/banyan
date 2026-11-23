@@ -8,7 +8,7 @@ description: 设置 Pages 交付配置，上传产物或连接 Git 仓库自动�
 
 ## 设置平台
 
-编辑 `assets/site/delivery.toml` 中已有的开关：
+编辑 `assets/deploy/settings.toml` 中已有的开关：
 
 ```toml
 [platform]

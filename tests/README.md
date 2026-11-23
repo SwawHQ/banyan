@@ -10,7 +10,7 @@ Hugo caches and resources stay there. They do not change site content or Git sta
 
 ## SW acceptance
 
-Run this suite from the Banyan repository root after changing `assets/site/delivery.toml` or the code that generates `sw.js`. The fixtures build the local Module, check both platforms' generated cache headers, and use Chromium to verify controlled offline navigation, cache buckets, content updates, worker activation and disable cleanup. They prepare both builds for each update scenario.
+Run this suite from the Banyan repository root after changing `module/assets/deploy/policy.toml` or the code that generates `sw.js`. The fixtures build the local Module, check both platforms' generated cache headers, and use Chromium to verify controlled offline navigation, cache buckets, content updates, worker activation and disable cleanup. They prepare both builds for each update scenario.
 
 ```powershell
 .\swban.cmd base/node --test --test-concurrency=2 tests/cache-policy.test.mjs tests/browser-pwa.test.mjs tests/browser-content.test.mjs tests/browser-update.test.mjs tests/browser-disable.test.mjs

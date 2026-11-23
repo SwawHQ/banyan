@@ -60,10 +60,9 @@ test('functional pages keep their shortcode scripts without article metadata, ch
   }
 });
 
-test('the reference site owns its images, manifest and robots templates',()=>{
-  for(const relative of ['assets/site/favicon.ico','assets/site/favicon.link.svg','assets/site/icon-180.png','assets/site/icon-192.png',
-    'assets/site/icon-256.png','assets/site/icon-512.png',
-    'assets/site/icon-1200.png','assets/site/manifest.webmanifest.tmpl','assets/site/robots.txt.tmpl']) {
+test('the reference site owns its brand images',()=>{
+  for(const relative of ['assets/site/favicon.ico','assets/site/favicon.link.svg','assets/site/apple-touch-icon.png','assets/site/pwa-192.png',
+    'assets/site/pwa-256.png','assets/site/pwa-512.png']) {
     assert.ok(fs.existsSync(path.join(root,relative)),'Site identity file: '+relative);
     assert.equal(fs.existsSync(path.join(root,'module',relative)),false,'Identity stays outside the Module: '+relative);
   }
@@ -88,7 +87,7 @@ test('GitHub pages link only to the organization and its avatar',()=>{
     assert.ok(links.every(tag=>extractTagAttribute(tag,'href')==='https://github.com/SwawHQ'));
     const images=extractStartTags(main,'img');assert.equal(images.length,1);
     const src=extractTagAttribute(images[0],'src');
-    assert.match(src,/\/site\/avatar\.swaw\.[a-f0-9]{64}\.svg$/);
+    assert.match(src,/\/site\/avatar\.github\.[a-f0-9]{64}\.svg$/);
     assert.equal(extractTagAttribute(images[0],'width'),'64');
     assert.equal(extractTagAttribute(images[0],'height'),'64');
     assert.ok(fs.existsSync(path.join(output,src)));
@@ -98,33 +97,33 @@ test('GitHub pages link only to the organization and its avatar',()=>{
   assert.match(source,/viewBox="0 0 1024 1024"/);
 });
 
-test('the reference site owns its delivery data, icons and interface translations',()=>{
+test('the reference site owns its delivery data and interface translations',()=>{
   assert.deepEqual(Object.keys(parseToml(fs.readFileSync(path.join(root,'hugo.toml'),'utf8')).languages),languages);
-  assert.deepEqual(fs.readdirSync(path.join(root,'assets/i18n')).sort(),languages.map(language=>language+'.toml').sort());
-  for(const relative of ['assets/site/delivery.toml','assets/site/icons.toml',...languages.map(language=>'assets/i18n/'+language+'.toml')]) {
+  assert.deepEqual(fs.readdirSync(path.join(root,'i18n')).sort(),languages.map(language=>language+'.toml').sort());
+  for(const relative of ['assets/deploy/settings.toml','assets/deploy/redirects.toml',...languages.map(language=>'i18n/'+language+'.toml')]) {
     assert.ok(fs.existsSync(path.join(root,relative)),'Site-owned file: '+relative);
     assert.equal(fs.existsSync(path.join(root,'module',relative)),false,'Configuration stays outside the Module: '+relative);
   }
   assert.equal(fs.existsSync(path.join(root,'data')),false);
-  assert.equal(fs.existsSync(path.join(root,'i18n')),false);
+  assert.equal(fs.existsSync(path.join(output,'deploy')),false,'Deployment inputs stay unpublished');
   assert.equal(fs.existsSync(path.join(output,'i18n')),false,'Interface dictionaries are not published as assets');
   assert.deepEqual(fs.readdirSync(path.join(output,'site')).filter(file=>/\.(?:toml|ya?ml)$/.test(file)),[],
     'Configuration sources stay unpublished, including fingerprinted copies');
-  const english=parseToml(fs.readFileSync(path.join(root,'assets/i18n/en.toml'),'utf8'));
+  const english=parseToml(fs.readFileSync(path.join(root,'i18n/en.toml'),'utf8'));
   for(const language of languages) {
-    const dictionary=parseToml(fs.readFileSync(path.join(root,'assets/i18n',language+'.toml'),'utf8'));
-    assert.deepEqual(Object.keys(dictionary).sort(),Object.keys(english).sort(),language+' has every interface key');
+    const dictionary=parseToml(fs.readFileSync(path.join(root,'i18n',language+'.toml'),'utf8'));
+    assert.deepEqual(Object.keys(dictionary),Object.keys(english),language+' must match the keys and order in i18n/en.toml');
     assert.ok(Object.keys(dictionary).every(key=>!/^((list|products)_sort_.+_(asc|desc)|products_col_name)$/.test(key)),
       'Sort fields share the two action templates and one name label.');
     for(const [key,value] of Object.entries(dictionary)) {
-      assert.ok(value.other?.trim(),language+': '+key+' has display text');
-      if(language==='ar')assert.match(value.other,/[\u0600-\u06ff]/,key+' has Arabic display text');
+      assert.ok(value?.trim(),language+': '+key+' has display text');
+      if(language==='ar')assert.match(value,/[\u0600-\u06ff]/,key+' has Arabic display text');
     }
     const html=fs.readFileSync(path.join(output,prefixes[languages.indexOf(language)],'p/banyan/index.html'),'utf8');
     const body=extractStartTags(html,'body')[0],copy=JSON.parse(extractTagAttribute(body,'data-collection-sort-copy'));
     assert.deepEqual(Object.keys(copy.actions).sort(),['asc','desc'],'Sort actions use two translated templates.');
     for(const order of ['asc','desc']) {
-      assert.equal(copy.actions[order],dictionary['list_sort_'+order].other);
+      assert.equal(copy.actions[order],dictionary['list_sort_'+order]);
       assert.ok(copy.actions[order].includes('{field}'),'Sort templates must retain their field placeholder.');
     }
     for(const route of ['articles','articles/product-info','articles-all','products/themes','products-all']) {
@@ -553,7 +552,7 @@ test('Powered by Markdown separates build information and update controls',async
     assert.ok(!policyRow.includes('<button'),'The policy link is static.');
     const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-content-interval'))[0];
     const enabled=fs.existsSync(path.join(output,'sw-version.json'));
-    if(enabled)assert.ok(interval.inner.includes(String(parseToml(fs.readFileSync(path.join(root,'assets/site/delivery.toml'),'utf8')).sw.content_check_interval)));
+    if(enabled)assert.ok(interval.inner.includes(String(parseToml(fs.readFileSync(path.join(root,'module/assets/deploy/policy.toml'),'utf8')).sw.content_check_interval)));
     else assert.equal(interval.inner,extractBlocks(html,'span',tag=>tag.includes('data-site-sw-policy'))[0].inner);
     const indicator=extractStartTags(html,'span').find(tag=>tag.includes('data-site-content-status'));
     assert.equal(extractTagAttribute(indicator,'data-site-page-version'),version);

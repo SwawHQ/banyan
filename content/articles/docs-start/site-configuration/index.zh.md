@@ -25,7 +25,6 @@ baseURL = "https://example.com/"
 | 设置 | 保留它的原因 |
 | --- | --- |
 | `minify.disableJS = true` | 避免压缩改变脚本后，浏览器因 CSP 拒绝执行 |
-| `module.mounts` 中的界面字典挂载 | 让界面使用站点的 `assets/i18n/` 字典 |
 | `cascade` 中的 `build.publishResources = false` | 避免自动发布未使用的页面包文件，包括 `_map.toml` |
 | `printPathWarnings`、`panicOnWarning` | 在页面发布网址冲突时停止构建 |
 
@@ -66,9 +65,9 @@ disableLanguages = ["ar"]
 
 此例停用阿拉伯语，保留内容文件以便以后恢复；不要停用当前默认语言。改变默认语言前，要核对无语言后缀文件的归属，并检查各语言首页和文章是否仍发布到预期地址。
 
-新增语言时，完成三处配置：在 `[languages]` 中声明语言，补齐 `assets/i18n/<语言代码>.toml` 界面字典，再添加同名页面的译文，如 `index.fr.md`、`_index.fr.md`。界面字典只翻译按钮等界面文字，不替代正文翻译。
+新增语言时，完成三处配置：在 `[languages]` 中声明语言，补齐 `i18n/<语言代码>.toml` 界面字典，再添加同名页面的译文，如 `index.fr.md`、`_index.fr.md`。界面字典只翻译按钮等界面文字，不替代正文翻译。
 
-参考站的界面字典挂载已配置，无需重复添加。语言选项图标与设置页见[选择列表](/zh/p/choice-icons/)。
+可复制现有字典并翻译每行的值。语言选项图标与设置页见[选择列表](/zh/p/choice-icons/)。
 
 ## 站点状态页
 

@@ -10,7 +10,7 @@ description: 启用本站 Service Worker，验证断网浏览并检查停用结�
 
 ## 启用离线访问
 
-1. 打开 `assets/site/delivery.toml`。
+1. 打开 `assets/deploy/settings.toml`。
 2. 在已有 `[sw]` 中将 `mode` 改为 `"enable"`，保留原有路由配置。
 3. 按[发布教程](/zh/p/deploying/)构建、检查并部署到 HTTPS 站点。
 
@@ -19,10 +19,9 @@ description: 启用本站 Service Worker，验证断网浏览并检查停用结�
 ```toml
 [sw]
 mode = "enable"
-content_check_interval = 5
 ```
 
-此例在间隔至少 5 分钟后的页面导航中检查内容版本。断网打开未缓存的受管页面时，SW 直接返回英文提示。
+检查间隔由交付策略文件中的 `sw.content_check_interval` 设置。断网打开未缓存的受管页面时，SW 直接返回英文提示。
 
 缓存范围由各路由的 `sw.bucket` 控制，字段含义见[交付配置](/zh/p/delivery/#service-worker)。
 

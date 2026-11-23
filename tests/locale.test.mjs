@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureSiteFiles,fixtureDelivery} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteFiles,writeDelivery,fixtureDelivery} from './_shared/hugo.mjs';
 import {loadDependency} from '../.agents/skills/swaw-banyan/tasks/_shared/dependencies.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {extractStartTags,extractTagAttribute as attr} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
@@ -33,7 +33,7 @@ before(()=>{
   for(const [code,locale] of languages)configuration.languages[code].locale=locale;
   write(path.join(site,'go.mod'),'module fixture.invalid/locale\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\n'+
     'replace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(repository,'module').replaceAll('\\','/'))+'\n');
-  write(path.join(site,'assets/site/delivery.toml'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\n'));
+  writeDelivery(path.join(site,'assets'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\n'));
   for(const [code] of languages) {
     write(path.join(site,'content/_index.'+code+'.md'),'---\ntitle: Locale '+code+'\ndescription: Locale fixture.\nlayout: page-home\n---\nHome.\n');
     write(path.join(site,'content/article.'+code+'.md'),'---\ntitle: Article '+code+'\nurl: p/locale-probe/\nlayout: page-article-rss\nparams:\n  slots: []\n---\nArticle.\n');

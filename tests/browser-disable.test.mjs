@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {referenceSiteEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,writeDelivery,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {command} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/disable/options.mjs';
 import {parseArguments,helpFor} from '../.agents/skills/swaw-banyan/tasks/_shared/arguments.mjs';
@@ -60,7 +60,7 @@ before(()=>{
   const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureSiteMounts;
   const build=(name,mode,asset,code)=>{
     const assets=path.join(work,name+'-assets');if(asset)write(path.join(assets,'js/pwa/'+asset),code);
-    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(mode)));
+    writeDelivery(assets,fixtureDelivery(serviceWorkerPolicy(mode)));
     write(config,mounts+'[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+
       '[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[params.build]\nversion = "v20261010001001"\n');
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],

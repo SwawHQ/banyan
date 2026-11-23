@@ -68,7 +68,7 @@ try {
     assert.deepEqual(pageCss(explicit), pageCss(normal), 'Whitespace around a palette path does not change its CSS.');
     const highContrast = build('high-contrast', paletteConfig('"site/theme.high-contrast.css"'));
     const rose = build('rose', paletteConfig('"site/theme.rose.css"'));
-    assert.notEqual(pageCss(highContrast).href, pageCss(normal).href, 'Site-owned high-contrast and default palettes produce separate CSS bundles.');
+    assert.notEqual(pageCss(highContrast).href, pageCss(normal).href, 'Module high-contrast and default palettes produce separate CSS bundles.');
 
     const overlay = path.join(work, 'assets');
     const customPath = `__palette-test/${path.basename(work)}.css`;

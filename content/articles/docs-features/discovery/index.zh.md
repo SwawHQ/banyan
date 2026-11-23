@@ -32,7 +32,7 @@ params:
 
 ## 设置爬虫规则
 
-编辑 `assets/site/robots.txt.tmpl`，按目标爬虫填写 `User-agent`、`Allow` 和 `Disallow`，并保留 sitemap 地址。`hugo.toml` 的 `enableRobotsTXT` 控制是否生成该文件。
+默认规则允许所有爬虫访问。要自定义规则，将 Module 的 `assets/site/robots.txt.tmpl` 复制到站点同路径，按目标爬虫填写 `User-agent`、`Allow` 和 `Disallow`，并保留 sitemap 地址。`hugo.toml` 的 `enableRobotsTXT` 控制是否生成该文件。
 
 需要搜索引擎读取 `noindex` 时，应允许它抓取该页面。站内搜索有独立的[索引范围](/zh/p/search-scope/)。
 

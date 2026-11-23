@@ -2,7 +2,7 @@ swban help/en deploy/cloudflare/git  #Prepare Cloudflare Pages Git builds
 
 The platform pulls source and uses swban to build the site and Pagefind search index.
 
-1. Prepare the source: commit swban, .agents/skills/swaw-banyan and the site source. Enable platform.cloudflare.pages.enabled in assets/site/delivery.toml. Keep replace to ./module when that source is included in the repository; remove replacements pointing outside the repository. Do not commit .tools.
+1. Prepare the source: commit swban, .agents/skills/swaw-banyan and the site source. Enable platform.cloudflare.pages.enabled in assets/deploy/settings.toml. Keep replace to ./module when that source is included in the repository; remove replacements pointing outside the repository. Do not commit .tools.
 
 2. Give the platform these build settings:
 Root: site directory in the repository (./ for this reference site). Output: public.

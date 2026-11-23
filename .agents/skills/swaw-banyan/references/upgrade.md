@@ -54,8 +54,8 @@ Start with these four roots:
 | --- | --- | --- |
 | Site configuration | `hugo.toml` | Parameters, mounts, output formats and languages. |
 | Content | `content/` | Lists, article/product examples, functional pages and their resources. |
-| Site resources | `assets/` | Delivery policy, icons, palettes, templates and interface dictionaries. |
-| Content templates | `archetypes/` | Fields used when creating content. |
+| Site resources | `assets/` | Delivery policy and brand assets. |
+| Interface dictionaries | `i18n/` | Labels in each enabled language. |
 
 For shared structure, start with `_index.md` and `index.md`, which are English in this
 reference site. Also review affected translations and resources.
@@ -91,7 +91,7 @@ page behavior. Use a fixed release instead of `@latest` when choosing a known pa
 
 Use a temporary consumer site and call the Skill from the Banyan checkout.
 Supply its root `assets/site/` with complete configuration files and enabled
-languages' `assets/i18n/` dictionaries from the reference site. Include any root
+languages' `i18n/` dictionaries from the reference site. Include any root
 content pages needed by the site.
 Its `go.mod` can resolve the local Module without a release:
 

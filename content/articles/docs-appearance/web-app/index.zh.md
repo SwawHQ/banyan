@@ -17,8 +17,8 @@ description: 替换浏览器和安装图标，设置应用名称、启动地址�
 | `favicon.ico` | 固定地址的浏览器图标 |
 | `favicon.link.svg` | 页面优先使用的 SVG 图标 |
 | `favicon.link.ico` | 没有上述 SVG 时使用的 ICO 图标 |
-| `icon-180.png` | 180 × 180 的 Apple touch 图标 |
-| `icon-192.png`、`icon-256.png`、`icon-512.png` | 对应尺寸的安装图标 |
+| `apple-touch-icon.png` | 180 × 180 的 Apple touch 图标 |
+| `pwa-192.png`、`pwa-256.png`、`pwa-512.png` | 对应尺寸的安装图标 |
 
 参考站使用 SVG 页面图标，并提供表中的浏览器图标和安装图标。替换其中实际使用的文件，再检查浅色、深色和浏览器标签上的显示。SVG 可使用原有尺寸或只声明 `viewBox`。
 
@@ -28,7 +28,7 @@ description: 替换浏览器和安装图标，设置应用名称、启动地址�
 
 ## 设置应用名称和启动地址
 
-应用清单（Manifest）供浏览器读取安装信息。模板位于 `assets/site/manifest.webmanifest.tmpl`。按下表修改对应文件：
+应用清单（Manifest）供浏览器读取安装信息。默认生成应用清单。若只需站点图标，在 `hugo.toml` 的 `[params]` 下设置 `manifest.enabled = false`，即可省去三张安装图标。Apple touch 图标和 SW 各自独立。Module 提供默认模板。要修改模板字段，将 `assets/site/manifest.webmanifest.tmpl` 从 Module 复制到站点同路径。按下表修改对应文件：
 
 | 内容 | 修改位置 |
 | --- | --- |

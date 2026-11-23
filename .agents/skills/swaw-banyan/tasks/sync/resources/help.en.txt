@@ -1,0 +1,1 @@
+swban sync/resources [id...]  #Refresh selected external resources; default all

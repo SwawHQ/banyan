@@ -13,6 +13,6 @@ params:
 
 
 
-{{< new-tab href="https://github.com/SwawHQ" >}}{{< asset src="site/avatar.swaw.svg" alt="SwawHQ 头像" width="64" height="64" >}}{{< /new-tab >}}
+{{< new-tab href="https://github.com/SwawHQ" >}}{{< asset src="site/avatar.github.svg" alt="SwawHQ 头像" width="64" height="64" >}}{{< /new-tab >}}
 
 {{< new-tab href="https://github.com/SwawHQ" >}}GitHub.com/SwawHQ{{< /new-tab >}}

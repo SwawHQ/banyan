@@ -17,7 +17,7 @@ description: 选择配色文件，修改颜色并检查两种外观模式。
 palette = "site/theme.css"
 ```
 
-站点自行维护完整配色，Module 不提供默认配色。
+Module 在 `assets/site/` 提供三套完整配色。
 默认使用 `site/theme.css`。需要高对比外观时，把上面的值改为 `site/theme.high-contrast.css`。
 三套参考配色（默认、高对比度、Rose）都包含浅色和深色，不改变彩色图片。标题线的定制示例见各配色文件中的变量注释。
 自定义文件如 `assets/site/theme-custom.css`，配置为 `palette = "site/theme-custom.css"`。

@@ -6,7 +6,7 @@ url: p/service-worker-regression-checklist/
 description: 定位 SW 源码，检查程序更新、内容版本与停用边界。
 ---
 
-在 Banyan 源码仓库修改 `assets/site/delivery.toml` 或生成 `sw.js` 的逻辑后，运行 [SW 验收夹具](https://github.com/SwawHQ/banyan/blob/main/tests/README.md#sw-acceptance)。夹具自动构建程序更新和内容更新所需的两组产物。站点配置见[交付与缓存](/zh/p/delivery/)。
+在 Banyan 源码仓库修改 `module/assets/deploy/policy.toml` 或生成 `sw.js` 的逻辑后，运行 [SW 验收夹具](https://github.com/SwawHQ/banyan/blob/main/tests/README.md#sw-acceptance)。夹具自动构建程序更新和内容更新所需的两组产物。站点配置见[交付与缓存](/zh/p/delivery/)。
 
 ## 源码入口
 

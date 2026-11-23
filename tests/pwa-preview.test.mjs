@@ -20,11 +20,16 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
   fs.mkdirSync(parent,{recursive:true});const work=fs.mkdtempSync(path.join(parent,'run-')),source=path.join(work,'site');
   fs.mkdirSync(source);let server,logs='',launchError;
   try {
-    for(const name of ['content','assets','module','hugo.toml','layouts'])
+    for(const name of ['content','assets','i18n','module','hugo.toml','layouts'])
       if(fs.existsSync(path.join(root,name)))fs.cpSync(path.join(root,name),path.join(source,name),{recursive:true});
     previewWorkspace(source);
-    const policyFile=path.join(source,'assets/site/delivery.toml'),originalPolicy=fs.readFileSync(policyFile,'utf8');
-    const policy=(mode,interval=8)=>originalPolicy.replace(/^mode = .*$/m,'mode = "'+mode+'"').replace(/^content_check_interval = .*$/m,'content_check_interval = '+interval);
+    const policyFile=path.join(source,'assets/deploy/policy.toml'),originalPolicy=fs.readFileSync(path.join(source,'module/assets/deploy/policy.toml'),'utf8');
+    fs.writeFileSync(policyFile,originalPolicy);
+    const settingsFile=path.join(source,'assets/deploy/settings.toml'),settings=fs.readFileSync(settingsFile,'utf8');
+    const policy=(mode,interval=8)=>{
+      fs.writeFileSync(settingsFile,settings.replace(/^mode = .*$/m,'mode = "'+mode+'"'));
+      return originalPolicy.replace(/^content_check_interval = .*$/m,'content_check_interval = '+interval);
+    };
     fs.writeFileSync(policyFile,policy('enable'));
     const configFile=path.join(source,'hugo.toml'),originalConfig=fs.readFileSync(configFile,'utf8');
     const versionConfig=version=>originalConfig+'\n[params.build]\nversion = "'+version+'"\n';

@@ -18,7 +18,7 @@ Like a banyan tree, a single article can branch into multiple categories while k
 
 ### 2. Delivery-Grade Static Engineering
 - **Lean & fast**: Hugo-generated static HTML with zero frontend frameworks, zero web fonts, and built-in Pagefind full-text search.
-- **Caching, offline & prefetch**: Unified `assets/site/delivery.toml` configuring dual-bucket Service Worker caching, PWA support, and Speculation Rules prefetch/prerender.
+- **Caching, offline & prefetch**: Select platforms, Service Worker mode and prefetch in `assets/deploy/settings.toml`. The Module supplies cache routes and prefetch profiles.
 - **Security & dual-platform output**: Build-time SHA-256 CSP hashes for inline scripts, SRI integrity, and generated configs for both Cloudflare Pages (`_headers`, `_redirects`) and Tencent Cloud EdgeOne Makers (`edgeone.json`).
 - **Human & AI discovery**: Built-in RSS, JSON-LD structured data, social share images, sitemap, `robots.txt`, and `llms.txt`.
 
@@ -58,8 +58,8 @@ Banyan focuses on static publishing and edge delivery. Backend features such as 
    go.mod and go.sum            #Pinned Banyan theme version and checksums
    swban and swban.cmd          #Site command launchers
    .agents/skills/swaw-banyan/  #Bundled Swaw Banyan Skill
-   archetypes/                  #Content templates
    assets/                      #Site config, styles, and brand assets
+   i18n/                        #Interface dictionaries
    content/                     #Site pages
    ```
 

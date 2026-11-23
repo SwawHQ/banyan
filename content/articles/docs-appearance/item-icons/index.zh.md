@@ -10,7 +10,7 @@ description: 为条目设置图标，并设置栏目的默认图标。
 
 ## 设置图标
 
-SVG 名称来自站点根 `assets/site/icons.toml`，例如 `icon: folder`。字符使用 `icon: {text: "©"}`，图片使用 `icon: {image: "0.webp"}`。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如产品栏目的 `content/products/_index.zh.md` 可以声明：
+SVG 名称来自Module 的 `assets/site/icons.toml`，例如 `icon: folder`。要增改图标，将整份图标库复制到站点同路径后编辑。字符使用 `icon: {text: "©"}`，图片使用 `icon: {image: "0.webp"}`。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如产品栏目的 `content/products/_index.zh.md` 可以声明：
 
 ```yaml
 layout: page-collection-directory

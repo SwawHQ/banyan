@@ -28,22 +28,16 @@ Review these site-owned files when adapting an existing site:
 | --- | --- |
 | `assets/site/favicon.ico` | Fixed `/favicon.ico` output |
 | `assets/site/favicon.link.svg` or `favicon.link.ico` | Fingerprinted icon link; SVG takes priority |
-| `assets/site/icon-180.png` | Apple touch icon |
-| `assets/site/icon-192.png`, `icon-256.png`, `icon-512.png` | Manifest icons |
-| `assets/site/manifest.webmanifest.tmpl` | Complete site manifest template |
-| `assets/site/robots.txt.tmpl` | Crawler rules and sitemap URL; used when `enableRobotsTXT` is true |
-| `assets/site/delivery.toml` | Complete site delivery policy |
-| `assets/site/icons.toml` | Named SVG icons |
-| `assets/site/theme.css` | Complete site palette, selected by `params.appearance.palette` |
-| `assets/i18n/<language>.toml` | Interface dictionary for each enabled language |
+| `assets/site/apple-touch-icon.png` | Apple touch icon |
+| `assets/site/pwa-192.png`, `pwa-256.png`, `pwa-512.png` | Manifest icons |
+| `assets/deploy/settings.toml` | Platform switches, SW mode and prefetch switch |
+| `i18n/<language>.toml` | Interface dictionary for each enabled language |
 
 For an existing site, copy missing resources from the reference root and review
 its configuration changes without overwriting the site's identity or values.
-The Module and traditional theme directory provide no configuration, dictionary
-or identity-file defaults. Keep these resources complete when upgrading.
+Keep the site deployment settings, redirects, dictionaries and identity images when upgrading.
 
-At least one favicon source, the four PWA PNG files and the manifest template
-are required even when the Service Worker is off. `favicon.link.*` supplies the
+Supply at least one favicon source and the Apple touch icon. The default manifest also requires the three install icons. Set `params.manifest.enabled = false` in `hugo.toml` to omit the manifest. `favicon.link.*` supplies the
 fingerprinted page icon; `favicon.ico` publishes independently at the root URL.
 Additional brand media is optional. Configure redirects in
 [Delivery configuration](delivery.md#configuration) and downloads in
@@ -53,12 +47,13 @@ All pages belong to root `content/`; the Module provides no fallback pages.
 Copy the functional pages the site needs.
 Home art is optional; see [Home art](home-art.md) when using it.
 
-Copy `archetypes/banyan.md` when using the article generator; the Module does
-not supply content templates. Page examples and creation commands are in
+The Module supplies `archetypes/banyan.md` for the article generator. Page examples and creation commands are in
 [Content and layouts](content.md).
 
 Select a complete site palette with `params.appearance.palette`, using a path
-relative to `assets/`. The Module supplies no default palette. The manifest
+relative to `assets/`. The Module includes the default, high-contrast and Rose palettes,
+the named SVG icons, and the manifest and robots templates. To customize one,
+copy the complete file from the Module to the same path in your site. The manifest
 publishes at `/site/site.<hash>.webmanifest`, and images use fingerprinted
 paths under `/site/`.
 

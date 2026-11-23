@@ -17,7 +17,7 @@ disableJS = true
 
 此设置防止 HTML 压缩再次改写脚本，使 CSP 哈希失效。
 
-其他缓存、安全和权限头在 `assets/site/delivery.toml` 中维护。修改源配置后重新构建，不直接编辑生成的 `_headers` 或 `edgeone.json`。平台开关和路由见[交付与缓存](/zh/p/delivery/)。
+要调整缓存、安全和权限头，将 `module/assets/deploy/policy.toml` 复制到站点的 `assets/deploy/policy.toml` 后编辑。修改源配置后重新构建，不直接编辑生成的 `_headers` 或 `edgeone.json`。平台开关和路由见[交付与缓存](/zh/p/delivery/)。
 
 参考配置的 Permissions-Policy 关闭主题不需要的高权限能力。HSTS 使用 `max-age=300`，不包含 `includeSubDomains` 或 `preload`；是否扩大范围由站点决定。
 

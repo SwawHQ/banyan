@@ -1,15 +1,14 @@
 # External resources
 
-Run `swban sync/ext [id...]` from the site root to fetch resources declared in
-`assets/site/external-resources.yaml`. With no IDs, it syncs all declarations. This
-command writes the declared site files; it is not a check or a build step.
+Run `swban sync/resources [id...]` from the site root to fetch resources declared in
+`assets/site/external-resources.toml`. With no IDs, it syncs all declarations. Preview and build commands download missing targets before rendering. Run this command to refresh existing files.
 
-```yaml
-resources:
-  - id: catalogue
-    source: https://example.com/catalogue.json
-    target: assets/site/catalogue.json
-    validators: [json, "min-size:2KiB", "max-size:1MB"]
+```toml
+[[resources]]
+id = "catalogue"
+source = "https://example.com/catalogue.json"
+target = "assets/site/catalogue.json"
+validators = ["json", "min-size:2KiB", "max-size:1MB"]
 ```
 
 Each declaration needs `id`, HTTP(S) `source` and a site-relative `target`.

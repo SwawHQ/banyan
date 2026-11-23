@@ -18,7 +18,7 @@ swban base/git -C "<official>" rev-parse "<old>^{commit}" "<new>^{commit}"  #将
 swban base/git -C "<official>" diff <old> <new> -- hugo.toml                  #查看站点配置差异
 swban base/git -C "<official>" diff --name-status <old> <new> -- content/     #列出内容变动，含子目录
 swban base/git -C "<official>" diff --name-status <old> <new> -- assets/      #列出资源变动，含子目录
-swban base/git -C "<official>" diff --name-status <old> <new> -- archetypes/  #列出内容模板变动
+swban base/git -C "<official>" diff --name-status <old> <new> -- i18n/       #列出界面字典变动
 
 4. 以 content/ 为例，逐层探索：
 swban base/git -C "<official>" diff --name-status <old> <new> -- content/products/  #缩小到产品目录及其子目录

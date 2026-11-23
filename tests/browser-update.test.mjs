@@ -9,7 +9,7 @@ import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browse
 import {active} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/state.mjs';
 import {panelState} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/update.mjs';
 import {contentIndicator} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/_shared/content-indicator.mjs';
-import {referenceSiteEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,writeDelivery,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {command as lifecycleCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/lifecycle/options.mjs';
 import {command as checkCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/pwa/check/options.mjs';
@@ -83,7 +83,7 @@ Server: {{< site-status "content" >}}
   const build=(name,version=versions[0],asset,code,mode='enable')=>{
     const assets=path.join(work,name+'-assets');
     if(asset)write(path.join(assets,asset),code);
-    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(mode)));
+    writeDelivery(assets,fixtureDelivery(serviceWorkerPolicy(mode)));
     write(config,mounts+'[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+
       '[[module.mounts]]\nsource = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"\n[params.build]\nversion = "'+version+'"\n');
     const destination=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',destination],

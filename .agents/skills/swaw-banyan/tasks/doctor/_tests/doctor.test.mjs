@@ -43,7 +43,7 @@ before(()=>{
   write(site,'hugo.toml','baseURL="https://example.test/"\ntheme="banyan"\n');
   write(site,'themes/banyan/theme.toml','name="banyan"\nversion='+JSON.stringify(release.version)+'\n');
   write(site,'public/index.html','<h1>Fixture</h1>');
-  write(site,'assets/site/external-resources.yaml','resources: []\n');
+  write(site,'assets/site/external-resources.toml','resources = []\n');
 });
 after(()=>{
   assert.equal(path.dirname(fs.realpathSync(work)),parent);assert.ok(path.basename(work).startsWith('swban-doctor-'));
@@ -55,7 +55,7 @@ test('ordinary checks, reports and sync run without a source site or Hugo bindin
   writeBindings({...bindings,tools:{[bindings.runtime]:bindings.tools[bindings.runtime]}},path.join(skill,'.tools'));
   const output=path.join(site,'public'),empty=path.join(work,'empty');fs.mkdirSync(empty);
   try {
-    for (const [command,args,cwd] of [['check/html/headings',[output],empty],['report/size/assets',[output],empty],['sync/ext',[],site]]) {
+    for (const [command,args,cwd] of [['check/html/headings',[output],empty],['report/size/assets',[output],empty],['sync/resources',[],site]]) {
       const result=cli(command,args,cwd);
       assert.equal(result.status,0,result.stdout+result.stderr);
     }

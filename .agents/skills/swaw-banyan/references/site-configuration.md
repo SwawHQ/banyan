@@ -44,10 +44,6 @@ label = "English"
 locale = "en-US"
 weight = 1
 
-[[module.mounts]]
-source = "assets/i18n"
-target = "i18n"
-
 [outputFormats.LLMS]
 mediaType = "text/plain"
 baseName = "llms"
@@ -69,11 +65,11 @@ its native `label` and `locale`. Its settings page's `params.language_icon`
 sets the language option icon, for example `{ text: "EN" }`.
 This starter enables English.
 To enable Chinese, remove it from `disableLanguages`, then add its language
-settings, locale, icon, `assets/i18n/<language>.toml` dictionary and required content
+settings, locale, icon, `i18n/<language>.toml` dictionary and required content
 translations, including the home. Adding or removing a language requires matching
-changes in `hugo.toml`, the site's `assets/i18n/` and its content translations.
+changes in `hugo.toml`, the site's `i18n/` and its content translations.
 The [demo configuration](https://github.com/SwawHQ/banyan/blob/main/hugo.toml)
-shows all three languages. The mount above loads site dictionaries.
+shows all three languages. Hugo loads site dictionaries from the root `i18n/` directory.
 For right-to-left languages, set `languages.<code>.direction = "rtl"`.
 The reference site supplies translated settings and diagnostic pages.
 
@@ -119,8 +115,8 @@ page's own `description`, then the home page's `description` for that language.
 description for its entry. Directory groups include `_map.toml` references.
 Each group lists a page once; the same page can appear in several groups.
 
-`enableRobotsTXT = true` renders the site-owned `assets/site/robots.txt.tmpl`
-through Hugo's robots template. Edit that file with standard crawler directives
+`enableRobotsTXT = true` renders the default `assets/site/robots.txt.tmpl`
+through Hugo's robots template. Create a site copy at the same path to customize it with crawler directives
 and Hugo template functions. Its context is the current site's home page.
 The reference template allows all crawlers and declares the sitemap URL.
 Set `enableRobotsTXT = false` to disable this output; use a clean build destination

@@ -35,9 +35,17 @@ description: 查阅图标、列范围、触发档位和预取诊断。
 
 ## 配置
 
+在 `assets/deploy/settings.toml` 启用预取：
+
 ```toml
 [prefetch]
 enabled = true
+```
+
+要调整预取档位，将 Module 的 `assets/deploy/policy.toml` 复制到站点同路径，编辑其中的规则。
+
+```toml
+[prefetch]
 default = "conservative"
 
 [prefetch.icons.folder]

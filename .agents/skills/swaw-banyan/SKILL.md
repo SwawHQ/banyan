@@ -28,11 +28,11 @@ swban <command>/help      #查看入口说明，包括原生工具入口
 
 ## 站点与 Module 的边界
 
-- 站点在根目录的 `content/` 维护全部页面，在 `assets/site/` 维护配置与品牌资源，在 `assets/i18n/` 维护界面字典。Module 提供布局、脚本和样式，不提供站点内容与配置的默认副本。
+- 站点在根目录的 `content/` 维护全部页面，在 `assets/site/` 维护外部资源清单与品牌资源，在 `i18n/` 维护界面字典。Module 提供布局、脚本、文章原型、图标库、三套配色，以及应用清单和 robots.txt 模板。站点可用同路径文件覆盖默认文件。
 - Hugo 原生 front matter 字段保留在顶层。自定义字段放在 `params` 中，继承默认值放在 `cascade.params` 中；模板通过 `.Params` 读取自定义字段。
 - 公共导航路径的每级栏目都使用 `_index.md`，并输出 HTML。内部页放在 `content/_res/`，由共用 `_index.md` 隐藏其导航和站点发现入口。
 - 面包屑列由浏览器加载共享的 `.js` 导航片段；支持原生绘制阻塞的浏览器在正常加载路径中等待填充后首绘。根导航、栏目主列表和正文保留在页面 HTML 中。
-- 修改交付规则时，编辑 `assets/site/delivery.toml`；`_headers` 和 `edgeone.json` 是 Hugo 生成的产物。
+- 部署开关在 `assets/deploy/settings.toml`，重定向在 `assets/deploy/redirects.toml`，Module 默认策略在 `module/assets/deploy/policy.toml`；`_headers` 和 `edgeone.json` 是 Hugo 生成的产物。
 
 ## 根据任务读取说明
 
@@ -52,14 +52,14 @@ swban <command>/help      #查看入口说明，包括原生工具入口
 | 执行浏览器检查，包括 SW 更新 | [浏览器检查](references/browser-site.md) |
 | 修改 SW 状态或预取诊断页面 | [状态与诊断页](references/diagnostics.md) |
 | 配置交付策略或检查产物与指纹路径 | [交付检查](references/delivery.md) |
-| 用 `sync/ext` 下载已声明的外部资源 | [外部资源](references/external-resources.md) |
+| 用 `sync/resources` 下载已声明的外部资源 | [外部资源](references/external-resources.md) |
 | 准备 EdgeOne 交付配置 | [EdgeOne](references/edgeone.md) |
 | 添加任务或编排站点测试套件 | [任务维护](references/tasks.md) |
 
 ## 根据改动选择检查
 
 - 修改交付配置或资源发布路径后，运行 `check/delivery`。
-- 在 Banyan 源码仓库修改 `assets/site/delivery.toml` 或生成 `sw.js` 的逻辑后，运行 [SW 验收夹具](https://github.com/SwawHQ/banyan/blob/main/tests/README.md#sw-acceptance)。
+- 在 Banyan 源码仓库修改交付配置或生成 `sw.js` 的逻辑后，运行 [SW 验收夹具](https://github.com/SwawHQ/banyan/blob/main/tests/README.md#sw-acceptance)。
 - 修改脚本或安全响应头后，运行 `check/csp`。
 - 浏览器检查从 `check/browser/site <build>` 开始，准备方式和测试页面要求见浏览器检查文档。默认使用 Chromium；涉及内核差异时，选择已有的 `.webkit` 检查。
 - 站点特有的文案、账号、路由和业务预期留在站点测试中。

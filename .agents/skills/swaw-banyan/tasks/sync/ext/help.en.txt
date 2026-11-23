@@ -1,3 +1,0 @@
-swban sync/ext [id...]  #Sync external files; default all
-
-Default: all declared resource IDs.

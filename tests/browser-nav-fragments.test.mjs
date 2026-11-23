@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {referenceSiteEnvironment,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy,directoryPage} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,writeDelivery,fixtureDelivery,serviceWorkerPolicy,directoryPage} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {runScenarioSuite} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/suite.mjs';
 import {loadWebkit} from '../.agents/skills/swaw-banyan/tasks/_shared/browser/runtime.mjs';
@@ -85,7 +85,7 @@ before(()=>{
     '---\ntitle: 中文 '+name+'\nurl: p/fragment-unicode-'+name+'/\ndate: 2026-10-01\n---\nUnicode directory article.');
   write(path.join(content,'articles/product-info/fragment-root-only/index.md'),
     '---\ntitle: Root-only article\nurl: p/fragment-root-only/\nparams:\n  slots: []\n---\nRoot navigation without breadcrumb columns.');
-  write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy('enable')));
+  writeDelivery(assets,fixtureDelivery(serviceWorkerPolicy('enable')));
   write(config,[['content',content],['content','content'],['assets','assets'],['assets',assets]].map(([target,source])=>
     '[[module.mounts]]\nsource = '+JSON.stringify(source.replaceAll('\\','/'))+'\ntarget = "'+target+'"\n').join('')+fixtureSiteMounts);
   const result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,'+config,'--destination',output],

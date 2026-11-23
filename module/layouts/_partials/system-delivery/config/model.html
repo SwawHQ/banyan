@@ -1,9 +1,24 @@
 {{- $policy := dict -}}
-{{- with resources.Get "site/delivery.toml" -}}
-  {{- $policy = . | transform.Unmarshal | default dict -}}
-{{- end -}}
-{{- if eq (len $policy) 0 -}}
-  {{- errorf "Build failed: missing assets/site/delivery.toml." -}}
+{{- range $file := slice "policy" "settings" "redirects" -}}
+  {{- $path := printf "deploy/%s.toml" $file -}}
+  {{- with resources.Get $path -}}
+    {{- $values := . | transform.Unmarshal | default dict -}}
+    {{- $allowed := index (dict "settings" (slice "platform" "sw" "prefetch") "policy" (slice "routes" "sw" "prefetch") "redirects" (slice "redirects")) $file -}}
+    {{- range $key, $value := $values -}}
+      {{- if not (in $allowed $key) -}}{{- errorf "Delivery config: unknown field %q in assets/%s." $key $path -}}{{- end -}}
+      {{- if and (in (slice "sw" "prefetch") $key) (reflect.IsMap $value) -}}
+        {{- $switch := cond (eq $key "sw") "mode" "enabled" -}}
+        {{- range $field, $_ := $value -}}
+          {{- if ne (eq $file "settings") (eq $field $switch) -}}{{- errorf "Delivery config: %s.%s belongs in assets/deploy/%s.toml." $key $field (cond (eq $field $switch) "settings" "policy") -}}{{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $policy = merge $policy $values -}}
+  {{- else -}}
+    {{- if ne $file "redirects" -}}
+      {{- errorf "Build failed: missing assets/%s." $path -}}
+    {{- end -}}
+  {{- end -}}
 {{- end -}}
 {{- partial "./validate.html" $policy -}}
 {{- $routes := index $policy "routes" | default slice -}}

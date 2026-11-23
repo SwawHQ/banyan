@@ -31,10 +31,11 @@ export async function siteFile(siteRoot, target) {
   return file;
 }
 
-export async function writeSiteFile(siteRoot, target, bytes) {
+export async function writeSiteFile(siteRoot, target, bytes, {missingOnly=false}={}) {
   const file = await siteFile(siteRoot,target);
   try {
-    if ((await fs.readFile(file)).equals(bytes)) return false;
+    const existing = await fs.readFile(file);
+    if (missingOnly || existing.equals(bytes)) return false;
   } catch (error) { if (error.code !== 'ENOENT') throw error; }
   await fs.mkdir(path.dirname(file),{recursive:true});
   await siteFile(siteRoot,target);
@@ -42,7 +43,11 @@ export async function writeSiteFile(siteRoot, target, bytes) {
   try {
     await fs.writeFile(temporary,bytes,{flag:'wx'});
     await siteFile(siteRoot,target);
-    await fs.rename(temporary,file);
+    if (missingOnly) {
+      // A concurrent build or editor may have created the target during the download.
+      try { await fs.link(temporary,file); }
+      catch (error) { if (error.code === 'EEXIST') return false; throw error; }
+    } else await fs.rename(temporary,file);
   } finally {
     try { await fs.unlink(temporary); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }

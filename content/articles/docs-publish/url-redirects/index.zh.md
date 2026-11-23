@@ -10,7 +10,7 @@ description: 声明旧路径和新地址，发布并检查网址跳转。
 
 ## 添加跳转规则
 
-1. 打开 `assets/site/delivery.toml`。
+1. 打开 `assets/deploy/redirects.toml`。
 2. 在文件末尾添加一条 `[[redirects]]`，填写旧发布路径和新地址。
 3. 确认目标平台的交付开关已启用。
 
@@ -29,7 +29,7 @@ status = 301
 
 按[构建和检查](/zh/p/deploying/#构建与检查)生成新产物。Cloudflare Pages 将规则写入 `_redirects`，EdgeOne Makers 写入 `edgeone.json`。
 
-上传方式发布完整产物目录。EdgeOne Git 构建还需[复制交付配置到站点根目录](/zh/p/edgeone-makers/#git-托管构建)，再提交并触发部署。规则始终在 `delivery.toml` 中维护。
+上传方式发布完整产物目录。EdgeOne Git 构建还需[复制交付配置到站点根目录](/zh/p/edgeone-makers/#git-托管构建)，再提交并触发部署。规则始终在 `assets/deploy/redirects.toml` 中维护。
 
 ## 检查结果
 

@@ -32,18 +32,18 @@ Cloud tools: https://github.com/SwawHQ/swaw-clouds
 
 Checks:
 swban doctor [directory]        #Check tools and the site theme
-swban check/delivery [dir]      #Check assets/site/delivery.toml and its rendered output
+swban check/delivery [dir]      #Check delivery output and fingerprint paths
 swban check/csp [dir]           #Check CSP and inline hashes
 swban check/browser/site [dir]  #Run browser checks
 swban report/size/html [dir]    #Report page size and size on first load
-swban sync/ext [id...]          #Sync declared external resources
+swban sync/resources [id...]    #Sync declared external resources
 
 Before a theme upgrade, check these four items in the official repository:
 swban help upgrade/git  #Run this command for detailed help before upgrading
 hugo.toml               #1 Site configuration
 content/                #2 Lists, article/product examples and functional pages
-assets/                 #3 Site resources and interface dictionaries
-archetypes/             #4 Content templates
+assets/                 #3 Site resources
+i18n/                   #4 Interface dictionaries
 
 Theme developers:
 swban deploy/release/tag <version> [--check]                   #Publish the Module, build the site and tag the project

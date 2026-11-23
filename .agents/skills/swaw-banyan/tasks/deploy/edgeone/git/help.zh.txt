@@ -1,9 +1,9 @@
 swban help/zh deploy/edgeone/git  #准备 EdgeOne Makers Git 托管构建
 
 平台拉取源码，使用 swban 构建页面和 Pagefind 搜索索引。
-以下命令在站点根目录的 PowerShell 中执行。只有采用 EdgeOne Git 构建的站点，才需要提交根目录 edgeone.json；交付规则仍在 delivery.toml 中维护。
+以下命令在站点根目录的 PowerShell 中执行。只有采用 EdgeOne Git 构建的站点，才需要提交根目录 edgeone.json；交付规则仍在 assets/deploy/ 下维护。
 
-1. 准备源码：在 hugo.toml 中设置 baseURL，并在 assets/site/delivery.toml 中启用 platform.edgeone.makers.enabled。提交 swban、.agents/skills/swaw-banyan、站点及固定的主题版本；保留随仓库提供的 ./module 替换，移除指向仓库外本机目录的 replace。
+1. 准备源码：在 hugo.toml 中设置 baseURL，并在 assets/deploy/settings.toml 中启用 platform.edgeone.makers.enabled。提交 swban、.agents/skills/swaw-banyan、站点及固定的主题版本；保留随仓库提供的 ./module 替换，移除指向仓库外本机目录的 replace。
 
 2. 向平台提供构建设置：
 根目录：站点在仓库中的目录，本参考站点为 ./。输出目录：public。

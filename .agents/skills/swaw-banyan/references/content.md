@@ -124,7 +124,7 @@ Sections default to HTML and RSS outputs. Set
 `outputs: [HTML]` to disable a section's feed. Its articles can still appear
 in the site feed when they use `page-article-rss`.
 
-With the site-owned `archetypes/banyan.md`, create an article using:
+With the Module-provided `archetypes/banyan.md`, create an article using:
 
 ```text
 swban base/hugo new content --kind banyan articles/my-post/index.md  #Create an article

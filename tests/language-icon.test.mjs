@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {fixtureEnvironment,fixtureSiteFiles,fixtureDelivery} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteFiles,writeDelivery,fixtureDelivery} from './_shared/hugo.mjs';
 import {loadDependency} from '../.agents/skills/swaw-banyan/tasks/_shared/dependencies.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {extractBlocks} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
@@ -39,7 +39,7 @@ before(()=>{
   write(path.join(site,'hugo.toml'),toml.stringify(configuration));
   write(path.join(site,'go.mod'),'module fixture.invalid/language-icon\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\n'+
     'replace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(repository,'module').replaceAll('\\','/'))+'\n');
-  write(path.join(site,'assets/site/delivery.toml'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\n'));
+  writeDelivery(path.join(site,'assets'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\n'));
   for(const suffix of ['', '.zh'])write(path.join(site,'content/_index'+suffix+'.md'),'---\ntitle: Icon fixture\ndescription: Language icon fixture.\nlayout: page-home\n---\nHome.\n');
   write(path.join(site,'content/language/_index.md'),settings('English',{text:'EN'}));
   write(path.join(site,'content/language/_index.zh.md'),settings('中文',{text:'简'}));

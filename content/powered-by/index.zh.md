@@ -44,7 +44,7 @@ params:
       article: "文章"
 ---
 
-**Swaw Banyan** {{< asset src="site/favicon.link.svg" alt="Banyan" class="icon icon--image md-inline-image" width="16" height="16" >}}：{{< new-tab href="https://github.com/SwawHQ/banyan" >}}{{< theme-version local="本地开发版" >}}{{< /new-tab >}}
+**Swaw Banyan** {{< asset src="site/swaw-banyan.svg" alt="Banyan" class="icon icon--image md-inline-image" width="16" height="16" >}}：{{< new-tab href="https://github.com/SwawHQ/banyan" >}}{{< theme-version local="本地开发版" >}}{{< /new-tab >}}
 
 ### PWA 缓存信息：
 

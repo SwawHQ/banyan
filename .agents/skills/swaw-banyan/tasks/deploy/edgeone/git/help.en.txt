@@ -1,9 +1,9 @@
 swban help/en deploy/edgeone/git  #Prepare EdgeOne Makers Git builds
 
 The platform pulls source and uses swban to build pages and the Pagefind search index.
-Run these commands in PowerShell from the site root. Only sites using EdgeOne Git builds need a committed root edgeone.json; maintain delivery rules in delivery.toml.
+Run these commands in PowerShell from the site root. Only sites using EdgeOne Git builds need a committed root edgeone.json; maintain delivery rules in assets/deploy/.
 
-1. Prepare the source: set baseURL in hugo.toml and enable platform.edgeone.makers.enabled in assets/site/delivery.toml. Commit swban, .agents/skills/swaw-banyan, the site and its pinned theme version. Keep ./module when bundled in the repository; remove replacements outside the repository.
+1. Prepare the source: set baseURL in hugo.toml and enable platform.edgeone.makers.enabled in assets/deploy/settings.toml. Commit swban, .agents/skills/swaw-banyan, the site and its pinned theme version. Keep ./module when bundled in the repository; remove replacements outside the repository.
 
 2. Give the platform these build settings:
 Root: site directory in the repository (./ for this reference site). Output: public.

@@ -17,7 +17,7 @@ params:
   #   details: title       #title：一行标题展开详情；overlay：图内细点常显；overlay-hover：悬停显示，触屏常显。
   #   scroll: horizontal   #horizontal：横向滚动；vertical：竖向滚动。
   show_navigation: true
-  # 图标也可使用 assets/site/icons.toml 中的名称，或 {image: "site/icon-192.png"}。
+  # 图标也可使用 Module 图标库中的名称，或 {image: "site/pwa-192.png"}。
   icon: {image: "site/favicon.link.svg"}
   # 浏览器标签页标题；上方 title 仍用于页面可见标题。
   browser_title: Banyan — 极简 Hugo 发布主题

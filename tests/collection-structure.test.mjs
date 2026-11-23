@@ -7,7 +7,7 @@ import net from 'node:net';
 import {fileURLToPath} from 'node:url';
 import {spawn,spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
-import {fixtureEnvironment,fixtureSiteFiles,fixtureSiteMounts,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureEnvironment,fixtureSiteFiles,fixtureSiteMounts,writeDelivery,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {readNavigationResource} from '../.agents/skills/swaw-banyan/tasks/_shared/html/breadcrumb.mjs';
 import {extractCanonicalHref,extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
@@ -46,7 +46,7 @@ before(()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));source=path.join(work,'site');
   fixtureSiteFiles(source);fs.mkdirSync(path.join(source,'themes'),{recursive:true});
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
-  write(path.join(source,'assets/site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy('disable')));
+  writeDelivery(path.join(source,'assets'),fixtureDelivery(serviceWorkerPolicy('disable')));
   configuration='theme="banyan"\nbaseURL="https://example.test/base/"\n'+
     '[params.appearance]\npalette="site/theme.css"\n[minify]\ndisableJS=true\n[taxonomies]\n'+
     '[outputs]\nhome=["HTML"]\nsection=["HTML"]\npage=["HTML"]\n'+

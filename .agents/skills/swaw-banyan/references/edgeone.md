@@ -1,7 +1,7 @@
 # EdgeOne delivery configuration
 
 Enable `platform.edgeone.makers.enabled` in the site-owned
-`assets/site/delivery.toml`. Banyan generates headers and redirects in
+`assets/deploy/settings.toml`. Banyan generates headers and redirects in
 `edgeone.json`; build commands, output directory and tool versions belong
 to platform settings.
 
@@ -22,7 +22,7 @@ Read [Git build preparation](../tasks/deploy/edgeone/git/help.en.txt).
 Only sites using EdgeOne Git builds need a committed root `edgeone.json`.
 Build and check locally, then copy `public/edgeone.json` to the site root
 with PowerShell `Copy-Item`, as shown in the guide. Maintain delivery rules
-in `delivery.toml`, not by hand in the generated root file. Regenerate and
+in the deployment settings, policy and redirects files, not by hand in the generated root file. Regenerate and
 copy it when delivery rules or CSP change.
 
 In the 2026-11-14 Git build test, root headers and redirects applied;

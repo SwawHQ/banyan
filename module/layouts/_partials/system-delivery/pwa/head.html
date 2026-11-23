@@ -1,16 +1,9 @@
 {{- $favicon := partialCached "./favicon.html" . "pwa:favicon" -}}
-{{- $appleTouchIcon := resources.Get "site/icon-180.png" -}}
+{{- $appleTouchIcon := resources.Get "site/apple-touch-icon.png" -}}
 {{- if not $appleTouchIcon -}}
-  {{- errorf "Build failed: missing resource %q." "site/icon-180.png" -}}
+  {{- errorf "Build failed: missing resource %q." "site/apple-touch-icon.png" -}}
 {{- else -}}
   {{- $appleTouchIcon = $appleTouchIcon | fingerprint -}}
-{{- end -}}
-{{- $manifest := "" -}}
-{{- $manifestTmpl := resources.Get "site/manifest.webmanifest.tmpl" -}}
-{{- if $manifestTmpl -}}
-  {{- $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/site.webmanifest" . | fingerprint -}}
-{{- else -}}
-  {{- errorf "Build failed: missing resource %q." "site/manifest.webmanifest.tmpl" -}}
 {{- end -}}
 {{- with $favicon }}
 <link rel="icon" href="{{ .RelPermalink }}" type="{{ .MediaType.Type }}"{{ if eq .MediaType.Type "image/svg+xml" }} sizes="any"{{ end }} fetchpriority="low">
@@ -18,6 +11,12 @@
 {{- with $appleTouchIcon }}
 <link rel="apple-touch-icon" href="{{ .RelPermalink }}" fetchpriority="low">
 {{- end }}
-{{- with $manifest }}
-<link rel="manifest" href="{{ .RelPermalink }}">
+{{- $settings := .Site.Params.manifest | default dict -}}
+{{- if ne $settings.enabled false -}}
+  {{- with resources.Get "site/manifest.webmanifest.tmpl" -}}
+    {{- $manifest := . | resources.ExecuteAsTemplate "site/site.webmanifest" $ | fingerprint -}}
+<link rel="manifest" href="{{ $manifest.RelPermalink }}">
+  {{- else -}}
+    {{- errorf "Build failed: missing resource %q." "site/manifest.webmanifest.tmpl" -}}
+  {{- end -}}
 {{- end -}}

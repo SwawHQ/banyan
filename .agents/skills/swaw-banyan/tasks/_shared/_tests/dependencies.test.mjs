@@ -99,7 +99,7 @@ test('a nested capability prepares its own packages without installing the core 
 }));
 
 test('help, doctor, unrelated commands and invalid arguments do not install packages',()=>fixture(async({root,count})=>{
-  for(const args of [['help/en'],['base/packages/ensure/help'],['sync/ext/help'],['check/content/share-image/help'],['check/content/share-image','missing','extra'],['report/size/assets','missing'],['doctor']]){
+  for(const args of [['help/en'],['base/packages/ensure/help'],['sync/resources/help'],['check/content/share-image/help'],['check/content/share-image','missing','extra'],['report/size/assets','missing'],['doctor']]){
     const result=spawnSync(process.execPath,[path.join(root,'tasks/_cli/main.mjs'),...args],{cwd:root,encoding:'utf8',timeout:15000});
     assert.ifError(result.error);
     if(args[0]==='doctor'){assert.equal(result.status,1);assert.match(result.stdout,/packages.core: missing/);assert.match(result.stderr,/base\/packages\/ensure/);}

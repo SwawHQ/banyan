@@ -11,7 +11,7 @@ import {readBindings,resolveBinding,writeBindings} from '../.agents/skills/swaw-
 import {hugoEnvironment} from '../.agents/skills/swaw-banyan/tasks/base/hugo/run.mjs';
 import {readRelease,inspect} from '../.agents/skills/swaw-banyan/tasks/_shared/banyan.mjs';
 import {extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
-import {fixtureSiteFiles,fixtureSitePages,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {fixtureSiteFiles,fixtureSitePages,writeDelivery,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 
 const repository=fileURLToPath(new URL('../',import.meta.url));
 const skill=path.join(repository,'.agents/skills/swaw-banyan'),moduleRoot=path.join(repository,'module');
@@ -162,6 +162,7 @@ after(()=>{
 
 test('documented starter supplies site identity and builds through a local Module without a Git repository',()=>{
   const root=consumer('local consumer',{replacement:moduleRoot});
+  fs.unlinkSync(path.join(root,'assets/deploy/redirects.toml'));
   assert.equal(inspect(root).state,'development');
   const output=build(root,skill);checks(root,skill,output);
   directoryDefaults(output);
@@ -172,32 +173,23 @@ test('documented starter supplies site identity and builds through a local Modul
   assert.equal(fs.existsSync(path.join(root,'.git')),false);
 });
 
-test('a Module consumer must supply its own PWA icons and manifest template',()=>{
-  for(const file of ['icon-192.png','manifest.webmanifest.tmpl']) {
-    const root=consumer('missing site '+file,{replacement:moduleRoot});
-    fs.unlinkSync(path.join(root,'assets/site',file));
-    const result=command(root,skill,['base/hugo','--minify','--noBuildLock']);
-    assert.notEqual(result.status,0);
-    assert.ok((result.stdout+result.stderr).includes('missing resource "site/'+file+'"'));
-  }
-});
-
-test('site-owned robots templates follow the native switch and render site context',()=>{
-  for(const variant of ['custom','disabled','missing','invalid']) {
+test('robots templates follow the native switch and render site context',()=>{
+  for(const variant of ['custom','disabled','default','invalid']) {
     const root=consumer('robots '+variant,{replacement:moduleRoot}),template='assets/site/robots.txt.tmpl';
     const config=fs.readFileSync(path.join(root,'hugo.toml'),'utf8').replace('https://example.com/','https://example.test/base/');
     write(root,'hugo.toml',variant==='disabled'?config.replace('enableRobotsTXT = true','enableRobotsTXT = false'):config);
-    if(variant==='disabled'||variant==='missing')fs.unlinkSync(path.join(root,template));
-    else write(root,template,variant==='invalid'?'{{ if }}':
+    if(variant==='custom'||variant==='invalid')write(root,template,variant==='invalid'?'{{ if }}':
       '# {{ .Site.Home.Title }}\nUser-agent: ExampleBot\nDisallow: /private/\nSitemap: {{ absURL "sitemap.xml" }}\n');
     const result=command(root,skill,['base/hugo','--minify','--noBuildLock']),log=result.stdout+result.stderr;
-    if(variant==='missing'||variant==='invalid') {
+    if(variant==='invalid') {
       assert.notEqual(result.status,0,variant+' robots template must fail');
-      assert.match(log,variant==='missing'?/missing resource "site\/robots\.txt\.tmpl"/:/missing value for if/);
+      assert.match(log,/missing value for if/);
     } else {
       assert.equal(result.status,0,log);
       const file=path.join(root,'public/robots.txt');
-      assert.equal(fs.existsSync(file),variant==='custom');
+      assert.equal(fs.existsSync(file),variant!=='disabled');
+      if(variant==='default')assert.equal(fs.readFileSync(file,'utf8').trim(),
+        'User-agent: *\nAllow: /\n\nSitemap: https://example.test/base/sitemap.xml');
       if(variant==='custom')assert.equal(fs.readFileSync(file,'utf8').trim(),
         '# My site\nUser-agent: ExampleBot\nDisallow: /private/\nSitemap: https://example.test/base/sitemap.xml');
       assert.equal(fs.existsSync(path.join(root,'public/site/robots.txt.tmpl')),false,'Template source stays unpublished');
@@ -205,19 +197,34 @@ test('site-owned robots templates follow the native switch and render site conte
   }
 });
 
-test('a Module consumer must supply its own delivery and icons configuration',()=>{
-  for(const file of ['delivery.toml','icons.toml']) {
-    const root=consumer('missing site '+file,{replacement:moduleRoot});
-    fs.unlinkSync(path.join(root,'assets/site',file));
+test('a Module consumer must supply its delivery configuration and PWA icons',()=>{
+  for(const file of ['deploy/settings.toml','site/pwa-192.png']) {
+    const root=consumer('missing site '+path.basename(file),{replacement:moduleRoot});
+    fs.unlinkSync(path.join(root,'assets',file));
     const result=command(root,skill,['base/hugo','--minify','--noBuildLock']);
     assert.notEqual(result.status,0);
-    assert.ok((result.stdout+result.stderr).includes('missing assets/site/'+file));
+    assert.ok((result.stdout+result.stderr).includes(file==='deploy/settings.toml'?'missing assets/deploy/settings.toml':'missing resource "site/pwa-192.png"'));
   }
+});
+
+test('sites can disable the manifest independently of touch icons and the worker',()=>{
+  const root=consumer('disabled manifest',{replacement:moduleRoot});
+  fs.appendFileSync(path.join(root,'hugo.toml'),'\n[params.manifest]\nenabled = false\n');
+  for(const size of [192,256,512])fs.unlinkSync(path.join(root,'assets/site','pwa-'+size+'.png'));
+  writeDelivery(path.join(root,'assets'),fixtureDelivery(serviceWorkerPolicy('enable')));
+  const output=build(root,skill);
+  const links=extractStartTags(fs.readFileSync(path.join(output,'index.html'),'utf8'),'link');
+  assert.ok(!links.some(tag=>extractTagAttribute(tag,'rel')==='manifest'));
+  assert.ok(!fs.readdirSync(path.join(output,'site')).some(name=>name.endsWith('.webmanifest')));
+  const touch=links.find(tag=>extractTagAttribute(tag,'rel')==='apple-touch-icon');
+  assert.deepEqual(fs.readFileSync(path.join(output,extractTagAttribute(touch,'href'))),
+    fs.readFileSync(path.join(root,'assets/site/apple-touch-icon.png')));
+  assert.ok(fs.existsSync(path.join(output,'sw.js')));
 });
 
 test('a multilingual consumer enables the worker without publishing offline pages',()=>{
   const site=consumer('builtin-offline',{replacement:moduleRoot,multilingual:true});
-  write(site,'assets/site/delivery.toml',fixtureDelivery(serviceWorkerPolicy('enable')));
+  writeDelivery(path.join(site,'assets'),fixtureDelivery(serviceWorkerPolicy('enable')));
   const output=build(site,skill);
   assert.ok(fs.existsSync(path.join(output,'sw.js')));
   for(const prefix of ['','zh','ar'])assert.ok(!fs.existsSync(path.join(output,prefix,'_res/offline/index.html')));
@@ -227,14 +234,16 @@ test('favicon files select SVG before ICO and keep the fixed icon independent',(
   for(const kind of ['fixed','ico','both','svg']) {
     const root=consumer('favicon '+kind,{replacement:moduleRoot}),assets=path.join(root,'assets/site');
     const ico=fs.readFileSync(path.join(assets,'favicon.ico'));
-    for(const suffix of ['','.zh','.ar']) {
-      const file=path.join(root,'content/powered-by','index'+suffix+'.md');
-      fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('src="site/favicon.link.svg"','src="site/icon-180.png"'));
-    }
+    if(kind==='svg')write(root,'assets/site/favicon.link.svg','<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12"/></svg>');
     if(kind==='fixed'||kind==='ico')fs.unlinkSync(path.join(assets,'favicon.link.svg'));
     if(kind==='ico'||kind==='both')fs.writeFileSync(path.join(assets,'favicon.link.ico'),ico);
     if(kind==='svg')fs.unlinkSync(path.join(assets,'favicon.ico'));
     const output=build(root,skill),html=fs.readFileSync(path.join(output,'index.html'),'utf8');
+    const poweredBy=fs.readFileSync(path.join(output,'powered-by/index.html'),'utf8');
+    const logo=extractStartTags(poweredBy,'img').find(tag=>extractTagAttribute(tag,'alt')==='Banyan');
+    assert.ok(logo,'Powered by displays the Banyan logo');
+    assert.deepEqual(fs.readFileSync(path.join(output,extractTagAttribute(logo,'src'))),
+      fs.readFileSync(path.join(moduleRoot,'assets/site/swaw-banyan.svg')));
     const icons=extractStartTags(html,'link').filter(tag=>extractTagAttribute(tag,'rel')==='icon');
     assert.equal(icons.length,kind==='fixed'?0:1);
     if(kind!=='fixed') {
@@ -320,12 +329,6 @@ test('the release module directory also installs and builds as a local Hugo them
   write(root,'hugo.toml','theme="banyan"\n'+toml[1]);
   fs.cpSync(moduleRoot,directory,{recursive:true});
   assert.match(passed(root,installed,['doctor']),/site\.banyan: matched/);
-  const template='assets/site/manifest.webmanifest.tmpl',source=fs.readFileSync(path.join(root,template),'utf8');
-  fs.unlinkSync(path.join(root,template));
-  const missing=command(root,installed,['base/hugo','--minify','--noBuildLock']);
-  assert.notEqual(missing.status,0);
-  assert.ok((missing.stdout+missing.stderr).includes('missing resource "site/manifest.webmanifest.tmpl"'));
-  write(root,template,source);
   const output=build(root,installed);checks(root,installed,output);
   directoryDefaults(output);
   assert.equal(fs.existsSync(path.join(root,'go.mod')),false);
@@ -335,14 +338,14 @@ test('the release module directory also installs and builds as a local Hugo them
 test('site content, palette, translations and delivery data drive a fresh install',()=>{
   const root=consumer('overridden consumer',{multilingual:true});
   write(root,'content/rss/index.zh.md','---\ntitle: 本站订阅\nurl: rss/\ndescription: 本站订阅地址。\nlayout: page-article-norss\n---\n\n{{< rss-link >}}\n');
-  write(root,'assets/site/theme.css',fs.readFileSync(path.join(repository,'assets/site/theme.css'),'utf8')+'\n:root{--consumer-palette-marker:1}\n');
-  write(root,'assets/i18n/zh.toml',fs.readFileSync(path.join(repository,'assets/i18n/zh.toml'),'utf8').replace('other = "名称"','other = "本站名称"'));
+  write(root,'assets/site/theme.css',fs.readFileSync(path.join(moduleRoot,'assets/site/theme.css'),'utf8')+'\n:root{--consumer-palette-marker:1}\n');
+  write(root,'i18n/zh.toml',fs.readFileSync(path.join(repository,'i18n/zh.toml'),'utf8').replace('list_col_name = "名称"','list_col_name = "本站名称"'));
   const template='assets/site/manifest.webmanifest.tmpl';
-  write(root,template,fs.readFileSync(path.join(root,template),'utf8')
+  write(root,template,fs.readFileSync(path.join(moduleRoot,template),'utf8')
     .replace('"theme_color" "#000000"','"theme_color" "#123456"')
     .replace('"background_color" "#ffffff"','"background_color" "#fefefe"'));
-  write(root,'assets/site/external-resources.yaml','resources: []\n');
-  write(root,'assets/site/delivery.toml',fixtureDelivery('[platform.cloudflare]\npages.enabled = true\n'+
+  write(root,'assets/site/external-resources.toml','resources = []\n');
+  writeDelivery(path.join(root,'assets'),fixtureDelivery('[platform.cloudflare]\npages.enabled = true\n'+
     '[platform.edgeone]\nmakers.enabled = true\n'+
     '[[redirects]]\nsource = "/previous/"\ndestination = "/p/alpha/"\nstatus = 301\n'));
   const output=build(root,installed);checks(root,installed,output);

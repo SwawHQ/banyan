@@ -12,7 +12,7 @@ description: 设置语言与外观选项的图标。
 
 语言选项按配置 `weight` 排列；外观选项依次为“跟随系统、浅色、深色”。
 
-在外观设置页的 `params.appearance_icons` 中指定三个选项的图标。图形定义在 `assets/site/icons.toml`；也可选择文字或图片。第一列入口继续使用页面声明的 `params.icon`。
+在外观设置页的 `params.appearance_icons` 中指定三个选项的图标。内置图形定义在 Module 的 `assets/site/icons.toml`；也可选择文字或图片。第一列入口继续使用页面声明的 `params.icon`。
 
 ```yaml
 params:

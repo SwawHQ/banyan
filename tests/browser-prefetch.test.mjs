@@ -6,7 +6,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {referenceSiteEnvironment,fixtureSiteMounts,fixtureContentDirectory,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
+import {referenceSiteEnvironment,fixtureSiteMounts,fixtureContentDirectory,writeDelivery,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {readBindings} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/bindings.mjs';
 import {command as rulesCommand} from '../.agents/skills/swaw-banyan/tasks/check/browser/prefetch/rules/options.mjs';
@@ -104,7 +104,7 @@ before(()=>{
   const mounts=mount(content,'content')+mount('content','content')+mount(layouts,'layouts')+mount('layouts','layouts')+fixtureSiteMounts;
   function build(name,enabled=true,runtimeSource,prerenderOnly=false,columnPolicy='') {
     const assets=path.join(work,name+'-assets');
-    write(path.join(assets,'site/delivery.toml'),fixtureDelivery(serviceWorkerPolicy(!columnPolicy&&enabled?'enable':'off')+(columnPolicy||'[prefetch]\nenabled='+enabled+
+    writeDelivery(assets,fixtureDelivery(serviceWorkerPolicy(!columnPolicy&&enabled?'enable':'off')+(columnPolicy||'[prefetch]\nenabled='+enabled+
       '\ndefault="off"\n[prefetch.icons.folder]\nall="conservative"\n[prefetch.icons.tag]\nall="moderate"\n[prefetch.icons.product]\nall="eager"\n[prefetch.icons.file]\nall="'+(prerenderOnly?'off':'immediate')+'"\n'+
       '[prefetch.prerender.icons.folder]\ntail="off"\n'+
       (prerenderOnly?'[prefetch.prerender.icons.file]\nall="moderate"\n':''))));

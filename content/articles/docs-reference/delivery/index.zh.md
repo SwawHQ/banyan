@@ -8,11 +8,7 @@ description: 配置部署平台、HTTP 响应头、Service Worker 缓存和重�
 
 ## 配置来源
 
-站点根 `assets/site/delivery.toml` 是站点交付配置的唯一来源，须保留完整文件。
-新站点从 Banyan 根参考站点取得该文件；已有站点按参考文件补齐配置，
-保留自己的 SW、路由和平台值。Module 和传统主题目录不提供默认配置，
-`routes` 按声明顺序使用，
-`routes = []` 表示不声明缓存路由。运行时配置应用到所有语言。
+在 `assets/deploy/settings.toml` 选择部署平台、SW 模式及预取开关。本站跳转规则放在可选的 `assets/deploy/redirects.toml`。Module 的 `assets/deploy/policy.toml` 提供按顺序匹配的缓存路由、预取档位及内容检查间隔。需要定制时，将整份策略复制到站点同路径后编辑。各语言共用这些配置。
 
 ## 部署平台
 

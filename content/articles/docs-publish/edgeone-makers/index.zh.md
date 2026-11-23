@@ -8,7 +8,7 @@ description: 设置 Makers 交付配置，上传产物或连接 Git 仓库自动
 
 ## 设置平台
 
-编辑 `assets/site/delivery.toml` 中已有的开关：
+编辑 `assets/deploy/settings.toml` 中已有的开关：
 
 ```toml
 [platform]
@@ -69,7 +69,7 @@ cp "$build/edgeone.json" ./edgeone.json  #复制交付规则
 
 `swban build` 同时构建页面和搜索索引。构建日志中应有 Hugo 和 Pagefind 的完成记录。平台支持自定义安装、构建命令和输出目录，见 [Makers 构建指南](https://pages.edgeone.ai/document/build-guide)。
 
-Makers 从项目根目录读取 `edgeone.json`。交付规则仍在 `assets/site/delivery.toml` 中维护；规则、脚本或 CSP 变化后，重新构建并复制生成文件。本地和平台使用相同源码、工具版本和构建参数，以保持 CSP 一致。配置位置见 [edgeone.json 说明](https://pages.edgeone.ai/document/edgeone-json)。
+Makers 从项目根目录读取 `edgeone.json`。修改部署开关、路由、重定向或 CSP 后，重新构建并复制生成文件。本地和平台使用相同源码、工具版本和构建参数，以保持 CSP 一致。配置位置见 [edgeone.json 说明](https://pages.edgeone.ai/document/edgeone-json)。
 
 多条 `headers` 规则命中同一路径时，Makers 按数组顺序合并，同名响应头取最后声明的值。把通用的 `/*` 放在前面，才能让后面的例外规则覆盖它。
 

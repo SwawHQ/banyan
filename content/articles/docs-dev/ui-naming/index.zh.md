@@ -43,4 +43,4 @@ CSS 按视觉职责命名，不复制模板目录层级。源码职责与发布�
 | 站点状态控件 | `layouts/_shortcodes/site-status.html`、`assets/js/site-status/` |
 | 首页艺术包装配 | `layouts/page-home.html`、`layouts/_partials/entry-page-home/` |
 
-配色与艺术包由站点维护，修改方法见[首页和外观](/zh/articles/docs-appearance/)。浏览来源与排序只在[导航状态协议](/zh/p/navigation-state/)中定义；不要用 UI 命名或样式类替代该协议。
+Module 提供内置配色，站点维护自定义配色与艺术包，修改方法见[首页和外观](/zh/articles/docs-appearance/)。浏览来源与排序只在[导航状态协议](/zh/p/navigation-state/)中定义；不要用 UI 命名或样式类替代该协议。

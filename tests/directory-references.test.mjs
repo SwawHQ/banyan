@@ -45,7 +45,6 @@ before(()=>{
   fixtureSitePages(source,['appearance','language','my','_res','rss','powered-by']);
   fs.mkdirSync(path.join(source,'themes'),{recursive:true});
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
-  fs.cpSync(path.join(repository,'archetypes'),path.join(source,'archetypes'),{recursive:true});
   write(path.join(source,'hugo.toml'),'theme="banyan"\nbaseURL="https://example.test/"\ndefaultContentLanguage="en"\nenableRobotsTXT=true\nprintPathWarnings=true\npanicOnWarning=true\n'+
     '[minify]\ndisableJS=true\n[params.appearance]\npalette="site/theme.css"\n[languages.en]\nlabel="English"\nweight=1\n[languages.zh]\nlabel="中文"\nweight=2\n[languages.ar]\nlabel="العربية"\ndirection="rtl"\nweight=3\n'+
     '[taxonomies]\n[[cascade]]\n[cascade.build]\npublishResources=false\n[outputs]\nhome=["HTML","RSS","LLMS","DIRECTORY"]\nsection=["HTML","RSS"]\npage=["HTML"]\n'+
@@ -72,7 +71,7 @@ before(()=>{
 });
 after(()=>{if(work){assert.equal(path.dirname(fs.realpathSync(work)),parent);fs.rmSync(work,{recursive:true,force:true});}});
 
-test('articles require an explicit URL and the site article archetype supplies one',()=>{
+test('articles require an explicit URL and the Module article archetype supplies one',()=>{
   const file=path.join(source,'content/library/url-contract.md');
   try {
     for(const fields of ['', 'slug: legacy-only', 'url: ""', 'url: "   "']) {

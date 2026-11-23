@@ -1,17 +1,25 @@
 import {usageError} from '../../_shared/usage.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {parseYaml as parse} from '../../_shared/parsers.mjs';
+import {parseToml as parse} from '../../_shared/parsers.mjs';
 import {ensureDependencies} from '../../_shared/dependencies.mjs';
 import {siteFile} from '../../_shared/files.mjs';
 import {prepareValidators} from './validators.mjs';
 
-export const registryFile = 'assets/site/external-resources.yaml';
+export const registryFile = 'assets/site/external-resources.toml';
 
 export async function readResources(siteRoot, requestedIds) {
-  const text = await fs.readFile(path.join(siteRoot,registryFile),'utf8');
+  const text = await fs.readFile(path.join(siteRoot,registryFile),'utf8').catch(error => {
+    if (error.code === 'ENOENT') return '';
+    throw error;
+  });
+  if (!text.trim() && !requestedIds.length) return [];
   await ensureDependencies();
   const registry = parse(text);
+  for (const key of Object.keys(registry)) {
+    if (key !== 'resources') throw new Error(registryFile + ': unknown field ' + key);
+  }
+  if (!Object.keys(registry).length) registry.resources = [];
   if (!Array.isArray(registry?.resources)) throw new Error(registryFile + ' must contain a resources list');
   const byId = new Map();
   for (const entry of registry.resources) {
@@ -37,7 +45,7 @@ export async function readResources(siteRoot, requestedIds) {
     const key = process.platform === 'win32' ? file.toLowerCase() : file;
     if (targets.has(key)) throw new Error('Duplicate resource target: ' + entry.target);
     targets.add(key);
-    resources.push({...entry,validate:prepareValidators(id,entry.validators)});
+    resources.push({...entry,file,validate:prepareValidators(id,entry.validators)});
   }
   return resources;
 }

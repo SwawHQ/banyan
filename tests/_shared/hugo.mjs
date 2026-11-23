@@ -7,15 +7,15 @@ import {loadDependency} from '../../.agents/skills/swaw-banyan/tasks/_shared/dep
 
 export const fixtureTools=()=>Object.fromEntries(['git','go','hugo'].map(name=>[name,{...resolveBinding(name),source:'path'}]));
 export const fixtureSiteMounts='\n[[module.mounts]]\nsource = "assets"\ntarget = "assets"\n'+
-  '[[module.mounts]]\nsource = "assets/i18n"\ntarget = "i18n"\n'+
   '[[module.mounts]]\nsource = "layouts"\ntarget = "layouts"\n';
 export function fixtureSiteFiles(directory) {
-  fs.cpSync(new URL('../../assets/i18n/',import.meta.url),path.join(directory,'assets/i18n'),{recursive:true});
+  fs.cpSync(new URL('../../i18n/',import.meta.url),path.join(directory,'i18n'),{recursive:true});
   fs.cpSync(new URL('../../content/_res/home-art/',import.meta.url),path.join(directory,'content/_res/home-art'),{recursive:true});
   fs.copyFileSync(new URL('../../content/_res/_index.md',import.meta.url),path.join(directory,'content/_res/_index.md'));
   const siteAssets=path.join(directory,'assets/site');
   fs.mkdirSync(siteAssets,{recursive:true});
-  for(const file of ['icons.toml','delivery.toml','favicon.ico','favicon.link.svg','icon-180.png','icon-192.png','icon-256.png','icon-512.png','manifest.webmanifest.tmpl','robots.txt.tmpl','theme.css','theme.high-contrast.css'])
+  fs.cpSync(new URL('../../assets/deploy/',import.meta.url),path.join(directory,'assets/deploy'),{recursive:true});
+  for(const file of ['favicon.ico','favicon.link.svg','apple-touch-icon.png','pwa-192.png','pwa-256.png','pwa-512.png'])
     fs.copyFileSync(new URL('../../assets/site/'+file,import.meta.url),path.join(siteAssets,file));
 }
 
@@ -26,8 +26,29 @@ export function fixtureSitePages(directory,names) {
 
 export function fixtureDelivery(...tables) {
   const toml=loadDependency('@iarna/toml');
-  return toml.stringify(Object.assign(toml.parse(fs.readFileSync(new URL('../../assets/site/delivery.toml',import.meta.url),'utf8')),
+  const source=file=>toml.parse(fs.readFileSync(new URL('../../'+file,import.meta.url),'utf8'));
+  const settings=source('assets/deploy/settings.toml'),policy=source('module/assets/deploy/policy.toml');
+  return toml.stringify(Object.assign({...policy,platform:settings.platform,sw:{...settings.sw,...policy.sw},prefetch:{...settings.prefetch,...policy.prefetch}},
     ...tables.map(table=>toml.parse(table??''))));
+}
+
+export function writeDelivery(assets,text) {
+  const toml=loadDependency('@iarna/toml');
+  const {platform,redirects,sw,prefetch,...policy}=toml.parse(text);
+  const settings={platform};
+  for(const [key,field,values] of [["sw","mode",sw],["prefetch","enabled",prefetch]]) {
+    if(!values || typeof values!=='object') {
+      if(values!==undefined)policy[key]=values;
+      continue;
+    }
+    settings[key]={};
+    if(Object.hasOwn(values,field))settings[key][field]=values[field];
+    policy[key]={...values};
+    delete policy[key][field];
+  }
+  const dir=path.join(assets,"deploy");fs.mkdirSync(dir,{recursive:true});
+  for(const [name,value] of Object.entries({settings,policy,redirects:redirects===undefined?{}:{redirects}}))
+    fs.writeFileSync(path.join(dir,name+".toml"),toml.stringify(value));
 }
 
 export function fixturePairing(directory) {

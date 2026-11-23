@@ -57,8 +57,8 @@ description: 统一项目用语，快速了解页面结构、内容分类、配�
 
 | 术语 | 含义 | 对应标识 |
 | --- | --- | --- |
-| 站点层 | 项目中维护网站内容、配置、品牌资源和界面字典的部分。 | 根目录的 `content/`、`hugo.toml`、`assets/site/`、`assets/i18n/` |
-| Banyan 主题 | 提供页面模板、脚本和样式的 Hugo Module，开发时简称 Module。 | `module/`、`github.com/SwawHQ/banyan/module` |
+| 站点层 | 项目中维护网站内容、配置、品牌资源和界面字典的部分。 | 根目录的 `content/`、`hugo.toml`、`assets/site/`、`i18n/` |
+| Banyan 主题 | 提供文章原型、页面模板、脚本、配色、图标库及应用清单和爬虫模板的 Hugo Module，开发时简称 Module。 | `module/`、`github.com/SwawHQ/banyan/module` |
 | 外观模式 | 用户选择的跟随系统、浅色或深色显示方式。 | `auto`、`light`、`dark` |
 | 页面布局 | 决定页面内容如何呈现的模板，例如文章、目录列表或图片墙。 | `layout` |
 | 页面元数据 | 页面文件头部声明的标题、布局及自定义配置。 | front matter、自定义字段 `params` |
@@ -85,7 +85,7 @@ JSON-LD 是表达格式，Schema.org 提供类型和字段，页面模板填入�
 
 | 术语 | 含义 | 对应标识 |
 | --- | --- | --- |
-| 站点交付配置 | 声明部署平台、HTTP 响应头、SW 缓存及页面预取规则的配置。 | `assets/site/delivery.toml` |
+| 站点交付配置 | 站点选择部署平台、SW 模式与预取开关，声明网址跳转；Module 提供缓存和预取策略。 | `assets/deploy/`、`module/assets/deploy/policy.toml` |
 | 页面预取 | 在用户打开目标页面前，按规则提前获取页面，缩短后续访问等待。 | `prefetch` |
 | 页面预渲染 | 在预取基础上提前加载资源并渲染目标页面，由浏览器的原生规则执行。 | `prefetch.prerender`、Speculation Rules |
 | 本站 Service Worker（SW） | 在浏览器后台处理本站受管请求、缓存和离线回退的程序。 | `sw.js` |

@@ -3,7 +3,7 @@ swban help/en deploy/cloudflare/upload  #Prepare Cloudflare Pages built-output u
 Build on the local machine or in CI, then publish the completed directory. Run Banyan commands from the site root.
 <build>: absolute path to a dedicated output directory; <url>: public site URL.
 
-1. In assets/site/delivery.toml, set platform.cloudflare.pages.enabled = true. Set hugo.toml baseURL to <url>.
+1. In assets/deploy/settings.toml, set platform.cloudflare.pages.enabled = true. Set hugo.toml baseURL to <url>.
 
 2. Build and check:
 swban base/hugo --minify --gc --cleanDestinationDir --destination "<build>"  #Build static output

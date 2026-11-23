@@ -10,13 +10,19 @@ description: 开启页面预取，选择预取强度并检查效果。
 
 ## 启用预取
 
-1. 打开 `assets/site/delivery.toml`。
+1. 打开 `assets/deploy/settings.toml`。
 2. 在已有 `[prefetch]` 中将 `enabled` 改为 `true`。
 3. 保留现有图标规则，按需要调整档位。
 
 ```toml
 [prefetch]
 enabled = true
+```
+
+要调整预取档位，将 Module 的 `assets/deploy/policy.toml` 复制到站点同路径，编辑其中的规则。
+
+```toml
+[prefetch]
 default = "conservative"
 ```
 

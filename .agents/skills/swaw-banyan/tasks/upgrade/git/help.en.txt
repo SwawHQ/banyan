@@ -18,7 +18,7 @@ swban base/git -C "<official>" rev-parse "<old>^{commit}" "<new>^{commit}"  #Res
 swban base/git -C "<official>" diff <old> <new> -- hugo.toml                  #Read site configuration changes
 swban base/git -C "<official>" diff --name-status <old> <new> -- content/     #List content changes, including subdirectories
 swban base/git -C "<official>" diff --name-status <old> <new> -- assets/      #List asset changes, including subdirectories
-swban base/git -C "<official>" diff --name-status <old> <new> -- archetypes/  #List content-template changes
+swban base/git -C "<official>" diff --name-status <old> <new> -- i18n/       #List interface dictionary changes
 
 4. Explore a directory, using content/ as an example:
 swban base/git -C "<official>" diff --name-status <old> <new> -- content/products/  #Narrow the scope to products and its subdirectories

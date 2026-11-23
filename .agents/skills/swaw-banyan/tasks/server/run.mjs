@@ -1,3 +1,4 @@
+import {syncResources} from '../sync/resources/run.mjs';
 import {usageError} from '../_shared/usage.mjs';
 import os from 'node:os';
 import path from 'node:path';
@@ -71,7 +72,9 @@ export async function dev(input,options={}) {
     const executable=toolExecutable('hugo');
     const addressSettings=addressOptions(input);
     const config=await readHugoConfig(process.cwd(),'',addressSettings.configArgs);
-    const {destination}=buildArguments({destination:config.publishdir||'public'},path.resolve(addressSettings.source||process.cwd()),config);
+    const siteRoot=path.resolve(addressSettings.source||process.cwd());
+    const {destination}=buildArguments({destination:config.publishdir||'public'},siteRoot,config);
+    await syncResources(siteRoot,{missingOnly:true});
     let address;
     try {
       address=developmentAddress(config,addressSettings,port);

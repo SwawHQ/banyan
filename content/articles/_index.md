@@ -15,7 +15,7 @@ params:
   # This entry uses the default folder icon. Set one value to replace it.
   # icon: folder
   # icon: {text: "A"}
-  # icon: {image: "site/icon-192.png", monochrome: true}
+  # icon: {image: "site/pwa-192.png", monochrome: true}
   # Row icons inherit these defaults; each row's own icon takes priority.
   # list_icon_folder: folder
   # list_icon_file: file
