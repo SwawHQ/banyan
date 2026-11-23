@@ -126,6 +126,8 @@ swban server     #用 go.mod 固定版本预览
 swban build      #用 go.mod 固定版本构建
 ```
 
+发布前用 `swban dev/build` 验证改动。发布流程会更新 `go.mod` 中的主题版本。
+
 ## 文档索引
 
 - [项目术语表](content/articles/docs-reference/glossary/index.zh.md)

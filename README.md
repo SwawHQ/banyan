@@ -126,6 +126,8 @@ swban server     #Preview with the version pinned in go.mod
 swban build      #Build with the version pinned in go.mod
 ```
 
+Use `swban dev/build` to verify changes before release. The release process updates the theme version in `go.mod`.
+
 ## Documentation
 
 - [Project glossary (Chinese)](content/articles/docs-reference/glossary/index.zh.md)
