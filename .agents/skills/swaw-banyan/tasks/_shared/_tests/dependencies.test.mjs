@@ -211,3 +211,11 @@ test('real offline npm installs only the selected group inside a parent workspac
   assert.equal(fs.existsSync(path.join(work,'bun.lock')),false);
   assert.equal(fs.existsSync(path.join(root,'bun.lock')),false);
 }));
+
+test('a comment-only resource registry needs no packages',()=>fixture(async({root,count})=>{
+  const {readResources,registryFile}=await import(pathToFileURL(path.join(root,'tasks/sync/resources/registry.mjs')));
+  write(root,registryFile,'  # Example\r\n\r\n# [[resources]]\r\n');
+  assert.deepEqual(await readResources(root,[]),[]);
+  await assert.rejects(readResources(root,['missing']),/Unknown resource id: missing/);
+  assert.equal(count(),0);
+}));

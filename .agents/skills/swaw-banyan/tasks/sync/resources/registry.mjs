@@ -13,7 +13,10 @@ export async function readResources(siteRoot, requestedIds) {
     if (error.code === 'ENOENT') return '';
     throw error;
   });
-  if (!text.trim() && !requestedIds.length) return [];
+  if (text.split(/\r?\n/).every(line=>/^\s*(?:#.*)?$/u.test(line))) {
+    if (requestedIds.length) throw usageError('Unknown resource id: ' + requestedIds[0]);
+    return [];
+  }
   await ensureDependencies();
   const registry = parse(text);
   for (const key of Object.keys(registry)) {
