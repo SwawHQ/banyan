@@ -31,6 +31,9 @@ Review these site-owned files when adapting an existing site:
 | `assets/site/apple-touch-icon.png` | Apple touch icon |
 | `assets/site/pwa-192.png`, `pwa-256.png`, `pwa-512.png` | Manifest icons |
 | `assets/deploy/settings.toml` | Platform switches, SW mode and prefetch switch |
+| `assets/deploy/redirects.toml` | Optional URL redirects in declaration order |
+| `assets/site/external-resources.toml` | Optional files to download before preview or build when missing locally |
+| `assets/site/avatar.github.svg` | Avatar shared by the reference site’s GitHub pages |
 | `i18n/<language>.toml` | Interface dictionary for each enabled language |
 
 For an existing site, copy missing resources from the reference root and review

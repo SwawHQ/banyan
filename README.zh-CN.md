@@ -58,7 +58,8 @@ Banyan 专注静态内容发布与边缘交付；账号、支付、评论等后�
    go.mod、go.sum               #固定的 Banyan 主题版本与校验和
    swban、swban.cmd             #站点命令入口
    .agents/skills/swaw-banyan/  #随包提供的 Swaw Banyan Skill
-   assets/                      #站点配置、样式与品牌资源
+   assets/deploy/               #部署开关与网址重定向
+   assets/site/                 #品牌资源与外部资源清单
    i18n/                        #界面字典
    content/                     #站点页面内容
    ```

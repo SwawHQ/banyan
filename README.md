@@ -58,7 +58,8 @@ Banyan focuses on static publishing and edge delivery. Backend features such as 
    go.mod and go.sum            #Pinned Banyan theme version and checksums
    swban and swban.cmd          #Site command launchers
    .agents/skills/swaw-banyan/  #Bundled Swaw Banyan Skill
-   assets/                      #Site config, styles, and brand assets
+   assets/deploy/               #Deployment settings and redirects
+   assets/site/                 #Brand assets and external resource declarations
    i18n/                        #Interface dictionaries
    content/                     #Site pages
    ```

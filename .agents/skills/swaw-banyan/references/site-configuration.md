@@ -17,7 +17,7 @@ taxonomies = {}
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
 disableLanguages = ["zh", "ar"]
-# Render assets/site/robots.txt.tmpl; false disables Hugo's robots.txt output.
+# Default rules allow all crawlers and list the sitemap. Override them in assets/site/robots.txt.tmpl.
 enableRobotsTXT = true
 
 panicOnWarning = true
