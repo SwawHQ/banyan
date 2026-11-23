@@ -1,1 +1,1 @@
-swban sync/resources [id...]  #Refresh selected external resources; default all
+swban sync/resources [--force] [id...]  #Download resources, use --force to replace files

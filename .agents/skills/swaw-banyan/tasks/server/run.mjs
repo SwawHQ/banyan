@@ -1,4 +1,3 @@
-import {syncResources} from '../sync/resources/run.mjs';
 import {usageError} from '../_shared/usage.mjs';
 import os from 'node:os';
 import path from 'node:path';
@@ -74,7 +73,7 @@ export async function dev(input,options={}) {
     const config=await readHugoConfig(process.cwd(),'',addressSettings.configArgs);
     const siteRoot=path.resolve(addressSettings.source||process.cwd());
     const {destination}=buildArguments({destination:config.publishdir||'public'},siteRoot,config);
-    await syncResources(siteRoot,{missingOnly:true});
+    if(controller.signal.aborted)return 130;
     let address;
     try {
       address=developmentAddress(config,addressSettings,port);

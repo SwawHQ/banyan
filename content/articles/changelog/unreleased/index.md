@@ -12,4 +12,4 @@ lastmod: 2026-11-23
 - Replace `assets/site/avatar.github.svg` to update the GitHub avatar in all languages.
 - Interface dictionaries now use the site-root `i18n/` directory and one `key = "text"` entry per line.
 - Deployment switches now use `assets/deploy/settings.toml` and site redirects use `assets/deploy/redirects.toml`. The Module supplies the default cache and prefetch policy.
-- Declare downloads in `assets/site/external-resources.toml`. Preview and build fetch missing files. Run `swban sync/resources` to refresh them.
+- Declare downloads in `assets/site/external-resources.toml`. Run `swban sync/resources` to download them. Add `--force` to replace existing files.

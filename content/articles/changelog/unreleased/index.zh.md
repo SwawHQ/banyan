@@ -12,4 +12,4 @@ lastmod: 2026-11-23
 - GitHub 页面头像改名为 `assets/site/avatar.github.svg`，替换此图即可更新各语言页面的头像。
 - 界面字典移至站点根目录 `i18n/`，每条译文使用一行 `键 = "译文"`。
 - 部署开关移至 `assets/deploy/settings.toml`，站点跳转规则移至 `assets/deploy/redirects.toml`。Module 提供默认缓存与预取策略。
-- 外部资源清单改用 `assets/site/external-resources.toml`。预览和构建前自动补齐缺失文件，使用 `swban sync/resources` 刷新已有文件。
+- 外部资源清单改用 `assets/site/external-resources.toml`。运行 `swban sync/resources` 下载资源，加 `--force` 可替换已有文件。

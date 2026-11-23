@@ -36,7 +36,7 @@ swban check/delivery [dir]      #Check delivery output and fingerprint paths
 swban check/csp [dir]           #Check CSP and inline hashes
 swban check/browser/site [dir]  #Run browser checks
 swban report/size/html [dir]    #Report page size and size on first load
-swban sync/resources [id...]    #Sync declared external resources
+swban sync/resources [--force] [id...]  #Download resources, use --force to replace files
 
 Before a theme upgrade, check these four items in the official repository:
 swban help upgrade/git  #Run this command for detailed help before upgrading

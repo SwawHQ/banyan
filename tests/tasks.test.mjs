@@ -219,7 +219,7 @@ test('output tasks reject duplicate directories and missing output',() => {
   }
 });
 
-test('external sync uses Skill-local TOML, selects ids and preserves identical files without site npm',async () => {
+test('external sync uses Skill-local TOML, selects ids and requires force to replace files without site npm',async () => {
   const root = externalSite('external success',`[[resources]]
 id = "first"
 source = "ORIGIN/json"
@@ -240,27 +240,30 @@ validators = ["json"]
   assert.equal(fs.existsSync(path.join(root,'node_modules')),false);
   const target = path.join(root,'content/files/data.json');
   assert.equal(JSON.parse(fs.readFileSync(target)).details.version,1);
-  fs.utimesSync(target,new Date('2020-01-01'),new Date('2020-01-01'));
-  const mtime = fs.statSync(target).mtimeMs;
-  const unchanged = await cliAsync('sync/resources',['first'],{cwd:root});
-  assert.equal(unchanged.status,0,unchanged.stderr);
-  assert.match(unchanged.stdout,/already up to date/);
-  assert.equal(fs.statSync(target).mtimeMs,mtime);
-  assert.equal((await cliAsync('sync/resources',[],{cwd:root})).status,0);
+  fs.writeFileSync(target,'local');
+  const conflict = await cliAsync('sync/resources',['second','first'],{cwd:root});
+  assert.equal(conflict.status,1);
+  assert.match(conflict.stderr,/--force/);
+  assert.equal(requests,beforeRequests+1);
+  assert.equal(fs.readFileSync(target,'utf8'),'local');
+  assert.equal(fs.existsSync(path.join(root,'assets/second.json')),false);
+  const refreshed = await cliAsync('sync/resources',['--force'],{cwd:root});
+  assert.equal(refreshed.status,0,refreshed.stderr);
+  assert.equal(JSON.parse(fs.readFileSync(target)).details.version,1);
   assert.equal(fs.existsSync(path.join(root,'assets/second.json')),true);
   assert.equal(fs.readdirSync(path.dirname(target)).some(name => name.startsWith('.swban-')),false);
 });
 
-test('build downloads missing external resources and preserves local files on the next build',async () => {
+test('build leaves external downloads to the explicit sync command',async () => {
   const root=externalSite('build resources','[[resources]]\nid="catalogue"\nsource="ORIGIN/json"\ntarget="assets/catalogue.json"\nvalidators=["json"]\n');
-  write(root,'layouts/home.html','{{ (resources.Get "catalogue.json").Content | safeHTML }}');
+  write(root,'layouts/home.html','{{ with resources.Get "catalogue.json" }}{{ .Content | safeHTML }}{{ else }}missing{{ end }}');
   const start=requests;
   const first=await cliAsync('build',[],{cwd:root});assert.equal(first.status,0,first.stderr);
-  assert.equal(requests,start+1);
-  assert.ok(fs.readFileSync(path.join(root,'public/index.html'),'utf8').includes('ModernDistributions'));
+  assert.equal(requests,start);
+  assert.ok(fs.readFileSync(path.join(root,'public/index.html'),'utf8').includes('missing'));
   write(root,'assets/catalogue.json','{"local":true}');
   const second=await cliAsync('build',[],{cwd:root});assert.equal(second.status,0,second.stderr);
-  assert.equal(requests,start+1);
+  assert.equal(requests,start);
   assert.ok(fs.readFileSync(path.join(root,'public/index.html'),'utf8').includes('local'));
 });
 
@@ -276,7 +279,7 @@ target = "content/item.json"
 validators = ${validators}
 `);
     write(root,'content/item.json','original bytes');
-    const result = await cliAsync('sync/resources',[],{cwd:root});
+    const result = await cliAsync('sync/resources',['--force'],{cwd:root});
     assert.equal(result.status,1,result.stdout + result.stderr);
     assert.equal(fs.readFileSync(path.join(root,'content/item.json'),'utf8'),'original bytes');
     assert.deepEqual(fs.readdirSync(path.join(root,'content')),['item.json']);

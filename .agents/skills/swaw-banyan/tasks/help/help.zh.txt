@@ -36,7 +36,7 @@ swban check/delivery [dir]      #检查交付产物和指纹路径
 swban check/csp [dir]           #检查 CSP 与内联哈希
 swban check/browser/site [dir]  #执行浏览器检查
 swban report/size/html [dir]    #统计页面与首次加载体积
-swban sync/resources [id...]    #同步已声明的外部资源
+swban sync/resources [--force] [id...]  #下载外部资源，覆盖已有文件需用 --force
 
 主题升级，先检查官方仓库以下四项的变动：
 swban help upgrade/git  #具体升级时，务必执行此命令查看详细帮助

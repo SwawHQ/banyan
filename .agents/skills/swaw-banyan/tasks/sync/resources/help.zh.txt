@@ -1,1 +1,1 @@
-swban sync/resources [id...]  #刷新指定外部资源，默认全部
+swban sync/resources [--force] [id...]  #下载外部资源，覆盖已有文件需用 --force

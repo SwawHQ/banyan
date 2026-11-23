@@ -31,26 +31,24 @@ export async function siteFile(siteRoot, target) {
   return file;
 }
 
-export async function writeSiteFile(siteRoot, target, bytes, {missingOnly=false}={}) {
+export function existingTarget(target) {
+  return new Error('Resource already exists: ' + target + '. Use --force to replace it.');
+}
+
+export async function writeSiteFile(siteRoot,target,bytes,{force=false}={}) {
   const file = await siteFile(siteRoot,target);
-  try {
-    const existing = await fs.readFile(file);
-    if (missingOnly || existing.equals(bytes)) return false;
-  } catch (error) { if (error.code !== 'ENOENT') throw error; }
   await fs.mkdir(path.dirname(file),{recursive:true});
   await siteFile(siteRoot,target);
   const temporary = path.join(path.dirname(file),'.swban-' + randomUUID() + '.tmp');
   try {
     await fs.writeFile(temporary,bytes,{flag:'wx'});
     await siteFile(siteRoot,target);
-    if (missingOnly) {
-      // A concurrent build or editor may have created the target during the download.
-      try { await fs.link(temporary,file); }
-      catch (error) { if (error.code === 'EEXIST') return false; throw error; }
-    } else await fs.rename(temporary,file);
+    if (force) await fs.rename(temporary,file);
+    else {
+      try { await fs.copyFile(temporary,file,fs.constants.COPYFILE_EXCL); }
+      catch (error) { if (error.code === 'EEXIST') throw existingTarget(target); throw error; }
+    }
   } finally {
-    try { await fs.unlink(temporary); }
-    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    await fs.rm(temporary,{force:true});
   }
-  return true;
 }

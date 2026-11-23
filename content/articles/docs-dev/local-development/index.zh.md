@@ -96,7 +96,7 @@ swban sync/resources <resource-id>  #按声明 id 同步外部资源
 swban help/zh deploy          #查看各平台的部署准备方案
 ```
 
-外部资源由站点的 `assets/site/external-resources.toml` 声明。预览和构建前会补齐缺失文件。要刷新已有文件，运行 `swban sync/resources`。
+外部资源由站点的 `assets/site/external-resources.toml` 声明。运行 `swban sync/resources` 下载资源。若所选目标已存在，命令会报错。用 `swban sync/resources --force <resource-id>` 替换指定文件。
 下载目标 `target` 相对站点根：全站资源放 `assets/site/`，正文资源放 `content/<页面>/` 内容包。
 同步任务自带依赖，不需要站点执行 `npm install`。
 EdgeOne 部署方式见

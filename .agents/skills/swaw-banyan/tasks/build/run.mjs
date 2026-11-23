@@ -1,4 +1,3 @@
-import {syncResources} from '../sync/resources/run.mjs';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -39,7 +38,6 @@ export function buildArguments(options,cwd=process.cwd(),config={}) {
 export async function build(options,{render=hugo,index=execute,prepare=prepareTools,executable=toolExecutable,selection=searchArguments,configuration=readHugoConfig}={}) {
   buildArguments(options);
   const {destination,args}=buildArguments(options,process.cwd(),await configuration());
-  await syncResources(process.cwd(),{missingOnly:true});
   const status=await render(args);
   if(status!==0)return status;
   return indexSite(destination,{index,prepare,executable,selection});
