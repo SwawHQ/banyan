@@ -1,144 +1,142 @@
-# Banyan
+# Swaw Banyan
 
 English · [简体中文](README.zh-CN.md)
 
-**A website template and Hugo theme built for categorized content, database-free sites, and edge hosting.**
+**A Finder-style Hugo site template for organizing knowledge bases, docs, and catalogs with Miller columns and multi-dimensional categories.**
 
+Like a banyan tree, a single article can branch into multiple categories while keeping one canonical URL — with zero frontend frameworks, pure static output, and a bundled AI Agent toolchain.
 
-[Demo site 1](https://banyan.swaw.com/) ·
-[Demo site 2](https://swaw.com/)
+[Reference site & docs (banyan.swaw.com)](https://banyan.swaw.com/) ·
+[Live showcase (swaw.com)](https://swaw.com/)
 
-Features:
+## Key Features
 
-**1.** Organize resources and articles across multiple categories and levels
+### 1. Multi-Dimensional Structure & Views
+- **Multi-dimensional categories**: Organize content with nested sections and `_map.toml` references so one canonical article appears across multiple categories while preserving navigation lineage and per-column sorting.
+- **Multiple views**: Built-in Finder-style Miller column navigation, article lists, product lists, time-range aggregate lists, and image walls (grid, masonry, and equal-height layouts with horizontal or vertical scrolling).
+- **Multilingual & customizable**: Built-in multilingual and RTL support, light/dark modes, swappable color palettes, and pluggable home-art bundles.
 
-**2.** Card walls, Miller column navigation, product lists, and article lists
+### 2. Delivery-Grade Static Engineering
+- **Lean & fast**: Hugo-generated static HTML with zero frontend frameworks, zero web fonts, and built-in Pagefind full-text search.
+- **Caching, offline & prefetch**: Unified `assets/site/delivery.toml` configuring dual-bucket Service Worker caching, PWA support, and Speculation Rules prefetch/prerender.
+- **Security & dual-platform output**: Build-time SHA-256 CSP hashes for inline scripts, SRI integrity, and generated configs for both Cloudflare Pages (`_headers`, `_redirects`) and Tencent Cloud EdgeOne Makers (`edgeone.json`).
+- **Human & AI discovery**: Built-in RSS, JSON-LD structured data, social share images, sitemap, `robots.txt`, and `llms.txt`.
 
-**3.** Multiple languages, theme switching, and customizable appearance and home page
+### 3. AI Agent-Ready Operations
+- **Self-bootstrapping toolchain**: Root `swban` / `swban.cmd` launchers verify and prepare pinned local tools on demand across Windows x64, Linux x64, and macOS x64/ARM64 without manual Hugo, Go, Node, or Pagefind setup.
+- **Bundled Skill**: Includes the `swaw-banyan` Skill for preview, builds, CSP/delivery checks, browser regression tests, and upgrades, with optional [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) integration for cloud deployment.
 
-**4.** Bundled Swaw Banyan Skill for build and maintenance, with optional Swaw Clouds for deployment
+Banyan focuses on static publishing and edge delivery. Backend features such as accounts, payments, and comments require separate integration.
 
-**5.** Hugo-generated pages + optimized CDN caching + edge computing + object storage, with no database or self-hosted server
+## Quick Start (AI Agent Friendly)
 
-**6.** PWA, Service Worker caching, page prefetch, and automatic CSP/SRI generation
+1. Download **Source code (zip)** from the [latest stable release](https://github.com/SwawHQ/banyan/releases/latest) and extract it as your site directory.
 
-**7.** RSS, social metadata, sitemap, robots.txt, and llms.txt
+2. Start a local preview from the site root (supports Windows x64, Linux x64, and macOS x64/ARM64):
 
-Backend features such as accounts, payments, and comments are not yet available. They are in development.
+   Windows (PowerShell):
+   ```powershell
+   .\swban.cmd server      #Preview drafts and build the search index
+   .\swban.cmd server/lan  #Preview on local network devices
+   .\swban.cmd build       #Build production site and search index
+   ```
 
+   Linux and macOS:
+   ```sh
+   sh ./swban server      #Preview drafts and build the search index
+   sh ./swban server/lan  #Preview on local network devices
+   sh ./swban build       #Build production site and search index
+   ```
 
+   The root launchers prepare required local tools on demand. Open the URL shown in the terminal, and restart `server` after content edits to refresh the search index. Linux requires `sh`, standard system utilities, `curl`, `tar`, and `sha256sum`; macOS uses built-in utilities. See [Getting started (Chinese)](content/articles/docs-start/getting-started/index.zh.md) for details.
 
+3. Customize for your own site:
 
-## Set up a new site (with help from an AI Agent)
+   Keep these core files and directories:
+   ```text
+   hugo.toml                    #Site configuration
+   go.mod and go.sum            #Pinned Banyan theme version and checksums
+   swban and swban.cmd          #Site command launchers
+   .agents/skills/swaw-banyan/  #Bundled Swaw Banyan Skill
+   archetypes/                  #Content templates
+   assets/                      #Site config, styles, and brand assets
+   content/                     #Site pages
+   ```
 
+   Remove or replace these example and theme-source paths as needed:
+   ```text
+   module/                         #Theme source, optional with the published Module
+   hugo.work                       #Local theme workspace, optional with the published Module
+   content/articles/changelog/     #Banyan release notes
+   content/articles/docs-*/        #Banyan documentation
+   content/articles/product-info/  #Example product info
+   content/products/               #Example product categories and references
+   content/products-all/           #Example product list
+   ```
 
-1. Download **Source code (zip)** from the [latest stable release](https://github.com/SwawHQ/banyan/releases/latest). Extract it as your site directory.
+   If you remove the documentation or release notes, update the corresponding links on Home and Powered by, then update your site title, domain, icons, and content.
 
-2. Start a local preview from the site root. Banyan supports Windows x64, Linux x64, and macOS x64/ARM64.
+4. Deploy:
 
-    Windows (PowerShell):
-    ```powershell
-    .\swban.cmd server  #Preview drafts and build the search index
-    ```
+   - **Linux / macOS or manual deploy**: Follow [Deploying (Chinese)](content/articles/docs-publish/deploying/index.zh.md) to use Git-connected builds or upload build output.
+   - **Windows x64 (AI Agent assisted)**: Install the [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) Skill from the site root:
 
-    Linux and macOS:
-    ```sh
-    sh ./swban server  #Preview drafts and build the search index
-    ```
+     ```powershell
+     .\swban.cmd base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #Install deployment Skill
+     ```
 
-    The root launchers prepare required tools on demand. Open the URL shown in the terminal. Restart `server` after content changes to update the search index. Use `server/lan` for LAN preview and `build` for a production build with search.
+     Open the site root in your AI Agent and run one of the prompts below:
 
-    Linux requires sh, basic system utilities, curl, tar, and sha256sum. macOS uses its built-in utilities. See [Getting started](content/articles/docs-start/getting-started/index.zh.md) for setup and the `swban` command shorthand.
+     Cloudflare Pages:
+     ```text
+     Use .agents/skills/swaw-banyan to build and check the site locally, then use .agents/skills/swaw-clouds to deploy it to Cloudflare Pages.
+     When authorization is needed, run .\.agents\skills\swaw-clouds\swcl.cmd auth/setup and ask me to enter credentials in the authorization interface.
+     ```
 
-3. Keep these files and directories when customizing your site.
-    ```text
-    hugo.toml                    #Site configuration
-    go.mod and go.sum            #Pinned theme version and checksums
-    swban and swban.cmd          #Site command launchers
-    .agents/skills/swaw-banyan/  #Bundled Swaw Banyan Skill
-    archetypes/                  #Content templates
-    assets/                      #Site assets
-    content/                     #Site pages
-    ```
+     Tencent Cloud EdgeOne Makers:
+     ```text
+     Use .agents/skills/swaw-banyan to build and check the site locally, then use edgeone/cli in .agents/skills/swaw-clouds to deploy it to EdgeOne Makers.
+     When authorization is needed, run .\.agents\skills\swaw-clouds\swcl.cmd edgeone/cli login and guide me through the official login process.
+     ```
 
-    Remove or replace these files and resources as needed.
-    ```text
-    module/                         #Theme source, optional with the published Module
-    hugo.work                       #Local theme workspace, optional with the published Module
-    content/articles/changelog/     #Banyan release notes
-    content/articles/docs-*/        #Banyan documentation
-    content/articles/product-info/  #Example product information
-    content/products/               #Example product categories and references
-    content/products-all/           #Example product list
-    ```
+     You can also ask your Agent to purchase domains, configure DNS, or combine Cloudflare and EdgeOne Makers with DNS-ECS routing for mainland China traffic. To open the authorization UI manually:
 
-    If you remove the documentation or release notes, update the corresponding links on Home and Powered by.
+     ```powershell
+     .\.agents\skills\swaw-clouds\swcl.cmd auth/setup  #Open cloud authorization UI
+     ```
 
-    Then set your own site name, domain, logo, and articles.
+## Upgrade an Existing Site
 
+1. Check the [Changelog (Chinese)](https://banyan.swaw.com/zh/articles/changelog/) and pick a target version.
+2. Open the site root in your AI Agent and prompt:
 
-4. Deploy\
-    Install [Swaw Clouds](https://github.com/SwawHQ/swaw-clouds) separately on Windows x64 for cloud authorization and deployment. On Linux and macOS, use [Git builds or upload the build output](content/articles/docs-publish/deploying/index.zh.md) with your hosting platform's tools.
+   ```text
+   Use .agents/skills/swaw-banyan. First read help upgrade/git through the root launcher (.\swban.cmd on Windows; sh ./swban on Linux/macOS), then upgrade this site to the latest official Banyan release. Preserve this site's content, URLs, and customizations. Report any unclear changes and wait for confirmation before applying them.
+   ```
 
-    On Windows, install the Skill in PowerShell from the site root:
-    ```powershell
-    .\swban.cmd base/node/npx --yes skills add SwawHQ/swaw-clouds --skill swaw-clouds -y  #Install the deployment Skill
-    ```
+## Develop the Banyan Theme
 
-    Open the site root in your AI Agent and use this prompt:
-    ```
-    Use .agents/skills/swaw-banyan to build and check the site locally, then use .agents/skills/swaw-clouds to deploy it to Cloudflare Pages.
-    When authorization is needed, run .\.agents\skills\swaw-clouds\swcl.cmd auth/setup and ask me to enter credentials in the authorization interface.
-    ```
-
-    For Tencent Cloud EdgeOne Makers:
-    ```
-    Use .agents/skills/swaw-banyan to build and check the site locally, then use edgeone/cli in .agents/skills/swaw-clouds to deploy it to EdgeOne Makers.
-    When authorization is needed, run .\.agents\skills\swaw-clouds\swcl.cmd edgeone/cli login and guide me through the official login process.
-    ```
-
-    You can also ask your Agent to purchase domains, configure DNS, or combine Cloudflare with EdgeOne Makers and route mainland China traffic to EdgeOne Makers through DNS-ECS.
-
-    To open the authorization interface manually:
-    ```powershell
-    .\.agents\skills\swaw-clouds\swcl.cmd auth/setup
-    ```
-
-
-## Upgrade an existing Banyan site
-1. Read the [Changelog](https://banyan.swaw.com/zh/articles/changelog/) and choose a version. The example below uses the latest release.
-
-2. Open the site root in your AI Agent and use this prompt:
-    ```
-    Use .agents/skills/swaw-banyan. First read help upgrade/git through the root launcher (.\swban.cmd on Windows; sh ./swban on Linux/macOS), then upgrade this site to the latest official Banyan release. Preserve this site's content, URLs, and customizations. If any changes are unclear, report them and wait for confirmation.
-    ```
-
-
-
-## Develop the Banyan theme
-
-Keep `module/` and `hugo.work` in your Banyan checkout. The examples use the same `swban` shorthand as the [local development guide](content/articles/docs-dev/local-development/index.zh.md).
+Keep `module/` and `hugo.work` in your checkout. Examples below use the `swban` shorthand from the [local development guide (Chinese)](content/articles/docs-dev/local-development/index.zh.md):
 
 ```text
-swban dev        #Preview changes to the local theme
-swban dev/build  #Build with the local theme
+swban dev        #Preview local theme source changes
+swban dev/build  #Build with local theme source
 swban server     #Preview with the version pinned in go.mod
 swban build      #Build with the version pinned in go.mod
 ```
 
 ## Documentation
 
-
 - [Project glossary (Chinese)](content/articles/docs-reference/glossary/index.zh.md)
 - [Getting started (Chinese)](content/articles/docs-start/getting-started/index.zh.md)
-- [Site configuration](https://banyan.swaw.com/zh/p/site-configuration/)
-- [Lists and products](https://banyan.swaw.com/zh/p/collection-lists/)
-- [Page regions](https://banyan.swaw.com/zh/p/layout-slots/)
-- [Delivery and caching](https://banyan.swaw.com/zh/p/delivery/)
-- [Security policies and CSP](https://banyan.swaw.com/zh/p/security-csp/)
-- [Site discovery and source links](https://banyan.swaw.com/zh/p/discovery/)
-- [Web App Manifest and icons](https://banyan.swaw.com/zh/p/web-app/)
-- [Development and release guide](https://banyan.swaw.com/zh/articles/docs-dev/)
+- [Site configuration (Chinese)](https://banyan.swaw.com/zh/p/site-configuration/)
+- [Lists and products (Chinese)](https://banyan.swaw.com/zh/p/collection-lists/)
+- [Page regions (Chinese)](https://banyan.swaw.com/zh/p/layout-slots/)
+- [Delivery and caching (Chinese)](https://banyan.swaw.com/zh/p/delivery/)
+- [Security policies and CSP (Chinese)](https://banyan.swaw.com/zh/p/security-csp/)
+- [Site discovery and source links (Chinese)](https://banyan.swaw.com/zh/p/discovery/)
+- [Web App Manifest and icons (Chinese)](https://banyan.swaw.com/zh/p/web-app/)
+- [Development and release guide (Chinese)](https://banyan.swaw.com/zh/articles/docs-dev/)
 
 ## License
 
