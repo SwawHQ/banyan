@@ -1,7 +1,7 @@
 # External resources
 
 Run `swban sync/resources [--force] [id...]` from the site root to fetch resources declared in
-`assets/site/external-resources.toml`. With no IDs, it syncs all declarations. If any selected target exists, the command stops before downloading. Add `--force` to replace existing files after validation.
+`assets/deploy/external-resources.toml`. With no IDs, it syncs all declarations. If any selected target exists, the command stops before downloading. Add `--force` to replace existing files after validation.
 
 ```toml
 [[resources]]

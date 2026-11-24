@@ -45,6 +45,7 @@ export async function writeSiteFile(siteRoot,target,bytes,{force=false}={}) {
     await siteFile(siteRoot,target);
     if (force) await fs.rename(temporary,file);
     else {
+      // Preserve existing targets; replacing a partial copy after interruption requires --force.
       try { await fs.copyFile(temporary,file,fs.constants.COPYFILE_EXCL); }
       catch (error) { if (error.code === 'EEXIST') throw existingTarget(target); throw error; }
     }

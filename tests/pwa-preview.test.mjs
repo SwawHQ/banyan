@@ -26,11 +26,11 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
     const policyFile=path.join(source,'assets/deploy/policy.toml'),originalPolicy=fs.readFileSync(path.join(source,'module/assets/deploy/policy.toml'),'utf8');
     fs.writeFileSync(policyFile,originalPolicy);
     const settingsFile=path.join(source,'assets/deploy/settings.toml'),settings=fs.readFileSync(settingsFile,'utf8');
-    const policy=(mode,interval=8)=>{
-      fs.writeFileSync(settingsFile,settings.replace(/^mode = .*$/m,'mode = "'+mode+'"'));
-      return originalPolicy.replace(/^content_check_interval = .*$/m,'content_check_interval = '+interval);
+    const setWorker=(mode,interval=8)=>{
+      fs.writeFileSync(settingsFile,settings.replace(/^mode = .*$/m,'mode = "'+mode+'"')
+        .replace(/^content_check_interval = .*$/m,'content_check_interval = '+interval));
     };
-    fs.writeFileSync(policyFile,policy('enable'));
+    setWorker('enable');
     const configFile=path.join(source,'hugo.toml'),originalConfig=fs.readFileSync(configFile,'utf8');
     const versionConfig=version=>originalConfig+'\n[params.build]\nversion = "'+version+'"\n';
     fs.writeFileSync(configFile,versionConfig('v-sw-preview-one'));
@@ -74,14 +74,15 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
     }
     await until('initial enable preview and three-language manager SRI',async()=>{await managers('enable');return await interval(480000);});
     const initial=await state(),initialManager=await managers('enable');
-    fs.writeFileSync(policyFile,policy('enable',11));
+    setWorker('enable',11);
     await until('interval edits rebuild worker',async()=>await interval(660000));
     const configured=await state();
-    fs.writeFileSync(policyFile,policy('enable'));
+    setWorker('enable');
     await until('restored interval reproduces the original worker',async()=>{assert.deepEqual(await state(),initial);return true;});
-    fs.writeFileSync(policyFile,policy('enable',11)+'\n[[routes]]\npath = "/preview-probe/*"\nsw.bucket = "off"\n');
+    setWorker('enable',11);
+    fs.writeFileSync(policyFile,originalPolicy+'\n[[routes]]\npath = "/preview-probe/*"\nsw.bucket = "off"\n');
     await until('route edits rebuild policy and worker',async()=>(await get('/sw-policy.json')).includes('/preview-probe/*')&&(await get('/sw.js')).includes('/preview-probe/*'));
-    fs.writeFileSync(policyFile,policy('enable',11));
+    fs.writeFileSync(policyFile,originalPolicy);
     await until('restored routes reproduce policy and worker',async()=>{assert.deepEqual(await state(),configured);return true;});
     const workerFile=path.join(source,'module/assets/js/pwa/worker-enable.js.tmpl'),originalWorker=fs.readFileSync(workerFile,'utf8');
     fs.appendFileSync(workerFile,'\nglobalThis.banyanPreviewWorker = "worker-rebuilt";\n');
@@ -101,20 +102,20 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
     fs.writeFileSync(configFile,versionConfig('v-sw-preview-one'));
     await until('restored build version republishes the original JSON',async()=>{assert.deepEqual(await state(),configured);return true;});
     await until('restored configuration rebuild completes',async()=>/Rebuilt in \d+/.test(logs.slice(restoreOffset)));
-    fs.writeFileSync(policyFile,policy('disable'));
+    setWorker('disable');
     await until('disable selects cleanup worker and manager',async()=>Boolean(await managers('disable'))&&(await get('/sw.js')).includes('navigationPreload.disable()'));
     const disabledWorker=await get('/sw.js');
-    fs.writeFileSync(policyFile,policy('enable',11));
+    setWorker('enable',11);
     await until('re-enabling the same configuration restores worker and manager',async()=>{
       assert.deepEqual(await state(),configured);assert.equal(await managers('enable'),initialManager);return true;
     });
-    fs.writeFileSync(policyFile,policy('disable'));
+    setWorker('disable');
     await until('disabling again restores the same cleanup worker',async()=>{
       await managers('disable');assert.equal(await get('/sw.js'),disabledWorker);return true;
     });
-    fs.writeFileSync(policyFile,policy('off'));
+    setWorker('off');
     await until('off removes managers from every language',async()=>{await managers('off');return true;});
-    fs.writeFileSync(policyFile,policy('enable'));
+    setWorker('enable');
     await until('re-enabling after off restores the initial outputs',async()=>{
       assert.deepEqual(await state(),initial);assert.equal(await managers('enable'),initialManager);return true;
     });

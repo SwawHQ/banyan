@@ -1,14 +1,14 @@
 ---
 title: 交付配置
 date: 2026-11-06
-lastmod: 2026-11-17
+lastmod: 2026-11-23
 url: p/delivery/
 description: 配置部署平台、HTTP 响应头、Service Worker 缓存和重定向。
 ---
 
 ## 配置来源
 
-在 `assets/deploy/settings.toml` 选择部署平台、SW 模式及预取开关。本站跳转规则放在可选的 `assets/deploy/redirects.toml`。Module 的 `assets/deploy/policy.toml` 提供按顺序匹配的缓存路由、预取档位及内容检查间隔。需要定制时，将整份策略复制到站点同路径后编辑。各语言共用这些配置。
+在 `assets/deploy/settings.toml` 选择部署平台、SW 模式、内容检查间隔及预取开关。本站跳转规则放在可选的 `assets/deploy/redirects.toml`。Module 的 `assets/deploy/policy.toml` 提供按顺序匹配的缓存路由和预取档位。需要定制时，将整份策略复制到站点同路径后编辑。各语言共用这些配置。
 
 ## 部署平台
 

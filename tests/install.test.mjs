@@ -344,7 +344,7 @@ test('site content, palette, translations and delivery data drive a fresh instal
   write(root,template,fs.readFileSync(path.join(moduleRoot,template),'utf8')
     .replace('"theme_color" "#000000"','"theme_color" "#123456"')
     .replace('"background_color" "#ffffff"','"background_color" "#fefefe"'));
-  write(root,'assets/site/external-resources.toml','resources = []\n');
+  write(root,'assets/deploy/external-resources.toml','resources = []\n');
   writeDelivery(path.join(root,'assets'),fixtureDelivery('[platform.cloudflare]\npages.enabled = true\n'+
     '[platform.edgeone]\nmakers.enabled = true\n'+
     '[[redirects]]\nsource = "/previous/"\ndestination = "/p/alpha/"\nstatus = 301\n'));

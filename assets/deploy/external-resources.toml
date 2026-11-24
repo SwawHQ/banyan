@@ -1,0 +1,14 @@
+# 运行 swban sync/resources 下载资源。加 --force 可替换已有文件。
+# 每个资源使用一个 [[resources]]。取消下方示例的注释并填写实际地址。
+# validators 可省略。文件必须非空，列出的规则须全部通过。
+#   json                 文件可解析为 JSON。
+#   json:data.items      JSON 中存在 data.items 字段，可用点号指定多层字段。
+#   min-size:512         文件至少 512 字节。
+#   max-size:2MiB        文件最多 2 MiB。
+# 大小默认以字节计，也可使用 B、KB、MB、GB（按 1000 进位）或 KiB、MiB、GiB（按 1024 进位）。
+
+# [[resources]]
+# id = "catalogue"
+# source = "https://example.com/catalogue.json"
+# target = "assets/site/catalogue.json"
+# validators = ["json:data.items", "max-size:2MiB"]

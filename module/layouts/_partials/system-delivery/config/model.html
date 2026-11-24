@@ -3,13 +3,17 @@
   {{- $path := printf "deploy/%s.toml" $file -}}
   {{- with resources.Get $path -}}
     {{- $values := . | transform.Unmarshal | default dict -}}
-    {{- $allowed := index (dict "settings" (slice "platform" "sw" "prefetch") "policy" (slice "routes" "sw" "prefetch") "redirects" (slice "redirects")) $file -}}
+    {{- $allowed := index (dict "settings" (slice "platform" "sw" "prefetch") "policy" (slice "routes" "prefetch") "redirects" (slice "redirects")) $file -}}
     {{- range $key, $value := $values -}}
       {{- if not (in $allowed $key) -}}{{- errorf "Delivery config: unknown field %q in assets/%s." $key $path -}}{{- end -}}
-      {{- if and (in (slice "sw" "prefetch") $key) (reflect.IsMap $value) -}}
-        {{- $switch := cond (eq $key "sw") "mode" "enabled" -}}
+      {{- if and (eq $key "sw") (reflect.IsMap $value) -}}
         {{- range $field, $_ := $value -}}
-          {{- if ne (eq $file "settings") (eq $field $switch) -}}{{- errorf "Delivery config: %s.%s belongs in assets/deploy/%s.toml." $key $field (cond (eq $field $switch) "settings" "policy") -}}{{- end -}}
+          {{- if not (in (slice "mode" "content_check_interval") $field) -}}{{- errorf "Delivery config: unsupported sw.%s." $field -}}{{- end -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if and (eq $key "prefetch") (reflect.IsMap $value) -}}
+        {{- range $field, $_ := $value -}}
+          {{- if ne (eq $file "settings") (eq $field "enabled") -}}{{- errorf "Delivery config: %s.%s belongs in assets/deploy/%s.toml." $key $field (cond (eq $field "enabled") "settings" "policy") -}}{{- end -}}
         {{- end -}}
       {{- end -}}
     {{- end -}}

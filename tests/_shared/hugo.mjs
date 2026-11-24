@@ -28,24 +28,19 @@ export function fixtureDelivery(...tables) {
   const toml=loadDependency('@iarna/toml');
   const source=file=>toml.parse(fs.readFileSync(new URL('../../'+file,import.meta.url),'utf8'));
   const settings=source('assets/deploy/settings.toml'),policy=source('module/assets/deploy/policy.toml');
-  return toml.stringify(Object.assign({...policy,platform:settings.platform,sw:{...settings.sw,...policy.sw},prefetch:{...settings.prefetch,...policy.prefetch}},
+  return toml.stringify(Object.assign({...policy,platform:settings.platform,sw:settings.sw,prefetch:{...settings.prefetch,...policy.prefetch}},
     ...tables.map(table=>toml.parse(table??''))));
 }
 
 export function writeDelivery(assets,text) {
   const toml=loadDependency('@iarna/toml');
   const {platform,redirects,sw,prefetch,...policy}=toml.parse(text);
-  const settings={platform};
-  for(const [key,field,values] of [["sw","mode",sw],["prefetch","enabled",prefetch]]) {
-    if(!values || typeof values!=='object') {
-      if(values!==undefined)policy[key]=values;
-      continue;
-    }
-    settings[key]={};
-    if(Object.hasOwn(values,field))settings[key][field]=values[field];
-    policy[key]={...values};
-    delete policy[key][field];
-  }
+  const settings={platform,sw};
+  if (prefetch && typeof prefetch === 'object') {
+    const {enabled,...rules}=prefetch;
+    settings.prefetch=enabled===undefined?{}:{enabled};
+    policy.prefetch=rules;
+  } else if (prefetch!==undefined) policy.prefetch=prefetch;
   const dir=path.join(assets,"deploy");fs.mkdirSync(dir,{recursive:true});
   for(const [name,value] of Object.entries({settings,policy,redirects:redirects===undefined?{}:{redirects}}))
     fs.writeFileSync(path.join(dir,name+".toml"),toml.stringify(value));

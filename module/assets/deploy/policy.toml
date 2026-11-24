@@ -1,7 +1,3 @@
-[sw]
-# 内容版本检查的最小间隔，单位：分钟；到期后由导航触发后台检查，不阻塞页面请求。
-content_check_interval = 21
-
 [prefetch]
 # 未匹配图标规则的链接使用此档位，包括文字、图片和正文链接。
 # off：关闭；conservative：按下链接或键盘聚焦；moderate：悬停；eager：短暂悬停或触屏进入可见区。

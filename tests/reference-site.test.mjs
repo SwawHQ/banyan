@@ -552,7 +552,7 @@ test('Powered by Markdown separates build information and update controls',async
     assert.ok(!policyRow.includes('<button'),'The policy link is static.');
     const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-content-interval'))[0];
     const enabled=fs.existsSync(path.join(output,'sw-version.json'));
-    if(enabled)assert.ok(interval.inner.includes(String(parseToml(fs.readFileSync(path.join(root,'module/assets/deploy/policy.toml'),'utf8')).sw.content_check_interval)));
+    if(enabled)assert.ok(interval.inner.includes(String(parseToml(fs.readFileSync(path.join(root,'assets/deploy/settings.toml'),'utf8')).sw.content_check_interval)));
     else assert.equal(interval.inner,extractBlocks(html,'span',tag=>tag.includes('data-site-sw-policy'))[0].inner);
     const indicator=extractStartTags(html,'span').find(tag=>tag.includes('data-site-content-status'));
     assert.equal(extractTagAttribute(indicator,'data-site-page-version'),version);

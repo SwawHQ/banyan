@@ -13,7 +13,7 @@ set `--base-path` to that prefix, as in the example above.
 
 ## Configuration
 
-Choose platforms, SW mode and prefetch in `assets/deploy/settings.toml`. Add ordered URL redirects to the optional `assets/deploy/redirects.toml`. The Module supplies `assets/deploy/policy.toml` with cache routes, the content check interval and prefetch profiles. To customize these rules, copy the complete policy to the same path in the site.
+Choose platforms, SW mode, content check interval and prefetch in `assets/deploy/settings.toml`. Add ordered URL redirects to the optional `assets/deploy/redirects.toml`. The Module supplies `assets/deploy/policy.toml` with cache routes and prefetch profiles. To customize these rules, copy the complete policy to the same path in the site.
 
 Keep general routes first and exceptions last. HTTP output retains declaration
 order. SW uses only routes with `sw`, reverses them and takes the first match.
@@ -47,7 +47,7 @@ The fingerprint bucket retains resources across builds by their fingerprint URLs
 For deployment preparation, use `swban help/en deploy`; see [EdgeOne](edgeone.md)
 for its Git-build configuration requirements.
 
-Set the switches in settings.toml:
+Configure these fields in `assets/deploy/settings.toml`:
 
 ```toml
 [prefetch]
@@ -55,12 +55,6 @@ enabled = true
 
 [sw]
 mode = "enable"
-```
-
-Set the check interval in the policy override:
-
-```toml
-[sw]
 content_check_interval = 5
 ```
 

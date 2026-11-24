@@ -1,6 +1,7 @@
 # Banyan minimal reference site.
 # Sites own their complete configuration. Use this file as a reference.
 baseURL = "https://banyan.swaw.com/"
+module.imports = [{ path = "github.com/SwawHQ/banyan/module" }]
 # Optional Hugo cache directory for downloaded modules and other cached files. Windows default: %LOCALAPPDATA%/hugo_cache
 # cacheDir = ""
 timeZone = "Asia/Shanghai"
@@ -18,11 +19,10 @@ minify.disableJS = true
 frontmatter.lastmod = ["lastmod", "date"]
 taxonomies = {} # Disable Hugo's default tags and categories.
 
-[[cascade]]
 # true: automatically publish page bundle resources, including unused files.
 # false: publish only resources whose Permalink, RelPermalink or Publish method is called.
 # Page HTML is controlled by build.render; static/ files are copied separately.
-build.publishResources = false
+cascade = [{ build.publishResources = false }]
 
 [markup]
 highlight.noClasses = false
@@ -38,9 +38,6 @@ LLMS.mediaType = "text/plain"
 LLMS.baseName = "llms"
 LLMS.isPlainText = true
 LLMS.notAlternative = true
-
-[module]
-imports = [{ path = "github.com/SwawHQ/banyan/module" }]
 
 [languages]
 en.label = "English"

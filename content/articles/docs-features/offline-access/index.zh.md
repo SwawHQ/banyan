@@ -1,7 +1,7 @@
 ---
 title: 离线：怎么设置离线访问？
 date: 2026-11-17
-lastmod: 2026-11-17
+lastmod: 2026-11-23
 url: p/offline-access/
 description: 启用本站 Service Worker，验证断网浏览并检查停用结果。
 ---
@@ -11,7 +11,7 @@ description: 启用本站 Service Worker，验证断网浏览并检查停用结�
 ## 启用离线访问
 
 1. 打开 `assets/deploy/settings.toml`。
-2. 在已有 `[sw]` 中将 `mode` 改为 `"enable"`，保留原有路由配置。
+2. 在已有 `[sw]` 中将 `mode` 改为 `"enable"`。
 3. 按[发布教程](/zh/p/deploying/)构建、检查并部署到 HTTPS 站点。
 
 配置示例：
@@ -19,9 +19,10 @@ description: 启用本站 Service Worker，验证断网浏览并检查停用结�
 ```toml
 [sw]
 mode = "enable"
+content_check_interval = 21
 ```
 
-检查间隔由交付策略文件中的 `sw.content_check_interval` 设置。断网打开未缓存的受管页面时，SW 直接返回英文提示。
+`content_check_interval` 设置两次内容版本检查之间的最短间隔，单位为分钟。断网打开未缓存的受管页面时，SW 直接返回英文提示。
 
 缓存范围由各路由的 `sw.bucket` 控制，字段含义见[交付配置](/zh/p/delivery/#service-worker)。
 

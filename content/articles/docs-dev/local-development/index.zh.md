@@ -22,8 +22,8 @@ banyan/
 ├── content/products/                      #产品分类与一份引用
 ├── content/products-all/                  #产品汇总
 ├── content/{appearance,language,my,rss}/  #站点自有设置和说明页
-├── assets/site/                           #站点品牌与外部资源清单
-├── assets/deploy/                         #部署开关与重定向
+├── assets/site/                           #站点品牌资源
+├── assets/deploy/                         #部署开关、重定向与外部资源清单
 ├── i18n/                                  #界面字典
 ├── content/powered-by/                    #版本信息与预取诊断
 ├── content/_res/                          #首页艺术包
@@ -96,7 +96,7 @@ swban sync/resources <resource-id>  #按声明 id 同步外部资源
 swban help/zh deploy          #查看各平台的部署准备方案
 ```
 
-外部资源由站点的 `assets/site/external-resources.toml` 声明。运行 `swban sync/resources` 下载资源。若所选目标已存在，命令会报错。用 `swban sync/resources --force <resource-id>` 替换指定文件。
+外部资源由站点的 `assets/deploy/external-resources.toml` 声明。运行 `swban sync/resources` 下载资源。若所选目标已存在，命令会报错。用 `swban sync/resources --force <resource-id>` 替换指定文件。
 下载目标 `target` 相对站点根：全站资源放 `assets/site/`，正文资源放 `content/<页面>/` 内容包。
 同步任务自带依赖，不需要站点执行 `npm install`。
 EdgeOne 部署方式见

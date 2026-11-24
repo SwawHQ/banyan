@@ -1,6 +1,0 @@
-# Run swban sync/resources to download these files. Add --force to replace existing files.
-# [[resources]]
-# id = "catalogue"
-# source = "https://example.com/catalogue.json"
-# target = "assets/site/catalogue.json"
-# validators = ["json"]
