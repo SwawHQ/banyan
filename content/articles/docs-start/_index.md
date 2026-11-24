@@ -1,6 +1,6 @@
 ---
 title: Docs1·Getting started
-description: Banyan documentation. Articles are available in Chinese.
+description: Get the reference site, preview it locally, and configure your own Banyan site.
 weight: 5
 params:
   default_sort: name-asc

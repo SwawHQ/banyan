@@ -1,6 +1,6 @@
 ---
 title: Docs6·Developing the theme
-description: Banyan documentation. Articles are available in Chinese.
+description: Set up the development environment, follow the source conventions, and test and release the theme.
 weight: 10
 params:
   default_sort: name-asc

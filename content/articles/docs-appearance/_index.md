@@ -1,6 +1,6 @@
 ---
 title: Docs3·Customizing appearance
-description: Banyan documentation. Articles are available in Chinese.
+description: Customize the home page, image walls, colors, icons, and navigation.
 weight: 7
 params:
   default_sort: name-asc

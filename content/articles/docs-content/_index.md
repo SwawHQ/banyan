@@ -1,6 +1,6 @@
 ---
 title: Docs2·Organizing content
-description: Banyan documentation. Articles are available in Chinese.
+description: Organize articles into sections, reuse articles across lists, and display products.
 weight: 6
 params:
   default_sort: name-asc

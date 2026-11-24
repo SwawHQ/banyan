@@ -1,6 +1,6 @@
 ---
 title: Docs4·Publishing a site
-description: Banyan documentation. Articles are available in Chinese.
+description: Choose a hosting platform, build your site, check the output, and deploy it.
 weight: 8
 params:
   default_sort: name-asc

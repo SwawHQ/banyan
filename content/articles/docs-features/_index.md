@@ -1,6 +1,6 @@
 ---
 title: Docs5·Configuring features
-description: Banyan documentation. Articles are available in Chinese.
+description: Configure search, RSS feeds, sharing, indexing, offline access, and prefetching.
 weight: 9
 params:
   default_sort: name-asc
