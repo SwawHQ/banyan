@@ -60,25 +60,6 @@ before(()=>{
     }
     write(path.join(content,'reader-start/index'+suffix+'.md'),`---\ntitle: Independent update source\nurl: ${prefix}${from}\nlayout: page-article-norss\nweight: 87\nbuild:\n  list: local\nparams:\n  icon: code\n---\n\nIndependent update source.`);
   }
-  write(path.join(content,'version-only/index.md'),`---
-title: Independent version indicator
-url: /version-only/
-layout: page-article-norss
-params:
-  site_status:
-    labels:
-      content_checking: Checking version
-      content_current: Same version
-      content_failed: Version check failed
-      cache_disabled: Caching disabled
-      content_current_icon: 🟢
-      refresh_icon: 🔄
-      content_refresh: Refresh server version
----
-Build: {{< site-status "version" >}}
-
-Server: {{< site-status "content" >}}
-`);
   const mounts='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n'+fixtureSiteMounts;
   const build=(name,version=versions[0],asset,code,mode='enable')=>{
     const assets=path.join(work,name+'-assets');
@@ -93,7 +74,7 @@ Server: {{< site-status "content" >}}
     return destination;
   };
   old=build('old');next=build('next',versions[1]);off=build('off',versions[0],undefined,undefined,'off');
-  const manager=fs.readFileSync(path.join(root,'module/assets/js/pwa/manager-entry.js.tmpl'),'utf8').replaceAll('\r\n','\n');
+  const main=fs.readFileSync(path.join(root,'module/assets/js/main.js'),'utf8');
   const panelScript=fs.readFileSync(path.join(root,'module/assets/js/site-status/page.js'),'utf8').replaceAll('\r\n','\n');
   const worker=fs.readFileSync(path.join(root,'module/assets/js/pwa/worker-enable.js.tmpl'),'utf8').replaceAll('\r\n','\n');
   for(const [name,input,search,replacement] of [
@@ -107,9 +88,9 @@ Server: {{< site-status "content" >}}
   const install="self.addEventListener('install', (event) => {";
   assert.ok(worker.includes(install));
   faults['auto-activate']=build('auto-activate',versions[1],'js/pwa/worker-enable.js.tmpl',worker.replace(install,install+' self.skipWaiting();'));
-  faults['captures-modifiers']=build('captures-modifiers',versions[0],'js/pwa/manager-entry.js.tmpl',manager+
+  faults['captures-modifiers']=build('captures-modifiers',versions[0],'js/main.js',main+
     '\ndocument.addEventListener("click",event=>{const link=event.target.closest("a[href]");if(link&&(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)){event.preventDefault();location.assign(link.href);}});');
-  faults['delayed-reload']=build('delayed-reload',versions[0],'js/pwa/manager-entry.js.tmpl',manager+
+  faults['delayed-reload']=build('delayed-reload',versions[0],'js/main.js',main+
     '\nif(sessionStorage.getItem("swban-delayed-reload")){sessionStorage.removeItem("swban-delayed-reload");setTimeout(()=>location.reload(),3500);}\n'+
     'document.addEventListener("click",event=>{if(event.target.closest("[data-root-href]"))sessionStorage.setItem("swban-delayed-reload","yes");});');
 },{timeout:60000});
@@ -214,10 +195,10 @@ test('version indicators work independently and keep build text fixed',{timeout:
       for(const [body,status,state] of [[JSON.stringify(versions[0]),200,'current'],[JSON.stringify(versions[1]),200,'changed'],
         ['{broken',200,'failed'],['null',200,'failed'],['"valid"',503,'failed'],[null,0,'failed']]) {
         reply=body===null?null:{body,status};
-        if(!requests)await page.goto(baseUrl+'/version-only/',{waitUntil:'load'});
+        if(!requests)await page.goto(baseUrl+panel,{waitUntil:'load'});
         else await page.locator('[data-site-content-action]').click();
         await contentIndicator(page,state,state==='current'?versions[0]:versions[1]);
-        assert.equal(await page.locator('[data-site-status-panel]').count(),0);
+        assert.equal(await page.locator('[data-site-status-panel]').count(),1);
         assert.equal(await page.locator('script[src*="/js/site-status/page."]').count(),1);
         assert.equal(await page.locator('[data-site-build-version]').textContent(),versions[0]);
         assert.equal(await page.locator('a [data-site-build-version]').count(),0);
@@ -235,7 +216,7 @@ test('version indicators work independently and keep build text fixed',{timeout:
       assert.equal(page.url(),baseUrl+panel,'Refreshing a row must not reload or navigate.');
       await page.locator('[data-site-content-status] a').click();
       await page.waitForURL(baseUrl+'/sw-version.json');
-      return {independent:true,buildTextFixed:true,customIcons:true,refreshRetry:true,versionLink:true};
+      return {independent:true,buildTextFixed:true,refreshRetry:true,versionLink:true};
     }}]});
   assert.equal(result.totals.failed,0,result.scenarios.map(value=>value.message).join('\n'));
 });

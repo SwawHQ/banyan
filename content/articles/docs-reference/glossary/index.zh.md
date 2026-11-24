@@ -1,7 +1,7 @@
 ---
 title: 项目术语表
 date: 2026-11-13
-lastmod: 2026-11-17
+lastmod: 2026-11-24
 url: p/glossary/
 description: 统一项目用语，快速了解页面结构、内容分类、配置和交付机制。
 ---
@@ -58,7 +58,7 @@ description: 统一项目用语，快速了解页面结构、内容分类、配�
 | 术语 | 含义 | 对应标识 |
 | --- | --- | --- |
 | 站点层 | 项目中维护网站内容、配置、品牌资源和界面字典的部分。 | 根目录的 `content/`、`hugo.toml`、`assets/site/`、`i18n/` |
-| Banyan 主题 | 提供文章原型、页面模板、脚本、配色、图标库及应用清单和爬虫模板的 Hugo Module，开发时简称 Module。 | `module/`、`github.com/SwawHQ/banyan/module` |
+| Banyan 主题 | 提供与页面布局同名的原型、页面模板、脚本、配色、图标库及应用清单和爬虫模板的 Hugo Module，开发时简称 Module。 | `module/`、`github.com/SwawHQ/banyan/module` |
 | 外观模式 | 用户选择的跟随系统、浅色或深色显示方式。 | `auto`、`light`、`dark` |
 | 页面布局 | 决定页面内容如何呈现的模板，例如文章、目录列表或图片墙。 | `layout` |
 | 页面元数据 | 页面文件头部声明的标题、布局及自定义配置。 | front matter、自定义字段 `params` |

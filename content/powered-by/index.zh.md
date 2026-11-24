@@ -2,13 +2,13 @@
 title: Powered by
 description: "了解本站使用的技术、构建信息、PWA 与预取状态。"
 url: powered-by/ #重命名内容目录时保留此网址。
-layout: page-article-norss #显示 Markdown 正文；短代码启用交互控件。
+layout: page-powered-by
 weight: 100
 
 params:
   icon: code
   slots: [breadcrumb] #breadcrumb：面包屑列；meta：文章元信息、章节目录和 BlogPosting；[]：全部关闭。
-  site_status: #下方 site-status 短代码使用的文字。
+  site_status:
     labels: #按当前语言翻译值；保留键名。
       checking: "检查中…"
       installing: "正在安装新版…"
@@ -29,6 +29,26 @@ params:
       refresh_icon: "↻"
       content_refresh: "刷新服务器版本"
       status_refresh: "检查 SW 程序更新"
+  diagnostics:
+    heading: "PWA 缓存信息："
+    version: "本地："
+    content: "服务器："
+    interval: "触发同步："
+    policy: "sw-策略："
+    status: "sw-状态："
+    interval_format: "页面加载时 且 间隔 ≥ %d 分钟"
+    hugo: "Hugo："
+    more: "更多诊断信息"
+    transport_intro: "此处的选择只影响本页。选择预取方式后，应用并重新加载。"
+    worker_note: "此选择不会绕过 Service Worker 的请求拦截，也不会注销 Service Worker。"
+    devtools_note: "要绕过请求拦截，请在开发者工具中打开 Application → Service Workers，选中 Bypass for network。浏览器原生预取记录位于 Application → Speculative loads。"
+    test_links: "测试链接"
+    link_hint: "将指针移到链接上，或用键盘聚焦链接。在触摸屏上，轻触链接。浏览器按当前策略调度预取。"
+    support: "浏览器支持"
+    env: "当前后端"
+    actions: "候选链接"
+    runtime: "自定义调度"
+    payload: "发布配置与规则"
   prefetch_debug:
     labels:
       backend: "预取方式"
@@ -45,51 +65,3 @@ params:
 ---
 
 **Swaw Banyan** {{< asset src="site/swaw-banyan.svg" alt="Banyan" class="icon icon--image md-inline-image" width="16" height="16" >}}：{{< new-tab href="https://github.com/SwawHQ/banyan" >}}{{< theme-version local="本地开发版" >}}{{< /new-tab >}}
-
-### PWA 缓存信息：
-
-**本地**：{{< site-status "version" >}}  
-**服务器**：{{< site-status "content" >}}  
-**触发同步**：{{< site-status "interval" "页面加载时 且 间隔 ≥ %d 分钟" >}}  
-**sw-策略**：{{< site-status "policy" >}}  
-**sw-状态**：{{< site-status "status" >}}
-
-{{< details-start summary="**更多诊断信息**" >}}
-
-Hugo：{{< new-tab href="https://gohugo.io/news/" >}}{{< hugo-version >}}{{< /new-tab >}}
-
-此处的选择只影响本页。选择预取方式后，应用并重新加载。
-
-{{< prefetch-debug-controls >}}
-
-此选择不会绕过 Service Worker 的请求拦截，也不会注销 Service Worker。
-
-要绕过请求拦截，请在开发者工具中打开 Application → Service Workers，选中 Bypass for network。浏览器原生预取记录位于 Application → Speculative loads。
-
-### 测试链接
-
-将指针移到链接上，或用键盘聚焦链接。在触摸屏上，轻触链接。浏览器按当前策略调度预取。
-
-{{< prefetch-debug-links >}}
-
-### 浏览器支持
-
-{{< prefetch-debug-state "support" >}}
-
-### 当前后端
-
-{{< prefetch-debug-state "env" >}}
-
-### 候选链接
-
-{{< prefetch-debug-state "actions" >}}
-
-### 自定义调度
-
-{{< prefetch-debug-state "runtime" >}}
-
-### 发布配置与规则
-
-{{< prefetch-debug-state "payload" >}}
-
-{{< details-end >}}

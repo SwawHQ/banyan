@@ -1,0 +1,13 @@
+---
+title: Language
+layout: page-collection-language
+outputs: [HTML] #Disable this section's RSS feed.
+weight: 70
+
+params:
+  labels: #Translate values for this language; keep the keys.
+    missing_translation: "This page does not yet have a [{lang}] version.\nGo to the [{lang}] homepage?" #Keep {lang}; it is replaced with the selected language name.
+  icon: language
+  language_icon: { text: "EN" }
+  robots: noindex, follow #Use as <meta name="robots" content="…">; noindex or none excludes this page from sitemap.xml and llms.txt.
+---

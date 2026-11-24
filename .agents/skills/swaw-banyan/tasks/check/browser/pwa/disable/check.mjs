@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {insideOutput,localReference} from '../../../../_shared/output.mjs';
 import {readPages} from '../../../../_shared/html/read.mjs';
+import {countWorkerRegistrationScripts,extractExternalScriptSrcs} from '../../../../_shared/html/markup.mjs';
 import {siteLocation} from '../../_shared/location.mjs';
 import {waitForState} from '../_shared/state.mjs';
 import {visit,observe,quiet} from '../_shared/update.mjs';
@@ -44,11 +45,10 @@ async function selectedBuild(directory,page,manager) {
   let file=insideOutput(root,localReference(route,{siteURL:'https://output.invalid'+location.basePath}));
   if((await fs.stat(file)).isDirectory())file=path.join(file,'index.html');
   const html=await fs.readFile(file,'utf8');
-  const scripts=[...html.matchAll(/<script\b[^>]*\bsrc=["']?([^"'\s>]+)/gi)].map(value=>value[1]);
-  assert.equal(scripts.filter(src=>src.includes('sw-manager.'+manager+'.')).length,1,
-    'The '+manager+' build must contain one '+manager+' manager on --page.');
-  assert.equal(scripts.filter(src=>src.includes('sw-manager.'+(manager==='enable'?'disable':'enable')+'.')).length,0,
-    'The build must not mix enable and disable managers.');
+  const scripts=extractExternalScriptSrcs(html);
+  const counts={enable:countWorkerRegistrationScripts(html,scripts),disable:scripts.filter(src=>src.includes('sw-manager.disable.')).length};
+  assert.equal(counts[manager],1,'The '+manager+' build must contain one '+manager+' manager on --page.');
+  assert.equal(counts.enable+counts.disable,1,'The build must not mix enable and disable managers.');
   return {root,route,basePath:location.basePath,worker:await fs.readFile(path.join(root,'sw.js'))};
 }
 

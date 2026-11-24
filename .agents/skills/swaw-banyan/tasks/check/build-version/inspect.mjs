@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {extractTagAttribute,decodeHtmlAttribute,extractExternalScriptSrcs} from '../../_shared/html/markup.mjs';
+import {extractTagAttribute,decodeHtmlAttribute,countWorkerRegistrationScripts} from '../../_shared/html/markup.mjs';
 import {readPages} from '../../_shared/html/read.mjs';
 
 async function readUtf8IfExists(absolutePath) {
@@ -33,7 +33,7 @@ async function inspectBuildVersionContract(rootDir, rows) {
     const updateVersions = [];
     for (const row of rows) {
         const text = await fs.readFile(row.absolutePath, 'utf8');
-        serviceWorkerEnabled ||= extractExternalScriptSrcs(text).some(src => /\/sw-manager\.enable\./.test(src));
+        serviceWorkerEnabled ||= countWorkerRegistrationScripts(text) > 0;
         const elements = extractUpdateVersionElements(text);
         if (elements.length > 1) {
             issues.push(`${row.relativePath} contains ${elements.length} update version elements; expected at most one.`);

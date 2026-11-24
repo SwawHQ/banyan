@@ -7,13 +7,12 @@ const blocks={
   image:'<p>'+image+'</p>',
   linked:'<p><a class="md-image-link">'+image+'</a></p>',
   responsive:'<p><a class="md-image-link"><picture class="md-responsive-image">'+image+'</picture></a></p>',
-  figure:'<figure class="md-centered-image">'+image+'</figure>',
   quote:'<blockquote><p>Quoted text.</p></blockquote>',
   table:'<table><tbody><tr><td>Table text.</td></tr></tbody></table>',
   code:'<div class="highlight"><pre><code>const value = 1;</code></pre></div>',
   pre:'<pre><code>Plain code.</code></pre>'
 };
-const framed=['image','linked','responsive','figure','quote','table','code','pre'];
+const framed=['image','linked','responsive','quote','table','code','pre'];
 
 export async function checkFlow(page) {
   const original=await page.locator('.prose').evaluate(node=>({html:node.innerHTML,classes:node.className}));
@@ -43,7 +42,7 @@ export async function checkFlow(page) {
           return {pair:section.dataset.adjacent,gap:b.getBoundingClientRect().top-a.getBoundingClientRect().bottom};
         }),images:[...prose.querySelectorAll('[data-flow] img:not(.md-inline-image)')].map(image=>({
           margin:getComputedStyle(image).marginBlock,
-          offset:image.getBoundingClientRect().top-image.closest('p,figure').getBoundingClientRect().top
+          offset:image.getBoundingClientRect().top-image.closest('p').getBoundingClientRect().top
         })),fonts:Object.fromEntries(['blockquote p','td','pre code','.md-caption'].map(selector=>
           [selector,parseFloat(getComputedStyle(prose.querySelector(selector)).fontSize)]))};
       },{collection,size});

@@ -521,7 +521,7 @@ test('Powered by contains translated diagnostics and same-language test links',(
   }
 });
 
-test('Powered by Markdown separates build information and update controls',async()=>{
+test('Powered by layout separates build information and update controls',async()=>{
   for(const prefix of prefixes) {
     const html=fs.readFileSync(path.join(output,prefix,'powered-by/index.html'),'utf8');
     const times=extractStartTags(html,'time').filter(tag=>tag.includes('data-site-build-version'));
@@ -533,15 +533,15 @@ test('Powered by Markdown separates build information and update controls',async
     assert.deepEqual(visible.match(/v\d{14}/g),[version]);
     const panel=extractBlocks(html,'span',tag=>tag.includes('data-site-status-panel'))[0];
     const copy=JSON.parse(extractTagAttribute(panel.open,'data-site-sw-copy'));
-    for(const key of ['build','status','check'])assert.equal(key in copy,false,'Static text stays in Markdown.');
+    for(const key of ['build','status','check'])assert.equal(key in copy,false,'Row labels stay outside the SW state payload.');
     const rows=extractBlocks(html,'p').flatMap(row=>row.inner.split(/<br\s*\/?>/i));
     const markers=['site-build-version','site-content-status','site-content-interval','site-sw-policy','site-sw-status'];
     const indexes=markers.map(marker=>rows.findIndex(row=>row.includes('data-'+marker)));
     assert.ok(indexes.every(index=>index>=0));
-    assert.equal(new Set(indexes).size,5,'Each value has its own Markdown line.');
+    assert.equal(new Set(indexes).size,5,'Each value has its own line.');
     for(const index of indexes) {
-      assert.doesNotMatch(rows[index],/<code\b/,'Shortcodes do not add inline-code formatting.');
-      assert.match(rows[index],/^<strong>[^<]+<\/strong>/,'Each information line keeps its emphasized Markdown label.');
+      assert.doesNotMatch(rows[index],/<code\b/,'Values use plain text formatting.');
+      assert.match(rows[index],/^<strong>[^<]+<\/strong>/,'Each information line keeps its emphasized label.');
     }
     const information=extractBlocks(html,'p').find(row=>row.inner.includes('data-site-build-version'));
     assert.ok(markers.every(marker=>information.inner.includes('data-'+marker)),'The five information lines stay adjacent.');

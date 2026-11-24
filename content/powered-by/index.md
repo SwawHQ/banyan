@@ -2,13 +2,13 @@
 title: Powered by
 description: "The technology behind this site, build information, PWA and prefetch status."
 url: powered-by/ #Keep this route when renaming the content directory.
-layout: page-article-norss #Render Markdown; shortcodes enable interactive controls.
+layout: page-powered-by
 weight: 100
 
 params:
   icon: code
   slots: [breadcrumb] #breadcrumb: breadcrumb navigation; meta: article metadata, chapters and BlogPosting; []: disable all.
-  site_status: #Text for the site-status shortcode below.
+  site_status:
     labels: #Translate values for this language; keep the keys.
       checking: "Checking…"
       installing: "Installing the new version…"
@@ -29,6 +29,26 @@ params:
       refresh_icon: "↻"
       content_refresh: "Refresh server version"
       status_refresh: "Check for SW program updates"
+  diagnostics:
+    heading: "Appendix: PWA cache information"
+    version: "Local:"
+    content: "Server:"
+    interval: "Sync trigger:"
+    policy: "SW policy:"
+    status: "SW status:"
+    interval_format: "On page navigation and interval ≥ %d minutes"
+    hugo: "Hugo:"
+    more: "More diagnostics"
+    transport_intro: "This test applies to this page. Choose a transport, then apply and reload."
+    worker_note: "This choice does not bypass Service Worker interception or remove its registration."
+    devtools_note: "To bypass Service Worker interception, use DevTools → Application → Service Workers → Bypass for network. Inspect native prefetch in Application → Speculative loads."
+    test_links: "Test links"
+    link_hint: "Hover or focus a link. On a touch screen, tap it. The browser schedules prefetch according to the current policy."
+    support: "Browser support"
+    env: "Selected backend"
+    actions: "Potential candidates"
+    runtime: "Custom dispatch"
+    payload: "Published configuration and rules"
   prefetch_debug:
     labels:
       backend: "Prefetch transport"
@@ -45,51 +65,3 @@ params:
 ---
 
 **Swaw Banyan** {{< asset src="site/swaw-banyan.svg" alt="Banyan" class="icon icon--image md-inline-image" width="16" height="16" >}}: {{< new-tab href="https://github.com/SwawHQ/banyan" >}}{{< theme-version local="Local development" >}}{{< /new-tab >}}
-
-### Appendix: PWA cache information
-
-**Local**: {{< site-status "version" >}}  
-**Server**: {{< site-status "content" >}}  
-**Sync trigger**: {{< site-status "interval" "On page navigation and interval ≥ %d minutes" >}}  
-**SW policy**: {{< site-status "policy" >}}  
-**SW status**: {{< site-status "status" >}}
-
-{{< details-start summary="**More diagnostics**" >}}
-
-Hugo: {{< new-tab href="https://gohugo.io/news/" >}}{{< hugo-version >}}{{< /new-tab >}}
-
-This test applies to this page. Choose a transport, then apply and reload.
-
-{{< prefetch-debug-controls >}}
-
-This choice does not bypass Service Worker interception or remove its registration.
-
-To bypass Service Worker interception, use DevTools → Application → Service Workers → Bypass for network. Inspect native prefetch in Application → Speculative loads.
-
-### Test links
-
-Hover or focus a link. On a touch screen, tap it. The browser schedules prefetch according to the current policy.
-
-{{< prefetch-debug-links >}}
-
-### Browser support
-
-{{< prefetch-debug-state "support" >}}
-
-### Selected backend
-
-{{< prefetch-debug-state "env" >}}
-
-### Potential candidates
-
-{{< prefetch-debug-state "actions" >}}
-
-### Custom dispatch
-
-{{< prefetch-debug-state "runtime" >}}
-
-### Published configuration and rules
-
-{{< prefetch-debug-state "payload" >}}
-
-{{< details-end >}}

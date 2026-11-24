@@ -174,14 +174,9 @@ try {
     }
 
     const diagnosticSource=read(path.join(siteRoot,'content/powered-by/index.md'));
-    const invalidState=diagnosticSource.replace('{{< prefetch-debug-state "support" >}}','{{< prefetch-debug-state "unknown" >}}');
-    assert.notEqual(invalidState,diagnosticSource,'The diagnostic fixture must contain the support panel');
     for(const [name,source,error] of [
-        ['unknown-panel',invalidState,'prefetch-debug-state requires support, env, actions, runtime or payload'],
-        ['orphan-panel','---\ntitle: Orphan diagnostic\nlayout: page-article-norss\n---\n{{< prefetch-debug-state "support" >}}','requires prefetch-debug-controls.'],
-        ['missing-labels','---\ntitle: Missing labels\nlayout: page-article-norss\n---\n{{< prefetch-debug-controls >}}','requires prefetch_debug.labels.backend.'],
-        ['duplicate-controls',diagnosticSource+'\n{{< prefetch-debug-controls >}}\n','repeats prefetch-debug-controls.'],
-        ['duplicate-support',diagnosticSource+'\n{{< prefetch-debug-state "support" >}}\n','repeats prefetch-debug-support.']
+        ['missing-labels',diagnosticSource.replace(/^      backend:.*$/m,''),'requires prefetch_debug.labels.backend.'],
+        ['missing-heading',diagnosticSource.replace(/^    heading:.*$/m,''),'requires diagnostics.heading.']
     ]) {
         const content=path.join(work,name+'-content');
         fs.mkdirSync(path.join(content,'powered-by'),{recursive:true});

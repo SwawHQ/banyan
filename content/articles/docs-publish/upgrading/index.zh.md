@@ -1,7 +1,7 @@
 ---
 title: 07 怎么更新 Banyan？
 date: 2026-11-17
-lastmod: 2026-11-17
+lastmod: 2026-11-24
 url: p/upgrading/
 description: 选择目标版本，保留站点定制并更新主题和 Skill。
 ---
@@ -14,6 +14,10 @@ description: 选择目标版本，保留站点定制并更新主题和 Skill。
 swban upgrade/version/current  #查看当前版本与比对起点
 swban help upgrade/git         #查看比较官方版本与保留本站定制的步骤
 ```
+
+比较两个版本的 `module/archetypes/`，按布局检查对应栏目、文章和译文。继承的字段检查上级 `cascade`，Powered by 还应比对正文。
+
+查看 `module/archetypes/shortcodes.toml` 的差异，按变更前的短代码名称检查各语言页面的调用。
 
 按[版本维护说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/upgrade.md#change-the-version)更新 Skill、主题和受影响的站点文件。
 

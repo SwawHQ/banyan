@@ -1,3 +1,4 @@
-{{- with partial "./assets.html" . -}}
+{{- $manager := partial "./assets.html" . -}}
+{{- with and (not .panel_registers) $manager -}}
 <script src="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}" defer></script>
 {{- end -}}

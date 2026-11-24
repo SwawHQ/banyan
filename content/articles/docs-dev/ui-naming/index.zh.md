@@ -1,7 +1,7 @@
 ---
 title: 界面：UI 命名与职责
 date: 2026-11-06
-lastmod: 2026-11-15
+lastmod: 2026-11-24
 url: p/ui-naming/
 description: 说明页面列、公共列表和样式的职责边界与源码入口。
 ---
@@ -40,7 +40,7 @@ CSS 按视觉职责命名，不复制模板目录层级。源码职责与发布�
 | 共享面包屑 HTML | `layouts/_partials/feature-browse/navigation/source/fragment.html` |
 | 共享片段校验与显示 | `assets/js/browse/breadcrumb-source.js`、`breadcrumb-render.js` |
 | 语言与外观选项 | `layouts/_partials/feature-preferences/`、`assets/js/preferences/` |
-| 站点状态控件 | `layouts/_shortcodes/site-status.html`、`assets/js/site-status/` |
+| 站点状态控件 | `layouts/_partials/page-powered-by/status-value.html`、`assets/js/site-status/` |
 | 首页艺术包装配 | `layouts/page-home.html`、`layouts/_partials/entry-page-home/` |
 
 Module 提供内置配色，站点维护自定义配色与艺术包，修改方法见[首页和外观](/zh/articles/docs-appearance/)。浏览来源与排序只在[导航状态协议](/zh/p/navigation-state/)中定义；不要用 UI 命名或样式类替代该协议。

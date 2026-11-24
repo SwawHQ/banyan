@@ -1,7 +1,4 @@
-{{- $page := .Page -}}
-{{- if not ($page.HasShortcode "prefetch-debug-controls") -}}
-  {{- errorf "Build failed: %s requires prefetch-debug-controls." $page.File.Path -}}
-{{- end -}}
+{{- $page := . -}}
 {{- $labels := partial "feature-prefetch-debug/labels.html" $page -}}
 {{- $collection := false -}}
 {{- $article := false -}}

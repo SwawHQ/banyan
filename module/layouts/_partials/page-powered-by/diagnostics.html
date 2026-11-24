@@ -1,0 +1,23 @@
+{{- $copy := .Params.diagnostics -}}
+{{- range $key := slice "heading" "version" "content" "interval" "policy" "status" "more" "hugo" "transport_intro" "worker_note" "devtools_note" "test_links" "link_hint" "support" "env" "actions" "runtime" "payload" -}}
+  {{- if not (index ($copy | default dict) $key) -}}{{ errorf "%s requires diagnostics.%s." $.File.Path $key }}{{- end -}}
+{{- end -}}
+<h3 id="{{ $copy.heading | anchorize }}">{{ $copy.heading }}</h3>
+<p>{{- range $i,$part := slice "version" "content" "interval" "policy" "status" -}}
+{{- if $i }}<br>{{ end -}}
+<strong>{{ index $copy $part }}</strong> {{ partial "page-powered-by/status-value.html" (dict "page" $ "part" $part) }}
+{{- end -}}</p>
+<details><summary><strong>{{ $copy.more }}</strong></summary>
+<p>{{ $copy.hugo }} <a href="https://gohugo.io/news/" target="_blank" rel="noopener noreferrer">{{ hugo.Version }}</a></p>
+<p>{{ $copy.transport_intro }}</p>
+{{ partial "page-powered-by/controls.html" . }}
+<p>{{ $copy.worker_note }}</p>
+<p>{{ $copy.devtools_note }}</p>
+<h3 id="{{ $copy.test_links | anchorize }}">{{ $copy.test_links }}</h3>
+<p>{{ $copy.link_hint }}</p>
+{{ partial "page-powered-by/links.html" . }}
+{{ range $key := slice "support" "env" "actions" "runtime" "payload" }}
+<h3 id="{{ index $copy $key | anchorize }}">{{ index $copy $key }}</h3>
+<pre id="prefetch-debug-{{ $key }}">{{ $.Params.prefetch_debug.labels.loading }}</pre>
+{{ end }}
+</details>

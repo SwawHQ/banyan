@@ -1,0 +1,13 @@
+{{ define "head-extra" }}
+{{ partial "feature-document/styles.html" . }}
+{{ end }}
+
+{{ define "main" }}
+{{/* The chapter list covers Markdown headings; the layout owns the diagnostic appendix. */}}
+{{ partial "feature-document/render-page.html" (dict "page" . "appendix" (partial "page-powered-by/diagnostics.html" .)) }}
+{{ end }}
+
+{{ define "body-extra" }}
+{{ partial "system-assets/script.html" (dict "path" "js/site-status/page.js") }}
+{{ partial "system-assets/script.html" (dict "path" "js/prefetch/debug-page.js") }}
+{{ end }}

@@ -84,14 +84,10 @@ before(()=>{
     const prefix=language==='en'?'':'/'+language,suffix=language==='en'?'':'.'+language;
     write(path.join(content,'prefetch-probe/index'+suffix+'.md'),'---\ntitle: Prefetch probe\nurl: '+prefix+probePage+'\nlayout: page-prefetch-probe\n---\n');
   }
-  const labels=Object.entries({backend:'Prefetch transport',auto:'Auto',native:'Native',sw:'SW',link:'Link',off:'Off',apply:'Apply and reload',loading:'Loading...',unavailable:'Unavailable',collection:'Collection',article:'Article'})
-    .map(([key,value])=>'      '+key+': '+JSON.stringify(value)).join('\n');
-  for(const [name,route,panels] of [
-    ['diagnostics',debugPage,['support','env','actions','runtime','payload']],
-    ['diagnostics-partial','/diagnostics/partial/',['support','env']]
-  ])write(path.join(content,name,'index.md'),'---\ntitle: Prefetch diagnostics\nurl: '+route+'\nlayout: page-prefetch-probe\nparams:\n  prefetch_debug:\n    labels:\n'+
-    labels+'\n---\n\n{{< prefetch-debug-controls >}}\n\n{{< prefetch-debug-links >}}\n\n'+
-    panels.map(key=>'## '+key+'\n\n{{< prefetch-debug-state "'+key+'" >}}').join('\n\n')+'\n');
+  const diagnostic=fs.readFileSync(path.join(root,'content/powered-by/index.md'),'utf8');
+  write(path.join(content,'diagnostics/index.md'),diagnostic.replace(/^url:.*$/m,'url: '+debugPage));
+  const layout=fs.readFileSync(path.join(root,'module/layouts/page-powered-by.html'),'utf8');
+  write(path.join(layouts,'page-powered-by.html'),layout.replace(/{{ end }}\s*$/,'{{ if eq .RelPermalink "'+debugPage+'" }}'+anchors+'{{ end }}{{ end }}'));
   for(const name of ['folder','tag','product','file','dynamic'])write(path.join(content,'probe-'+name+'/index.md'),
     '---\ntitle: Target '+name+'\nurl: /probe-'+name+'/\nlayout: page-article-norss\n---\n');
   for(const render of ['link','never'])write(path.join(content,'unpublished-'+render+'/index.md'),
@@ -237,7 +233,7 @@ test('one backend is selected once; overrides apply only on diagnostic pages',{t
       status:document.getElementById('prefetch-debug-status').textContent
     })),{language:'en',label:'Prefetch transport',status:'Auto → Native',copy:{
       backend:'Prefetch transport',auto:'Auto',native:'Native',sw:'SW',link:'Link',off:'Off',apply:'Apply and reload',
-      loading:'Loading...',unavailable:'Unavailable',collection:'Collection',article:'Article'
+      loading:'Loading…',unavailable:'Unavailable',collection:'Collection',article:'Article'
     }});
     for(const [requested,backend] of [['native','native'],['sw','off'],['link','link'],['off','off'],['bad-value','native']]) {
       state=await visit(page,baseUrl,requested);assert.equal(state.backend,backend,requested);
@@ -298,16 +294,6 @@ test('one backend is selected once; overrides apply only on diagnostic pages',{t
       await summary.click();
       assert.equal(await disclosure.evaluate(node=>node.open),false);
     } finally {await context.close();}
-  }},{id:'partial-diagnostic-panels',run:async({page,baseUrl})=>{
-    const errors=[];page.on('pageerror',error=>errors.push(error.message));
-    const state=await visit(page,baseUrl,'off','/diagnostics/partial/');
-    assert.deepEqual(state,{requested:'off',backend:'off',reason:'requested-off',dispatched:0,failures:0});
-    await page.waitForFunction(()=>JSON.parse(document.getElementById('prefetch-debug-support').textContent).serviceWorker.status!=='pending');
-    assert.equal(await page.locator('#prefetch-debug-backend').inputValue(),'off');
-    assert.deepEqual(JSON.parse(await page.locator('#prefetch-debug-env').textContent()),{requested:'off',backend:'off',reason:'requested-off'});
-    assert.equal(await page.locator('#prefetch-debug-actions, #prefetch-debug-runtime, #prefetch-debug-payload').count(),0);
-    assert.deepEqual(errors,[]);
-    return state;
   }},{id:'forced-native-unavailable',run:async({page,baseUrl})=>{
     await page.addInitScript(noNative);await page.addInitScript(recordRuntime);
     const state=await visit(page,baseUrl,'native');assert.equal(state.backend,'off');assert.equal(state.reason,'native-unavailable');

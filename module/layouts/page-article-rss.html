@@ -3,5 +3,5 @@
 {{ end }}
 
 {{ define "main" }}
-{{ partial "feature-document/render-page.html" . }}
+{{ partial "feature-document/render-page.html" (dict "page" .) }}
 {{ end }}

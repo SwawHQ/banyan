@@ -397,9 +397,11 @@ test('disabled and off workers do not publish a policy copy, and worker tables m
 });
 
 test('sync hints show the configured interval without an enabled-mode prefix',()=>{
-  const output=passed(build('sync-hint',undefined,'',serviceWorkerPolicy('enable',11)));
+  const output=passed(build('sync-hint',undefined,'',serviceWorkerPolicy('Enable',11)));
   const html=fs.readFileSync(path.join(output,'zh/powered-by/index.html'),'utf8');
   const interval=extractBlocks(html,'span',tag=>tag.includes('data-site-content-interval'))[0];
+  const panel=extractBlocks(html,'span',tag=>tag.includes('data-site-status-panel'))[0];
+  assert.equal(extractTagAttribute(panel.open,'data-site-sw-mode'),'enable');
   assert.equal(decodeHtmlAttribute(interval.inner),'页面加载时 且 间隔 ≥ 11 分钟');
 });
 

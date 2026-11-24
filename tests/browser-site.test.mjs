@@ -108,6 +108,7 @@ test('site checks reuse one build, report skipped coverage and retain failures',
 
 test('site checks follow a deployment subdirectory and language home',{timeout:120000},async()=>{
   const file=path.join(source,'assets/deploy/policy.toml'),original=fs.readFileSync(file,'utf8');
+  const settingsFile=path.join(source,'assets/deploy/settings.toml'),settings=fs.readFileSync(settingsFile,'utf8');
   const destination=path.join(work,'subdirectory-build');
   let server,browser;
   try {
@@ -126,20 +127,20 @@ test('site checks follow a deployment subdirectory and language home',{timeout:1
     const page=await browser.newPage();await page.goto(server.getBaseUrl()+'/blog/en/');
     await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller),null,{timeout:15000});
     assert.equal(await page.evaluate(async()=>new URL((await navigator.serviceWorker.getRegistration()).scope).pathname),'/blog/');
-    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('mode = "enable"','mode = "disable"'));
+    fs.writeFileSync(settingsFile,settings.replace('mode = "enable"','mode = "disable"'));
     const disabled=path.join(work,'subdirectory-disabled');
     const disableBuild=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--config','hugo.toml,subdirectory.toml',
       '--baseURL','https://example.test/blog/','--destination',disabled],
       {cwd:source,env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true,timeout:60000});
     assert.equal(disableBuild.status,0,disableBuild.stdout+disableBuild.stderr);
-    for(const pageArgs of [[],['--page','/blog/en/']]) {
+    for(const pageArgs of [[],['--page',summary.discovery.panel]]) {
       const cleanup=spawnSync(process.execPath,[path.join(skill,'tasks/check/browser/pwa/disable/entry.mjs'),destination,'--next',disabled,...pageArgs,'--out',path.join(work,'subdirectory-cleanup')],{cwd:work,encoding:'utf8',timeout:60000,windowsHide:true});
       assert.ifError(cleanup.error);assert.equal(cleanup.status,0,cleanup.stdout+cleanup.stderr);
     }
     await server.setRoot(disabled);
     const next=await browser.newPage();await next.goto(server.getBaseUrl()+'/blog/en/');
     await next.waitForFunction(async()=>!(await navigator.serviceWorker.getRegistration()),null,{timeout:15000});
-  } finally {await browser?.close();await server?.stop();fs.writeFileSync(file,original);fs.rmSync(path.join(source,'subdirectory.toml'),{force:true});}
+  } finally {await browser?.close();await server?.stop();fs.writeFileSync(file,original);fs.writeFileSync(settingsFile,settings);fs.rmSync(path.join(source,'subdirectory.toml'),{force:true});}
 });
 
 test('site browser checks accept a published empty speculation-rules block',{timeout:30000},()=>{

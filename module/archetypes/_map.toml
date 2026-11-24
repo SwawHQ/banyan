@@ -1,0 +1,6 @@
+# 将此文件复制到目标栏目的 _index.md 旁，各语言共用一份。
+# 同一栏目可以引用多篇文章：在同一个 refs 数组中每篇写一行。
+refs = [
+  # "/articles/product-info/banyan",
+  # "/articles/docs-content/article-references",
+]

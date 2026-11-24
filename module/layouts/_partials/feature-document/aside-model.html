@@ -4,7 +4,7 @@
 {{- if index $slotFlags "meta" -}}
   {{- $metaHTML = trim (printf "%s" (partial "./meta.html" .)) " \r\n\t" -}}
 {{- end -}}
-{{- $isArticle := in (slice "page-article-norss" "page-article-rss") .Layout -}}
+{{- $isArticle := in (slice "page-article-norss" "page-article-rss" "page-powered-by") .Layout -}}
 {{- $tocHTML := "" -}}
 {{- if and $isArticle (index $slotFlags "meta") -}}
   {{- $tocHTML = trim (printf "%s" (partial "./toc.html" .)) " \r\n\t" -}}

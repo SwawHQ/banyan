@@ -4,6 +4,10 @@ weight: 10
 description: موقع مرجعي بسيط لقالب Banyan المبني على Hugo، مع عرض للغة العربية.
 layout: page-home
 
+cascade:
+  - target: {kind: page}
+    layout: page-article-rss
+
 params:
   # لعرض عمود التنقل الرئيسي فقط، أبقِ page-home و show_navigation: true واترك متن الصفحة فارغًا.
   # To use the wall: change layout, enable aggregate and wall, and remove the home-art shortcode.

@@ -88,3 +88,24 @@ test('rss-link reports a missing language-home RSS output',()=>{
   assert.throws(()=>build('missing-home-feed','[outputs]\nhome=["HTML"]\n'),
     /uses rss-link, but the language homepage has no RSS output/);
 });
+
+test('articles inherit each reference home layout unless a section or article overrides it',()=>{
+  for(const suffix of ['','.zh','.ar']) {
+    const home='_index'+suffix+'.md';
+    const [,frontMatter]=fs.readFileSync(path.join(repository,'content',home),'utf8').split(/^---\s*$/m);
+    write(path.join(source,'content',home),'---'+frontMatter+'---\n');
+    write(path.join(source,'content/notes',home),directoryPage('Notes').replace('layout: page-article-rss','layout: page-article-norss'));
+    for(const [bundle,layout] of [['home-default',''],['notes/section-default',''],['notes/page-override','layout: page-article-rss\n']]) {
+      write(path.join(source,'content',bundle,'index'+suffix+'.md'),
+        '---\ntitle: Article\nurl: p/'+path.basename(bundle)+'/\n'+layout+'---\nArticle body.\n');
+    }
+  }
+  const destination=build('home-cascade');
+  for(const prefix of ['','zh/','ar/']) {
+    const feed=urls(read(destination,prefix,'index.xml'));
+    for(const name of ['home-default','section-default','page-override']) {
+      assert.match(read(destination,prefix,'p/'+name+'/index.html'),/Article body\./);
+      assert.equal(feed.includes('https://example.test/base/'+prefix+'p/'+name+'/'),name!=='section-default',prefix+name);
+    }
+  }
+});

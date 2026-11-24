@@ -15,3 +15,5 @@
 7. Changelog 只记录用户可见的变化、配置要求和实际修复，合并同类条目；不记录测试细节、测试夹具、纯内部重构、文件整理或开发过程。
 8. 检查和测试优先复用已有方法。新增时，先考虑是否可以通用化，放入 swaw-banyan skill（并就近放在相关模块目录的 _tests/），然后再考虑放站点 tests/
 9. 项目对话和文档优先使用[项目术语表](content/articles/docs-reference/glossary/index.zh.md)中的名称；功能改变术语含义时，同步更新定义。
+10. 新增、改名或移除页面布局、公共短代码，或改变站长编写页面和 `_map.toml` 的方式时，在同一次修订中更新 `module/archetypes/` 下的对应原型。
+11. 开发和审查未发布的 Module 时，用 `swban dev` 预览，用 `swban dev/build` 构建验收。根目录 `go.mod` 固定已发布版本，由发布流程更新。

@@ -59,11 +59,9 @@ function watchInstallingWorker() {
 }
 
 async function readRegistration() {
-    const found = await navigator.serviceWorker.getRegistration('/')
-        || await navigator.serviceWorker.register(panel.dataset.siteSwUrl, {
-            scope: '/',
-            updateViaCache: 'none'
-        });
+    const found = registration || await navigator.serviceWorker.register(panel.dataset.siteSwUrl, {
+        updateViaCache: 'none'
+    });
     if (found !== registration) {
         registration = found;
         registration.addEventListener('updatefound', watchInstallingWorker);

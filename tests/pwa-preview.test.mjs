@@ -12,7 +12,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {fixtureEnvironment,previewWorkspace} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
 import {listenOnLoopback} from '../.agents/skills/swaw-banyan/tasks/check/browser/_shared/server.mjs';
-import {extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {extractStartTags,extractTagAttribute,extractExternalScriptSrcs} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 for(const disableFastRender of [false,true])test('SW preview rebuilds and restores outputs with fast render '+(disableFastRender?'disabled':'enabled'),{timeout:90000},async()=>{
@@ -63,6 +63,9 @@ for(const disableFastRender of [false,true])test('SW preview rebuilds and restor
       let main='';
       for(const prefix of ['','/zh','/ar']) {
         const tags=extractStartTags(await get(prefix+'/'),'script').filter(tag=>extractTagAttribute(tag,'src').includes('/js/sw-manager.'));
+        const panel=extractExternalScriptSrcs(await get(prefix+'/powered-by/'));
+        assert.equal(panel.filter(src=>src.includes('/js/site-status/page.')).length,1);
+        assert.deepEqual(panel.filter(src=>src.includes('/js/sw-manager.')),mode==='disable'?tags.map(tag=>extractTagAttribute(tag,'src')):[]);
         assert.equal(tags.length,mode==='off'?0:1);
         if(mode!=='off') {
           const src=extractTagAttribute(tags[0],'src');assert.match(src,new RegExp('/sw-manager\\.'+mode+'\\.bundle\\.[^.]+\\.js$'));

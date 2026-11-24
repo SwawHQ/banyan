@@ -58,6 +58,7 @@ $skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_shared/_tests
 | `browser-nav-fragments.test.mjs` | Shared column loading, slow responses, source races, failure retries and visited-path offline reload |
 | `output.test.mjs` | Repository budgets and retired-output faults |
 | `sitemap.test.mjs` | Sitemap/LLMS parity, native exclusions, language routing and rebuilds |
+| `archetypes.test.mjs` | Create content from each layout archetype and verify the Powered by diagnostic fields and calls |
 | `directory-references.test.mjs` | TOML references, native taxonomy configuration, multilingual membership, feeds, canonical outputs and rebuilds |
 | `column-urls.test.mjs` | Directory-based column URLs, rejected overrides, article URLs and multilingual normalization |
 | `collection-structure.test.mjs` | Section-only collection layouts, rejected regular pages and preview validation |

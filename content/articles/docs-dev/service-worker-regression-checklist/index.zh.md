@@ -1,7 +1,7 @@
 ---
 title: 检查：Service Worker 回归
 date: 2026-11-06
-lastmod: 2026-11-14
+lastmod: 2026-11-24
 url: p/service-worker-regression-checklist/
 description: 定位 SW 源码，检查程序更新、内容版本与停用边界。
 ---
@@ -15,7 +15,7 @@ description: 定位 SW 源码，检查程序更新、内容版本与停用边界
 | `layouts/_partials/system-delivery/pwa/` | 配置和程序资源装配 |
 | `assets/js/pwa/worker-enable.js.tmpl` | 缓存、程序生命周期和站点构建版本 |
 | `assets/js/pwa/manager-entry.js.tmpl` | 普通页面注册 |
-| `assets/js/site-status/` | Powered by 的程序与内容检查 |
+| `assets/js/site-status/` | Powered by 的 SW 注册、失败重试、程序与内容检查 |
 | `assets/js/pwa/worker-disable.js`、`manager-disable.js` | 停用与清理 |
 | `assets/js/pwa/cache-names.js` | 受管缓存名称 |
 

@@ -1,7 +1,7 @@
 ---
 title: 02 设置自己的站点
 date: 2026-11-06
-lastmod: 2026-11-15
+lastmod: 2026-11-24
 url: p/site-configuration/
 description: 设置站点网址、站名和语言，检查各语言首页。
 ---
@@ -71,18 +71,9 @@ disableLanguages = ["ar"]
 
 ## 站点状态页
 
-编辑已有的各语言 `content/powered-by/index*.md`，在正文中维护说明、源码和变更记录链接。该页通过短代码显示版本和诊断信息：
+编辑各语言的 `content/powered-by/index*.md`。正文是本站介绍，`page-powered-by` 布局在介绍后显示版本、SW 状态和预取诊断。
 
-| 短代码 | 显示内容 |
-| --- | --- |
-| `theme-version`、`hugo-version` | 主题与 Hugo 版本 |
-| `site-status "version"` | 当前页面的站点构建版本 |
-| `site-status "interval" "每 %d 分钟检查"` | 内容检查间隔 |
-| `site-status "policy"` | 缓存策略链接 |
-| `site-status "status"` | SW 程序状态与检查按钮 |
-| `site-status "content"` | 本页与服务器的站点构建版本比对 |
-
-`params.site_status.labels` 提供各语言文案。检查按钮只检查，不激活等待中的 SW，也不自动刷新页面。预取诊断见[预取配置](/zh/p/prefetch-rules/#诊断)。
+页面内的 `params.diagnostics` 提供标题、行名和说明，`params.site_status.labels` 与 `params.prefetch_debug.labels` 提供交互文案。检查按钮分别刷新服务器版本和 SW 状态。预取诊断见[预取配置](/zh/p/prefetch-rules/#诊断)。
 
 ## 替换本站内容
 

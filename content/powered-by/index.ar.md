@@ -2,7 +2,7 @@
 title: تقنيات الموقع
 description: تقنيات هذا الموقع ومعلومات البناء وحالة العمل دون اتصال والتحميل المسبق.
 url: powered-by/
-layout: page-article-norss
+layout: page-powered-by
 weight: 100
 
 params:
@@ -29,6 +29,26 @@ params:
       refresh_icon: "↻"
       content_refresh: "تحديث إصدار الخادم"
       status_refresh: "التحقق من تحديث برنامج SW"
+  diagnostics:
+    heading: "ملحق: معلومات ذاكرة PWA المؤقتة"
+    version: "محلي:"
+    content: "الخادم:"
+    interval: "بدء المزامنة:"
+    policy: "سياسة SW:"
+    status: "حالة SW:"
+    interval_format: "عند الانتقال إلى صفحة وفاصل زمني ≥ %d دقائق"
+    hugo: "Hugo:"
+    more: "مزيد من معلومات التشخيص"
+    transport_intro: "يخص هذا الفحص الصفحة الحالية. اختر وسيلة التحميل المسبق، ثم طبّق الاختيار وأعد التحميل."
+    worker_note: "لا يتجاوز هذا الاختيار اعتراض Service Worker للطلبات، ولا يلغي تسجيله."
+    devtools_note: "لتجاوز اعتراض الطلبات، افتح DevTools → Application → Service Workers → Bypass for network. وافحص التحميل المسبق المدمج في Application → Speculative loads."
+    test_links: "روابط الفحص"
+    link_hint: "مرّر المؤشر فوق رابط أو انتقل إليه بلوحة المفاتيح. على شاشة اللمس، اضغط الرابط. يجدول المتصفح التحميل المسبق حسب السياسة الحالية."
+    support: "دعم المتصفح"
+    env: "الوسيلة المختارة"
+    actions: "الروابط المرشحة"
+    runtime: "جدولة مخصصة"
+    payload: "الإعدادات والقواعد المنشورة"
   prefetch_debug:
     labels:
       backend: "وسيلة التحميل المسبق"
@@ -45,51 +65,3 @@ params:
 ---
 
 **Swaw Banyan** {{< asset src="site/swaw-banyan.svg" alt="Banyan" class="icon icon--image md-inline-image" width="16" height="16" >}}: {{< new-tab href="https://github.com/SwawHQ/banyan" >}}{{< theme-version local="تطوير محلي" >}}{{< /new-tab >}}
-
-### ملحق: معلومات ذاكرة PWA المؤقتة
-
-**محلي**: {{< site-status "version" >}}  
-**الخادم**: {{< site-status "content" >}}  
-**بدء المزامنة**: {{< site-status "interval" "عند الانتقال إلى صفحة وفاصل زمني ≥ %d دقائق" >}}  
-**سياسة SW**: {{< site-status "policy" >}}  
-**حالة SW**: {{< site-status "status" >}}
-
-{{< details-start summary="**مزيد من معلومات التشخيص**" >}}
-
-Hugo: {{< new-tab href="https://gohugo.io/news/" >}}{{< hugo-version >}}{{< /new-tab >}}
-
-يخص هذا الفحص الصفحة الحالية. اختر وسيلة التحميل المسبق، ثم طبّق الاختيار وأعد التحميل.
-
-{{< prefetch-debug-controls >}}
-
-لا يتجاوز هذا الاختيار اعتراض Service Worker للطلبات، ولا يلغي تسجيله.
-
-لتجاوز اعتراض الطلبات، افتح DevTools → Application → Service Workers → Bypass for network. وافحص التحميل المسبق المدمج في Application → Speculative loads.
-
-### روابط الفحص
-
-مرّر المؤشر فوق رابط أو انتقل إليه بلوحة المفاتيح. على شاشة اللمس، اضغط الرابط. يجدول المتصفح التحميل المسبق حسب السياسة الحالية.
-
-{{< prefetch-debug-links >}}
-
-### دعم المتصفح
-
-{{< prefetch-debug-state "support" >}}
-
-### الوسيلة المختارة
-
-{{< prefetch-debug-state "env" >}}
-
-### الروابط المرشحة
-
-{{< prefetch-debug-state "actions" >}}
-
-### جدولة مخصصة
-
-{{< prefetch-debug-state "runtime" >}}
-
-### الإعدادات والقواعد المنشورة
-
-{{< prefetch-debug-state "payload" >}}
-
-{{< details-end >}}

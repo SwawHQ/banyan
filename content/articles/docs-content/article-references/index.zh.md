@@ -1,7 +1,7 @@
 ---
 title: 02 怎么在多栏目引用文章？
 date: 2026-11-17
-lastmod: 2026-11-17
+lastmod: 2026-11-24
 url: p/article-references/
 description: 在目标栏目引用已有文章，正文只维护一份。
 ---
@@ -11,11 +11,14 @@ description: 在目标栏目引用已有文章，正文只维护一份。
 ## 添加引用
 
 1. 按[创建栏目](/zh/p/directories/)准备目标栏目，例如 `content/articles/notes/`。
-2. 在目标栏目创建或编辑 `_map.toml`，将已有文章的内容路径加入 `refs`。
+2. 在目标栏目的 `_index.md` 旁创建或编辑 `_map.toml`。每个栏目共用一份，把每篇引用的文章各写一行。
 3. 保存后运行 `swban server`，打开目标栏目。
 
 ```toml
-refs = ["/articles/product-info/banyan"]
+refs = [
+  "/articles/product-info/banyan",
+  "/articles/docs-content/article-references",
+]
 ```
 
 已有 `refs` 时，在原数组中添加路径。路径相对于内容树，省略语言、域名和文件扩展名；例如上例对应 `content/articles/product-info/banyan/index.zh.md`。

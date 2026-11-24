@@ -3,7 +3,7 @@ import path from 'node:path';
 import {isFile} from '../../../_shared/output.mjs';
 import {siteLocation,pageRoute} from '../_shared/location.mjs';
 import {extractStartTags,extractTagAttribute,extractInlineScriptTextById,extractCanonicalHref,
-  extractExternalScriptSrcs,hasClassToken,isRedirectPage} from '../../../_shared/html/markup.mjs';
+  countWorkerRegistrationScripts,hasClassToken,isRedirectPage} from '../../../_shared/html/markup.mjs';
 
 const has=(tag,name)=>new RegExp('(?:^|\\s)'+name+'(?:\\s|=|>)','i').test(tag);
 const attr=extractTagAttribute;
@@ -44,7 +44,7 @@ function inspect(page,basePath) {
   return {route,language:attr(extractStartTags(text,'html')[0]??'','lang'),roots,sortable,
     prose:hasClassToken(text,'prose'),panel:has(text,'data-site-status-panel'),
     version:has(text,'data-site-build-version'),
-    worker:extractExternalScriptSrcs(text).some(src=>/\/sw-manager\.enable\./.test(src)),
+    worker:countWorkerRegistrationScripts(text)>0,
     overlap:Boolean(exclusive),rules:native!==null,
     debug:Boolean(rules?.prefetch?.length&&has(body,'data-prefetch-debug')&&extractStartTags(text,'pre').some(tag=>attr(tag,'id')==='prefetch-debug-support'))};
 }

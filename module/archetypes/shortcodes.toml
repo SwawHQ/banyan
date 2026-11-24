@@ -1,0 +1,69 @@
+# Author-facing arguments and content requirements. A trailing ? marks an optional argument. Use either named or positional arguments.
+
+# 在正文中插入本地资源，可显示图片或生成文件链接。
+[asset]
+positional = ["src", "text?"]
+named = ["src", "alt?", "text?", "title?", "class?", "width?", "height?", "download?"]
+requires = ["A local resource. Set alt to show an image. For a link, text defaults to the file name."]
+examples = ['{{< asset src="site/favicon.link.svg" alt="Logo" width="16" >}}', '{{< asset "manual.pdf" "Manual" >}}']
+
+# 创建可展开的折叠区，summary 是读者点击的标题。
+[details-start]
+named = ["summary"]
+requires = ["Close with details-end."]
+examples = ['{{< details-start summary="More" >}}']
+
+# 结束折叠区，后续正文始终可见。
+[details-end]
+requires = ["Close an open details-start."]
+examples = ['{{< details-end >}}']
+
+# 在首页嵌入指定的艺术包。
+[home-art]
+positional = ["bundle"]
+requires = ["Once on the page-home homepage. Use a /_res/ leaf bundle with build.render: never and params.template."]
+examples = ['{{< home-art "/_res/home-art/wind" >}}']
+
+# 显示构建本站所用的 Hugo 版本。
+[hugo-version]
+examples = ['{{< hugo-version >}}']
+
+# 按名称插入主题图标。
+[icon]
+positional = ["name"]
+examples = ['{{< icon "folder" >}}']
+
+# 将包裹的文字排为图注。
+[md-caption]
+inner = "Caption text"
+examples = ['{{< md-caption >}}Figure 1{{< /md-caption >}}']
+
+# 在相邻内容之间留出竖向空白。
+[md-spacer]
+examples = ['{{< md-spacer >}}']
+
+# 将包裹的文字显示为在新标签页打开的链接。
+[new-tab]
+named = ["href"]
+inner = "Link text"
+examples = ['{{< new-tab href="/docs/" >}}Documentation{{< /new-tab >}}']
+
+# 在正文中显示一至两个操作链接；左侧可刷新页面（reload），在 page-my 布局中还可返回上一页（back）。
+[page-actions]
+named = ["left_href", "left_label", "left_action?", "right_href?", "right_label?"]
+requires = ["Supply both right_href and right_label for a second link."]
+examples = ['{{< page-actions left_href="/" left_label="Back" left_action="back" >}}']
+
+# 显示当前语言首页的 RSS 订阅链接。
+[rss-link]
+requires = ["The current language homepage publishes RSS."]
+examples = ['{{< rss-link >}}']
+
+# 输出当前语言首页的完整网址。
+[site-root]
+examples = ['{{< site-root >}}']
+
+# 显示本站使用的 Banyan 主题版本，可为本地开发版指定显示文字。
+[theme-version]
+named = ["local?"]
+examples = ['{{< theme-version local="Local development" >}}']

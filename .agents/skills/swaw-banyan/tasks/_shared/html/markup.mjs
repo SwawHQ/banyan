@@ -79,6 +79,15 @@ export function extractExternalScriptSrcs(text) {
     return refs;
 }
 
+export function countWorkerRegistrationScripts(text, scripts = extractExternalScriptSrcs(text)) {
+    let count = scripts.filter(src => src.includes('/sw-manager.enable.')).length;
+    const panels = scripts.filter(src => src.includes('/js/site-status/page.'));
+    if (panels.length && extractStartTags(text, 'span').some(tag => extractTagAttribute(tag, 'data-site-sw-mode') === 'enable')) {
+        count += panels.length;
+    }
+    return count;
+}
+
 export function extractInlineScriptTextById(text, scriptId) {
     for (const match of text.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
         if (extractTagAttribute(match[1], 'id') === scriptId) return match[2];

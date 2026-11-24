@@ -1,7 +1,7 @@
 ---
 title: 02 项目结构与源码入口
 date: 2026-11-06
-lastmod: 2026-11-14
+lastmod: 2026-11-24
 url: p/partial-architecture/
 description: 说明主题目录、模块所有权、依赖方向和维护入口。
 ---
@@ -30,7 +30,7 @@ description: 说明主题目录、模块所有权、依赖方向和维护入口�
 | `feature-browse/` | 内容成员、引用、列表、图片墙和导航 |
 | `feature-document/` | 正文、元信息、章节与文章结构化数据 |
 | `feature-preferences/` | 语言和外观选项 |
-| `feature-prefetch-debug/`、`feature-site-status/` | 诊断与状态显示 |
+| `page-powered-by/`、`feature-prefetch-debug/`、`feature-site-status/` | 诊断与状态显示 |
 | `system-ui/` | 公共列表、图标、控件与页面样式 |
 | `system-assets/` | 资源定位、处理、构建与发布 |
 | `system-metadata/` | SEO、分享信息和 Agent 索引 |

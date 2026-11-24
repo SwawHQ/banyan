@@ -18,18 +18,12 @@
     margin: 18px 0;
 }
 
-.prose :is(p, .md-centered-image) img:not(.md-inline-image) {
+.prose p img:not(.md-inline-image) {
     margin: 0;
 }
 
 .prose p a:has(> img:not(.md-inline-image)) {
     display: block;
-}
-
-.prose .md-centered-image {
-    display: flex;
-    justify-content: center;
-    margin: 18px 0;
 }
 
 .prose .md-image-link {

@@ -2,4 +2,4 @@ swban upgrade/version/current [directory]  #Identify the current official compar
 
 Default: current site directory. Output JSON: old, source and basis; modified reports local Git changes when available.
 Use old as <old> in swban help upgrade/git. Local sources check current official refs with ls-remote and require their commit history to be available locally; no fetch is performed.
-If old is null, exit 1; candidate is only a declared version. Use the target reference site to review all four roots and migrate step by step, or set up from it as a new site.
+If old is null, exit 1; candidate is only a declared version. Use the target reference site to review the configuration and affected content and migrate step by step, or set up from it as a new site.

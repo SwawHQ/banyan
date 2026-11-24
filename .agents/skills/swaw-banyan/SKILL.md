@@ -28,7 +28,7 @@ swban <command>/help      #查看入口说明，包括原生工具入口
 
 ## 站点与 Module 的边界
 
-- 站点在根目录的 `content/` 维护全部页面，在 `assets/site/` 维护外部资源清单与品牌资源，在 `i18n/` 维护界面字典。Module 提供布局、脚本、文章原型、图标库、三套配色，以及应用清单和 robots.txt 模板。站点可用同路径文件覆盖默认文件。
+- 站点在根目录的 `content/` 维护全部页面，在 `assets/site/` 维护品牌资源，在 `assets/deploy/external-resources.toml` 声明外部资源，在 `i18n/` 维护界面字典。Module 提供布局、脚本、同名页面原型、图标库、三套配色，以及应用清单和 robots.txt 模板。站点可用同路径文件覆盖默认文件。
 - Hugo 原生 front matter 字段保留在顶层。自定义字段放在 `params` 中，继承默认值放在 `cascade.params` 中；模板通过 `.Params` 读取自定义字段。
 - 公共导航路径的每级栏目都使用 `_index.md`，并输出 HTML。内部页放在 `content/_res/`，由共用 `_index.md` 隐藏其导航和站点发现入口。
 - 面包屑列由浏览器加载共享的 `.js` 导航片段；支持原生绘制阻塞的浏览器在正常加载路径中等待填充后首绘。根导航、栏目主列表和正文保留在页面 HTML 中。

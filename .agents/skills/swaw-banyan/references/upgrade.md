@@ -28,7 +28,7 @@ root is the `module/` subdirectory. Sites still request `<module>@vX.Y.Z`.
 ## Change the version
 
 Choose the starting and target versions. Upgrades and downgrades use the same steps.
-Run `swban help upgrade/git` for directory comparisons, filename filters and exclusions.
+Run `swban help upgrade/git` for the version comparison commands.
 Keep the official checkout under `swaw/banyan/<task>/` in the system temporary directory.
 Run `swban upgrade/version/current` from the site root. Use its `old` field as
 `<old>` and the selected official project tag or commit as `<new>`.
@@ -38,7 +38,7 @@ remote history, then reports that commit and any uncommitted source changes.
 It reads official refs without fetching; unavailable evidence produces `old: null`.
 
 If `old` is null, or a previous migration is incomplete, use the target reference site
-to review all four roots in full. Migrate step by step or set up from it as a new site;
+to review the configuration and page archetypes in full. Migrate step by step or set up from it as a new site;
 retain the site's content, languages and branding. Review local theme edits and overrides
 before replacement. Complete validation before recording the target as the next base.
 
@@ -48,27 +48,13 @@ upstream changes. Merge both before updating dependencies or regenerating vendor
 
 When the base is known and the previous migration is complete, compare official
 `<old>` and `<new>`, then inspect the affected site files.
-Start with these four roots:
+Compare `hugo.toml`, `assets/` and `i18n/` for changes to settings, resources and interface labels.
+Compare `module/archetypes/` by layout, then apply relevant changes to sections, articles and their translations. Check the parent cascade for inherited fields. For Powered by, compare the page body as well.
 
-| Scope | Official paths | Review |
-| --- | --- | --- |
-| Site configuration | `hugo.toml` | Parameters, mounts, output formats and languages. |
-| Content | `content/` | Lists, article/product examples, functional pages and their resources. |
-| Site resources | `assets/` | Delivery policy and brand assets. |
-| Interface dictionaries | `i18n/` | Labels in each enabled language. |
+For changes in `module/archetypes/shortcodes.toml`, search site content and translations by the old shortcode name.
 
-For shared structure, start with `_index.md` and `index.md`, which are English in this
-reference site. Also review affected translations and resources.
-Match pages by their layouts, fields and shortcodes; site directory names can differ.
-The four roots cover reference-site files. Also check the target's minimum Hugo version
-in `module/theme.toml`, theme/Skill pairing, and any local overrides of Module files.
-Reference-site language, palette or policy choices are not mandatory migrations.
-Preserve site content and branding. Exclude `content/articles/docs-*/`,
-`content/articles/changelog/` and `content/about/` from comparisons as needed.
-Actual changes are determined by source differences between the selected versions;
-documentation and release notes are references. Copying them into the site is optional.
-If omitting them, change Home's documentation link and Powered by's changelog link
-to their corresponding pages on `https://banyan.swaw.com/`.
+When upgrading from a version without matching archetypes, use the release notes and the old and new reference pages to identify required edits. Preserve local URLs, text and branding. Check maps and resource bundles for affected features, the minimum Hugo version in `module/theme.toml` and local Module overrides.
+
 Report affected site files and required edits. Obtain the target files from the checkout
 or **Source code (zip)** on [project releases](https://github.com/SwawHQ/banyan/releases).
 
@@ -90,9 +76,8 @@ page behavior. Use a fixed release instead of `@latest` when choosing a known pa
 ## Test an unpublished Module
 
 Use a temporary consumer site and call the Skill from the Banyan checkout.
-Supply its root `assets/site/` with complete configuration files and enabled
-languages' `i18n/` dictionaries from the reference site. Include any root
-content pages needed by the site.
+Copy `assets/deploy/settings.toml`, `assets/site/` brand assets and the enabled
+languages' `i18n/` dictionaries from the reference site. Include the pages the site needs.
 Its `go.mod` can resolve the local Module without a release:
 
 ```go

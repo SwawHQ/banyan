@@ -1,3 +1,5 @@
+{{- $appendix := .appendix -}}
+{{- with .page -}}
 {{- $contentHTML := printf "%s" .Content -}}
 {{- $content := trim $contentHTML " \r\n\t" -}}
 {{- partial "./validate-heading.html" . -}}
@@ -13,8 +15,10 @@
     {{- if ne $content "" -}}
     {{- $contentHTML | safeHTML -}}
     {{- end -}}
+    {{ $appendix }}
   </div>
 </article>
 {{- if and .IsPage (index (partial "system-ui/page-slots.html" (dict "ctx" .)) "meta") -}}
   {{- partial "./schema.html" . -}}
+{{- end -}}
 {{- end -}}

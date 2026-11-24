@@ -1,7 +1,7 @@
 ---
 title: 03 写第一篇文章
 date: 2026-11-17
-lastmod: 2026-11-17
+lastmod: 2026-11-24
 url: p/first-article/
 description: 创建一篇中文文章，添加图片并检查发布状态。
 ---
@@ -11,7 +11,7 @@ description: 创建一篇中文文章，添加图片并检查发布状态。
 在站点根目录使用[开始使用](/zh/p/getting-started/#取得站点)中定义的 `swban` 简称。正在预览时，先按 **Ctrl+C** 停止预览。
 
 ```powershell
-swban base/hugo new content --kind banyan articles/my-post/index.zh.md  #创建中文文章
+swban base/hugo new content --kind page-article-rss articles/my-post/index.zh.md  #创建中文文章
 ```
 
 打开生成的 `content/articles/my-post/index.zh.md`：

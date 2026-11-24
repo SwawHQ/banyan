@@ -83,7 +83,7 @@ test('articles require an explicit URL and the Module article archetype supplies
   } finally {fs.rmSync(file,{force:true});}
   const generatedDirectory=path.join(source,'content/library/URL Contract'),generated=path.join(generatedDirectory,'index.md');
   try {
-    const result=spawnSync(toolExecutable('hugo'),['new','content','library/URL Contract/index.md','--kind','banyan'],
+    const result=spawnSync(toolExecutable('hugo'),['new','content','library/URL Contract/index.md','--kind','page-article-rss'],
       {cwd:source,env:fixtureEnvironment(work),encoding:'utf8',windowsHide:true,timeout:30000});
     passed(result);
     const text=fs.readFileSync(generated,'utf8');

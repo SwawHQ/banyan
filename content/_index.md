@@ -5,6 +5,10 @@ weight: 10
 description: A minimal reference site for the Banyan Hugo theme.
 layout: page-home
 
+cascade:
+  - target: {kind: page}
+    layout: page-article-rss
+
 params:
   # To show only the root navigation column, keep page-home and show_navigation: true, and leave the body empty.
   # To use the wall: change layout, enable aggregate and wall, and remove the home-art shortcode.

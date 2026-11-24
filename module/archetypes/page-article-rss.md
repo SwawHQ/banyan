@@ -34,12 +34,6 @@ description: ""
   #   - label: Other publication
   #     url: https://example.com/article
 
-  # Optional product-list values; they do not control directory membership.
-  # offer:
-  #   version: "1.0.0"
-  #   amount: 0
-  #   currency: "$"
-
 # Keep the article in a leaf bundle: category/article/index.md.
 # Other directories reference its content path in _map.toml.
 ---

@@ -124,10 +124,12 @@ Sections default to HTML and RSS outputs. Set
 `outputs: [HTML]` to disable a section's feed. Its articles can still appear
 in the site feed when they use `page-article-rss`.
 
-With the Module-provided `archetypes/banyan.md`, create an article using:
+`--kind` selects the archetype. Articles created with `page-article-rss` inherit their layout unless you set `layout` on the article.
+Use `_index.<lang>.md` for sections and `index.<lang>.md` for leaf bundles. Edit the generated text for the target language.
 
 ```text
-swban base/hugo new content --kind banyan articles/my-post/index.md  #Create an article
+swban base/hugo new content --kind page-article-rss articles/my-post/index.md  #Create an article
+swban base/hugo new content --kind page-collection-directory guides/_index.zh.md  #Create a section
 ```
 
 For a manual example, create `content/articles/sample/alpha/index.md`:

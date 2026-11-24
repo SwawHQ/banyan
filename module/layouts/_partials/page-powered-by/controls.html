@@ -1,4 +1,4 @@
-{{- $labels := partial "feature-prefetch-debug/labels.html" .Page -}}
+{{- $labels := partial "feature-prefetch-debug/labels.html" . -}}
 <form id="prefetch-debug-controls" method="get" data-prefetch-debug-copy='{{ $labels | jsonify }}'>
   <label for="prefetch-debug-backend">{{ $labels.backend }}</label>
   <select id="prefetch-debug-backend" name="prefetch-backend">

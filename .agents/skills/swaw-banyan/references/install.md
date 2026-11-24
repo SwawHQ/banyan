@@ -32,7 +32,7 @@ Review these site-owned files when adapting an existing site:
 | `assets/site/pwa-192.png`, `pwa-256.png`, `pwa-512.png` | Manifest icons |
 | `assets/deploy/settings.toml` | Platform switches, SW mode and prefetch switch |
 | `assets/deploy/redirects.toml` | Optional URL redirects in declaration order |
-| `assets/site/external-resources.toml` | Optional files to download before preview or build when missing locally |
+| `assets/deploy/external-resources.toml` | Optional files downloaded by `swban sync/resources` |
 | `assets/site/avatar.github.svg` | Avatar shared by the reference site’s GitHub pages |
 | `i18n/<language>.toml` | Interface dictionary for each enabled language |
 
@@ -50,7 +50,7 @@ All pages belong to root `content/`; the Module provides no fallback pages.
 Copy the functional pages the site needs.
 Home art is optional; see [Home art](home-art.md) when using it.
 
-The Module supplies `archetypes/banyan.md` for the article generator. Page examples and creation commands are in
+The Module supplies a matching archetype for each page layout. Page examples and creation commands are in
 [Content and layouts](content.md).
 
 Select a complete site palette with `params.appearance.palette`, using a path

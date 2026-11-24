@@ -13,7 +13,7 @@
 {{- $pwaConfig := partialCached "system-delivery/pwa/config.html" (dict "delivery" $delivery) "pwa" ($delivery.sw | jsonify) -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}
 {{- $prefetch := partialCached "system-delivery/prefetch/config.html" (dict "delivery" $delivery) "prefetch" -}}
-{{- $isPrefetchDebug := or (.HasShortcode "prefetch-debug-controls") (and $homeArt ($homeArt.HasShortcode "prefetch-debug-controls")) -}}
+{{- $isPoweredBy := eq .Layout "page-powered-by" -}}
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
 {{- partialCached "entry-baseof/audit-column-urls.html" .Site .Site.Language.Lang -}}
 {{- $defaultSite := hugo.Sites.Default -}}
@@ -79,9 +79,10 @@
     {{- partial "system-delivery/pwa/service-worker.html" (dict
       "config" $pwaConfig
       "sw_routes" $delivery.sw_routes
+      "panel_registers" (and $isPoweredBy (eq $swMode "enable"))
     ) -}}
 </head>
-<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }}{{ if or $navigation.has_breadcrumb_columns $navigation.sortable }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPrefetchDebug }} data-prefetch-debug{{ end }}>
+<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }}{{ if or $navigation.has_breadcrumb_columns $navigation.sortable }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPoweredBy }} data-prefetch-debug{{ end }}>
     <div class="page">
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         <div class="page-shell"{{ if $navigationOnly }} role="main" id="main" tabindex="-1"{{ end }}>
@@ -119,7 +120,7 @@
       "page" .
       "home_art" $homeArt
       "prefetch" $prefetch
-      "prefetch_debug" $isPrefetchDebug
+      "powered_by" $isPoweredBy
       "sw_mode" $swMode
     ) -}}
     {{- partial "system-ui/icon/sprite.html" . -}}
