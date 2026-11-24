@@ -14,13 +14,16 @@ swban base/git -C "<official>" fetch origin --tags                          #更
 swban base/git -C "<official>" tag -l "v*" --sort=-version:refname          #查看官方版本
 swban base/git -C "<official>" rev-parse "<old>^{commit}" "<new>^{commit}"  #将已确认的起点和目标解析为提交 SHA
 
-3. 比对站点配置和页面原型
-swban base/git -C "<official>" diff <old> <new> -- hugo.toml assets/ i18n/  #查看配置、资源和界面字典
-swban base/git -C "<official>" diff <old> <new> -- module/archetypes/       #查看各布局的页面原型
-按原型差异检查对应栏目、文章及译文。继承字段从上级 cascade 检查。Powered by 同时核对整页正文。保留本站内容和定制。
-短代码接口见 module/archetypes/shortcodes.toml。按变更前的调用名称检查本站各语言正文。
+3. 比对站点配置、原型和本地覆盖
+swban base/git -C "<official>" diff --name-status -M <old> <new> -- assets/ module/archetypes/  #列出资源和原型的增删、修改及可识别的改名或移动
+swban base/git -C "<official>" diff <old> <new> -- hugo.toml assets/ i18n/                      #查看配置、资源和界面字典
+swban base/git -C "<official>" diff <old> <new> -- module/archetypes/                           #查看原型变动
+按原型差异检查各语言内容和上级 cascade。module/archetypes/assets/ 下的配置对应本站 assets/ 下的同路径文件，迁移时保留本站取值。
 
-若旧版本缺少对应原型，结合版本说明和新旧参考页确认所需修改。按涉及的功能核对 _map.toml 或资源包。
+若本站覆盖了 Module 文件，只比对相应路径。深度定制时可选查完整清单：
+swban base/git -C "<official>" diff --name-status -M <old> <new> -- module/  #按新旧路径定位受影响的定制文件
+
+若旧版本缺少对应原型或文件已拆分，比对两个版本的源文件和读取它们的代码，确认字段去向。按涉及的功能核对 _map.toml 或资源包。
 
 4. 配套升级与验证：
 从目标项目标签 vX.Y.Z 更新完整的 .agents/skills/swaw-banyan/，与主题 vX.Y.Z 配套使用；仅修改 metadata.version 不会升级 Skill。

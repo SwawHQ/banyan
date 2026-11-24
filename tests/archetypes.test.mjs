@@ -15,6 +15,17 @@ function page(file) {
   return {fields:parseYaml(header),body};
 }
 
+test('the reference site and deployment prototype expose the same setting names and types',()=>{
+  const settings='assets/deploy/settings.toml';
+  function fields(value) {
+    if (Array.isArray(value)) return 'array';
+    if (typeof value!=='object') return typeof value;
+    return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,fields(item)]));
+  }
+  const read=base=>fields(parseToml(fs.readFileSync(path.join(base,settings),'utf8')));
+  assert.deepEqual(read(root),read(path.join(root,'module/archetypes')));
+});
+
 test('each layout has a usable Module archetype and Powered by keeps its diagnostic fields and calls',t=>{
   const moduleRoot=path.join(root,'module');
   const kinds=fs.readdirSync(path.join(moduleRoot,'layouts')).filter(name=>/^page-.*\.html$/.test(name)).map(name=>path.basename(name,'.html')).sort();

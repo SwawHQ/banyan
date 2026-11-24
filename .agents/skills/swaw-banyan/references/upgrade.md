@@ -49,11 +49,10 @@ upstream changes. Merge both before updating dependencies or regenerating vendor
 When the base is known and the previous migration is complete, compare official
 `<old>` and `<new>`, then inspect the affected site files.
 Compare `hugo.toml`, `assets/` and `i18n/` for changes to settings, resources and interface labels.
-Compare `module/archetypes/` by layout, then apply relevant changes to sections, articles and their translations. Check the parent cascade for inherited fields. For Powered by, compare the page body as well.
+Use changes in `module/archetypes/` to check affected content in each language and parent cascades. Map configuration prototypes under `module/archetypes/assets/` to the same paths under the site’s `assets/`. Apply field changes and retain site values.
+For a site override such as `layouts/page-search.html`, compare the old and new `module/layouts/page-search.html` and merge the upstream changes into the local copy. Check both paths for renames and review local copies of deleted files.
 
-For changes in `module/archetypes/shortcodes.toml`, search site content and translations by the old shortcode name.
-
-When upgrading from a version without matching archetypes, use the release notes and the old and new reference pages to identify required edits. Preserve local URLs, text and branding. Check maps and resource bundles for affected features, the minimum Hugo version in `module/theme.toml` and local Module overrides.
+When upgrading from a version without matching archetypes, compare the source files and their consumers in both versions to identify required edits. Trace split files the same way. Preserve local URLs, text and branding. Check maps and resource bundles for affected features, the minimum Hugo version in `module/theme.toml` and local Module overrides.
 
 Report affected site files and required edits. Obtain the target files from the checkout
 or **Source code (zip)** on [project releases](https://github.com/SwawHQ/banyan/releases).

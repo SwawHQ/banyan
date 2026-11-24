@@ -14,13 +14,16 @@ swban base/git -C "<official>" fetch origin --tags                          #Upd
 swban base/git -C "<official>" tag -l "v*" --sort=-version:refname          #List official versions
 swban base/git -C "<official>" rev-parse "<old>^{commit}" "<new>^{commit}"  #Resolve the confirmed baseline and target to commit SHAs
 
-3. Compare site configuration and page archetypes
-swban base/git -C "<official>" diff <old> <new> -- hugo.toml assets/ i18n/  #Review settings, assets and interface dictionaries
-swban base/git -C "<official>" diff <old> <new> -- module/archetypes/       #Review archetype changes by layout
-Apply field changes to the matching sections, articles and translations. Check the parent cascade for inherited fields. Compare the Powered by body as well. Preserve local content and customizations.
-For changes to shortcodes.toml, search all site languages by the previous shortcode name.
+3. Compare site configuration, archetypes and local overrides
+swban base/git -C "<official>" diff --name-status -M <old> <new> -- assets/ module/archetypes/  #List added, deleted, modified and detected renamed or moved files
+swban base/git -C "<official>" diff <old> <new> -- hugo.toml assets/ i18n/                      #Review settings, assets and interface dictionaries
+swban base/git -C "<official>" diff <old> <new> -- module/archetypes/                           #Review archetype changes
+Use the archetype changes to check content in each language and parent cascades. Map module/archetypes/assets/ to the site’s assets/ directory and preserve local setting values.
 
-When the old version lacks a matching archetype, use the release notes and reference pages to identify required changes. Review maps or resource bundles for affected features.
+For site overrides, compare the corresponding upstream paths. For extensive customizations, optionally list all changes:
+swban base/git -C "<official>" diff --name-status -M <old> <new> -- module/  #Find affected overrides by old and new path
+
+If the old version lacks a prototype or a file was split, compare the source files and the code that reads them in both versions to trace the affected fields. Review maps or resource bundles for affected features.
 
 4. Upgrade the matching Skill and theme:
 Update the complete .agents/skills/swaw-banyan/ from target project tag vX.Y.Z for use with theme vX.Y.Z; changing metadata.version alone does not update the Skill.

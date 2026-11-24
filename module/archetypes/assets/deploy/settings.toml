@@ -1,0 +1,17 @@
+[platform]
+# 生成 _headers 和 _redirects。
+cloudflare.pages.enabled = true
+
+# 生成腾讯云 edgeone.json。
+edgeone.makers.enabled = true
+
+[sw]
+# enable：注册并启用；disable：访问页面时注销本站 SW，并清除受管缓存。
+# off：不加载 SW 管理逻辑；已安装的 SW 不会自动注销。
+mode = "enable"
+# 内容版本检查的最小间隔，单位：分钟；到期后由导航触发后台检查，不阻塞页面请求。
+content_check_interval = 21
+
+[prefetch]
+# 总开关；开启后依次选择原生 Speculation Rules、本站活动 SW、浏览器 link prefetch。
+enabled = false

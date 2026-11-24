@@ -15,9 +15,9 @@ swban upgrade/version/current  #查看当前版本与比对起点
 swban help upgrade/git         #查看比较官方版本与保留本站定制的步骤
 ```
 
-比较两个版本的 `module/archetypes/`，按布局检查对应栏目、文章和译文。继承的字段检查上级 `cascade`，Powered by 还应比对正文。
+按 `module/archetypes/` 的差异检查各语言内容及上级 `cascade`。`module/archetypes/assets/` 下的配置对应本站 `assets/` 下的同路径文件。按字段差异迁移，保留本站取值。
 
-查看 `module/archetypes/shortcodes.toml` 的差异，按变更前的短代码名称检查各语言页面的调用。
+若本站覆盖了 Module 文件，例如 `layouts/page-search.html`，比对上游对应文件的新旧版本，将所需改动合入本站副本。遇到改名或删除时也要检查旧路径。
 
 按[版本维护说明](https://github.com/SwawHQ/banyan/blob/main/.agents/skills/swaw-banyan/references/upgrade.md#change-the-version)更新 Skill、主题和受影响的站点文件。
 
