@@ -1,8 +1,4 @@
 /* Scene geometry and signal timing come from the wind model. */
-.page {
-    --page-edge-block-end: 1.5rem;
-}
-
 .home-art-wind {
     --home-art-wind-inline-direction: 1;
     --home-art-wind-signal-peak-opacity: 0.9;
@@ -45,19 +41,19 @@
     line-height: 1.2;
 }
 
-.home-art-wind__anchor-title,
-.home-art-wind__anchor-line {
+.home-art-wind__anchor > .home-art-wind__anchor-title,
+.home-art-wind__anchor > .home-art-wind__anchor-line {
     margin: 0;
     font-size: inherit;
     line-height: inherit;
     letter-spacing: 0;
 }
 
-.home-art-wind__anchor-title {
+.home-art-wind__anchor > .home-art-wind__anchor-title {
     font-weight: 600;
 }
 
-.home-art-wind__anchor-line {
+.home-art-wind__anchor > .home-art-wind__anchor-line {
     font-weight: 400;
 }
 

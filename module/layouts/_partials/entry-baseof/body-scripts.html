@@ -1,6 +1,5 @@
 {{- $page := .page -}}
-{{- $homeArt := .home_art -}}
-{{- if or ($page.HasShortcode "page-actions") (and $homeArt ($homeArt.HasShortcode "page-actions")) -}}
+{{- if $page.HasShortcode "page-actions" -}}
   {{- partial "system-assets/script.html" (dict "path" "js/pages/reload.js") -}}
 {{- end -}}
 {{- if or .prefetch.enabled .powered_by -}}

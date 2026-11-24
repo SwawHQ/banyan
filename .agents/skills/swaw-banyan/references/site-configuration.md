@@ -75,8 +75,8 @@ The reference site supplies translated settings and diagnostic pages.
 
 ### Internal pages
 
-Home and published direct children appear in the first navigation column.
-Keep `content/_res/_index.md` with the following front matter. It hides `_res`
+Published direct children of the language root appear in the first navigation column.
+If the site needs internal pages, create `content/_res/_index.md` with the following front matter. It hides `_res`
 and its descendants from page collections. The branch has no output; its pages
 keep their HTML with `noindex, follow` and `slots: []`. The sites matrix shares
 this file across all enabled languages.

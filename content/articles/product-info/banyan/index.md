@@ -20,7 +20,7 @@ Banyan is a website template and Hugo theme for documentation, articles, product
 
 ## Customize the site
 
-Banyan supports multiple languages and light and dark appearances. Customize colors, icons, navigation and article information, or build a homepage with a home art bundle.
+Banyan supports multiple languages and light and dark appearances. Customize colors, icons, navigation and article information, or embed the wind scene in page content.
 
 Pagefind provides full-text search. RSS, share images, sitemaps and llms.txt help readers discover and follow content. Offline access and page prefetching are optional.
 

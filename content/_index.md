@@ -1,7 +1,5 @@
 ---
-# Root navigation includes Home and published direct children.
 title: Banyan
-weight: 10
 description: A minimal reference site for the Banyan Hugo theme.
 layout: page-home
 
@@ -10,8 +8,6 @@ cascade:
     layout: page-article-rss
 
 params:
-  # To show only the root navigation column, keep page-home and show_navigation: true, and leave the body empty.
-  # To use the wall: change layout, enable aggregate and wall, and remove the home-art shortcode.
   # aggregate: /articles #Source section; include descendants and references, without duplicates.
   # Use with layout: page-collection-wall-all; uncomment params.wall to enable the wall.
   # wall:
@@ -20,11 +16,6 @@ params:
   #     height: 125        #Number or auto; one auto dimension preserves the source ratio. Not both auto.
   #   details: title       #title: title opens details; overlay: image dots; overlay-hover: dots on hover, always on touch.
   #   scroll: horizontal   #horizontal or vertical.
-  show_navigation: true
-  # Icons also accept a name from the Module icon library or {image: "site/pwa-192.png"}.
-  icon: {image: "site/favicon.link.svg"}
   # Browser/tab title; title above remains the visible heading.
   browser_title: Banyan — A Minimal Hugo Publishing Theme
 ---
-
-{{< home-art "/_res/home-art/wind" >}}

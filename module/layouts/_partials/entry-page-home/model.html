@@ -1,7 +1,3 @@
-{{- /* Render the art before the head so its template can register resources. */ -}}
-{{- if .HasShortcode "home-art" -}}{{- $content := .Content -}}{{- end -}}
-{{- $art := .Store.Get "homeArt" -}}
-{{- $assets := dict -}}
 {{- $showNavigation := true -}}
 {{- if isset .Params "show_navigation" -}}
   {{- if ne (printf "%T" .Params.show_navigation) "bool" -}}
@@ -10,7 +6,4 @@
     {{- $showNavigation = .Params.show_navigation -}}
   {{- end -}}
 {{- end -}}
-{{- with $art -}}
-  {{- $assets = partial "./assets.html" . -}}
-{{- end -}}
-{{- return (dict "art" $art "assets" $assets "show_navigation" $showNavigation) -}}
+{{- return $showNavigation -}}

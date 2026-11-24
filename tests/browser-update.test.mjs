@@ -26,7 +26,7 @@ const faults={};
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function cli(name,args=[],directory=old,newBuild=next){
   const result=spawnSync(process.execPath,[path.join(skill,'tasks','check/browser/pwa/'+name,'entry.mjs'),directory,
-    '--next',newBuild,...(args.includes('--page')?[]:['--page',panel]),...(args.includes('--from')?[]:['--from',from]),...args],{cwd:work,encoding:'utf8',timeout:30000});
+    '--next',newBuild,...(args.includes('--page')?[]:['--page',panel]),...(name==='native'||args.includes('--from')?[]:['--from',from]),...args],{cwd:work,encoding:'utf8',timeout:30000});
   assert.ifError(result.error);return result;
 }
 function report(result){
@@ -101,7 +101,8 @@ test('update declarations require the next build and describe all paths',()=>{
   assert.throws(()=>parseArguments(lifecycleCommand(),['--next','new','--page','https://example.invalid/']));
   const options=parseArguments(lifecycleCommand(),['old','--next','new']);
   assert.equal(options.page,'/powered-by/');assert.equal(options.from,'/');
-  for(const factory of [checkCommand,nativeCommand,contentCommand])assert.equal(parseArguments(factory(),['--next','new']).from,'/');
+  for(const factory of [checkCommand,contentCommand])assert.equal(parseArguments(factory(),['--next','new']).from,'/');
+  assert.equal(parseArguments(nativeCommand(),['--next','new']).from,false);
   for(const flag of ['next','page','from'])assert.match(helpFor(lifecycleCommand(),'en'),new RegExp('--'+flag+' <'));
   assert.throws(()=>parseArguments(languageCommand(),['--next','new']),/--to is required/);
   assert.throws(()=>parseArguments(languageCommand(),['--next','new','--to','bad value']),/language code/);

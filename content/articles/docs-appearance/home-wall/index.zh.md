@@ -11,7 +11,6 @@ description: 让首页汇总指定栏目及其下级文章的封面。
 1. 打开中文首页 `content/_index.zh.md`。
 2. 将 `layout` 改为 `page-collection-wall-all`。
 3. 在已有 `params` 中设置 `aggregate` 和 `wall`，保留首页其他配置。
-4. 移除正文中的 `home-art` 短代码。其他语言分别修改对应首页。
 
 ```yaml
 layout: page-collection-wall-all
@@ -35,8 +34,4 @@ params:
 
 ## 切回艺术首页
 
-将布局改回 `page-home`，移除 `aggregate` 和 `wall`，在正文恢复艺术包引用。风场资源包可以保留：
-
-```text
-{{</* home-art "/_res/home-art/wind" */>}}
-```
+将布局改回 `page-home`，移除 `aggregate` 和 `wall`，根地址即恢复为导航列。风场仍可从首页入口访问。

@@ -111,8 +111,8 @@ test('public navigation requires explicit section pages and rendered ancestors',
 test('visible read-only ancestors work and internal hidden trees need no breadcrumb columns',()=>{
   changed(content('docs/direct/index.md'),article('Direct leaf').replace('slots: []','slots: [breadcrumb]'),passed);
   changed(content('docs/_index.md'),'---\ntitle: Read only\nlayout: page-article-norss\noutputs: [HTML]\n---\n',passed);
-  const internal=content('_res/private');
-  write(path.join(internal,'_index.md'),'---\ntitle: Internal\nlayout: page-article-norss\nbuild: {list: never, render: never}\nparams: {slots: []}\n---\n');
+  const internal=content('private');
+  write(path.join(internal,'_index.md'),'---\ntitle: Internal\nlayout: page-article-norss\nbuild: {list: never, render: never}\nparams: {slots: []}\ncascade: {build: {list: never}, params: {slots: []}}\n---\n');
   write(path.join(internal,'nested/item.md'),article('Internal item').replace('p/probe/','_res/private-item/'));
   try {passed(build());} finally {fs.rmSync(internal,{recursive:true,force:true});}
 });

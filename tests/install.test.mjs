@@ -52,15 +52,12 @@ function consumer(name,{replacement='',multilingual=false}={}) {
   write(root,'go.mod',`module example.test/consumer\n\ngo 1.18\n\nrequire ${release.module} ${version}\n`+
     (replacement?`\nreplace ${release.module} => ${JSON.stringify(replacement.replaceAll('\\','/'))}\n`:''));
   fixtureSiteFiles(root);
-  fixtureSitePages(root,['appearance','language','my','_res','rss','powered-by']);
-  for(const suffix of ['','.zh','.ar']) {
-    const href=(suffix==='.zh'?'/zh/':'/')+'articles/docs-start/';
-    const file=path.join(root,'content/_res/home-art/wind','index'+suffix+'.md');
-    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replaceAll(href,'https://banyan.swaw.com'+href));
-  }
+  fixtureSitePages(root,['appearance','language','my','rss','powered-by']);
   for(const suffix of multilingual?['','.zh','.ar']:['']) {
     const translated=value=>value.replace(/^title: (.+)$/m,'title: $1'+suffix);
-    write(root,'content/_index'+suffix+'.md',markdown[0]);
+    const home=suffix==='.zh'?markdown[0].replace('banyan.swaw.com/articles/','banyan.swaw.com/zh/articles/'):markdown[0];
+    write(root,'content/_index'+suffix+'.md','---\ntitle: My site\ndescription: Describe this site.\nlayout: page-home\n---\n');
+    write(root,'content/home/index'+suffix+'.md',home);
     write(root,'content/articles/_index'+suffix+'.md',translated(markdown[1]));
     write(root,'content/articles/sample/_index'+suffix+'.md',translated(markdown[2]));
     write(root,'content/articles/related/_index'+suffix+'.md',translated(markdown[2].replaceAll('Sample','Related')));
@@ -111,7 +108,7 @@ function directoryDefaults(output,{prefix='',suffix=''}={}) {
   assert.ok(category.includes('/'+prefix+'p/alpha/#from=products/free'));
   for(const name of ['discover','all','catalog','catalog-all','about','github',...['start','content','appearance','publish','features','dev','reference'].map(name=>'articles/docs-'+name),'articles/changelog'])
     assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'Module must not supply site-owned '+name+'.');
-  const home=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
+  const home=fs.readFileSync(path.join(output,prefix,'home/index.html'),'utf8');
   assert.ok(extractStartTags(home,'a').some(tag=>extractTagAttribute(tag,'href')===
     'https://banyan.swaw.com/'+(prefix==='zh/'?'zh/':'')+'articles/docs-start/'),'A starter without documentation links to the official guides.');
 }

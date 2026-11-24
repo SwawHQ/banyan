@@ -8,11 +8,13 @@ export async function check({page,baseUrl,options}) {
   assert.ok(targets.every(target=>target.pathname!==source.pathname),'Choose root pages other than --from.');
   const response=await page.goto(source.href,{waitUntil:'load'});
   assert.ok(response?.ok(),'Root source page must return a successful response.');await waitForBrowse(page);await afterPaint(page);
-  const roots=(await readRootState(page)).roots;assert.ok(roots.includes(source.pathname),'--from must select a published root page.');
+  const roots=(await readRootState(page)).roots;
+  const sourceIsHome=await page.locator('body[data-home-navigation]').count()>0;
+  assert.ok(sourceIsHome||roots.includes(source.pathname),'--from must be the language root or a published root entry.');
   async function ready(target,length) {
     await page.waitForURL(target.href,{waitUntil:'load'});await waitForBrowse(page);await afterPaint(page);
     assert.equal(page.url(),target.href,'Root navigation must retain the expected URL without copied context.');
-    await assertRootLinks(page);await checkRootSelection(page,target.pathname,roots);
+    await assertRootLinks(page);await checkRootSelection(page,sourceIsHome && target===source ? null : target.pathname,roots);
     assert.equal(await page.evaluate(()=>history.length),length,'Root navigation must retain the native history length.');
   }
   const results=[];let length=await page.evaluate(()=>history.length);await ready(source,length);

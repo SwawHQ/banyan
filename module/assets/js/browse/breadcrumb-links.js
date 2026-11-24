@@ -103,7 +103,7 @@ export function buildBreadcrumbSortToggleHref(
 
 export function buildCollectionPageHref(href, logicalPath, sortVariant, defaultSort = '') {
     const rawHref = typeof href === 'string' ? href.trim() : '';
-    if (!rawHref || !logicalPath || !sortVariant) {
+    if (!rawHref || !logicalPath) {
         return rawHref;
     }
 

@@ -98,7 +98,7 @@ test(name+' moves RTL home art left and keeps keyboard skip links inside the can
     await server.start();const type=loadBrowser();browser=await type.launch({headless:true,executablePath:type.executablePath()});
     const context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage();
     for(const width of [390,1440]) {
-      await page.setViewportSize({width,height:900});await page.goto(server.getBaseUrl()+'/ar/',{waitUntil:'load'});
+      await page.setViewportSize({width,height:900});await page.goto(server.getBaseUrl()+'/ar/home/',{waitUntil:'load'});
       const motion=await page.locator('.home-art-wind__signal').first().evaluate(async signal=>{
         const animation=signal.getAnimations().find(item=>item.animationName==='home-art-wind-signal-drift');
         if(!animation)throw new Error('The Arabic homepage must include animated signals.');

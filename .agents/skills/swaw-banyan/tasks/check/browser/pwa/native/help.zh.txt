@@ -7,7 +7,7 @@ swban check/browser/pwa/native [dir] [--headed] [--trace] [--out <dir>] [--timeo
   --timeout <ms>  浏览器启动和单次操作的超时，单位为毫秒；默认：15000
   --next <dir>    下一份启用 SW 的构建，使用不同的 sw.js
   --page <path>   更新面板路径；默认：/powered-by/
-  --from <path>   链接到设置页的来源页面；默认：/
+  --from <path>   来源页路径；默认从旧构建选择与更新面板互链的页面
 
 swban check/browser/pwa/native ./old --next ./new
-swban check/browser/pwa/native ./old --next ./new --trace --out ./browser-report
+swban check/browser/pwa/native ./old --next ./new --from /home/ --trace --out ./browser-report

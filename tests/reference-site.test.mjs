@@ -14,7 +14,7 @@ import {inspect as inspectBuildVersion} from '../.agents/skills/swaw-banyan/task
 import {inspect as inspectLlms} from '../.agents/skills/swaw-banyan/tasks/check/llms/inspect.mjs';
 import {inspect as inspectDelivery} from '../.agents/skills/swaw-banyan/tasks/check/delivery/inspect.mjs';
 import {inspect as inspectScripts} from '../.agents/skills/swaw-banyan/tasks/check/html/scripts/inspect.mjs';
-import {extractStartTags,extractTagAttribute,extractCanonicalHref} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
+import {extractStartTags,extractTagAttribute,extractCanonicalHref,decodeHtmlAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {extractBlocks,stripRawText} from '../.agents/skills/swaw-banyan/tasks/_shared/html/blocks.mjs';
 import {filesUnder,localReference} from '../.agents/skills/swaw-banyan/tasks/_shared/output.mjs';
 import {parseToml,parseYaml} from '../.agents/skills/swaw-banyan/tasks/_shared/parsers.mjs';
@@ -57,6 +57,17 @@ test('functional pages keep their shortcode scripts without article metadata, ch
     const scripts=extractStartTags(html,'script').map(tag=>extractTagAttribute(tag,'src')||'');
     assert.equal(scripts.filter(src=>src.includes('/js/site-status/page.')).length,1,prefix+'powered-by loads its controller once.');
     assert.doesNotMatch(html,/document-meta|document-toc|document-aside-toggle|"@type"\s*:\s*"BlogPosting"/);
+  }
+});
+
+test('the shortcode reference publishes every example as copyable text',()=>{
+  const html=fs.readFileSync(path.join(output,'zh/p/shortcodes/index.html'),'utf8');
+  const catalog=parseToml(fs.readFileSync(path.join(root,'module/archetypes/shortcodes.toml'),'utf8'));
+  const headings=extractStartTags(html,'h2').map(tag=>extractTagAttribute(tag,'id'));
+  const snippets=extractBlocks(html,'pre').map(block=>decodeHtmlAttribute(block.inner.replace(/<[^>]*>/g,'')).trim());
+  for(const [name,item] of Object.entries(catalog)){
+    assert.ok(headings.includes(name),name);
+    assert.ok(snippets.includes(item.examples.join('\n')),name);
   }
 });
 
@@ -159,14 +170,22 @@ test('the reference site owns its columns and links to its local documentation',
   assert.equal(fs.existsSync(path.join(root,'content/changelog')),false);
   for(const prefix of prefixes) {
     const home=fs.readFileSync(path.join(output,prefix,'index.html'),'utf8');
-    const roots=extractStartTags(home,'a').map(tag=>extractTagAttribute(tag,'data-root-href')).filter(Boolean);
+    const rootLinks=extractStartTags(home,'a').filter(tag=>extractTagAttribute(tag,'data-root-href'));
+    const roots=rootLinks.map(tag=>extractTagAttribute(tag,'data-root-href'));
     for(const name of ['articles','articles-all','products','products-all','about']) {
       const pathname='/'+prefix+name+'/';
       const html=fs.readFileSync(path.join(output,pathname,'index.html'),'utf8');
       assert.equal(extractCanonicalHref(html),origin+pathname);
       assert.ok(roots.includes(pathname),'Direct child pages appear without an opt-in field: '+pathname);
     }
-    assert.ok(roots.includes('/'+prefix),'The homepage remains a root entry.');
+    assert.ok(!roots.includes('/'+prefix));
+    assert.ok(roots.includes('/'+prefix+'home/'));
+    assert.ok(rootLinks.every(tag=>!extractTagAttribute(tag,'aria-current')));
+    assert.doesNotMatch(stripRawText(home),/class=["']?reading-group|data-art=/);
+    assert.ok(extractStartTags(home,'script').every(tag=>!extractTagAttribute(tag,'src').includes('/js/art-wind.')));
+    const landing=fs.readFileSync(path.join(output,prefix,'home/index.html'),'utf8');
+    const selected=extractStartTags(landing,'a').filter(tag=>extractTagAttribute(tag,'aria-current')==='page' && extractTagAttribute(tag,'data-root-href'));
+    assert.deepEqual(selected.map(tag=>extractTagAttribute(tag,'data-root-href')),['/'+prefix+'home/']);
     assert.ok(!roots.includes('/'+prefix+'my/'));
     assert.equal(fs.existsSync(path.join(output,prefix,'my/index.html')),false);
     for(const pathname of roots)assert.ok(!pathname.includes('/_res/'),'Resource pages stay out of root navigation.');
@@ -181,7 +200,7 @@ test('the reference site owns its columns and links to its local documentation',
     for(const name of ['notes','notes-all','discover','all','catalog','catalog-all','changelog'])
       assert.equal(fs.existsSync(path.join(output,prefix,name)),false,'No retired or unconfigured column is published: '+name);
     const docs=(prefix==='zh/'?'/zh/':'/')+'articles/docs-start/';
-    assert.match(home,/data-home-art-style=(?:"wind"|wind)/,'Reference home uses wind art.');
+    assert.match(landing,/data-art=(?:"wind"|wind)/);
     assert.doesNotMatch(home,/data-wall-width=/);
     assert.ok(fs.existsSync(path.join(output,docs,'index.html')));
   }
@@ -348,7 +367,6 @@ test('Arabic pages use RTL and demonstrate mixed text without losing translation
   const english=contentFiles.filter(file=>{
     const source=path.relative(root,file).replaceAll('\\','/');
     return /(?:^|[\\/])(?:_index|index)\.md$/.test(file)
-      &&!['content/_res/_index.md','content/_res/home-art/_index.md'].includes(source)
       &&!/^content\/articles\/(?:docs-[^/]+|changelog)\//.test(source);
   });
   for(const file of english)assert.ok(fs.existsSync(file.replace(/\.md$/,'.ar.md')),'Arabic counterpart: '+file);
@@ -358,7 +376,7 @@ test('Arabic pages use RTL and demonstrate mixed text without losing translation
     assert.equal(extractTagAttribute(tag,'lang'),languages[index]);
     assert.equal(extractTagAttribute(tag,'dir'),prefix==='ar/'?'rtl':'ltr');
     if(prefix==='ar/') {
-      const main=extractBlocks(html,'main')[0].inner;
+      const main=extractBlocks(html,route?'main':'nav')[0].inner;
       assert.match(main,/[\u0600-\u06ff]/,route+' contains Arabic text');
       assert.match(extractBlocks(html,'a',tag=>extractTagAttribute(tag,'class')==='skip-link')[0].inner,/[\u0600-\u06ff]/);
     }
@@ -368,8 +386,8 @@ test('Arabic pages use RTL and demonstrate mixed text without losing translation
   for(const tag of ['ul','ol'])assert.ok(extractBlocks(main,tag).length,'Arabic product information includes '+tag);
   for(const value of ['Banyan','Hugo','Pagefind','Windows x64','macOS x64/ARM64'])assert.ok(main.includes(value),'Mixed text retains '+value);
   assert.ok(extractStartTags(article,'link').some(tag=>extractTagAttribute(tag,'hreflang')==='en'));
-  const home=fs.readFileSync(path.join(output,'ar/index.html'),'utf8');
-  assert.match(home,/data-home-art-style=(?:"wind"|wind)/);
+  const home=fs.readFileSync(path.join(output,'ar/home/index.html'),'utf8');
+  assert.match(home,/data-art=(?:"wind"|wind)/);
   assert.doesNotMatch(home,/data-wall-width=/);
 });
 

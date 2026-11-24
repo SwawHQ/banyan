@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import {waiting} from '../_shared/state.mjs';
+import {discoverSite} from '../../site/discover.mjs';
 import {builds,visit,update,rootLink,version,observe,quiet,settled} from '../_shared/update.mjs';
 
 export async function check({page,context=page.context(),server,baseUrl,options}) {
-  const pair=await builds(options),target=new URL(options.page,baseUrl).href,from=new URL(options.from,baseUrl).href;
+  const pair=await builds(options),target=new URL(options.page,baseUrl).href;
+  const source=options.from||(await discoverSite(pair.old,new URL(target).pathname)).from;
+  assert.ok(source,'No SW-enabled source with reciprocal root links to '+options.page+'.');
+  const from=new URL(source,baseUrl).href;
   assert.notEqual(from,target,'Native history checks need two pages.');
   const events=observe(page);let popup;
   try {
@@ -38,6 +42,6 @@ export async function check({page,context=page.context(),server,baseUrl,options}
     assert.equal(events.loads,1,'An ordinary link must load once without an application reload.');
     assert.equal(events.navigationRequests,1,'An ordinary link must issue only one navigation request.');
     quiet(events);
-    return {page:options.page,from:options.from,version:before,refreshLoads:1,waitingAfter:['refresh','back','forward','anchor','new-tab','link']};
+    return {page:options.page,from:source,version:before,refreshLoads:1,waitingAfter:['refresh','back','forward','anchor','new-tab','link']};
   }finally{events.stop();if(popup)await popup.close();}
 }

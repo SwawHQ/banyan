@@ -39,9 +39,9 @@ title: 我的站点
 description: 介绍本站提供的内容。
 ```
 
-`title` 用作站名；`linkTitle` 可单独设置导航文字。参考首页还设有 `params.browser_title`，它会覆盖浏览器标签标题，应一并修改或删除。各篇文章的 `description` 可覆盖首页提供的默认说明。
+`title` 用作站名；风场入口的导航文字在 `content/home/index*.md` 的 `linkTitle` 中设置。参考首页还设有 `params.browser_title`，它会覆盖浏览器标签标题，应一并修改或删除。各篇文章的 `description` 可覆盖首页提供的默认说明。
 
-首页的风场文字在艺术包中设置，步骤见[修改风场](/zh/p/appearance-customization/#修改风场)。也可切换到[文字首页](/zh/p/home-minimal/)。
+首页的风场文字在 `content/home/index*.md` 正文的短代码中设置，步骤见[修改风场](/zh/p/appearance-customization/#修改风场)。也可切换到[文字首页](/zh/p/home-minimal/)。
 
 语言在 `hugo.toml` 的 `[languages]` 中设置：
 
@@ -81,12 +81,12 @@ disableLanguages = ["ar"]
 
 | 内容 | 编辑位置 |
 | --- | --- |
-| 首页文字和链接 | 当前首页引用的艺术包，见[首页定制](/zh/p/appearance-customization/) |
+| 首页文字和链接 | `content/home/index*.md` 正文中的风场短代码，见[首页定制](/zh/p/appearance-customization/) |
 | 图标与应用名称 | `assets/site/`，见[应用名称与图标](/zh/p/web-app/) |
 | 关于、GitHub 等页面 | `content/about/`、`content/github/` 等页面的正文 |
 | 文章来源链接 | `hugo.toml` 中的 `params.content_source`；改为自己的仓库或删除该配置 |
 
-Banyan 文档与版本说明可以保留，也可以删除。删除前，把首页艺术包中的文档链接、Powered by 中的版本说明链接改为 Banyan 官网对应地址。删除产品说明时，同时处理引用它的 `_map.toml`。
+Banyan 文档与版本说明可以保留，也可以删除。删除前，把 `content/home/index*.md` 正文中的文档链接、Powered by 中的版本说明链接改为 Banyan 官网对应地址。删除产品说明时，同时处理引用它的 `_map.toml`。
 
 ## 检查设置
 

@@ -12,7 +12,9 @@ const staticState=page=>page.evaluate(()=>{
   while(scroller&&scroller!==document.scrollingElement
     &&!(/auto|scroll/.test(getComputedStyle(scroller).overflowX)&&scroller.scrollWidth>scroller.clientWidth+1))scroller=scroller.parentElement;
   scroller??=document.scrollingElement;
-  return {direction:document.documentElement.dir,flow:getComputedStyle(document.querySelector('.page-shell')).direction,
+  const shell=document.querySelector('.page-shell');
+  return {direction:document.documentElement.dir,flow:getComputedStyle(shell).direction,navigationOnly:shell.id==='main',
+    onlyRootColumn:columns.length===1&&columns[0].contains(first)&&first.matches('[data-root-navigation]'),
     first:rect(first),last:rect(columns.at(-1)),viewport,scroller:scroller.tagName,
     x:scroller===document.scrollingElement?(view?.pageLeft??scrollX):scroller.scrollLeft,
     edge:parseFloat(getComputedStyle(document.body).paddingInlineStart),
@@ -20,6 +22,7 @@ const staticState=page=>page.evaluate(()=>{
 });
 
 function assertStaticStart(state) {
+  if(state.navigationOnly)assert.ok(state.onlyRootColumn,'The navigation-only home must show exactly one root navigation column.');
   assert.ok(state.first.left>=-1&&state.first.right<=state.viewport+1,
     'Static first content column must be visible on arrival: '+JSON.stringify(state));
   const start=state.flow==='rtl'?state.viewport-state.first.right:state.first.left;
@@ -76,7 +79,8 @@ export async function checkStaticLayout({browser,baseUrl,options}) {
         if(input)assert.ok(endVisible(current),'Native horizontal input must reveal the static final column: '+JSON.stringify(current));
         assert.equal(page.url(),url,'Static horizontal input must not activate a link.');
         noScript.push({width,mobile,initial,native:{input,gestures,state:current,
-          ...(input?{}:{skipReason:'Native mobile gestures are unavailable in Playwright WebKit.'})},...await assertCanvasEnd(page)});
+          ...(input?{}:{skipReason:'Native mobile gestures are unavailable in Playwright WebKit.'})},
+          ...(initial.navigationOnly?{}:await assertCanvasEnd(page))});
       }
     } finally {try{await cdp?.detach();}finally{await context.close();}}
   }
@@ -90,6 +94,11 @@ export async function check({page,baseUrl,options}) {
     await page.goto('about:blank');
     const response=await page.goto(baseUrl+options.page,{waitUntil:'load'});
     assert.ok(response?.ok(),'Page must return a successful response.');await waitForBrowse(page);await afterPaint(page);
+    if(await page.locator('.page-shell#main').count()) {
+      const home=await staticState(page);assertStaticStart(home);
+      results.push({width,height:options.height??900,...home,columns:[],rootCount:await page.locator('[data-root-href]').count()});
+      continue;
+    }
     const state=await page.evaluate(()=>{
       const view=window.visualViewport,rtl=getComputedStyle(document.documentElement).direction==='rtl',viewport=view?.width||innerWidth,rect=node=>{
         const box=node.getBoundingClientRect(),x=box.x-(view?.offsetLeft||0),right=box.right-(view?.offsetLeft||0);

@@ -163,6 +163,28 @@ test('native drag opening rejects incompatible options and engines',{timeout:300
 });
 
 for(const {name,suffix} of engines){
+test(name+' clamps the canvas position when collapsing to a shorter list',async()=>{
+  const server=await createStaticSiteServer(output);let browser;
+  try {
+    await server.start();
+    const type=name==='chromium'?loadChromium():loadWebkit();
+    browser=await type.launch({executablePath:type.executablePath()});
+    const page=await browser.newPage({viewport:{width:390,height:900}});
+    const list=server.getBaseUrl()+'/all/';
+    await page.goto(server.getBaseUrl()+route);await waitForBrowse(page);
+    const before=await page.locator('[data-breadcrumb-column]').last().locator('[data-list-entry][aria-current="page"]').evaluate(link=>{
+      link.focus({preventScroll:true});
+      window.scrollTo({left:document.scrollingElement.scrollWidth,behavior:'instant'});
+      return scrollX;
+    });
+    await Promise.all([page.waitForURL(list),page.keyboard.press('Enter')]);
+    await waitForBrowse(page);
+    const {max,x}=await page.evaluate(()=>({max:document.scrollingElement.scrollWidth-innerWidth,x:scrollX}));
+    assert.ok(before>max&&max>0,'The source list must have a shorter scroll range.');
+    assert.ok(Math.abs(x-max)<=1,'Collapse must stop at the end of the shorter canvas.');
+  } finally {await browser?.close();await server.stop();}
+});
+
 test(name+' opens sorted collections and observes initial layout with held scripts',{timeout:30000},()=>{
   for(const command of commands){
     const article=command==='open'?new URL(route,'http://fixture').pathname:route;
@@ -174,7 +196,7 @@ test(name+' opens sorted collections and observes initial layout with held scrip
     for(const state of report.details.cases){
       assert.ok(state.first.scriptsHeld>0);assert.equal(state.final.reservedColumnsRetained,true);
       if(command==='open'){
-        assert.equal(state.from,'/all/#sorts=name-desc');assert.ok(state.current.readingY>0);assert.equal(state.history.back,state.before.canvasOffsetX);
+        assert.equal(state.from,'/all/#sorts=name-desc');assert.equal(state.collapsed,state.from);assert.equal(state.history.back,state.before.canvasOffsetX);
         assert.equal(new URLSearchParams(new URL(state.target,'http://fixture').hash.slice(1)).get('sorts'),'name-desc');
       }
     }
@@ -279,13 +301,11 @@ test(name+' rejects a missing early position and an unconsumed navigation record
   assert.equal(pending.status,1);assert.match(pending.stderr,/one-navigation record must be consumed/);
 });
 
-test(name+' rejects current-entry reloads, reading resets and history overrides',{timeout:20000},()=>{
-  const current=fixture('current-'+name);script(current,"document.addEventListener('click',event=>{if(event.target.closest('[data-slot=breadcrumb] [aria-current=page]'))document.querySelector('.page-content').scrollTop=0;},true);");
-  const reset=cli('open'+suffix,['--from','/all/','--page','/d/canvas-first/','--widths','390'],current);
-  assert.equal(reset.status,1);assert.match(reset.stderr,/preserve the reading position/);
-  const reloaded=fixture('reloaded-'+name);script(reloaded,"document.addEventListener('click',event=>{if(event.target.closest('[data-slot=breadcrumb] [aria-current=page]')){event.preventDefault();location.reload();}},true);");
-  const again=cli('open'+suffix,['--from','/all/','--page','/d/canvas-first/','--widths','390'],reloaded);
-  assert.equal(again.status,1);assert.match(again.stderr,/new document|retain the document|Current article click failed/);
+test(name+' rejects a lost sort on collapse and history overrides',{timeout:20000},()=>{
+  const current=fixture('current-'+name);
+  script(current,"document.addEventListener('click',event=>{if(event.target.closest('[data-slot=breadcrumb] [aria-current=page]')){event.preventDefault();location.assign('/all/');}},true);");
+  const reset=cli('open'+suffix,['--from','/all/#sorts=name-desc','--page','/d/canvas-first/','--widths','390'],current);
+  assert.equal(reset.status,1);assert.match(reset.stderr,/Collapsing must restore/);
   const history=fixture('history-'+name);script(history,"history.scrollRestoration='manual';");
   const manual=cli('open'+suffix,['--from','/all/','--page','/d/canvas-first/','--widths','390'],history);
   assert.equal(manual.status,1);assert.match(manual.stderr,/browser must own history/);
@@ -339,7 +359,7 @@ test(name+' rejects late root repair even when settled selection is correct',{ti
   const directory=fixture('root-late-'+name),article=path.join(directory,'d/root-only/index.html');
   const html=fs.readFileSync(article,'utf8');let removed=0;
   fs.writeFileSync(article,html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/g,(tag,code)=>{
-    if(code.includes('[data-root-href]')){removed++;return '';}
+    if(code.includes('querySelectorAll("[data-root-href]")')){removed++;return '';}
     return tag;
   }));assert.equal(removed,1,'Remove only the real early root-selection script.');
   write(path.join(directory,'late-root.js'),"document.querySelectorAll('[data-root-href]').forEach(link=>{const current=link.dataset.rootHref==='/all/';link.classList.toggle('is-current',current);if(current)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});");

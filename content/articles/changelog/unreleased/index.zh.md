@@ -12,6 +12,9 @@ lastmod: 2026-11-24
 - 可在 `hugo.toml` 设置 `params.manifest.enabled = false` 关闭应用清单。Apple touch 图标改名为 `apple-touch-icon.png`，默认清单使用 `pwa-192.png`、`pwa-256.png` 和 `pwa-512.png`。
 - GitHub 页面头像改名为 `assets/site/avatar.github.svg`，替换此图即可更新各语言页面的头像。
 - 界面字典移至站点根目录 `i18n/`，每条译文使用一行 `键 = "译文"`。
-- 部署开关和 SW 内容检查间隔移至 `assets/deploy/settings.toml`，站点跳转规则移至 `assets/deploy/redirects.toml`。Module 提供默认缓存与预取策略。
+- 部署开关和 SW 内容检查间隔移至 `assets/deploy/settings.toml`，站点跳转规则移至 `assets/deploy/redirects.toml`。升级时可按 `module/archetypes/assets/deploy/settings.toml` 核对部署设置。Module 提供默认缓存与预取策略。
 - 外部资源清单改用 `assets/deploy/external-resources.toml`。运行 `swban sync/resources` 下载资源，加 `--force` 可替换已有文件。
 - 已移除 `centered-image`。文章内图片可写作 `![说明](photo.jpg)`，按正文默认方式对齐和缩放。
+- 将引用风场艺术包的 `home-art` 改为 `art-wind`，把各语言的风场参数写入短代码正文的 JSON。文字首页直接使用 Markdown。
+- 各语言根地址只显示导航列，打开时没有选中项。风场内容移至 `content/home/index*.md`，选择「首页」即可打开。
+- 再次点击导航列中已选中的条目可收起右侧栏目，返回该列表并保留排序。

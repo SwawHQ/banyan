@@ -1,5 +1,5 @@
 {{- $model := partial "./model.html" . -}}
-<nav class="column-panel" data-root-navigation data-default-root-href="{{ $model.default_href }}" aria-label="{{ partial "system-metadata/site/title.html" .Site }}">
+<nav class="column-panel" data-root-navigation data-root-url="{{ .Site.Home.RelPermalink }}" data-default-root-href="{{ $model.default_href }}" aria-label="{{ partial "system-metadata/site/title.html" .Site }}">
   <div class="item-list">
   {{- range $model.items -}}
     {{- if and (eq $.Layout "page-search") (eq .href $.RelPermalink) -}}

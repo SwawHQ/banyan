@@ -297,6 +297,7 @@ test('external navigation handles slow, stale, failed and offline column request
       const slow=await sourceData(page,slowSource),fast=await sourceData(page,fastSource);
       await waitForCondition(page,()=>document.documentElement.hasAttribute('data-breadcrumb-pending'));
       await page.evaluate(hash=>{location.hash=hash;},routeFor(fastSource).split('#')[1]);
+      await page.locator('[data-breadcrumb-collection-href='+JSON.stringify(fast.hrefs.at(-1))+']').waitFor();
       await waitForBrowse(page);
       assert.deepEqual((await snapshot(page)).columns.map(column=>column.href),fast.hrefs);
       const finished=page.waitForResponse(response=>new URL(response.url()).pathname===slow.urls.at(-1));
@@ -304,6 +305,7 @@ test('external navigation handles slow, stale, failed and offline column request
       await afterPaintIfReady(page);
       assert.deepEqual((await snapshot(page)).columns.map(column=>column.href),fast.hrefs,'An older response must not replace the new source.');
       await page.evaluate(hash=>{location.hash=hash;},routeFor(slowSource).split('#')[1]);
+      await page.locator('[data-breadcrumb-collection-href='+JSON.stringify(slow.hrefs.at(-1))+']').waitFor();
       await waitForBrowse(page);await afterPaintIfReady(page);
       assert.deepEqual((await snapshot(page)).columns.map(column=>column.href),slow.hrefs);
       for(const url of new Set([...slow.urls,...fast.urls]))assert.equal(requests.filter(value=>value===url).length,1,
@@ -658,7 +660,8 @@ test('external navigation handles slow, stale, failed and offline column request
         assert.deepEqual(await tab.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname)),
           column.rows.map(row=>row.key),'Opening the parent entry in a new tab preserves the exact row order.');
       } finally {await tab.close();}
-      await parent.evaluateAll((nodes,href)=>nodes.find(node=>node.href===href).click(),href);
+      const currentRow=page.locator('[data-breadcrumb-collection-href='+JSON.stringify(column.href)+'] a[aria-current="page"]');
+      await currentRow.click();
       await page.waitForURL(href);await waitForBrowse(page);await afterPaintIfReady(page);
       assert.deepEqual(await page.locator('main [data-list-entry]').evaluateAll(nodes=>nodes.map(node=>new URL(node.href).pathname)),column.rows.map(row=>row.key));
       await page.goto(url,{waitUntil:'load'});await waitForBrowse(page);await afterPaintIfReady(page);
@@ -668,6 +671,11 @@ test('external navigation handles slow, stale, failed and offline column request
     assert.equal(await page.locator('[data-root-href="/articles/"]').getAttribute('href'),'/articles/','The old root entry must lose the previous lineage sort.');
     assert.equal(await page.locator('[data-root-href="/articles-all/"]').getAttribute('href'),'/articles-all/#sorts=name-desc');
     await assertRootLinks(page);
+    await page.locator('[data-breadcrumb-collection-href="/articles-all/"] a[aria-current="page"]').click();
+    await page.waitForURL(baseUrl+'/articles-all/#sorts=name-desc');
+    await page.locator('[data-root-href="/articles-all/"]').click();
+    await page.waitForURL(baseUrl+'/');
+    assert.equal(await page.locator('[data-root-navigation] [aria-current]').count(),0);
     return {columns:columns.length,newTabs:true,sourceSwitch:true};
   }});
   scenarios.push({id:'mixed-defaults-and-native-sort-links',kind:'single',serviceWorkers:'block',async run({page,context,baseUrl}){

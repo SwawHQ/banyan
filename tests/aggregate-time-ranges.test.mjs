@@ -78,7 +78,7 @@ function articleHrefs(names,prefix=''){return names.map(name=>prefix+'/p/range-'
 before(()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));
   source=path.join(work,'site');output=path.join(work,'public');
-  fixtureSiteFiles(source);fixtureSitePages(source,['appearance','language','my','_res','rss','powered-by']);
+  fixtureSiteFiles(source);fixtureSitePages(source,['appearance','language','my','rss','powered-by']);
   fs.mkdirSync(path.join(source,'themes'),{recursive:true});
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
   config=path.join(source,'hugo.toml');

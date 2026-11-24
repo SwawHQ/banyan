@@ -6,6 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {extractStartTags,extractTagAttribute} from '../.agents/skills/swaw-banyan/tasks/_shared/html/markup.mjs';
 import {discoverSite} from '../.agents/skills/swaw-banyan/tasks/check/browser/site/discover.mjs';
 import {fixtureEnvironment,fixtureContentDirectory,fixtureSiteFiles,fixtureSitePages,writeDelivery,fixtureDelivery,serviceWorkerPolicy} from './_shared/hugo.mjs';
 import {toolExecutable} from '../.agents/skills/swaw-banyan/tasks/_shared/tools/operations.mjs';
@@ -29,7 +30,7 @@ before(()=>{
   work=fs.mkdtempSync(path.join(parent,'banyan-browser-site-'));
   source=path.join(work,'source with spaces 树');
   fixtureSiteFiles(source);
-  fixtureSitePages(source,['appearance','language','my','_res','rss','powered-by']);
+  fixtureSitePages(source,['appearance','language','my','rss','powered-by']);
   const config='disableLanguages = ["ar"]\n'+fs.readFileSync(path.join(root,'hugo.toml'),'utf8');
   write(source,'hugo.toml',config);
   writeDelivery(path.join(source,'assets'),fixtureDelivery(serviceWorkerPolicy('enable')));
@@ -39,7 +40,7 @@ before(()=>{
   write(source,'content/powered-by/index.md',panel);
   fixtureContentDirectory(path.join(source,'content'));
   for(const suffix of ['','.zh','.ar']) {
-    write(source,'content/_index'+suffix+'.md','---\ntitle: Independent site\ndescription: A browser discovery fixture.\nlayout: page-home\n---\n\n{{< home-art "/_res/home-art/wind" >}}\n');
+    write(source,'content/_index'+suffix+'.md','---\ntitle: Independent site\ndescription: A browser discovery fixture.\nlayout: page-home\n---\n');
     for(const [name,title,date] of [['first','First Article','2026-01-01'],['second','Second Article','2026-01-02']])
       write(source,'content/d/'+name+suffix+'.md','---\ntitle: '+title+'\nurl: p/'+name+'-article/\nweight: 2\ndate: '+date+'\n---\n\nArticle for collection sorting.');
   }
@@ -54,7 +55,12 @@ test('site discovery uses actual translated paths, source links and sort data',a
   const found=await discoverSite(build);
   assert.equal(found.panel,'/prefs/update/');
   assert.equal(found.collection,'/all/','The sorting check needs article links with an explicit source.');
-  assert.equal(found.offline,'/');assert.ok(found.prose);assert.equal(found.from,'/');
+  assert.equal(found.offline,'/');assert.ok(found.prose);
+  assert.ok(found.from && found.from!==found.panel);
+  for(const [source,target] of [[found.from,found.panel],[found.panel,found.from]]) {
+    const html=fs.readFileSync(path.join(build,source,'index.html'),'utf8');
+    assert.ok(extractStartTags(html,'a').some(tag=>extractTagAttribute(tag,'data-root-href')===target));
+  }
   const tiny=path.join(work,'tiny');
   write(tiny,'index.html','<html lang=en><body><main class=slot-main>Home</main></body></html>');
   write(tiny,'reader/deep/index.html','<html lang=en><body><article class=prose>Reader</article></body></html>');

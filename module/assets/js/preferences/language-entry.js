@@ -2,7 +2,7 @@
 const entry = document.querySelector('a[data-language-entry]');
 entry?.addEventListener('click', event => {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (entry.pathname === location.pathname) { event.preventDefault(); return; }
+    if (entry.matches('[aria-current="page"]')) return;
     const fields = new URLSearchParams();
     for (const alternate of document.querySelectorAll('link[rel="alternate"][hreflang]:not([hreflang="x-default"])')) {
         fields.set(alternate.hreflang, new URL(alternate.href).pathname);

@@ -14,7 +14,7 @@ Like a banyan tree, a single article can branch into multiple categories while k
 ### 1. Multi-Dimensional Structure & Views
 - **Multi-dimensional categories**: Organize content with nested sections and `_map.toml` references so one canonical article appears across multiple categories while preserving navigation lineage and per-column sorting.
 - **Multiple views**: Built-in Finder-style Miller column navigation, article lists, product lists, time-range aggregate lists, and image walls (grid, masonry, and equal-height layouts with horizontal or vertical scrolling).
-- **Multilingual & customizable**: Built-in multilingual and RTL support, light/dark modes, swappable color palettes, and pluggable home-art bundles.
+- **Multilingual & customizable**: Built-in multilingual and RTL support, light/dark modes, swappable color palettes, and a wind scene shortcode for page content.
 
 ### 2. Delivery-Grade Static Engineering
 - **Lean & fast**: Hugo-generated static HTML with zero frontend frameworks, zero web fonts, and built-in Pagefind full-text search.

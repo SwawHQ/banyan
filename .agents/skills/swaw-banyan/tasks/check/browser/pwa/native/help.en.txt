@@ -7,7 +7,7 @@ swban check/browser/pwa/native [dir] [--headed] [--trace] [--out <dir>] [--timeo
   --timeout <ms>  Browser launch and individual action timeout; default: 15000
   --next <dir>    Next SW-enabled build; sw.js must differ
   --page <path>   Update panel path; default: /powered-by/
-  --from <path>   Linked source page; default: /
+  --from <path>   Source page; defaults to a page in the old build with reciprocal links to the update panel
 
 swban check/browser/pwa/native ./old --next ./new
-swban check/browser/pwa/native ./old --next ./new --trace --out ./browser-report
+swban check/browser/pwa/native ./old --next ./new --from /home/ --trace --out ./browser-report

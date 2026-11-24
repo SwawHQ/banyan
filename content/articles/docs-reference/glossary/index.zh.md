@@ -64,7 +64,7 @@ description: 统一项目用语，快速了解页面结构、内容分类、配�
 | 页面元数据 | 页面文件头部声明的标题、布局及自定义配置。 | front matter、自定义字段 `params` |
 | 页面配置继承 | 在上级页面声明默认配置，供指定类型的后代页面使用。 | `cascade`、`cascade.params` |
 | 页面区域开关 | 选择页面装配的面包屑及文章辅助内容，同时控制对应的 SEO 数据。 | `params.slots` 中的 `breadcrumb`、`meta` |
-| 首页艺术包 | 集中维护首页正文、模板、样式和脚本的页面包。 | `home-art`、`content/_res/home-art/` |
+| 风场 | 在页面正文中显示动态文字和链接的交互场景。 | `art-wind` 短代码 |
 
 基本设置见[站点配置](/zh/p/site-configuration/)，外观设置见[首页和外观](/zh/articles/docs-appearance/)。
 

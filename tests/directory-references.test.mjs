@@ -42,7 +42,7 @@ before(()=>{
   fs.mkdirSync(parent,{recursive:true});work=fs.mkdtempSync(path.join(parent,'run-'));
   source=path.join(work,'site');output=path.join(work,'public');
   fixtureSiteFiles(source);
-  fixtureSitePages(source,['appearance','language','my','_res','rss','powered-by']);
+  fixtureSitePages(source,['appearance','language','my','rss','powered-by']);
   fs.mkdirSync(path.join(source,'themes'),{recursive:true});
   fs.cpSync(path.join(repository,'module'),path.join(source,'themes/banyan'),{recursive:true});
   write(path.join(source,'hugo.toml'),'theme="banyan"\nbaseURL="https://example.test/"\ndefaultContentLanguage="en"\nenableRobotsTXT=true\nprintPathWarnings=true\npanicOnWarning=true\n'+

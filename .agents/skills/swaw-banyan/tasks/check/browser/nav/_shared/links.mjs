@@ -1,12 +1,6 @@
 import assert from 'node:assert/strict';
 import {readColumns,columnSort} from '../../breadcrumb/_shared/page.mjs';
 
-export const readLanguageHome=page=>page.locator('[data-root-navigation] [data-root-href]').evaluateAll(nodes=>{
-  const paths=[...new Set(nodes.map(node=>new URL(node.dataset.rootHref,location.href))
-    .filter(url=>url.origin===location.origin).map(url=>url.pathname))];
-  return paths.find(path=>paths.every(other=>other.startsWith(path)))||'';
-});
-
 export async function assertRootLinks(page) {
   const columns=await readColumns(page);
   const links=await page.locator('[data-root-href]').evaluateAll(nodes=>nodes.map(node=>({

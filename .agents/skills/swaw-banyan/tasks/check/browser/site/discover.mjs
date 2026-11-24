@@ -49,7 +49,7 @@ function inspect(page,basePath) {
     debug:Boolean(rules?.prefetch?.length&&has(body,'data-prefetch-debug')&&extractStartTags(text,'pre').some(tag=>attr(tag,'id')==='prefetch-debug-support'))};
 }
 
-export async function discoverSite(directory) {
+export async function discoverSite(directory,panelRoute) {
   const {root,pages:html}=await readPages(directory);
   const location=siteLocation(html);
   const pages=html.filter(page=>!isRedirectPage(page.text)&&!/(?:^|\/)404\.html$/.test(page.relativePath)).map(page=>inspect(page,location.basePath));
@@ -58,7 +58,7 @@ export async function discoverSite(directory) {
   pages.sort((a,b)=>Number(b.language===home.language)-Number(a.language===home.language)||a.route.length-b.route.length||a.route.localeCompare(b.route));
   const byRoute=new Map(pages.map(page=>[page.route,page]));
   const prose=pages.find(page=>page.prose),collection=pages.find(page=>page.sortable);
-  const panel=pages.find(page=>page.panel&&page.version&&page.worker&&page.roots.some(route=>{
+  const panel=pages.find(page=>(!panelRoute||page.route===panelRoute)&&page.panel&&page.version&&page.worker&&page.roots.some(route=>{
     const source=byRoute.get(route);return source&&source.route!==page.route&&source.worker&&source.roots.includes(page.route);
   }));
   const from=panel&&pages.find(page=>page.route!==panel.route&&page.worker&&page.roots.includes(panel.route)&&panel.roots.includes(page.route));

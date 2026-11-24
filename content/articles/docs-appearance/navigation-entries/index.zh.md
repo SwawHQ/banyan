@@ -8,7 +8,7 @@ description: 添加根导航入口，修改名称、顺序和显示状态。
 
 ## 添加入口
 
-根导航列显示当前语言的首页和已发布的直属页面。添加文章分类时，按[创建栏目](/zh/p/directories/)在 `content/` 下建立顶层栏目。添加独立说明页时，可参考现有的 `content/about/`。
+根导航列显示当前语言已发布的直属页面，包括 `content/home/`。添加文章分类时，按[创建栏目](/zh/p/directories/)在 `content/` 下建立顶层栏目。添加独立说明页时，可参考现有的 `content/about/`。
 
 例如，新建 `content/contact/index.zh.md`：
 
@@ -25,6 +25,10 @@ params:
 ```
 
 在页面元数据之后写正文。需要其他语言入口时，在同一目录添加对应的 `index*.md`。
+
+## 收起导航列
+
+再次点击根导航中已选中的条目，回到当前语言的根地址。在后续导航列中，再次点击已选中的条目，会回到该列的列表并保留排序。复制链接或在新标签页打开，仍会进入条目本身。
 
 ## 修改名称和顺序
 
@@ -50,7 +54,7 @@ build:
 
 页面仍可通过网址访问，但会从内容列表中隐藏；搜索引擎收录另见[收录设置](/zh/p/discovery/)。
 
-要隐藏首页上的整列根导航，在 `content/_index*.md` 中设置 `params.show_navigation: false`。恢复显示时改为 `true`。
+使用图片墙布局时，要隐藏根导航，在 `content/_index*.md` 中设置 `params.show_navigation: false`。恢复显示时改为 `true`。
 
 ## 添加说明页链接
 

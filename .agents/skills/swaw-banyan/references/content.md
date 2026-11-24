@@ -6,27 +6,25 @@ collection membership. Site configuration is covered in
 
 ## Home page
 
-Create `content/_index.md` for each language's home. This example uses an art
-bundle; omit the shortcode for a home without art:
+Set `layout: page-home` in `content/_index.md` for the root navigation. The root contains site metadata and opens with no selection. Add a separate entry at `content/home/index.md` for each language:
 
 ```markdown
 ---
-title: My site
-description: Describe this site.
+title: Welcome
+description: Explore this site and its guides.
+url: home/
 layout: page-home
-params:
-  show_navigation: true
+weight: 10
 ---
 
-{{< home-art "/_res/home-art/wind" >}}
+{{< art-wind >}}{"brand_line":"Start here","signals":[{"name":"Guides","url":"https://banyan.swaw.com/articles/docs-start/"}]}{{< /art-wind >}}
 ```
 
-The home page's `params.show_navigation` controls the first navigation column
-and defaults to `true`, including homes without a `home-art` shortcode.
+Use Markdown or a shortcode for this entry’s content.
 
 ## Image walls
 
-For an image-wall home, use this front matter and omit the art shortcode:
+For an image-wall home, use this front matter:
 
 ```yaml
 layout: page-collection-wall-all
@@ -59,10 +57,9 @@ on touch screens). Scrolling is `horizontal` or `vertical`.
 Put `cover.*` in an article bundle, or set article `params.wall.cover` to a
 bundle resource name. Optional `params.wall.alt` supplies image text;
 `params.wall.kind: video` adds a video marker and still links to the article.
-Restore `page-home`, remove `aggregate` and `wall`, and restore the art shortcode
-to switch back. The reference site retains both art bundles.
+Restore `page-home` at the root and remove `aggregate` and `wall` to switch back to navigation.
 
-For home navigation and art bundles, read [Home art](home-art.md).
+For wind scenes, read [Wind scenes](home-art.md).
 
 ## Collections and article layouts
 

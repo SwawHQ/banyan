@@ -1,0 +1,9 @@
+{{- $catalog := os.ReadFile "archetypes/shortcodes.toml" | transform.Unmarshal -}}
+{{- range $name, $item := $catalog -}}
+{{ printf "\n## %s\n\n%s\n\n" $name $item.description }}
+{{ with $item.positional }}{{ printf "位置参数：`%s`\n\n" (delimit . "`、`") }}{{ end }}
+{{ with $item.named }}{{ printf "命名参数：`%s`\n\n" (delimit . "`、`") }}{{ end }}
+{{ with $item.inner }}{{ printf "包裹内容：%s。\n\n" . }}{{ end }}
+{{ range $item.requires }}{{ printf "%s\n\n" . }}{{ end }}
+{{ printf "````text\n%s\n````\n\n" (delimit $item.examples "\n") | safeHTML }}
+{{ end }}

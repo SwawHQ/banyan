@@ -1,69 +1,68 @@
 # Author-facing arguments and content requirements. A trailing ? marks an optional argument. Use either named or positional arguments.
 
-# 在正文中插入本地资源，可显示图片或生成文件链接。
+[art-wind]
+description = "在页面正文中插入交互风场。"
+inner = "JSON 对象。可填 heading、brand_line、signals，以及 signal_drift_seconds、signal_launch_gap_seconds、wind_field_start_offset_rem、signal_guide_chance。signals 可包含文字或带 name、url、primary 的条目"
+examples = ['{{< art-wind >}}{"brand_line":"Start here","signals":[{"name":"Docs","url":"/docs/"}]}{{< /art-wind >}}']
+
 [asset]
+description = "在正文中插入本地资源，可显示图片或生成文件链接。"
 positional = ["src", "text?"]
 named = ["src", "alt?", "text?", "title?", "class?", "width?", "height?", "download?"]
-requires = ["A local resource. Set alt to show an image. For a link, text defaults to the file name."]
+requires = ["使用本地资源。填写 alt 时显示图片；生成文件链接时，text 默认使用文件名。"]
 examples = ['{{< asset src="site/favicon.link.svg" alt="Logo" width="16" >}}', '{{< asset "manual.pdf" "Manual" >}}']
 
-# 创建可展开的折叠区，summary 是读者点击的标题。
 [details-start]
+description = "创建可展开的折叠区，summary 是读者点击的标题。"
 named = ["summary"]
-requires = ["Close with details-end."]
+requires = ["用 details-end 结束折叠区。"]
 examples = ['{{< details-start summary="More" >}}']
 
-# 结束折叠区，后续正文始终可见。
 [details-end]
-requires = ["Close an open details-start."]
+description = "结束折叠区，后续正文始终可见。"
+requires = ["与前面的 details-start 配对。"]
 examples = ['{{< details-end >}}']
 
-# 在首页嵌入指定的艺术包。
-[home-art]
-positional = ["bundle"]
-requires = ["Once on the page-home homepage. Use a /_res/ leaf bundle with build.render: never and params.template."]
-examples = ['{{< home-art "/_res/home-art/wind" >}}']
-
-# 显示构建本站所用的 Hugo 版本。
 [hugo-version]
+description = "显示构建本站所用的 Hugo 版本。"
 examples = ['{{< hugo-version >}}']
 
-# 按名称插入主题图标。
 [icon]
+description = "按名称插入主题图标。"
 positional = ["name"]
 examples = ['{{< icon "folder" >}}']
 
-# 将包裹的文字排为图注。
 [md-caption]
-inner = "Caption text"
+description = "将包裹的文字排为图注。"
+inner = "图注文字"
 examples = ['{{< md-caption >}}Figure 1{{< /md-caption >}}']
 
-# 在相邻内容之间留出竖向空白。
 [md-spacer]
+description = "在相邻内容之间留出竖向空白。"
 examples = ['{{< md-spacer >}}']
 
-# 将包裹的文字显示为在新标签页打开的链接。
 [new-tab]
+description = "将包裹的文字显示为在新标签页打开的链接。"
 named = ["href"]
-inner = "Link text"
+inner = "链接文字"
 examples = ['{{< new-tab href="/docs/" >}}Documentation{{< /new-tab >}}']
 
-# 在正文中显示一至两个操作链接；左侧可刷新页面（reload），在 page-my 布局中还可返回上一页（back）。
 [page-actions]
+description = "在正文中显示一至两个操作链接；左侧可刷新页面（reload），在 page-my 布局中还可返回上一页（back）。"
 named = ["left_href", "left_label", "left_action?", "right_href?", "right_label?"]
-requires = ["Supply both right_href and right_label for a second link."]
+requires = ["添加第二个链接时，同时填写 right_href 和 right_label。"]
 examples = ['{{< page-actions left_href="/" left_label="Back" left_action="back" >}}']
 
-# 显示当前语言首页的 RSS 订阅链接。
 [rss-link]
-requires = ["The current language homepage publishes RSS."]
+description = "显示当前语言首页的 RSS 订阅链接。"
+requires = ["当前语言的首页须发布 RSS。"]
 examples = ['{{< rss-link >}}']
 
-# 输出当前语言首页的完整网址。
 [site-root]
+description = "输出当前语言首页的完整网址。"
 examples = ['{{< site-root >}}']
 
-# 显示本站使用的 Banyan 主题版本，可为本地开发版指定显示文字。
 [theme-version]
+description = "显示本站使用的 Banyan 主题版本，可为本地开发版指定显示文字。"
 named = ["local?"]
 examples = ['{{< theme-version local="Local development" >}}']

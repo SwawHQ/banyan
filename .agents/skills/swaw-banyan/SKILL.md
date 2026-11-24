@@ -1,6 +1,6 @@
 ---
 name: swaw-banyan
-description: 协助安装、定制、开发、测试和部署基于 Swaw Banyan Hugo Theme 的站点，并准备所需的本地工具。
+description: 协助安装、定制、升级、开发、测试和部署基于 Swaw Banyan Hugo Theme 的站点，并准备所需的本地工具。
 license: MIT
 metadata:
   version: "0.2.0"
@@ -20,6 +20,7 @@ swban server              #预览站点并建立搜索索引
 swban server/lan          #允许局域网预览
 swban build               #构建站点和搜索索引
 swban doctor [目录]       #检查工具和站点主题
+swban help upgrade/git    #查看版本比对与升级步骤
 swban help                #查看常用命令
 swban help/zh 1           #查看一级分类
 swban help/zh check 2     #查看 check 下两层命令
@@ -30,7 +31,7 @@ swban <command>/help      #查看入口说明，包括原生工具入口
 
 - 站点在根目录的 `content/` 维护全部页面，在 `assets/site/` 维护品牌资源，在 `assets/deploy/external-resources.toml` 声明外部资源，在 `i18n/` 维护界面字典。Module 提供布局、脚本、同名页面原型、图标库、三套配色，以及应用清单和 robots.txt 模板。站点可用同路径文件覆盖默认文件。
 - Hugo 原生 front matter 字段保留在顶层。自定义字段放在 `params` 中，继承默认值放在 `cascade.params` 中；模板通过 `.Params` 读取自定义字段。
-- 公共导航路径的每级栏目都使用 `_index.md`，并输出 HTML。内部页放在 `content/_res/`，由共用 `_index.md` 隐藏其导航和站点发现入口。
+- 公共导航路径的每级栏目都使用 `_index.md`，并输出 HTML。需要内部页时，可建立 `content/_res/_index.md`，用级联配置隐藏其导航和站点发现入口。
 - 面包屑列由浏览器加载共享的 `.js` 导航片段；支持原生绘制阻塞的浏览器在正常加载路径中等待填充后首绘。根导航、栏目主列表和正文保留在页面 HTML 中。
 - 部署开关在 `assets/deploy/settings.toml`，重定向在 `assets/deploy/redirects.toml`，Module 默认策略在 `module/assets/deploy/policy.toml`；`_headers` 和 `edgeone.json` 是 Hugo 生成的产物。
 
@@ -43,7 +44,7 @@ swban <command>/help      #查看入口说明，包括原生工具入口
 | 安装站点或接入 Module | [安装说明](references/install.md) |
 | 升级、降级或测试本地 Module | [版本维护](references/upgrade.md) |
 | 修改根配置、语言或内部页面 | [站点配置](references/site-configuration.md) |
-| 修改首页或制作 home-art 艺术包 | [首页与艺术包](references/home-art.md) |
+| 在页面中使用风场或自定义艺术效果 | [页面风场](references/home-art.md) |
 | 配置图片墙、封面和滚动方式 | [图片墙](references/content.md#image-walls) |
 | 修改站名、描述或爬虫规则 | [站点信息与发现](references/site-configuration.md#site-identity-and-discovery) |
 | 配置栏目、汇总列表、汇总时间范围、RSS 或页面区域开关 | [栏目与文章布局](references/content.md#collections-and-article-layouts) |

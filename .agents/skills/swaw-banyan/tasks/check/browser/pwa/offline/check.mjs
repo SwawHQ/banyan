@@ -87,7 +87,7 @@ export async function check({page,baseUrl,options}) {
     assert.equal(page.url(),expected,'Offline reload must retain the selected page.');
     assert.equal(await page.title(),title,'The offline page must keep its title.');
     assert.equal(await page.locator('html').getAttribute('lang'),language,'The offline page must keep its language.');
-    assert.ok(await page.locator('main').isVisible(),'The offline page must render its main content.');
+    assert.ok(await page.getByRole('main').isVisible(),'The offline page must render its main content.');
     assert.deepEqual(failures,[],'Cached CSS/JS must not fail during offline reload.');
     for(const url of assets)assert.deepEqual(responses.get(url),{ok:true,worker:true},'Offline CSS/JS must come from the worker: '+new URL(url).pathname);
     const after=await cacheState(page,resources,registration.worker);

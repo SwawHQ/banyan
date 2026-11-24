@@ -2,7 +2,7 @@
     const SIGNAL_CONTROL_SELECTOR = "[data-home-art-wind-signal]";
     const windScenes = Array.from(document.querySelectorAll(".home-art-wind"));
     const scenePauseStates = new Map();
-    let selectedSignalControl = null;
+    const selections = new Map();
 
     const setScenePaused = (windScene, reason, paused) => {
         if (!windScene) {
@@ -41,14 +41,15 @@
         signal?.classList.toggle("is-selected", selected);
     };
 
-    const clearSelectedSignal = () => {
-        if (!selectedSignalControl) {
-            return;
+    const clearSelection = (scene) => {
+        const control = selections.get(scene);
+        if (control) {
+            setSignalSelected(control, false);
+            selections.delete(scene);
         }
-
-        setSignalSelected(selectedSignalControl, false);
-        selectedSignalControl = null;
     };
+
+    const clearAll = () => selections.forEach((_, scene) => clearSelection(scene));
 
     const isSignalLink = (control) => control instanceof HTMLAnchorElement && control.hasAttribute("href");
 
@@ -62,8 +63,11 @@
         const control = target.closest(SIGNAL_CONTROL_SELECTOR);
 
         if (!control) {
-            if (!target.closest(".home-art-wind__signals")) {
-                clearSelectedSignal();
+            const scene = target.closest(".home-art-wind");
+            if (!scene) {
+                clearAll();
+            } else if (!target.closest(".home-art-wind__signals")) {
+                clearSelection(scene);
             }
             return;
         }
@@ -72,26 +76,27 @@
             return;
         }
 
-        if (control === selectedSignalControl) {
+        const scene = control.closest(".home-art-wind");
+        if (control === selections.get(scene)) {
             if (isSignalLink(control)) {
-                clearSelectedSignal();
+                clearSelection(scene);
                 return;
             }
 
             event.preventDefault();
-            clearSelectedSignal();
+            clearSelection(scene);
             return;
         }
 
         event.preventDefault();
-        clearSelectedSignal();
-        selectedSignalControl = control;
+        clearSelection(scene);
+        selections.set(scene, control);
         setSignalSelected(control, true);
     });
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
-            clearSelectedSignal();
+            clearAll();
         }
     });
 

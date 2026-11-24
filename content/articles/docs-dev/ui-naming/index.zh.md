@@ -41,6 +41,6 @@ CSS 按视觉职责命名，不复制模板目录层级。源码职责与发布�
 | 共享片段校验与显示 | `assets/js/browse/breadcrumb-source.js`、`breadcrumb-render.js` |
 | 语言与外观选项 | `layouts/_partials/feature-preferences/`、`assets/js/preferences/` |
 | 站点状态控件 | `layouts/_partials/page-powered-by/status-value.html`、`assets/js/site-status/` |
-| 首页艺术包装配 | `layouts/page-home.html`、`layouts/_partials/entry-page-home/` |
+| 风场短代码 | `layouts/_shortcodes/art-wind.html` |
 
-Module 提供内置配色，站点维护自定义配色与艺术包，修改方法见[首页和外观](/zh/articles/docs-appearance/)。浏览来源与排序只在[导航状态协议](/zh/p/navigation-state/)中定义；不要用 UI 命名或样式类替代该协议。
+Module 提供内置配色，站点维护自定义配色与自定义短代码，修改方法见[首页和外观](/zh/articles/docs-appearance/)。浏览来源与排序只在[导航状态协议](/zh/p/navigation-state/)中定义；不要用 UI 命名或样式类替代该协议。

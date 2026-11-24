@@ -51,8 +51,8 @@ try {
     };
 
     // Let Hugo resolve the configured site asset through its mounts.
-    write(path.join(work, 'content/_res/palette-source/index.md'),
-        '---\ntitle: Palette source\nurl: _res/palette-source/\nlayout: palette-source\noutputs: [HTML]\n---\n');
+    write(path.join(work, 'content/palette-source/index.md'),
+        '---\ntitle: Palette source\nbuild: {list: never}\nurl: palette-source/\nlayout: palette-source\noutputs: [HTML]\n---\n');
     write(path.join(work, 'layouts/palette-source.html'), `
 {{ $path := strings.TrimSpace .Site.Params.appearance.palette }}
 {{ $palette := resources.Get $path }}

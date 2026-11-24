@@ -10,16 +10,11 @@ import { readActiveNavigationRoute } from './navigation-source.js';
 import { renderBreadcrumbColumn, updateBreadcrumbColumnHeader } from './breadcrumb-render.js';
 import { sortItemsRows } from './collection-items.js';
 import { refreshMainCollectionNavigation } from './collection-navigation.js';
+import { initSelectedEntry, isPlainPrimaryClick } from './selected-entry.js';
 import { normalizePathname } from './navigation-state.js';
 
 function visibleLineage(columns) {
     return readActiveNavigationRoute().lineage || columns.at(-1)?.key || '';
-}
-
-function isPlainPrimaryClick(event, link) {
-    return !event.defaultPrevented && event.button === 0
-        && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
-        && !link.hasAttribute('download') && (!link.target || link.target === '_self');
 }
 
 export function refreshBreadcrumbParentLinks() {
@@ -91,6 +86,12 @@ export function refreshBreadcrumbColumns(changedLogicalPath = '') {
 }
 
 export function initBreadcrumbSort() {
+    initSelectedEntry(document.querySelector('[data-slot="breadcrumb"]'), 'a[data-list-entry][aria-current="page"]', entry => {
+        const column = entry.closest('[data-breadcrumb-column]');
+        if (!column) return '';
+        const { breadcrumbCollectionHref, breadcrumbColumnPath, sortVariant, defaultSort } = column.dataset;
+        return buildCollectionPageHref(breadcrumbCollectionHref, breadcrumbColumnPath, sortVariant, defaultSort);
+    });
     document.addEventListener('click', event => {
         const toggle = event.target instanceof Element ? event.target.closest('a[data-breadcrumb-sort-toggle="true"]') : null;
         if (!(toggle instanceof HTMLAnchorElement) || !isPlainPrimaryClick(event, toggle)) return;

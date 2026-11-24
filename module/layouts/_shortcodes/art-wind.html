@@ -1,5 +1,7 @@
-{{- $config := .Params -}}
-{{- $context := .File.Path -}}
+{{- $config := transform.Unmarshal (dict "format" "json") (.Inner | strings.TrimSpace) -}}
+{{- if not (reflect.IsMap $config) -}}{{- errorf "art-wind expects a JSON object at %s" .Position -}}{{- end -}}
+{{- $id := printf "wind-%s-%d-%d" (md5 .Page.RelPermalink) .Position.LineNumber .Position.ColumnNumber -}}
+{{- $context := .Position -}}
 {{- $signals := $config.signals | default slice -}}
 {{- $guideChance := $config.signal_guide_chance | default 0 -}}
 {{- $horizonOffsetRem := 31.2 -}}
@@ -33,7 +35,7 @@
 {{- if lt $signalLaunchGapSeconds 1 -}}{{- $signalLaunchGapSeconds = 1 -}}{{- end -}}
 {{- $signalDurationSpreadSeconds := 16 -}}
 {{- $signalDurationBaseSeconds := sub $signalDriftSeconds (div $signalDurationSpreadSeconds 2) -}}
-{{- $sceneRule := printf ".home-art-wind{--home-art-wind-field-start-offset:%vrem;--home-art-wind-field-height:%vrem;--home-art-wind-ground-space:%vrem;--home-art-wind-signal-font-size:%vrem}" $windFieldStartOffsetRem $windFieldHeightRem $groundSpaceRem $signalFontSizeRem -}}
+{{- $sceneRule := printf "#%s{--home-art-wind-field-start-offset:%vrem;--home-art-wind-field-height:%vrem;--home-art-wind-ground-space:%vrem;--home-art-wind-signal-font-size:%vrem}" $id $windFieldStartOffsetRem $windFieldHeightRem $groundSpaceRem $signalFontSizeRem -}}
 {{- $rules := slice $sceneRule -}}
 {{- $items := slice -}}
 {{- range $index, $signal := $signals -}}
@@ -65,25 +67,22 @@
 {{- $signalClasses := slice "home-art-wind__signal" -}}
 {{- if $signalIsPrimary -}}{{- $signalClasses = $signalClasses | append "is-primary" -}}{{- end -}}
 {{- if gt $guideChance $guideBucket -}}{{- $signalClasses = $signalClasses | append "is-guided" -}}{{- end -}}
-{{- $signalURL = partial "system-ui/content-href.html" (dict "page" $.Site.Home "href" $signalURL) -}}
+{{- $signalURL = partial "system-ui/content-href.html" (dict "page" $.Page "href" $signalURL) -}}
 {{- $isExternalSignalURL := or (hasPrefix $signalURL "http://") (hasPrefix $signalURL "https://") (hasPrefix $signalURL "//") -}}
 {{- $items = $items | append (dict "name" $signalName "url" $signalURL "isExternalURL" $isExternalSignalURL "classes" (delimit $signalClasses " ")) -}}
-{{- $rules = $rules | append (printf ".home-art-wind__signal:nth-child(%d){--home-art-wind-signal-lift:%s;--home-art-wind-signal-duration:%ds;--home-art-wind-signal-delay:-%ds}" (add $index 1) $signalLift $signalDuration $delay) -}}
+{{- $rules = $rules | append (printf "#%s .home-art-wind__signal:nth-child(%d){--home-art-wind-signal-lift:%s;--home-art-wind-signal-duration:%ds;--home-art-wind-signal-delay:-%ds}" $id (add $index 1) $signalLift $signalDuration $delay) -}}
 {{- end -}}
 
-{{- $home := .Site.Home -}}
-
-{{- with (delimit $rules "") -}}
-  {{- $target := printf "css/%s/scene.%s.css" (strings.TrimPrefix "/_res/" $.Path) $home.Language.Lang -}}
-  {{- $sceneCSS := resources.FromString $target . -}}
-  {{- $sceneCSS = partial "system-assets/process-css.html" (dict "resource" $sceneCSS) -}}
-  {{- $home.Store.SetInMap "homeArtStyles" $target $sceneCSS -}}
+{{- $css := resources.FromString (printf "css/art-wind/%s.css" $id) (delimit $rules "") -}}
+{{- with partial "system-assets/process-css.html" (dict "resource" $css) -}}
+<link rel="stylesheet" data-art-style="wind" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
 {{- end -}}
-<section class="home-art-wind" data-home-art-style="wind" aria-labelledby="home-art-wind-title">
+<section id="{{ $id }}" class="home-art-wind" data-art="wind" aria-labelledby="{{ $id }}-title">
   <div class="home-art-wind__anchor">
-    <h1 id="home-art-wind-title" class="home-art-wind__anchor-title">{{ $home.Title | htmlEscape }}</h1>
-    {{- with .Params.brand_line }}
-    <p class="home-art-wind__anchor-line">{{ . | htmlEscape }}</p>
+    {{- $heading := $config.heading | default .Page.Title -}}
+    {{- if eq .Page.Layout "page-home" }}<h1 id="{{ $id }}-title" class="home-art-wind__anchor-title">{{ $heading }}</h1>{{ else }}<h2 id="{{ $id }}-title" class="home-art-wind__anchor-title">{{ $heading }}</h2>{{ end }}
+    {{- with $config.brand_line }}
+    <p class="home-art-wind__anchor-line">{{ . }}</p>
     {{- end }}
   </div>
   <div class="home-art-wind__scene">
@@ -99,9 +98,9 @@
       <li class="{{ $signal.classes }}">
         {{- with $signal.url -}}
         {{- $url := urls.Parse (replaceRE `%25([0-9A-Fa-f]{2})` `%$1` (replace . "%" "%25")) -}}
-        <a href="{{ $url.String | htmlEscape }}"{{ if $signal.isExternalURL }} target="_blank" rel="noopener noreferrer"{{ end }} data-home-art-wind-signal>{{ $signal.name | htmlEscape }}</a>
+        <a href="{{ $url.String }}"{{ if $signal.isExternalURL }} target="_blank" rel="noopener noreferrer"{{ end }} data-home-art-wind-signal>{{ $signal.name }}</a>
         {{- else -}}
-        <button data-home-art-wind-signal>{{ $signal.name | htmlEscape }}</button>
+        <button data-home-art-wind-signal>{{ $signal.name }}</button>
         {{- end -}}
       </li>
       {{- end }}
@@ -109,11 +108,11 @@
     {{- end }}
     <svg class="home-art-wind__windsock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" focusable="false">
       <defs>
-        <clipPath id="home-art-wind-windsock-sock-clip">
+        <clipPath id="{{ $id }}-clip">
           <rect x="128" y="80" width="840" height="410"/>
         </clipPath>
       </defs>
-      <g class="home-art-wind__windsock-sock" clip-path="url(#home-art-wind-windsock-sock-clip)">
+      <g class="home-art-wind__windsock-sock" clip-path="url(#{{ $id }}-clip)">
         <path class="home-art-wind__windsock-body" d="M921 343c-19 25-56 27-84 34-106 26-219 40-327 58-67 11-135 24-202 36l-169-144v581l-15 16H94l-10-16V195c0-12 11-18 23-18 14-1 30 6 31 20l2 31L321 106l27-6c23 5 47 9 70 14 101 20 202 40 303 60 45 9 90 17 135 26 25 5 57 7 73 31 18 27 12 86-7 111z"/>
         <path class="home-art-wind__windsock-stripes" d="M268 170L135 283l136 122-2-235zm65-41s-39-6-39 166c0 0 5 150 39 150 0 0 41 1 41-150 0 0-3-166-41-166zM643 213s-21-56-162-58c0 0 58 93 8 266 0 0 123 6 154-64 0 0 35-70 0-144zm230 29c-20-32-66-35-101-34 0 0 23 76-2 152 1-2 69-13 77-17 35-20 47-67 26-101z"/>
       </g>
@@ -121,5 +120,3 @@
     </svg>
   </div>
 </section>
-
-{{ .Content }}

@@ -23,7 +23,7 @@ export async function check({page,baseUrl,options={page:'/'}}) {
     assert.ok(script?.split(/\s+/).includes("'self'"),'CSP must declare script-src with self.');
     assert.ok(!script.split(/\s+/).some(token => ["'unsafe-inline'","'unsafe-eval'"].includes(token)),
       'script-src must not allow unsafe-inline or unsafe-eval.');
-    await page.locator('.slot-main').waitFor({state:'visible'});
+    await page.getByRole('main').waitFor({state:'visible'});
     await waitForBrowse(page);
     // CSP events and console reports can be queued after the load event.
     await page.waitForTimeout(250);

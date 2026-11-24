@@ -2,13 +2,9 @@
   {{- errorf "Build failed: page %q (title: %q) requires a non-empty url field, for example url: p/article-name/." .File.Path .Title -}}
 {{- end -}}
 {{- $validated := partial "feature-browse/directory/assert-map-resources.html" . -}}
-{{- $home := dict "show_navigation" true -}}
-{{- if .IsHome -}}
-  {{- $home = partialCached "entry-page-home/model.html" . .RelPermalink -}}
-{{- end -}}
-{{- $homeArt := $home.art -}}
-{{- $showHomeNavigation := $home.show_navigation -}}
-{{- $navigationOnly := and .IsHome (eq .Layout "page-home") $showHomeNavigation (eq (strings.TrimSpace .RawContent) "") -}}
+{{- $navigationOnly := and .IsHome (eq .Layout "page-home") -}}
+{{- $showHomeNavigation := true -}}
+{{- if and .IsHome (not $navigationOnly) -}}{{- $showHomeNavigation = partial "entry-page-home/model.html" . -}}{{- end -}}
 {{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
 {{- $pwaConfig := partialCached "system-delivery/pwa/config.html" (dict "delivery" $delivery) "pwa" ($delivery.sw | jsonify) -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}
@@ -64,6 +60,12 @@
     <script>{{ $breadcrumbPendingInline | safeJS }}</script>
     {{- end }}
     {{- partial "system-ui/page-styles.html" . -}}
+    {{- if and (not $navigationOnly) (.HasShortcode "art-wind") -}}
+      {{- with partial "system-assets/process-css.html" (dict "resource" (resources.Get "css/art-wind.css")) }}
+    <link rel="stylesheet" data-art-style="wind" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
+      {{- end -}}
+      {{- partial "system-assets/script.html" (dict "path" "js/art-wind.js") -}}
+    {{- end -}}
     {{- block "head-extra" . -}}{{- end -}}
     <script>{{ index $inlineScripts "canvas_position" | safeJS }}</script>
     {{- hugo.Generator -}}
@@ -82,7 +84,7 @@
       "panel_registers" (and $isPoweredBy (eq $swMode "enable"))
     ) -}}
 </head>
-<body{{ with $homeArt }} data-home-art-source="{{ .Path }}"{{ end }}{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }}{{ if or $navigation.has_breadcrumb_columns $navigation.sortable }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPoweredBy }} data-prefetch-debug{{ end }}>
+<body{{ if .IsHome }} data-home-navigation="{{ $showHomeNavigation }}"{{ end }}{{ if or $navigation.has_breadcrumb_columns $navigation.sortable }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }}{{ if $isPoweredBy }} data-prefetch-debug{{ end }}>
     <div class="page">
         <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         <div class="page-shell"{{ if $navigationOnly }} role="main" id="main" tabindex="-1"{{ end }}>
@@ -118,7 +120,6 @@
     {{- block "body-extra" . -}}{{- end -}}
     {{- partial "entry-baseof/body-scripts.html" (dict
       "page" .
-      "home_art" $homeArt
       "prefetch" $prefetch
       "powered_by" $isPoweredBy
       "sw_mode" $swMode

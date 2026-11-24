@@ -2,6 +2,16 @@ import { readAnchor } from './navigation-state.contract.js';
 
 const CANVAS_NAVIGATION_KEY = 'banyan:canvas-navigation';
 
+export function saveCanvasPosition(href) {
+    try {
+        sessionStorage[CANVAS_NAVIGATION_KEY] = JSON.stringify({
+            source: location.href.split('#')[0],
+            target: new URL(href, location.href).href,
+            x: window.visualViewport?.pageLeft ?? scrollX
+        });
+    } catch { /* Navigation remains usable when storage is unavailable. */ }
+}
+
 // Carry only the horizontal position of one same-tab collection navigation.
 // History traversal and reload keep the browser's native horizontal restoration.
 export function initCanvasPosition() {
@@ -21,18 +31,8 @@ export function initCanvasPosition() {
         const link = event.target.closest?.('[data-list-entry][href], [data-slot="breadcrumb"] a[href]');
         if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
         if (link.origin !== location.origin || readAnchor(link.hash)) return;
-        if (link.href === location.href) {
-            event.preventDefault();
-            return;
-        }
         if (link.pathname === location.pathname && link.search === location.search) return;
-        try {
-            sessionStorage[CANVAS_NAVIGATION_KEY] = JSON.stringify({
-                source: location.href.split('#')[0],
-                target: link.href,
-                x: window.visualViewport?.pageLeft ?? scrollX
-            });
-        } catch { /* Do not block the link if storage is unavailable. */ }
+        saveCanvasPosition(link.href);
     });
 
     const navigation = performance.getEntriesByType('navigation')[0];

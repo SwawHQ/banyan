@@ -53,7 +53,7 @@ $skillTests = Get-ChildItem @('./.agents/skills/swaw-banyan/tasks/_shared/_tests
 | `appearance-icons.test.mjs` | Page-owned appearance icons, bundle images and required icon values |
 | `locale.test.mjs` | Script locales, RSS language tags and region-only Open Graph metadata |
 | `responsive-images.test.mjs` | Image processing, browser selection, original links and build-cache reuse |
-| `home-art.test.mjs` | Hidden home-art bundles, translated shortcode content, host navigation, resource isolation and preview rebuilds |
+| `home-art.test.mjs` | Wind shortcode instances, translated content, resource isolation and home navigation |
 | `browser-{pwa,content,update,disable,prefetch}.test.mjs` | Registration, native worker activation, controlled offline navigation, content versions, cache ownership and prefetch |
 | `browser-nav-fragments.test.mjs` | Shared column loading, slow responses, source races, failure retries and visited-path offline reload |
 | `output.test.mjs` | Repository budgets and retired-output faults |

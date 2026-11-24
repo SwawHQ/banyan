@@ -78,8 +78,9 @@ test('missing covers prefer SVG, fall back to ICO, and fail without both',()=>{
  const original=fs.readFileSync(config,'utf8'),home=()=>fs.readFileSync(path.join(output,'index.html'),'utf8');
  assert.match(home(),/class=.?wall-placeholder-icon[^>]*favicon\.link[^>]*\.svg/);
  const assets=path.join(work,'icon-assets');fs.cpSync('assets',assets,{recursive:true});
- // The reference Powered by copy explicitly embeds SVG; isolate it from fallback checks.
- for(const suffix of ['', '.zh','.ar'])write(path.join(content,'powered-by/index'+suffix+'.md'),'---\ntitle: Powered by\nurl: powered-by/\nlayout: page-article-norss\n---\n');
+ // Keep explicit SVG references in the reference pages out of the wall fallback check.
+ for(const name of ['home','powered-by'])for(const suffix of ['', '.zh','.ar'])
+  write(path.join(content,name,'index'+suffix+'.md'),`---\ntitle: ${name}\nurl: ${name}/\nlayout: page-article-norss\n---\n`);
  try {
   write(config,original.replace('source = "assets"\ntarget = "assets"','source = '+JSON.stringify(assets.replaceAll('\\','/'))+'\ntarget = "assets"'));
   fs.rmSync(path.join(assets,'site/favicon.link.svg'));passed(build());
@@ -87,7 +88,7 @@ test('missing covers prefer SVG, fall back to ICO, and fail without both',()=>{
   fs.rmSync(path.join(assets,'site/favicon.ico'));const result=build();assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,/Wall: provide assets\/site\/favicon/);
  } finally {write(config,original);passed(build());}
 });
-test('wall validates options and can switch the home back to home-art',()=>{
+test('wall validates options and can switch the home back to navigation',()=>{
  const home=path.join(content,'_index.md'),original=fs.readFileSync(home,'utf8');
  for(const [replace,expected] of [
   [s=>s.replace(/  wall:[\s\S]*?---/,'  wall: false\n---'),/params.wall must be a map/],
@@ -95,7 +96,7 @@ test('wall validates options and can switch the home back to home-art',()=>{
   [s=>s.replace('details: title','caption: title'),/unsupported params.wall.caption/],
   ...[[0,/size must be a map/],[{width:'auto',height:'auto'},/cannot both be auto/],[{width:200},/requires both/],[{width:0,height:200},/size.width must be/],[{width:true,height:200},/size.width must be/],[{width:'200',height:200},/size.width must be/],[{width:200,height:641},/size.height must be/],[{width:200,height:200,depth:1},/unsupported params.wall.size.depth/]].map(([value,error])=>[s=>s.replace(JSON.stringify(sizes['equal-height']),JSON.stringify(value)),error])
  ]) {write(home,replace(section()));const result=build();assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,expected);}
- write(home,'---\ntitle: Home\ndescription: Home fixture.\nlayout: page-home\n---\n{{< home-art "/_res/home-art/wind" >}}');passed(build());assert.match(fs.readFileSync(path.join(output,'index.html'),'utf8'),/data-home-art-source/);
+ write(home,'---\ntitle: Home\ndescription: Home fixture.\nlayout: page-home\n---\n{{< art-wind >}}{}{{< /art-wind >}}');passed(build());assert.doesNotMatch(fs.readFileSync(path.join(output,'index.html'),'utf8'),/data-art=|class=.?reading-group/);
  write(home,original);passed(build());
 });
 for(const engineName of ['chromium','webkit'])test(engineName+' wall layouts, RTL, details and homepage lineage',async()=>{
@@ -163,7 +164,8 @@ for(const engineName of ['chromium','webkit'])test(engineName+' wall layouts, RT
    await trigger.click();await page.waitForSelector('.wall-info:popover-open');await trigger.press('Escape');
    await first.locator('.wall-cover').click();await page.waitForURL('**/p/wall-item-0/**');await waitForBrowse(page);assert.match(new URL(page.url()).hash,/from=wall-tree\/branch\/leaf/);
    assert.equal(await page.locator('.breadcrumb-column').count(),3);assert.equal(await page.locator('link[href*="collection-wall"],script[src*="collection-wall"]').count(),0);
-   await page.locator('.breadcrumb-column').nth(1).locator('a[data-list-entry][href*="/leaf/"]').click();await page.waitForURL('**/leaf/**');await page.waitForSelector('[data-wall-ready]');
+   await page.locator('.breadcrumb-column').nth(1).locator('a[data-list-entry][aria-current="page"]').click();
+   await page.waitForURL(server.getBaseUrl()+'/'+language+'/wall-tree/branch/');await page.waitForSelector('[data-wall-ready]');
    await page.goto(server.getBaseUrl()+'/'+language+'/wall-tree/empty/');await page.waitForSelector('[data-wall-ready]');assert.equal(await page.locator('.wall-empty').isVisible(),true);
   }
   for(const count of [1,2])for(const layout of layouts)for(const direction of ['horizontal','vertical']) {

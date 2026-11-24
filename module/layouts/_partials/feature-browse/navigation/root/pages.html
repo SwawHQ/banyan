@@ -1,4 +1,1 @@
-{{- $ctx := . -}}
-{{- /* Keep structural roots for ancestry; model.html selects published HTML entries. */ -}}
-{{- $pages := $ctx.Site.Home.Pages | union (slice $ctx.Site.Home) -}}
-{{- return $pages.ByWeight -}}
+{{- return .Site.Home.Pages.ByWeight -}}

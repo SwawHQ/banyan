@@ -48,7 +48,7 @@ Additional brand media is optional. Configure redirects in
 
 All pages belong to root `content/`; the Module provides no fallback pages.
 Copy the functional pages the site needs.
-Home art is optional; see [Home art](home-art.md) when using it.
+Use the optional [wind shortcode](home-art.md) in page content.
 
 The Module supplies a matching archetype for each page layout. Page examples and creation commands are in
 [Content and layouts](content.md).

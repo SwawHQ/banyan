@@ -12,12 +12,12 @@ test('home art styles must match the selected source and load once',async()=>{
   try {
     fs.mkdirSync(path.join(root,'css'));
     for(const name of ['page','art','scene','cards'])fs.writeFileSync(path.join(root,'css',name+'.css'),'');
-    const source='/_res/home-art/wind',other='/_res/home-art/cards';
-    const link=(name,art='')=>'<link rel="stylesheet" href="/css/'+name+'.css"'+(art?' data-home-art="'+art+'"':'')+'>';
+    const source='wind',other='cards';
+    const link=(name,art='')=>'<link rel="stylesheet" href="/css/'+name+'.css"'+(art?' data-art-style="'+art+'"':'')+'>';
     const page=link('page'),style=link('art',source),scene=link('scene',source);
     const write=(art,styles,content='<main>Art</main>')=>fs.writeFileSync(path.join(root,'index.html'),
-      '<html><head><link rel="canonical" href="https://example.test/">'+styles+'</head><body'+
-      (art?' data-home-art-source="'+art+'"':'')+'>'+content+'</body></html>');
+      '<html><head><link rel="canonical" href="https://example.test/">'+styles+'</head><body><section'+
+      (art?' data-art="'+art+'"':'')+'>'+content+'</section></body></html>');
     const issues=async()=> (await inspect(root)).issues.join('\n');
     write(source,page+style+scene);
     assert.deepEqual((await inspect(root)).issues,[]);
@@ -30,11 +30,9 @@ test('home art styles must match the selected source and load once',async()=>{
     write(source,page+link('art')+scene);
     assert.match(await issues(),/unexpected stylesheet families: \/css\/art.css/);
     write(source,page+style+link('scene',other));
-    assert.match(await issues(),/declares home art \/_res\/home-art\/cards, expected \/_res\/home-art\/wind/);
+    assert.match(await issues(),/unexpected stylesheet families/);
     write('',page+style+scene);
-    assert.match(await issues(),/declares home art .* expected <none>/);
-    write('',page+style,'<main data-home-art-source="'+source+'">Art</main>');
-    assert.match(await issues(),/expected <none>/,'Only the body identifies the source.');
+    assert.match(await issues(),/unexpected stylesheet families/);
     write(other,page+link('cards',other));
     assert.deepEqual((await inspect(root)).issues,[]);
     write('',page);

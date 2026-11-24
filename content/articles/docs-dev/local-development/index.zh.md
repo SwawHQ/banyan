@@ -26,7 +26,6 @@ banyan/
 ├── assets/deploy/                         #部署开关、重定向与外部资源清单
 ├── i18n/                                  #界面字典
 ├── content/powered-by/                    #版本信息与预取诊断
-├── content/_res/                          #首页艺术包
 ├── module/                                #布局、脚本和样式，不含站点内容
 ├── .agents/skills/swaw-banyan/            #本地工具和通用检查任务
 └── tests/                                 #主题和工具源码测试

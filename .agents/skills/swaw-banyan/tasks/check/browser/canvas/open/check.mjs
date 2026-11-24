@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {afterPaint,waitForBrowse,clickVisible,visiblePoint} from '../../_shared/viewport.mjs';
+import {afterPaint,waitForBrowse,visiblePoint} from '../../_shared/viewport.mjs';
 import {readCanvas,panCanvas,waitForCanvasX} from '../_shared/state.mjs';
 import {installStartupProbe,observeStartup} from '../_shared/startup.mjs';
 import {checkReservedColumns,checkInitialLayout} from '../first-paint/check.mjs';
@@ -44,31 +44,23 @@ async function checkOpenResult(page,before,name,state,target) {
   return row;
 }
 
-async function checkCurrentEntry(page,touch) {
-  const currentUrl=page.url();
-  const href=await page.locator('[data-slot=breadcrumb] [aria-current="page"][href]').evaluateAll((nodes,url)=>nodes.find(node=>node.href===url)?.getAttribute('href'),currentUrl);
-  const selected=page.locator('[data-slot=breadcrumb] [aria-current="page"][href='+JSON.stringify(href)+']');
+async function checkCollapse(page,touch,sourceUrl,source,target) {
+  const selected=page.locator('[data-breadcrumb-column]').last().locator('[data-list-entry][aria-current="page"]');
   await centerVertically(selected);await afterPaint(page);
-  const marker=await page.evaluate(()=>{
-    window.__swbanCurrentDocument=crypto.randomUUID();
-    const content=document.querySelector('.page-content');content.scrollTop=Math.min(120,content.scrollHeight-content.clientHeight);
-    return window.__swbanCurrentDocument;
-  });await afterPaint(page);
-  const before=await readCanvas(page);assert.ok(before.readingY>0,'Choose an article with overflowing reading content at 900 pixels high.');
-  let requests=0;
-  const record=request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())requests++;};
-  page.on('request',record);
-  try {await clickVisible(page,selected,touch);await afterPaint(page);}
-  catch(error) {throw new Error('Current article click failed: '+error.message);}
-  finally {page.off('request',record);}
-  assert.equal(requests,0,'Clicking the current article must not request a new document.');
-  assert.equal(page.url(),currentUrl,'Clicking the current article must preserve its URL.');
-  assert.equal(await page.evaluate(()=>window.__swbanCurrentDocument),marker,'Clicking the current article must retain the document.');
-  const after=await readCanvas(page);
-  assert.equal(after.readingY,before.readingY,'Clicking the current article must preserve the reading position.');
-  assert.ok(Math.abs(after.canvasOffsetX-before.canvasOffsetX)<=1,'Clicking the current article must preserve the canvas position.');
-  assert.equal(await page.evaluate(()=>sessionStorage.getItem('banyan:canvas-navigation')),null,'Clicking the current article must not leave a navigation record.');
-  return {readingY:after.readingY,canvasOffsetX:after.canvasOffsetX};
+  const point=await visiblePoint(selected),path=new URL(sourceUrl).pathname;
+  const {canvasOffsetX}=await readCanvas(page);
+  await Promise.all([
+    page.waitForURL(url=>url.pathname===path),
+    touch?page.touchscreen.tap(point.x,point.y):page.mouse.click(point.x,point.y)
+  ]);
+  await waitForBrowse(page);
+  const canvas=await readCanvas(page);
+  await waitForCanvasX(page,Math.min(canvasOffsetX,canvas.maxX),'Collapse to the source list');
+  assert.deepEqual(await readOpeningSource(page,canvas),source,'Collapsing must restore the source list and its sort order.');
+  const collapsed=new URL(page.url());
+  await page.goBack();assert.equal(page.url(),target,'Back after collapsing must reopen the article.');
+  await waitForBrowse(page);await checkOpeningSource(page,source);
+  return collapsed.pathname+collapsed.search+collapsed.hash;
 }
 
 async function checkOpenedHistory(page,sourceUrl,target,before,after,source) {
@@ -104,8 +96,9 @@ export async function checkOpening({page,options}) {
   });
   const selected=await checkOpenResult(page,before,name,state,target);
   const lineage=await checkOpeningSource(page,source);
-  const current=await checkCurrentEntry(page,options.touch),history=await checkOpenedHistory(page,sourceUrl,target,before,state.final,source);
-  return {from:new URL(sourceUrl).pathname+new URL(sourceUrl).search+new URL(sourceUrl).hash,target:new URL(target).pathname+new URL(target).search+new URL(target).hash,before,name,source,lineage,selected,...state,current,history};
+  const history=await checkOpenedHistory(page,sourceUrl,target,before,state.final,source);
+  const collapsed=await checkCollapse(page,options.touch,sourceUrl,source,target);
+  return {from:new URL(sourceUrl).pathname+new URL(sourceUrl).search+new URL(sourceUrl).hash,target:new URL(target).pathname+new URL(target).search+new URL(target).hash,before,name,source,lineage,selected,...state,collapsed,history};
 }
 
 export async function check({page,context,baseUrl,options}) {

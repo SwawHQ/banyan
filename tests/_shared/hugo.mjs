@@ -10,8 +10,7 @@ export const fixtureSiteMounts='\n[[module.mounts]]\nsource = "assets"\ntarget =
   '[[module.mounts]]\nsource = "layouts"\ntarget = "layouts"\n';
 export function fixtureSiteFiles(directory) {
   fs.cpSync(new URL('../../i18n/',import.meta.url),path.join(directory,'i18n'),{recursive:true});
-  fs.cpSync(new URL('../../content/_res/home-art/',import.meta.url),path.join(directory,'content/_res/home-art'),{recursive:true});
-  fs.copyFileSync(new URL('../../content/_res/_index.md',import.meta.url),path.join(directory,'content/_res/_index.md'));
+  fs.mkdirSync(path.join(directory,'content'),{recursive:true});
   const siteAssets=path.join(directory,'assets/site');
   fs.mkdirSync(siteAssets,{recursive:true});
   fs.cpSync(new URL('../../assets/deploy/',import.meta.url),path.join(directory,'assets/deploy'),{recursive:true});

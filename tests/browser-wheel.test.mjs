@@ -104,7 +104,9 @@ for(const [name,suffix] of [['Chromium',''],['WebKit','.webkit']]) {
         assert.deepEqual(state.noScript.map(sample=>sample.width),[390,1440]);
         assert.equal(state.noScriptMobile.width,390);assert.equal(state.noScriptMobile.mobile,true);
         assert.equal(state.noScriptMobile.initial.direction,prefix==='/ar'?'rtl':'ltr');
-        if(name==='Chromium')assert.ok(state.noScriptMobile.native.gestures>0,'Narrow static pages must exercise native horizontal input.');
+        assert.equal(state.noScriptMobile.initial.navigationOnly,route==='/');
+        if(route==='/')assert.equal(state.noScriptMobile.native.gestures,0,'The root navigation must fit without panning.');
+        else if(name==='Chromium')assert.ok(state.noScriptMobile.native.gestures>0,'Narrow static articles must exercise native horizontal input.');
         else assert.match(state.noScriptMobile.native.skipReason,/Native mobile gestures are unavailable/);
       }
     } finally {try{await browser?.close();}finally{await server.stop();}}
