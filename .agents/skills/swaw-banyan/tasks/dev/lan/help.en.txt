@@ -1,0 +1,6 @@
+swban dev/lan [Hugo arguments...]  #Preview the local Module on the LAN
+
+Open the computer’s LAN address on another device on the same network. The default port is 5678.
+
+swban dev/lan -p 8080  #Use port 8080
+swban dev/help         #Show development server options

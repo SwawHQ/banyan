@@ -1,0 +1,6 @@
+swban dev/lan [Hugo 参数...]  #用本地 Module 供局域网预览
+
+在同一局域网的设备上，用电脑的局域网地址和端口访问。默认端口为 5678。
+
+swban dev/lan -p 8080  #改用 8080 端口
+swban dev/help         #查看开发服参数

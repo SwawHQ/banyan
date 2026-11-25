@@ -9,6 +9,7 @@ Pagefind 读取临时 pagefind.json。site 为 Hugo 输出目录，output_subdir
 搜索页的 index.source 决定 glob（索引文件），index.selector 决定 root_selector（页内索引范围）。
 启动时建立一次索引。修改内容后，重启命令更新索引。
 
+swban dev/lan                  #用本地 Module 供局域网预览
 swban dev -p 8080              #改用 8080 端口
 swban dev -D=false             #排除草稿
 swban dev -N                   #编辑后跳转到对应页面

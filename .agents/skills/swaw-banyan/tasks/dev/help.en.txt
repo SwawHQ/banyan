@@ -9,6 +9,7 @@ Pagefind reads a temporary pagefind.json. site is the Hugo output directory and 
 The search page’s index.source sets glob (files to index). Its index.selector sets root_selector (content within each file).
 Indexing runs once at startup. Restart to index content changes.
 
+swban dev/lan                  #Preview the local Module on the LAN
 swban dev -p 8080              #Use port 8080
 swban dev -D=false             #Exclude drafts
 swban dev -N                   #Navigate to the changed page

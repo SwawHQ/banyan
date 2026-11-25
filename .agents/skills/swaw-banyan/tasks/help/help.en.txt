@@ -10,6 +10,7 @@ swban help check/browser 3  #List commands and categories three levels below che
 
 Site development and builds:
 swban dev                            #Start the server with the local Module
+swban dev/lan                        #Preview the local Module on the LAN
 swban dev/build                      #Build with the local Module
 swban server                         #Preview the site and index search
 swban server/lan                     #Allow LAN previews

@@ -10,6 +10,7 @@ swban help check/browser 3  #列出 check/browser 下三层命令和分类
 
 站点开发与构建：
 swban dev                            #用本地 Module 启动开发服
+swban dev/lan                        #用本地 Module 供局域网预览
 swban dev/build                      #用本地 Module 构建站点
 swban server                         #预览站点并建立搜索索引
 swban server/lan                     #允许局域网预览

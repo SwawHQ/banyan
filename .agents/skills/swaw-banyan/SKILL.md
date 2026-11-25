@@ -15,6 +15,7 @@ Windows x64 使用本技能目录中的 `swban.cmd`；Linux x64 和 macOS x64/AR
 
 ```text
 swban dev                 #用本地 Module 启动开发服
+swban dev/lan             #用本地 Module 供局域网预览
 swban dev/build           #用本地 Module 构建站点
 swban server              #预览站点并建立搜索索引
 swban server/lan          #允许局域网预览

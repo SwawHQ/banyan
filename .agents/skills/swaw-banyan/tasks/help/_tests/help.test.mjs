@@ -204,7 +204,7 @@ function dispatch(args,cold) {
 
 test('help aliases render the same command, category and root help in both dispatchers',()=>{
   for(const cold of [false,true]) {
-    for(const command of ['dev','dev/build','build','server','server/lan','server/pagefind.off','check','help/zh']) {
+    for(const command of ['dev','dev/lan','dev/build','build','server','server/lan','server/pagefind.off','check','help/zh']) {
       const expected=dispatch(['help',command],cold);
       assert.equal(expected.status,0,expected.stderr);
       const result=dispatch([command+'/help'],cold);
