@@ -1,7 +1,7 @@
 ---
 title: Banyan
 description: موقع مرجعي بسيط لقالب Banyan المبني على Hugo، مع عرض للغة العربية.
-layout: page-home
+layout: page-root-navigation
 
 cascade:
   - target: {kind: page}

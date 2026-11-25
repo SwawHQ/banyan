@@ -1,7 +1,7 @@
 ---
 title: Banyan
 description: A minimal reference site for the Banyan Hugo theme.
-layout: page-home
+layout: page-root-navigation
 
 cascade:
   - target: {kind: page}
@@ -16,6 +16,6 @@ params:
   #     height: 125        #Number or auto; one auto dimension preserves the source ratio. Not both auto.
   #   details: title       #title: title opens details; overlay: image dots; overlay-hover: dots on hover, always on touch.
   #   scroll: horizontal   #horizontal or vertical.
-  # Browser/tab title; title above remains the visible heading.
+  # Browser tab title. The title above supplies the site name.
   browser_title: Banyan — A Minimal Hugo Publishing Theme
 ---

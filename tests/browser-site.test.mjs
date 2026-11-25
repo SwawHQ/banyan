@@ -40,7 +40,7 @@ before(()=>{
   write(source,'content/powered-by/index.md',panel);
   fixtureContentDirectory(path.join(source,'content'));
   for(const suffix of ['','.zh','.ar']) {
-    write(source,'content/_index'+suffix+'.md','---\ntitle: Independent site\ndescription: A browser discovery fixture.\nlayout: page-home\n---\n');
+    write(source,'content/_index'+suffix+'.md','---\ntitle: Independent site\ndescription: A browser discovery fixture.\nlayout: page-root-navigation\n---\n');
     for(const [name,title,date] of [['first','First Article','2026-01-01'],['second','Second Article','2026-01-02']])
       write(source,'content/d/'+name+suffix+'.md','---\ntitle: '+title+'\nurl: p/'+name+'-article/\nweight: 2\ndate: '+date+'\n---\n\nArticle for collection sorting.');
   }

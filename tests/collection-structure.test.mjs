@@ -153,7 +153,7 @@ test('icon audit includes hidden articles in a language with only RSS and no 404
     'build: {render: never, list: always}\nparams:\n  icon: home\n---\nHidden.\n';
   write(config,'disableKinds=["404"]\n'+configuration+
     '\n[languages.en]\nlabel="English"\nweight=1\n[languages.ar]\nlabel="العربية"\nweight=2\n');
-  write(home,'---\ntitle: Arabic home\ndescription: Icon audit fixture.\nlayout: page-home\noutputs: [RSS]\n---\nHome.\n');
+  write(home,'---\ntitle: Arabic home\ndescription: Icon audit fixture.\nlayout: page-root-navigation\noutputs: [RSS]\n---\nHome.\n');
   write(hidden,valid);
   try {
     passed(build());

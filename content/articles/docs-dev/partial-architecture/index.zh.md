@@ -26,7 +26,7 @@ description: 说明主题目录、模块所有权、依赖方向和维护入口�
 
 | 目录（相对 `layouts/_partials/`） | 职责 |
 | --- | --- |
-| `entry-baseof/`、`entry-page-home/` | 入口独有的装配与检查 |
+| `entry-baseof/` | 入口独有的装配与检查 |
 | `feature-browse/` | 内容成员、引用、列表、图片墙和导航 |
 | `feature-document/` | 正文、元信息、章节与文章结构化数据 |
 | `feature-preferences/` | 语言和外观选项 |

@@ -2,9 +2,9 @@
   {{- errorf "Build failed: page %q (title: %q) requires a non-empty url field, for example url: p/article-name/." .File.Path .Title -}}
 {{- end -}}
 {{- $validated := partial "feature-browse/directory/assert-map-resources.html" . -}}
-{{- $navigationOnly := and .IsHome (eq .Layout "page-home") -}}
+{{- $navigationOnly := and .IsHome (eq .Layout "page-root-navigation") -}}
 {{- $showHomeNavigation := true -}}
-{{- if and .IsHome (not $navigationOnly) -}}{{- $showHomeNavigation = partial "entry-page-home/model.html" . -}}{{- end -}}
+{{- if and .IsHome (not $navigationOnly) -}}{{- $showHomeNavigation = partial "entry-baseof/home-navigation.html" . -}}{{- end -}}
 {{- $delivery := partialCached "system-delivery/config/model.html" site "delivery" -}}
 {{- $pwaConfig := partialCached "system-delivery/pwa/config.html" (dict "delivery" $delivery) "pwa" ($delivery.sw | jsonify) -}}
 {{- $swMode := index $pwaConfig "sw_mode" -}}

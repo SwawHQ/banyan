@@ -1,7 +1,7 @@
 ---
 title: Banyan
 description: Banyan Hugo 主题的最小参考站点。
-layout: page-home
+layout: page-root-navigation
 
 cascade:
   - target: {kind: page}
@@ -16,6 +16,6 @@ params:
   #     height: 125        #数值：目标高度；auto：按原图比例计算高度。宽高不能同时为 auto。
   #   details: title       #title：一行标题展开详情；overlay：图内细点常显；overlay-hover：悬停显示，触屏常显。
   #   scroll: horizontal   #horizontal：横向滚动；vertical：竖向滚动。
-  # 浏览器标签页标题；上方 title 仍用于页面可见标题。
+  # 浏览器标签页标题。上方 title 提供站点名称。
   browser_title: Banyan — 极简 Hugo 发布主题
 ---

@@ -39,7 +39,7 @@ before(()=>{
     '[outputs]','home=["HTML","RSS"]','section=["HTML","RSS"]','page=["HTML"]'
   ].join('\n'));
   for(const suffix of ['','.zh','.ar']) {
-    write(path.join(source,'content/_index'+suffix+'.md'),'---\ntitle: Fixture\ndescription: RSS fixture.\nlayout: page-home\n---\n');
+    write(path.join(source,'content/_index'+suffix+'.md'),'---\ntitle: Fixture\ndescription: RSS fixture.\nlayout: page-root-navigation\n---\n');
     for(const name of ['posts','posts/nested','category','empty','no-feed'])
       write(path.join(source,'content',name,'_index'+suffix+'.md'),directoryPage(name,name==='no-feed'?'outputs: [HTML]\n':''));
   }

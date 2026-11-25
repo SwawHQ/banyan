@@ -2,7 +2,7 @@
 
 [art-wind]
 description = "在页面正文中插入交互风场。"
-inner = "JSON 对象。可填 heading、brand_line、signals，以及 signal_drift_seconds、signal_launch_gap_seconds、wind_field_start_offset_rem、signal_guide_chance。signals 可包含文字或带 name、url、primary 的条目"
+inner = "JSON 对象。heading 指定风场标题，默认使用页面标题。风场提供整页一级标题时设置 page_heading: true，其他风场默认使用二级标题。可填 brand_line、signals，以及 signal_drift_seconds、signal_launch_gap_seconds、wind_field_start_offset_rem、signal_guide_chance。signals 可包含文字或带 name、url、primary 的条目"
 examples = ['{{< art-wind >}}{"brand_line":"Start here","signals":[{"name":"Docs","url":"/docs/"}]}{{< /art-wind >}}']
 
 [asset]

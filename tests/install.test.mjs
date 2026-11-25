@@ -56,7 +56,7 @@ function consumer(name,{replacement='',multilingual=false}={}) {
   for(const suffix of multilingual?['','.zh','.ar']:['']) {
     const translated=value=>value.replace(/^title: (.+)$/m,'title: $1'+suffix);
     const home=suffix==='.zh'?markdown[0].replace('banyan.swaw.com/articles/','banyan.swaw.com/zh/articles/'):markdown[0];
-    write(root,'content/_index'+suffix+'.md','---\ntitle: My site\ndescription: Describe this site.\nlayout: page-home\n---\n');
+    write(root,'content/_index'+suffix+'.md','---\ntitle: My site\ndescription: Describe this site.\nlayout: page-root-navigation\n---\n');
     write(root,'content/home/index'+suffix+'.md',home);
     write(root,'content/articles/_index'+suffix+'.md',translated(markdown[1]));
     write(root,'content/articles/sample/_index'+suffix+'.md',translated(markdown[2]));

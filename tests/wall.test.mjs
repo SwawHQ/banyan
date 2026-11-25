@@ -96,7 +96,7 @@ test('wall validates options and can switch the home back to navigation',()=>{
   [s=>s.replace('details: title','caption: title'),/unsupported params.wall.caption/],
   ...[[0,/size must be a map/],[{width:'auto',height:'auto'},/cannot both be auto/],[{width:200},/requires both/],[{width:0,height:200},/size.width must be/],[{width:true,height:200},/size.width must be/],[{width:'200',height:200},/size.width must be/],[{width:200,height:641},/size.height must be/],[{width:200,height:200,depth:1},/unsupported params.wall.size.depth/]].map(([value,error])=>[s=>s.replace(JSON.stringify(sizes['equal-height']),JSON.stringify(value)),error])
  ]) {write(home,replace(section()));const result=build();assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,expected);}
- write(home,'---\ntitle: Home\ndescription: Home fixture.\nlayout: page-home\n---\n{{< art-wind >}}{}{{< /art-wind >}}');passed(build());assert.doesNotMatch(fs.readFileSync(path.join(output,'index.html'),'utf8'),/data-art=|class=.?reading-group/);
+ write(home,'---\ntitle: Home\ndescription: Home fixture.\nlayout: page-root-navigation\n---\n{{< art-wind >}}{}{{< /art-wind >}}');passed(build());assert.doesNotMatch(fs.readFileSync(path.join(output,'index.html'),'utf8'),/data-art=|class=.?reading-group/);
  write(home,original);passed(build());
 });
 for(const engineName of ['chromium','webkit'])test(engineName+' wall layouts, RTL, details and homepage lineage',async()=>{

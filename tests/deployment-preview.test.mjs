@@ -24,7 +24,7 @@ test('deployment preview follows configuration and inline scripts with a standal
       if(fs.existsSync(path.join(root,name)))fs.cpSync(path.join(root,name),path.join(source,name),{recursive:true});
     previewWorkspace(source);
     fs.mkdirSync(path.join(source,'layouts'),{recursive:true});
-    fs.writeFileSync(path.join(source,'layouts/page-home.en.html'),'<!doctype html><html lang="en"><head><title>Standalone</title></head><body>STANDALONE_DEPLOYMENT</body></html>');
+    fs.writeFileSync(path.join(source,'layouts/page-root-navigation.en.html'),'<!doctype html><html lang="en"><head><title>Standalone</title></head><body>STANDALONE_DEPLOYMENT</body></html>');
     const policyFile=path.join(source,'assets/deploy/policy.toml'),originalPolicy=fs.readFileSync(path.join(source,'module/assets/deploy/policy.toml'),'utf8');
     fs.writeFileSync(policyFile,originalPolicy);
     const inlineFile=path.join(source,'module/assets/js/inline/theme-boot.js'),originalInline=fs.readFileSync(inlineFile,'utf8');

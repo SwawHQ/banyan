@@ -3,7 +3,7 @@ title: Banyan
 linkTitle: الرئيسية
 description: استكشف مقالات Banyan ومنتجاته وأدلته في مشهد الرياح.
 url: home/
-layout: page-home
+layout: page-content-only
 weight: 10
 params:
   icon: {image: "site/favicon.link.svg"}
@@ -12,6 +12,7 @@ params:
 
 {{< art-wind >}}
 {
+  "page_heading": true,
   "brand_line": "بنية واضحة لاكتشاف المحتوى ونشره.",
   "signals": [
     {

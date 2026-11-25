@@ -34,4 +34,4 @@ params:
 
 ## 切回艺术首页
 
-将布局改回 `page-home`，移除 `aggregate` 和 `wall`，根地址即恢复为导航列。风场仍可从首页入口访问。
+将布局改回 `page-root-navigation`，移除 `aggregate` 和 `wall`，根地址即恢复为导航列。风场仍可从首页入口访问。

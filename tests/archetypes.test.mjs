@@ -40,8 +40,8 @@ test('each layout has a usable Module archetype and Powered by keeps its diagnos
   previewWorkspace(site);
   const env={...fixtureEnvironment(site),HUGO_MODULE_WORKSPACE:'hugo.work'};
   for(const kind of kinds) {
-    const section=kind==='page-home'||kind==='page-search'||kind.startsWith('page-collection-');
-    const file=kind==='page-home'?'_index.zh.md':kind+'/'+(section?'_index.zh.md':'index.md');
+    const section=kind==='page-root-navigation'||kind==='page-search'||kind.startsWith('page-collection-');
+    const file=kind==='page-root-navigation'?'_index.zh.md':kind+'/'+(section?'_index.zh.md':'index.md');
     execFileSync(toolExecutable('hugo'),['new','content','--kind',kind,file],{cwd:site,env});
     const generated=page(path.join(site,'content',file));
     assert.ok(generated.fields.title,kind);

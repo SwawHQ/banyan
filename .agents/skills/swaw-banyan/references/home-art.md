@@ -2,6 +2,8 @@
 
 Use `art-wind` in page content. Supply a JSON object between the opening and closing tags. The Module provides the template, CSS and JavaScript. Each call has its own settings.
 
+Wind titles use heading level two by default. Set `"page_heading": true` on one scene when it supplies the page’s main heading.
+
 ```markdown
 {{< art-wind >}}
 {"heading":"Explore","brand_line":"Start here","signals":["News",{"name":"Docs","url":"/docs/"}]}

@@ -35,7 +35,7 @@ before(()=>{
     'replace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(repository,'module').replaceAll('\\','/'))+'\n');
   writeDelivery(path.join(site,'assets'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\n'));
   for(const [code] of languages) {
-    write(path.join(site,'content/_index.'+code+'.md'),'---\ntitle: Locale '+code+'\ndescription: Locale fixture.\nlayout: page-home\n---\nHome.\n');
+    write(path.join(site,'content/_index.'+code+'.md'),'---\ntitle: Locale '+code+'\ndescription: Locale fixture.\nlayout: page-root-navigation\n---\nHome.\n');
     write(path.join(site,'content/article.'+code+'.md'),'---\ntitle: Article '+code+'\nurl: p/locale-probe/\nlayout: page-article-rss\nparams:\n  slots: []\n---\nArticle.\n');
   }
 });

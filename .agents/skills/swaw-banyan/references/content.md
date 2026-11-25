@@ -6,21 +6,21 @@ collection membership. Site configuration is covered in
 
 ## Home page
 
-Set `layout: page-home` in `content/_index.md` for the root navigation. The root contains site metadata and opens with no selection. Add a separate entry at `content/home/index.md` for each language:
+Set `layout: page-root-navigation` in `content/_index.md` for the root navigation. The root contains site metadata and opens with no selection. Add a separate entry at `content/home/index.md` for each language:
 
 ```markdown
 ---
 title: Welcome
 description: Explore this site and its guides.
 url: home/
-layout: page-home
+layout: page-content-only
 weight: 10
 ---
 
-{{< art-wind >}}{"brand_line":"Start here","signals":[{"name":"Guides","url":"https://banyan.swaw.com/articles/docs-start/"}]}{{< /art-wind >}}
+{{< art-wind >}}{"page_heading":true,"brand_line":"Start here","signals":[{"name":"Guides","url":"https://banyan.swaw.com/articles/docs-start/"}]}{{< /art-wind >}}
 ```
 
-Use Markdown or a shortcode for this entry’s content.
+`page-content-only` renders the body of a display page at any URL. Supply its heading in Markdown or let one wind scene provide it with `page_heading: true`.
 
 ## Image walls
 
@@ -57,7 +57,7 @@ on touch screens). Scrolling is `horizontal` or `vertical`.
 Put `cover.*` in an article bundle, or set article `params.wall.cover` to a
 bundle resource name. Optional `params.wall.alt` supplies image text;
 `params.wall.kind: video` adds a video marker and still links to the article.
-Restore `page-home` at the root and remove `aggregate` and `wall` to switch back to navigation.
+Restore `page-root-navigation` at the root and remove `aggregate` and `wall` to switch back to navigation.
 
 For wind scenes, read [Wind scenes](home-art.md).
 

@@ -3,7 +3,7 @@ title: Banyan
 linkTitle: 首页
 description: 在风场中浏览 Banyan 的文章、产品和使用文档。
 url: home/
-layout: page-home
+layout: page-content-only
 weight: 10
 params:
   icon: {image: "site/favicon.link.svg"}
@@ -12,6 +12,7 @@ params:
 
 {{< art-wind >}}
 {
+  "page_heading": true,
   "brand_line": "为探索型发布提供清晰结构。",
   "signals": [
     {

@@ -24,14 +24,14 @@ let work,site;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 const suffix=language=>language==='en'?'':'.'+language;
 function home(index,body,extra='') {
-  return '---\ntitle: Home identity '+index+'\ndescription: Home description '+index+'\nlayout: page-home\nparams:\n  icon: home\n  browser_title: Browser identity '+index+'\n'+extra+'---\n\n'+body+'\n';
+  return '---\ntitle: Home identity '+index+'\ndescription: Home description '+index+'\nlayout: page-root-navigation\nparams:\n  icon: home\n  browser_title: Browser identity '+index+'\n'+extra+'---\n\n'+body+'\n';
 }
 function prepare(name) {
   const source=path.join(work,name);fixtureSiteFiles(source);
   write(path.join(source,'hugo.toml'),fs.readFileSync(path.join(root,'hugo.toml'),'utf8'));
   write(path.join(source,'go.mod'),'module fixture.invalid/home-art\n\ngo 1.18\n\nrequire github.com/SwawHQ/banyan/module v0.0.0\n\n'+
     'replace github.com/SwawHQ/banyan/module => '+JSON.stringify(path.join(root,'module').replaceAll('\\','/'))+'\n');
-  for(const [,language] of languages) write(path.join(source,'content/home/index'+suffix(language)+'.md'),'---\ntitle: Welcome\nurl: home/\nlayout: page-home\n---\n'+entry({brand_line:'Welcome'}));
+  for(const [,language] of languages) write(path.join(source,'content/home/index'+suffix(language)+'.md'),'---\ntitle: Welcome\nurl: home/\nlayout: page-content-only\n---\n'+entry({brand_line:'Welcome'}));
   return source;
 }
 function homes(source,body='',extra='') {
@@ -145,4 +145,12 @@ test('wind uses local JSON, scopes multiple instances and loads shared assets on
 test('wind reports invalid signal fields',()=>{
   const {result}=build('invalid',entry({signals:[{name:'Docs',href:'/docs/'}]}));
   assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,/unsupported signal field.*href/);
+});
+
+test('a content-only page can give one of two wind scenes the page heading',()=>{
+  write(path.join(site,'content/showcase/index.md'),'---\ntitle: Showcase\nurl: showcase/\nlayout: page-content-only\n---\n'
+    +entry({heading:'First scene',page_heading:true})+'\n\n'+entry({heading:'Second scene'}));
+  const html=htmlAt(passed('showcase',''),'showcase');
+  assert.deepEqual(extractBlocks(html,'h1').map(block=>block.inner.trim()),['First scene']);
+  assert.deepEqual(extractBlocks(html,'h2').map(block=>block.inner.trim()),['Second scene']);
 });

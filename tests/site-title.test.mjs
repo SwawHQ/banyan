@@ -18,7 +18,7 @@ let work,site,config;
 function write(file,text){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,text);}
 function home(language,title=language.title) {
   return '---\n'+(title===null?'':'title: '+JSON.stringify(title)+'\n')+
-    'linkTitle: Navigation '+language.label+'\ndescription: Home description\nlayout: page-home\nparams:\n  browser_title: Browser '+language.label+'\n---\nHome body.\n';
+    'description: Home description\nlayout: page-root-navigation\nparams:\n  browser_title: Browser '+language.label+'\n---\n';
 }
 function build(name) {
   const output=path.join(work,name),result=spawnSync(toolExecutable('hugo'),['--minify','--noBuildLock','--destination',output],
@@ -40,6 +40,7 @@ before(()=>{
   writeDelivery(path.join(site,'assets'),fixtureDelivery('[sw]\nmode="off"\ncontent_check_interval=5\n'));
   for(const language of languages) {
     write(path.join(site,'content/_index'+language.suffix+'.md'),home(language));
+    write(path.join(site,'content/home/index'+language.suffix+'.md'),'---\ntitle: Welcome\nlinkTitle: Navigation '+language.label+'\nurl: home/\nlayout: page-content-only\n---\n# Welcome\n');
     write(path.join(site,'content/articles/_index'+language.suffix+'.md'),'---\ntitle: Collection '+language.label+'\nlayout: page-collection-directory\n---\n');
     for(const custom of [false,true]) write(path.join(site,'content/articles/'+(custom?'custom':'plain')+language.suffix+'.md'),
       '---\ntitle: Article '+language.label+'\nurl: '+(custom?'custom':'plain')+'/\nlayout: page-article-rss\n'+

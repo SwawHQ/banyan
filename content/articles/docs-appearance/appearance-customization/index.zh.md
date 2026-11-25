@@ -10,7 +10,7 @@ description: 在首页只显示根导航列，或修改风场的标语、文字�
 
 ## 只显示根导航列
 
-根导航列出当前语言的直属页面。根地址使用 `layout: page-home`，打开时没有选中项。
+根导航列出当前语言的直属页面。根地址使用 `layout: page-root-navigation`，打开时没有选中项。
 
 ## 修改风场
 
@@ -18,7 +18,7 @@ description: 在首页只显示根导航列，或修改风场的标语、文字�
 
 ```text
 {{</* art-wind */>}}
-{"brand_line":"欢迎来访","signals":[{"name":"使用文档","url":"/zh/articles/docs-start/","primary":true}]}
+{"page_heading":true,"brand_line":"欢迎来访","signals":[{"name":"使用文档","url":"/zh/articles/docs-start/","primary":true}]}
 {{</* /art-wind */>}}
 ```
 
@@ -26,6 +26,7 @@ description: 在首页只显示根导航列，或修改风场的标语、文字�
 
 | 风场可选参数 | 默认值 | 用途 |
 | --- | --- | --- |
+| `page_heading` | `false` | 风场默认使用二级标题。让其中一个风场提供整页一级标题时设为 `true` |
 | `wind_field_start_offset_rem` | `6` | 信号区域顶部距风场区域顶部的距离，单位为 rem |
 | `signal_drift_seconds` | `90` | 普通信号漂移周期的基准秒数 |
 | `signal_launch_gap_seconds` | `4` | 相邻信号启动的基准间隔秒数 |

@@ -80,7 +80,10 @@
 <section id="{{ $id }}" class="home-art-wind" data-art="wind" aria-labelledby="{{ $id }}-title">
   <div class="home-art-wind__anchor">
     {{- $heading := $config.heading | default .Page.Title -}}
-    {{- if eq .Page.Layout "page-home" }}<h1 id="{{ $id }}-title" class="home-art-wind__anchor-title">{{ $heading }}</h1>{{ else }}<h2 id="{{ $id }}-title" class="home-art-wind__anchor-title">{{ $heading }}</h2>{{ end }}
+    {{- if and (isset $config "page_heading") (ne (printf "%T" $config.page_heading) "bool") -}}
+      {{- errorf "art-wind page_heading must be true or false at %s" .Position -}}
+    {{- end -}}
+    {{- if $config.page_heading }}<h1 id="{{ $id }}-title" class="home-art-wind__anchor-title">{{ $heading }}</h1>{{ else }}<h2 id="{{ $id }}-title" class="home-art-wind__anchor-title">{{ $heading }}</h2>{{ end }}
     {{- with $config.brand_line }}
     <p class="home-art-wind__anchor-line">{{ . }}</p>
     {{- end }}

@@ -319,7 +319,7 @@ test('delivery redirects share platform output and reject invalid declarations',
 test('shared deployment files are published when the primary homepage uses a standalone layout',()=>{
   const policy='[[redirects]]\nsource = "/previous/"\ndestination = "/current/"\nstatus = 301\n';
   const baseline=passed(build('deployment-home-baseline',policy)),layouts=path.join(work,'deployment-home-layouts');
-  write(path.join(layouts,'page-home.en.html'),
+  write(path.join(layouts,'page-root-navigation.en.html'),
     '<!DOCTYPE html><html lang="en"><head><title>Standalone home</title></head><body data-standalone-deployment-home><a href="{{ .RelPermalink }}">Home</a></body></html>');
   const config='\n[[module.mounts]]\nsource = '+JSON.stringify(layouts.replaceAll('\\','/'))+'\ntarget = "layouts"\n';
   const output=passed(build('deployment-home-standalone',policy,config));
@@ -333,7 +333,7 @@ test('shared deployment files are published when the primary homepage uses a sta
 test('shared deployment files are published when the default language only outputs RSS',()=>{
   const content=path.join(work,'deployment-rss-content');
   for(const suffix of ['','.zh','.ar'])write(path.join(content,'_index'+suffix+'.md'),
-    '---\ntitle: RSS deployment fixture\ndescription: Shared deployment fixture.\nlayout: page-home\n'+
+    '---\ntitle: RSS deployment fixture\ndescription: Shared deployment fixture.\nlayout: page-root-navigation\n'+
     'outputs: '+(suffix?'[HTML, RSS]':'[RSS]')+'\n---\nHome.\n');
   const config='[[module.mounts]]\nsource = '+JSON.stringify(content.replaceAll('\\','/'))+'\ntarget = "content"\n'+
     '[languages.en]\nweight=2\n[languages.zh]\nweight=1\n';

@@ -1,0 +1,4 @@
+{{ define "main" }}
+  {{- /* baseof renders the root navigation directly and calls main only on content pages. */ -}}
+  {{- errorf "Build failed: page-root-navigation requires the language root; check %s." .File.Path -}}
+{{ end }}
