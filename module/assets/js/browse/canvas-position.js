@@ -2,12 +2,13 @@ import { readAnchor } from './navigation-state.contract.js';
 
 const CANVAS_NAVIGATION_KEY = 'banyan:canvas-navigation';
 
-export function saveCanvasPosition(href) {
+export function saveCanvasPosition(href, clipped = false) {
     try {
         sessionStorage[CANVAS_NAVIGATION_KEY] = JSON.stringify({
             source: location.href.split('#')[0],
             target: new URL(href, location.href).href,
-            x: window.visualViewport?.pageLeft ?? scrollX
+            x: window.visualViewport?.pageLeft ?? scrollX,
+            clipped
         });
     } catch { /* Navigation remains usable when storage is unavailable. */ }
 }
@@ -51,6 +52,7 @@ export function initCanvasPosition() {
     const observer = new MutationObserver(() => {
         const main = document.getElementById('main');
         if (!main) return;
+        if (pending?.clipped && main.matches('.page-shell') && !main.querySelector('.page-rail')) return;
         stop();
         // Early user input, an anchor or native restoration takes priority.
         if (readAnchor(location.hash) || (!rtl && (window.visualViewport?.pageLeft ?? scrollX))
@@ -64,6 +66,17 @@ export function initCanvasPosition() {
         main.style.scrollMarginInlineStart = `${start + (scrollX - targetX) * (rtl ? -1 : 1)}px`;
         main.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'instant' });
         main.style.scrollMarginInlineStart = '';
+        if (carry && pending.clipped && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            const delta = (window.visualViewport?.pageLeft ?? scrollX) - targetX;
+            if (Math.abs(delta) > 1) {
+                // The shell supplies the scroll extent. Move its visible tracks inside it.
+                const tracks = main.closest('.page-shell').querySelectorAll('.page-rail, [data-breadcrumb-column], .reading-group');
+                for (const track of tracks) {
+                    track.animate([{ transform: `translateX(${delta}px)` }, { transform: 'none' }],
+                        { duration: 70, easing: 'ease-in-out' });
+                }
+            }
+        }
     });
     for (const name of ['pointerdown', 'touchstart', 'wheel', 'keydown']) {
         window.addEventListener(name, stop, options);

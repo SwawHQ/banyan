@@ -163,6 +163,55 @@ test('native drag opening rejects incompatible options and engines',{timeout:300
 });
 
 for(const {name,suffix} of engines){
+test(name+' animates only the clipped collapse offset without extending the canvas',async()=>{
+  const server=await createStaticSiteServer(output);let browser;
+  try {
+    await server.start();
+    const type=name==='chromium'?loadChromium():loadWebkit();
+    browser=await type.launch({executablePath:type.executablePath()});
+    const page=await browser.newPage({viewport:{width:900,height:900}});
+    await page.addInitScript(()=>{
+      const animate=Element.prototype.animate;
+      Element.prototype.animate=function(...args){
+        const animation=animate.apply(this,args);
+        if(this.matches('.reading-group')){
+          window.collapseStart={x:scrollX,width:document.documentElement.scrollWidth,
+            shift:new DOMMatrix(getComputedStyle(this).transform).m41};
+          window.collapseFinished=animation.finished;
+        }
+        return animation;
+      };
+    });
+    for(const [prefix,rtl] of [['',false],['/ar',true]])for(const reducedMotion of ['no-preference','reduce'])for(const width of [390,1678]){
+      await page.setViewportSize({width,height:900});
+      await page.emulateMedia({reducedMotion});
+      const base=server.getBaseUrl()+prefix;
+      await page.goto(base+'/p/reference-note/#from=discover/tooling');await waitForBrowse(page);
+      const entry=page.locator('[data-breadcrumb-column-path="/discover/"] [aria-current="page"]');
+      const before=await entry.evaluate((link,rtl)=>{
+        const box=link.getBoundingClientRect();
+        scrollBy({left:rtl?box.right-document.documentElement.clientWidth-70:box.left+70,behavior:'instant'});
+        return scrollX;
+      },rtl);
+      const box=await entry.boundingBox();
+      await Promise.all([page.waitForURL(base+'/discover/'),page.mouse.click(rtl?box.x+10:box.x+box.width-10,box.y+box.height/2)]);
+      const result=await page.evaluate(async()=>{
+        await window.collapseFinished;
+        return {start:window.collapseStart,x:scrollX,width:document.documentElement.scrollWidth,
+          transform:getComputedStyle(document.querySelector('.reading-group')).transform};
+      });
+      assert.ok(Math.abs(before-result.x)>50);
+      if(reducedMotion==='reduce')assert.equal(result.start,undefined);
+      else {
+        assert.ok(Math.abs(result.start.shift-(result.x-before))<=1,JSON.stringify({rtl,before,result}));
+        assert.equal(result.start.x,result.x);
+        assert.equal(result.start.width,result.width);
+      }
+      assert.equal(result.transform,'none');
+    }
+  } finally {await browser?.close();await server.stop();}
+});
+
 test(name+' clamps the canvas position when collapsing to a shorter list',async()=>{
   const server=await createStaticSiteServer(output);let browser;
   try {
@@ -303,7 +352,12 @@ test(name+' rejects a missing early position and an unconsumed navigation record
 
 test(name+' rejects a lost sort on collapse and history overrides',{timeout:20000},()=>{
   const current=fixture('current-'+name);
-  script(current,"document.addEventListener('click',event=>{if(event.target.closest('[data-slot=breadcrumb] [aria-current=page]')){event.preventDefault();location.assign('/all/');}},true);");
+  write(path.join(current,'reset-sort.js'),`addEventListener('pageshow',()=>{
+    if(document.referrer.endsWith('/d/canvas-first/')){
+      document.querySelector('main [data-sort-field="name"][data-sort-control]').click();
+    }
+  });`);
+  fs.appendFileSync(path.join(current,'all/index.html'),'<script defer src="/reset-sort.js"></script>');
   const reset=cli('open'+suffix,['--from','/all/#sorts=name-desc','--page','/d/canvas-first/','--widths','390'],current);
   assert.equal(reset.status,1);assert.match(reset.stderr,/Collapsing must restore/);
   const history=fixture('history-'+name);script(history,"history.scrollRestoration='manual';");

@@ -17,4 +17,4 @@ lastmod: 2026-11-24
 - Replace `centered-image` with Markdown such as `![View](photo.jpg)`. The image follows the article’s standard alignment and sizing.
 - Replace each `home-art` bundle call with `art-wind` and move the translated wind settings into its JSON body. Use ordinary Markdown for a text-only home.
 - Replace `page-home` with `page-root-navigation` at each language root and `page-content-only` for the Home entry. The root opens with only navigation. In `content/home/index*.md`, set `page_heading: true` on the wind scene that supplies the page heading.
-- Activate a selected navigation entry to return to its list. Opening its link in a new tab still opens the entry.
+- Activate a selected navigation entry to return to its list. A partially visible column slides into alignment when the shorter canvas reaches its end. Opening the link in a new tab still opens the entry.

@@ -17,4 +17,4 @@ lastmod: 2026-11-24
 - 已移除 `centered-image`。文章内图片可写作 `![说明](photo.jpg)`，按正文默认方式对齐和缩放。
 - 将引用风场艺术包的 `home-art` 改为 `art-wind`，把各语言的风场参数写入短代码正文的 JSON。文字首页直接使用 Markdown。
 - 原用 `page-home` 的各语言根页改用 `page-root-navigation`，只显示根导航列。「首页」入口改用 `page-content-only`。在 `content/home/index*.md` 中给承担页面一级标题的风场设置 `page_heading: true`。
-- 再次点击导航列中已选中的条目可收起右侧栏目，返回该列表并保留排序。
+- 再次点击导航列中已选中的条目可收起右侧栏目，返回该列表并保留排序。若画幅缩短后触及末端，原本只露出一部分的列会平滑移至对齐位置。
